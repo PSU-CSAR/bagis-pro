@@ -1,0 +1,60 @@
+﻿<ArcGIS defaultAssembly="BAGIS_V4.dll" defaultNamespace="BAGIS_V4" xmlns="http://schemas.esri.com/DADF/Registry" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://schemas.esri.com/DADF/Registry file:///C:/Program%20Files/ArcGIS/Pro/bin/ArcGIS.Desktop.Framework.xsd">
+  <AddInInfo id="{bfef0cd1-e877-48dc-8b78-40de4825c346}" version="1.0" desktopVersion="2.3.15769">
+    <Name>BAGIS_V4</Name>
+    <Description>BAGIS_V4 description</Description>
+    <Image>Images\AddinDesktop32.png</Image>
+    <Author>Lesley Bross and Geoffrey Duh</Author>
+    <Company>Portland State University</Company>
+    <Date>9/12/2019 1:28:40 PM, 2019</Date>
+    <Subject>Content, Geoprocessing, Map Authoring</Subject>
+    <!-- Note subject can be one or more of these topics:
+                    Content, Framework, Editing, Geodatabase, Geometry, Geoprocessing, Layouts, Map Authoring, Map Exploration -->
+  </AddInInfo>
+  <modules>
+    <insertModule id="BAGIS_V4_Module" className="Module1" autoLoad="false" caption="Module1">
+      <!-- uncomment to have the control hosted on a separate tab-->
+      <tabs>
+        <tab id="BAGIS_Tab1" caption="BAGIS">
+          <group refID="BAGIS_V4_Group1" />
+        </tab>
+      </tabs>
+      <groups>
+        <!-- comment this out if you have no controls on the Addin tab to avoid
+              an empty group -->
+        <group id="BAGIS_V4_Group1" caption="BAGIS" appearsOnAddInTab="false">
+          <!-- host controls within groups
+          <menu refID="BAGIS_V4_Menus_MnuBasinAnalyst" size="middle" /> -->
+          <toolbar refID="BAGIS_V4_Toolbar1" />
+        </group> 
+      </groups>
+      <toolbars>
+        <toolbar id="BAGIS_V4_Toolbar1">
+          <group>
+            <menu refID="BAGIS_V4_Menus_MnuBasinAnalyst" size="small" />
+          </group>
+        </toolbar>
+      </toolbars>
+      <controls>
+        <!-- add your controls here -->
+        <button id="BAGIS_V4_Menus_MnuBasinAnalyst_Items_Button1" caption="Add Ref Layers" className="BAGIS_V4.Menus.MnuBasinAnalyst_button1" loadOnClick="true" >
+          <tooltip heading="Add Ref Layers">Add Reference Layers<disabledText /></tooltip>
+        </button>
+        <button id="BAGIS_V4_Menus_MnuBasinAnalyst_Items_Button2" caption="Save AOI MXD" className="BAGIS_V4.Menus.MnuBasinAnalyst_button2" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ArcGISProjectSave32.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ArcGISProjectSave32.png" >
+          <tooltip heading="Save AOI MXD">
+            Save AOI MXD<disabledText />
+          </tooltip>
+        </button>
+        <button id="BAGIS_V4_Menus_MnuBasinAnalyst_Items_Button3" caption="Basin info" className="BAGIS_V4.Menus.MnuBasinAnalyst_button2" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericProperties16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericProperties32.png">
+          <tooltip heading="Basin info">Basin information<disabledText /></tooltip>
+        </button>
+      </controls>
+      <menus>
+        <menu id="BAGIS_V4_Menus_MnuBasinAnalyst" caption="Basin Analysis" smallImage="Images\basin.png" largeImage="Images\basin.png">
+          <button refID="BAGIS_V4_Menus_MnuBasinAnalyst_Items_Button1" />
+          <button refID="BAGIS_V4_Menus_MnuBasinAnalyst_Items_Button2" />
+          <button refID="BAGIS_V4_Menus_MnuBasinAnalyst_Items_Button3" separator="true"/>
+        </menu>
+      </menus>
+    </insertModule>
+  </modules>
+</ArcGIS>
