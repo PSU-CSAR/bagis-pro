@@ -48,5 +48,25 @@ namespace BAGIS_V4
 
         #endregion Overrides
 
+        #region Toggle State
+        /// <summary>
+        /// Activate or Deactivate the specified state. State is identified via
+        /// its name. Listen for state changes via the DAML <b>condition</b> attribute
+        /// </summary>
+        /// <param name="stateID"></param>
+        public static void ToggleState(string stateID)
+        {
+            if (FrameworkApplication.State.Contains(stateID))
+            {
+                FrameworkApplication.State.Deactivate(stateID);
+            }
+            else
+            {
+                FrameworkApplication.State.Activate(stateID);
+            }
+        }
+
+        #endregion Toggle State
+
     }
 }

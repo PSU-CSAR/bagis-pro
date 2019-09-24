@@ -18,15 +18,16 @@ using ArcGIS.Desktop.Mapping;
 
 namespace BAGIS_V4.Menus
 {
-    internal class MnuBasinAnalyst_button1 : Button
+    internal class MnuBasinAnalyst_AddRefLayers : Button
     {
         protected override void OnClick()
         {
+            Module1.ToggleState("MnuBasinAnalyst_BasinInfo");
             MessageBox.Show("Add reference layers");
         }
     }
 
-    internal class MnuBasinAnalyst_button2 : Button
+    internal class MnuBasinAnalyst_SaveMxd : Button
     {
         protected override void OnClick()
         {
@@ -34,7 +35,7 @@ namespace BAGIS_V4.Menus
         }
     }
 
-    internal class MnuBasinAnalyst_button3 : Button
+    internal class MnuBasinAnalyst_BasinInfo : Button
     {
         protected override void OnClick()
         {
@@ -42,5 +43,11 @@ namespace BAGIS_V4.Menus
         }
     }
 
-
+    internal class MnuBasinAnalyst_AoiUtilities : Button
+    {
+        protected override void OnClick()
+        {
+            MessageBox.Show("AOI Utilities");
+        }
+    }
 }
