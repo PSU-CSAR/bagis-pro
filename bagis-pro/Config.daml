@@ -1,0 +1,73 @@
+﻿<ArcGIS defaultAssembly="bagis_pro.dll" defaultNamespace="bagis_pro" xmlns="http://schemas.esri.com/DADF/Registry" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://schemas.esri.com/DADF/Registry file:///C:/Program%20Files/ArcGIS/Pro/bin/ArcGIS.Desktop.Framework.xsd">
+  <AddInInfo id="{bfef0cd1-e877-48dc-8b78-40de4825c346}" version="1.0" desktopVersion="2.3.15769">
+    <Name>BAGIS-PRO</Name>
+    <Description>Basin Analysis for ArcGIS Pro</Description>
+    <Image>Images\AddinDesktop32.png</Image>
+    <Author>Lesley Bross and Geoffrey Duh</Author>
+    <Company>Portland State University</Company>
+    <Date>10/01/2019 1:28:40 PM, 2019</Date>
+    <Subject>Content, Geoprocessing, Map Authoring</Subject>
+    <!-- Note subject can be one or more of these topics:
+                    Content, Framework, Editing, Geodatabase, Geometry, Geoprocessing, Layouts, Map Authoring, Map Exploration -->
+  </AddInInfo>
+  <modules>
+    <insertModule id="bagis_pro_Module" className="Module1" autoLoad="true" caption="Module1">
+      <!-- uncomment to have the control hosted on a separate tab-->
+      <tabs>
+        <tab id="BAGIS_Tab1" caption="BAGIS">
+          <group refID="bagis_pro_Group1" />
+        </tab>
+      </tabs>
+      <groups>
+        <!-- comment this out if you have no controls on the Addin tab to avoid
+              an empty group -->
+        <group id="bagis_pro_Group1" caption="" appearsOnAddInTab="false">
+          <menu refID="bagis_pro_Menus_MnuBasinAnalyst" size="middle" />
+          <!-- host controls within groups
+          <toolbar refID="BAGIS_V4_Toolbar1" /> -->
+        </group> 
+      </groups>
+      <toolbars>
+<!--        <toolbar id="BAGIS_V4_Toolbar1">
+          <group>
+            <menu refID="BAGIS_V4_Menus_MnuBasinAnalyst" size="middle" />
+          </group>
+        </toolbar> -->
+      </toolbars>
+      <controls>
+        <!-- add your controls here -->
+        <button id="bagis_pro_Menus_MnuBasinAnalyst_AddRefLayers" caption="Add Ref Layers" className="bagis_pro.Menus.MnuBasinAnalyst_AddRefLayers" loadOnClick="true" >
+          <tooltip heading="Add Ref Layers">Add Reference Layers<disabledText /></tooltip>
+        </button>
+        <button id="bagis_pro_Menus_MnuBasinAnalyst_SaveMxd" caption="Save AOI MXD" className="bagis_pro.Menus.MnuBasinAnalyst_SaveMxd" condition="enable_MnuBasinAnalyst_SaveMxd" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ArcGISProjectSave32.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ArcGISProjectSave32.png">
+          <tooltip heading="Save AOI MXD">
+            Save AOI MXD<disabledText />
+          </tooltip>
+        </button>
+        <button id="bagis_pro_Menus_MnuBasinAnalyst_BasinInfo" caption="Basin info" className="bagis_pro.Menus.MnuBasinAnalyst_BasinInfo" condition="enable_MnuBasinAnalyst_BasinInfo" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericProperties16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericProperties32.png">
+          <tooltip heading="Basin info">Basin information<disabledText /></tooltip>
+        </button>
+        <button id="bagis_pro_Menus_MnuBasinAnalyst_AoiUtilities" caption="AOI Utilities" className="bagis_pro.Menus.MnuBasinAnalyst_AoiUtilities" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericProperties16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericProperties32.png">
+          <tooltip heading="AOI Utilities">AOI Utilities<disabledText /></tooltip>
+        </button>
+      </controls>
+      <menus>
+        <menu id="bagis_pro_Menus_MnuBasinAnalyst" caption="Basin Analysis" smallImage="Images\basin.png" largeImage="Images\basin.png">
+          <button refID="bagis_pro_Menus_MnuBasinAnalyst_AddRefLayers" />
+          <button refID="bagis_pro_Menus_MnuBasinAnalyst_SaveMxd" />
+          <button refID="bagis_pro_Menus_MnuBasinAnalyst_BasinInfo" separator="true"/>
+        </menu>
+      </menus>
+    </insertModule>
+  </modules>
+  <conditions>
+    <!-- our custom condition -->
+    <insertCondition id="enable_MnuBasinAnalyst_SaveMxd" caption="Save AOI MXD">
+      <!-- our condition is set true or false based on this underlying state -->
+      <state id="MnuBasinAnalyst_SaveMxd" />
+    </insertCondition>
+      <insertCondition id="enable_MnuBasinAnalyst_BasinInfo" caption="Basin info">
+      <state id="MnuBasinAnalyst_BasinInfo" />
+    </insertCondition>
+  </conditions>
+</ArcGIS>

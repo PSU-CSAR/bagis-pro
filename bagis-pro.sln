@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.28307.271
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "bagis-v4", "bagis-v4\bagis-v4.csproj", "{BFEF0CD1-E877-48DC-8B78-40DE4825C346}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "bagis-pro", "bagis-pro\bagis-pro.csproj", "{BFEF0CD1-E877-48DC-8B78-40DE4825C346}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
