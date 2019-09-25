@@ -16,7 +16,7 @@ using ArcGIS.Desktop.Framework.Dialogs;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
 using ArcGIS.Desktop.Mapping;
 
-namespace BAGIS_V4.Menus
+namespace bagis_pro.Menus
 {
     internal class MnuBasinAnalyst_AddRefLayers : Button
     {
@@ -48,6 +48,14 @@ namespace BAGIS_V4.Menus
         protected override void OnClick()
         {
             MessageBox.Show("AOI Utilities");
+        }
+    }
+
+    internal class MnuBasinAnalyst_AOIShapefile : Button
+    {
+        protected override void OnClick()
+        {
+            MessageBox.Show("Create AOI from a shapefile");
         }
     }
 }

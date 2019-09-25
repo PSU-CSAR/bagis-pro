@@ -47,8 +47,13 @@
         <button id="bagis_pro_Menus_MnuBasinAnalyst_BasinInfo" caption="Basin info" className="bagis_pro.Menus.MnuBasinAnalyst_BasinInfo" condition="enable_MnuBasinAnalyst_BasinInfo" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericProperties16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericProperties32.png">
           <tooltip heading="Basin info">Basin information<disabledText /></tooltip>
         </button>
-        <button id="bagis_pro_Menus_MnuBasinAnalyst_AoiUtilities" caption="AOI Utilities" className="bagis_pro.Menus.MnuBasinAnalyst_AoiUtilities" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericProperties16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericProperties32.png">
+        <button id="bagis_pro_Menus_MnuBasinAnalyst_AoiUtilities" caption="AOI Utilities" className="bagis_pro.Menus.MnuBasinAnalyst_AoiUtilities" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GeoprocessingEnvironmentSettings16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GeoprocessingEnvironmentSettings32.png">
           <tooltip heading="AOI Utilities">AOI Utilities<disabledText /></tooltip>
+        </button>
+        <button id="bagis_pro_Menus_MnuBasinAnalyst_AOIShapefile" caption="Create AOI from a shapefile" className="bagis_pro.Menus.MnuBasinAnalyst_AOIShapefile" loadOnClick="true" >
+          <tooltip heading="Create AOI from a shapefile">
+            Creating an AOI using an existing shapefile<disabledText />
+          </tooltip>
         </button>
       </controls>
       <menus>
@@ -56,6 +61,8 @@
           <button refID="bagis_pro_Menus_MnuBasinAnalyst_AddRefLayers" />
           <button refID="bagis_pro_Menus_MnuBasinAnalyst_SaveMxd" />
           <button refID="bagis_pro_Menus_MnuBasinAnalyst_BasinInfo" separator="true"/>
+          <button refID="bagis_pro_Menus_MnuBasinAnalyst_AoiUtilities" />
+          <button refID="bagis_pro_Menus_MnuBasinAnalyst_AOIShapefile" />
         </menu>
       </menus>
     </insertModule>

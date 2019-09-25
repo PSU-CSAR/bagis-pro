@@ -17,7 +17,7 @@ using ArcGIS.Desktop.Framework.Dialogs;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
 using ArcGIS.Desktop.Mapping;
 
-namespace BAGIS_V4
+namespace bagis_pro
 {
     internal class Module1 : Module
     {
