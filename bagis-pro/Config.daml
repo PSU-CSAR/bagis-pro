@@ -15,20 +15,25 @@
       <!-- uncomment to have the control hosted on a separate tab-->
       <tabs>
         <tab id="BAGIS_Tab1" caption="BAGIS">
-          <group refID="bagis_pro_Group1" />
+          <group refID="bagis_pro_Groups_BasinAnalyst" />
+          <group refID="bagis_pro_Groups_Basin" />
         </tab>
       </tabs>
       <groups>
         <!-- comment this out if you have no controls on the Addin tab to avoid
               an empty group -->
-        <group id="bagis_pro_Group1" caption="" appearsOnAddInTab="false">
+        <group id="bagis_pro_Groups_BasinAnalyst" appearsOnAddInTab="false">
           <menu refID="bagis_pro_Menus_MnuBasinAnalyst" size="middle" />
           <!-- host controls within groups
           <toolbar refID="BAGIS_V4_Toolbar1" /> -->
-        </group> 
+          <tool refID="bagis_pro_Basin_SetDEMExtenttTool" size="large" />
+        </group>
+        <group id="bagis_pro_Groups_Basin" appearsOnAddInTab="false">
+          <menu refID="bagis_pro_Menus_MnuBasin" size="middle" />
+        </group>
       </groups>
       <toolbars>
-<!--        <toolbar id="BAGIS_V4_Toolbar1">
+        <!--        <toolbar id="BAGIS_V4_Toolbar1">
           <group>
             <menu refID="BAGIS_V4_Menus_MnuBasinAnalyst" size="middle" />
           </group>
@@ -36,13 +41,12 @@
       </toolbars>
       <controls>
         <!-- add your controls here -->
-        <button id="bagis_pro_Menus_MnuBasinAnalyst_AddRefLayers" caption="Add Ref Layers" className="bagis_pro.Menus.MnuBasinAnalyst_AddRefLayers" loadOnClick="true" >
+        <button id="bagis_pro_Menus_MnuBasinAnalyst_AddRefLayers" caption="Add Ref Layers" className="bagis_pro.Menus.MnuBasinAnalyst_AddRefLayers" loadOnClick="true">
           <tooltip heading="Add Ref Layers">Add Reference Layers<disabledText /></tooltip>
         </button>
         <button id="bagis_pro_Menus_MnuBasinAnalyst_SaveMxd" caption="Save AOI MXD" className="bagis_pro.Menus.MnuBasinAnalyst_SaveMxd" condition="enable_MnuBasinAnalyst_SaveMxd" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ArcGISProjectSave32.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ArcGISProjectSave32.png">
           <tooltip heading="Save AOI MXD">
-            Save AOI MXD<disabledText />
-          </tooltip>
+            Save AOI MXD<disabledText /></tooltip>
         </button>
         <button id="bagis_pro_Menus_MnuBasinAnalyst_BasinInfo" caption="Basin info" className="bagis_pro.Menus.MnuBasinAnalyst_BasinInfo" condition="enable_MnuBasinAnalyst_BasinInfo" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericProperties16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericProperties32.png">
           <tooltip heading="Basin info">Basin information<disabledText /></tooltip>
@@ -50,19 +54,46 @@
         <button id="bagis_pro_Menus_MnuBasinAnalyst_AoiUtilities" caption="AOI Utilities" className="bagis_pro.Menus.MnuBasinAnalyst_AoiUtilities" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GeoprocessingEnvironmentSettings16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GeoprocessingEnvironmentSettings32.png">
           <tooltip heading="AOI Utilities">AOI Utilities<disabledText /></tooltip>
         </button>
-        <button id="bagis_pro_Menus_MnuBasinAnalyst_AOIShapefile" caption="Create AOI from a shapefile" className="bagis_pro.Menus.MnuBasinAnalyst_AOIShapefile" loadOnClick="true" >
+        <button id="bagis_pro_Menus_MnuBasinAnalyst_AOIShapefile" caption="Create AOI from a shapefile" className="bagis_pro.Menus.MnuBasinAnalyst_AOIShapefile" loadOnClick="true">
           <tooltip heading="Create AOI from a shapefile">
-            Creating an AOI using an existing shapefile<disabledText />
-          </tooltip>
+            Creating an AOI using an existing shapefile<disabledText /></tooltip>
         </button>
+        <button id="bagis_pro_Menus_MnuBasinAnalyst_Options" caption="Options" className="bagis_pro.Menus.MnuBasinAnalyst_Options" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericOptions16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericOptions32.png">
+          <tooltip heading="Options">
+            Options for managing AOIs in BAGIS.<disabledText /></tooltip>
+        </button>
+        <button id="bagis_pro_Menus_MnuBasinAnalyst_About" caption="About" className="bagis_pro.Menus.MnuBasinAnalyst_About" loadOnClick="true">
+          <tooltip heading="About">
+            About BAGIS<disabledText /></tooltip>
+        </button>
+        <button id="bagis_pro_Menus_MnuBasin_SelectBasin" caption="Select Basin" className="bagis_pro.Menus.MnuBasin_Select" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/SelectionSelectUnselect16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/SelectionSelectUnselect32.png">
+          <tooltip heading="Menu Button 1">Tool for selecting basin<disabledText /></tooltip>
+        </button>
+        <button id="bagis_pro_Menus_MnuBasin_Items_Button2" caption="Menu Button 2" className="bagis_pro.Menus.MnuBasin_button2" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericButtonGreen16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericButtonGreen32.png">
+          <tooltip heading="Menu Button 2">ToolTip<disabledText /></tooltip>
+        </button>
+        <button id="bagis_pro_Menus_MnuBasin_Items_Button3" caption="Menu Button 3" className="bagis_pro.Menus.MnuBasin_button3" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericButtonGreen16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericButtonGreen32.png">
+          <tooltip heading="Menu Button 3">ToolTip<disabledText /></tooltip>
+        </button>
+        <tool id="bagis_pro_Basin_SetDEMExtentTool" caption="SetDEMExtentTool" className="bagis_pro.Basin.SetDEMExtentTool" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/EditingSketchSquareAndFinish16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/EditingSketchSquareAndFinish32.png" condition="esri_mapping_mapPane">
+          <tooltip heading="Tooltip Heading">Set extent of DEM for basin<disabledText /></tooltip>
+        </tool>
       </controls>
       <menus>
-        <menu id="bagis_pro_Menus_MnuBasinAnalyst" caption="Basin Analysis" smallImage="Images\basin.png" largeImage="Images\basin.png">
+        <menu id="bagis_pro_Menus_MnuBasinAnalyst" caption="Basin Analysis">
           <button refID="bagis_pro_Menus_MnuBasinAnalyst_AddRefLayers" />
           <button refID="bagis_pro_Menus_MnuBasinAnalyst_SaveMxd" />
-          <button refID="bagis_pro_Menus_MnuBasinAnalyst_BasinInfo" separator="true"/>
+          <button refID="bagis_pro_Menus_MnuBasinAnalyst_BasinInfo" separator="true" />
           <button refID="bagis_pro_Menus_MnuBasinAnalyst_AoiUtilities" />
           <button refID="bagis_pro_Menus_MnuBasinAnalyst_AOIShapefile" />
+          <button refID="bagis_pro_Menus_MnuBasinAnalyst_Options" separator="true" />
+          <button refID="bagis_pro_Menus_MnuBasinAnalyst_About" />
+        </menu>
+        <menu id="bagis_pro_Menus_MnuBasin" caption="Basin Tools" smallImage="GenericButtonGreen16.png" largeImage="GenericButtonGreen32.png">
+          <button refID="bagis_pro_Menus_MnuBasin_SelectBasin" />
+          <customControl refID="bagis_pro_Basin_SetDEMExtentTool" />
+          <button refID="bagis_pro_Menus_MnuBasin_Items_Button2" />
+          <button refID="bagis_pro_Menus_MnuBasin_Items_Button3" />
         </menu>
       </menus>
     </insertModule>
@@ -73,7 +104,7 @@
       <!-- our condition is set true or false based on this underlying state -->
       <state id="MnuBasinAnalyst_SaveMxd" />
     </insertCondition>
-      <insertCondition id="enable_MnuBasinAnalyst_BasinInfo" caption="Basin info">
+    <insertCondition id="enable_MnuBasinAnalyst_BasinInfo" caption="Basin info">
       <state id="MnuBasinAnalyst_BasinInfo" />
     </insertCondition>
   </conditions>

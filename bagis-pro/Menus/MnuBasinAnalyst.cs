@@ -58,4 +58,20 @@ namespace bagis_pro.Menus
             MessageBox.Show("Create AOI from a shapefile");
         }
     }
+
+    internal class MnuBasinAnalyst_Options : Button
+    {
+        protected override void OnClick()
+        {
+            MessageBox.Show("You have options!");
+        }
+    }
+
+    internal class MnuBasinAnalyst_About : Button
+    {
+        protected override void OnClick()
+        {
+            MessageBox.Show("About BAGIS");
+        }
+    }
 }
