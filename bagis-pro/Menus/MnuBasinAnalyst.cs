@@ -55,7 +55,9 @@ namespace bagis_pro.Menus
     {
         protected override void OnClick()
         {
-            MessageBox.Show("Create AOI from a shapefile");
+            Webservices ws = new Webservices();
+            ws.AddPortalItem();
+            //MessageBox.Show("Create AOI from a shapefile");
         }
     }
 

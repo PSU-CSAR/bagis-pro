@@ -97,6 +97,7 @@
         </menu>
       </menus>
     </insertModule>
+    <insertModule id="bagis_pro_Webservices" className="Webservices" autoLoad="true" caption="Webservices"/>
   </modules>
   <conditions>
     <!-- our custom condition -->
