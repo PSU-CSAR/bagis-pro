@@ -64,7 +64,7 @@ namespace bagis_pro
             //string strToken = myPortal.GetToken();
 
             //var owner = myPortal.GetSignOnUsername();
-            var owner = <owner>;
+            var owner = "owner";
             var token = await Task.Run(() => GetToken(owner));
             string strToken = Convert.ToString(token);
 
@@ -108,7 +108,7 @@ namespace bagis_pro
 
         private async Task<string> GetToken(string userName)
         {
-            string password = <password>;
+            string password = "password";
             string url = "https://nrcs.maps.arcgis.com/sharing/rest/generateToken";
             string token = "";
             using (var formData = new MultipartFormDataContent())

@@ -120,8 +120,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Basin\SetDEMExtentTool.cs" />
+    <Compile Include="Constants.cs" />
+    <Compile Include="MapTools.cs" />
+    <Compile Include="Enumerations.cs" />
     <Compile Include="Menus\MnuBasin.cs" />
     <Compile Include="Menus\MnuBasinAnalyst.cs" />
+    <Compile Include="Menus\MnuMaps.cs" />
     <Compile Include="Webservices.cs" />
     <Compile Include="Module1.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -152,6 +156,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Buttons\" />
+    <Folder Include="Maps_Tables\" />
   </ItemGroup>
   <ItemGroup>
     <AddInContent Include="Images\basin.png" />

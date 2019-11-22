@@ -22,7 +22,7 @@ namespace bagis_pro.Menus
     {
         protected override void OnClick()
         {
-            Module1.ToggleState("MnuBasinAnalyst_BasinInfo");
+            Module1.ToggleState("MnuBasinAnalyst_BasinInfo_State");
             MessageBox.Show("Add reference layers");
         }
     }

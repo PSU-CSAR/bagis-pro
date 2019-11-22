@@ -17,6 +17,7 @@
         <tab id="BAGIS_Tab1" caption="BAGIS">
           <group refID="bagis_pro_Groups_BasinAnalyst" />
           <group refID="bagis_pro_Groups_Basin" />
+          <group refID="bagis_pro_Groups_Maps" />
         </tab>
       </tabs>
       <groups>
@@ -27,9 +28,13 @@
           <!-- host controls within groups
           <toolbar refID="BAGIS_V4_Toolbar1" /> -->
           <tool refID="bagis_pro_Basin_SetDEMExtenttTool" size="large" />
+          <button refID="bagis_pro_Maps_Tables_Button1" size="large" />
         </group>
         <group id="bagis_pro_Groups_Basin" appearsOnAddInTab="false">
           <menu refID="bagis_pro_Menus_MnuBasin" size="middle" />
+        </group>
+        <group id="bagis_pro_Groups_Maps" appearsOnAddInTab="false">
+          <menu refID="bagis_pro_Menus_MnuMaps" size="middle" />
         </group>
       </groups>
       <toolbars>
@@ -44,11 +49,11 @@
         <button id="bagis_pro_Menus_MnuBasinAnalyst_AddRefLayers" caption="Add Ref Layers" className="bagis_pro.Menus.MnuBasinAnalyst_AddRefLayers" loadOnClick="true">
           <tooltip heading="Add Ref Layers">Add Reference Layers<disabledText /></tooltip>
         </button>
-        <button id="bagis_pro_Menus_MnuBasinAnalyst_SaveMxd" caption="Save AOI MXD" className="bagis_pro.Menus.MnuBasinAnalyst_SaveMxd" condition="enable_MnuBasinAnalyst_SaveMxd" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ArcGISProjectSave32.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ArcGISProjectSave32.png">
+        <button id="bagis_pro_Menus_MnuBasinAnalyst_SaveMxd" caption="Save AOI MXD" className="bagis_pro.Menus.MnuBasinAnalyst_SaveMxd" condition="MnuBasinAnalyst_SaveMxd_Condition" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ArcGISProjectSave32.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ArcGISProjectSave32.png">
           <tooltip heading="Save AOI MXD">
             Save AOI MXD<disabledText /></tooltip>
         </button>
-        <button id="bagis_pro_Menus_MnuBasinAnalyst_BasinInfo" caption="Basin info" className="bagis_pro.Menus.MnuBasinAnalyst_BasinInfo" condition="enable_MnuBasinAnalyst_BasinInfo" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericProperties16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericProperties32.png">
+        <button id="bagis_pro_Menus_MnuBasinAnalyst_BasinInfo" caption="Basin info" className="bagis_pro.Menus.MnuBasinAnalyst_BasinInfo" condition="MnuBasinAnalyst_Condition" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericProperties16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericProperties32.png">
           <tooltip heading="Basin info">Basin information<disabledText /></tooltip>
         </button>
         <button id="bagis_pro_Menus_MnuBasinAnalyst_AoiUtilities" caption="AOI Utilities" className="bagis_pro.Menus.MnuBasinAnalyst_AoiUtilities" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GeoprocessingEnvironmentSettings16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GeoprocessingEnvironmentSettings32.png">
@@ -78,6 +83,9 @@
         <tool id="bagis_pro_Basin_SetDEMExtentTool" caption="SetDEMExtentTool" className="bagis_pro.Basin.SetDEMExtentTool" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/EditingSketchSquareAndFinish16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/EditingSketchSquareAndFinish32.png" condition="esri_mapping_mapPane">
           <tooltip heading="Tooltip Heading">Set extent of DEM for basin<disabledText /></tooltip>
         </tool>
+        <button id="bagis_pro_Menus_MnuMaps_BtnMapTest" caption="Maps Test" className="bagis_pro.Menus.MnuMaps_BtnMapTest" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericButtonGreen16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericButtonGreen32.png">
+          <tooltip heading="Maps Test">Click to test maps<disabledText /></tooltip>
+        </button>
       </controls>
       <menus>
         <menu id="bagis_pro_Menus_MnuBasinAnalyst" caption="Basin Analysis">
@@ -95,18 +103,21 @@
           <button refID="bagis_pro_Menus_MnuBasin_Items_Button2" />
           <button refID="bagis_pro_Menus_MnuBasin_Items_Button3" />
         </menu>
+        <menu id="bagis_pro_Menus_MnuMaps" caption="Maps Menu" smallImage="GenericButtonGreen16.png" largeImage="GenericButtonGreen32.png">
+          <button refID="bagis_pro_Menus_MnuMaps_BtnMapTest" />
+        </menu>
       </menus>
     </insertModule>
-    <insertModule id="bagis_pro_Webservices" className="Webservices" autoLoad="true" caption="Webservices"/>
+    <insertModule id="bagis_pro_Webservices" className="Webservices" autoLoad="true" caption="Webservices" />
   </modules>
   <conditions>
     <!-- our custom condition -->
-    <insertCondition id="enable_MnuBasinAnalyst_SaveMxd" caption="Save AOI MXD">
+    <insertCondition id="MnuBasinAnalyst_SaveMxd_Condition" caption="Save AOI MXD">
       <!-- our condition is set true or false based on this underlying state -->
-      <state id="MnuBasinAnalyst_SaveMxd" />
+      <state id="MnuBasinAnalyst_SaveMxd_State" />
     </insertCondition>
-    <insertCondition id="enable_MnuBasinAnalyst_BasinInfo" caption="Basin info">
-      <state id="MnuBasinAnalyst_BasinInfo" />
+    <insertCondition id="MnuBasinAnalyst_Condition" caption="Basin info">
+      <state id="MnuBasinAnalyst_BasinInfo_State" />
     </insertCondition>
   </conditions>
 </ArcGIS>
