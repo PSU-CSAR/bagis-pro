@@ -126,6 +126,7 @@
     <Compile Include="Menus\MnuBasin.cs" />
     <Compile Include="Menus\MnuBasinAnalyst.cs" />
     <Compile Include="Menus\MnuMaps.cs" />
+    <Compile Include="BA_Objects\Aoi.cs" />
     <Compile Include="Webservices.cs" />
     <Compile Include="Module1.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

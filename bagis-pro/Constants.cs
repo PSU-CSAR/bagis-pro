@@ -13,6 +13,8 @@ namespace bagis_pro
     {
         public const string MAPS_DEFAULT_MAP_NAME = "Basin Analysis";
 
+
+        public const string PROP_AOI = "Aoi";
     }
 
 }

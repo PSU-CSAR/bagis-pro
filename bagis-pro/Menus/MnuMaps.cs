@@ -23,7 +23,11 @@ namespace bagis_pro.Menus
     {
         protected async override void OnClick()
         {
-            Map map = await MapTools.FindOpenExistingMapAsync(Constants.MAPS_DEFAULT_MAP_NAME);
+            // Initialize AOI object
+            BA_Objects.Aoi oAoi = new BA_Objects.Aoi("animas_AOI_prms", "C:\\Docs\\animas_AOI_prms");
+            // Store current AOI in application properties
+            Application.Current.Properties[Constants.PROP_AOI] = oAoi;
+            Map map = await MapTools.SetDefaultMapFrameNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
             if (map != null)
             {
                 if (map.Layers.Count() > 0)

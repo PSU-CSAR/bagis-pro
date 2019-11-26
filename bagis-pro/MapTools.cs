@@ -11,7 +11,7 @@ namespace bagis_pro
 {
     public class MapTools
     {
-        public static async Task<Map> FindOpenExistingMapAsync(string mapName)
+        public static async Task<Map> SetDefaultMapFrameNameAsync(string mapName)
         {
             return await QueuedTask.Run(async () =>
             {
@@ -30,6 +30,7 @@ namespace bagis_pro
                 {
                     map = MapFactory.Instance.CreateMap(mapName, basemap: Basemap.None);
                 }
+                await ProApp.Panes.CreateMapPaneAsync(map);
                 return map;
             });
         }
