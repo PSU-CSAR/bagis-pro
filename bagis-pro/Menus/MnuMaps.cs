@@ -15,6 +15,7 @@ using ArcGIS.Desktop.Framework;
 using ArcGIS.Desktop.Framework.Contracts;
 using ArcGIS.Desktop.Framework.Dialogs;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
+using ArcGIS.Desktop.Layouts;
 using ArcGIS.Desktop.Mapping;
 
 namespace bagis_pro.Menus
@@ -27,10 +28,11 @@ namespace bagis_pro.Menus
             BA_Objects.Aoi oAoi = new BA_Objects.Aoi("animas_AOI_prms", "C:\\Docs\\animas_AOI_prms");
             // Store current AOI in application properties
             Application.Current.Properties[Constants.PROP_AOI] = oAoi;
-            Map map = await MapTools.SetDefaultMapFrameNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
-            if (map != null)
+
+            Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
+            if (oMap != null)
             {
-                if (map.Layers.Count() > 0)
+                if (oMap.Layers.Count() > 0)
                 {
                     string strMessage = "Adding the maps to the display will overwrite the current arrangement of data layers. " +
                            "This action cannot be undone." + System.Environment.NewLine + "Do you wish to continue ?";
@@ -39,6 +41,13 @@ namespace bagis_pro.Menus
                     {
                         return;
                     }
+                }
+
+                Layout layout = await MapTools.SetDefaultLayoutNameAsync(Constants.MAPS_DEFAULT_LAYOUT_NAME);
+                if (layout != null)
+                {
+                    ILayoutPane iNewLayoutPane = await ProApp.Panes.CreateLayoutPaneAsync(layout); //GUI thread
+                    await MapTools.SetDefaultMapFrameNameAsync(Constants.MAPS_DEFAULT_MAP_FRAME_NAME, layout, oMap);
                 }
             }
         }
