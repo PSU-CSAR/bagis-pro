@@ -15,7 +15,7 @@ namespace bagis_pro
     {
         public static async Task<Layout> SetDefaultLayoutNameAsync(string layoutName)
         {
-            return await QueuedTask.Run(async () =>
+            return await QueuedTask.Run( () =>
             {
                 Layout layout = null;
                 Project proj = Project.Current;
@@ -37,22 +37,21 @@ namespace bagis_pro
             });
         }
 
-        public static async Task<MapFrame> SetDefaultMapFrameNameAsync(string mapFrameName, Layout oLayout, Map oMap)
+        public static async Task SetDefaultMapFrameDimensionAsync(string mapFrameName, Layout oLayout, Map oMap, double xMin, 
+                                                                  double yMin, double xMax, double yMax)
         {
-            return await QueuedTask.Run(async () =>
+            await QueuedTask.Run( () =>
             {
                 //Finding the mapFrame with mapFrameName
-                MapFrame mfElm = oLayout.FindElement(mapFrameName) as MapFrame; ;
-                if (mfElm == null)
+                if (!(oLayout.FindElement(mapFrameName) is MapFrame mfElm))
                 {
                     //Build 2D envelope geometry
-                    Coordinate2D mf_ll = new Coordinate2D(1.0, 2.0);
-                    Coordinate2D mf_ur = new Coordinate2D(7.5, 9.0);
+                    Coordinate2D mf_ll = new Coordinate2D(xMin, yMin);
+                    Coordinate2D mf_ur = new Coordinate2D(xMax, yMax);
                     Envelope mf_env = EnvelopeBuilder.CreateEnvelope(mf_ll, mf_ur);
                     mfElm = LayoutElementFactory.Instance.CreateMapFrame(oLayout, mf_env, oMap);
                     mfElm.SetName(mapFrameName);
                 }
-                return mfElm;
             });
         }
 
@@ -77,6 +76,17 @@ namespace bagis_pro
                 }
                 await ProApp.Panes.CreateMapPaneAsync(map);
                 return map;
+            });
+        }
+
+        public static async Task AddAoiBoundaryToMapAsync(string aoiPath)
+        {
+            await QueuedTask.Run(() =>
+            {
+                string strPath = GeodatabaseTools.GetGeodatabasePath(aoiPath, GeodatabaseNames.Aoi, true) +
+                                 "aoi_v";
+                Uri uri = new Uri(strPath);
+                LayerFactory.Instance.CreateLayer(uri, MapView.Active.Map);
             });
         }
     }

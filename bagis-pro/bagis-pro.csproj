@@ -121,6 +121,7 @@
   <ItemGroup>
     <Compile Include="Basin\SetDEMExtentTool.cs" />
     <Compile Include="Constants.cs" />
+    <Compile Include="GeodatabaseTools.cs" />
     <Compile Include="MapTools.cs" />
     <Compile Include="Enumerations.cs" />
     <Compile Include="Menus\MnuBasin.cs" />
