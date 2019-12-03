@@ -14,6 +14,7 @@ namespace bagis_pro
         public const string MAPS_DEFAULT_LAYOUT_NAME = "Basin Analysis Layout";
         public const string MAPS_DEFAULT_MAP_FRAME_NAME = "Basin Analysis Map Frame";
         public const string MAPS_DEFAULT_MAP_NAME = "Basin Analysis";
+        public const string MAPS_AOI_BOUNDARY = "AOI Boundary";
 
 
         public const string PROP_AOI = "Aoi";
