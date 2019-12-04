@@ -84,7 +84,12 @@
           <tooltip heading="Tooltip Heading">Set extent of DEM for basin<disabledText /></tooltip>
         </tool>
         <button id="bagis_pro_Menus_MnuMaps_BtnMapTest" caption="Maps Test" className="bagis_pro.Menus.MnuMaps_BtnMapTest" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericButtonGreen16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericButtonGreen32.png">
-          <tooltip heading="Maps Test">Click to test maps<disabledText /></tooltip>
+          <tooltip heading="Maps Test">
+            Click to test maps<disabledText />
+          </tooltip>
+        </button>
+        <button id="bagis_pro_Menus_MnuMaps_BtnSelectAoi" caption="Select AOI" className="bagis_pro.Menus.MnuMaps_BtnSelectAoi" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericButtonGreen16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericButtonGreen32.png">
+          <tooltip heading="Select AOI">Click to select an AOI<disabledText /></tooltip>
         </button>
       </controls>
       <menus>
@@ -104,6 +109,7 @@
           <button refID="bagis_pro_Menus_MnuBasin_Items_Button3" />
         </menu>
         <menu id="bagis_pro_Menus_MnuMaps" caption="Maps Menu" smallImage="GenericButtonGreen16.png" largeImage="GenericButtonGreen32.png">
+          <button refID="bagis_pro_Menus_MnuMaps_BtnSelectAoi" />
           <button refID="bagis_pro_Menus_MnuMaps_BtnMapTest" />
         </menu>
       </menus>

@@ -15,4 +15,11 @@ namespace bagis_pro
         WriteError,
         OtherError
     }
+
+    public enum FolderType
+    {
+        AOI,
+        BASIN,
+        FOLDER
+    }
 }

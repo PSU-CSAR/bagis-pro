@@ -20,14 +20,64 @@ using ArcGIS.Desktop.Mapping;
 
 namespace bagis_pro.Menus
 {
+    internal class MnuMaps_BtnSelectAoi : Button
+    {
+        protected async override void OnClick()
+        {
+            OpenItemDialog selectAoiDialog = new OpenItemDialog()
+            {
+                Title = "Select AOI Folder",
+                InitialLocation = System.IO.Directory.GetCurrentDirectory(),
+                MultiSelect = false,
+                Filter = ItemFilters.folders
+            };
+            bool? boolOk = selectAoiDialog.ShowDialog();
+            if (boolOk == true)
+            {
+                IEnumerable<Item> selectedItems = selectAoiDialog.Items;
+                foreach (Item selectedItem in selectedItems)    // there will only be one
+                {
+                    FolderType fType = await GeodatabaseTools.GetAoiFolderType(selectedItem.Path);
+                    if (fType != FolderType.AOI)
+                    {
+                        ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("!!The selected folder does not contain a valid AOI","BAGIS Pro");
+                    }
+                    else
+                    {
+                        // Initialize AOI object
+                        BA_Objects.Aoi oAoi = new BA_Objects.Aoi(System.IO.Path.GetFileName(selectedItem.Path), selectedItem.Path);
+                        // Store current AOI in application properties
+                        Application.Current.Properties[Constants.PROP_AOI] = oAoi;
+
+                    }
+
+                }
+
+            }
+
+        }
+    }
+
     internal class MnuMaps_BtnMapTest : Button
     {
         protected async override void OnClick()
         {
-            // Initialize AOI object
-            BA_Objects.Aoi oAoi = new BA_Objects.Aoi("animas_AOI_prms", "C:\\Docs\\animas_AOI_prms");
-            // Store current AOI in application properties
-            Application.Current.Properties[Constants.PROP_AOI] = oAoi;
+            string tempAoiPath = "C:\\Docs\\animas_AOI_prms";
+            BA_Objects.Aoi oAoi = (BA_Objects.Aoi) Application.Current.Properties[Constants.PROP_AOI];
+            if (oAoi == null)
+            {
+                if (System.IO.Directory.Exists(tempAoiPath))
+                {
+                    // Initialize AOI object
+                    oAoi = new BA_Objects.Aoi("animas_AOI_prms", tempAoiPath);
+                    // Store current AOI in application properties
+                    Application.Current.Properties[Constants.PROP_AOI] = oAoi;
+                }
+                else
+                {
+                    ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("!!Please set an AOI before testing the maps", "BAGIS Pro");
+                }
+            }
 
             Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
             if (oMap != null)
