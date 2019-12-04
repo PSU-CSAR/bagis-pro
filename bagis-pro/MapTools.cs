@@ -1,4 +1,5 @@
-﻿using ArcGIS.Core.Data;
+﻿using ArcGIS.Core.CIM;
+using ArcGIS.Core.Data;
 using ArcGIS.Core.Geometry;
 using ArcGIS.Desktop.Core;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
@@ -80,24 +81,45 @@ namespace bagis_pro
             });
         }
 
-        public static async Task AddAoiBoundaryToMapAsync(Uri aoiUri, string displayName = "")
+        public static async Task AddAoiBoundaryToMapAsync(Uri aoiUri, string displayName = "", double lineSymbolWidth = 1.0)
         {
+            // parse the uri for the folder and file
+            string strFileName = null;
+            string strFolderPath = null;
+            if (aoiUri.IsFile)
+            {
+                strFileName = System.IO.Path.GetFileName(aoiUri.LocalPath);
+                strFolderPath = System.IO.Path.GetDirectoryName(aoiUri.LocalPath);
+            }
             await QueuedTask.Run(() =>
             {
-                FeatureLayer fLayer = LayerFactory.Instance.CreateFeatureLayer(aoiUri, MapView.Active.Map);
-                if (fLayer != null)
+                FeatureClass fClass = null;
+                // Opens a file geodatabase. This will open the geodatabase if the folder exists and contains a valid geodatabase.
+                using (Geodatabase geodatabase =
+                    new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(strFolderPath))))
                 {
-                    //set layer name
-                    FeatureClass fc =fLayer.GetFeatureClass();
-                    if (String.IsNullOrEmpty(displayName))
-                    { 
-                        fLayer.SetName(fc.GetDefinition().GetAliasName());
-                    }
-                    else
-                    {
-                        fLayer.SetName(displayName);
-                    }
+                    // Use the geodatabase.
+                    fClass = geodatabase.OpenDataset<FeatureClass>(strFileName);
                 }
+                if (String.IsNullOrEmpty(displayName))
+                {
+                    displayName = fClass.GetDefinition().GetAliasName();
+                }
+                // Create symbology for feature layer
+                var flyrCreatnParam = new FeatureLayerCreationParams(fClass)
+                {
+                    Name = displayName,
+                    IsVisible = true,
+                    RendererDefinition = new SimpleRendererDefinition()
+                    {
+                        SymbolTemplate = SymbolFactory.Instance.ConstructPolygonSymbol(
+                        ColorFactory.Instance.BlackRGB, SimpleFillStyle.Null,
+                        SymbolFactory.Instance.ConstructStroke(ColorFactory.Instance.BlackRGB, lineSymbolWidth, SimpleLineStyle.Solid))
+                        .MakeSymbolReference()
+                    }
+                };
+
+                FeatureLayer fLayer = LayerFactory.Instance.CreateLayer<FeatureLayer>(flyrCreatnParam, MapView.Active.Map);
             });
         }
 
