@@ -49,11 +49,16 @@ namespace bagis_pro.Menus
                     ILayoutPane iNewLayoutPane = await ProApp.Panes.CreateLayoutPaneAsync(layout); //GUI thread
                     await MapTools.SetDefaultMapFrameDimensionAsync(Constants.MAPS_DEFAULT_MAP_FRAME_NAME, layout, oMap,
                         1.0, 2.0, 7.5, 9.0);
-                    await MapTools.AddAoiBoundaryToMapAsync(oAoi.FilePath, Constants.MAPS_AOI_BOUNDARY);
+
+                    //add aoi boundary to map and zoom to layer
+                    string strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi, true) +
+                                     "aoi_v";
+                    Uri uri = new Uri(strPath);
+                    await MapTools.AddAoiBoundaryToMapAsync(uri, Constants.MAPS_AOI_BOUNDARY);
                     
-                    //zoom to layer
-                    double bufferFactor = 1.2;
-                    bool bZoomed = await MapTools.ZoomToExtentAsync(oAoi.FilePath, "aoi_v", bufferFactor);
+                    //zoom to aoi boundary layer
+                    double bufferFactor = 1.1;
+                    bool bZoomed = await MapTools.ZoomToExtentAsync(uri, bufferFactor);
                 }
             }
         }

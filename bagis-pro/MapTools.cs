@@ -80,14 +80,11 @@ namespace bagis_pro
             });
         }
 
-        public static async Task AddAoiBoundaryToMapAsync(string aoiPath, string displayName = "")
+        public static async Task AddAoiBoundaryToMapAsync(Uri aoiUri, string displayName = "")
         {
             await QueuedTask.Run(() =>
             {
-                string strPath = GeodatabaseTools.GetGeodatabasePath(aoiPath, GeodatabaseNames.Aoi, true) +
-                                 "aoi_v";
-                Uri uri = new Uri(strPath);
-                FeatureLayer fLayer = LayerFactory.Instance.CreateFeatureLayer(uri, MapView.Active.Map);
+                FeatureLayer fLayer = LayerFactory.Instance.CreateFeatureLayer(aoiUri, MapView.Active.Map);
                 if (fLayer != null)
                 {
                     //set layer name
@@ -104,23 +101,29 @@ namespace bagis_pro
             });
         }
 
-        public static async Task<bool> ZoomToExtentAsync(string aoiPath, string fileName, double bufferFactor = 1)
+        public static async Task<bool> ZoomToExtentAsync(Uri aoiUri, double bufferFactor = 1)
         {            
             //Get the active map view.
             var mapView = MapView.Active;
             if (mapView == null)
                 return false;
+            string strFileName = null;
+            string strFolderPath = null;
+            if (aoiUri.IsFile)
+            {
+                strFileName = System.IO.Path.GetFileName(aoiUri.LocalPath);
+                strFolderPath = System.IO.Path.GetDirectoryName(aoiUri.LocalPath);
+            }
 
             Envelope zoomEnv = null;
             await QueuedTask.Run(() => {
                 // Opens a file geodatabase. This will open the geodatabase if the folder exists and contains a valid geodatabase.
-                string strPath = GeodatabaseTools.GetGeodatabasePath(aoiPath, GeodatabaseNames.Aoi);
                 using (
                   Geodatabase geodatabase =
-                    new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(strPath))))
+                    new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(strFolderPath))))
                 {
                     // Use the geodatabase.
-                    FeatureClassDefinition fcDefinition = geodatabase.GetDefinition<FeatureClassDefinition>(fileName);
+                    FeatureClassDefinition fcDefinition = geodatabase.GetDefinition<FeatureClassDefinition>(strFileName);
                     zoomEnv = fcDefinition.GetExtent().Expand(bufferFactor, bufferFactor, true);
                 }
             });
