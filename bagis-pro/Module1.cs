@@ -30,7 +30,7 @@ namespace bagis_pro
         {
             get
             {
-                return _this ?? (_this = (Module1)FrameworkApplication.FindModule("BAGIS_V4_Module"));
+                return _this ?? (_this = (Module1)FrameworkApplication.FindModule("Module1"));
             }
         }
 
@@ -65,8 +65,14 @@ namespace bagis_pro
                 FrameworkApplication.State.Activate(stateID);
             }
         }
-
         #endregion Toggle State
+
+        private BA_Objects.Aoi _aoi = new BA_Objects.Aoi();
+        internal BA_Objects.Aoi Aoi
+        {
+            get { return _aoi; }
+            set { _aoi = value; }
+        }
 
     }
 }

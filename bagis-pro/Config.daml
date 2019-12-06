@@ -11,7 +11,7 @@
                     Content, Framework, Editing, Geodatabase, Geometry, Geoprocessing, Layouts, Map Authoring, Map Exploration -->
   </AddInInfo>
   <modules>
-    <insertModule id="bagis_pro_Module" className="Module1" autoLoad="true" caption="Module1">
+    <insertModule id="Module1" className="Module1" autoLoad="true" caption="Module1">
       <!-- uncomment to have the control hosted on a separate tab-->
       <tabs>
         <tab id="BAGIS_Tab1" caption="BAGIS">

@@ -46,9 +46,8 @@ namespace bagis_pro.Menus
                     {
                         // Initialize AOI object
                         BA_Objects.Aoi oAoi = new BA_Objects.Aoi(System.IO.Path.GetFileName(selectedItem.Path), selectedItem.Path);
-                        // Store current AOI in application properties
-                        Application.Current.Properties[Constants.PROP_AOI] = oAoi;
-
+                        // Store current AOI in Module1
+                        Module1.Current.Aoi = oAoi;
                     }
 
                 }
@@ -63,15 +62,15 @@ namespace bagis_pro.Menus
         protected async override void OnClick()
         {
             string tempAoiPath = "C:\\Docs\\animas_AOI_prms";
-            BA_Objects.Aoi oAoi = (BA_Objects.Aoi) Application.Current.Properties[Constants.PROP_AOI];
-            if (oAoi == null)
+            BA_Objects.Aoi oAoi = Module1.Current.Aoi;
+            if (String.IsNullOrEmpty(oAoi.Name))
             {
                 if (System.IO.Directory.Exists(tempAoiPath))
                 {
                     // Initialize AOI object
                     oAoi = new BA_Objects.Aoi("animas_AOI_prms", tempAoiPath);
-                    // Store current AOI in application properties
-                    Application.Current.Properties[Constants.PROP_AOI] = oAoi;
+                    // Store current AOI in Module1
+                    Module1.Current.Aoi = oAoi;
                 }
                 else
                 {
