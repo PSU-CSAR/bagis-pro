@@ -95,10 +95,29 @@ namespace bagis_pro.Menus
                 Layout layout = await MapTools.SetDefaultLayoutNameAsync(Constants.MAPS_DEFAULT_LAYOUT_NAME);
                 if (layout != null)
                 {
-                    ILayoutPane iNewLayoutPane = await ProApp.Panes.CreateLayoutPaneAsync(layout); //GUI thread
+                    bool bFoundIt = false;
+                    //A layout view may exist but it may not be active
+                    //Iterate through each pane in the application and check to see if the layout is already open and if so, activate it
+                    foreach (var pane in ProApp.Panes)
+                    {
+                        if (!(pane is ILayoutPane layoutPane))  //if not a layout view, continue to the next pane    
+                            continue;
+                        if (layoutPane.LayoutView.Layout == layout) //if there is a match, activate the view  
+                        {
+                            (layoutPane as Pane).Activate();
+                            bFoundIt = true;
+                        }
+                    }
+                    if (!bFoundIt)
+                    {
+                        ILayoutPane iNewLayoutPane = await ProApp.Panes.CreateLayoutPaneAsync(layout); //GUI thread
+                    }
                     await MapTools.SetDefaultMapFrameDimensionAsync(Constants.MAPS_DEFAULT_MAP_FRAME_NAME, layout, oMap,
                         1.0, 2.0, 7.5, 9.0);
 
+                    //remove existing layers from map frame
+                    MapTools.RemoveLayersfromMapFrame();
+                    
                     //add aoi boundary to map and zoom to layer
                     string strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi, true) +
                                      "aoi_v";

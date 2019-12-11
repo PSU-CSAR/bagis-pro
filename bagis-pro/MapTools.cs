@@ -75,8 +75,8 @@ namespace bagis_pro
                 else
                 {
                     map = MapFactory.Instance.CreateMap(mapName, basemap: Basemap.None);
+                    await ProApp.Panes.CreateMapPaneAsync(map);
                 }
-                await ProApp.Panes.CreateMapPaneAsync(map);
                 return map;
             });
         }
@@ -153,5 +153,35 @@ namespace bagis_pro
             //Zoom the view to a given extent.
             return await mapView.ZoomToAsync(zoomEnv, null);
         }
+
+        public static async Task RemoveLayer(Map map, string layerName)
+        {
+            await QueuedTask.Run(() =>
+            {
+                Layer oLayer =
+                    map.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(layerName, StringComparison.CurrentCultureIgnoreCase));
+                if (oLayer != null)
+                    map.RemoveLayer(oLayer);
+            });
+        }
+
+        public static async Task RemoveLayersfromMapFrame()
+        {
+            string[] arrLayerNames = new string[1];
+            arrLayerNames[0] = Constants.MAPS_AOI_BOUNDARY;
+            var map = MapView.Active.Map;
+            await QueuedTask.Run(() =>
+            {
+                foreach (string strName in arrLayerNames)
+                {
+                    Layer oLayer =
+                        map.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(strName, StringComparison.CurrentCultureIgnoreCase));
+                    if (oLayer != null)
+                        map.RemoveLayer(oLayer);
+                }
+            });
+        }
+
     }
+
 }
