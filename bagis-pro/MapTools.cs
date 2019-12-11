@@ -123,6 +123,97 @@ namespace bagis_pro
             });
         }
 
+        public static async Task AddLineLayerAsync(Uri aoiUri, string displayName, CIMColor lineColor)
+        {
+            // parse the uri for the folder and file
+            string strFileName = null;
+            string strFolderPath = null;
+            if (aoiUri.IsFile)
+            {
+                strFileName = System.IO.Path.GetFileName(aoiUri.LocalPath);
+                strFolderPath = System.IO.Path.GetDirectoryName(aoiUri.LocalPath);
+            }
+            await QueuedTask.Run(() =>
+            {
+                FeatureClass fClass = null;
+                // Opens a file geodatabase. This will open the geodatabase if the folder exists and contains a valid geodatabase.
+                using (Geodatabase geodatabase =
+                    new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(strFolderPath))))
+                {
+                    // Use the geodatabase.
+                    try
+                    {
+                        fClass = geodatabase.OpenDataset<FeatureClass>(strFileName);
+                    }
+                    catch (GeodatabaseTableException e)
+                    {
+                        Console.WriteLine("AddLineLayerAsync: Unable to open feature class " + strFileName);
+                        Console.WriteLine("AddLineLayerAsync: " + e.Message);
+                        return;
+                    }
+                }
+                // Create symbology for feature layer
+                var flyrCreatnParam = new FeatureLayerCreationParams(fClass)
+                {
+                    Name = displayName,
+                    IsVisible = true,
+                    RendererDefinition = new SimpleRendererDefinition()
+                    {
+                        SymbolTemplate = SymbolFactory.Instance.ConstructLineSymbol(lineColor)
+                        .MakeSymbolReference()
+                    }
+                };
+
+                FeatureLayer fLayer = LayerFactory.Instance.CreateLayer<FeatureLayer>(flyrCreatnParam, MapView.Active.Map);
+            });
+        }
+
+        public static async Task AddPointMarkersAsync(Uri aoiUri, string displayName, CIMColor markerColor, 
+                                    SimpleMarkerStyle markerStyle, double markerSize)
+        {
+            // parse the uri for the folder and file
+            string strFileName = null;
+            string strFolderPath = null;
+            if (aoiUri.IsFile)
+            {
+                strFileName = System.IO.Path.GetFileName(aoiUri.LocalPath);
+                strFolderPath = System.IO.Path.GetDirectoryName(aoiUri.LocalPath);
+            }
+            await QueuedTask.Run(() =>
+            {
+                FeatureClass fClass = null;
+                // Opens a file geodatabase. This will open the geodatabase if the folder exists and contains a valid geodatabase.
+                using (Geodatabase geodatabase =
+                    new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(strFolderPath))))
+                {
+                    // Use the geodatabase.
+                    try
+                    {
+                        fClass = geodatabase.OpenDataset<FeatureClass>(strFileName);
+                    }
+                    catch (GeodatabaseTableException e)
+                    {
+                        Console.WriteLine("DisplayPointMarkersAsync: Unable to open feature class " + strFileName);
+                        Console.WriteLine("DisplayPointMarkersAsync: " + e.Message);
+                        return;
+                    }
+                }
+                // Create symbology for feature layer
+                var flyrCreatnParam = new FeatureLayerCreationParams(fClass)
+                {
+                    Name = displayName,
+                    IsVisible = true,
+                    RendererDefinition = new SimpleRendererDefinition()
+                    {
+                        SymbolTemplate = SymbolFactory.Instance.ConstructPointSymbol(markerColor, markerSize,  markerStyle)
+                        .MakeSymbolReference()
+                    }
+                };
+
+                FeatureLayer fLayer = LayerFactory.Instance.CreateLayer<FeatureLayer>(flyrCreatnParam, MapView.Active.Map);
+            });
+        }
+
         public static async Task<bool> ZoomToExtentAsync(Uri aoiUri, double bufferFactor = 1)
         {            
             //Get the active map view.
@@ -167,8 +258,11 @@ namespace bagis_pro
 
         public static async Task RemoveLayersfromMapFrame()
         {
-            string[] arrLayerNames = new string[1];
+            string[] arrLayerNames = new string[4];
             arrLayerNames[0] = Constants.MAPS_AOI_BOUNDARY;
+            arrLayerNames[1] = Constants.MAPS_STREAMS;
+            arrLayerNames[2] = Constants.MAPS_SNOTEL;
+            arrLayerNames[3] = Constants.MAPS_SNOW_COURSE;
             var map = MapView.Active.Map;
             await QueuedTask.Run(() =>
             {

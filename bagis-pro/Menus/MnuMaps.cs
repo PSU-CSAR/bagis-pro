@@ -116,17 +116,38 @@ namespace bagis_pro.Menus
                         1.0, 2.0, 7.5, 9.0);
 
                     //remove existing layers from map frame
-                    MapTools.RemoveLayersfromMapFrame();
+                    await MapTools.RemoveLayersfromMapFrame();
                     
                     //add aoi boundary to map and zoom to layer
                     string strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi, true) +
-                                     "aoi_v";
+                                     Constants.FILE_AOI_VECTOR;
+                    Uri aoiUri = new Uri(strPath);
+                    await MapTools.AddAoiBoundaryToMapAsync(aoiUri, Constants.MAPS_AOI_BOUNDARY);
+
+                    // add aoi streams layer
+                    strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers, true) +
+                              Constants.FILE_STREAMS;
                     Uri uri = new Uri(strPath);
-                    await MapTools.AddAoiBoundaryToMapAsync(uri, Constants.MAPS_AOI_BOUNDARY);
-                    
+                    await MapTools.AddLineLayerAsync(uri, Constants.MAPS_STREAMS, ColorFactory.Instance.BlueRGB);
+
+                    // add Snotel Layer
+                    strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers, true) +
+                              Constants.FILE_SNOTEL;
+                    uri = new Uri(strPath);
+                    await MapTools.AddPointMarkersAsync(uri, Constants.MAPS_SNOTEL, ColorFactory.Instance.BlueRGB,
+                        SimpleMarkerStyle.X, 16);
+
+                    // add Snotel Layer
+                    strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers, true) +
+                              Constants.FILE_SNOW_COURSE;
+                    uri = new Uri(strPath);
+                    await MapTools.AddPointMarkersAsync(uri, Constants.MAPS_SNOW_COURSE, CIMColor.CreateRGBColor(0, 255, 255),
+                        SimpleMarkerStyle.Star, 16);
+
+
                     //zoom to aoi boundary layer
                     double bufferFactor = 1.1;
-                    bool bZoomed = await MapTools.ZoomToExtentAsync(uri, bufferFactor);
+                    bool bZoomed = await MapTools.ZoomToExtentAsync(aoiUri, bufferFactor);
                 }
             }
         }

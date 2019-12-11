@@ -15,7 +15,16 @@ namespace bagis_pro
         public const string MAPS_DEFAULT_MAP_FRAME_NAME = "Basin Analysis Map Frame";
         public const string MAPS_DEFAULT_MAP_NAME = "Basin Analysis";
         public const string MAPS_AOI_BOUNDARY = "AOI Boundary";
+        public const string MAPS_STREAMS = "AOI Streams";
+        public const string MAPS_SNOTEL = "SNOTEL Sites";
+        public const string MAPS_SNOW_COURSE = "Snow Courses";
+        public const string MAPS_HILLSHADE = "hillshade";
 
+        public const string FILE_AOI_VECTOR = "aoi_v";
+        public const string FILE_STREAMS = "aoi_streams";
+        public const string FILE_SNOTEL = "snotel_sites";
+        public const string FILE_SNOW_COURSE = "snowcourse_sites";
+        public const string FILE_HILLSHADE = "hillshade";
     }
 
 }
