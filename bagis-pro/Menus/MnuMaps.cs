@@ -144,6 +144,19 @@ namespace bagis_pro.Menus
                     await MapTools.AddPointMarkersAsync(uri, Constants.MAPS_SNOW_COURSE, CIMColor.CreateRGBColor(0, 255, 255),
                         SimpleMarkerStyle.Star, 16);
 
+                    // add hillshade layer
+                    strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Surfaces, true) +
+                        Constants.FILE_HILLSHADE;
+                    uri = new Uri(strPath);
+                    await MapTools.DisplayRasterAsync(uri, Constants.MAPS_HILLSHADE, 0);
+
+                    // add elev zones layer
+                    strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
+                        Constants.FILE_ELEV_ZONE;
+                    uri = new Uri(strPath);
+                    await MapTools.DisplayRasterWithSymbolAsync(uri, Constants.MAPS_ELEV_ZONE, "ArcGIS Colors",
+                                "Elevation #2", "NAME", 30);
+
 
                     //zoom to aoi boundary layer
                     double bufferFactor = 1.1;

@@ -19,12 +19,14 @@ namespace bagis_pro
         public const string MAPS_SNOTEL = "SNOTEL Sites";
         public const string MAPS_SNOW_COURSE = "Snow Courses";
         public const string MAPS_HILLSHADE = "hillshade";
+        public const string MAPS_ELEV_ZONE = "Elevation Zones";
 
         public const string FILE_AOI_VECTOR = "aoi_v";
         public const string FILE_STREAMS = "aoi_streams";
         public const string FILE_SNOTEL = "snotel_sites";
         public const string FILE_SNOW_COURSE = "snowcourse_sites";
         public const string FILE_HILLSHADE = "hillshade";
+        public const string FILE_ELEV_ZONE = "elevzone";
     }
 
 }

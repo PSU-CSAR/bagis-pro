@@ -1,5 +1,6 @@
 ﻿using ArcGIS.Core.CIM;
 using ArcGIS.Core.Data;
+using ArcGIS.Core.Data.Raster;
 using ArcGIS.Core.Geometry;
 using ArcGIS.Desktop.Core;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
@@ -258,11 +259,13 @@ namespace bagis_pro
 
         public static async Task RemoveLayersfromMapFrame()
         {
-            string[] arrLayerNames = new string[4];
+            string[] arrLayerNames = new string[6];
             arrLayerNames[0] = Constants.MAPS_AOI_BOUNDARY;
             arrLayerNames[1] = Constants.MAPS_STREAMS;
             arrLayerNames[2] = Constants.MAPS_SNOTEL;
             arrLayerNames[3] = Constants.MAPS_SNOW_COURSE;
+            arrLayerNames[4] = Constants.MAPS_HILLSHADE;
+            arrLayerNames[5] = Constants.MAPS_ELEV_ZONE;
             var map = MapView.Active.Map;
             await QueuedTask.Run(() =>
             {
@@ -276,6 +279,169 @@ namespace bagis_pro
             });
         }
 
+        public static async Task DisplayRasterAsync(Uri rasterUri, string displayName, int transparency)
+        {
+            // parse the uri for the folder and file
+            string strFileName = null;
+            string strFolderPath = null;
+            if (rasterUri.IsFile)
+            {
+                strFileName = System.IO.Path.GetFileName(rasterUri.LocalPath);
+                strFolderPath = System.IO.Path.GetDirectoryName(rasterUri.LocalPath);
+            }
+            await QueuedTask.Run(() =>
+            {
+                RasterDataset rDataset = null;
+                // Opens a file geodatabase. This will open the geodatabase if the folder exists and contains a valid geodatabase.
+                using (Geodatabase geodatabase =
+                    new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(strFolderPath))))
+                {
+                    // Use the geodatabase.
+                    try
+                    {
+                        rDataset = geodatabase.OpenDataset<RasterDataset>(strFileName);
+                    }
+                    catch (GeodatabaseTableException e)
+                    {
+                        Console.WriteLine("DisplayRasterAsync: Unable to open raster " + strFileName);
+                        Console.WriteLine("DisplayRasterAsync: " + e.Message);
+                        return;
+                    }
+                }
+                // Create a new colorizer definition using default constructor.
+                StretchColorizerDefinition stretchColorizerDef = new StretchColorizerDefinition();
+                RasterLayer rasterLayer = (RasterLayer)LayerFactory.Instance.CreateLayer(rasterUri, MapView.Active.Map);
+                if (rasterLayer != null)
+                {
+                    rasterLayer.SetTransparency(transparency);
+                    rasterLayer.SetName(displayName);
+                }
+            });
+        }
+
+        public static async Task DisplayRasterWithSymbolAsync(Uri rasterUri, string displayName, string styleCategory, string styleName, 
+            string fieldName, int transparency)
+        {
+            // parse the uri for the folder and file
+            string strFileName = null;
+            string strFolderPath = null;
+            if (rasterUri.IsFile)
+            {
+                strFileName = System.IO.Path.GetFileName(rasterUri.LocalPath);
+                strFolderPath = System.IO.Path.GetDirectoryName(rasterUri.LocalPath);
+            }
+            // Open the requested raster so we know it exists; return if it doesn't
+            await QueuedTask.Run(async () =>
+            {
+                RasterDataset rDataset = null;
+                // Opens a file geodatabase. This will open the geodatabase if the folder exists and contains a valid geodatabase.
+                using (Geodatabase geodatabase =
+                    new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(strFolderPath))))
+                {
+                    // Use the geodatabase.
+                    try
+                    {
+                        rDataset = geodatabase.OpenDataset<RasterDataset>(strFileName);
+                    }
+                    catch (GeodatabaseTableException e)
+                    {
+                        Console.WriteLine("DisplayRasterWithSymbolAsync: Unable to open raster " + strFileName);
+                        Console.WriteLine("DisplayRasterWithSymbolAsync: " + e.Message);
+                        return;
+                    }
+                }
+                RasterLayer rasterLayer = null;
+                // Create the raster layer on the active map
+                await QueuedTask.Run(() =>
+                {
+                    rasterLayer = (RasterLayer) LayerFactory.Instance.CreateLayer(rasterUri, MapView.Active.Map);
+                });
+
+                // Set raster layer transparency and name
+                if (rasterLayer != null)
+                {
+                    rasterLayer.SetTransparency(transparency);
+                    rasterLayer.SetName(displayName);
+                    // Create and deploy the unique values renderer
+                    await MapTools.SetToUniqueValueColorizer(displayName,styleCategory, styleName, fieldName);
+                }
+            });
+        }
+
+        public static async Task SetToUniqueValueColorizer(string layerName, string styleCategory, 
+            string styleName, string fieldName)
+        {
+            // Get the layer we want to symbolize from the map
+            Layer oLayer =
+                MapView.Active.Map.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(layerName, StringComparison.CurrentCultureIgnoreCase));
+            if (oLayer == null)
+                return;
+            RasterLayer rasterLayer = (RasterLayer) oLayer;
+
+            StyleProjectItem style =
+                Project.Current.GetItems<StyleProjectItem>().FirstOrDefault(s => s.Name == styleCategory);
+            if (style == null) return;
+            var colorRampList = await QueuedTask.Run(() => style.SearchColorRamps(styleName));
+            if (colorRampList == null || colorRampList.Count == 0) return;
+            CIMColorRamp cimColorRamp = colorRampList[0].ColorRamp;
+
+            // Creates a new UV Colorizer Definition using the default constructor.
+            UniqueValueColorizerDefinition UVColorizerDef = new UniqueValueColorizerDefinition(fieldName, cimColorRamp);
+
+            // Creates a new UV colorizer using the colorizer definition created above.
+            CIMRasterUniqueValueColorizer newColorizer = await rasterLayer.CreateColorizerAsync(UVColorizerDef) as CIMRasterUniqueValueColorizer;
+
+            // Sets the newly created colorizer on the layer.
+            await QueuedTask.Run(() =>
+            {
+                rasterLayer.SetColorizer(MapTools.RecalculateColorizer(newColorizer));
+            });
+        }
+
+        // This method addresses the issue that the CreateColorizer does not systematically assign colors 
+        // from the associated color ramp.
+        // https://community.esri.com/message/867870-re-creating-unique-value-colorizer-for-raster
+        public static CIMRasterColorizer RecalculateColorizer(CIMRasterColorizer colorizer)
+        {
+            if (colorizer is CIMRasterUniqueValueColorizer uvrColorizer)
+            {
+                var colorRamp = uvrColorizer.ColorRamp;
+                if (colorRamp == null)
+                    throw new InvalidOperationException("Colorizer must have a color ramp");
+
+                //get the total number of colors to be assigned
+                var total_colors = uvrColorizer.Groups.Select(g => g.Classes.Count()).Sum();
+                var colors = ColorFactory.Instance.GenerateColorsFromColorRamp(colorRamp, total_colors);
+                var c = 0;
+                foreach (var uvr_group in uvrColorizer.Groups)
+                {
+                    foreach (var uvr_class in uvr_group.Classes)
+                    {
+                        //assign the generated colors to each class in turn
+                        uvr_class.Color = colors[c++];
+                    }
+                }
+            }
+            else if (colorizer is CIMRasterClassifyColorizer classColorizer)
+            {
+                var colorRamp = classColorizer.ColorRamp;
+                if (colorRamp == null)
+                    throw new InvalidOperationException("Colorizer must have a color ramp");
+
+                var total_colors = classColorizer.ClassBreaks.Count();
+                var colors = ColorFactory.Instance.GenerateColorsFromColorRamp(colorRamp, total_colors);
+                var c = 0;
+                foreach (var cbreak in classColorizer.ClassBreaks)
+                {
+                    //assign the generated colors to each class break in turn
+                    cbreak.Color = colors[c++];
+                }
+            }
+            return colorizer;
+        }
+
     }
+
+
 
 }
