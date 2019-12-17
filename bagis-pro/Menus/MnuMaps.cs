@@ -48,6 +48,7 @@ namespace bagis_pro.Menus
                         BA_Objects.Aoi oAoi = new BA_Objects.Aoi(System.IO.Path.GetFileName(selectedItem.Path), selectedItem.Path);
                         // Store current AOI in Module1
                         Module1.Current.Aoi = oAoi;
+                        ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("AOI is set to " + oAoi.Name + "!", "BAGIS PRO");
                     }
 
                 }
@@ -157,7 +158,9 @@ namespace bagis_pro.Menus
                     await MapTools.DisplayRasterWithSymbolAsync(uri, Constants.MAPS_ELEV_ZONE, "ArcGIS Colors",
                                 "Elevation #2", "NAME", 30);
 
-
+                    // create map elements
+                    await MapTools.AddMapElements(Constants.MAPS_DEFAULT_LAYOUT_NAME);
+                    
                     //zoom to aoi boundary layer
                     double bufferFactor = 1.1;
                     bool bZoomed = await MapTools.ZoomToExtentAsync(aoiUri, bufferFactor);

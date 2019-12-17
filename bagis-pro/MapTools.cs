@@ -440,6 +440,46 @@ namespace bagis_pro
             return colorizer;
         }
 
+        public static async Task AddMapElements(string layoutName)
+        {
+            //Finding the first project item with name matches with layoutName
+            Layout layout = null;
+            string MapTitle = "Title";
+            await QueuedTask.Run(() =>
+            {
+                LayoutProjectItem lytItem =
+                Project.Current.GetItems<LayoutProjectItem>()
+                    .FirstOrDefault(m => m.Name.Equals(layoutName, StringComparison.CurrentCultureIgnoreCase));
+                if (lytItem != null)
+                {
+                    layout = lytItem.GetLayout();
+                }
+            });
+            await MapTools.DisplayTextBoxAsync(layout, MapTitle, 4.0, 10.5, ColorFactory.Instance.BlackRGB, 24, "Times New Roman", 
+                "Bold", Module1.Current.Aoi.Name.ToUpper());
+        }
+
+        public static async Task<bool> DisplayTextBoxAsync(Layout layout, string elementName, double xPos, double yPos,
+                                        CIMColor fontColor, double fontSize, string fontFamily, string fontStyle, string textBoxText)
+        {
+            await QueuedTask.Run(() =>
+            {
+                //Build 2D point geometry
+                Coordinate2D coord2D = new Coordinate2D(5, 5);
+
+                //Set symbolology, create and add element to layout
+                CIMTextSymbol sym = SymbolFactory.Instance.ConstructTextSymbol(fontColor, fontSize, fontFamily, fontStyle);
+                sym.HorizontalAlignment = HorizontalAlignment.Left;
+                GraphicElement ptTxtElm = LayoutElementFactory.Instance.CreatePointTextGraphicElement(layout, coord2D, textBoxText, sym);
+                ptTxtElm.SetName(elementName);
+                ptTxtElm.SetAnchor(Anchor.CenterPoint);
+                ptTxtElm.SetX(xPos);
+                ptTxtElm.SetY(yPos);
+            });
+
+            return true;
+        }
+
     }
 
 
