@@ -445,6 +445,7 @@ namespace bagis_pro
             //Finding the first project item with name matches with layoutName
             Layout layout = null;
             string MapTitle = "Title";
+            string SubTitle = "SubTitle";
             await QueuedTask.Run(() =>
             {
                 LayoutProjectItem lytItem =
@@ -455,8 +456,14 @@ namespace bagis_pro
                     layout = lytItem.GetLayout();
                 }
             });
+            // Map Title
             await MapTools.DisplayTextBoxAsync(layout, MapTitle, 4.0, 10.5, ColorFactory.Instance.BlackRGB, 24, "Times New Roman", 
                 "Bold", Module1.Current.Aoi.Name.ToUpper());
+            // Map SubTitle - Elevation for now
+            await MapTools.DisplayTextBoxAsync(layout, SubTitle, 4.0, 10.1, ColorFactory.Instance.BlackRGB, 14, "Times New Roman",
+                "Regular", "ELEVATION DISTRIBUTION");
+            // Legent
+            await MapTools.DisplayLegend(layout);
         }
 
         public static async Task<bool> DisplayTextBoxAsync(Layout layout, string elementName, double xPos, double yPos,
@@ -478,6 +485,45 @@ namespace bagis_pro
             });
 
             return true;
+        }
+
+        public static async Task DisplayLegend (Layout layout)
+        {
+            //Construct on the worker thread
+            await QueuedTask.Run(() =>
+            {
+                //Build 2D envelope geometry
+                Coordinate2D leg_ll = new Coordinate2D(0.5, 0.3);
+                Coordinate2D leg_ur = new Coordinate2D(2.14, 2.57);
+                Envelope leg_env = EnvelopeBuilder.CreateEnvelope(leg_ll, leg_ur);
+
+                //Reference MF, create legend and add to layout
+                MapFrame mapFrame = layout.FindElement(Constants.MAPS_DEFAULT_MAP_FRAME_NAME) as MapFrame;
+                if (mapFrame == null)
+                {
+                    ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("Map frame not found", "WARNING");
+                    return;
+                }
+                Legend legendElm = LayoutElementFactory.Instance.CreateLegend(layout, leg_env, mapFrame);
+                legendElm.SetName(Constants.MAPS_LEGEND);
+                legendElm.SetAnchor(Anchor.BottomLeftCorner);
+
+                CIMLegend cimLeg = legendElm.GetDefinition() as CIMLegend;
+                CIMLegendItem[] myLegendItems = new CIMLegendItem[1];
+                foreach (CIMLegendItem legItem in cimLeg.Items)
+                {
+                    if (legItem.Name.Equals(Constants.MAPS_ELEV_ZONE))
+                    {
+                        myLegendItems[0] = legItem;
+                        break;
+                    }
+                }
+                if (myLegendItems[0] != null)
+                {
+                    cimLeg.Items = myLegendItems;
+                    legendElm.SetDefinition(cimLeg);
+                }
+            });
         }
 
     }
