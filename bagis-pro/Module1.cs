@@ -67,12 +67,8 @@ namespace bagis_pro
         }
         #endregion Toggle State
 
-        private BA_Objects.Aoi _aoi = new BA_Objects.Aoi();
-        internal BA_Objects.Aoi Aoi
-        {
-            get { return _aoi; }
-            set { _aoi = value; }
-        }
-
+        internal BA_Objects.Aoi Aoi { get; set; } = new BA_Objects.Aoi();
+        internal bool AoiHasSnotel { get; set; } = false;
+        internal bool AoiHasSnowCourse { get; set; } = false;
     }
 }

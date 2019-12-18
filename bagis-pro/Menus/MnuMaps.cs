@@ -135,15 +135,19 @@ namespace bagis_pro.Menus
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers, true) +
                               Constants.FILE_SNOTEL;
                     uri = new Uri(strPath);
-                    await MapTools.AddPointMarkersAsync(uri, Constants.MAPS_SNOTEL, ColorFactory.Instance.BlueRGB,
+                    BA_ReturnCode success = await MapTools.AddPointMarkersAsync(uri, Constants.MAPS_SNOTEL, ColorFactory.Instance.BlueRGB,
                         SimpleMarkerStyle.X, 16);
+                    if (success == BA_ReturnCode.Success)
+                        Module1.Current.AoiHasSnotel = true;
 
-                    // add Snotel Layer
+                    // add Snow Course Layer
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers, true) +
                               Constants.FILE_SNOW_COURSE;
                     uri = new Uri(strPath);
-                    await MapTools.AddPointMarkersAsync(uri, Constants.MAPS_SNOW_COURSE, CIMColor.CreateRGBColor(0, 255, 255),
+                    success = await MapTools.AddPointMarkersAsync(uri, Constants.MAPS_SNOW_COURSE, CIMColor.CreateRGBColor(0, 255, 255),
                         SimpleMarkerStyle.Star, 16);
+                    if (success == BA_ReturnCode.Success)
+                        Module1.Current.AoiHasSnowCourse = true;
 
                     // add hillshade layer
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Surfaces, true) +
@@ -159,7 +163,7 @@ namespace bagis_pro.Menus
                                 "Elevation #2", "NAME", 30);
 
                     // create map elements
-                    await MapTools.AddMapElements(Constants.MAPS_DEFAULT_LAYOUT_NAME);
+                    await MapTools.AddMapElements(Constants.MAPS_DEFAULT_LAYOUT_NAME, "ArcGIS Colors", "1.5 Point");
                     
                     //zoom to aoi boundary layer
                     double bufferFactor = 1.1;

@@ -53,6 +53,13 @@ namespace bagis_pro
                     Coordinate2D mf_ur = new Coordinate2D(xMax, yMax);
                     Envelope mf_env = EnvelopeBuilder.CreateEnvelope(mf_ll, mf_ur);
                     mfElm = LayoutElementFactory.Instance.CreateMapFrame(oLayout, mf_env, oMap);
+                    // Remove border from map frame
+                    var mapFrameDefn = mfElm.GetDefinition() as CIMMapFrame;
+                    mapFrameDefn.GraphicFrame.BorderSymbol = new CIMSymbolReference
+                    {
+                        Symbol = SymbolFactory.Instance.ConstructLineSymbol(ColorFactory.Instance.BlackRGB, 0, SimpleLineStyle.Null)
+                    };
+                    mfElm.SetDefinition(mapFrameDefn);
                     mfElm.SetName(mapFrameName);
                 }
             });
@@ -169,7 +176,7 @@ namespace bagis_pro
             });
         }
 
-        public static async Task AddPointMarkersAsync(Uri aoiUri, string displayName, CIMColor markerColor, 
+        public static async Task<BA_ReturnCode> AddPointMarkersAsync(Uri aoiUri, string displayName, CIMColor markerColor, 
                                     SimpleMarkerStyle markerStyle, double markerSize)
         {
             // parse the uri for the folder and file
@@ -180,6 +187,7 @@ namespace bagis_pro
                 strFileName = System.IO.Path.GetFileName(aoiUri.LocalPath);
                 strFolderPath = System.IO.Path.GetDirectoryName(aoiUri.LocalPath);
             }
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
             await QueuedTask.Run(() =>
             {
                 FeatureClass fClass = null;
@@ -196,6 +204,7 @@ namespace bagis_pro
                     {
                         Console.WriteLine("DisplayPointMarkersAsync: Unable to open feature class " + strFileName);
                         Console.WriteLine("DisplayPointMarkersAsync: " + e.Message);
+                        success = BA_ReturnCode.ReadError;
                         return;
                     }
                 }
@@ -213,6 +222,8 @@ namespace bagis_pro
 
                 FeatureLayer fLayer = LayerFactory.Instance.CreateLayer<FeatureLayer>(flyrCreatnParam, MapView.Active.Map);
             });
+            success = BA_ReturnCode.Success;
+            return success;
         }
 
         public static async Task<bool> ZoomToExtentAsync(Uri aoiUri, double bufferFactor = 1)
@@ -440,7 +451,7 @@ namespace bagis_pro
             return colorizer;
         }
 
-        public static async Task AddMapElements(string layoutName)
+        public static async Task AddMapElements(string layoutName, string styleCategory, string styleName)
         {
             //Finding the first project item with name matches with layoutName
             Layout layout = null;
@@ -463,7 +474,7 @@ namespace bagis_pro
             await MapTools.DisplayTextBoxAsync(layout, SubTitle, 4.0, 10.1, ColorFactory.Instance.BlackRGB, 14, "Times New Roman",
                 "Regular", "ELEVATION DISTRIBUTION");
             // Legent
-            await MapTools.DisplayLegend(layout);
+            await MapTools.DisplayLegendAsync(layout, styleCategory, styleName);
         }
 
         public static async Task<bool> DisplayTextBoxAsync(Layout layout, string elementName, double xPos, double yPos,
@@ -487,10 +498,10 @@ namespace bagis_pro
             return true;
         }
 
-        public static async Task DisplayLegend (Layout layout)
+        public static async Task DisplayLegendAsync (Layout layout, string styleCategory, string styleName)
         {
             //Construct on the worker thread
-            await QueuedTask.Run(() =>
+            await QueuedTask.Run( async () =>
             {
                 //Build 2D envelope geometry
                 Coordinate2D leg_ll = new Coordinate2D(0.5, 0.3);
@@ -508,21 +519,43 @@ namespace bagis_pro
                 legendElm.SetName(Constants.MAPS_LEGEND);
                 legendElm.SetAnchor(Anchor.BottomLeftCorner);
 
+                // Choose the items we want to show
+                IList<string> lstLegend = new List<string>();
+                if (Module1.Current.AoiHasSnotel == true)
+                    lstLegend.Add(Constants.MAPS_SNOTEL);
+                if (Module1.Current.AoiHasSnowCourse == true)
+                    lstLegend.Add(Constants.MAPS_SNOW_COURSE);
+                lstLegend.Add(Constants.MAPS_ELEV_ZONE);
                 CIMLegend cimLeg = legendElm.GetDefinition() as CIMLegend;
-                CIMLegendItem[] myLegendItems = new CIMLegendItem[1];
+                CIMLegendItem[] myLegendItems = new CIMLegendItem[lstLegend.Count];
+                int i = 0;
                 foreach (CIMLegendItem legItem in cimLeg.Items)
                 {
-                    if (legItem.Name.Equals(Constants.MAPS_ELEV_ZONE))
+                    if (lstLegend.Contains(legItem.Name))
                     {
-                        myLegendItems[0] = legItem;
-                        break;
+                        myLegendItems[i] = legItem;
+                        i++;
                     }
                 }
                 if (myLegendItems[0] != null)
                 {
                     cimLeg.Items = myLegendItems;
-                    legendElm.SetDefinition(cimLeg);
                 }
+
+                // Add border to legend
+                //StyleProjectItem style =
+                //    Project.Current.GetItems<StyleProjectItem>().FirstOrDefault(s => s.Name == styleCategory);
+                //if (style == null) return;
+                //var lineList = await QueuedTask.Run(() => style.SearchSymbols(StyleItemType.LineSymbol, styleName));
+                //if (lineList == null || lineList.Count == 0) return;
+                //CIMSymbol lineSymbol = lineList[0].Symbol;
+                //cimLeg.GraphicFrame.BorderSymbol = lineSymbol.getr
+                cimLeg.GraphicFrame.BorderSymbol = new CIMSymbolReference
+                {
+                    Symbol = SymbolFactory.Instance.ConstructLineSymbol(ColorFactory.Instance.BlackRGB, 1.5, SimpleLineStyle.Solid)
+                };
+                legendElm.SetDefinition(cimLeg);
+
             });
         }
 
