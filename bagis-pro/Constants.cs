@@ -23,6 +23,7 @@ namespace bagis_pro
         public const string MAPS_LEGEND = "Legend";
 
         public const string FILE_AOI_VECTOR = "aoi_v";
+        public const string FILE_AOI_RASTER = "aoibagis";
         public const string FILE_STREAMS = "aoi_streams";
         public const string FILE_SNOTEL = "snotel_sites";
         public const string FILE_SNOW_COURSE = "snowcourse_sites";

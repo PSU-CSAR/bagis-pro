@@ -37,7 +37,7 @@ namespace bagis_pro.Menus
                 IEnumerable<Item> selectedItems = selectAoiDialog.Items;
                 foreach (Item selectedItem in selectedItems)    // there will only be one
                 {
-                    FolderType fType = await GeodatabaseTools.GetAoiFolderType(selectedItem.Path);
+                    FolderType fType = await GeodatabaseTools.GetAoiFolderTypeAsync(selectedItem.Path);
                     if (fType != FolderType.AOI)
                     {
                         ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("!!The selected folder does not contain a valid AOI","BAGIS Pro");

@@ -1,4 +1,6 @@
-﻿using ArcGIS.Core.Data;
+﻿using ArcGIS.Core.CIM;
+using ArcGIS.Core.Data;
+using ArcGIS.Core.Data.Raster;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
 using System;
 using System.Collections.Generic;
@@ -35,23 +37,28 @@ namespace bagis_pro
             return sb.ToString();
         }
 
-        public static async Task<FolderType> GetAoiFolderType(string folderPath)
+        public static async Task<FolderType> GetAoiFolderTypeAsync (string folderPath)
         {
-            FolderType retVal = FolderType.FOLDER;
-            Uri gdbUri = new Uri(GetGeodatabasePath(folderPath, GeodatabaseNames.Aoi));
+            Uri gdbUri = new Uri(GetGeodatabasePath(folderPath, GeodatabaseNames.Aoi, true));
             if (System.IO.Directory.Exists(gdbUri.LocalPath))
             {
-                Uri uriToCheck = new Uri(gdbUri.LocalPath + "\\aoi_v");
-                bool bExists = await FileExists(uriToCheck);
+                Uri uriToCheck = new Uri(gdbUri.LocalPath + Constants.FILE_AOI_RASTER);
+                bool bExists = await FileExistsAsync(uriToCheck, esriDatasetType.esriDTRasterDataset);
                 if (bExists)
                 {
-                    retVal = FolderType.AOI;
+                    return FolderType.AOI;
+                }
+                uriToCheck = new Uri(gdbUri.LocalPath + Constants.FILE_AOI_VECTOR);
+                bExists = await FileExistsAsync(uriToCheck, esriDatasetType.esriDTFeatureClass);
+                if (bExists)
+                {
+                    return FolderType.BASIN;
                 }
             }
-            return retVal;
+            return FolderType.FOLDER;
         }
 
-        public static async Task<bool> FileExists(Uri fileUri)
+        public static async Task<bool> FileExistsAsync(Uri fileUri, esriDatasetType datasetType)
         {
             // parse the uri for the folder and file
             string strFileName = null;
@@ -68,16 +75,32 @@ namespace bagis_pro
 
             return await QueuedTask.Run<bool>(() =>
             {
-                using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(strFolderPath))))
+                try
                 {
-                    // Open a featureClass (within a feature dataset or outside a feature dataset).
-                    using (FeatureClass featureClass = geodatabase.OpenDataset<FeatureClass>(strFileName))
+                    using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(strFolderPath))))
                     {
-                        if (featureClass != null)
+                        // The openDataset throws an exception if the dataset cannot be opened
+                        if (datasetType.Equals(esriDatasetType.esriDTFeatureClass))
                         {
-                            return true;
+                            // Open a featureClass (within a feature dataset or outside a feature dataset).
+                            using (FeatureClass featureClass = geodatabase.OpenDataset<FeatureClass>(strFileName))
+                            {
+                                return true;
+                            }
+                        }
+                        else if (datasetType.Equals(esriDatasetType.esriDTRasterDataset))
+                        {
+                            // Open a featureClass (within a feature dataset or outside a feature dataset).
+                            using (RasterDataset raster = geodatabase.OpenDataset<RasterDataset>(strFileName))
+                            {
+                                return true;
+                            }
                         }
                     }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("FileExistsAsync Exception: " + e.Message);
                 }
                 return false;
             });

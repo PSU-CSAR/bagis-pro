@@ -501,7 +501,7 @@ namespace bagis_pro
         public static async Task DisplayLegendAsync (Layout layout, string styleCategory, string styleName)
         {
             //Construct on the worker thread
-            await QueuedTask.Run( async () =>
+            await QueuedTask.Run( () =>
             {
                 //Build 2D envelope geometry
                 Coordinate2D leg_ll = new Coordinate2D(0.5, 0.3);
