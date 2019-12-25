@@ -164,6 +164,11 @@ namespace bagis_pro.Menus
 
                     // create map elements
                     await MapTools.AddMapElements(Constants.MAPS_DEFAULT_LAYOUT_NAME, "ArcGIS Colors", "1.5 Point");
+
+                    // update text in map elements
+                    string textBoxText = "Elevation Units = Meters";    //@ToDo: get this from settings/DEM units
+                    await MapTools.UpdateMapElementsAsync(Constants.MAPS_DEFAULT_LAYOUT_NAME, Module1.Current.Aoi.Name.ToUpper(),
+                        "ELEVATION DISTRIBUTION", textBoxText);
                     
                     //zoom to aoi boundary layer
                     double bufferFactor = 1.1;

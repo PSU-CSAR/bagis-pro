@@ -21,6 +21,9 @@ namespace bagis_pro
         public const string MAPS_HILLSHADE = "hillshade";
         public const string MAPS_ELEV_ZONE = "Elevation Zones";
         public const string MAPS_LEGEND = "Legend";
+        public const string MAPS_TITLE = "Title";
+        public const string MAPS_SUBTITLE = "SubTitle";
+        public const string MAPS_TEXTBOX1 = "TextBox1";
 
         public const string FILE_AOI_VECTOR = "aoi_v";
         public const string FILE_AOI_RASTER = "aoibagis";
