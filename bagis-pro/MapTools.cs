@@ -465,17 +465,25 @@ namespace bagis_pro
                     layout = lytItem.GetLayout();
                 }
             });
-            // Map Title
-            await MapTools.DisplayTextBoxAsync(layout, Constants.MAPS_TITLE, 4.0, 10.5, ColorFactory.Instance.BlackRGB, 24, "Times New Roman", 
-                "Bold", "Title");
-            // Map SubTitle
-            await MapTools.DisplayTextBoxAsync(layout, Constants.MAPS_SUBTITLE, 4.0, 10.1, ColorFactory.Instance.BlackRGB, 14, "Times New Roman",
-                "Regular", "SubTitle");
-            // (optional) textbox
-            await MapTools.DisplayTextBoxAsync(layout, Constants.MAPS_TEXTBOX1, 5.0, 1.0, ColorFactory.Instance.BlackRGB, 12, "Times New Roman",
-                "Regular", "Text Box 1");
-            // Legend
-            await MapTools.DisplayLegendAsync(layout, styleCategory, styleName);
+            if (layout != null)
+            {
+                // Delete all graphic elements except map frame
+                await QueuedTask.Run(() =>
+                {
+                    layout.DeleteElements(item => !item.Name.Contains(Constants.MAPS_DEFAULT_MAP_FRAME_NAME));
+                });
+                // Map Title
+                await MapTools.DisplayTextBoxAsync(layout, Constants.MAPS_TITLE, 4.0, 10.5, ColorFactory.Instance.BlackRGB, 24, "Times New Roman",
+                    "Bold", "Title");
+                // Map SubTitle
+                await MapTools.DisplayTextBoxAsync(layout, Constants.MAPS_SUBTITLE, 4.0, 10.1, ColorFactory.Instance.BlackRGB, 14, "Times New Roman",
+                    "Regular", "SubTitle");
+                // (optional) textbox
+                await MapTools.DisplayTextBoxAsync(layout, Constants.MAPS_TEXTBOX1, 5.0, 1.0, ColorFactory.Instance.BlackRGB, 12, "Times New Roman",
+                    "Regular", "Text Box 1");
+                // Legend
+                await MapTools.DisplayLegendAsync(layout, styleCategory, styleName);
+            }
         }
 
         public static async Task<bool> DisplayTextBoxAsync(Layout layout, string elementName, double xPos, double yPos,
