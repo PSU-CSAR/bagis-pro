@@ -130,6 +130,7 @@ namespace bagis_pro
                     await MapTools.UpdateMapElementsAsync(layout, Module1.Current.Aoi.Name.ToUpper(),
                         "ELEVATION DISTRIBUTION", textBoxText);
                     await MapTools.DisplayNorthArrowAsync(layout, Constants.MAPS_DEFAULT_MAP_FRAME_NAME);
+                    await MapTools.DisplayScaleBarAsync(layout, Constants.MAPS_DEFAULT_MAP_FRAME_NAME);
 
                     //zoom to aoi boundary layer
                     double bufferFactor = 1.1;
@@ -761,6 +762,36 @@ namespace bagis_pro
                     //Construct the north arrow
                     NorthArrow northArrow = LayoutElementFactory.Instance.CreateNorthArrow(layout, nArrow, mapFrame, northArrowStyleItem);
                     northArrow.SetHeight(0.7037);
+                }
+            });
+        }
+
+        public static async Task DisplayScaleBarAsync(Layout layout, string mapFrameName)
+        {
+            var arcgis_2d = Project.Current.GetItems<StyleProjectItem>().First(si => si.Name == "ArcGIS 2D");
+
+            await QueuedTask.Run(() =>
+            {
+                if (arcgis_2d != null)
+                {
+                    var scaleBars = arcgis_2d.SearchScaleBars("Alternating Scale Bar");
+                    if (scaleBars == null || scaleBars.Count == 0) return;
+                    ScaleBarStyleItem scaleBarStyleItem = scaleBars[0];
+
+                    //Reference the map frame and define the location
+                    MapFrame mapFrame = layout.FindElement(mapFrameName) as MapFrame;
+                    Coordinate2D location = new Coordinate2D(3.8, 0.3);
+
+                    //Construct the scale bar
+                    ScaleBar scaleBar = LayoutElementFactory.Instance.CreateScaleBar(layout, location, mapFrame, scaleBarStyleItem);
+                    CIMScaleBar cimScaleBar = (CIMScaleBar) scaleBar.GetDefinition();
+                    cimScaleBar.Divisions = 2;
+                    cimScaleBar.Subdivisions = 4;
+                    cimScaleBar.DivisionsBeforeZero = 1;
+                    cimScaleBar.MarkPosition = ScaleBarVerticalPosition.Above;
+                    cimScaleBar.UnitLabelPosition = ScaleBarLabelPosition.AfterLabels;
+                    scaleBar.SetDefinition(cimScaleBar);
+                    
                 }
             });
         }
