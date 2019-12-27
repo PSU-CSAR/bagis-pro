@@ -4,6 +4,7 @@ using ArcGIS.Core.Data.Raster;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -100,7 +101,7 @@ namespace bagis_pro
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine("FileExistsAsync Exception: " + e.Message);
+                    Debug.WriteLine("FileExistsAsync Exception: " + e.Message);
                 }
                 return false;
             });

@@ -11,11 +11,133 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Diagnostics;
+using System.Windows;
+using ArcGIS.Desktop.Framework.Contracts;
 
 namespace bagis_pro
 {
     public class MapTools
     {
+        public static async Task DisplayMaps(string strTempAoiPath)
+        {
+            BA_Objects.Aoi oAoi = Module1.Current.Aoi;
+            if (String.IsNullOrEmpty(oAoi.Name))
+            {
+                if (System.IO.Directory.Exists(strTempAoiPath))
+                {
+                    // Initialize AOI object
+                    oAoi = new BA_Objects.Aoi("animas_AOI_prms", strTempAoiPath);
+                    // Store current AOI in Module1
+                    Module1.Current.Aoi = oAoi;
+                }
+                else
+                {
+                    ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("!!Please set an AOI before testing the maps", "BAGIS Pro");
+                }
+            }
+
+            Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
+            if (oMap != null)
+            {
+                if (oMap.Layers.Count() > 0)
+                {
+                    string strMessage = "Adding the maps to the display will overwrite the current arrangement of data layers. " +
+                           "This action cannot be undone." + System.Environment.NewLine + "Do you wish to continue ?";
+                    MessageBoxResult oRes = ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show(strMessage, "BAGIS", MessageBoxButton.YesNo);
+                    if (oRes != MessageBoxResult.Yes)
+                    {
+                        return;
+                    }
+                }
+
+                Layout layout = await MapTools.SetDefaultLayoutNameAsync(Constants.MAPS_DEFAULT_LAYOUT_NAME);
+                if (layout != null)
+                {
+                    bool bFoundIt = false;
+                    //A layout view may exist but it may not be active
+                    //Iterate through each pane in the application and check to see if the layout is already open and if so, activate it
+                    foreach (var pane in ProApp.Panes)
+                    {
+                        if (!(pane is ILayoutPane layoutPane))  //if not a layout view, continue to the next pane    
+                            continue;
+                        if (layoutPane.LayoutView.Layout == layout) //if there is a match, activate the view  
+                        {
+                            (layoutPane as Pane).Activate();
+                            bFoundIt = true;
+                        }
+                    }
+                    if (!bFoundIt)
+                    {
+                        ILayoutPane iNewLayoutPane = await ProApp.Panes.CreateLayoutPaneAsync(layout); //GUI thread
+                    }
+                    await MapTools.SetDefaultMapFrameDimensionAsync(Constants.MAPS_DEFAULT_MAP_FRAME_NAME, layout, oMap,
+                        1.0, 2.0, 7.5, 9.0);
+
+                    //remove existing layers from map frame
+                    await MapTools.RemoveLayersfromMapFrame();
+
+                    //add aoi boundary to map and zoom to layer
+                    string strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi, true) +
+                                     Constants.FILE_AOI_VECTOR;
+                    Uri aoiUri = new Uri(strPath);
+                    await MapTools.AddAoiBoundaryToMapAsync(aoiUri, Constants.MAPS_AOI_BOUNDARY);
+
+                    // add aoi streams layer
+                    strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers, true) +
+                              Constants.FILE_STREAMS;
+                    Uri uri = new Uri(strPath);
+                    await MapTools.AddLineLayerAsync(uri, Constants.MAPS_STREAMS, ColorFactory.Instance.BlueRGB);
+
+                    // add Snotel Layer
+                    strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers, true) +
+                              Constants.FILE_SNOTEL;
+                    uri = new Uri(strPath);
+                    BA_ReturnCode success = await MapTools.AddPointMarkersAsync(uri, Constants.MAPS_SNOTEL, ColorFactory.Instance.BlueRGB,
+                        SimpleMarkerStyle.X, 16);
+                    if (success == BA_ReturnCode.Success)
+                        Module1.Current.AoiHasSnotel = true;
+
+                    // add Snow Course Layer
+                    strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers, true) +
+                              Constants.FILE_SNOW_COURSE;
+                    uri = new Uri(strPath);
+                    success = await MapTools.AddPointMarkersAsync(uri, Constants.MAPS_SNOW_COURSE, CIMColor.CreateRGBColor(0, 255, 255),
+                        SimpleMarkerStyle.Star, 16);
+                    if (success == BA_ReturnCode.Success)
+                        Module1.Current.AoiHasSnowCourse = true;
+
+                    // add hillshade layer
+                    strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Surfaces, true) +
+                        Constants.FILE_HILLSHADE;
+                    uri = new Uri(strPath);
+                    await MapTools.DisplayRasterAsync(uri, Constants.MAPS_HILLSHADE, 0);
+
+                    // add elev zones layer
+                    strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
+                        Constants.FILE_ELEV_ZONE;
+                    uri = new Uri(strPath);
+                    await MapTools.DisplayRasterWithSymbolAsync(uri, Constants.MAPS_ELEV_ZONE, "ArcGIS Colors",
+                                "Elevation #2", "NAME", 30);
+
+                    // create map elements
+                    await MapTools.AddMapElements(Constants.MAPS_DEFAULT_LAYOUT_NAME, "ArcGIS Colors", "1.5 Point");
+
+                    // update text in map elements
+                    string textBoxText = "Elevation Units = Feet";    //@ToDo: get this from settings/DEM units
+                    if (Module1.Current.MapDisplayElevationInMeters == true)
+                        textBoxText = "Elevation Units = Meters";
+                    await MapTools.UpdateMapElementsAsync(layout, Module1.Current.Aoi.Name.ToUpper(),
+                        "ELEVATION DISTRIBUTION", textBoxText);
+                    await MapTools.DisplayNorthArrowAsync(layout, Constants.MAPS_DEFAULT_MAP_FRAME_NAME);
+
+                    //zoom to aoi boundary layer
+                    double bufferFactor = 1.1;
+                    bool bZoomed = await MapTools.ZoomToExtentAsync(aoiUri, bufferFactor);
+                }
+            }
+        }
+
         public static async Task<Layout> SetDefaultLayoutNameAsync(string layoutName)
         {
             return await QueuedTask.Run( () =>
@@ -155,8 +277,8 @@ namespace bagis_pro
                     }
                     catch (GeodatabaseTableException e)
                     {
-                        Console.WriteLine("AddLineLayerAsync: Unable to open feature class " + strFileName);
-                        Console.WriteLine("AddLineLayerAsync: " + e.Message);
+                        Debug.WriteLine("AddLineLayerAsync: Unable to open feature class " + strFileName);
+                        Debug.WriteLine("AddLineLayerAsync: " + e.Message);
                         return;
                     }
                 }
@@ -202,8 +324,8 @@ namespace bagis_pro
                     }
                     catch (GeodatabaseTableException e)
                     {
-                        Console.WriteLine("DisplayPointMarkersAsync: Unable to open feature class " + strFileName);
-                        Console.WriteLine("DisplayPointMarkersAsync: " + e.Message);
+                        Debug.WriteLine("DisplayPointMarkersAsync: Unable to open feature class " + strFileName);
+                        Debug.WriteLine("DisplayPointMarkersAsync: " + e.Message);
                         success = BA_ReturnCode.ReadError;
                         return;
                     }
@@ -314,8 +436,8 @@ namespace bagis_pro
                     }
                     catch (GeodatabaseTableException e)
                     {
-                        Console.WriteLine("DisplayRasterAsync: Unable to open raster " + strFileName);
-                        Console.WriteLine("DisplayRasterAsync: " + e.Message);
+                        Debug.WriteLine("DisplayRasterAsync: Unable to open raster " + strFileName);
+                        Debug.WriteLine("DisplayRasterAsync: " + e.Message);
                         return;
                     }
                 }
@@ -356,8 +478,8 @@ namespace bagis_pro
                     }
                     catch (GeodatabaseTableException e)
                     {
-                        Console.WriteLine("DisplayRasterWithSymbolAsync: Unable to open raster " + strFileName);
-                        Console.WriteLine("DisplayRasterWithSymbolAsync: " + e.Message);
+                        Debug.WriteLine("DisplayRasterWithSymbolAsync: Unable to open raster " + strFileName);
+                        Debug.WriteLine("DisplayRasterWithSymbolAsync: " + e.Message);
                         return;
                     }
                 }
@@ -496,7 +618,7 @@ namespace bagis_pro
 
                 //Set symbolology, create and add element to layout
                 CIMTextSymbol sym = SymbolFactory.Instance.ConstructTextSymbol(fontColor, fontSize, fontFamily, fontStyle);
-                sym.HorizontalAlignment = HorizontalAlignment.Left;
+                sym.HorizontalAlignment = ArcGIS.Core.CIM.HorizontalAlignment.Left;
                 GraphicElement ptTxtElm = LayoutElementFactory.Instance.CreatePointTextGraphicElement(layout, coord2D, textBoxText, sym);
                 ptTxtElm.SetName(elementName);
                 ptTxtElm.SetAnchor(Anchor.CenterPoint);
@@ -571,20 +693,8 @@ namespace bagis_pro
             });
         }
 
-        public static async Task UpdateMapElementsAsync(string layoutName, string titleText, string subTitleText, string textBoxText)
+        public static async Task UpdateMapElementsAsync(Layout layout, string titleText, string subTitleText, string textBoxText)
         {
-            //Finding the first project item with name matches with layoutName
-            Layout layout = null;
-            await QueuedTask.Run(() =>
-            {
-                LayoutProjectItem lytItem =
-                Project.Current.GetItems<LayoutProjectItem>()
-                    .FirstOrDefault(m => m.Name.Equals(layoutName, StringComparison.CurrentCultureIgnoreCase));
-                if (lytItem != null)
-                {
-                    layout = lytItem.GetLayout();
-                }
-            });
             if (layout != null)
             {
                 if (!String.IsNullOrEmpty(titleText))
@@ -632,6 +742,28 @@ namespace bagis_pro
             }
         }
 
+        public static async Task DisplayNorthArrowAsync(Layout layout, string mapFrameName)
+        {
+            var arcgis_2d = Project.Current.GetItems<StyleProjectItem>().First(si => si.Name == "ArcGIS 2D");
+
+            await QueuedTask.Run(() =>
+            {
+                if (arcgis_2d != null)
+                {
+                    var northArrowItems = arcgis_2d.SearchNorthArrows("ESRI North 1");
+                    if (northArrowItems == null || northArrowItems.Count == 0) return;
+                    NorthArrowStyleItem northArrowStyleItem = northArrowItems[0];
+
+                    //Reference the map frame and define the location
+                    MapFrame mapFrame = layout.FindElement(mapFrameName) as MapFrame;
+                    Coordinate2D nArrow = new Coordinate2D(7.7906, 0.8906);
+
+                    //Construct the north arrow
+                    NorthArrow northArrow = LayoutElementFactory.Instance.CreateNorthArrow(layout, nArrow, mapFrame, northArrowStyleItem);
+                    northArrow.SetHeight(0.7037);
+                }
+            });
+        }
     }
 
 

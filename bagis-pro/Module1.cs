@@ -70,5 +70,6 @@ namespace bagis_pro
         internal BA_Objects.Aoi Aoi { get; set; } = new BA_Objects.Aoi();
         internal bool AoiHasSnotel { get; set; } = false;
         internal bool AoiHasSnowCourse { get; set; } = false;
+        internal bool MapDisplayElevationInMeters { get; } = false;
     }
 }
