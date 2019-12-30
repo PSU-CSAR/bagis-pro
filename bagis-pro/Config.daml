@@ -33,8 +33,11 @@
         <group id="bagis_pro_Groups_Basin" appearsOnAddInTab="false">
           <menu refID="bagis_pro_Menus_MnuBasin" size="middle" />
         </group>
-        <group id="bagis_pro_Groups_Maps" appearsOnAddInTab="false">
-          <menu refID="bagis_pro_Menus_MnuMaps" size="middle" />
+        <group id="bagis_pro_Groups_Maps" appearsOnAddInTab="false" caption="Map Functions">
+          <!--<menu refID="bagis_pro_Menus_MnuMaps" size="middle" /> -->
+          <button refID="bagis_pro_Menus_MnuMaps_BtnSelectAoi" size="middle"/>
+          <button refID="bagis_pro_Menus_MnuMaps_BtnMapLoad" size="middle"/>
+          <button refID="bagis_pro_Buttons_BtnExportToPdf" size="middle"/>
         </group>
       </groups>
       <toolbars>
@@ -83,13 +86,15 @@
         <tool id="bagis_pro_Basin_SetDEMExtentTool" caption="SetDEMExtentTool" className="bagis_pro.Basin.SetDEMExtentTool" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/EditingSketchSquareAndFinish16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/EditingSketchSquareAndFinish32.png" condition="esri_mapping_mapPane">
           <tooltip heading="Tooltip Heading">Set extent of DEM for basin<disabledText /></tooltip>
         </tool>
-        <button id="bagis_pro_Menus_MnuMaps_BtnMapTest" caption="Maps Test" className="bagis_pro.Menus.MnuMaps_BtnMapTest" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericButtonGreen16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericButtonGreen32.png">
-          <tooltip heading="Maps Test">
-            Click to test maps<disabledText />
-          </tooltip>
+        <button id="bagis_pro_Menus_MnuMaps_BtnMapLoad" caption="Load Maps" className="bagis_pro.Menus.MnuMaps_BtnMapLoad" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/MapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/MapFrame32.png">
+          <tooltip heading="Load Maps">
+            Click to load maps<disabledText /></tooltip>
         </button>
-        <button id="bagis_pro_Menus_MnuMaps_BtnSelectAoi" caption="Select AOI" className="bagis_pro.Menus.MnuMaps_BtnSelectAoi" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericButtonGreen16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericButtonGreen32.png">
+        <button id="bagis_pro_Menus_MnuMaps_BtnSelectAoi" caption="Select AOI" className="bagis_pro.Menus.MnuMaps_BtnSelectAoi" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ArcGISProjectOpenState16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ArcGISProjectOpenState32.png">
           <tooltip heading="Select AOI">Click to select an AOI<disabledText /></tooltip>
+        </button>
+        <button id="bagis_pro_Buttons_BtnExportToPdf" caption="Export Map to PDF" className="bagis_pro.Buttons.BtnExportToPdf" loadOnClick="true" smallImage="Images\PdfIcon.png" largeImage="Images\PdfIcon.png" condition="BtnExportToPdf_Condition">
+          <tooltip heading="Export Map to PDF">Export Map to PDF<disabledText /></tooltip>
         </button>
       </controls>
       <menus>
@@ -110,7 +115,7 @@
         </menu>
         <menu id="bagis_pro_Menus_MnuMaps" caption="Maps Menu" smallImage="GenericButtonGreen16.png" largeImage="GenericButtonGreen32.png">
           <button refID="bagis_pro_Menus_MnuMaps_BtnSelectAoi" />
-          <button refID="bagis_pro_Menus_MnuMaps_BtnMapTest" />
+          <button refID="bagis_pro_Menus_MnuMaps_BtnMapLoad" />
         </menu>
       </menus>
     </insertModule>
@@ -124,6 +129,9 @@
     </insertCondition>
     <insertCondition id="MnuBasinAnalyst_Condition" caption="Basin info">
       <state id="MnuBasinAnalyst_BasinInfo_State" />
+    </insertCondition>
+    <insertCondition id="BtnExportToPdf_Condition" caption="Export PDF">
+      <state id="BtnMapLoad_State" />
     </insertCondition>
   </conditions>
 </ArcGIS>

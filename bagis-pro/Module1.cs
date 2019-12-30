@@ -71,5 +71,6 @@ namespace bagis_pro
         internal bool AoiHasSnotel { get; set; } = false;
         internal bool AoiHasSnowCourse { get; set; } = false;
         internal bool MapDisplayElevationInMeters { get; } = false;
+        internal string DisplayedMap { get; set; } = "";
     }
 }

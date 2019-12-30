@@ -60,7 +60,7 @@ namespace bagis_pro.Menus
         }
     }
 
-    internal class MnuMaps_BtnMapTest : Button
+    internal class MnuMaps_BtnMapLoad : Button
     {
         protected async override void OnClick()
         {
@@ -68,6 +68,8 @@ namespace bagis_pro.Menus
             try
             {
                 await MapTools.DisplayMaps(tempAoiPath);
+                Module1.Current.DisplayedMap = Constants.FILE_EXPORT_MAP_ELEV_PDF;
+                Module1.ToggleState("BtnMapLoad_State");
             }
             catch (Exception e)
             {

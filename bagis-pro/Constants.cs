@@ -32,6 +32,17 @@ namespace bagis_pro
         public const string FILE_SNOW_COURSE = "snowcourse_sites";
         public const string FILE_HILLSHADE = "hillshade";
         public const string FILE_ELEV_ZONE = "elevzone";
+        public const string FILE_EXPORT_MAP_ELEV_PDF = "map_elevation.pdf";
+        public const string FILE_EXPORT_MAP_SNOTEL_PDF = "map_elevation_snotel.pdf";
+        public const string FILE_EXPORT_MAP_SCOS_PDF = "map_elevation_sc.pdf";
+        public const string FILE_EXPORT_MAP_SNOTEL_AND_SCOS_PDF = "map_elevation_snotel_sc.pdf";
+        public const string FILE_EXPORT_MAP_PRECIPITATION_PDF = "map_precipitation.pdf";
+        public const string FILE_EXPORT_MAP_SNODAS_PDF = "map_snodas.pdf";
+        public const string FILE_EXPORT_MAP_ASPECT_PDF = "map_aspect.pdf";
+        public const string FILE_EXPORT_MAP_SLOPE_PDF = "map_slope.pdf";
+
+
+        public const string FOLDER_MAP_PACKAGE = "maps_publish";
     }
 
 }
