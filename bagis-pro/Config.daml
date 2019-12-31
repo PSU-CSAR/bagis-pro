@@ -49,7 +49,7 @@
         </toolbar> -->
       </toolbars>
       <palettes>
-        <buttonPalette id="bagis_pro_Buttons_MapButtonPalette" caption="Toggle Maps" keytip="Maps" dropDown="false" menuStyle="true" >
+        <buttonPalette id="bagis_pro_Buttons_MapButtonPalette" caption="Toggle Maps" keytip="Maps" dropDown="false" menuStyle="true"  >
           <button refID="bagis_pro_Buttons_MapButtonPalette_BtnElevation"/>
           <button refID="bagis_pro_Buttons_MapButtonPalette_BtnSlope" />
         </buttonPalette>
@@ -103,10 +103,10 @@
         <button id="bagis_pro_Buttons_BtnExportToPdf" caption="Export Map to PDF" className="bagis_pro.Buttons.BtnExportToPdf" loadOnClick="true" smallImage="Images\PdfIcon.png" largeImage="Images\PdfIcon.png" condition="BtnExportToPdf_Condition">
           <tooltip heading="Export Map to PDF">Export Map to PDF<disabledText /></tooltip>
         </button>
-        <button id="bagis_pro_Buttons_MapButtonPalette_BtnElevation" caption="Elevation Distribution" className="bagis_pro.Buttons.MapButtonPalette_BtnElevation" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png">
+        <button id="bagis_pro_Buttons_MapButtonPalette_BtnElevation" caption="Elevation Distribution" className="bagis_pro.Buttons.MapButtonPalette_BtnElevation" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnElevation_Condition">
           <tooltip heading="Palette Button 1">ToolTip<disabledText /></tooltip>
         </button>
-        <button id="bagis_pro_Buttons_MapButtonPalette_BtnSlope" caption="Slope Distribution" className="bagis_pro.Buttons.MapButtonPalette_BtnSlope" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png">
+        <button id="bagis_pro_Buttons_MapButtonPalette_BtnSlope" caption="Slope Distribution" className="bagis_pro.Buttons.MapButtonPalette_BtnSlope" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSlope_Condition">
           <tooltip heading="Palette Button 2">ToolTip<disabledText /></tooltip>
         </button>
       </controls>
@@ -145,6 +145,12 @@
     </insertCondition>
     <insertCondition id="BtnExportToPdf_Condition" caption="Export PDF">
       <state id="BtnMapLoad_State" />
+    </insertCondition>
+    <insertCondition id="MapButtonPalette_BtnElevation_Condition" caption="Map Disabled">
+      <state id="MapButtonPalette_BtnElevation_State" />
+    </insertCondition>
+    <insertCondition id="MapButtonPalette_BtnSlope_Condition" caption="Map Disabled">
+      <state id="MapButtonPalette_BtnSlope_State" />
     </insertCondition>
   </conditions>
 </ArcGIS>

@@ -51,7 +51,7 @@ namespace bagis_pro
                     }
                 }
 
-                Layout layout = await MapTools.SetDefaultLayoutNameAsync(Constants.MAPS_DEFAULT_LAYOUT_NAME);
+                Layout layout = await MapTools.GetDefaultLayoutAsync(Constants.MAPS_DEFAULT_LAYOUT_NAME);
                 if (layout != null)
                 {
                     bool bFoundIt = false;
@@ -119,6 +119,7 @@ namespace bagis_pro
                     uri = new Uri(strPath);
                     await MapTools.DisplayRasterWithSymbolAsync(uri, Constants.MAPS_ELEV_ZONE, "ArcGIS Colors",
                                 "Elevation #2", "NAME", 30, true);
+                    Module1.ToggleState("MapButtonPalette_BtnElevation_State");
 
                     // add slope zones layer
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
@@ -126,7 +127,7 @@ namespace bagis_pro
                     uri = new Uri(strPath);
                     await MapTools.DisplayRasterWithSymbolAsync(uri, Constants.MAPS_SLOPE_ZONE, "ArcGIS Colors",
                                 "Slope", "NAME", 30, false);
-
+                    Module1.ToggleState("MapButtonPalette_BtnSlope_State");
 
                     // create map elements
                     await MapTools.AddMapElements(Constants.MAPS_DEFAULT_LAYOUT_NAME, "ArcGIS Colors", "1.5 Point");
@@ -137,16 +138,6 @@ namespace bagis_pro
                     BA_Objects.MapDefinition defaultMap = MapTools.LoadMapDefinition(BagisMapType.ELEVATION);
                     await MapTools.UpdateMapElementsAsync(layout, Module1.Current.Aoi.Name.ToUpper(), defaultMap);
 
-                    
-                    // toggle layers according to map definition
-                    //var allLayers = oMap.Layers.ToList();
-                    //await QueuedTask.Run(() => {
-                    //    foreach (var layer in allLayers)
-                    //    {
-
-                    //        layer.SetVisibility(false);
-                    //    }
-                    //});
 
                     //zoom to aoi boundary layer
                     double bufferFactor = 1.1;
@@ -155,7 +146,7 @@ namespace bagis_pro
             }
         }
 
-        public static async Task<Layout> SetDefaultLayoutNameAsync(string layoutName)
+        public static async Task<Layout> GetDefaultLayoutAsync(string layoutName)
         {
             return await QueuedTask.Run( () =>
             {
@@ -819,7 +810,7 @@ namespace bagis_pro
                                                    Constants.MAPS_SNOTEL, Constants.MAPS_SNOW_COURSE};
                     // @ToDo: manage elevation units better
                     mapDefinition = new BA_Objects.MapDefinition(Constants.MAPS_ELEV_ZONE, "ELEVATION DISTRIBUTION", 
-                        "Elevation Units = Feet");
+                        "Elevation Units = Feet", Constants.FILE_EXPORT_MAP_ELEV_PDF);
                     mapDefinition.LayerList = lstLayers;
                     break; 
                 case BagisMapType.SLOPE:
@@ -827,7 +818,7 @@ namespace bagis_pro
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_SLOPE_ZONE,
                                                    Constants.MAPS_SNOTEL, Constants.MAPS_SNOW_COURSE};
                     mapDefinition = new BA_Objects.MapDefinition(Constants.MAPS_SLOPE_ZONE, "SLOPE DISTRIBUTION",
-                        " ");
+                        " ", Constants.FILE_EXPORT_MAP_SLOPE_PDF);
                     mapDefinition.LayerList = lstLayers;
                     break;
             }

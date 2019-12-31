@@ -13,8 +13,9 @@ namespace bagis_pro.BA_Objects
         private readonly string m_legendTitle;
         private readonly string m_subTitle;
         private readonly string m_unitsText;
+        private readonly string m_pdfFileName;
 
-        public MapDefinition(string legendTitle, string subTitle, string unitsText)
+        public MapDefinition(string legendTitle, string subTitle, string unitsText, string pdfFileName)
         {
             m_legendTitle = legendTitle;
             m_subTitle = subTitle;
@@ -34,6 +35,11 @@ namespace bagis_pro.BA_Objects
         public string UnitsText
         {
             get { return m_unitsText; }
+        }
+
+        public string PdfFileName
+        {
+            get { return m_pdfFileName; }
         }
 
         public IList<string> LayerList
