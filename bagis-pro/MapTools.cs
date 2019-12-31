@@ -118,19 +118,35 @@ namespace bagis_pro
                         Constants.FILE_ELEV_ZONE;
                     uri = new Uri(strPath);
                     await MapTools.DisplayRasterWithSymbolAsync(uri, Constants.MAPS_ELEV_ZONE, "ArcGIS Colors",
-                                "Elevation #2", "NAME", 30);
+                                "Elevation #2", "NAME", 30, true);
+
+                    // add slope zones layer
+                    strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
+                        Constants.FILE_SLOPE_ZONE;
+                    uri = new Uri(strPath);
+                    await MapTools.DisplayRasterWithSymbolAsync(uri, Constants.MAPS_SLOPE_ZONE, "ArcGIS Colors",
+                                "Slope", "NAME", 30, false);
+
 
                     // create map elements
                     await MapTools.AddMapElements(Constants.MAPS_DEFAULT_LAYOUT_NAME, "ArcGIS Colors", "1.5 Point");
-
-                    // update text in map elements
-                    string textBoxText = "Elevation Units = Feet";    //@ToDo: get this from settings/DEM units
-                    if (Module1.Current.MapDisplayElevationInMeters == true)
-                        textBoxText = "Elevation Units = Meters";
-                    await MapTools.UpdateMapElementsAsync(layout, Module1.Current.Aoi.Name.ToUpper(),
-                        "ELEVATION DISTRIBUTION", textBoxText);
                     await MapTools.DisplayNorthArrowAsync(layout, Constants.MAPS_DEFAULT_MAP_FRAME_NAME);
                     await MapTools.DisplayScaleBarAsync(layout, Constants.MAPS_DEFAULT_MAP_FRAME_NAME);
+
+                    // update text in map elements
+                    BA_Objects.MapDefinition defaultMap = MapTools.LoadMapDefinition(BagisMapType.ELEVATION);
+                    await MapTools.UpdateMapElementsAsync(layout, Module1.Current.Aoi.Name.ToUpper(), defaultMap);
+
+                    
+                    // toggle layers according to map definition
+                    //var allLayers = oMap.Layers.ToList();
+                    //await QueuedTask.Run(() => {
+                    //    foreach (var layer in allLayers)
+                    //    {
+
+                    //        layer.SetVisibility(false);
+                    //    }
+                    //});
 
                     //zoom to aoi boundary layer
                     double bufferFactor = 1.1;
@@ -454,7 +470,7 @@ namespace bagis_pro
         }
 
         public static async Task DisplayRasterWithSymbolAsync(Uri rasterUri, string displayName, string styleCategory, string styleName, 
-            string fieldName, int transparency)
+            string fieldName, int transparency, bool isVisible)
         {
             // parse the uri for the folder and file
             string strFileName = null;
@@ -496,6 +512,7 @@ namespace bagis_pro
                 {
                     rasterLayer.SetTransparency(transparency);
                     rasterLayer.SetName(displayName);
+                    rasterLayer.SetVisibility(isVisible);
                     // Create and deploy the unique values renderer
                     await MapTools.SetToUniqueValueColorizer(displayName,styleCategory, styleName, fieldName);
                 }
@@ -675,14 +692,6 @@ namespace bagis_pro
                     cimLeg.Items = myLegendItems;
                 }
 
-                // Add border to legend
-                //StyleProjectItem style =
-                //    Project.Current.GetItems<StyleProjectItem>().FirstOrDefault(s => s.Name == styleCategory);
-                //if (style == null) return;
-                //var lineList = await QueuedTask.Run(() => style.SearchSymbols(StyleItemType.LineSymbol, styleName));
-                //if (lineList == null || lineList.Count == 0) return;
-                //CIMSymbol lineSymbol = lineList[0].Symbol;
-                //cimLeg.GraphicFrame.BorderSymbol = lineSymbol.getr
                 cimLeg.GraphicFrame.BorderSymbol = new CIMSymbolReference
                 {
                     Symbol = SymbolFactory.Instance.ConstructLineSymbol(ColorFactory.Instance.BlackRGB, 1.5, SimpleLineStyle.Solid)
@@ -694,7 +703,7 @@ namespace bagis_pro
             });
         }
 
-        public static async Task UpdateMapElementsAsync(Layout layout, string titleText, string subTitleText, string textBoxText)
+        public static async Task UpdateMapElementsAsync(Layout layout, string titleText, BA_Objects.MapDefinition mapDefinition)
         {
             if (layout != null)
             {
@@ -713,7 +722,7 @@ namespace bagis_pro
                             });
                         }
                     }
-                    if (subTitleText != null)
+                    if (mapDefinition.SubTitle != null)
                     {
                         GraphicElement textBox = layout.FindElement(Constants.MAPS_SUBTITLE) as GraphicElement;
                         if (textBox != null)
@@ -721,12 +730,12 @@ namespace bagis_pro
                             await QueuedTask.Run(() =>
                             {
                                 CIMTextGraphic graphic = (CIMTextGraphic)textBox.Graphic;
-                                graphic.Text = subTitleText;
+                                graphic.Text = mapDefinition.SubTitle;
                                 textBox.SetGraphic(graphic);
                             });
                         }
                     }
-                    if (textBoxText != null)
+                    if (mapDefinition.UnitsText != null)
                     {
                         GraphicElement textBox = layout.FindElement(Constants.MAPS_TEXTBOX1) as GraphicElement;
                         if (textBox != null)
@@ -734,7 +743,7 @@ namespace bagis_pro
                             await QueuedTask.Run(() =>
                             {
                                 CIMTextGraphic graphic = (CIMTextGraphic)textBox.Graphic;
-                                graphic.Text = textBoxText;
+                                graphic.Text = mapDefinition.UnitsText;
                                 textBox.SetGraphic(graphic);
                             });
                         }
@@ -794,6 +803,35 @@ namespace bagis_pro
                     
                 }
             });
+        }
+
+        public static BA_Objects.MapDefinition LoadMapDefinition(BagisMapType mapType)
+        {
+
+            BA_Objects.MapDefinition mapDefinition = null;
+            IList<string> lstLayers = new List<string>();
+
+            switch (mapType)
+            {
+                case BagisMapType.ELEVATION:
+                    lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
+                                                   Constants.MAPS_HILLSHADE, Constants.MAPS_ELEV_ZONE,
+                                                   Constants.MAPS_SNOTEL, Constants.MAPS_SNOW_COURSE};
+                    // @ToDo: manage elevation units better
+                    mapDefinition = new BA_Objects.MapDefinition(Constants.MAPS_ELEV_ZONE, "ELEVATION DISTRIBUTION", 
+                        "Elevation Units = Feet");
+                    mapDefinition.LayerList = lstLayers;
+                    break; 
+                case BagisMapType.SLOPE:
+                    lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
+                                                   Constants.MAPS_HILLSHADE, Constants.MAPS_SLOPE_ZONE,
+                                                   Constants.MAPS_SNOTEL, Constants.MAPS_SNOW_COURSE};
+                    mapDefinition = new BA_Objects.MapDefinition(Constants.MAPS_SLOPE_ZONE, "SLOPE DISTRIBUTION",
+                        " ");
+                    mapDefinition.LayerList = lstLayers;
+                    break;
+            }
+            return mapDefinition;
         }
     }
 

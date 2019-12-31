@@ -120,7 +120,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Basin\SetDEMExtentTool.cs" />
+    <Compile Include="BA_Objects\MapDefinition.cs" />
     <Compile Include="Buttons\BtnExportToPdf.cs" />
+    <Compile Include="Buttons\MapButtonPalette.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="GeodatabaseTools.cs" />
     <Compile Include="MapTools.cs" />
@@ -180,6 +182,18 @@
   </ItemGroup>
   <ItemGroup>
     <AddInContent Include="Images\PdfIcon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <AddInContent Include="Images\GenericButtonGrey16.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <AddInContent Include="Images\GenericButtonGrey32.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <AddInContent Include="DarkImages\GenericButtonGrey16.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <AddInContent Include="DarkImages\GenericButtonGrey32.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!--

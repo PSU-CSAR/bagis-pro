@@ -22,4 +22,11 @@ namespace bagis_pro
         BASIN,
         FOLDER
     }
+
+    public enum BagisMapType
+    {
+        ELEVATION,
+        ASPECT,
+        SLOPE
+    }
 }
