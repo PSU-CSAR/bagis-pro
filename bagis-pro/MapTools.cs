@@ -83,17 +83,26 @@ namespace bagis_pro
                     Uri aoiUri = new Uri(strPath);
                     await MapTools.AddAoiBoundaryToMapAsync(aoiUri, Constants.MAPS_AOI_BOUNDARY);
 
+                    //add Snotel Represented Area Layer
+                    strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
+                        Constants.FILE_SNOTEL_REPRESENTED;
+                    Uri uri = new Uri(strPath);
+                    CIMColor fillColor = CIMColor.CreateRGBColor(255, 0, 0, 50);    //Red with 30% transparency
+                    BA_ReturnCode success = await MapTools.AddPolygonLayerAsync(uri, fillColor, false, Constants.MAPS_SNOTEL_REPRESENTED);
+                    if (success.Equals(BA_ReturnCode.Success))
+                        Module1.ToggleState("MapButtonPalette_BtnSnotel_State");
+                    
                     // add aoi streams layer
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers, true) +
                               Constants.FILE_STREAMS;
-                    Uri uri = new Uri(strPath);
+                    uri = new Uri(strPath);
                     await MapTools.AddLineLayerAsync(uri, Constants.MAPS_STREAMS, ColorFactory.Instance.BlueRGB);
 
                     // add Snotel Layer
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers, true) +
                               Constants.FILE_SNOTEL;
                     uri = new Uri(strPath);
-                    BA_ReturnCode success = await MapTools.AddPointMarkersAsync(uri, Constants.MAPS_SNOTEL, ColorFactory.Instance.BlueRGB,
+                    success = await MapTools.AddPointMarkersAsync(uri, Constants.MAPS_SNOTEL, ColorFactory.Instance.BlueRGB,
                         SimpleMarkerStyle.X, 16);
                     if (success == BA_ReturnCode.Success)
                         Module1.Current.AoiHasSnotel = true;
@@ -269,6 +278,53 @@ namespace bagis_pro
 
                 FeatureLayer fLayer = LayerFactory.Instance.CreateLayer<FeatureLayer>(flyrCreatnParam, MapView.Active.Map);
             });
+        }
+
+        public static async Task<BA_ReturnCode> AddPolygonLayerAsync(Uri uri, CIMColor fillColor, bool isVisible, string displayName = "")
+        {
+            // parse the uri for the folder and file
+            string strFileName = null;
+            string strFolderPath = null;
+            if (uri.IsFile)
+            {
+                strFileName = System.IO.Path.GetFileName(uri.LocalPath);
+                strFolderPath = System.IO.Path.GetDirectoryName(uri.LocalPath);
+            }
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            await QueuedTask.Run(() =>
+            {
+                FeatureClass fClass = null;
+                // Opens a file geodatabase. This will open the geodatabase if the folder exists and contains a valid geodatabase.
+                using (Geodatabase geodatabase =
+                    new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(strFolderPath))))
+                {
+                    // Use the geodatabase.
+                    fClass = geodatabase.OpenDataset<FeatureClass>(strFileName);
+                }
+                if (String.IsNullOrEmpty(displayName))
+                {
+                    displayName = fClass.GetDefinition().GetAliasName();
+                }
+                // Create symbology for feature layer
+                var flyrCreatnParam = new FeatureLayerCreationParams(fClass)
+                {
+                    Name = displayName,
+                    IsVisible = true,
+                    RendererDefinition = new SimpleRendererDefinition()
+                    {
+                        //SymbolTemplate = SymbolFactory.Instance.ConstructPolygonSymbol(fillColor).MakeSymbolReference()
+                        SymbolTemplate = SymbolFactory.Instance.ConstructPolygonSymbol(
+                        fillColor, SimpleFillStyle.Solid,
+                        SymbolFactory.Instance.ConstructStroke(ColorFactory.Instance.BlackRGB,0))
+                        .MakeSymbolReference()
+                    }
+                };
+
+                FeatureLayer fLayer = LayerFactory.Instance.CreateLayer<FeatureLayer>(flyrCreatnParam, MapView.Active.Map);
+                fLayer.SetVisibility(isVisible);
+                success = BA_ReturnCode.Success;
+            });
+            return success;
         }
 
         public static async Task AddLineLayerAsync(Uri aoiUri, string displayName, CIMColor lineColor)
@@ -887,6 +943,21 @@ namespace bagis_pro
                     }
                     mapDefinition = new BA_Objects.MapDefinition("ASPECT DISTRIBUTION",
                         " ", Constants.FILE_EXPORT_MAP_ASPECT_PDF);
+                    mapDefinition.LayerList = lstLayers;
+                    mapDefinition.LegendLayerList = lstLegendLayers;
+                    break;
+                case BagisMapType.SNOTEL:
+                    lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
+                                                   Constants.MAPS_HILLSHADE, Constants.MAPS_ELEV_ZONE,
+                                                   Constants.MAPS_SNOTEL_REPRESENTED};
+                    lstLegendLayers = new List<string> { Constants.MAPS_SNOTEL_REPRESENTED };
+                    if (Module1.Current.AoiHasSnotel == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOTEL);
+                        lstLegendLayers.Add(Constants.MAPS_SNOTEL);
+                    }
+                    mapDefinition = new BA_Objects.MapDefinition("SNOTEL SITES REPRESENTATION",
+                        " ", Constants.FILE_EXPORT_MAP_SNOTEL_PDF);
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;

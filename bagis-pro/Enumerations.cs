@@ -27,6 +27,7 @@ namespace bagis_pro
     {
         ELEVATION,
         ASPECT,
-        SLOPE
+        SLOPE,
+        SNOTEL
     }
 }

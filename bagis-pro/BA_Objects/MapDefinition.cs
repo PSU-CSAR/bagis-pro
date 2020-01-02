@@ -19,6 +19,7 @@ namespace bagis_pro.BA_Objects
         {
             m_subTitle = subTitle;
             m_unitsText = unitsText;
+            m_pdfFileName = pdfFileName;
         }
 
         public string SubTitle

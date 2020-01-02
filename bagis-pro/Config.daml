@@ -53,6 +53,7 @@
           <button refID="bagis_pro_Buttons_MapButtonPalette_BtnElevation"/>
           <button refID="bagis_pro_Buttons_MapButtonPalette_BtnSlope" />
           <button refID="bagis_pro_Buttons_MapButtonPalette_BtnAspect" />
+          <button refID="bagis_pro_Buttons_MapButtonPalette_BtnSnotel" />
         </buttonPalette>
       </palettes>
       <controls>
@@ -114,6 +115,11 @@
           <tooltip heading="Palette Button 3">
             ToolTip<disabledText /></tooltip>
         </button>
+        <button id="bagis_pro_Buttons_MapButtonPalette_BtnSnotel" caption="Snotel Sites Distribution" className="bagis_pro.Buttons.MapButtonPalette_BtnSnotel" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSnotel_Condition">
+          <tooltip heading="Palette Button 3">
+            ToolTip<disabledText />
+          </tooltip>
+        </button>
       </controls>
       <menus>
         <menu id="bagis_pro_Menus_MnuBasinAnalyst" caption="Basin Analysis">
@@ -159,6 +165,9 @@
     </insertCondition>
     <insertCondition id="MapButtonPalette_BtnAspect_Condition" caption="Map Disabled">
       <state id="MapButtonPalette_BtnAspect_State" />
+    </insertCondition>
+    <insertCondition id="MapButtonPalette_BtnSnotel_Condition" caption="Map Disabled">
+      <state id="MapButtonPalette_BtnSnotel_State" />
     </insertCondition>
   </conditions>
 </ArcGIS>

@@ -96,4 +96,19 @@ namespace bagis_pro.Buttons
         }
     }
 
+    internal class MapButtonPalette_BtnSnotel : Button
+    {
+        protected override async void OnClick()
+        {
+            try
+            {
+                await ToggleMapDisplay.Toggle(BagisMapType.SNOTEL);
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show("Unable to display snotel map!!" + e.Message, "BAGIS-PRO");
+            }
+        }
+    }
+
 }
