@@ -19,15 +19,15 @@ namespace bagis_pro
 {
     public class MapTools
     {
-        public static async Task DisplayMaps(string strTempAoiPath)
+        public static async Task DisplayMaps(string strAoiPath)
         {
             BA_Objects.Aoi oAoi = Module1.Current.Aoi;
             if (String.IsNullOrEmpty(oAoi.Name))
             {
-                if (System.IO.Directory.Exists(strTempAoiPath))
+                if (System.IO.Directory.Exists(strAoiPath))
                 {
                     // Initialize AOI object
-                    oAoi = new BA_Objects.Aoi("animas_AOI_prms", strTempAoiPath);
+                    oAoi = new BA_Objects.Aoi("animas_AOI_prms", strAoiPath);
                     // Store current AOI in Module1
                     Module1.Current.Aoi = oAoi;
                 }
@@ -128,6 +128,15 @@ namespace bagis_pro
                     await MapTools.DisplayRasterWithSymbolAsync(uri, Constants.MAPS_SLOPE_ZONE, "ArcGIS Colors",
                                 "Slope", "NAME", 30, false);
                     Module1.ToggleState("MapButtonPalette_BtnSlope_State");
+
+                    // add aspect zones layer
+                    strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
+                        Constants.FILE_ASPECT_ZONE;
+                    uri = new Uri(strPath);
+                    await MapTools.DisplayRasterWithSymbolAsync(uri, Constants.MAPS_ASPECT_ZONE, "ArcGIS Colors",
+                                "Aspect", "NAME", 30, false);
+                    Module1.ToggleState("MapButtonPalette_BtnAspect_State");
+
 
                     // create map elements
                     await MapTools.AddMapElements(Constants.MAPS_DEFAULT_LAYOUT_NAME, "ArcGIS Colors", "1.5 Point");
@@ -859,6 +868,25 @@ namespace bagis_pro
                     }
                     mapDefinition = new BA_Objects.MapDefinition("SLOPE DISTRIBUTION",
                         " ", Constants.FILE_EXPORT_MAP_SLOPE_PDF);
+                    mapDefinition.LayerList = lstLayers;
+                    mapDefinition.LegendLayerList = lstLegendLayers;
+                    break;
+                case BagisMapType.ASPECT:
+                    lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
+                                                   Constants.MAPS_HILLSHADE, Constants.MAPS_ASPECT_ZONE};
+                    lstLegendLayers = new List<string> { Constants.MAPS_ASPECT_ZONE};
+                    if (Module1.Current.AoiHasSnotel == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOTEL);
+                        lstLegendLayers.Add(Constants.MAPS_SNOTEL);
+                    }
+                    if (Module1.Current.AoiHasSnowCourse == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOW_COURSE);
+                        lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE);
+                    }
+                    mapDefinition = new BA_Objects.MapDefinition("ASPECT DISTRIBUTION",
+                        " ", Constants.FILE_EXPORT_MAP_ASPECT_PDF);
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;

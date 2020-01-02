@@ -21,6 +21,7 @@ namespace bagis_pro
         public const string MAPS_HILLSHADE = "hillshade";
         public const string MAPS_ELEV_ZONE = "Elevation Zones";
         public const string MAPS_SLOPE_ZONE = "Slope Zones";
+        public const string MAPS_ASPECT_ZONE = "Aspect Zones";
 
         public const string MAPS_LEGEND = "Legend";
         public const string MAPS_TITLE = "Title";
@@ -35,6 +36,7 @@ namespace bagis_pro
         public const string FILE_HILLSHADE = "hillshade";
         public const string FILE_ELEV_ZONE = "elevzone";
         public const string FILE_SLOPE_ZONE = "slpzone";
+        public const string FILE_ASPECT_ZONE = "aspzone";
         public const string FILE_EXPORT_MAP_ELEV_PDF = "map_elevation.pdf";
         public const string FILE_EXPORT_MAP_SNOTEL_PDF = "map_elevation_snotel.pdf";
         public const string FILE_EXPORT_MAP_SCOS_PDF = "map_elevation_sc.pdf";

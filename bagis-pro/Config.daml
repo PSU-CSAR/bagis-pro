@@ -52,6 +52,7 @@
         <buttonPalette id="bagis_pro_Buttons_MapButtonPalette" caption="Toggle Maps" keytip="Maps" dropDown="true" menuStyle="true"  >
           <button refID="bagis_pro_Buttons_MapButtonPalette_BtnElevation"/>
           <button refID="bagis_pro_Buttons_MapButtonPalette_BtnSlope" />
+          <button refID="bagis_pro_Buttons_MapButtonPalette_BtnAspect" />
         </buttonPalette>
       </palettes>
       <controls>
@@ -109,6 +110,10 @@
         <button id="bagis_pro_Buttons_MapButtonPalette_BtnSlope" caption="Slope Distribution" className="bagis_pro.Buttons.MapButtonPalette_BtnSlope" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSlope_Condition">
           <tooltip heading="Palette Button 2">ToolTip<disabledText /></tooltip>
         </button>
+        <button id="bagis_pro_Buttons_MapButtonPalette_BtnAspect" caption="Aspect Distribution" className="bagis_pro.Buttons.MapButtonPalette_BtnAspect" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnAspect_Condition">
+          <tooltip heading="Palette Button 3">
+            ToolTip<disabledText /></tooltip>
+        </button>
       </controls>
       <menus>
         <menu id="bagis_pro_Menus_MnuBasinAnalyst" caption="Basin Analysis">
@@ -151,6 +156,9 @@
     </insertCondition>
     <insertCondition id="MapButtonPalette_BtnSlope_Condition" caption="Map Disabled">
       <state id="MapButtonPalette_BtnSlope_State" />
+    </insertCondition>
+    <insertCondition id="MapButtonPalette_BtnAspect_Condition" caption="Map Disabled">
+      <state id="MapButtonPalette_BtnAspect_State" />
     </insertCondition>
   </conditions>
 </ArcGIS>

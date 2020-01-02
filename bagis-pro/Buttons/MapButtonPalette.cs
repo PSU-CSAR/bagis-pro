@@ -81,10 +81,18 @@ namespace bagis_pro.Buttons
         }
     }
 
-    internal class MapButtonPalette_button3 : Button
+    internal class MapButtonPalette_BtnAspect : Button
     {
-        protected override void OnClick()
+        protected override async void OnClick()
         {
+            try
+            {
+                await ToggleMapDisplay.Toggle(BagisMapType.ASPECT);
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show("Unable to display aspect map!!" + e.Message, "BAGIS-PRO");
+            }
         }
     }
 
