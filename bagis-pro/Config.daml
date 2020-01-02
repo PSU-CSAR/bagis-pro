@@ -49,7 +49,7 @@
         </toolbar> -->
       </toolbars>
       <palettes>
-        <buttonPalette id="bagis_pro_Buttons_MapButtonPalette" caption="Toggle Maps" keytip="Maps" dropDown="false" menuStyle="true"  >
+        <buttonPalette id="bagis_pro_Buttons_MapButtonPalette" caption="Toggle Maps" keytip="Maps" dropDown="true" menuStyle="true"  >
           <button refID="bagis_pro_Buttons_MapButtonPalette_BtnElevation"/>
           <button refID="bagis_pro_Buttons_MapButtonPalette_BtnSlope" />
         </buttonPalette>

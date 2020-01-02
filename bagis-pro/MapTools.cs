@@ -134,9 +134,10 @@ namespace bagis_pro
                     await MapTools.DisplayNorthArrowAsync(layout, Constants.MAPS_DEFAULT_MAP_FRAME_NAME);
                     await MapTools.DisplayScaleBarAsync(layout, Constants.MAPS_DEFAULT_MAP_FRAME_NAME);
 
-                    // update text in map elements
+                    // update map elements for default map (elevation)
                     BA_Objects.MapDefinition defaultMap = MapTools.LoadMapDefinition(BagisMapType.ELEVATION);
                     await MapTools.UpdateMapElementsAsync(layout, Module1.Current.Aoi.Name.ToUpper(), defaultMap);
+                    await MapTools.UpdateLegendAsync(layout, defaultMap);
 
 
                     //zoom to aoi boundary layer
@@ -659,42 +660,58 @@ namespace bagis_pro
                 legendElm.SetName(Constants.MAPS_LEGEND);
                 legendElm.SetAnchor(Anchor.BottomLeftCorner);
 
-                // Choose the items we want to show
-                IList<string> lstLegend = new List<string>();
-                if (Module1.Current.AoiHasSnotel == true)
-                    lstLegend.Add(Constants.MAPS_SNOTEL);
-                if (Module1.Current.AoiHasSnowCourse == true)
-                    lstLegend.Add(Constants.MAPS_SNOW_COURSE);
-                lstLegend.Add(Constants.MAPS_ELEV_ZONE);
+                // Turn off all of the layers to start
                 CIMLegend cimLeg = legendElm.GetDefinition() as CIMLegend;
-                CIMLegendItem[] myLegendItems = new CIMLegendItem[lstLegend.Count];
-                int i = 0;
                 foreach (CIMLegendItem legItem in cimLeg.Items)
                 {
-                    if (lstLegend.Contains(legItem.Name))
-                    {
-                        legItem.ShowHeading = false;
-                        myLegendItems[i] = legItem;
-                        i++;
-                    }
-                }
-                if (myLegendItems[0] != null)
-                {
-                    cimLeg.Items = myLegendItems;
+                    legItem.ShowHeading = false;
+                    legItem.IsVisible = false;
                 }
 
+                // Format other elements in the legend
                 cimLeg.GraphicFrame.BorderSymbol = new CIMSymbolReference
                 {
                     Symbol = SymbolFactory.Instance.ConstructLineSymbol(ColorFactory.Instance.BlackRGB, 1.5, SimpleLineStyle.Solid)
                 };
                 cimLeg.GraphicFrame.BorderGapX = 3;
                 cimLeg.GraphicFrame.BorderGapY = 3;
+                // Apply the changes
                 legendElm.SetDefinition(cimLeg);
 
             });
         }
 
-        public static async Task UpdateMapElementsAsync(Layout layout, string titleText, BA_Objects.MapDefinition mapDefinition)
+        public async static Task UpdateLegendAsync(Layout layout, BA_Objects.MapDefinition mapDefinition)
+        {
+            await QueuedTask.Run(() =>
+            {
+                //Get LayoutCIM and iterate through its elements
+                var layoutDef = layout.GetDefinition();
+
+                foreach (var elem in layoutDef.Elements)
+                {
+                    if (elem is CIMLegend)
+                    {
+                        var legend = elem as CIMLegend;
+                        foreach (var legendItem in legend.Items)
+                        {
+                            if (mapDefinition.LegendLayerList.Contains(legendItem.Name))
+                            {
+                                legendItem.IsVisible = true;    
+                            }
+                            else
+                            {
+                                legendItem.IsVisible = false;
+                            }
+                        }
+                    }
+                }
+                //Apply the changes back to the layout
+                layout.SetDefinition(layoutDef);
+            });
+        }
+
+            public static async Task UpdateMapElementsAsync(Layout layout, string titleText, BA_Objects.MapDefinition mapDefinition)
         {
             if (layout != null)
             {
@@ -788,6 +805,7 @@ namespace bagis_pro
                     cimScaleBar.Divisions = 2;
                     cimScaleBar.Subdivisions = 4;
                     cimScaleBar.DivisionsBeforeZero = 1;
+                    cimScaleBar.MarkFrequency=ScaleBarFrequency.Divisions;
                     cimScaleBar.MarkPosition = ScaleBarVerticalPosition.Above;
                     cimScaleBar.UnitLabelPosition = ScaleBarLabelPosition.AfterLabels;
                     scaleBar.SetDefinition(cimScaleBar);
@@ -801,25 +819,48 @@ namespace bagis_pro
 
             BA_Objects.MapDefinition mapDefinition = null;
             IList<string> lstLayers = new List<string>();
+            IList<string> lstLegendLayers = new List<string>();
 
             switch (mapType)
             {
                 case BagisMapType.ELEVATION:
                     lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
-                                                   Constants.MAPS_HILLSHADE, Constants.MAPS_ELEV_ZONE,
-                                                   Constants.MAPS_SNOTEL, Constants.MAPS_SNOW_COURSE};
+                                                   Constants.MAPS_HILLSHADE, Constants.MAPS_ELEV_ZONE};
+                    lstLegendLayers = new List<string> {Constants.MAPS_ELEV_ZONE};
+                    if (Module1.Current.AoiHasSnotel == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOTEL);
+                        lstLegendLayers.Add(Constants.MAPS_SNOTEL);
+                    }
+                    if (Module1.Current.AoiHasSnowCourse == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOW_COURSE);
+                        lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE);
+                    }
                     // @ToDo: manage elevation units better
-                    mapDefinition = new BA_Objects.MapDefinition(Constants.MAPS_ELEV_ZONE, "ELEVATION DISTRIBUTION", 
+                    mapDefinition = new BA_Objects.MapDefinition("ELEVATION DISTRIBUTION", 
                         "Elevation Units = Feet", Constants.FILE_EXPORT_MAP_ELEV_PDF);
                     mapDefinition.LayerList = lstLayers;
+                    mapDefinition.LegendLayerList = lstLegendLayers;
                     break; 
                 case BagisMapType.SLOPE:
                     lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
-                                                   Constants.MAPS_HILLSHADE, Constants.MAPS_SLOPE_ZONE,
-                                                   Constants.MAPS_SNOTEL, Constants.MAPS_SNOW_COURSE};
-                    mapDefinition = new BA_Objects.MapDefinition(Constants.MAPS_SLOPE_ZONE, "SLOPE DISTRIBUTION",
+                                                   Constants.MAPS_HILLSHADE, Constants.MAPS_SLOPE_ZONE};
+                    lstLegendLayers = new List<string> { Constants.MAPS_SLOPE_ZONE };
+                    if (Module1.Current.AoiHasSnotel == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOTEL);
+                        lstLegendLayers.Add(Constants.MAPS_SNOTEL);
+                    }
+                    if (Module1.Current.AoiHasSnowCourse == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOW_COURSE);
+                        lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE);
+                    }
+                    mapDefinition = new BA_Objects.MapDefinition("SLOPE DISTRIBUTION",
                         " ", Constants.FILE_EXPORT_MAP_SLOPE_PDF);
                     mapDefinition.LayerList = lstLayers;
+                    mapDefinition.LegendLayerList = lstLegendLayers;
                     break;
             }
             return mapDefinition;

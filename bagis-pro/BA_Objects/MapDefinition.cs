@@ -10,21 +10,15 @@ namespace bagis_pro.BA_Objects
     public class MapDefinition
     {
         private IList<string> m_layerList;
-        private readonly string m_legendTitle;
+        private IList<string> m_legendLayerList;
         private readonly string m_subTitle;
         private readonly string m_unitsText;
         private readonly string m_pdfFileName;
 
-        public MapDefinition(string legendTitle, string subTitle, string unitsText, string pdfFileName)
+        public MapDefinition(string subTitle, string unitsText, string pdfFileName)
         {
-            m_legendTitle = legendTitle;
             m_subTitle = subTitle;
             m_unitsText = unitsText;
-        }
-
-        public string LegendTitle
-        {
-            get { return m_legendTitle; }
         }
 
         public string SubTitle
@@ -48,6 +42,16 @@ namespace bagis_pro.BA_Objects
             set
             {
                 m_layerList = value;
+            }
+
+        }
+
+        public IList<string> LegendLayerList
+        {
+            get { return m_legendLayerList; }
+            set
+            {
+                m_legendLayerList = value;
             }
 
         }
