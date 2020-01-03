@@ -56,6 +56,9 @@
     <Reference Include="System.Xml" />
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
+    <Reference Include="System.Xml.XPath, Version=4.0.2.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Xml.XPath.4.3.0\lib\net46\System.Xml.XPath.dll</HintPath>
+    </Reference>
     <Reference Include="WindowsBase" />
     <Reference Include="System.Xaml" />
     <Reference Include="ArcGIS.Desktop.Framework">
@@ -120,10 +123,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Basin\SetDEMExtentTool.cs" />
+    <Compile Include="BA_Objects\ExportTitlePage.cs" />
     <Compile Include="BA_Objects\MapDefinition.cs" />
     <Compile Include="Buttons\BtnExportToPdf.cs" />
     <Compile Include="Buttons\MapButtonPalette.cs" />
     <Compile Include="Constants.cs" />
+    <Compile Include="GeneralTools.cs" />
     <Compile Include="GeodatabaseTools.cs" />
     <Compile Include="MapTools.cs" />
     <Compile Include="Enumerations.cs" />
@@ -194,6 +199,11 @@
   </ItemGroup>
   <ItemGroup>
     <AddInContent Include="DarkImages\GenericButtonGrey32.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="title_page.xsl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!--

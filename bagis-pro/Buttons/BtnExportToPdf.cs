@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml;
+using System.Xml.XPath;
+using System.Xml.Xsl;
 using ArcGIS.Core.CIM;
 using ArcGIS.Core.Data;
 using ArcGIS.Core.Geometry;
@@ -72,6 +75,44 @@ namespace bagis_pro.Buttons
             catch (Exception e)
             {
                 MessageBox.Show("An error occurred while trying to export the map!! " + e.Message, "BAGIS PRO");
+            }
+        }
+    }
+
+    internal class BtnTitlePage : Button
+    {
+        protected override void OnClick()
+        {
+            try
+            {
+                // Serialize the title page object
+                BA_Objects.ExportTitlePage tPage = new BA_Objects.ExportTitlePage
+                {
+                    aoi_name = Module1.Current.Aoi.Name,
+                    comments = "This is a test",
+                    publisher = "Lesley Bross",
+                    local_path = Module1.Current.Aoi.FilePath,
+                    date_created = DateTime.Now
+                };
+                string publishFolder = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE;
+                string myXmlFile = publishFolder + "\\" + Constants.FILE_TITLE_PAGE_XML;
+                System.Xml.Serialization.XmlSerializer writer = new System.Xml.Serialization.XmlSerializer(tPage.GetType());
+                using (System.IO.FileStream fs = System.IO.File.Create(myXmlFile))
+                {
+                    writer.Serialize(fs, tPage);
+                }
+
+                // Process the title page through the xsl template
+                string myStyleSheet = GeneralTools.GetAddInDirectory() + "\\" + Constants.FILE_TITLE_PAGE_XSL;
+                XPathDocument myXPathDoc = new XPathDocument(myXmlFile);
+                XslCompiledTransform myXslTrans = new XslCompiledTransform();
+                myXslTrans.Load(myStyleSheet);
+                XmlTextWriter myWriter = new XmlTextWriter(publishFolder + @"\result.html", null);
+                myXslTrans.Transform(myXPathDoc, null, myWriter);
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show("An error occurred while trying to parse the XML!! " + e.Message, "BAGIS PRO");
             }
         }
     }
