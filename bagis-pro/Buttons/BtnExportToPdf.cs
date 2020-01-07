@@ -81,10 +81,17 @@ namespace bagis_pro.Buttons
 
     internal class BtnTitlePage : Button
     {
-        protected override void OnClick()
+        protected async override void OnClick()
         {
             try
             {
+                // Query for the drainage area
+                Uri gdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true));
+                string strAreaSqKm = await GeodatabaseTools.QueryTableForSingleValueAsync(gdbUri, Constants.FILE_SNOTEL_POURPOINT, 
+                                        Constants.FIELD_AOI_AREA, new QueryFilter());
+                double areaSqKm = -1;
+                bool isDouble = Double.TryParse(strAreaSqKm, out areaSqKm);
+
                 // Serialize the title page object
                 BA_Objects.ExportTitlePage tPage = new BA_Objects.ExportTitlePage
                 {
@@ -92,6 +99,13 @@ namespace bagis_pro.Buttons
                     comments = "This is a test",
                     publisher = "Lesley Bross",
                     local_path = Module1.Current.Aoi.FilePath,
+                    streamgage_station = "USGS XXXXXXX",
+                    drainage_area_sqkm = areaSqKm,
+                    elevation_min = 1.25,
+                    elevation_max = 100.5,
+                    snotel_sites_in_basin = 4,
+                    snotel_sites_in_buffer = 2,
+                    snotel_sites_buffer_size = "???",
                     date_created = DateTime.Now
                 };
                 string publishFolder = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE;
@@ -109,6 +123,7 @@ namespace bagis_pro.Buttons
                 myXslTrans.Load(myStyleSheet);
                 XmlTextWriter myWriter = new XmlTextWriter(publishFolder + @"\result.html", null);
                 myXslTrans.Transform(myXPathDoc, null, myWriter);
+                MessageBox.Show("Title page created!!");
             }
             catch (Exception e)
             {

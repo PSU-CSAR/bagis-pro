@@ -68,7 +68,39 @@
                           Exported on <xsl:value-of select="DateCreatedText"/>
                         </td>
                     </tr>
+                    <tr>
+                    <td class="style3">
+                      <xsl:text disable-output-escaping="yes"><![CDATA[&nbsp;]]></xsl:text>
+                    </td>
+                  </tr>
                 </table>
+                <table>
+                <tr>
+                  <td class="style3"/>
+                </tr>
+                <xsl:if test="streamgage_station != ''">
+                  <tr>
+                    <td class="style3">
+                      Streamgage station: <xsl:value-of select="streamgage_station"/>
+                    </td>
+                  </tr>
+                </xsl:if>
+                <tr>
+                  <td class="style3">
+                    Delineated drainage area: <xsl:value-of select="drainage_area_sqmi"/> square miles
+                  </td>
+                </tr>
+                <tr>
+                  <td class="style3">
+                    Elevation range: <xsl:value-of select="elevation_min"/> to <xsl:value-of select="elevation_max"/> feet
+                  </td>
+                </tr>
+                <tr>
+                  <td class="style3">
+                    SNOTEL Sites: within basin – <xsl:value-of select="snotel_sites_in_basin"/>, within <xsl:value-of select="snotel_sites_buffer_size"/> mile buffer – <xsl:value-of select="snotel_sites_in_buffer"/> (SNOTEL SITE REPRESENTATION)
+                  </td>
+                </tr>
+              </table>
             </div>
                    
             <div class="footer">

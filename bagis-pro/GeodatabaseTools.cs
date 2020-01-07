@@ -38,7 +38,7 @@ namespace bagis_pro
             return sb.ToString();
         }
 
-        public static async Task<FolderType> GetAoiFolderTypeAsync (string folderPath)
+        public static async Task<FolderType> GetAoiFolderTypeAsync(string folderPath)
         {
             Uri gdbUri = new Uri(GetGeodatabasePath(folderPath, GeodatabaseNames.Aoi, true));
             if (System.IO.Directory.Exists(gdbUri.LocalPath))
@@ -106,6 +106,53 @@ namespace bagis_pro
                 return false;
             });
 
+        }
+
+        public static async Task<string> QueryTableForSingleValueAsync(Uri fileUri, string featureClassName, string fieldName, QueryFilter queryFilter)
+        {
+            // parse the uri for the folder and file
+            string strFileName = null;
+            string strFolderPath = null;
+            if (fileUri.IsFile)
+            {
+                strFileName = System.IO.Path.GetFileName(fileUri.LocalPath);
+                strFolderPath = System.IO.Path.GetDirectoryName(fileUri.LocalPath);
+            }
+            else
+            {
+                return "";
+            }
+
+            string returnValue = "";
+            await QueuedTask.Run(() =>
+            {
+                try
+                {
+                    using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(strFolderPath))))
+                    {
+                        Table table = geodatabase.OpenDataset<Table>(featureClassName);
+                        using (RowCursor cursor = table.Search(queryFilter, false))
+                        {
+                            cursor.MoveNext();
+                            Feature onlyFeature = (Feature) cursor.Current;
+                            if (onlyFeature != null)
+                            {
+                                int idx = onlyFeature.FindField(fieldName);
+                                if (idx > -1)
+                                {
+                                    returnValue = Convert.ToString(onlyFeature[idx]);
+                                }
+                            }
+
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    Debug.WriteLine("QueryTableForSingleValueAsync Exception: " + e.Message);
+                }
+            });
+            return returnValue;
         }
     }
 }

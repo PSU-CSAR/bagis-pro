@@ -39,6 +39,7 @@ namespace bagis_pro
         public const string FILE_SLOPE_ZONE = "slpzone";
         public const string FILE_ASPECT_ZONE = "aspzone";
         public const string FILE_SNOTEL_REPRESENTED = "npactual";
+        public const string FILE_SNOTEL_POURPOINT = "pourpoint";
         public const string FILE_EXPORT_MAP_ELEV_PDF = "map_elevation.pdf";
         public const string FILE_EXPORT_MAP_SNOTEL_PDF = "map_elevation_snotel.pdf";
         public const string FILE_EXPORT_MAP_SCOS_PDF = "map_elevation_sc.pdf";
@@ -52,6 +53,8 @@ namespace bagis_pro
         public const string FILE_TITLE_PAGE_XML = "title_page.xml";
 
         public const string FOLDER_MAP_PACKAGE = "maps_publish";
+
+        public const string FIELD_AOI_AREA = "AOISHPAREA";
     }
 
 }
