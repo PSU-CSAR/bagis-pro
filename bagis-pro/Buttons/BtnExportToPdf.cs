@@ -92,6 +92,16 @@ namespace bagis_pro.Buttons
                 double areaSqKm = -1;
                 bool isDouble = Double.TryParse(strAreaSqKm, out areaSqKm);
 
+                //Query min/max from dem
+                IList<double> lstResult = await GeoprocessingTools.GetDemStatsAsync(Module1.Current.Aoi.FilePath);
+                double elevMinMeters = -1;
+                double elevMaxMeters = -1;
+                if (lstResult.Count == 2)   // We expect the min and max values in that order
+                {
+                    elevMinMeters = lstResult[0];
+                    elevMaxMeters = lstResult[1];
+                }
+
                 // Serialize the title page object
                 BA_Objects.ExportTitlePage tPage = new BA_Objects.ExportTitlePage
                 {
@@ -101,8 +111,8 @@ namespace bagis_pro.Buttons
                     local_path = Module1.Current.Aoi.FilePath,
                     streamgage_station = "USGS XXXXXXX",
                     drainage_area_sqkm = areaSqKm,
-                    elevation_min = 1.25,
-                    elevation_max = 100.5,
+                    elevation_min_meters = elevMinMeters,
+                    elevation_max_meters = elevMaxMeters,
                     snotel_sites_in_basin = 4,
                     snotel_sites_in_buffer = 2,
                     snotel_sites_buffer_size = "???",

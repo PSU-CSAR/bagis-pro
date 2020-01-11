@@ -92,7 +92,7 @@
                 </tr>
                 <tr>
                   <td class="style3">
-                    Elevation range: <xsl:value-of select="elevation_min"/> to <xsl:value-of select="elevation_max"/> feet
+                    Elevation range: <xsl:value-of select="elevation_min_feet"/> to <xsl:value-of select="elevation_max_feet"/> feet
                   </td>
                 </tr>
                 <tr>

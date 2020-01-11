@@ -2,6 +2,7 @@
 using ArcGIS.Core.Data;
 using ArcGIS.Core.Data.Raster;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
+using ArcGIS.Desktop.Mapping;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -153,6 +154,61 @@ namespace bagis_pro
                 }
             });
             return returnValue;
+        }
+
+        public static async Task<TableStatisticsResult> GetRasterStats(Uri rasterUri, string field)
+        {
+            // parse the uri for the folder and file
+            string strFileName = null;
+            string strFolderPath = null;
+            if (rasterUri.IsFile)
+            {
+                strFileName = System.IO.Path.GetFileName(rasterUri.LocalPath);
+                strFolderPath = System.IO.Path.GetDirectoryName(rasterUri.LocalPath);
+            }
+
+            RasterDataset rDataset = null;
+            await QueuedTask.Run(() =>
+            {                
+                // Opens a file geodatabase. This will open the geodatabase if the folder exists and contains a valid geodatabase.
+                using (Geodatabase geodatabase =
+                    new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(strFolderPath))))
+                {
+                    // Use the geodatabase.
+                    try
+                    {
+                        rDataset = geodatabase.OpenDataset<RasterDataset>(strFileName);
+                    }
+                    catch (GeodatabaseTableException e)
+                    {
+                        Debug.WriteLine("DisplayRasterAsync: Unable to open raster " + strFileName);
+                        Debug.WriteLine("DisplayRasterAsync: " + e.Message);
+                        return;
+                    }
+                }
+             });
+            TableStatisticsResult tableStatisticsResult = null;
+            if (rDataset != null)
+            {
+                await QueuedTask.Run(() =>
+                {
+                    Raster raster = rDataset.CreateRaster(new int[] { 0 });
+                    if (raster != null)
+                    {
+                        var table = raster.GetAttributeTable();
+                        if (table != null)
+                        {
+                            Field statField = table.GetDefinition().GetFields().First(x => x.Name.Equals(field));
+
+                            StatisticsDescription statisticsDescription = new StatisticsDescription(statField, new List<StatisticsFunction>() { StatisticsFunction.Min, StatisticsFunction.Max });
+                            TableStatisticsDescription tableStatisticsDescription = new TableStatisticsDescription(new List<StatisticsDescription>() { statisticsDescription });
+                            IReadOnlyList<TableStatisticsResult> statResult = table.CalculateStatistics(tableStatisticsDescription);
+                            tableStatisticsResult = statResult[0];
+                        }
+                    }
+                });
+            }
+            return tableStatisticsResult;
         }
     }
 }
