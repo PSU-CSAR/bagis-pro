@@ -10,7 +10,7 @@ namespace bagis_pro
 {
     class GeoprocessingTools
     {
-        public static async Task<IList<double>> GetDemStatsAsync(string aoiPath)
+        public static async Task<IList<double>> GetDemStatsAsync(string aoiPath, double adjustmentFactor)
         {
             IList<double> returnList = new List<double>();
             try
@@ -23,13 +23,13 @@ namespace bagis_pro
                 IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("GetRasterProperties_management", parameters, environments,
                     ArcGIS.Desktop.Framework.Threading.Tasks.CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
                 bool success = Double.TryParse(Convert.ToString(gpResult.ReturnValue), out dblMin);
-                returnList.Add(dblMin);
+                returnList.Add(dblMin - adjustmentFactor);
                 double dblMax = -1;
                 parameters = Geoprocessing.MakeValueArray(sDemPath, "MAXIMUM");
                 gpResult = await Geoprocessing.ExecuteToolAsync("GetRasterProperties_management", parameters, environments,
                     ArcGIS.Desktop.Framework.Threading.Tasks.CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
                 success = Double.TryParse(Convert.ToString(gpResult.ReturnValue), out dblMax);
-                returnList.Add(dblMax);
+                returnList.Add(dblMax + adjustmentFactor);
             }
             catch (Exception e)
             {
