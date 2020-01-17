@@ -52,6 +52,8 @@ namespace bagis_pro
         public const string FILE_EXPORT_MAP_ELEVATION_SNOTEL_PDF = "map_elevation_snotel.pdf";
         public const string FILE_TITLE_PAGE_XSL = "title_page.xsl";
         public const string FILE_TITLE_PAGE_XML = "title_page.xml";
+        public const string FILE_TITLE_PAGE_HTML = "title_page.html";
+        public const string FILE_TITLE_PAGE_PDF = "title_page.pdf";
 
         public const string FOLDER_MAP_PACKAGE = "maps_publish";
 

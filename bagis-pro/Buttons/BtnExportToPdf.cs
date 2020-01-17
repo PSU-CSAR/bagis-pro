@@ -19,6 +19,8 @@ using ArcGIS.Desktop.Framework.Dialogs;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
 using ArcGIS.Desktop.Layouts;
 using ArcGIS.Desktop.Mapping;
+using PdfSharp.Pdf;
+using TheArtOfDev.HtmlRenderer.PdfSharp;
 
 namespace bagis_pro.Buttons
 {
@@ -162,8 +164,19 @@ namespace bagis_pro.Buttons
                 XPathDocument myXPathDoc = new XPathDocument(myXmlFile);
                 XslCompiledTransform myXslTrans = new XslCompiledTransform();
                 myXslTrans.Load(myStyleSheet);
-                XmlTextWriter myWriter = new XmlTextWriter(publishFolder + @"\result.html", null);
-                myXslTrans.Transform(myXPathDoc, null, myWriter);
+                string htmlFilePath = publishFolder + "\\" + Constants.FILE_TITLE_PAGE_HTML;
+                using (XmlTextWriter myWriter = new XmlTextWriter(htmlFilePath, null))
+                {
+                    myXslTrans.Transform(myXPathDoc, null, myWriter);
+                }
+                
+                // Convert the title page to PDF
+                if (System.IO.File.Exists(htmlFilePath))
+                {
+                    PdfDocument titlePageDoc = PdfGenerator.GeneratePdf(System.IO.File.ReadAllText(htmlFilePath), 
+                        PdfSharp.PageSize.Letter);
+                    titlePageDoc.Save(publishFolder + "\\" + Constants.FILE_TITLE_PAGE_PDF);
+                }
                 MessageBox.Show("Title page created!!");
             }
             catch (Exception e)
