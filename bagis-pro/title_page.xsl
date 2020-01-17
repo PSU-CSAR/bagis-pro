@@ -100,6 +100,11 @@
                     SNOTEL Sites: within basin – <xsl:value-of select="snotel_sites_in_basin"/>, within <xsl:value-of select="snotel_sites_buffer_size"/> mile buffer – <xsl:value-of select="snotel_sites_in_buffer"/> (SNOTEL SITE REPRESENTATION)
                   </td>
                 </tr>
+                <tr>
+                  <td class="style3">
+                    Snow Courses: within basin – <xsl:value-of select="scos_sites_in_basin"/>, within <xsl:value-of select="scos_sites_buffer_size"/> mile buffer – <xsl:value-of select="scos_sites_in_buffer"/> (SNOW COURSE SITE REPRESENTATION)
+                  </td>
+                </tr>
               </table>
             </div>
                    

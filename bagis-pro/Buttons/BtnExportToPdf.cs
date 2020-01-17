@@ -102,6 +102,34 @@ namespace bagis_pro.Buttons
                     elevMaxMeters = lstResult[1];
                 }
 
+                //Test querying metadata; Layer metadata methods not currently available in Pro
+                //string snowCourseSitesPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, true) +  Constants.FILE_SNOW_COURSE;
+                //Item featureClassItem = ItemFactory.Instance.Create(snowCourseSitesPath);
+                //IMetadata fcMetadataItem = featureClassItem as IMetadata;
+
+                // Counting Snotel Sites in AOI boundary
+                gdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, false));
+                Uri sitesGdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, false));
+                int snotelInBasin = await GeodatabaseTools.CountPointsWithinInFeatureAsync(sitesGdbUri, Constants.FILE_SNOTEL,
+                    gdbUri, Constants.FILE_AOI_VECTOR);
+                int snotelInBuffer = 0;
+                int totalSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_SNOTEL);
+                if (totalSites > 0)
+                {
+                    snotelInBuffer = totalSites - snotelInBasin;
+                }
+
+                // Counting Snow Course Sites in AOI boundary
+                int scosInBasin = await GeodatabaseTools.CountPointsWithinInFeatureAsync(sitesGdbUri, Constants.FILE_SNOW_COURSE,
+                    gdbUri, Constants.FILE_AOI_VECTOR);
+                int scosInBuffer = 0;
+                totalSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_SNOW_COURSE);
+                if (totalSites > 0)
+                {
+                    scosInBuffer = totalSites - scosInBasin;
+                }
+
+
                 // Serialize the title page object
                 BA_Objects.ExportTitlePage tPage = new BA_Objects.ExportTitlePage
                 {
@@ -113,9 +141,12 @@ namespace bagis_pro.Buttons
                     drainage_area_sqkm = areaSqKm,
                     elevation_min_meters = elevMinMeters,
                     elevation_max_meters = elevMaxMeters,
-                    snotel_sites_in_basin = 4,
-                    snotel_sites_in_buffer = 2,
+                    snotel_sites_in_basin = snotelInBasin,
+                    snotel_sites_in_buffer = snotelInBuffer,
                     snotel_sites_buffer_size = "???",
+                    scos_sites_in_basin = scosInBasin,
+                    scos_sites_in_buffer = scosInBuffer,
+                    scos_sites_buffer_size = "???",
                     date_created = DateTime.Now
                 };
                 string publishFolder = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE;

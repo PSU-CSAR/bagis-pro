@@ -1,6 +1,7 @@
 ﻿using ArcGIS.Core.CIM;
 using ArcGIS.Core.Data;
 using ArcGIS.Core.Data.Raster;
+using ArcGIS.Core.Geometry;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
 using ArcGIS.Desktop.Mapping;
 using System;
@@ -209,6 +210,70 @@ namespace bagis_pro
                 });
             }
             return tableStatisticsResult;
+        }
+
+        // This method assumes that the polygon feature class contains a single feature. It was written
+        // to count the number of points within an AOI
+        public static async Task<int> CountPointsWithinInFeatureAsync(Uri pointFeatureGdbUri, string pointFeatureName,
+                                                                      Uri polyFeatureGdbUri, string polyFeatureName)
+        {
+            int retVal = 0;
+            Geometry polyGeometry = null;
+            await QueuedTask.Run(() => {
+                using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(polyFeatureGdbUri)))
+                using (Table table = geodatabase.OpenDataset<Table>(polyFeatureName))
+                {
+                    QueryFilter queryFilter = new QueryFilter();
+                    using (RowCursor cursor = table.Search(queryFilter, false))
+                    {
+                        cursor.MoveNext();
+                        Feature onlyFeature = (Feature)cursor.Current;
+                        if (onlyFeature != null)
+                        {
+                            polyGeometry = onlyFeature.GetShape();
+                        }
+                    }
+                }
+                if (polyGeometry != null)
+                {
+                    using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(pointFeatureGdbUri)))
+                    using (FeatureClass pointFeatureClass = geodatabase.OpenDataset<FeatureClass>(pointFeatureName))
+                    {
+                        // Using a spatial query filter to find all features which have a certain district name and lying within a given Polygon.
+                        SpatialQueryFilter spatialQueryFilter = new SpatialQueryFilter
+                        {
+                            FilterGeometry = polyGeometry,
+                            SpatialRelationship = SpatialRelationship.Contains
+                        };
+
+                        using (RowCursor aCursor = pointFeatureClass.Search(spatialQueryFilter, false))
+                        {
+                            while (aCursor.MoveNext())
+                            {
+                                using (Feature feature = (Feature)aCursor.Current)
+                                {
+                                    retVal++;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            return retVal;
+        }
+
+        public static async Task<int> CountFeaturesAsync(Uri gdbUri, string featureClassName)
+        {
+            int retVal = -1;
+            await QueuedTask.Run(() => {
+                using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(gdbUri)))
+                using (Table table = geodatabase.OpenDataset<Table>(featureClassName))
+                {
+                    retVal = table.GetCount();
+                }
+
+            });
+            return retVal;
         }
     }
 }

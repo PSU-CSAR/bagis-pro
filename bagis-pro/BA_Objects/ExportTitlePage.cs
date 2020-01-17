@@ -20,6 +20,10 @@ namespace bagis_pro.BA_Objects
         public int snotel_sites_in_basin;
         public int snotel_sites_in_buffer;
         public string snotel_sites_buffer_size;
+        public int scos_sites_in_basin;
+        public int scos_sites_in_buffer;
+        public string scos_sites_buffer_size;
+
 
         public string DateCreatedText
         {
