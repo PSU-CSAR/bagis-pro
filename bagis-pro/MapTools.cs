@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using System.Diagnostics;
 using System.Windows;
 using ArcGIS.Desktop.Framework.Contracts;
+using ArcGIS.Desktop.Framework;
 
 namespace bagis_pro
 {
@@ -89,9 +90,34 @@ namespace bagis_pro
                     Uri uri = new Uri(strPath);
                     CIMColor fillColor = CIMColor.CreateRGBColor(255, 0, 0, 50);    //Red with 30% transparency
                     BA_ReturnCode success = await MapTools.AddPolygonLayerAsync(uri, fillColor, false, Constants.MAPS_SNOTEL_REPRESENTED);
-                    if (success.Equals(BA_ReturnCode.Success))
-                        Module1.ToggleState("MapButtonPalette_BtnSnotel_State");
-                    
+                    if (!FrameworkApplication.State.Contains("MapButtonPalette_BtnSnotel_State"))
+                    {
+                        if (success.Equals(BA_ReturnCode.Success))
+                            Module1.ToggleState("MapButtonPalette_BtnSnotel_State");
+                    }
+
+                    //add Snow Course Represented Area Layer
+                    strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
+                        Constants.FILE_SCOS_REPRESENTED;
+                    uri = new Uri(strPath);
+                    success = await MapTools.AddPolygonLayerAsync(uri, fillColor, false, Constants.MAPS_SNOW_COURSE_REPRESENTED);
+                    if (!FrameworkApplication.State.Contains("MapButtonPalette_BtnSnowCourse_State"))
+                    {
+                        if (success.Equals(BA_ReturnCode.Success))
+                            Module1.ToggleState("MapButtonPalette_BtnSnowCourse_State");
+                    }
+
+                    //add All Sites Represented Area Layer
+                    strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
+                        Constants.FILE_SITES_REPRESENTED;
+                    uri = new Uri(strPath);
+                    success = await MapTools.AddPolygonLayerAsync(uri, fillColor, false, Constants.MAPS_ALL_SITES_REPRESENTED);
+                    if (!FrameworkApplication.State.Contains("MapButtonPalette_BtnSitesAll_State"))
+                    {
+                        if (success.Equals(BA_ReturnCode.Success))
+                            Module1.ToggleState("MapButtonPalette_BtnSitesAll_State");
+                    }
+
                     // add aoi streams layer
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers, true) +
                               Constants.FILE_STREAMS;
@@ -128,7 +154,10 @@ namespace bagis_pro
                     uri = new Uri(strPath);
                     await MapTools.DisplayRasterWithSymbolAsync(uri, Constants.MAPS_ELEV_ZONE, "ArcGIS Colors",
                                 "Elevation #2", "NAME", 30, true);
-                    Module1.ToggleState("MapButtonPalette_BtnElevation_State");
+                    if (!FrameworkApplication.State.Contains("MapButtonPalette_BtnElevation_State"))
+                    {
+                            Module1.ToggleState("MapButtonPalette_BtnElevation_State");
+                    }
 
                     // add slope zones layer
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
@@ -136,7 +165,10 @@ namespace bagis_pro
                     uri = new Uri(strPath);
                     await MapTools.DisplayRasterWithSymbolAsync(uri, Constants.MAPS_SLOPE_ZONE, "ArcGIS Colors",
                                 "Slope", "NAME", 30, false);
-                    Module1.ToggleState("MapButtonPalette_BtnSlope_State");
+                    if (!FrameworkApplication.State.Contains("MapButtonPalette_BtnSlope_State"))
+                    {
+                        Module1.ToggleState("MapButtonPalette_BtnSlope_State");
+                    }
 
                     // add aspect zones layer
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
@@ -144,7 +176,10 @@ namespace bagis_pro
                     uri = new Uri(strPath);
                     await MapTools.DisplayRasterWithSymbolAsync(uri, Constants.MAPS_ASPECT_ZONE, "ArcGIS Colors",
                                 "Aspect", "NAME", 30, false);
-                    Module1.ToggleState("MapButtonPalette_BtnAspect_State");
+                    if (!FrameworkApplication.State.Contains("MapButtonPalette_BtnAspect_State"))
+                    {
+                        Module1.ToggleState("MapButtonPalette_BtnAspect_State");
+                    }
 
 
                     // create map elements
@@ -466,13 +501,18 @@ namespace bagis_pro
 
         public static async Task RemoveLayersfromMapFrame()
         {
-            string[] arrLayerNames = new string[6];
+            string[] arrLayerNames = new string[11];
             arrLayerNames[0] = Constants.MAPS_AOI_BOUNDARY;
             arrLayerNames[1] = Constants.MAPS_STREAMS;
             arrLayerNames[2] = Constants.MAPS_SNOTEL;
             arrLayerNames[3] = Constants.MAPS_SNOW_COURSE;
             arrLayerNames[4] = Constants.MAPS_HILLSHADE;
             arrLayerNames[5] = Constants.MAPS_ELEV_ZONE;
+            arrLayerNames[6] = Constants.MAPS_SNOW_COURSE_REPRESENTED;
+            arrLayerNames[7] = Constants.MAPS_SNOTEL_REPRESENTED;
+            arrLayerNames[8] = Constants.MAPS_SLOPE_ZONE;
+            arrLayerNames[9] = Constants.MAPS_ASPECT_ZONE;
+            arrLayerNames[10] = Constants.MAPS_ALL_SITES_REPRESENTED;
             var map = MapView.Active.Map;
             await QueuedTask.Run(() =>
             {
@@ -958,6 +998,41 @@ namespace bagis_pro
                     }
                     mapDefinition = new BA_Objects.MapDefinition("SNOTEL SITES REPRESENTATION",
                         " ", Constants.FILE_EXPORT_MAP_SNOTEL_PDF);
+                    mapDefinition.LayerList = lstLayers;
+                    mapDefinition.LegendLayerList = lstLegendLayers;
+                    break;
+                case BagisMapType.SCOS:
+                    lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
+                                                   Constants.MAPS_HILLSHADE, Constants.MAPS_ELEV_ZONE,
+                                                   Constants.MAPS_SNOW_COURSE_REPRESENTED};
+                    lstLegendLayers = new List<string> { Constants.MAPS_SNOW_COURSE_REPRESENTED };
+                    if (Module1.Current.AoiHasSnowCourse == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOW_COURSE);
+                        lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE);
+                    }
+                    mapDefinition = new BA_Objects.MapDefinition("SNOW COURSE SITES REPRESENTATION",
+                        " ", Constants.FILE_EXPORT_MAP_SCOS_PDF);
+                    mapDefinition.LayerList = lstLayers;
+                    mapDefinition.LegendLayerList = lstLegendLayers;
+                    break;
+                case BagisMapType.SITES_ALL:
+                    lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
+                                                   Constants.MAPS_HILLSHADE, Constants.MAPS_ELEV_ZONE,
+                                                   Constants.MAPS_ALL_SITES_REPRESENTED};
+                    lstLegendLayers = new List<string> { Constants.MAPS_ALL_SITES_REPRESENTED };
+                    if (Module1.Current.AoiHasSnowCourse == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOW_COURSE);
+                        lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE);
+                    }
+                    if (Module1.Current.AoiHasSnotel == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOTEL);
+                        lstLegendLayers.Add(Constants.MAPS_SNOTEL);
+                    }
+                    mapDefinition = new BA_Objects.MapDefinition("SNOTEL AND SNOW COURSE SITES REPRESENTATION",
+                        " ", Constants.FILE_EXPORT_MAP_SNOTEL_AND_SCOS_PDF);
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;

@@ -54,6 +54,8 @@
           <button refID="bagis_pro_Buttons_MapButtonPalette_BtnSlope" />
           <button refID="bagis_pro_Buttons_MapButtonPalette_BtnAspect" />
           <button refID="bagis_pro_Buttons_MapButtonPalette_BtnSnotel" />
+          <button refID="bagis_pro_Buttons_MapButtonPalette_BtnSnowCourse" />
+          <button refID="bagis_pro_Buttons_MapButtonPalette_BtnSitesAll" />
         </buttonPalette>
       </palettes>
       <controls>
@@ -116,10 +118,21 @@
             ToolTip<disabledText /></tooltip>
         </button>
         <button id="bagis_pro_Buttons_MapButtonPalette_BtnSnotel" caption="Snotel Sites Distribution" className="bagis_pro.Buttons.MapButtonPalette_BtnSnotel" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSnotel_Condition">
-          <tooltip heading="Palette Button 3">
+          <tooltip heading="Palette Button 4">
             ToolTip<disabledText />
           </tooltip>
         </button>
+        <button id="bagis_pro_Buttons_MapButtonPalette_BtnSnowCourse" caption="Snow Course Sites Distribution" className="bagis_pro.Buttons.MapButtonPalette_BtnSnowCourse" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSnowCourse_Condition">
+          <tooltip heading="Palette Button 4">
+            ToolTip<disabledText />
+          </tooltip>
+        </button>
+        <button id="bagis_pro_Buttons_MapButtonPalette_BtnSitesAll" caption="Snotel and Snow Course Sites Distribution" className="bagis_pro.Buttons.MapButtonPalette_BtnSitesAll" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSitesAll_Condition">
+          <tooltip heading="Palette Button 5">
+            ToolTip<disabledText />
+          </tooltip>
+        </button>
+
       </controls>
       <menus>
         <menu id="bagis_pro_Menus_MnuBasinAnalyst" caption="Basin Analysis">
@@ -168,6 +181,12 @@
     </insertCondition>
     <insertCondition id="MapButtonPalette_BtnSnotel_Condition" caption="Map Disabled">
       <state id="MapButtonPalette_BtnSnotel_State" />
+    </insertCondition>
+    <insertCondition id="MapButtonPalette_BtnSnowCourse_Condition" caption="Map Disabled">
+      <state id="MapButtonPalette_BtnSnowCourse_State" />
+    </insertCondition>
+    <insertCondition id="MapButtonPalette_BtnSitesAll_Condition" caption="Map Disabled">
+      <state id="MapButtonPalette_BtnSitesAll_State" />
     </insertCondition>
   </conditions>
 </ArcGIS>

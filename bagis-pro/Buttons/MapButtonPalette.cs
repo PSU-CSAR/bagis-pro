@@ -119,4 +119,38 @@ namespace bagis_pro.Buttons
         }
     }
 
+    internal class MapButtonPalette_BtnSnowCourse : Button
+    {
+        protected override async void OnClick()
+        {
+            try
+            {
+                Module1.Current.MapFinishedLoading = false;
+                await ToggleMapDisplay.Toggle(BagisMapType.SCOS);
+                Module1.Current.MapFinishedLoading = true;
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show("Unable to display snow course map!!" + e.Message, "BAGIS-PRO");
+            }
+        }
+    }
+
+    internal class MapButtonPalette_BtnSitesAll : Button
+    {
+        protected override async void OnClick()
+        {
+            try
+            {
+                Module1.Current.MapFinishedLoading = false;
+                await ToggleMapDisplay.Toggle(BagisMapType.SITES_ALL);
+                Module1.Current.MapFinishedLoading = true;
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show("Unable to display all sites map!!" + e.Message, "BAGIS-PRO");
+            }
+        }
+    }
+
 }

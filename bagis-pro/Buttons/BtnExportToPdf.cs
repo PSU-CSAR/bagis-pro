@@ -37,6 +37,7 @@ namespace bagis_pro.Buttons
 
                 IList<string> lstMapButtons = new List<string>{ "bagis_pro_Buttons_MapButtonPalette_BtnElevation",
                                                                 "bagis_pro_Buttons_MapButtonPalette_BtnSnotel",
+                                                                "bagis_pro_Buttons_MapButtonPalette_BtnSnowCourse",
                                                                 "bagis_pro_Buttons_MapButtonPalette_BtnAspect",
                                                                 "bagis_pro_Buttons_MapButtonPalette_BtnSlope"};
                 foreach(string strMapButton in lstMapButtons)
@@ -66,6 +67,7 @@ namespace bagis_pro.Buttons
                 IList<string> lstFilesToAppend = new List<string>{ Constants.FILE_TITLE_PAGE_PDF,
                                                                    Constants.FILE_EXPORT_MAP_ELEV_PDF,
                                                                    Constants.FILE_EXPORT_MAP_SNOTEL_PDF,
+                                                                   Constants.FILE_EXPORT_MAP_SCOS_PDF,
                                                                    Constants.FILE_EXPORT_MAP_ASPECT_PDF,
                                                                    Constants.FILE_EXPORT_MAP_SLOPE_PDF};
 

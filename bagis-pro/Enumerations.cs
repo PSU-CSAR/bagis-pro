@@ -28,6 +28,8 @@ namespace bagis_pro
         ELEVATION,
         ASPECT,
         SLOPE,
-        SNOTEL
+        SNOTEL,
+        SCOS,
+        SITES_ALL
     }
 }
