@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -42,14 +43,19 @@ namespace bagis_pro.Buttons
                 {
                     ICommand cmd = FrameworkApplication.GetPlugInWrapper(strMapButton) as ICommand;
 
-                    if ((cmd != null) && cmd.CanExecute(null))
+                    if ((cmd != null))
                     {
+                        do
+                        {
+                            await Task.Delay(TimeSpan.FromSeconds(0.5));  // build in delay until the command can execute
+                        }
+                        while (!cmd.CanExecute(null));
                         cmd.Execute(null);
                     }
 
                     do
                     {
-                        await Task.Delay(TimeSpan.FromSeconds(1));  // build in delay so maps can load
+                        await Task.Delay(TimeSpan.FromSeconds(0.5));  // build in delay so maps can load
                     }
                     while (Module1.Current.MapFinishedLoading == false);
 

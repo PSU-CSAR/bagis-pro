@@ -3,7 +3,6 @@ using ArcGIS.Desktop.Framework.Dialogs;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
 using ArcGIS.Desktop.Layouts;
 using ArcGIS.Desktop.Mapping;
-using PdfSharp.Pdf;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -12,7 +11,6 @@ using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.XPath;
 using System.Xml.Xsl;
-using TheArtOfDev.HtmlRenderer.PdfSharp;
 
 namespace bagis_pro
 {
@@ -172,7 +170,7 @@ namespace bagis_pro
                 // Convert the title page to PDF
                 if (System.IO.File.Exists(htmlFilePath))
                 {
-                    PdfDocument titlePageDoc = PdfGenerator.GeneratePdf(System.IO.File.ReadAllText(htmlFilePath),
+                    PdfSharp.Pdf.PdfDocument titlePageDoc = TheArtOfDev.HtmlRenderer.PdfSharp.PdfGenerator.GeneratePdf(System.IO.File.ReadAllText(htmlFilePath),
                         PdfSharp.PageSize.Letter);
                     titlePageDoc.Save(publishFolder + "\\" + Constants.FILE_TITLE_PAGE_PDF);
                 }
