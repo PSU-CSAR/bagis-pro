@@ -57,7 +57,9 @@ namespace bagis_pro.Buttons
         {
             try
             {
+                Module1.Current.MapFinishedLoading = false;
                 await ToggleMapDisplay.Toggle(BagisMapType.ELEVATION);
+                Module1.Current.MapFinishedLoading = true;
             }
             catch (Exception e)
             {
@@ -72,7 +74,9 @@ namespace bagis_pro.Buttons
         {
             try
             {
+                Module1.Current.MapFinishedLoading = false;
                 await ToggleMapDisplay.Toggle(BagisMapType.SLOPE);
+                Module1.Current.MapFinishedLoading = true;
             }
             catch (Exception e)
             {
@@ -87,7 +91,9 @@ namespace bagis_pro.Buttons
         {
             try
             {
+                Module1.Current.MapFinishedLoading = false;
                 await ToggleMapDisplay.Toggle(BagisMapType.ASPECT);
+                Module1.Current.MapFinishedLoading = true;
             }
             catch (Exception e)
             {
@@ -102,7 +108,9 @@ namespace bagis_pro.Buttons
         {
             try
             {
+                Module1.Current.MapFinishedLoading = false;
                 await ToggleMapDisplay.Toggle(BagisMapType.SNOTEL);
+                Module1.Current.MapFinishedLoading = true;
             }
             catch (Exception e)
             {

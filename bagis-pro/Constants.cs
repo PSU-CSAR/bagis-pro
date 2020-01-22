@@ -50,6 +50,7 @@ namespace bagis_pro
         public const string FILE_EXPORT_MAP_ASPECT_PDF = "map_aspect.pdf";
         public const string FILE_EXPORT_MAP_SLOPE_PDF = "map_slope.pdf";
         public const string FILE_EXPORT_MAP_ELEVATION_SNOTEL_PDF = "map_elevation_snotel.pdf";
+        public const string FILE_EXPORT_MAPS_ALL_PDF = "all_maps_charts.pdf";
         public const string FILE_TITLE_PAGE_XSL = "title_page.xsl";
         public const string FILE_TITLE_PAGE_XML = "title_page.xml";
         public const string FILE_TITLE_PAGE_HTML = "title_page.html";
