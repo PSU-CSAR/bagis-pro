@@ -29,6 +29,7 @@
           <toolbar refID="BAGIS_V4_Toolbar1" /> -->
           <tool refID="bagis_pro_Basin_SetDEMExtenttTool" size="large" />
           <button refID="bagis_pro_Maps_Tables_Button1" size="large" />
+          <button refID="bagis_pro_Buttons_BtnGenerateLayers" size="large" />
         </group>
         <group id="bagis_pro_Groups_Basin" appearsOnAddInTab="false">
           <menu refID="bagis_pro_Menus_MnuBasin" size="middle" />
@@ -37,8 +38,9 @@
           <!--<menu refID="bagis_pro_Menus_MnuMaps" size="middle" /> -->
           <button refID="bagis_pro_Menus_MnuMaps_BtnSelectAoi" size="middle" />
           <button refID="bagis_pro_Menus_MnuMaps_BtnMapLoad" size="middle" />
+          <button refID="bagis_pro_Buttons_BtnGenerateLayers" size="middle" />
           <button refID="bagis_pro_Buttons_BtnExportToPdf" size="middle" />
-          <buttonPalette refID="bagis_pro_Buttons_MapButtonPalette" size="middle"/>
+          <buttonPalette refID="bagis_pro_Buttons_MapButtonPalette" size="middle" />
         </group>
       </groups>
       <toolbars>
@@ -49,8 +51,8 @@
         </toolbar> -->
       </toolbars>
       <palettes>
-        <buttonPalette id="bagis_pro_Buttons_MapButtonPalette" caption="Toggle Maps" keytip="Maps" dropDown="true" menuStyle="true"  >
-          <button refID="bagis_pro_Buttons_MapButtonPalette_BtnElevation"/>
+        <buttonPalette id="bagis_pro_Buttons_MapButtonPalette" caption="Toggle Maps" keytip="Maps" dropDown="true" menuStyle="true">
+          <button refID="bagis_pro_Buttons_MapButtonPalette_BtnElevation" />
           <button refID="bagis_pro_Buttons_MapButtonPalette_BtnSlope" />
           <button refID="bagis_pro_Buttons_MapButtonPalette_BtnAspect" />
           <button refID="bagis_pro_Buttons_MapButtonPalette_BtnSnotel" />
@@ -119,20 +121,19 @@
         </button>
         <button id="bagis_pro_Buttons_MapButtonPalette_BtnSnotel" caption="Snotel Sites Distribution" className="bagis_pro.Buttons.MapButtonPalette_BtnSnotel" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSnotel_Condition">
           <tooltip heading="Palette Button 4">
-            ToolTip<disabledText />
-          </tooltip>
+            ToolTip<disabledText /></tooltip>
         </button>
         <button id="bagis_pro_Buttons_MapButtonPalette_BtnSnowCourse" caption="Snow Course Sites Distribution" className="bagis_pro.Buttons.MapButtonPalette_BtnSnowCourse" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSnowCourse_Condition">
           <tooltip heading="Palette Button 4">
-            ToolTip<disabledText />
-          </tooltip>
+            ToolTip<disabledText /></tooltip>
         </button>
-        <button id="bagis_pro_Buttons_MapButtonPalette_BtnSitesAll" caption="Snotel and Snow Course Sites Distribution" className="bagis_pro.Buttons.MapButtonPalette_BtnSitesAll" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSitesAll_Condition">
+        <button id="bagis_pro_Buttons_MapButtonPalette_BtnSitesAll" caption="All Sites Distribution" className="bagis_pro.Buttons.MapButtonPalette_BtnSitesAll" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSitesAll_Condition">
           <tooltip heading="Palette Button 5">
-            ToolTip<disabledText />
-          </tooltip>
+            ToolTip<disabledText /></tooltip>
         </button>
-
+        <button id="bagis_pro_Buttons_BtnGenerateLayers" caption="Generate Analysis Layers" className="bagis_pro.Buttons.BtnGenerateLayers" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/CalculateGeometry16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/CalculateGeometry32.png">
+          <tooltip heading="Tooltip Heading"><disabledText /></tooltip>
+        </button>
       </controls>
       <menus>
         <menu id="bagis_pro_Menus_MnuBasinAnalyst" caption="Basin Analysis">

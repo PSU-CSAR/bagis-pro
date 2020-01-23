@@ -140,6 +140,7 @@
     <Compile Include="BA_Objects\ExportTitlePage.cs" />
     <Compile Include="BA_Objects\MapDefinition.cs" />
     <Compile Include="Buttons\BtnExportToPdf.cs" />
+    <Compile Include="Buttons\BtnGenerateLayers.cs" />
     <Compile Include="Buttons\MapButtonPalette.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="GeneralTools.cs" />
