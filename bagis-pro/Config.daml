@@ -29,7 +29,6 @@
           <toolbar refID="BAGIS_V4_Toolbar1" /> -->
           <tool refID="bagis_pro_Basin_SetDEMExtenttTool" size="large" />
           <button refID="bagis_pro_Maps_Tables_Button1" size="large" />
-          <button refID="bagis_pro_Buttons_BtnGenerateLayers" size="large" />
         </group>
         <group id="bagis_pro_Groups_Basin" appearsOnAddInTab="false">
           <menu refID="bagis_pro_Menus_MnuBasin" size="middle" />

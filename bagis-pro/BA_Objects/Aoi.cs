@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ArcGIS.Core.Geometry;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -38,6 +39,11 @@ namespace bagis_pro.BA_Objects
             {
                 m_strFilePath = value;
             }
+        }
+
+        public LinearUnit LinearUnits
+        {
+            get { return LinearUnit.Meters; }
         }
     }
 }
