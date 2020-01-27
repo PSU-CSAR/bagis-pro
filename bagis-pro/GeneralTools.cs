@@ -92,7 +92,8 @@ namespace bagis_pro
                 bool isDouble = Double.TryParse(strAreaSqKm, out areaSqKm);
 
                 //Query min/max from dem
-                IList<double> lstResult = await GeoprocessingTools.GetDemStatsAsync(Module1.Current.Aoi.FilePath, 0.005);
+                string sMask = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_VECTOR;
+                IList<double> lstResult = await GeoprocessingTools.GetDemStatsAsync(Module1.Current.Aoi.FilePath, sMask, 0.005);
                 double elevMinMeters = -1;
                 double elevMaxMeters = -1;
                 if (lstResult.Count == 2)   // We expect the min and max values in that order

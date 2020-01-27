@@ -63,6 +63,12 @@ namespace bagis_pro
         public const string FOLDER_MAP_PACKAGE = "maps_publish";
 
         public const string FIELD_AOI_AREA = "AOISHPAREA";
+        public const string FIELD_SITE_ELEV = "BA_SELEV";
+        public const string FIELD_SITE_NAME = "BA_SNAME";
+        public const string FIELD_OBJECT_ID = "OBJECTID";
+
+        public const int VALUE_NO_DATA_9999 = -9999;
+        public const string VALUE_NO_DATA = "NoData";
     }
 
 }

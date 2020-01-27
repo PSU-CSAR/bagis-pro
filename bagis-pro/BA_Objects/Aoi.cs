@@ -11,6 +11,8 @@ namespace bagis_pro.BA_Objects
     {
         string m_strName;
         string m_strFilePath;
+        double m_dblMinElev = Constants.VALUE_NO_DATA_9999;
+        double m_dblMaxElev = Constants.VALUE_NO_DATA_9999;
 
         public Aoi()
         {
@@ -44,6 +46,24 @@ namespace bagis_pro.BA_Objects
         public LinearUnit LinearUnits
         {
             get { return LinearUnit.Meters; }
+        }
+
+        public double MinElevMeters
+        {
+            get { return m_dblMinElev; }
+            set
+            {
+                m_dblMinElev = value;
+            }
+        }
+
+        public double MaxElevMeters
+        {
+            get { return m_dblMaxElev; }
+            set
+            {
+                m_dblMaxElev = value;
+            }
         }
     }
 }

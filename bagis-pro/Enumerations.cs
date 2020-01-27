@@ -32,4 +32,13 @@ namespace bagis_pro
         SCOS,
         SITES_ALL
     }
+
+    public enum SiteType
+    {
+        MISSING,
+        SNOTEL,
+        SNOW_COURSE,
+        PSEUDO,
+        SITES_ALL
+    }
 }
