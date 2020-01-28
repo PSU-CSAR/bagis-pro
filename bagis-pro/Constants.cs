@@ -41,8 +41,10 @@ namespace bagis_pro
         public const string FILE_ELEV_ZONE = "elevzone";
         public const string FILE_SLOPE_ZONE = "slpzone";
         public const string FILE_ASPECT_ZONE = "aspzone";
-        public const string FILE_SNOTEL_REPRESENTED = "npactual";
-        public const string FILE_SCOS_REPRESENTED = "nppseduo";
+        //public const string FILE_SNOTEL_REPRESENTED = "npactual";
+        public const string FILE_SNOTEL_REPRESENTED = "snotel_rep";
+        //public const string FILE_SCOS_REPRESENTED = "nppseduo";
+        public const string FILE_SCOS_REPRESENTED = "scos_rep";
         public const string FILE_SITES_REPRESENTED = "npdiff";
         public const string FILE_SNOTEL_POURPOINT = "pourpoint";
         public const string FILE_EXPORT_MAP_ELEV_PDF = "map_elevation.pdf";
