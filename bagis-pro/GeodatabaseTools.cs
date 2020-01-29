@@ -265,14 +265,23 @@ namespace bagis_pro
         public static async Task<int> CountFeaturesAsync(Uri gdbUri, string featureClassName)
         {
             int retVal = -1;
-            await QueuedTask.Run(() => {
-                using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(gdbUri)))
-                using (Table table = geodatabase.OpenDataset<Table>(featureClassName))
-                {
-                    retVal = table.GetCount();
-                }
+            try
+            {
+                await QueuedTask.Run(() => {
+                    using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(gdbUri)))
+                    using (Table table = geodatabase.OpenDataset<Table>(featureClassName))
+                    {
+                        retVal = table.GetCount();
+                    }
 
-            });
+                });
+            }
+            catch (Exception e)
+            {
+                Debug.Print("CountFeaturesAsync error opening table!!");
+                Debug.Print("Exception: " + e.Message);
+
+            }
             return retVal;
         }
     }

@@ -21,6 +21,22 @@ namespace bagis_pro
 
             try
             {
+                // Check to make sure we have snotel and/or snow course sites
+                bool bHasSnotel = false;
+                bool bHasSnowCourse = false;
+                Uri sitesGdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, false));
+                int intSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_SNOTEL);
+                if (intSites > 0)
+                    bHasSnotel = true;
+                intSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_SNOW_COURSE);
+                if (intSites > 0)
+                    bHasSnowCourse = true;
+                if (!bHasSnotel && !bHasSnowCourse)
+                {
+                    MessageBox.Show("No SNOTEL or Snow Course layers found for AOI. Site Layers cannot be generated!!");
+                    return;
+                }
+
                 //1. Get min/max DEM elevation for reclassing raster. We only want to do this once
                 Debug.WriteLine("START: GenerateSiteLayersAsync" );
                 Debug.WriteLine("GetDemStatsAsync");
@@ -39,12 +55,20 @@ namespace bagis_pro
                 }
 
                 // snotel sites
-                IList<BA_Objects.Site> lstSites = await AnalysisTools.AssembleSitesListAsync(Constants.FILE_SNOTEL, SiteType.SNOTEL);
-                BA_ReturnCode success = await AnalysisTools.CalculateRepresentedArea(demElevMinMeters, demElevMaxMeters, lstSites);
+                IList<BA_Objects.Site> lstSites = null;
+                BA_ReturnCode success = BA_ReturnCode.UnknownError;
+                if (bHasSnotel)
+                {
+                    lstSites = await AnalysisTools.AssembleSitesListAsync(Constants.FILE_SNOTEL, SiteType.SNOTEL);
+                    success = await AnalysisTools.CalculateRepresentedArea(demElevMinMeters, demElevMaxMeters, lstSites, Constants.FILE_SNOTEL_REPRESENTED);
+                }
 
                 // snow course sites
-                lstSites = await AnalysisTools.AssembleSitesListAsync(Constants.FILE_SNOW_COURSE, SiteType.SNOW_COURSE);
-                success = await AnalysisTools.CalculateRepresentedArea(demElevMinMeters, demElevMaxMeters, lstSites);
+                if (bHasSnowCourse)
+                {
+                    lstSites = await AnalysisTools.AssembleSitesListAsync(Constants.FILE_SNOW_COURSE, SiteType.SNOW_COURSE);
+                    success = await AnalysisTools.CalculateRepresentedArea(demElevMinMeters, demElevMaxMeters, lstSites, Constants.FILE_SCOS_REPRESENTED);
+                }
             }
             catch (Exception e)
             {
@@ -105,7 +129,8 @@ namespace bagis_pro
         }
 
         public static async Task<BA_ReturnCode> CalculateRepresentedArea(double demElevMinMeters,
-                                                                         double demElevMaxMeters, IList<BA_Objects.Site> lstSites)
+                                                                         double demElevMaxMeters, IList<BA_Objects.Site> lstSites,
+                                                                         string strOutputFile)
         {
             double elevRangeFeet = 500;
             IGPResult gpResult = null;
@@ -221,7 +246,7 @@ namespace bagis_pro
 
                 if (!gpResult.IsFailed)
                 {
-                    string outputClipPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) + Constants.FILE_SNOTEL_REPRESENTED;
+                    string outputClipPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) + strOutputFile;
                     string sMask = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_VECTOR;
                     parameters = Geoprocessing.MakeValueArray(outputDissolvePath, sMask, outputClipPath);
                     gpResult = await Geoprocessing.ExecuteToolAsync("Clip_analysis", parameters, environments,
