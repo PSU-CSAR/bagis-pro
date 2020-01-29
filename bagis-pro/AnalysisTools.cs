@@ -17,8 +17,6 @@ namespace bagis_pro
 
         public static async Task GenerateSiteLayersAsync()
         {
-            double m_bufferDistanceMiles = 5.642;
-            double m_elevRangeFeet = 500;
             BA_Objects.Aoi currentAoi = Module1.Current.Aoi;
 
             try
@@ -40,189 +38,214 @@ namespace bagis_pro
                     return;
                 }
 
-                //2. Buffer point from feature class and query site information
-                Uri layersUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, false));
+                // snotel sites
+                IList<BA_Objects.Site> lstSites = await AnalysisTools.AssembleSitesListAsync(Constants.FILE_SNOTEL, SiteType.SNOTEL);
+                BA_ReturnCode success = await AnalysisTools.CalculateRepresentedArea(demElevMinMeters, demElevMaxMeters, lstSites);
 
-                IList<BA_Objects.Site> lstSites = new List<BA_Objects.Site>();
-                // Open geodatabase for snotel sites
-                await QueuedTask.Run(() =>
-                {
-                    using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(layersUri)))
-                    using (FeatureClass fClass = geodatabase.OpenDataset<FeatureClass>(Constants.FILE_SNOTEL))
-                    {
-                        QueryFilter queryFilter = new QueryFilter();
-                        using (RowCursor cursor = fClass.Search(queryFilter, false))
-                        {
-                            while (cursor.MoveNext())
-                            {
-                                Feature nextFeature = (Feature)cursor.Current;
-                                BA_Objects.Site aSite = new BA_Objects.Site();
-                                var pointGeometry = nextFeature.GetShape();
-                                double bufferMeters = LinearUnit.Miles.ConvertTo(m_bufferDistanceMiles, LinearUnit.Meters);
-                                aSite.Buffer = GeometryEngine.Instance.Buffer(pointGeometry, bufferMeters);
-
-                                int idx = nextFeature.FindField(Constants.FIELD_SITE_ELEV);
-                                if (idx > -1)
-                                {
-                                    aSite.ElevMeters = Convert.ToDouble(nextFeature[idx]);
-                                }
-
-                                idx = nextFeature.FindField(Constants.FIELD_SITE_NAME);
-                                if (idx > -1)
-                                {
-                                    aSite.Name = Convert.ToString(nextFeature[idx]);
-                                }
-                                idx = nextFeature.FindField(Constants.FIELD_OBJECT_ID);
-                                if (idx > -1)
-                                {
-                                    aSite.ObjectId = Convert.ToInt32(nextFeature[idx]);
-                                }
-
-                                aSite.SiteType = SiteType.SNOTEL;
-                                lstSites.Add(aSite);
-                                Debug.WriteLine("Added site " + aSite.Name + " to list");
-                            }
-                        }
-                    }
-
-                });
-
-                IGPResult gpResult = null;
-                StringBuilder sb = new StringBuilder();
-                foreach (BA_Objects.Site aSite in lstSites)
-                {
-                    //3. Create temporary feature class to hold buffered point
-                    string tmpBuffer = "tmpBuffer";
-                    var parameters = Geoprocessing.MakeValueArray(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false),
-                        tmpBuffer, "POLYGON", "", "DISABLED", "DISABLED",
-                        GeodatabaseTools.GetGeodatabasePath(currentAoi.FilePath, GeodatabaseNames.Layers, true) + Constants.FILE_SNOTEL);
-                    var environments = Geoprocessing.MakeEnvironmentArray(workspace: currentAoi.FilePath);
-                    gpResult = await Geoprocessing.ExecuteToolAsync("CreateFeatureclass_management", parameters, environments,
-                        CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                    Debug.WriteLine("Create temporary feature class for site " + aSite.Name);
-
-                    Uri gdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false));
-                    await QueuedTask.Run(() =>
-                    {
-                        using (Geodatabase buffGeodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(gdbUri)))
-                        {
-                            //4. store buffered point in feature class
-                            var featureClass = buffGeodatabase.OpenDataset<FeatureClass>(tmpBuffer);
-                            var featureBuffer = featureClass.CreateRowBuffer();
-                            var newFeature = featureClass.CreateRow(featureBuffer) as Feature;
-                            newFeature.SetShape(aSite.Buffer);
-                            newFeature.Store();
-                        }
-                    });
-                    string strBufferedFeatures = GeodatabaseTools.GetGeodatabasePath(currentAoi.FilePath, GeodatabaseNames.Analysis, true) + "tmpBuffer";
-
-                    // 5.Build list of reclass items
-                    double minElevMeters = aSite.ElevMeters - LinearUnit.Feet.ConvertToMeters(m_elevRangeFeet);
-                    IList<string> reclassList = new List<string>();
-                    // non-represented below min elev
-                    if (minElevMeters > demElevMinMeters)
-                    {
-                        string belowString = demElevMinMeters + " " + minElevMeters + " NoData; ";
-                        reclassList.Add(belowString);
-                    }
-                    else
-                    {
-                        minElevMeters = demElevMinMeters;
-                    }
-                    bool hasNonRepresentedAbove = true;
-                    double maxElevMeters = aSite.ElevMeters + LinearUnit.Feet.ConvertToMeters(m_elevRangeFeet);
-                    if (maxElevMeters > demElevMaxMeters)
-                    {
-                        maxElevMeters = demElevMaxMeters;
-                        hasNonRepresentedAbove = false;
-                    }
-                    string representedString = minElevMeters + " " + maxElevMeters + " 1;";
-                    reclassList.Add(representedString);
-                    if (hasNonRepresentedAbove == true)
-                    {
-                        reclassList.Add(maxElevMeters + " " + demElevMaxMeters + " NoData; ");
-                    }
-                    string reclassString = "";
-                    foreach (string strItem in reclassList)
-                    {
-                        reclassString = reclassString + strItem;
-                    }
-
-                    string inputRasterPath = GeodatabaseTools.GetGeodatabasePath(currentAoi.FilePath, GeodatabaseNames.Surfaces, true) + Constants.FILE_DEM_FILLED;
-                    string maskPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) + tmpBuffer;
-                    string tmpOutputFile = "reclElev";
-                    string outputRasterPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) + tmpOutputFile;
-
-                    //6. Execute the reclass with the mask set to the buffered point
-                    parameters = Geoprocessing.MakeValueArray(inputRasterPath, "VALUE", reclassString, outputRasterPath);
-                    environments = Geoprocessing.MakeEnvironmentArray(mask: maskPath, workspace: currentAoi.FilePath);
-                    gpResult = await Geoprocessing.ExecuteToolAsync("Reclassify_sa", parameters, environments,
-                       CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                    Debug.WriteLine("Execute reclass with mask set to buffered point");
-
-                    //7. Save the reclass as a poly so we can merge with other buffered site polys
-                    string siteRepFileName = AnalysisTools.GetSiteScenarioFileName(aSite);
-                    string siteRepresentedPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) + siteRepFileName;
-                    parameters = Geoprocessing.MakeValueArray(outputRasterPath, siteRepresentedPath);
-                    gpResult = await Geoprocessing.ExecuteToolAsync("RasterToPolygon_conversion", parameters, environments,
-                        CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                    if (!gpResult.IsFailed)
-                    {
-                        sb.Append(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) + siteRepFileName);
-                        sb.Append(";");
-                        Debug.WriteLine("Finished processing site " + aSite.Name);
-                    }
-                }
-
-                if (sb.Length > 0)
-                {
-                    string inFeatures = sb.ToString().TrimEnd(';');
-                    string tmpUnion = "tmpUnion";
-                    string tmpDissolve = "tmpDissolve";
-                    string outputUnionPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) + tmpUnion;
-                    var parameters = Geoprocessing.MakeValueArray(inFeatures, outputUnionPath);
-                    var environments = Geoprocessing.MakeEnvironmentArray(workspace: currentAoi.FilePath);
-                    gpResult = await Geoprocessing.ExecuteToolAsync("Union_analysis", parameters, environments,
-                        CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-
-                    string outputDissolvePath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) + tmpDissolve;
-                    if (! gpResult.IsFailed)
-                    {
-                        parameters = Geoprocessing.MakeValueArray(outputUnionPath, outputDissolvePath);
-                        gpResult = await Geoprocessing.ExecuteToolAsync("Dissolve_management", parameters, environments,
-                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                        Debug.WriteLine("Finished merging sites");
-                    }
-
-                    if (!gpResult.IsFailed)
-                    {
-                        string outputClipPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) + Constants.FILE_SNOTEL_REPRESENTED;
-                        string sMask = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_VECTOR;
-                        parameters = Geoprocessing.MakeValueArray(outputDissolvePath, sMask, outputClipPath);
-                        gpResult = await Geoprocessing.ExecuteToolAsync("Clip_analysis", parameters, environments,
-                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                        Debug.WriteLine("Finished clipping sites layer");
-                    }
-
-                }
-
-
-                if (gpResult != null)
-                {
-                    Geoprocessing.ShowMessageBox(gpResult.Messages, "GP Messages",
-                        gpResult.IsFailed ? GPMessageBoxStyle.Error : GPMessageBoxStyle.Default);
-                }
-
-
+                // snow course sites
+                lstSites = await AnalysisTools.AssembleSitesListAsync(Constants.FILE_SNOW_COURSE, SiteType.SNOW_COURSE);
+                success = await AnalysisTools.CalculateRepresentedArea(demElevMinMeters, demElevMaxMeters, lstSites);
             }
             catch (Exception e)
             {
-                MessageBox.Show("GenerateSiteLayers Exception: " + e.Message, "BAGIS PRO");
+                MessageBox.Show("GenerateSiteLayersAsync Exception: " + e.Message, "BAGIS PRO");
             }
 
         }
 
-        public static string GetSiteScenarioFileName (BA_Objects.Site site)
+        public static async Task<IList<BA_Objects.Site>> AssembleSitesListAsync(string sitesFileName, SiteType sType)
+        {
+            double bufferDistanceMiles = 5.642;
+            //2. Buffer point from feature class and query site information
+            Uri layersUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, false));
+
+            IList<BA_Objects.Site> lstSites = new List<BA_Objects.Site>();
+            // Open geodatabase for snotel sites
+            await QueuedTask.Run(() =>
+            {
+                using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(layersUri)))
+                using (FeatureClass fClass = geodatabase.OpenDataset<FeatureClass>(sitesFileName))
+                {
+                    QueryFilter queryFilter = new QueryFilter();
+                    using (RowCursor cursor = fClass.Search(queryFilter, false))
+                    {
+                        while (cursor.MoveNext())
+                        {
+                            Feature nextFeature = (Feature)cursor.Current;
+                            BA_Objects.Site aSite = new BA_Objects.Site();
+                            var pointGeometry = nextFeature.GetShape();
+                            double bufferMeters = LinearUnit.Miles.ConvertTo(bufferDistanceMiles, LinearUnit.Meters);
+                            aSite.Buffer = GeometryEngine.Instance.Buffer(pointGeometry, bufferMeters);
+
+                            int idx = nextFeature.FindField(Constants.FIELD_SITE_ELEV);
+                            if (idx > -1)
+                            {
+                                aSite.ElevMeters = Convert.ToDouble(nextFeature[idx]);
+                            }
+
+                            idx = nextFeature.FindField(Constants.FIELD_SITE_NAME);
+                            if (idx > -1)
+                            {
+                                aSite.Name = Convert.ToString(nextFeature[idx]);
+                            }
+                            idx = nextFeature.FindField(Constants.FIELD_OBJECT_ID);
+                            if (idx > -1)
+                            {
+                                aSite.ObjectId = Convert.ToInt32(nextFeature[idx]);
+                            }
+
+                            aSite.SiteType = sType;
+                            lstSites.Add(aSite);
+                            Debug.WriteLine("Added site " + aSite.Name + " to list");
+                        }
+                    }
+                }
+            });
+            return lstSites;
+        }
+
+        public static async Task<BA_ReturnCode> CalculateRepresentedArea(double demElevMinMeters,
+                                                                         double demElevMaxMeters, IList<BA_Objects.Site> lstSites)
+        {
+            double elevRangeFeet = 500;
+            IGPResult gpResult = null;
+            StringBuilder sb = new StringBuilder();
+            foreach (BA_Objects.Site aSite in lstSites)
+            {
+                //3. Create temporary feature class to hold buffered point
+                string tmpBuffer = "tmpBuffer";
+                var parameters = Geoprocessing.MakeValueArray(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false),
+                    tmpBuffer, "POLYGON", "", "DISABLED", "DISABLED",
+                    GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, true) + Constants.FILE_SNOTEL);
+                var environments = Geoprocessing.MakeEnvironmentArray(workspace: Module1.Current.Aoi.FilePath);
+                gpResult = await Geoprocessing.ExecuteToolAsync("CreateFeatureclass_management", parameters, environments,
+                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                Debug.WriteLine("Create temporary feature class for site " + aSite.Name);
+
+                Uri gdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false));
+                await QueuedTask.Run(() =>
+                {
+                    using (Geodatabase buffGeodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(gdbUri)))
+                    {
+                        //4. store buffered point in feature class
+                        var featureClass = buffGeodatabase.OpenDataset<FeatureClass>(tmpBuffer);
+                        var featureBuffer = featureClass.CreateRowBuffer();
+                        var newFeature = featureClass.CreateRow(featureBuffer) as Feature;
+                        newFeature.SetShape(aSite.Buffer);
+                        newFeature.Store();
+                    }
+                });
+                string strBufferedFeatures = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) + "tmpBuffer";
+
+                // 5.Build list of reclass items
+                double minElevMeters = aSite.ElevMeters - LinearUnit.Feet.ConvertToMeters(elevRangeFeet);
+                IList<string> reclassList = new List<string>();
+                // non-represented below min elev
+                if (minElevMeters > demElevMinMeters)
+                {
+                    string belowString = demElevMinMeters + " " + minElevMeters + " NoData; ";
+                    reclassList.Add(belowString);
+                }
+                else
+                {
+                    minElevMeters = demElevMinMeters;
+                }
+                bool hasNonRepresentedAbove = true;
+                double maxElevMeters = aSite.ElevMeters + LinearUnit.Feet.ConvertToMeters(elevRangeFeet);
+                if (maxElevMeters > demElevMaxMeters)
+                {
+                    maxElevMeters = demElevMaxMeters;
+                    hasNonRepresentedAbove = false;
+                }
+                string representedString = minElevMeters + " " + maxElevMeters + " 1;";
+                reclassList.Add(representedString);
+                if (hasNonRepresentedAbove == true)
+                {
+                    reclassList.Add(maxElevMeters + " " + demElevMaxMeters + " NoData; ");
+                }
+                string reclassString = "";
+                foreach (string strItem in reclassList)
+                {
+                    reclassString = reclassString + strItem;
+                }
+
+                string inputRasterPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Surfaces, true) + Constants.FILE_DEM_FILLED;
+                string maskPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) + tmpBuffer;
+                string tmpOutputFile = "reclElev";
+                string outputRasterPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) + tmpOutputFile;
+
+                //6. Execute the reclass with the mask set to the buffered point
+                parameters = Geoprocessing.MakeValueArray(inputRasterPath, "VALUE", reclassString, outputRasterPath);
+                environments = Geoprocessing.MakeEnvironmentArray(mask: maskPath, workspace: Module1.Current.Aoi.FilePath);
+                gpResult = await Geoprocessing.ExecuteToolAsync("Reclassify_sa", parameters, environments,
+                   CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                Debug.WriteLine("Execute reclass with mask set to buffered point");
+
+                //7. Save the reclass as a poly so we can merge with other buffered site polys
+                string siteRepFileName = AnalysisTools.GetSiteScenarioFileName(aSite);
+                string siteRepresentedPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) + siteRepFileName;
+                parameters = Geoprocessing.MakeValueArray(outputRasterPath, siteRepresentedPath);
+                gpResult = await Geoprocessing.ExecuteToolAsync("RasterToPolygon_conversion", parameters, environments,
+                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                if (!gpResult.IsFailed)
+                {
+                    sb.Append(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) + siteRepFileName);
+                    sb.Append(";");
+                    Debug.WriteLine("Finished processing site " + aSite.Name);
+                }
+            }
+
+            if (sb.Length > 0)
+            {
+                string inFeatures = sb.ToString().TrimEnd(';');
+                string tmpUnion = "tmpUnion";
+                string tmpDissolve = "tmpDissolve";
+                string outputUnionPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) + tmpUnion;
+                var parameters = Geoprocessing.MakeValueArray(inFeatures, outputUnionPath);
+                var environments = Geoprocessing.MakeEnvironmentArray(workspace: Module1.Current.Aoi.FilePath);
+                gpResult = await Geoprocessing.ExecuteToolAsync("Union_analysis", parameters, environments,
+                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+
+                string outputDissolvePath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) + tmpDissolve;
+                if (!gpResult.IsFailed)
+                {
+                    parameters = Geoprocessing.MakeValueArray(outputUnionPath, outputDissolvePath);
+                    gpResult = await Geoprocessing.ExecuteToolAsync("Dissolve_management", parameters, environments,
+                        CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                    Debug.WriteLine("Finished merging sites");
+                }
+                else
+                {
+                    return BA_ReturnCode.UnknownError;
+                }
+
+                if (!gpResult.IsFailed)
+                {
+                    string outputClipPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) + Constants.FILE_SNOTEL_REPRESENTED;
+                    string sMask = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_VECTOR;
+                    parameters = Geoprocessing.MakeValueArray(outputDissolvePath, sMask, outputClipPath);
+                    gpResult = await Geoprocessing.ExecuteToolAsync("Clip_analysis", parameters, environments,
+                        CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                    Debug.WriteLine("Finished clipping sites layer");
+                }
+                else
+                {
+                    return BA_ReturnCode.UnknownError;
+                }
+
+            }
+
+
+            if (gpResult != null)
+            {
+                Geoprocessing.ShowMessageBox(gpResult.Messages, "GP Messages",
+                    gpResult.IsFailed ? GPMessageBoxStyle.Error : GPMessageBoxStyle.Default);
+            }
+            return BA_ReturnCode.Success;
+        }
+
+
+            public static string GetSiteScenarioFileName (BA_Objects.Site site)
         {
             // strip special characters out of site name
             StringBuilder sb = new StringBuilder();
