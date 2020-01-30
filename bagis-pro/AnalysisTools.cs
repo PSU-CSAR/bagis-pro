@@ -61,6 +61,8 @@ namespace bagis_pro
                 {
                     lstSites = await AnalysisTools.AssembleSitesListAsync(Constants.FILE_SNOTEL, SiteType.SNOTEL);
                     success = await AnalysisTools.CalculateRepresentedArea(demElevMinMeters, demElevMaxMeters, lstSites, Constants.FILE_SNOTEL_REPRESENTED);
+                    if (success != BA_ReturnCode.Success)
+                        bHasSnotel = false;
                 }
 
                 // snow course sites
@@ -68,7 +70,17 @@ namespace bagis_pro
                 {
                     lstSites = await AnalysisTools.AssembleSitesListAsync(Constants.FILE_SNOW_COURSE, SiteType.SNOW_COURSE);
                     success = await AnalysisTools.CalculateRepresentedArea(demElevMinMeters, demElevMaxMeters, lstSites, Constants.FILE_SCOS_REPRESENTED);
+                    if (success != BA_ReturnCode.Success)
+                        bHasSnowCourse = false;
                 }
+
+                // combine site layers
+                if (bHasSnotel && bHasSnowCourse)
+                {
+                    success = await AnalysisTools.CombineSitesRepresentedArea();
+                }
+
+
             }
             catch (Exception e)
             {
@@ -260,7 +272,6 @@ namespace bagis_pro
 
             }
 
-
             if (gpResult != null)
             {
                 Geoprocessing.ShowMessageBox(gpResult.Messages, "GP Messages",
@@ -269,8 +280,38 @@ namespace bagis_pro
             return BA_ReturnCode.Success;
         }
 
+        public static async Task<BA_ReturnCode> CombineSitesRepresentedArea()
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.Append(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) + Constants.FILE_SCOS_REPRESENTED);
+            sb.Append(";");
+            sb.Append(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) + Constants.FILE_SNOTEL_REPRESENTED);
+            string tmpUnion = "tmpUnion";
+            string outputUnionPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) + tmpUnion;
+            string inFeatures = sb.ToString().TrimEnd(';');
+            var parameters = Geoprocessing.MakeValueArray(inFeatures, outputUnionPath);
+            var environments = Geoprocessing.MakeEnvironmentArray(workspace: Module1.Current.Aoi.FilePath);
+            IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("Union_analysis", parameters, environments,
+                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
 
-            public static string GetSiteScenarioFileName (BA_Objects.Site site)
+            string outputDissolvePath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) + Constants.FILE_SITES_REPRESENTED;
+            if (!gpResult.IsFailed)
+            {
+                parameters = Geoprocessing.MakeValueArray(outputUnionPath, outputDissolvePath);
+                gpResult = await Geoprocessing.ExecuteToolAsync("Dissolve_management", parameters, environments,
+                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                Debug.WriteLine("Finished merging all sites");
+            }
+            else
+            {
+                return BA_ReturnCode.UnknownError;
+            }
+
+            return BA_ReturnCode.Success;
+        }
+
+
+        public static string GetSiteScenarioFileName (BA_Objects.Site site)
         {
             // strip special characters out of site name
             StringBuilder sb = new StringBuilder();
