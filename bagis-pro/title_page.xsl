@@ -106,6 +106,35 @@
                   </td>
                 </tr>
               </table>
+              <table>
+                <tr>
+                  <td class="style3"/>
+                </tr>
+                <tr>
+                  <td class="style3">Network Representation And Location Analysis</td>
+                </tr>
+                  <tr>
+                    <td class="style3">
+                      Site representation definition: within <xsl:value-of select="site_buffer_dist_mi"/> miles planar radius, 
+                      with <xsl:value-of select="site_elev_range_ft"/> feet above and below site elevation.
+                    </td>
+                  </tr>
+                <tr>
+                  <td class="style3">
+                    Represented by SNOTEL site(s): <xsl:value-of select="represented_snotel_percent"/>% (SNOTEL SITE REPRESENTATION)
+                  </td>
+                </tr>
+                <tr>
+                  <td class="style3">
+                    Represented by snow course site(s): <xsl:value-of select="represented_snow_course_percent"/>% (SNOW COURSE SITE REPRESENTATION)
+                  </td>
+                </tr>                
+                <tr>
+                  <td class="style3">
+                    Represented by both SNOTEL and snow course site(s): <xsl:value-of select="represented_all_sites_percent"/>% (SNOTEL AND SNOW COURSE SITES REPRESENTATION)
+                  </td>
+                </tr>
+              </table>
             </div>
                    
             <div class="footer">

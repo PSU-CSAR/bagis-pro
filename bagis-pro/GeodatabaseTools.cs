@@ -136,7 +136,7 @@ namespace bagis_pro
                         using (RowCursor cursor = table.Search(queryFilter, false))
                         {
                             cursor.MoveNext();
-                            Feature onlyFeature = (Feature) cursor.Current;
+                            Feature onlyFeature = (Feature)cursor.Current;
                             if (onlyFeature != null)
                             {
                                 int idx = onlyFeature.FindField(fieldName);
@@ -170,7 +170,7 @@ namespace bagis_pro
 
             RasterDataset rDataset = null;
             await QueuedTask.Run(() =>
-            {                
+            {
                 // Opens a file geodatabase. This will open the geodatabase if the folder exists and contains a valid geodatabase.
                 using (Geodatabase geodatabase =
                     new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(strFolderPath))))
@@ -187,7 +187,7 @@ namespace bagis_pro
                         return;
                     }
                 }
-             });
+            });
             TableStatisticsResult tableStatisticsResult = null;
             if (rDataset != null)
             {
@@ -219,7 +219,8 @@ namespace bagis_pro
         {
             int retVal = 0;
             Geometry polyGeometry = null;
-            await QueuedTask.Run(() => {
+            await QueuedTask.Run(() =>
+            {
                 using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(polyFeatureGdbUri)))
                 using (Table table = geodatabase.OpenDataset<Table>(polyFeatureName))
                 {
@@ -267,7 +268,8 @@ namespace bagis_pro
             int retVal = -1;
             try
             {
-                await QueuedTask.Run(() => {
+                await QueuedTask.Run(() =>
+                {
                     using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(gdbUri)))
                     using (Table table = geodatabase.OpenDataset<Table>(featureClassName))
                     {
@@ -284,5 +286,40 @@ namespace bagis_pro
             }
             return retVal;
         }
+
+            public static async Task<double> CalculateTotalPolygonAreaAsync(Uri gdbUri, string featureClassName)
+            {
+                double dblRetVal = 0;
+            try
+            {
+                await QueuedTask.Run(() =>
+                {
+                    using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(gdbUri)))
+                    using (Table table = geodatabase.OpenDataset<Table>(featureClassName))
+                    {
+                        QueryFilter queryFilter = new QueryFilter();
+                        using (RowCursor aCursor = table.Search(queryFilter, false))
+                        {
+                            while (aCursor.MoveNext())
+                            {
+                                using (Feature feature = (Feature)aCursor.Current)
+                                {
+                                    var geometry = feature.GetShape();
+                                    var area = GeometryEngine.Instance.Area(geometry);
+                                    dblRetVal = dblRetVal + area;
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+            catch (Exception e)
+            {
+                Debug.Print("CalculateTotalPolygonAreaAsync exception: " + e.Message);
+                dblRetVal = -1;
+            }
+
+                return dblRetVal;
+            }
+        }
     }
-}

@@ -23,7 +23,11 @@ namespace bagis_pro.BA_Objects
         public int scos_sites_in_basin;
         public int scos_sites_in_buffer;
         public string scos_sites_buffer_size;
-
+        public double site_elev_range_ft;
+        public double site_buffer_dist_mi;
+        public double represented_snotel_percent;
+        public double represented_snow_course_percent;
+        public double represented_all_sites_percent;
 
         public string DateCreatedText
         {
@@ -69,6 +73,7 @@ namespace bagis_pro.BA_Objects
             set
             { /*Do nothing; Required for serialization */}
         }
+
 
     }
 }

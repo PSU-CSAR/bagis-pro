@@ -113,22 +113,47 @@ namespace bagis_pro
                 int snotelInBasin = await GeodatabaseTools.CountPointsWithinInFeatureAsync(sitesGdbUri, Constants.FILE_SNOTEL,
                     gdbUri, Constants.FILE_AOI_VECTOR);
                 int snotelInBuffer = 0;
-                int totalSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_SNOTEL);
-                if (totalSites > 0)
+                int totalSnotelSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_SNOTEL);
+                if (totalSnotelSites > 0)
                 {
-                    snotelInBuffer = totalSites - snotelInBasin;
+                    snotelInBuffer = totalSnotelSites - snotelInBasin;
                 }
 
                 // Counting Snow Course Sites in AOI boundary
                 int scosInBasin = await GeodatabaseTools.CountPointsWithinInFeatureAsync(sitesGdbUri, Constants.FILE_SNOW_COURSE,
                     gdbUri, Constants.FILE_AOI_VECTOR);
                 int scosInBuffer = 0;
-                totalSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_SNOW_COURSE);
-                if (totalSites > 0)
+                int totalScosSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_SNOW_COURSE);
+                if (totalScosSites > 0)
                 {
-                    scosInBuffer = totalSites - scosInBasin;
+                    scosInBuffer = totalScosSites - scosInBasin;
                 }
 
+                // Calculating percent represented area
+                gdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, false));
+                double pctSnotelRepresented = 0;
+                double pctSnowCourseRepresented = 0;
+                double pctAllSitesRepresented = 0;
+                double aoiArea = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(gdbUri, Constants.FILE_AOI_VECTOR);
+                if (aoiArea > 0)
+                {
+                    gdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false));
+                    if (totalSnotelSites > 0)
+                    {
+                        double repArea = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(gdbUri, Constants.FILE_SNOTEL_REPRESENTED);
+                        pctSnotelRepresented = Math.Round(repArea / aoiArea * 100);
+                    }
+                    if (totalScosSites > 0)
+                    {
+                        double repArea = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(gdbUri, Constants.FILE_SCOS_REPRESENTED);
+                        pctSnowCourseRepresented = Math.Round(repArea / aoiArea * 100);
+                    }
+                    if (totalScosSites > 0 || totalScosSites > 0)
+                    {
+                        double repArea = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(gdbUri, Constants.FILE_SITES_REPRESENTED);
+                        pctAllSitesRepresented = Math.Round(repArea / aoiArea * 100);
+                    }
+                }
 
                 // Serialize the title page object
                 BA_Objects.ExportTitlePage tPage = new BA_Objects.ExportTitlePage
@@ -147,6 +172,11 @@ namespace bagis_pro
                     scos_sites_in_basin = scosInBasin,
                     scos_sites_in_buffer = scosInBuffer,
                     scos_sites_buffer_size = "???",
+                    site_elev_range_ft = Module1.Current.Aoi.SiteElevRangeFeet,
+                    site_buffer_dist_mi = Module1.Current.Aoi.SiteBufferDistMiles,
+                    represented_snotel_percent = pctSnotelRepresented,
+                    represented_snow_course_percent = pctSnowCourseRepresented,
+                    represented_all_sites_percent = pctAllSitesRepresented,
                     date_created = DateTime.Now
                 };
                 string publishFolder = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE;

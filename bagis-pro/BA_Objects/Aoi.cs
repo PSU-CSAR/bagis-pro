@@ -13,6 +13,8 @@ namespace bagis_pro.BA_Objects
         string m_strFilePath;
         double m_dblMinElev = Constants.VALUE_NO_DATA_9999;
         double m_dblMaxElev = Constants.VALUE_NO_DATA_9999;
+        double m_dblSiteElevRangeFeet = 500;
+        double m_dblSiteBufferDistMiles = 5.642;
 
         public Aoi()
         {
@@ -64,6 +66,16 @@ namespace bagis_pro.BA_Objects
             {
                 m_dblMaxElev = value;
             }
+        }
+
+        public double SiteElevRangeFeet
+        {
+            get { return m_dblSiteElevRangeFeet; }
+        }
+
+        public double SiteBufferDistMiles
+        {
+            get { return m_dblSiteBufferDistMiles; }
         }
     }
 }

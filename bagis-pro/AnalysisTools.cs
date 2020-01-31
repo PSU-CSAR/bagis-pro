@@ -91,7 +91,6 @@ namespace bagis_pro
 
         public static async Task<IList<BA_Objects.Site>> AssembleSitesListAsync(string sitesFileName, SiteType sType)
         {
-            double bufferDistanceMiles = 5.642;
             //2. Buffer point from feature class and query site information
             Uri layersUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, false));
 
@@ -110,7 +109,7 @@ namespace bagis_pro
                             Feature nextFeature = (Feature)cursor.Current;
                             BA_Objects.Site aSite = new BA_Objects.Site();
                             var pointGeometry = nextFeature.GetShape();
-                            double bufferMeters = LinearUnit.Miles.ConvertTo(bufferDistanceMiles, LinearUnit.Meters);
+                            double bufferMeters = LinearUnit.Miles.ConvertTo(Module1.Current.Aoi.SiteBufferDistMiles, LinearUnit.Meters);
                             aSite.Buffer = GeometryEngine.Instance.Buffer(pointGeometry, bufferMeters);
 
                             int idx = nextFeature.FindField(Constants.FIELD_SITE_ELEV);
@@ -144,7 +143,6 @@ namespace bagis_pro
                                                                          double demElevMaxMeters, IList<BA_Objects.Site> lstSites,
                                                                          string strOutputFile)
         {
-            double elevRangeFeet = 500;
             IGPResult gpResult = null;
             StringBuilder sb = new StringBuilder();
             foreach (BA_Objects.Site aSite in lstSites)
@@ -175,7 +173,7 @@ namespace bagis_pro
                 string strBufferedFeatures = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) + "tmpBuffer";
 
                 // 5.Build list of reclass items
-                double minElevMeters = aSite.ElevMeters - LinearUnit.Feet.ConvertToMeters(elevRangeFeet);
+                double minElevMeters = aSite.ElevMeters - LinearUnit.Feet.ConvertToMeters(Module1.Current.Aoi.SiteElevRangeFeet);
                 IList<string> reclassList = new List<string>();
                 // non-represented below min elev
                 if (minElevMeters > demElevMinMeters)
@@ -188,7 +186,7 @@ namespace bagis_pro
                     minElevMeters = demElevMinMeters;
                 }
                 bool hasNonRepresentedAbove = true;
-                double maxElevMeters = aSite.ElevMeters + LinearUnit.Feet.ConvertToMeters(elevRangeFeet);
+                double maxElevMeters = aSite.ElevMeters + LinearUnit.Feet.ConvertToMeters(Module1.Current.Aoi.SiteElevRangeFeet);
                 if (maxElevMeters > demElevMaxMeters)
                 {
                     maxElevMeters = demElevMaxMeters;
