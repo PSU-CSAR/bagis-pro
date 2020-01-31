@@ -325,6 +325,13 @@ namespace bagis_pro
                 strFileName = System.IO.Path.GetFileName(uri.LocalPath);
                 strFolderPath = System.IO.Path.GetDirectoryName(uri.LocalPath);
             }
+
+            Uri tempUri = new Uri(strFolderPath);
+            bool polygonLayerExists = await GeodatabaseTools.FeatureClassExistsAsync(tempUri, strFileName);
+            if (! polygonLayerExists)
+            {
+                return BA_ReturnCode.ReadError;
+            }
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
             await QueuedTask.Run(() =>
             {

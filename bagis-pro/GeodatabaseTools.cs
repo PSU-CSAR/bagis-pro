@@ -42,72 +42,22 @@ namespace bagis_pro
 
         public static async Task<FolderType> GetAoiFolderTypeAsync(string folderPath)
         {
-            Uri gdbUri = new Uri(GetGeodatabasePath(folderPath, GeodatabaseNames.Aoi, true));
+            Uri gdbUri = new Uri(GetGeodatabasePath(folderPath, GeodatabaseNames.Aoi, false));
             if (System.IO.Directory.Exists(gdbUri.LocalPath))
             {
                 Uri uriToCheck = new Uri(gdbUri.LocalPath + Constants.FILE_AOI_RASTER);
-                bool bExists = await FileExistsAsync(uriToCheck, esriDatasetType.esriDTRasterDataset);
+                bool bExists = await GeodatabaseTools.RasterDatasetExistsAsync(gdbUri, Constants.FILE_AOI_RASTER);
                 if (bExists)
                 {
                     return FolderType.AOI;
                 }
-                uriToCheck = new Uri(gdbUri.LocalPath + Constants.FILE_AOI_VECTOR);
-                bExists = await FileExistsAsync(uriToCheck, esriDatasetType.esriDTFeatureClass);
+                bExists = await FeatureClassExistsAsync(gdbUri, Constants.FILE_AOI_VECTOR);
                 if (bExists)
                 {
                     return FolderType.BASIN;
                 }
             }
             return FolderType.FOLDER;
-        }
-
-        public static async Task<bool> FileExistsAsync(Uri fileUri, esriDatasetType datasetType)
-        {
-            // parse the uri for the folder and file
-            string strFileName = null;
-            string strFolderPath = null;
-            if (fileUri.IsFile)
-            {
-                strFileName = System.IO.Path.GetFileName(fileUri.LocalPath);
-                strFolderPath = System.IO.Path.GetDirectoryName(fileUri.LocalPath);
-            }
-            else
-            {
-                return false;
-            }
-
-            return await QueuedTask.Run<bool>(() =>
-            {
-                try
-                {
-                    using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(strFolderPath))))
-                    {
-                        // The openDataset throws an exception if the dataset cannot be opened
-                        if (datasetType.Equals(esriDatasetType.esriDTFeatureClass))
-                        {
-                            // Open a featureClass (within a feature dataset or outside a feature dataset).
-                            using (FeatureClass featureClass = geodatabase.OpenDataset<FeatureClass>(strFileName))
-                            {
-                                return true;
-                            }
-                        }
-                        else if (datasetType.Equals(esriDatasetType.esriDTRasterDataset))
-                        {
-                            // Open a featureClass (within a feature dataset or outside a feature dataset).
-                            using (RasterDataset raster = geodatabase.OpenDataset<RasterDataset>(strFileName))
-                            {
-                                return true;
-                            }
-                        }
-                    }
-                }
-                catch (Exception e)
-                {
-                    Debug.WriteLine("FileExistsAsync Exception: " + e.Message);
-                }
-                return false;
-            });
-
         }
 
         public static async Task<string> QueryTableForSingleValueAsync(Uri fileUri, string featureClassName, string fieldName, QueryFilter queryFilter)
@@ -321,5 +271,64 @@ namespace bagis_pro
 
                 return dblRetVal;
             }
+
+        public static async Task<bool> FeatureClassExistsAsync(Uri gdbUri, string featureClassName)
+        {
+            bool bExists = false;
+            if (gdbUri.IsFile)
+            {
+                string strFolderPath = System.IO.Path.GetDirectoryName(gdbUri.LocalPath);
+                if (System.IO.Directory.Exists(strFolderPath))
+                {
+                    await QueuedTask.Run(() =>
+                    {
+
+                        using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(gdbUri)))
+                        { 
+                            IReadOnlyList<FeatureClassDefinition> definitions = geodatabase.GetDefinitions<FeatureClassDefinition>();
+                            foreach(FeatureClassDefinition def in definitions)
+                            {
+                                if (def.GetName().Equals(featureClassName) || def.GetAliasName().Equals(featureClassName))
+                                {
+                                    bExists = true;
+                                    break;
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+            return bExists;
         }
+
+        public static async Task<bool> RasterDatasetExistsAsync(Uri gdbUri, string rasterName)
+        {
+            bool bExists = false;
+            if (gdbUri.IsFile)
+            {
+                string strFolderPath = System.IO.Path.GetDirectoryName(gdbUri.LocalPath);
+                if (System.IO.Directory.Exists(strFolderPath))
+                {
+                    await QueuedTask.Run(() =>
+                    {
+
+                        using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(gdbUri)))
+                        {
+                            IReadOnlyList<RasterDatasetDefinition> definitions = geodatabase.GetDefinitions<RasterDatasetDefinition>();
+                            foreach (RasterDatasetDefinition def in definitions)
+                            {
+                                if (def.GetName().Equals(rasterName))
+                                {
+                                    bExists = true;
+                                    break;
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+            return bExists;
+        }
+
+    }
     }
