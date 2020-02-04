@@ -35,43 +35,45 @@ namespace bagis_pro.Buttons
                     System.IO.Directory.CreateDirectory(outputDirectory);
                 }
 
-                IList<string> lstMapButtons = new List<string>{ "bagis_pro_Buttons_MapButtonPalette_BtnElevation",
-                                                                "bagis_pro_Buttons_MapButtonPalette_BtnSnotel",
-                                                                "bagis_pro_Buttons_MapButtonPalette_BtnSnowCourse",
-                                                                "bagis_pro_Buttons_MapButtonPalette_BtnSitesAll",
-                                                                "bagis_pro_Buttons_MapButtonPalette_BtnAspect",
-                                                                "bagis_pro_Buttons_MapButtonPalette_BtnSlope"};
+                IList<string> lstFilesToAppend = new List<string> { Constants.FILE_TITLE_PAGE_PDF };
+                IList<string> lstMapButtons = new List<string>{ "MapButtonPalette_BtnElevation",
+                                                                "MapButtonPalette_BtnSnotel",
+                                                                "MapButtonPalette_BtnSnowCourse",
+                                                                "MapButtonPalette_BtnSitesAll",
+                                                                "MapButtonPalette_BtnAspect",
+                                                                "MapButtonPalette_BtnSlope"};
                 foreach(string strMapButton in lstMapButtons)
                 {
-                    ICommand cmd = FrameworkApplication.GetPlugInWrapper(strMapButton) as ICommand;
-
-                    if ((cmd != null))
+                    string strButtonState = strMapButton + "_State";
+                    if (FrameworkApplication.State.Contains(strButtonState))
                     {
+                        ICommand cmd = FrameworkApplication.GetPlugInWrapper(strMapButton) as ICommand;
+
+                        if ((cmd != null))
+                        {
+                            do
+                            {
+                                await Task.Delay(TimeSpan.FromSeconds(0.5));  // build in delay until the command can execute
+                            }
+                            while (!cmd.CanExecute(null));
+                            cmd.Execute(null);
+                        }
+
                         do
                         {
-                            await Task.Delay(TimeSpan.FromSeconds(0.5));  // build in delay until the command can execute
+                            await Task.Delay(TimeSpan.FromSeconds(0.5));  // build in delay so maps can load
                         }
-                        while (!cmd.CanExecute(null));
-                        cmd.Execute(null);
-                    }
+                        while (Module1.Current.MapFinishedLoading == false);
 
-                    do
-                    {
-                        await Task.Delay(TimeSpan.FromSeconds(0.5));  // build in delay so maps can load
-                    }
-                    while (Module1.Current.MapFinishedLoading == false);
+                        BA_ReturnCode success = await GeneralTools.ExportMapToPdfAsync();    // export each map to pdf
+                        if (success == BA_ReturnCode.Success)
+                        {
+                            lstFilesToAppend.Add(Module1.Current.DisplayedMap);
+                        }
 
-                    await GeneralTools.ExportMapToPdf();    // export each map to pdf
+                    }
                 }
                 await GeneralTools.GenerateMapsTitlePage();
-
-                IList<string> lstFilesToAppend = new List<string>{ Constants.FILE_TITLE_PAGE_PDF,
-                                                                   Constants.FILE_EXPORT_MAP_ELEV_PDF,
-                                                                   Constants.FILE_EXPORT_MAP_SNOTEL_PDF,
-                                                                   Constants.FILE_EXPORT_MAP_SCOS_PDF,
-                                                                   Constants.FILE_EXPORT_MAP_SNOTEL_AND_SCOS_PDF,
-                                                                   Constants.FILE_EXPORT_MAP_ASPECT_PDF,
-                                                                   Constants.FILE_EXPORT_MAP_SLOPE_PDF};
 
                 // Initialize output document
                 PdfDocument outputDocument = new PdfDocument();
@@ -98,6 +100,7 @@ namespace bagis_pro.Buttons
                 string outputPath = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\" +
                                       Constants.FILE_EXPORT_MAPS_ALL_PDF;
                 outputDocument.Save(outputPath);
+                MessageBox.Show("Map package exported to " + outputPath + "!!", "BAGIS-PRO");
             }
             catch (Exception e)
             {

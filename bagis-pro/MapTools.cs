@@ -152,9 +152,9 @@ namespace bagis_pro
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
                         Constants.FILE_ELEV_ZONE;
                     uri = new Uri(strPath);
-                    await MapTools.DisplayRasterWithSymbolAsync(uri, Constants.MAPS_ELEV_ZONE, "ArcGIS Colors",
+                    success = await MapTools.DisplayRasterWithSymbolAsync(uri, Constants.MAPS_ELEV_ZONE, "ArcGIS Colors",
                                 "Elevation #2", "NAME", 30, true);
-                    if (!FrameworkApplication.State.Contains("MapButtonPalette_BtnElevation_State"))
+                    if (success == BA_ReturnCode.Success && !FrameworkApplication.State.Contains("MapButtonPalette_BtnElevation_State"))
                     {
                             Module1.ToggleState("MapButtonPalette_BtnElevation_State");
                     }
@@ -163,9 +163,9 @@ namespace bagis_pro
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
                         Constants.FILE_SLOPE_ZONE;
                     uri = new Uri(strPath);
-                    await MapTools.DisplayRasterWithSymbolAsync(uri, Constants.MAPS_SLOPE_ZONE, "ArcGIS Colors",
+                    success = await MapTools.DisplayRasterWithSymbolAsync(uri, Constants.MAPS_SLOPE_ZONE, "ArcGIS Colors",
                                 "Slope", "NAME", 30, false);
-                    if (!FrameworkApplication.State.Contains("MapButtonPalette_BtnSlope_State"))
+                    if (success == BA_ReturnCode.Success && !FrameworkApplication.State.Contains("MapButtonPalette_BtnSlope_State"))
                     {
                         Module1.ToggleState("MapButtonPalette_BtnSlope_State");
                     }
@@ -174,9 +174,9 @@ namespace bagis_pro
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
                         Constants.FILE_ASPECT_ZONE;
                     uri = new Uri(strPath);
-                    await MapTools.DisplayRasterWithSymbolAsync(uri, Constants.MAPS_ASPECT_ZONE, "ArcGIS Colors",
+                    success = await MapTools.DisplayRasterWithSymbolAsync(uri, Constants.MAPS_ASPECT_ZONE, "ArcGIS Colors",
                                 "Aspect", "NAME", 30, false);
-                    if (!FrameworkApplication.State.Contains("MapButtonPalette_BtnAspect_State"))
+                    if (success == BA_ReturnCode.Success && !FrameworkApplication.State.Contains("MapButtonPalette_BtnAspect_State"))
                     {
                         Module1.ToggleState("MapButtonPalette_BtnAspect_State");
                     }
@@ -573,7 +573,7 @@ namespace bagis_pro
             });
         }
 
-        public static async Task DisplayRasterWithSymbolAsync(Uri rasterUri, string displayName, string styleCategory, string styleName, 
+        public static async Task<BA_ReturnCode> DisplayRasterWithSymbolAsync(Uri rasterUri, string displayName, string styleCategory, string styleName, 
             string fieldName, int transparency, bool isVisible)
         {
             // parse the uri for the folder and file
@@ -584,26 +584,16 @@ namespace bagis_pro
                 strFileName = System.IO.Path.GetFileName(rasterUri.LocalPath);
                 strFolderPath = System.IO.Path.GetDirectoryName(rasterUri.LocalPath);
             }
+            // Check to see if the raster exists before trying to add it
+            bool bExists = await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(strFolderPath), strFileName);
+            if (!bExists)
+            {
+                Debug.Print("DisplayRasterWithSymbolAsync: Unable to add locate raster!!");
+                return BA_ReturnCode.ReadError;
+            }
             // Open the requested raster so we know it exists; return if it doesn't
             await QueuedTask.Run(async () =>
             {
-                RasterDataset rDataset = null;
-                // Opens a file geodatabase. This will open the geodatabase if the folder exists and contains a valid geodatabase.
-                using (Geodatabase geodatabase =
-                    new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(strFolderPath))))
-                {
-                    // Use the geodatabase.
-                    try
-                    {
-                        rDataset = geodatabase.OpenDataset<RasterDataset>(strFileName);
-                    }
-                    catch (GeodatabaseTableException e)
-                    {
-                        Debug.WriteLine("DisplayRasterWithSymbolAsync: Unable to open raster " + strFileName);
-                        Debug.WriteLine("DisplayRasterWithSymbolAsync: " + e.Message);
-                        return;
-                    }
-                }
                 RasterLayer rasterLayer = null;
                 // Create the raster layer on the active map
                 await QueuedTask.Run(() =>
@@ -621,6 +611,7 @@ namespace bagis_pro
                     await MapTools.SetToUniqueValueColorizer(displayName,styleCategory, styleName, fieldName);
                 }
             });
+            return BA_ReturnCode.Success;
         }
 
         public static async Task SetToUniqueValueColorizer(string layerName, string styleCategory, 
@@ -1039,7 +1030,7 @@ namespace bagis_pro
                         lstLegendLayers.Add(Constants.MAPS_SNOTEL);
                     }
                     mapDefinition = new BA_Objects.MapDefinition("SNOTEL AND SNOW COURSE SITES REPRESENTATION",
-                        " ", Constants.FILE_EXPORT_MAP_SNOTEL_AND_SCOS_PDF);
+                        " ",  Constants.FILE_EXPORT_MAP_SNOTEL_AND_SCOS_PDF);
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;

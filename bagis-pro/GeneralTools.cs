@@ -25,7 +25,7 @@ namespace bagis_pro
                                       new Uri(asm.CodeBase).LocalPath));
         }
 
-        public static async Task ExportMapToPdf()
+        public static async Task<BA_ReturnCode> ExportMapToPdfAsync()
         {
             try
             {
@@ -67,15 +67,18 @@ namespace bagis_pro
                         await QueuedTask.Run(() => layout.Export(PDF));  //Export the layout to PDF on the worker thread
                     }
                     Debug.WriteLine("PDF file created!!");
+                    return BA_ReturnCode.Success;
                 }
                 else
                 {
                     MessageBox.Show("Could not find default layout. Map cannot be exported!!", "BAGIS PRO");
+                    return BA_ReturnCode.UnknownError;
                 }
             }
             catch (Exception e)
             {
                 MessageBox.Show("An error occurred while trying to export the map!! " + e.Message, "BAGIS PRO");
+                return BA_ReturnCode.UnknownError;
             }
 
         }

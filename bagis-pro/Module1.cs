@@ -73,5 +73,6 @@ namespace bagis_pro
         internal bool MapDisplayElevationInMeters { get; } = false;
         internal string DisplayedMap { get; set; } = "";
         internal bool MapFinishedLoading { get; set; } = false;
-    }
+        internal Buttons.CboCurrentAoi CboCurrentAoi { get; set; }
+}
 }

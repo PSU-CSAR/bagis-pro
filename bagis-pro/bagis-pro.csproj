@@ -145,6 +145,7 @@
     <Compile Include="BA_Objects\Site.cs" />
     <Compile Include="Buttons\BtnExportToPdf.cs" />
     <Compile Include="Buttons\BtnGenerateLayers.cs" />
+    <Compile Include="Buttons\CboCurrentAoi.cs" />
     <Compile Include="Buttons\MapButtonPalette.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="GeneralTools.cs" />

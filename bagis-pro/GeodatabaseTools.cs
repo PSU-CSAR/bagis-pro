@@ -242,6 +242,10 @@ namespace bagis_pro
                 double dblRetVal = 0;
             try
             {
+                bool bExists = await GeodatabaseTools.FeatureClassExistsAsync(gdbUri, featureClassName);
+                if (!bExists)
+                    return dblRetVal;
+
                 await QueuedTask.Run(() =>
                 {
                     using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(gdbUri)))

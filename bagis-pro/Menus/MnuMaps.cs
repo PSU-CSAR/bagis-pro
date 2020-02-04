@@ -45,6 +45,7 @@ namespace bagis_pro.Menus
                             BA_Objects.Aoi oAoi = new BA_Objects.Aoi(System.IO.Path.GetFileName(selectedItem.Path), selectedItem.Path);
                             // Store current AOI in Module1
                             Module1.Current.Aoi = oAoi;
+                            Module1.Current.CboCurrentAoi.SetAoiName(oAoi.Name);
                             ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("AOI is set to " + oAoi.Name + "!", "BAGIS PRO");
                         }
 
