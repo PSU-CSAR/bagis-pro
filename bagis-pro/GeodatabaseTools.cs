@@ -175,13 +175,21 @@ namespace bagis_pro
                 using (Table table = geodatabase.OpenDataset<Table>(polyFeatureName))
                 {
                     QueryFilter queryFilter = new QueryFilter();
+                    double maxArea = -1;    // We will report the points in the largest polygon if > 1
                     using (RowCursor cursor = table.Search(queryFilter, false))
                     {
-                        cursor.MoveNext();
-                        Feature onlyFeature = (Feature)cursor.Current;
-                        if (onlyFeature != null)
+                        while (cursor.MoveNext())
                         {
-                            polyGeometry = onlyFeature.GetShape();
+                            using (Feature feature = (Feature) cursor.Current)
+                            {
+                                Geometry areaGeo = feature.GetShape();
+                                var area = GeometryEngine.Instance.Area(areaGeo);
+                                if (area > maxArea)
+                                {
+                                    maxArea = area;
+                                    polyGeometry = feature.GetShape();
+                                }
+                            }
                         }
                     }
                 }
