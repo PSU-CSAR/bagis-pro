@@ -36,5 +36,21 @@ namespace bagis_pro
             }
             return returnList;
         }
+
+        public static async Task<BA_ReturnCode> DeleteFeatureClass(string aoiPath, string featureClassPath)
+        {
+            var parameters = Geoprocessing.MakeValueArray(featureClassPath);
+            var environments = Geoprocessing.MakeEnvironmentArray(workspace: aoiPath);
+            IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("Delete_management", parameters, environments,
+                ArcGIS.Desktop.Framework.Threading.Tasks.CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+            if (gpResult.IsFailed)
+            {
+                return BA_ReturnCode.UnknownError;
+            }
+            else
+            {
+                return BA_ReturnCode.Success;
+            }
+        }
     }
 }

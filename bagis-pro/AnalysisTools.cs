@@ -38,7 +38,7 @@ namespace bagis_pro
                 }
 
                 //1. Get min/max DEM elevation for reclassing raster. We only want to do this once
-                Debug.WriteLine("START: GenerateSiteLayersAsync" );
+                Debug.WriteLine("START: GenerateSiteLayersAsync");
                 Debug.WriteLine("GetDemStatsAsync");
                 IList<double> lstResult = await GeoprocessingTools.GetDemStatsAsync(Module1.Current.Aoi.FilePath, "", 0.005);
                 double demElevMinMeters = -1;
@@ -79,8 +79,15 @@ namespace bagis_pro
                 {
                     success = await AnalysisTools.CombineSitesRepresentedArea();
                 }
-
-
+                else
+                {
+                    string pathToDelete = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) + Constants.FILE_SITES_REPRESENTED;
+                    if (await GeodatabaseTools.FeatureClassExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false)),
+                        Constants.FILE_SITES_REPRESENTED))
+                    {
+                        success = await GeoprocessingTools.DeleteFeatureClass(currentAoi.FilePath, pathToDelete);
+                    }
+                }
             }
             catch (Exception e)
             {

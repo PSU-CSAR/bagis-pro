@@ -97,12 +97,14 @@
                 </tr>
                 <tr>
                   <td class="style3">
-                    SNOTEL Sites: within basin – <xsl:value-of select="snotel_sites_in_basin"/>, within <xsl:value-of select="snotel_sites_buffer_size"/> mile buffer – <xsl:value-of select="snotel_sites_in_buffer"/> (SNOTEL SITE REPRESENTATION)
+                    SNOTEL Sites: within basin – <xsl:value-of select="snotel_sites_in_basin"/>, outside basin – <xsl:value-of select="snotel_sites_in_buffer"/>
+                    <xsl:if test="has_snotel_sites = 'true'"> (SNOTEL SITE REPRESENTATION)</xsl:if>
                   </td>
                 </tr>
                 <tr>
                   <td class="style3">
-                    Snow Courses: within basin – <xsl:value-of select="scos_sites_in_basin"/>, within <xsl:value-of select="scos_sites_buffer_size"/> mile buffer – <xsl:value-of select="scos_sites_in_buffer"/> (SNOW COURSE SITE REPRESENTATION)
+                    Snow Courses: within basin – <xsl:value-of select="scos_sites_in_basin"/>, outside basin – <xsl:value-of select="scos_sites_in_buffer"/> 
+                    <xsl:if test="has_scos_sites = 'true'"> (SNOW COURSE SITE REPRESENTATION)</xsl:if>
                   </td>
                 </tr>
               </table>
@@ -121,17 +123,20 @@
                   </tr>
                 <tr>
                   <td class="style3">
-                    Represented by SNOTEL site(s): <xsl:value-of select="represented_snotel_percent"/>% (SNOTEL SITE REPRESENTATION)
+                    Represented by SNOTEL site(s): <xsl:value-of select="represented_snotel_percent"/>% 
+                    <xsl:if test="has_snotel_sites = 'true'"> (SNOTEL SITE REPRESENTATION)</xsl:if>
                   </td>
                 </tr>
                 <tr>
                   <td class="style3">
-                    Represented by snow course site(s): <xsl:value-of select="represented_snow_course_percent"/>% (SNOW COURSE SITE REPRESENTATION)
+                    Represented by snow course site(s): <xsl:value-of select="represented_snow_course_percent"/>%
+                    <xsl:if test="has_scos_sites = 'true'"> (SNOW COURSE SITE REPRESENTATION)</xsl:if>
                   </td>
                 </tr>                
                 <tr>
                   <td class="style3">
-                    Represented by both SNOTEL and snow course site(s): <xsl:value-of select="represented_all_sites_percent"/>% (SNOTEL AND SNOW COURSE SITES REPRESENTATION)
+                    Represented by both SNOTEL and snow course site(s): <xsl:value-of select="represented_all_sites_percent"/>%
+                    <xsl:if test="has_scos_sites = 'true' and has_snotel_sites = 'true'"> (SNOTEL AND SNOW COURSE SITES REPRESENTATION)</xsl:if>
                   </td>
                 </tr>
               </table>

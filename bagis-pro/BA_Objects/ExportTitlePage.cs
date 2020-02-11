@@ -17,9 +17,11 @@ namespace bagis_pro.BA_Objects
         public double drainage_area_sqkm;
         public double elevation_min_meters;
         public double elevation_max_meters;
+        public bool has_snotel_sites;
         public int snotel_sites_in_basin;
         public int snotel_sites_in_buffer;
         public string snotel_sites_buffer_size;
+        public bool has_scos_sites;
         public int scos_sites_in_basin;
         public int scos_sites_in_buffer;
         public string scos_sites_buffer_size;

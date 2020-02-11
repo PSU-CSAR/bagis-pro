@@ -138,6 +138,8 @@ namespace bagis_pro
                 double pctSnowCourseRepresented = 0;
                 double pctAllSitesRepresented = 0;
                 double aoiArea = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(gdbUri, Constants.FILE_AOI_VECTOR);
+                bool hasSnotelSites = false;
+                bool hasScosSites = false;
                 if (aoiArea > 0)
                 {
                     gdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false));
@@ -145,11 +147,13 @@ namespace bagis_pro
                     {
                         double repArea = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(gdbUri, Constants.FILE_SNOTEL_REPRESENTED);
                         pctSnotelRepresented = Math.Round(repArea / aoiArea * 100);
+                        hasSnotelSites = true;
                     }
                     if (totalScosSites > 0)
                     {
                         double repArea = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(gdbUri, Constants.FILE_SCOS_REPRESENTED);
                         pctSnowCourseRepresented = Math.Round(repArea / aoiArea * 100);
+                        hasScosSites = true;
                     }
                     if (totalScosSites > 0 || totalScosSites > 0)
                     {
@@ -169,12 +173,12 @@ namespace bagis_pro
                     drainage_area_sqkm = areaSqKm,
                     elevation_min_meters = elevMinMeters,
                     elevation_max_meters = elevMaxMeters,
+                    has_snotel_sites = hasSnotelSites,
                     snotel_sites_in_basin = snotelInBasin,
                     snotel_sites_in_buffer = snotelInBuffer,
-                    snotel_sites_buffer_size = "???",
+                    has_scos_sites = hasScosSites,
                     scos_sites_in_basin = scosInBasin,
                     scos_sites_in_buffer = scosInBuffer,
-                    scos_sites_buffer_size = "???",
                     site_elev_range_ft = Module1.Current.Aoi.SiteElevRangeFeet,
                     site_buffer_dist_mi = Module1.Current.Aoi.SiteBufferDistMiles,
                     represented_snotel_percent = pctSnotelRepresented,
