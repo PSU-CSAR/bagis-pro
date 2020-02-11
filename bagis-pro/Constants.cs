@@ -71,6 +71,14 @@ namespace bagis_pro
 
         public const int VALUE_NO_DATA_9999 = -9999;
         public const string VALUE_NO_DATA = "NoData";
+
+        // States that control the map display buttons
+        public static string[] STATES_MAP_BUTTON => new string[] {"MapButtonPalette_BtnElevation_State",
+                                                                "MapButtonPalette_BtnSnotel_State",
+                                                                "MapButtonPalette_BtnSnowCourse_State",
+                                                                "MapButtonPalette_BtnSitesAll_State",
+                                                                "MapButtonPalette_BtnAspect_State",
+                                                                "MapButtonPalette_BtnSlope_State" };
     }
 
 }

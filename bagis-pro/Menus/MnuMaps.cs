@@ -70,10 +70,7 @@ namespace bagis_pro.Menus
             {
                 await MapTools.DisplayMaps(tempAoiPath);
                 Module1.Current.DisplayedMap = Constants.FILE_EXPORT_MAP_ELEV_PDF;
-                if (!FrameworkApplication.State.Contains("BtnMapLoad_State"))
-                {
-                    Module1.ToggleState("BtnMapLoad_State");
-                }              
+                Module1.ActivateState("BtnMapLoad_State");          
             }
             catch (Exception e)
             {

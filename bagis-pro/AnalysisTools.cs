@@ -85,7 +85,7 @@ namespace bagis_pro
                     if (await GeodatabaseTools.FeatureClassExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false)),
                         Constants.FILE_SITES_REPRESENTED))
                     {
-                        success = await GeoprocessingTools.DeleteFeatureClass(currentAoi.FilePath, pathToDelete);
+                        success = await GeoprocessingTools.DeleteDataset(currentAoi.FilePath, pathToDelete);
                     }
                 }
             }
@@ -152,10 +152,15 @@ namespace bagis_pro
         {
             IGPResult gpResult = null;
             StringBuilder sb = new StringBuilder();
+            string tmpBuffer = "tmpBuffer";
+            string tmpOutputFile = "reclElev";
+            string tmpUnion = "tmpUnion";
+            string tmpDissolve = "tmpDissolve";
+            IList<string> lstLayersToDelete = new List<string> {tmpBuffer, tmpUnion, tmpDissolve };
+
             foreach (BA_Objects.Site aSite in lstSites)
             {
                 //3. Create temporary feature class to hold buffered point
-                string tmpBuffer = "tmpBuffer";
                 var parameters = Geoprocessing.MakeValueArray(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false),
                     tmpBuffer, "POLYGON", "", "DISABLED", "DISABLED",
                     GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, true) + Constants.FILE_SNOTEL);
@@ -213,7 +218,6 @@ namespace bagis_pro
 
                 string inputRasterPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Surfaces, true) + Constants.FILE_DEM_FILLED;
                 string maskPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) + tmpBuffer;
-                string tmpOutputFile = "reclElev";
                 string outputRasterPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) + tmpOutputFile;
 
                 //6. Execute the reclass with the mask set to the buffered point
@@ -240,8 +244,6 @@ namespace bagis_pro
             if (sb.Length > 0)
             {
                 string inFeatures = sb.ToString().TrimEnd(';');
-                string tmpUnion = "tmpUnion";
-                string tmpDissolve = "tmpDissolve";
                 string outputUnionPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) + tmpUnion;
                 var parameters = Geoprocessing.MakeValueArray(inFeatures, outputUnionPath);
                 var environments = Geoprocessing.MakeEnvironmentArray(workspace: Module1.Current.Aoi.FilePath);
@@ -269,6 +271,19 @@ namespace bagis_pro
                     gpResult = await Geoprocessing.ExecuteToolAsync("Clip_analysis", parameters, environments,
                         CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
                     Debug.WriteLine("Finished clipping sites layer");
+                    Uri uriAnalysis = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis));
+                    foreach (string fileName in lstLayersToDelete)
+                    {
+                        if (await GeodatabaseTools.FeatureClassExistsAsync(uriAnalysis, fileName))
+                        {
+                            await GeoprocessingTools.DeleteDataset(Module1.Current.Aoi.FilePath, uriAnalysis.LocalPath + "\\" + fileName);
+                        }
+                    }
+                    if (await GeodatabaseTools.RasterDatasetExistsAsync(uriAnalysis, tmpOutputFile))
+                    {
+                        await GeoprocessingTools.DeleteDataset(Module1.Current.Aoi.FilePath, uriAnalysis.LocalPath + "\\" + tmpOutputFile);
+                    }
+                    Debug.WriteLine("Finished deleting temp files");
                 }
                 else
                 {
@@ -277,11 +292,11 @@ namespace bagis_pro
 
             }
 
-            if (gpResult != null)
-            {
-                Geoprocessing.ShowMessageBox(gpResult.Messages, "GP Messages",
-                    gpResult.IsFailed ? GPMessageBoxStyle.Error : GPMessageBoxStyle.Default);
-            }
+            //if (gpResult != null)
+            //{
+            //    Geoprocessing.ShowMessageBox(gpResult.Messages, "GP Messages",
+            //        gpResult.IsFailed ? GPMessageBoxStyle.Error : GPMessageBoxStyle.Default);
+            //}
             return BA_ReturnCode.Success;
         }
 
@@ -306,12 +321,17 @@ namespace bagis_pro
                 gpResult = await Geoprocessing.ExecuteToolAsync("Dissolve_management", parameters, environments,
                     CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
                 Debug.WriteLine("Finished merging all sites");
+                Uri analysisUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis));
+                if (await GeodatabaseTools.FeatureClassExistsAsync(analysisUri, tmpUnion))
+                {
+                    await GeoprocessingTools.DeleteDataset(Module1.Current.Aoi.FilePath, analysisUri.LocalPath + "\\" + tmpUnion);
+                }
+                Debug.WriteLine("Deleted temp file");
             }
             else
             {
                 return BA_ReturnCode.UnknownError;
             }
-
             return BA_ReturnCode.Success;
         }
 

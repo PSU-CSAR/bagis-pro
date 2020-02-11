@@ -67,6 +67,32 @@ namespace bagis_pro
         }
         #endregion Toggle State
 
+        /// <summary>
+        /// Activate the specified state if it is inactive. State is identified via
+        /// its name. Listen for state changes via the DAML <b>condition</b> attribute
+        /// </summary>
+        /// <param name="stateID"></param>
+        public static void ActivateState(string stateID)
+        {
+            if (!FrameworkApplication.State.Contains(stateID))
+            {
+                FrameworkApplication.State.Activate(stateID);
+            }
+        }
+
+        /// <summary>
+        /// Dectivate the specified state if it is active. State is identified via
+        /// its name. Listen for state changes via the DAML <b>condition</b> attribute
+        /// </summary>
+        /// <param name="stateID"></param>
+        public static void DeactivateState(string stateID)
+        {
+            if (FrameworkApplication.State.Contains(stateID))
+            {
+                FrameworkApplication.State.Deactivate(stateID);
+            }
+        }
+
         internal BA_Objects.Aoi Aoi { get; set; } = new BA_Objects.Aoi();
         internal bool AoiHasSnotel { get; set; } = false;
         internal bool AoiHasSnowCourse { get; set; } = false;

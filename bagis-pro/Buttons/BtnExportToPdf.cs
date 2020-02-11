@@ -36,17 +36,12 @@ namespace bagis_pro.Buttons
                 }
 
                 IList<string> lstFilesToAppend = new List<string> { Constants.FILE_TITLE_PAGE_PDF };
-                IList<string> lstMapButtons = new List<string>{ "MapButtonPalette_BtnElevation",
-                                                                "MapButtonPalette_BtnSnotel",
-                                                                "MapButtonPalette_BtnSnowCourse",
-                                                                "MapButtonPalette_BtnSitesAll",
-                                                                "MapButtonPalette_BtnAspect",
-                                                                "MapButtonPalette_BtnSlope"};
-                foreach(string strMapButton in lstMapButtons)
+                foreach(string strButtonState in Constants.STATES_MAP_BUTTON)
                 {
-                    string strButtonState = strMapButton + "_State";
                     if (FrameworkApplication.State.Contains(strButtonState))
                     {
+                        int foundS1 = strButtonState.IndexOf("_State");
+                        string strMapButton = strButtonState.Remove(foundS1);
                         ICommand cmd = FrameworkApplication.GetPlugInWrapper(strMapButton) as ICommand;
 
                         if ((cmd != null))

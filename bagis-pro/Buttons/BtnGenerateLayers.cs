@@ -29,6 +29,8 @@ namespace bagis_pro.Buttons
             }
 
             await AnalysisTools.GenerateSiteLayersAsync();
+
+            MessageBox.Show("Analysis layers generated!!", "BAGIS-PRO");
         }
     }
 }

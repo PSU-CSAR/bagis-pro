@@ -155,10 +155,18 @@ namespace bagis_pro
                         pctSnowCourseRepresented = Math.Round(repArea / aoiArea * 100);
                         hasScosSites = true;
                     }
-                    if (totalScosSites > 0 || totalScosSites > 0)
+                    if (totalSnotelSites > 0 && totalScosSites > 0)
                     {
                         double repArea = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(gdbUri, Constants.FILE_SITES_REPRESENTED);
                         pctAllSitesRepresented = Math.Round(repArea / aoiArea * 100);
+                    }
+                    else if (totalSnotelSites > 0)
+                    {
+                        pctAllSitesRepresented = pctSnotelRepresented;
+                    }
+                    else if (totalScosSites > 0)
+                    {
+                        pctAllSitesRepresented = pctSnowCourseRepresented;
                     }
                 }
 

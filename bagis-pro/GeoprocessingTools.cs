@@ -37,7 +37,7 @@ namespace bagis_pro
             return returnList;
         }
 
-        public static async Task<BA_ReturnCode> DeleteFeatureClass(string aoiPath, string featureClassPath)
+        public static async Task<BA_ReturnCode> DeleteDataset(string aoiPath, string featureClassPath)
         {
             var parameters = Geoprocessing.MakeValueArray(featureClassPath);
             var environments = Geoprocessing.MakeEnvironmentArray(workspace: aoiPath);
