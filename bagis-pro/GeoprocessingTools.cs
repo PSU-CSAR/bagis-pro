@@ -1,4 +1,5 @@
 ﻿using ArcGIS.Desktop.Core.Geoprocessing;
+using ArcGIS.Desktop.Framework.Threading.Tasks;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -37,12 +38,29 @@ namespace bagis_pro
             return returnList;
         }
 
-        public static async Task<BA_ReturnCode> DeleteDataset(string aoiPath, string featureClassPath)
+        public static async Task<BA_ReturnCode> DeleteDataset(string featureClassPath)
         {
             var parameters = Geoprocessing.MakeValueArray(featureClassPath);
-            var environments = Geoprocessing.MakeEnvironmentArray(workspace: aoiPath);
-            IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("Delete_management", parameters, environments,
+            IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("Delete_management", parameters, null,
                 ArcGIS.Desktop.Framework.Threading.Tasks.CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+            if (gpResult.IsFailed)
+            {
+                return BA_ReturnCode.UnknownError;
+            }
+            else
+            {
+                return BA_ReturnCode.Success;
+            }
+        }
+
+        public static async Task<BA_ReturnCode> AddField(string featureClassPath, string fieldName, string dataType)
+        {
+            IGPResult gpResult = await QueuedTask.Run(() =>
+            {
+                var parameters = Geoprocessing.MakeValueArray(featureClassPath, fieldName, dataType);
+                return Geoprocessing.ExecuteToolAsync("AddField_management", parameters, null,
+                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+            });
             if (gpResult.IsFailed)
             {
                 return BA_ReturnCode.UnknownError;

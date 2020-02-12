@@ -85,7 +85,7 @@ namespace bagis_pro
                     if (await GeodatabaseTools.FeatureClassExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false)),
                         Constants.FILE_SITES_REPRESENTED))
                     {
-                        success = await GeoprocessingTools.DeleteDataset(currentAoi.FilePath, pathToDelete);
+                        success = await GeoprocessingTools.DeleteDataset(pathToDelete);
                     }
                 }
             }
@@ -276,12 +276,12 @@ namespace bagis_pro
                     {
                         if (await GeodatabaseTools.FeatureClassExistsAsync(uriAnalysis, fileName))
                         {
-                            await GeoprocessingTools.DeleteDataset(Module1.Current.Aoi.FilePath, uriAnalysis.LocalPath + "\\" + fileName);
+                            await GeoprocessingTools.DeleteDataset(uriAnalysis.LocalPath + "\\" + fileName);
                         }
                     }
                     if (await GeodatabaseTools.RasterDatasetExistsAsync(uriAnalysis, tmpOutputFile))
                     {
-                        await GeoprocessingTools.DeleteDataset(Module1.Current.Aoi.FilePath, uriAnalysis.LocalPath + "\\" + tmpOutputFile);
+                        await GeoprocessingTools.DeleteDataset(uriAnalysis.LocalPath + "\\" + tmpOutputFile);
                     }
                     Debug.WriteLine("Finished deleting temp files");
                 }
@@ -324,7 +324,7 @@ namespace bagis_pro
                 Uri analysisUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis));
                 if (await GeodatabaseTools.FeatureClassExistsAsync(analysisUri, tmpUnion))
                 {
-                    await GeoprocessingTools.DeleteDataset(Module1.Current.Aoi.FilePath, analysisUri.LocalPath + "\\" + tmpUnion);
+                    await GeoprocessingTools.DeleteDataset(analysisUri.LocalPath + "\\" + tmpUnion);
                 }
                 Debug.WriteLine("Deleted temp file");
             }
@@ -353,6 +353,36 @@ namespace bagis_pro
             sb.Append(site.ObjectId);
             sb.Append("_Rep");
             return sb.ToString();
+        }
+
+        public static async Task<string> GetStationId()
+        {
+            string strTriplet = "";
+            Uri ppUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi));
+            if (await GeodatabaseTools.FeatureClassExistsAsync(ppUri, Constants.FILE_POURPOINT))
+            {
+                // Check for the triplet if it exists
+                if (await GeodatabaseTools.AttributeExistsAsync(ppUri, Constants.FILE_POURPOINT, Constants.FIELD_STATION_TRIPLET))
+                {
+                    QueryFilter queryFilter = new QueryFilter();
+                    strTriplet = await GeodatabaseTools.QueryTableForSingleValueAsync(ppUri, Constants.FILE_POURPOINT,
+                        Constants.FIELD_STATION_TRIPLET, queryFilter);
+                }
+                // Add the triplet id field if it is missing
+                else
+                {
+                    string strFeatureClassPath = ppUri.LocalPath + "\\" + Constants.FILE_POURPOINT;
+                    BA_ReturnCode success = await GeoprocessingTools.AddField(strFeatureClassPath, Constants.FIELD_STATION_TRIPLET, "TEXT");
+                }
+                if (String.IsNullOrEmpty(strTriplet))
+                {
+                    // Use the awdb_id to query for the triplet from the pourpoint layer
+
+                }
+
+
+            }
+            return "";
         }
     }
 

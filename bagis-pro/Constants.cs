@@ -46,7 +46,7 @@ namespace bagis_pro
         //public const string FILE_SCOS_REPRESENTED = "nppseduo";
         public const string FILE_SCOS_REPRESENTED = "scos_rep";
         public const string FILE_SITES_REPRESENTED = "sites_rep";
-        public const string FILE_SNOTEL_POURPOINT = "pourpoint";
+        public const string FILE_POURPOINT = "pourpoint";
         public const string FILE_EXPORT_MAP_ELEV_PDF = "map_elevation.pdf";
         public const string FILE_EXPORT_MAP_SNOTEL_PDF = "map_elevation_snotel.pdf";
         public const string FILE_EXPORT_MAP_SCOS_PDF = "map_elevation_sc.pdf";
@@ -68,6 +68,8 @@ namespace bagis_pro
         public const string FIELD_SITE_ELEV = "BA_SELEV";
         public const string FIELD_SITE_NAME = "BA_SNAME";
         public const string FIELD_OBJECT_ID = "OBJECTID";
+        public const string FIELD_STATION_TRIPLET = "STATION_TRIPLET";
+        public const string FIELD_AWDB_ID = "AWDB_ID";
 
         public const int VALUE_NO_DATA_9999 = -9999;
         public const string VALUE_NO_DATA = "NoData";

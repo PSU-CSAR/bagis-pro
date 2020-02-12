@@ -342,5 +342,33 @@ namespace bagis_pro
             return bExists;
         }
 
+        public static async Task<bool> AttributeExistsAsync(Uri gdbUri, string featureClassName, string fieldName)
+        {
+            bool bExists = false;
+            await QueuedTask.Run(() =>
+            {
+                try
+                {
+                    using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(gdbUri)))
+                    {
+                        using (Table table = geodatabase.OpenDataset<Table>(featureClassName))
+                        {
+                            TableDefinition definition = table.GetDefinition();
+                            int idxField = definition.FindField(fieldName);
+                            if (idxField > -1)
+                            {
+                                bExists = true;
+                            }
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    Debug.WriteLine("AttributeExistsAsync Exception: " + e.Message);
+                }
+            });
+            return bExists;
+        }
+
     }
-    }
+}
