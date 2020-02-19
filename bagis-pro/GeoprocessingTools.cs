@@ -70,5 +70,23 @@ namespace bagis_pro
                 return BA_ReturnCode.Success;
             }
         }
+
+        public static async Task<BA_ReturnCode> Near(string strInputFeatures, string strNearFeatures)
+        {
+            IGPResult gpResult = await QueuedTask.Run(() =>
+            {
+                var parameters = Geoprocessing.MakeValueArray(strInputFeatures, strNearFeatures);
+                return Geoprocessing.ExecuteToolAsync("Near_analysis", parameters, null,
+                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+            });
+            if (gpResult.IsFailed)
+            {
+                return BA_ReturnCode.UnknownError;
+            }
+            else
+            {
+                return BA_ReturnCode.Success;
+            }
+        }
     }
 }

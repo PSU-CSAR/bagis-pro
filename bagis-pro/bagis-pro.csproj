@@ -140,6 +140,7 @@
   <ItemGroup>
     <Compile Include="AnalysisTools.cs" />
     <Compile Include="Basin\SetDEMExtentTool.cs" />
+    <Compile Include="BA_Objects\Settings.cs" />
     <Compile Include="BA_Objects\ExportTitlePage.cs" />
     <Compile Include="BA_Objects\MapDefinition.cs" />
     <Compile Include="BA_Objects\Site.cs" />

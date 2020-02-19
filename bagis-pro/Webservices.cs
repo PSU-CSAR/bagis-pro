@@ -21,6 +21,7 @@ using Newtonsoft.Json.Linq;
 using System.Collections.Specialized;
 using System.Net.Http;
 using Newtonsoft.Json;
+using System.Diagnostics;
 
 namespace bagis_pro
 {
@@ -134,8 +135,47 @@ namespace bagis_pro
             return token;
         }
 
-        
+        /// <summary>
+        /// Query a feature service for a single value
+        /// </summary>
+        /// <param name="oWebServiceUri">example: "https://services.arcgis.com/SXbDpmb7xQkk44JV/arcgis/rest/services/stations_USGS_ACTIVE/FeatureServer"</param>
+        /// <param name="layerNumber">The ordinal of the feature layer. Example: 0</param>
+        /// <param name="fieldName"></param>
+        /// <param name="queryFilter"></param>
+        /// <returns></returns>
+        public async Task<string> QueryServiceForSingleValueAsync(Uri oWebServiceUri, string layerNumber, string fieldName, QueryFilter queryFilter)
+        {
+            string returnValue = "";
+            await QueuedTask.Run(() =>
+            {
+                try
+                {
+                    ServiceConnectionProperties serviceConnectionProperties = new ServiceConnectionProperties(oWebServiceUri);
+                    using (Geodatabase geodatabase = new Geodatabase(serviceConnectionProperties))
+                    {
+                        Table table = geodatabase.OpenDataset<Table>(layerNumber);
+                        using (RowCursor cursor = table.Search(queryFilter, false))
+                        {
+                            cursor.MoveNext();
+                            Feature onlyFeature = (Feature)cursor.Current;
+                            if (onlyFeature != null)
+                            {
+                                int idx = onlyFeature.FindField(fieldName);
+                                if (idx > -1)
+                                {
+                                    returnValue = Convert.ToString(onlyFeature[idx]);
+                                }
+                            }
 
-
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    Debug.WriteLine("QueryServiceForSingleValueAsync Exception: " + e.Message);
+                }
+            });
+            return returnValue;
+        }
     }
-    }
+}

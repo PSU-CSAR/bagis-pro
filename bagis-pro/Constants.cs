@@ -68,8 +68,9 @@ namespace bagis_pro
         public const string FIELD_SITE_ELEV = "BA_SELEV";
         public const string FIELD_SITE_NAME = "BA_SNAME";
         public const string FIELD_OBJECT_ID = "OBJECTID";
-        public const string FIELD_STATION_TRIPLET = "STATION_TRIPLET";
+        public const string FIELD_STATION_TRIPLET = "stationTriplet";
         public const string FIELD_AWDB_ID = "AWDB_ID";
+        public const string FIELD_USGS_ID = "USGS_ID";
 
         public const int VALUE_NO_DATA_9999 = -9999;
         public const string VALUE_NO_DATA = "NoData";

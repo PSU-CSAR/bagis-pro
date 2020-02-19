@@ -80,7 +80,7 @@ namespace bagis_pro
             {
                 try
                 {
-                    using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(strFolderPath))))
+                    using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(fileUri)))
                     {
                         Table table = geodatabase.OpenDataset<Table>(featureClassName);
                         using (RowCursor cursor = table.Search(queryFilter, false))

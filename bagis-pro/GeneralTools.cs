@@ -91,7 +91,7 @@ namespace bagis_pro
                 string strStationId = await AnalysisTools.GetStationId();
                 
                 // Query for the drainage area
-                Uri gdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true));
+                Uri gdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi));
                 string strAreaSqKm = await GeodatabaseTools.QueryTableForSingleValueAsync(gdbUri, Constants.FILE_POURPOINT,
                                         Constants.FIELD_AOI_AREA, new QueryFilter());
                 double areaSqKm = -1;

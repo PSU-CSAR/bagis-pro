@@ -359,6 +359,8 @@ namespace bagis_pro
         {
             string strTriplet = "";
             Uri ppUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi));
+            string strPourpointClassPath = ppUri.LocalPath + "\\" + Constants.FILE_POURPOINT;
+            bool bUpdateTriplet = false;
             if (await GeodatabaseTools.FeatureClassExistsAsync(ppUri, Constants.FILE_POURPOINT))
             {
                 // Check for the triplet if it exists
@@ -371,14 +373,42 @@ namespace bagis_pro
                 // Add the triplet id field if it is missing
                 else
                 {
-                    string strFeatureClassPath = ppUri.LocalPath + "\\" + Constants.FILE_POURPOINT;
-                    BA_ReturnCode success = await GeoprocessingTools.AddField(strFeatureClassPath, Constants.FIELD_STATION_TRIPLET, "TEXT");
+                    BA_ReturnCode success = await GeoprocessingTools.AddField(strPourpointClassPath, Constants.FIELD_STATION_TRIPLET, "TEXT");
                 }
                 if (String.IsNullOrEmpty(strTriplet))
                 {
                     // Use the awdb_id to query for the triplet from the pourpoint layer
-
+                    string strAwdbId = await GeodatabaseTools.QueryTableForSingleValueAsync(ppUri, Constants.FILE_POURPOINT,
+                        Constants.FIELD_AWDB_ID, new QueryFilter());
+                    if (!String.IsNullOrEmpty(strAwdbId))
+                    {
+                        string strAwdbQueryId = strAwdbId.Trim();
+                        if (strAwdbQueryId.Length < 8)     // left pad the triplet if less than 8 characters
+                        {
+                            strAwdbQueryId = strAwdbQueryId.PadLeft(8, '0');
+                        }
+                        Uri serviceUri = new Uri(Module1.Current.Settings.m_pourpointUri);
+                        string serviceLayerId = Module1.Current.Settings.m_pourpointUri.Split('/').Last();
+                        QueryFilter queryFilter = new QueryFilter();
+                        queryFilter.WhereClause = Constants.FIELD_USGS_ID + " = '" + strAwdbQueryId + "'";
+                        Webservices ws = new Webservices();
+                        strTriplet = await ws.QueryServiceForSingleValueAsync(serviceUri, serviceLayerId, Constants.FIELD_STATION_TRIPLET, queryFilter);
+                        if (!string.IsNullOrEmpty(strTriplet))
+                        {
+                            bUpdateTriplet = true;
+                        }
+                    }
                 }
+                if (string.IsNullOrEmpty(strTriplet))
+                {
+                    // If triplet is still null, use the near tool
+                    BA_ReturnCode success = await GeoprocessingTools.Near(strPourpointClassPath, Module1.Current.Settings.m_pourpointUri);
+                    if (success == BA_ReturnCode.Success)
+                    {
+
+                    }
+                }
+
 
 
             }
