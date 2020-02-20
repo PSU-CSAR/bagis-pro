@@ -71,6 +71,8 @@ namespace bagis_pro
         public const string FIELD_STATION_TRIPLET = "stationTriplet";
         public const string FIELD_AWDB_ID = "AWDB_ID";
         public const string FIELD_USGS_ID = "USGS_ID";
+        public const string FIELD_NEAR_ID = "NEAR_FID";
+        public const string FIELD_NEAR_DIST = "NEAR_DIST";
 
         public const int VALUE_NO_DATA_9999 = -9999;
         public const string VALUE_NO_DATA = "NoData";

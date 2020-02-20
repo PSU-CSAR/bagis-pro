@@ -358,9 +358,17 @@ namespace bagis_pro
         public static async Task<string> GetStationId()
         {
             string strTriplet = "";
+            string strAwdbId = "";
             Uri ppUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi));
             string strPourpointClassPath = ppUri.LocalPath + "\\" + Constants.FILE_POURPOINT;
+            string usgsServiceLayerId = Module1.Current.Settings.m_pourpointUri.Split('/').Last();
+            int intTrim = usgsServiceLayerId.Length + 1;
+            string usgsTempString = Module1.Current.Settings.m_pourpointUri.Substring(0, Module1.Current.Settings.m_pourpointUri.Length - intTrim);
+            Uri usgsServiceUri = new Uri(usgsTempString);
+            
+            Webservices ws = new Webservices();
             bool bUpdateTriplet = false;
+            bool bUpdateAwdb = false;
             if (await GeodatabaseTools.FeatureClassExistsAsync(ppUri, Constants.FILE_POURPOINT))
             {
                 // Check for the triplet if it exists
@@ -378,7 +386,7 @@ namespace bagis_pro
                 if (String.IsNullOrEmpty(strTriplet))
                 {
                     // Use the awdb_id to query for the triplet from the pourpoint layer
-                    string strAwdbId = await GeodatabaseTools.QueryTableForSingleValueAsync(ppUri, Constants.FILE_POURPOINT,
+                    strAwdbId = await GeodatabaseTools.QueryTableForSingleValueAsync(ppUri, Constants.FILE_POURPOINT,
                         Constants.FIELD_AWDB_ID, new QueryFilter());
                     if (!String.IsNullOrEmpty(strAwdbId))
                     {
@@ -387,12 +395,9 @@ namespace bagis_pro
                         {
                             strAwdbQueryId = strAwdbQueryId.PadLeft(8, '0');
                         }
-                        Uri serviceUri = new Uri(Module1.Current.Settings.m_pourpointUri);
-                        string serviceLayerId = Module1.Current.Settings.m_pourpointUri.Split('/').Last();
                         QueryFilter queryFilter = new QueryFilter();
                         queryFilter.WhereClause = Constants.FIELD_USGS_ID + " = '" + strAwdbQueryId + "'";
-                        Webservices ws = new Webservices();
-                        strTriplet = await ws.QueryServiceForSingleValueAsync(serviceUri, serviceLayerId, Constants.FIELD_STATION_TRIPLET, queryFilter);
+                        strTriplet = await ws.QueryServiceForSingleValueAsync(usgsServiceUri, usgsServiceLayerId, Constants.FIELD_STATION_TRIPLET, queryFilter);
                         if (!string.IsNullOrEmpty(strTriplet))
                         {
                             bUpdateTriplet = true;
@@ -405,14 +410,31 @@ namespace bagis_pro
                     BA_ReturnCode success = await GeoprocessingTools.Near(strPourpointClassPath, Module1.Current.Settings.m_pourpointUri);
                     if (success == BA_ReturnCode.Success)
                     {
+                        QueryFilter queryFilter = new QueryFilter();
+                        string strNearId = await GeodatabaseTools.QueryTableForSingleValueAsync(ppUri, Constants.FILE_POURPOINT,
+                            Constants.FIELD_NEAR_ID, queryFilter);
+                        if (!String.IsNullOrEmpty(strNearId))
+                        {
+                            queryFilter.WhereClause = Constants.FIELD_OBJECT_ID + " = '" + strNearId + "'";
+                            strTriplet = await ws.QueryServiceForSingleValueAsync(usgsServiceUri, usgsServiceLayerId, Constants.FIELD_STATION_TRIPLET, queryFilter);
+                            if (!String.IsNullOrEmpty(strTriplet))
+                            {
+                                bUpdateTriplet = true;
+                            }
+                            strAwdbId = await ws.QueryServiceForSingleValueAsync(usgsServiceUri, usgsServiceLayerId, Constants.FIELD_USGS_ID, queryFilter);
+                            if (!String.IsNullOrEmpty(strAwdbId))
+                            {
+                                bUpdateAwdb = true;
+                            }
+                        }
+                        //@ToDo: Delete fields added by NEAR process: NEAR_DIST and NEAR_ID
+
 
                     }
                 }
 
-
-
             }
-            return "";
+            return strTriplet;
         }
     }
 

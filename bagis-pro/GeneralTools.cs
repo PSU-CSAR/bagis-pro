@@ -89,6 +89,10 @@ namespace bagis_pro
             {
                 // Query for the station triplet
                 string strStationId = await AnalysisTools.GetStationId();
+                if (String.IsNullOrEmpty(strStationId))
+                {
+                    strStationId = "XXXXXXXX:XX:USGS";
+                }
                 
                 // Query for the drainage area
                 Uri gdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi));
@@ -180,7 +184,7 @@ namespace bagis_pro
                     comments = "This is a test",
                     publisher = "Lesley Bross",
                     local_path = Module1.Current.Aoi.FilePath,
-                    streamgage_station = "USGS XXXXXXX",
+                    streamgage_station = strStationId,
                     drainage_area_sqkm = areaSqKm,
                     elevation_min_meters = elevMinMeters,
                     elevation_max_meters = elevMaxMeters,
