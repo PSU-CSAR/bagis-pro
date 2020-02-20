@@ -429,8 +429,18 @@ namespace bagis_pro
                         }
                         //@ToDo: Delete fields added by NEAR process: NEAR_DIST and NEAR_ID
 
-
                     }
+                }
+                //Save the new values to the pourpoint layer if needed
+                if (bUpdateAwdb == true || bUpdateTriplet == true)
+                {
+                    IDictionary<string, string> dictEdits = new Dictionary<string, string>();
+                    if (bUpdateAwdb)
+                        dictEdits.Add(Constants.FIELD_AWDB_ID, strAwdbId);
+                    if (bUpdateTriplet)
+                        dictEdits.Add(Constants.FIELD_STATION_TRIPLET, strTriplet);
+                    BA_ReturnCode success = await GeodatabaseTools.UpdateFeatureAttributesAsync(ppUri, Constants.FILE_POURPOINT, 
+                        new QueryFilter(), dictEdits);
                 }
 
             }

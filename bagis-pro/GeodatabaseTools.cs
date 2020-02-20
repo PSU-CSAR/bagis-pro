@@ -2,6 +2,8 @@
 using ArcGIS.Core.Data;
 using ArcGIS.Core.Data.Raster;
 using ArcGIS.Core.Geometry;
+using ArcGIS.Desktop.Core;
+using ArcGIS.Desktop.Editing;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
 using ArcGIS.Desktop.Mapping;
 using System;
@@ -180,7 +182,7 @@ namespace bagis_pro
                     {
                         while (cursor.MoveNext())
                         {
-                            using (Feature feature = (Feature) cursor.Current)
+                            using (Feature feature = (Feature)cursor.Current)
                             {
                                 Geometry areaGeo = feature.GetShape();
                                 var area = GeometryEngine.Instance.Area(areaGeo);
@@ -245,9 +247,9 @@ namespace bagis_pro
             return retVal;
         }
 
-            public static async Task<double> CalculateTotalPolygonAreaAsync(Uri gdbUri, string featureClassName)
-            {
-                double dblRetVal = 0;
+        public static async Task<double> CalculateTotalPolygonAreaAsync(Uri gdbUri, string featureClassName)
+        {
+            double dblRetVal = 0;
             try
             {
                 bool bExists = await GeodatabaseTools.FeatureClassExistsAsync(gdbUri, featureClassName);
@@ -281,8 +283,8 @@ namespace bagis_pro
                 dblRetVal = -1;
             }
 
-                return dblRetVal;
-            }
+            return dblRetVal;
+        }
 
         public static async Task<bool> FeatureClassExistsAsync(Uri gdbUri, string featureClassName)
         {
@@ -296,9 +298,9 @@ namespace bagis_pro
                     {
 
                         using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(gdbUri)))
-                        { 
+                        {
                             IReadOnlyList<FeatureClassDefinition> definitions = geodatabase.GetDefinitions<FeatureClassDefinition>();
-                            foreach(FeatureClassDefinition def in definitions)
+                            foreach (FeatureClassDefinition def in definitions)
                             {
                                 if (def.GetName().Equals(featureClassName) || def.GetAliasName().Equals(featureClassName))
                                 {
@@ -368,6 +370,71 @@ namespace bagis_pro
                 }
             });
             return bExists;
+        }
+
+        public static async Task<BA_ReturnCode> UpdateFeatureAttributesAsync(Uri gdbUri, string featureClassName, QueryFilter oQueryFilter, IDictionary<string, string> dictEdits)
+        {
+            bool modificationResult = false;
+            string errorMsg = "";
+            await QueuedTask.Run(() =>
+            {
+                using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(gdbUri)))
+                using (FeatureClass featureClass = geodatabase.OpenDataset<FeatureClass>(featureClassName))
+                {
+                    FeatureClassDefinition featureClassDefinition = featureClass.GetDefinition();
+
+                    EditOperation editOperation = new EditOperation();
+                    editOperation.Callback(context => {
+                        using (RowCursor rowCursor = featureClass.Search(oQueryFilter, false))
+                        {
+                            while (rowCursor.MoveNext())
+                            {
+                                using (Feature feature = (Feature) rowCursor.Current)
+                                {
+                                    // In order to update the the attribute table has to be called before any changes are made to the row
+                                    context.Invalidate(feature);
+                                    // Loop through fields to update
+                                    foreach (string strKey in dictEdits.Keys)
+                                    {
+                                        int idxRow = featureClassDefinition.FindField(strKey);
+                                        if (idxRow > -1)
+                                        {
+                                            feature[idxRow] = dictEdits[strKey];
+                                        }
+                                    }
+                                    feature.Store();
+                                    // Has to be called after the store too
+                                    context.Invalidate(feature);
+                                }
+                            }
+                        }
+
+
+                    }, featureClass);
+
+                    try
+                    {
+                        modificationResult = editOperation.Execute();
+                        if (!modificationResult) errorMsg = editOperation.ErrorMessage;
+                    }
+                    catch (GeodatabaseException exObj)
+                    {
+                        errorMsg = exObj.Message;
+                    }
+                }
+            });
+            if (String.IsNullOrEmpty(errorMsg))
+            {
+                await Project.Current.SaveEditsAsync();
+                return BA_ReturnCode.Success;
+            }
+            else
+            {
+                if (Project.Current.HasEdits)
+                    await Project.Current.DiscardEditsAsync();
+                Debug.Print("UpdateFeatureAttributesAsync: " + errorMsg);
+                return BA_ReturnCode.UnknownError;
+            }
         }
 
     }
