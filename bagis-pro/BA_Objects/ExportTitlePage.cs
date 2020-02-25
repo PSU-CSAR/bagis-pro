@@ -13,6 +13,7 @@ namespace bagis_pro.BA_Objects
         public string comments;
         public string local_path;
         public string streamgage_station;
+        public string streamgage_station_name;
         public DateTime date_created;
         public double drainage_area_sqkm;
         public double elevation_min_meters;

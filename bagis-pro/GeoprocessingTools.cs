@@ -53,6 +53,21 @@ namespace bagis_pro
             }
         }
 
+        public static async Task<BA_ReturnCode> DeleteFeatureClassFieldsAsync(string featureClassPath, string[] arrFieldsToDelete)
+        {
+            var parameters = Geoprocessing.MakeValueArray(featureClassPath, arrFieldsToDelete);
+            IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("DeleteField_management", parameters, null,
+                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+            if (gpResult.IsFailed)
+            {
+                return BA_ReturnCode.UnknownError;
+            }
+            else
+            {
+                return BA_ReturnCode.Success;
+            }
+        }
+
         public static async Task<BA_ReturnCode> AddField(string featureClassPath, string fieldName, string dataType)
         {
             IGPResult gpResult = await QueuedTask.Run(() =>

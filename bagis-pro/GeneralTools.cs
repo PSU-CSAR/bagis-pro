@@ -87,8 +87,10 @@ namespace bagis_pro
         {
             try
             {
-                // Query for the station triplet
-                string strStationId = await AnalysisTools.GetStationId();
+                // Query for the station triplet and name
+                string[] arrValues = await AnalysisTools.GetStationValues();
+                string strStationId = arrValues[0];
+                string strStationName = arrValues[1];
                 if (String.IsNullOrEmpty(strStationId))
                 {
                     strStationId = "XXXXXXXX:XX:USGS";
@@ -185,6 +187,7 @@ namespace bagis_pro
                     publisher = "Lesley Bross",
                     local_path = Module1.Current.Aoi.FilePath,
                     streamgage_station = strStationId,
+                    streamgage_station_name = strStationName,
                     drainage_area_sqkm = areaSqKm,
                     elevation_min_meters = elevMinMeters,
                     elevation_max_meters = elevMaxMeters,

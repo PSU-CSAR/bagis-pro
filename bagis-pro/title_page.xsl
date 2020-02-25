@@ -84,6 +84,11 @@
                       Streamgage station: <xsl:value-of select="streamgage_station"/>
                     </td>
                   </tr>
+                  <tr>
+                    <td class="style3">
+                      Streamgage station name: <xsl:value-of select="streamgage_station_name"/>
+                    </td>
+                  </tr>
                 </xsl:if>
                 <tr>
                   <td class="style3">

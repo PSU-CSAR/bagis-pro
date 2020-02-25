@@ -355,10 +355,12 @@ namespace bagis_pro
             return sb.ToString();
         }
 
-        public static async Task<string> GetStationId()
+        public static async Task<string[]> GetStationValues()
         {
             string strTriplet = "";
             string strAwdbId = "";
+            string strStationName = "";
+            string[] arrReturnValues = new string[] { strTriplet, strStationName };
             Uri ppUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi));
             string strPourpointClassPath = ppUri.LocalPath + "\\" + Constants.FILE_POURPOINT;
             string usgsServiceLayerId = Module1.Current.Settings.m_pourpointUri.Split('/').Last();
@@ -369,20 +371,35 @@ namespace bagis_pro
             Webservices ws = new Webservices();
             bool bUpdateTriplet = false;
             bool bUpdateAwdb = false;
+            bool bUpdateStationName = false;
             if (await GeodatabaseTools.FeatureClassExistsAsync(ppUri, Constants.FILE_POURPOINT))
             {
-                // Check for the triplet if it exists
-                if (await GeodatabaseTools.AttributeExistsAsync(ppUri, Constants.FILE_POURPOINT, Constants.FIELD_STATION_TRIPLET))
+                string[] arrFields = new string[] { Constants.FIELD_STATION_TRIPLET, Constants.FIELD_STATION_NAME };
+                foreach (string strField in arrFields)
                 {
-                    QueryFilter queryFilter = new QueryFilter();
-                    strTriplet = await GeodatabaseTools.QueryTableForSingleValueAsync(ppUri, Constants.FILE_POURPOINT,
-                        Constants.FIELD_STATION_TRIPLET, queryFilter);
+                    // Check for the field, if it exists query the value
+                    if (await GeodatabaseTools.AttributeExistsAsync(ppUri, Constants.FILE_POURPOINT, strField))
+                    {
+                        QueryFilter queryFilter = new QueryFilter();
+                        string strValue = await GeodatabaseTools.QueryTableForSingleValueAsync(ppUri, Constants.FILE_POURPOINT,
+                            strField, queryFilter);
+                        switch (strField)
+                        {
+                            case Constants.FIELD_STATION_TRIPLET:
+                                strTriplet = strValue;
+                                break;
+                            case Constants.FIELD_STATION_NAME:
+                                strStationName = strValue;
+                                break;
+                        }   
+                    }
+                    // Add the field if it is missing
+                    else
+                    {
+                        BA_ReturnCode success = await GeoprocessingTools.AddField(strPourpointClassPath, strField, "TEXT");
+                    }
                 }
-                // Add the triplet id field if it is missing
-                else
-                {
-                    BA_ReturnCode success = await GeoprocessingTools.AddField(strPourpointClassPath, Constants.FIELD_STATION_TRIPLET, "TEXT");
-                }
+
                 if (String.IsNullOrEmpty(strTriplet))
                 {
                     // Use the awdb_id to query for the triplet from the pourpoint layer
@@ -401,6 +418,11 @@ namespace bagis_pro
                         if (!string.IsNullOrEmpty(strTriplet))
                         {
                             bUpdateTriplet = true;
+                        }
+                        strStationName = await ws.QueryServiceForSingleValueAsync(usgsServiceUri, usgsServiceLayerId, Module1.Current.Settings.m_nameField, queryFilter);
+                        if (!string.IsNullOrEmpty(strStationName))
+                        {
+                            bUpdateStationName = true;
                         }
                     }
                 }
@@ -426,25 +448,36 @@ namespace bagis_pro
                             {
                                 bUpdateAwdb = true;
                             }
+                            strStationName = await ws.QueryServiceForSingleValueAsync(usgsServiceUri, usgsServiceLayerId, Module1.Current.Settings.m_nameField, queryFilter);
+                            if (!string.IsNullOrEmpty(strStationName))
+                            {
+                                bUpdateStationName = true;
+                            }
                         }
-                        //@ToDo: Delete fields added by NEAR process: NEAR_DIST and NEAR_ID
+                        //Delete fields added by NEAR process: NEAR_DIST and NEAR_ID
+                        string[] arrFieldsToDelete = new string[] { Constants.FIELD_NEAR_ID, Constants.FIELD_NEAR_DIST };
+                        success = await GeoprocessingTools.DeleteFeatureClassFieldsAsync(strPourpointClassPath, arrFieldsToDelete);
 
                     }
                 }
                 //Save the new values to the pourpoint layer if needed
-                if (bUpdateAwdb == true || bUpdateTriplet == true)
+                if (bUpdateAwdb == true || bUpdateTriplet == true || bUpdateStationName == true)
                 {
                     IDictionary<string, string> dictEdits = new Dictionary<string, string>();
                     if (bUpdateAwdb)
                         dictEdits.Add(Constants.FIELD_AWDB_ID, strAwdbId);
                     if (bUpdateTriplet)
                         dictEdits.Add(Constants.FIELD_STATION_TRIPLET, strTriplet);
+                    if (bUpdateStationName)
+                        dictEdits.Add(Constants.FIELD_STATION_NAME, strStationName);
                     BA_ReturnCode success = await GeodatabaseTools.UpdateFeatureAttributesAsync(ppUri, Constants.FILE_POURPOINT, 
                         new QueryFilter(), dictEdits);
                 }
 
             }
-            return strTriplet;
+            arrReturnValues[0] = strTriplet;
+            arrReturnValues[1] = strStationName;
+            return arrReturnValues;
         }
     }
 
