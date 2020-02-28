@@ -38,7 +38,7 @@ namespace bagis_pro
             return returnList;
         }
 
-        public static async Task<BA_ReturnCode> DeleteDataset(string featureClassPath)
+        public static async Task<BA_ReturnCode> DeleteDatasetAsync(string featureClassPath)
         {
             var parameters = Geoprocessing.MakeValueArray(featureClassPath);
             IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("Delete_management", parameters, null,
@@ -68,7 +68,7 @@ namespace bagis_pro
             }
         }
 
-        public static async Task<BA_ReturnCode> AddField(string featureClassPath, string fieldName, string dataType)
+        public static async Task<BA_ReturnCode> AddFieldAsync(string featureClassPath, string fieldName, string dataType)
         {
             IGPResult gpResult = await QueuedTask.Run(() =>
             {
@@ -86,12 +86,39 @@ namespace bagis_pro
             }
         }
 
-        public static async Task<BA_ReturnCode> Near(string strInputFeatures, string strNearFeatures)
+        public static async Task<BA_ReturnCode> NearAsync(string strInputFeatures, string strNearFeatures)
         {
             IGPResult gpResult = await QueuedTask.Run(() =>
             {
                 var parameters = Geoprocessing.MakeValueArray(strInputFeatures, strNearFeatures);
                 return Geoprocessing.ExecuteToolAsync("Near_analysis", parameters, null,
+                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+            });
+            if (gpResult.IsFailed)
+            {
+                return BA_ReturnCode.UnknownError;
+            }
+            else
+            {
+                return BA_ReturnCode.Success;
+            }
+        }
+
+        public static async Task<BA_ReturnCode> BufferAsync (string strInputFeatures, string strOutputFeatures, string strDistance,
+                                                        string p_strDissolveOption)
+        {
+            string strLineSide = "";
+            string strLineEndType = "";
+            string strDissolveOption = "";
+            if (!String.IsNullOrEmpty(strDissolveOption))
+            {
+                strDissolveOption = p_strDissolveOption;
+            }
+            IGPResult gpResult = await QueuedTask.Run(() =>
+            {
+                var parameters = Geoprocessing.MakeValueArray(strInputFeatures, strOutputFeatures, strDistance, strLineSide,
+                                                              strLineEndType, strDissolveOption);
+                return Geoprocessing.ExecuteToolAsync("Buffer_analysis", parameters, null,
                             CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
             });
             if (gpResult.IsFailed)

@@ -37,6 +37,7 @@
           <!--<menu refID="bagis_pro_Menus_MnuMaps" size="middle" /> -->
           <comboBox refID="bagis_pro_Buttons_CboCurrentAoi" />
           <button refID="bagis_pro_Menus_MnuMaps_BtnSelectAoi" size="middle" />
+          <button refID="bagis_pro_Buttons_BtnClipLayers" size="middle" />
           <button refID="bagis_pro_Buttons_BtnGenerateLayers" size="middle" />
           <button refID="bagis_pro_Menus_MnuMaps_BtnMapLoad" size="middle" />
           <buttonPalette refID="bagis_pro_Buttons_MapButtonPalette" size="middle" />
@@ -132,6 +133,11 @@
             ToolTip<disabledText /></tooltip>
         </button>
         <button id="bagis_pro_Buttons_BtnGenerateLayers" caption="Generate Analysis Layers" className="bagis_pro.Buttons.BtnGenerateLayers" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/CalculateGeometry16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/CalculateGeometry32.png">
+          <tooltip heading="Tooltip Heading">
+            <disabledText />
+          </tooltip>
+        </button>
+        <button id="bagis_pro_Buttons_BtnClipLayers" caption="Clip Layers" className="bagis_pro.Buttons.BtnClipLayers" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/PaperClip16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/PaperClip32.png">
           <tooltip heading="Tooltip Heading">
             <disabledText />
           </tooltip>

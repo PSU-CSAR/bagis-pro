@@ -85,7 +85,7 @@ namespace bagis_pro
                     if (await GeodatabaseTools.FeatureClassExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false)),
                         Constants.FILE_SITES_REPRESENTED))
                     {
-                        success = await GeoprocessingTools.DeleteDataset(pathToDelete);
+                        success = await GeoprocessingTools.DeleteDatasetAsync(pathToDelete);
                     }
                 }
             }
@@ -276,12 +276,12 @@ namespace bagis_pro
                     {
                         if (await GeodatabaseTools.FeatureClassExistsAsync(uriAnalysis, fileName))
                         {
-                            await GeoprocessingTools.DeleteDataset(uriAnalysis.LocalPath + "\\" + fileName);
+                            await GeoprocessingTools.DeleteDatasetAsync(uriAnalysis.LocalPath + "\\" + fileName);
                         }
                     }
                     if (await GeodatabaseTools.RasterDatasetExistsAsync(uriAnalysis, tmpOutputFile))
                     {
-                        await GeoprocessingTools.DeleteDataset(uriAnalysis.LocalPath + "\\" + tmpOutputFile);
+                        await GeoprocessingTools.DeleteDatasetAsync(uriAnalysis.LocalPath + "\\" + tmpOutputFile);
                     }
                     Debug.WriteLine("Finished deleting temp files");
                 }
@@ -324,7 +324,7 @@ namespace bagis_pro
                 Uri analysisUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis));
                 if (await GeodatabaseTools.FeatureClassExistsAsync(analysisUri, tmpUnion))
                 {
-                    await GeoprocessingTools.DeleteDataset(analysisUri.LocalPath + "\\" + tmpUnion);
+                    await GeoprocessingTools.DeleteDatasetAsync(analysisUri.LocalPath + "\\" + tmpUnion);
                 }
                 Debug.WriteLine("Deleted temp file");
             }
@@ -396,7 +396,7 @@ namespace bagis_pro
                     // Add the field if it is missing
                     else
                     {
-                        BA_ReturnCode success = await GeoprocessingTools.AddField(strPourpointClassPath, strField, "TEXT");
+                        BA_ReturnCode success = await GeoprocessingTools.AddFieldAsync(strPourpointClassPath, strField, "TEXT");
                     }
                 }
 
@@ -429,7 +429,7 @@ namespace bagis_pro
                 if (string.IsNullOrEmpty(strTriplet))
                 {
                     // If triplet is still null, use the near tool
-                    BA_ReturnCode success = await GeoprocessingTools.Near(strPourpointClassPath, Module1.Current.Settings.m_pourpointUri);
+                    BA_ReturnCode success = await GeoprocessingTools.NearAsync(strPourpointClassPath, Module1.Current.Settings.m_pourpointUri);
                     if (success == BA_ReturnCode.Success)
                     {
                         QueryFilter queryFilter = new QueryFilter();

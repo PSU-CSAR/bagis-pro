@@ -177,5 +177,45 @@ namespace bagis_pro
             });
             return returnValue;
         }
+
+        public async Task<BA_ReturnCode> ClipImageToAoi(Uri clipFileGdbUri, string clipName, Uri imageServiceUri)
+        {
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            Geometry aoiGeo = null;
+            int intCount = 0;
+            await QueuedTask.Run(() =>
+            {
+                using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(clipFileGdbUri)))
+                using (Table table = geodatabase.OpenDataset<Table>(clipName))
+                {
+                    //check for multiple buffer polygons and buffer AOI if we need to
+                    QueryFilter queryFilter = new QueryFilter();
+                    using (RowCursor cursor = table.Search(queryFilter, false))
+                    {
+                        while (cursor.MoveNext())
+                        {
+                            using (Feature feature = (Feature)cursor.Current)
+                            {
+                                aoiGeo = feature.GetShape();
+                            }
+                            intCount++;
+                        }
+                    }
+                }
+            });
+            if (intCount > 0)
+            {
+                string tmpClipBuffer = "tmpClipBuffer";
+                success = await GeoprocessingTools.BufferAsync(clipFileGdbUri.LocalPath + "\\" + clipName, clipFileGdbUri.LocalPath + "\\" + tmpClipBuffer,
+                            "0.5 Meters", "ALL");
+
+
+
+
+
+            }
+
+            return success;
+        }
     }
 }
