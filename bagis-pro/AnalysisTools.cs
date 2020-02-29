@@ -479,6 +479,34 @@ namespace bagis_pro
             arrReturnValues[1] = strStationName;
             return arrReturnValues;
         }
+
+        public static async Task<BA_ReturnCode> ClipSnotelSWELayersAsync()
+        {
+            Uri clipFileUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, false));
+            string[] arrReturnValues = await GeodatabaseTools.QueryAoiEnvelopeAsync(clipFileUri, Constants.FILE_AOI_PRISM_VECTOR);
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            if (arrReturnValues.Length == 2)
+            {
+                Webservices ws = new Webservices();
+                string strEnvelopeText = arrReturnValues[0];
+                string strTemplateDataset = arrReturnValues[1];
+                int i = 0;
+                foreach (string strUri in Constants.URIS_SNODAS_SWE)
+                {
+                    Uri imageServiceUri = new Uri(Module1.Current.Settings.m_snodasSweUri + strUri + Constants.URI_IMAGE_SERVER);
+                    string strOutputPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, true) + Constants.FILES_SNODAS_SWE[i];
+                    success = await GeoprocessingTools.ClipRasterAsync(imageServiceUri.AbsoluteUri, strEnvelopeText, strOutputPath, strTemplateDataset,
+                        "", true, Module1.Current.Aoi.FilePath, Module1.Current.Aoi.SnapRasterPath);
+                    if (success != BA_ReturnCode.Success)
+                    {
+                        break;
+                    }
+                    i++;
+                }
+            }
+            return success;
+        }
+
     }
 
 }

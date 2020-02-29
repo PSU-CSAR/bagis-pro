@@ -32,6 +32,7 @@ namespace bagis_pro
         public const string MAPS_TEXTBOX1 = "TextBox1";
 
         public const string FILE_AOI_VECTOR = "aoi_v";
+        public const string FILE_AOI_PRISM_VECTOR = "p_aoi_v";
         public const string FILE_AOI_RASTER = "aoibagis";
         public const string FILE_STREAMS = "aoi_streams";
         public const string FILE_SNOTEL = "snotel_sites";
@@ -61,8 +62,17 @@ namespace bagis_pro
         public const string FILE_TITLE_PAGE_XML = "title_page.xml";
         public const string FILE_TITLE_PAGE_HTML = "title_page.html";
         public const string FILE_TITLE_PAGE_PDF = "title_page.pdf";
+        public static readonly string[] URIS_SNODAS_SWE = new string[] { "daily_swe_normal_jan_01", "daily_swe_normal_feb_01", "daily_swe_normal_mar_01",
+                                                                         "daily_swe_normal_apr_01", "daily_swe_normal_may_01", "daily_swe_normal_jun_01",
+                                                                         "daily_swe_normal_dec_01"};
+        public static readonly string[] FILES_SNODAS_SWE = new string[] { "swe_jan_01", "swe_feb_01", "swe_mar_01",
+                                                                          "swe_apr_01", "swe_may_01", "swe_jun_01",
+                                                                          "swe_dec_01"};
+        public const string URI_IMAGE_SERVER = "/ImageServer";
+
 
         public const string FOLDER_MAP_PACKAGE = "maps_publish";
+        public const string FOLDER_MAPS = "maps";
 
         public const string FIELD_AOI_AREA = "AOISHPAREA";
         public const string FIELD_SITE_ELEV = "BA_SELEV";

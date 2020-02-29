@@ -77,5 +77,10 @@ namespace bagis_pro.BA_Objects
         {
             get { return m_dblSiteBufferDistMiles; }
         }
+
+        public string SnapRasterPath
+        {
+            get { return GeodatabaseTools.GetGeodatabasePath(m_strFilePath, GeodatabaseNames.Surfaces, true) + Constants.FILE_DEM_FILLED; }
+        }
     }
 }

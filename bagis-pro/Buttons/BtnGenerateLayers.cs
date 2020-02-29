@@ -44,12 +44,16 @@ namespace bagis_pro.Buttons
                 return;
             }
 
-            Uri clipFileUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, false));
-            Uri imageServiceUri = new Uri(@"C:\Users\lbross\Documents\ArcGIS\Projects\MyProject1\arcgis on bagis.geog.pdx.edu\DAILY_SWE_NORMALS\daily_swe_normal_apr_01.ImageServer");
-            Webservices ws = new Webservices();
-            BA_ReturnCode success = await ws.ClipImageToAoi(clipFileUri, Constants.FILE_AOI_VECTOR, imageServiceUri);
+            BA_ReturnCode success = await AnalysisTools.ClipSnotelSWELayersAsync();
 
-            MessageBox.Show("Analysis layers clipped!!", "BAGIS-PRO");
+            if (success == BA_ReturnCode.Success)
+            {
+                MessageBox.Show("Analysis layers clipped!!", "BAGIS-PRO");
+            }
+            else
+            {
+                MessageBox.Show("An error occurred while trying to clip the layers !!", "BAGIS-PRO");
+            }
         }
     }
 }
