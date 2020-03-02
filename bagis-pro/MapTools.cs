@@ -168,6 +168,15 @@ namespace bagis_pro
                     if (success == BA_ReturnCode.Success)
                         Module1.ActivateState("MapButtonPalette_BtnAspect_State");
 
+                    // add SNOTEL SWE layer
+                    strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers, true) +
+                        Constants.FILES_SNODAS_SWE[0];
+                    uri = new Uri(strPath);
+                    success = await MapTools.DisplayStretchRasterWithSymbolAsync(uri, Constants.MAPS_SNODAS_SWE_JAN, "ColorBrewer Schemes (RGB)",
+                                "Green-Blue (Continuous)", 30, false);
+                    if (success == BA_ReturnCode.Success)
+                        Module1.ActivateState("MapButtonPalette_BtnJanSwe_State");
+
                     // create map elements
                     await MapTools.AddMapElements(Constants.MAPS_DEFAULT_LAYOUT_NAME, "ArcGIS Colors", "1.5 Point");
                     await MapTools.DisplayNorthArrowAsync(layout, Constants.MAPS_DEFAULT_MAP_FRAME_NAME);
@@ -495,7 +504,7 @@ namespace bagis_pro
 
         public static async Task RemoveLayersfromMapFrame()
         {
-            string[] arrLayerNames = new string[11];
+            string[] arrLayerNames = new string[12];
             arrLayerNames[0] = Constants.MAPS_AOI_BOUNDARY;
             arrLayerNames[1] = Constants.MAPS_STREAMS;
             arrLayerNames[2] = Constants.MAPS_SNOTEL;
@@ -507,6 +516,7 @@ namespace bagis_pro
             arrLayerNames[8] = Constants.MAPS_SLOPE_ZONE;
             arrLayerNames[9] = Constants.MAPS_ASPECT_ZONE;
             arrLayerNames[10] = Constants.MAPS_ALL_SITES_REPRESENTED;
+            arrLayerNames[11] = Constants.MAPS_SNODAS_SWE_JAN;
             var map = MapView.Active.Map;
             await QueuedTask.Run(() =>
             {
@@ -601,6 +611,47 @@ namespace bagis_pro
             return BA_ReturnCode.Success;
         }
 
+        public static async Task<BA_ReturnCode> DisplayStretchRasterWithSymbolAsync(Uri rasterUri, string displayName, string styleCategory, string styleName,
+            int transparency, bool isVisible)
+        {
+            // parse the uri for the folder and file
+            string strFileName = null;
+            string strFolderPath = null;
+            if (rasterUri.IsFile)
+            {
+                strFileName = System.IO.Path.GetFileName(rasterUri.LocalPath);
+                strFolderPath = System.IO.Path.GetDirectoryName(rasterUri.LocalPath);
+            }
+            // Check to see if the raster exists before trying to add it
+            bool bExists = await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(strFolderPath), strFileName);
+            if (!bExists)
+            {
+                Debug.Print("DisplayStretchRasterWithSymbolAsync: Unable to add locate raster!!");
+                return BA_ReturnCode.ReadError;
+            }
+            // Open the requested raster so we know it exists; return if it doesn't
+            await QueuedTask.Run(async () =>
+            {
+                RasterLayer rasterLayer = null;
+                // Create the raster layer on the active map
+                await QueuedTask.Run(() =>
+                {
+                    rasterLayer = (RasterLayer)LayerFactory.Instance.CreateLayer(rasterUri, MapView.Active.Map);
+                });
+
+                // Set raster layer transparency and name
+                if (rasterLayer != null)
+                {
+                    rasterLayer.SetTransparency(transparency);
+                    rasterLayer.SetName(displayName);
+                    rasterLayer.SetVisibility(isVisible);
+                    // Create and deploy the unique values renderer
+                    await MapTools.SetToStretchValueColorizer(displayName, styleCategory, styleName);
+                }
+            });
+            return BA_ReturnCode.Success;
+        }
+
         public static async Task SetToUniqueValueColorizer(string layerName, string styleCategory,
             string styleName, string fieldName)
         {
@@ -629,6 +680,32 @@ namespace bagis_pro
             {
                 rasterLayer.SetColorizer(MapTools.RecalculateColorizer(newColorizer));
             });
+        }
+
+        public static async Task SetToStretchValueColorizer(string layerName, string styleCategory, string styleName)
+        {
+            // Get the layer we want to symbolize from the map
+            Layer oLayer =
+                MapView.Active.Map.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(layerName, StringComparison.CurrentCultureIgnoreCase));
+            if (oLayer == null)
+                return;
+            RasterLayer rasterLayer = (RasterLayer) oLayer;
+
+            StyleProjectItem style =
+                Project.Current.GetItems<StyleProjectItem>().FirstOrDefault(s => s.Name == styleCategory);
+            if (style == null) return;
+            var colorRampList = await QueuedTask.Run(() => style.SearchColorRamps(styleName));
+            if (colorRampList == null || colorRampList.Count == 0) return;
+            CIMColorRamp cimColorRamp = colorRampList[0].ColorRamp;
+
+            // Create a new Stretch Colorizer Definition supplying the color ramp
+            StretchColorizerDefinition stretchColorizerDef = new StretchColorizerDefinition(0, RasterStretchType.DefaultFromSource, 1.0, cimColorRamp);
+            stretchColorizerDef.StretchType = RasterStretchType.PercentMinimumMaximum;
+            //Create a new Stretch colorizer using the colorizer definition created above.
+            CIMRasterStretchColorizer newStretchColorizer =
+              await rasterLayer.CreateColorizerAsync(stretchColorizerDef) as CIMRasterStretchColorizer;
+            // Set the new colorizer on the raster layer.
+            rasterLayer.SetColorizer(newStretchColorizer);
         }
 
         // This method addresses the issue that the CreateColorizer does not systematically assign colors 
@@ -968,6 +1045,25 @@ namespace bagis_pro
                     }
                     mapDefinition = new BA_Objects.MapDefinition("ASPECT DISTRIBUTION",
                         " ", Constants.FILE_EXPORT_MAP_ASPECT_PDF);
+                    mapDefinition.LayerList = lstLayers;
+                    mapDefinition.LegendLayerList = lstLegendLayers;
+                    break;
+                case BagisMapType.SNODAS_SWE:
+                    lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
+                                                   Constants.MAPS_HILLSHADE, Constants.MAPS_SNODAS_SWE_JAN};
+                    lstLegendLayers = new List<string> { Constants.MAPS_SNODAS_SWE_JAN };
+                    if (Module1.Current.AoiHasSnotel == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOTEL);
+                        lstLegendLayers.Add(Constants.MAPS_SNOTEL);
+                    }
+                    if (Module1.Current.AoiHasSnowCourse == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOW_COURSE);
+                        lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE);
+                    }
+                    mapDefinition = new BA_Objects.MapDefinition("SNODAS SWE JAN 1ST",
+                        "Depth Units = Millimeters", Constants.FILE_EXPORT_MAP_SWE_JANUARY_PDF);
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;

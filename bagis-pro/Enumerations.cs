@@ -30,7 +30,8 @@ namespace bagis_pro
         SLOPE,
         SNOTEL,
         SCOS,
-        SITES_ALL
+        SITES_ALL,
+        SNODAS_SWE
     }
 
     public enum SiteType

@@ -25,6 +25,7 @@ namespace bagis_pro
         public const string MAPS_SNOTEL_REPRESENTED = "SNOTEL Sites Represented Area";
         public const string MAPS_SNOW_COURSE_REPRESENTED = "Snow Course Sites Represented Area";
         public const string MAPS_ALL_SITES_REPRESENTED = "All Sites Represented Area";
+        public const string MAPS_SNODAS_SWE_JAN = "January 1 SWE";
 
         public const string MAPS_LEGEND = "Legend";
         public const string MAPS_TITLE = "Title";
@@ -53,10 +54,10 @@ namespace bagis_pro
         public const string FILE_EXPORT_MAP_SCOS_PDF = "map_elevation_sc.pdf";
         public const string FILE_EXPORT_MAP_SNOTEL_AND_SCOS_PDF = "map_elevation_snotel_sc.pdf";
         public const string FILE_EXPORT_MAP_PRECIPITATION_PDF = "map_precipitation.pdf";
-        public const string FILE_EXPORT_MAP_SNODAS_PDF = "map_snodas.pdf";
         public const string FILE_EXPORT_MAP_ASPECT_PDF = "map_aspect.pdf";
         public const string FILE_EXPORT_MAP_SLOPE_PDF = "map_slope.pdf";
         public const string FILE_EXPORT_MAP_ELEVATION_SNOTEL_PDF = "map_elevation_snotel.pdf";
+        public const string FILE_EXPORT_MAP_SWE_JANUARY_PDF = "map_snodas_swe_january.pdf";
         public const string FILE_EXPORT_MAPS_ALL_PDF = "all_maps_charts.pdf";
         public const string FILE_TITLE_PAGE_XSL = "title_page.xsl";
         public const string FILE_TITLE_PAGE_XML = "title_page.xml";
@@ -93,6 +94,7 @@ namespace bagis_pro
                                                                 "MapButtonPalette_BtnSnotel_State",
                                                                 "MapButtonPalette_BtnSnowCourse_State",
                                                                 "MapButtonPalette_BtnSitesAll_State",
+                                                                "MapButtonPalette_BtnJanSwe_State",
                                                                 "MapButtonPalette_BtnAspect_State",
                                                                 "MapButtonPalette_BtnSlope_State" };
     }

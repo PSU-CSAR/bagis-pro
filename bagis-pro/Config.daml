@@ -59,6 +59,7 @@
           <button refID="MapButtonPalette_BtnSnotel" />
           <button refID="MapButtonPalette_BtnSnowCourse" />
           <button refID="MapButtonPalette_BtnSitesAll" />
+          <button refID="MapButtonPalette_BtnJanSwe" />
         </buttonPalette>
       </palettes>
       <controls>
@@ -132,6 +133,11 @@
           <tooltip heading="Palette Button 5">
             ToolTip<disabledText /></tooltip>
         </button>
+        <button id="MapButtonPalette_BtnJanSwe" caption="SWE January Distribution" className="bagis_pro.Buttons.MapButtonPalette_BtnJanSwe" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnJanSwe_Condition">
+          <tooltip heading="Palette Button 5">
+            ToolTip<disabledText />
+          </tooltip>
+        </button>
         <button id="bagis_pro_Buttons_BtnGenerateLayers" caption="Generate Analysis Layers" className="bagis_pro.Buttons.BtnGenerateLayers" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/CalculateGeometry16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/CalculateGeometry32.png">
           <tooltip heading="Tooltip Heading">
             <disabledText />
@@ -199,6 +205,9 @@
     </insertCondition>
     <insertCondition id="MapButtonPalette_BtnSitesAll_Condition" caption="Map Disabled">
       <state id="MapButtonPalette_BtnSitesAll_State" />
+    </insertCondition>
+    <insertCondition id="MapButtonPalette_BtnJanSwe_Condition" caption="Map Disabled">
+      <state id="MapButtonPalette_BtnJanSwe_State" />
     </insertCondition>
   </conditions>
 </ArcGIS>
