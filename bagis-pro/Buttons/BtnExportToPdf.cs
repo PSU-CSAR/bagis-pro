@@ -35,7 +35,11 @@ namespace bagis_pro.Buttons
                     System.IO.Directory.CreateDirectory(outputDirectory);
                 }
 
-                IList<string> lstFilesToAppend = new List<string> { Constants.FILE_TITLE_PAGE_PDF };
+                // This is the order the files will be assembled
+                IList<string> lstFilesToAppend = new List<string> { Constants.FILE_TITLE_PAGE_PDF,  Constants.FILE_EXPORT_MAP_ELEV_PDF,
+                    Constants.FILE_EXPORT_MAP_SNOTEL_PDF, Constants.FILE_EXPORT_MAP_SCOS_PDF, Constants.FILE_EXPORT_MAP_SNOTEL_AND_SCOS_PDF,
+                    Constants.FILE_EXPORT_MAP_PRECIPITATION_PDF, Constants.FILE_EXPORT_MAPS_SWE[0], Constants.FILE_EXPORT_MAPS_SWE[1],
+                    Constants.FILE_EXPORT_MAPS_SWE[2], Constants.FILE_EXPORT_MAP_ASPECT_PDF, Constants.FILE_EXPORT_MAP_SLOPE_PDF};
                 foreach(string strButtonState in Constants.STATES_MAP_BUTTON)
                 {
                     if (FrameworkApplication.State.Contains(strButtonState))
@@ -60,14 +64,29 @@ namespace bagis_pro.Buttons
                         }
                         while (Module1.Current.MapFinishedLoading == false);
 
-                        BA_ReturnCode success = await GeneralTools.ExportMapToPdfAsync();    // export each map to pdf
-                        if (success == BA_ReturnCode.Success)
-                        {
-                            lstFilesToAppend.Add(Module1.Current.DisplayedMap);
-                        }
-
+                        BA_ReturnCode success2 = await GeneralTools.ExportMapToPdfAsync();    // export each map to pdf
                     }
                 }
+
+                // Export remaining SNODAS SWE maps
+                if (Module1.Current.DisplayedMap.Equals(Constants.FILE_EXPORT_MAP_SWE_JANUARY_PDF))
+                {
+                    Uri snodasUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers));
+                    Map map = MapView.Active.Map;
+                    Layout layout = await MapTools.GetDefaultLayoutAsync(Constants.MAPS_DEFAULT_LAYOUT_NAME);
+                    IList<string> lstSweFilesToAppend = await MapTools.PublishSnodasSweMapsAsync(snodasUri, 0, map, layout);
+                    if (lstSweFilesToAppend.Count < 1)
+                    {
+                        Debug.WriteLine("BtnExportToPdf_onClick: No swe pdf files were created");
+                    }
+                }
+                else
+                {
+                    Debug.WriteLine("BtnExportToPdf_onClick: January SWE Map must be displayed to export other months!!");
+                }
+
+
+
                 await GeneralTools.GenerateMapsTitlePage();
 
                 // Initialize output document
