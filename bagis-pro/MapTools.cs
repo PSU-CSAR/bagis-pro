@@ -15,6 +15,7 @@ using System.Diagnostics;
 using System.Windows;
 using ArcGIS.Desktop.Framework.Contracts;
 using ArcGIS.Desktop.Framework;
+using System.Windows.Input;
 
 namespace bagis_pro
 {
@@ -1134,77 +1135,101 @@ namespace bagis_pro
         public static async Task<IList<string>> PublishSnodasSweMapsAsync(Uri uriSnodasGdb, int idxDisplayedMap, Map map, Layout layout)
         {
             List<string> lstPdfFilesToAppend = new List<string>();
+            List<string> lstLayersToRemove = new List<string>();
 
             int idx = 1;
             for (idx = 1; idx < Constants.FILES_SNODAS_SWE.Length; idx++) //start with the second raster, the first is already displayed
             {
-                string strPdfFile = await PublishSnodasSweMapAsync(uriSnodasGdb, Constants.FILES_SNODAS_SWE[idx -1], map, Constants.LAYER_NAMES_SNODAS_SWE[idx - 1],
-                    layout, Constants.LAYER_NAMES_SNODAS_SWE[idx], Constants.FILES_SNODAS_SWE[idx], Constants.MAP_TITLES_SNODAS_SWE[idx],
-                    Constants.FILE_EXPORT_MAPS_SWE[idx], true);
+                Uri fullUri = new Uri(uriSnodasGdb.LocalPath + "\\" + Constants.FILES_SNODAS_SWE[idx]);
+                string strPdfFile = await PublishSnodasSweMapAsync(fullUri, map, Constants.LAYER_NAMES_SNODAS_SWE[idx],
+                    Constants.MAP_TITLES_SNODAS_SWE[idx], Constants.FILE_EXPORT_MAPS_SWE[idx]);
                 if (!String.IsNullOrEmpty(strPdfFile))
                 {
                     lstPdfFilesToAppend.Add(strPdfFile);
+                    lstLayersToRemove.Add(Constants.LAYER_NAMES_SNODAS_SWE[idx]);
                 }
             }
             // Switch the map back to January so it matches the menu item
-            string strFile = await PublishSnodasSweMapAsync(uriSnodasGdb, Constants.FILES_SNODAS_SWE[idx-1], map, Constants.LAYER_NAMES_SNODAS_SWE[idx-1],
-                layout, Constants.LAYER_NAMES_SNODAS_SWE[idxDisplayedMap], Constants.FILES_SNODAS_SWE[idxDisplayedMap], Constants.MAP_TITLES_SNODAS_SWE[idxDisplayedMap],
-                Constants.FILE_EXPORT_MAPS_SWE[idxDisplayedMap], false);
+            if (! Module1.Current.DisplayedMap.Equals(Constants.FILE_EXPORT_MAP_SWE_JANUARY_PDF))
+            {
+                ICommand cmd = FrameworkApplication.GetPlugInWrapper("MapButtonPalette_BtnJanSwe") as ICommand;
 
+                if ((cmd != null))
+                {
+                    do
+                    {
+                        await Task.Delay(TimeSpan.FromSeconds(0.5));  // build in delay until the command can execute
+                    }
+                    while (!cmd.CanExecute(null));
+                    cmd.Execute(null);
+                }
+            }
+            // Delete extra swe layers
+            foreach (string layerName in lstLayersToRemove)
+            {
+                await (MapTools.RemoveLayer(map, layerName));
+            }
             return lstPdfFilesToAppend;
         }
 
-        private static async Task<string> PublishSnodasSweMapAsync(Uri uriSnodasGdb, string strDisplayedRaster, Map map, string displayedLayerName,
-                                            Layout layout, string strNewLayerName, string strRaster, string strTitle, string strFileMapExport,
-                                            bool bExportMap)
+        private static async Task<string> PublishSnodasSweMapAsync(Uri uriSnodasGdb, Map map, string strNewLayerName, string strTitle,
+                                                    string strFileMapExport)
         {
-            RasterDataset rDataset = null;
-            Layer oLayer = null;
-            BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            Module1.Current.MapFinishedLoading = false;            
+            // add SNOTEL SWE layer
+            BA_ReturnCode success = await MapTools.DisplayStretchRasterWithSymbolAsync(uriSnodasGdb, strNewLayerName, "ColorBrewer Schemes (RGB)",
+                        "Green-Blue (Continuous)", 30, false);
+
+            //Get map definition
+            BA_Objects.MapDefinition thisMap = new BA_Objects.MapDefinition(strTitle,
+                "Depth Units = Millimeters", strFileMapExport);
+            IList<string> lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
+                                                         Constants.MAPS_HILLSHADE, strNewLayerName};
+            IList<string> lstLegendLayers = new List<string> { strNewLayerName };
+            if (Module1.Current.AoiHasSnotel == true)
+            {
+                lstLayers.Add(Constants.MAPS_SNOTEL);
+                lstLegendLayers.Add(Constants.MAPS_SNOTEL);
+            }
+            if (Module1.Current.AoiHasSnowCourse == true)
+            {
+                lstLayers.Add(Constants.MAPS_SNOW_COURSE);
+                lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE);
+            }
+            thisMap.LayerList = lstLayers;
+            thisMap.LegendLayerList = lstLegendLayers;
+
+            // toggle layers according to map definition
+            var allLayers = MapView.Active.Map.Layers.ToList();
             await QueuedTask.Run(() =>
             {
-                // Opens a file geodatabase. This will open the geodatabase if the folder exists and contains a valid geodatabase.
-                using (Geodatabase geodatabase =
-                    new Geodatabase(new FileGeodatabaseConnectionPath(uriSnodasGdb)))
+                foreach (var layer in allLayers)
                 {
-                    // Use the geodatabase.
-                    try
+                    if (thisMap.LayerList.Contains(layer.Name))
                     {
-                        rDataset = geodatabase.OpenDataset<RasterDataset>(strRaster);
+                        layer.SetVisibility(true);
                     }
-                    catch (GeodatabaseTableException e)
+                    else
                     {
-                        Debug.WriteLine("UpdateSnodasSweMapDataAsync: Unable to open raster " + strRaster);
-                        Debug.WriteLine("UpdateSnodasSweMapDataAsync: " + e.Message);
-                        return;
+                        layer.SetVisibility(false);
                     }
                 }
             });
 
-            await QueuedTask.Run(() =>
-            {
-                oLayer = map.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(displayedLayerName, StringComparison.CurrentCultureIgnoreCase));
-            });
+            Layout layout = await MapTools.GetDefaultLayoutAsync(Constants.MAPS_DEFAULT_LAYOUT_NAME);
+            await MapTools.UpdateMapElementsAsync(layout, Module1.Current.Aoi.Name.ToUpper(), thisMap);
+            await MapTools.UpdateLegendAsync(layout, thisMap);
+            Module1.Current.DisplayedMap = thisMap.PdfFileName;
 
-            await QueuedTask.Run(() =>
-            {
-                if (oLayer.CanReplaceDataSource(rDataset))
-                {
-                    oLayer.ReplaceDataSource(rDataset);
-                    oLayer.SetName(strNewLayerName);
-                }
-                GraphicElement textBox = layout.FindElement(Constants.MAPS_SUBTITLE) as GraphicElement;
-                if (textBox != null)
-                {
-                    CIMTextGraphic graphic = (CIMTextGraphic)textBox.Graphic;
-                    graphic.Text = strTitle;
-                    textBox.SetGraphic(graphic);
-                    success = BA_ReturnCode.Success;
-                }
-            });
-            if (success == BA_ReturnCode.Success && bExportMap == true)
+            Module1.Current.MapFinishedLoading = true;
+            if (success == BA_ReturnCode.Success)
             {
                 Module1.Current.DisplayedMap = strFileMapExport;
+                do
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(0.5));  // build in delay so maps can load
+                }
+                while (Module1.Current.MapFinishedLoading == false);
                 success = await GeneralTools.ExportMapToPdfAsync();
             }
             if (success == BA_ReturnCode.Success)
