@@ -21,6 +21,13 @@ namespace bagis_pro.Menus
         {
             try
             {
+                Webservices ws = new Webservices();
+                IDictionary<string, BA_Objects.DataSource> dictDataSources = 
+                    await ws.QueryDataSourcesAsync(@"https://test.ebagis.geog.pdx.edu");
+                IList<BA_Objects.DataSource> lstSources = new List<BA_Objects.DataSource>(dictDataSources.Values);
+                string json = Newtonsoft.Json.JsonConvert.SerializeObject(lstSources);
+                Console.WriteLine(json);
+
                 OpenItemDialog selectAoiDialog = new OpenItemDialog()
                 {
                     Title = "Select AOI Folder",

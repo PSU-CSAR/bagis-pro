@@ -123,7 +123,7 @@ namespace bagis_pro
                               Constants.FILE_SNOTEL;
                     uri = new Uri(strPath);
                     success = await MapTools.AddPointMarkersAsync(uri, Constants.MAPS_SNOTEL, ColorFactory.Instance.BlueRGB,
-                        SimpleMarkerStyle.X, 16);
+                        SimpleMarkerStyle.X, 10);
                     if (success == BA_ReturnCode.Success)
                         Module1.Current.AoiHasSnotel = true;
 
@@ -132,7 +132,7 @@ namespace bagis_pro
                               Constants.FILE_SNOW_COURSE;
                     uri = new Uri(strPath);
                     success = await MapTools.AddPointMarkersAsync(uri, Constants.MAPS_SNOW_COURSE, CIMColor.CreateRGBColor(0, 255, 255),
-                        SimpleMarkerStyle.Star, 16);
+                        SimpleMarkerStyle.Star, 12);
                     if (success == BA_ReturnCode.Success)
                         Module1.Current.AoiHasSnowCourse = true;
 
@@ -173,8 +173,10 @@ namespace bagis_pro
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers, true) +
                         Constants.FILES_SNODAS_SWE[0];
                     uri = new Uri(strPath);
-                    success = await MapTools.DisplayStretchRasterWithSymbolAsync(uri, Constants.MAPS_SNODAS_SWE_JAN, "ColorBrewer Schemes (RGB)",
-                                "Green-Blue (Continuous)", 30, false);
+                    //success = await MapTools.DisplayStretchRasterWithSymbolAsync(uri, Constants.MAPS_SNODAS_SWE_JAN, "ColorBrewer Schemes (RGB)",
+                    //            "Green-Blue (Continuous)", 30, false);
+                    string strLayerFilePath = @"C:\Docs\animas_AOI_prms\maps_publish\SWE.lyrx";
+                    success = await MapTools.DisplayRasterFromLayerFileAsync(uri, Constants.MAPS_SNODAS_SWE_JAN, strLayerFilePath, 30);
                     if (success == BA_ReturnCode.Success)
                         Module1.ActivateState("MapButtonPalette_BtnJanSwe_State");
 
@@ -653,6 +655,56 @@ namespace bagis_pro
             return BA_ReturnCode.Success;
         }
 
+        public static async Task<BA_ReturnCode> DisplayRasterFromLayerFileAsync(Uri rasterUri, string displayName, 
+            string layerFilePath, int transparency)
+        {
+            // parse the uri for the folder and file
+            string strFileName = null;
+            string strFolderPath = null;
+            if (rasterUri.IsFile)
+            {
+                strFileName = System.IO.Path.GetFileName(rasterUri.LocalPath);
+                strFolderPath = System.IO.Path.GetDirectoryName(rasterUri.LocalPath);
+            }
+            // Check to see if the raster exists before trying to add it
+            bool bExists = await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(strFolderPath), strFileName);
+            if (!bExists)
+            {
+                Debug.Print("DisplayRasterFromLayerFileAsync: Unable to add locate raster!!");
+                return BA_ReturnCode.ReadError;
+            }
+            // Open the requested raster so we know it exists; return if it doesn't
+            await QueuedTask.Run(async () =>
+            {
+                RasterLayer rasterLayer = null;
+                // Create the raster layer on the active map
+                await QueuedTask.Run(() =>
+                {
+                    rasterLayer = (RasterLayer) LayerFactory.Instance.CreateLayer(rasterUri, MapView.Active.Map);
+                });
+
+                // Set raster layer transparency and name
+                if (rasterLayer != null)
+                {
+                    //Get the Layer Document from the lyrx file
+                    var lyrDocFromLyrxFile = new LayerDocument(layerFilePath);
+                    var cimLyrDoc = lyrDocFromLyrxFile.GetCIMLayerDocument();
+
+                    //Get the colorizer from the layer file
+                    var layerDefs = cimLyrDoc.LayerDefinitions;
+                    var colorizerFromLayerFile = ((CIMRasterLayer) cimLyrDoc.LayerDefinitions[0]).Colorizer as CIMRasterStretchColorizer;
+
+                    //Apply the colorizer to the raster layer
+                    rasterLayer?.SetColorizer(colorizerFromLayerFile);
+
+                    //Set the name and transparency
+                    rasterLayer?.SetName(displayName);
+                    rasterLayer?.SetTransparency(transparency);
+                }
+            });
+            return BA_ReturnCode.Success;
+        }
+
         public static async Task SetToUniqueValueColorizer(string layerName, string styleCategory,
             string styleName, string fieldName)
         {
@@ -1064,7 +1116,7 @@ namespace bagis_pro
                         lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE);
                     }
                     mapDefinition = new BA_Objects.MapDefinition(Constants.MAP_TITLES_SNODAS_SWE[0],
-                        "Depth Units = Millimeters", Constants.FILE_EXPORT_MAP_SWE_JANUARY_PDF);
+                        "Depth Units = Inches", Constants.FILE_EXPORT_MAP_SWE_JANUARY_PDF);
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;
@@ -1175,14 +1227,16 @@ namespace bagis_pro
         private static async Task<string> PublishSnodasSweMapAsync(Uri uriSnodasGdb, Map map, string strNewLayerName, string strTitle,
                                                     string strFileMapExport)
         {
-            Module1.Current.MapFinishedLoading = false;            
+            Module1.Current.MapFinishedLoading = false;
             // add SNOTEL SWE layer
-            BA_ReturnCode success = await MapTools.DisplayStretchRasterWithSymbolAsync(uriSnodasGdb, strNewLayerName, "ColorBrewer Schemes (RGB)",
-                        "Green-Blue (Continuous)", 30, false);
+            //BA_ReturnCode success = await MapTools.DisplayStretchRasterWithSymbolAsync(uriSnodasGdb, strNewLayerName, "ColorBrewer Schemes (RGB)",
+            //            "Green-Blue (Continuous)", 30, false);
+            string strLayerFilePath = @"C:\Docs\animas_AOI_prms\maps_publish\SWE.lyrx";
+            BA_ReturnCode success = await MapTools.DisplayRasterFromLayerFileAsync(uriSnodasGdb, strNewLayerName, strLayerFilePath, 30);
 
             //Get map definition
             BA_Objects.MapDefinition thisMap = new BA_Objects.MapDefinition(strTitle,
-                "Depth Units = Millimeters", strFileMapExport);
+                "Depth Units = Inches", strFileMapExport);
             IList<string> lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
                                                          Constants.MAPS_HILLSHADE, strNewLayerName};
             IList<string> lstLegendLayers = new List<string> { strNewLayerName };

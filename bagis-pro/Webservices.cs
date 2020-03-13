@@ -177,5 +177,26 @@ namespace bagis_pro
             });
             return returnValue;
         }
+
+        public async Task<IDictionary<string, BA_Objects.DataSource>> QueryDataSourcesAsync(string webserviceUrl)
+        {
+            IDictionary<string, BA_Objects.DataSource> dictDataSources = new Dictionary<string, BA_Objects.DataSource>();
+            webserviceUrl = webserviceUrl + @"/api/rest/desktop/settings/bagis-pro/";
+            EsriHttpResponseMessage response = new EsriHttpClient().Get(webserviceUrl);
+            dynamic dataSourcesResp = JObject.Parse(await response.Content.ReadAsStringAsync());
+            foreach (dynamic dSource in dataSourcesResp.datasources)
+            {
+                string key = dSource.layerType;
+                if (!dictDataSources.ContainsKey(key))
+                {
+                    BA_Objects.DataSource newSource = new BA_Objects.DataSource();
+                    newSource.layerType = key;
+                    newSource.description = dSource.description;
+                    newSource.uri = dSource.uri;
+                    dictDataSources.Add(key, newSource);
+                }
+            }
+            return dictDataSources;
+        }
     }
 }
