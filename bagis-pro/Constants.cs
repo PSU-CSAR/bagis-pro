@@ -51,6 +51,7 @@ namespace bagis_pro
         public const string FILE_SCOS_REPRESENTED = "scos_rep";
         public const string FILE_SITES_REPRESENTED = "sites_rep";
         public const string FILE_POURPOINT = "pourpoint";
+        public const string FILE_MAP_PARAMETERS = "map_parameters.json";
         public const string FILE_EXPORT_MAP_ELEV_PDF = "map_elevation.pdf";
         public const string FILE_EXPORT_MAP_SNOTEL_PDF = "map_elevation_snotel.pdf";
         public const string FILE_EXPORT_MAP_SCOS_PDF = "map_elevation_sc.pdf";
@@ -95,6 +96,9 @@ namespace bagis_pro
         public const string FIELD_USGS_ID = "USGS_ID";
         public const string FIELD_NEAR_ID = "NEAR_FID";
         public const string FIELD_NEAR_DIST = "NEAR_DIST";
+
+        public const string DATA_TYPE_SWE = "Snotel SWE";
+        public const string DATA_TYPE_PRECIPITATION = "Precipitation";
 
         public const int VALUE_NO_DATA_9999 = -9999;
         public const string VALUE_NO_DATA = "NoData";

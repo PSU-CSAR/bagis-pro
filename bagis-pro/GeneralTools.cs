@@ -3,9 +3,12 @@ using ArcGIS.Desktop.Framework.Dialogs;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
 using ArcGIS.Desktop.Layouts;
 using ArcGIS.Desktop.Mapping;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Xml;
@@ -236,6 +239,31 @@ namespace bagis_pro
             {
                 MessageBox.Show("An error occurred while trying to parse the XML!! " + e.Message, "BAGIS PRO");
             }
+        }
+
+        public static IDictionary<string, dynamic> QueryLocalDataSources()
+        {
+            IDictionary<string, dynamic> dictDataSources = new Dictionary<string, dynamic>();
+            string strDataSourcesFile = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAPS + "\\" +
+                Constants.FILE_MAP_PARAMETERS;
+            if (File.Exists(strDataSourcesFile))
+            {
+                using (StreamReader file = File.OpenText(strDataSourcesFile))
+                using (JsonTextReader reader = new JsonTextReader(file))
+                {
+                    JObject jsonVal = (JObject)JToken.ReadFrom(reader);
+                    JArray arrDataSources = (JArray)jsonVal["dataSources"];
+                    foreach (dynamic dSource in arrDataSources)
+                    {
+                        string key = dSource.layerType;
+                        if (!dictDataSources.ContainsKey(key))
+                        {
+                            dictDataSources.Add(key, dSource);
+                        }
+                    }
+                }
+            }
+            return dictDataSources;
         }
     }
 

@@ -184,8 +184,9 @@ namespace bagis_pro
             webserviceUrl = webserviceUrl + @"/api/rest/desktop/settings/bagis-pro/";
             EsriHttpResponseMessage response = new EsriHttpClient().Get(webserviceUrl);
             JObject jsonVal = JObject.Parse(await response.Content.ReadAsStringAsync()) as JObject;
-            dynamic dataSources = jsonVal;
-            foreach (dynamic dSource in dataSources)
+            JArray arrDataSources = (JArray)jsonVal["dataSources"];
+
+            foreach (dynamic dSource in arrDataSources)
             {
                 string key = dSource.layerType;
                 if (!dictDataSources.ContainsKey(key))

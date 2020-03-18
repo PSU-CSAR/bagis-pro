@@ -76,7 +76,8 @@ namespace bagis_pro.Buttons
                     Uri snodasUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers));
                     Map map = MapView.Active.Map;
                     Layout layout = await MapTools.GetDefaultLayoutAsync(Constants.MAPS_DEFAULT_LAYOUT_NAME);
-                    IList<string> lstSweFilesToAppend = await MapTools.PublishSnodasSweMapsAsync(snodasUri, 0, map, layout);
+                    IList<string> lstSweFilesToAppend = await MapTools.PublishSnodasSweMapsAsync(snodasUri, 0, map, layout,
+                        Module1.Current.Aoi.FilePath + @"\maps_publish\SWE.lyrx");
                     if (lstSweFilesToAppend.Count < 1)
                     {
                         Debug.WriteLine("BtnExportToPdf_onClick: No swe pdf files were created");

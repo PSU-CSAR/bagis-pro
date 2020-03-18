@@ -482,27 +482,46 @@ namespace bagis_pro
 
         public static async Task<BA_ReturnCode> ClipSnotelSWELayersAsync()
         {
-            Uri clipFileUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, false));
-            string[] arrReturnValues = await GeodatabaseTools.QueryAoiEnvelopeAsync(clipFileUri, Constants.FILE_AOI_PRISM_VECTOR);
+            Webservices ws = new Webservices();
+            IDictionary<string, dynamic> dictDataSources =
+                await ws.QueryDataSourcesAsync(Module1.Current.Settings.m_eBagisServer);
+            string strSwePrefix = dictDataSources[Constants.DATA_TYPE_SWE].uri;
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
-            if (arrReturnValues.Length == 2)
+            if (!String.IsNullOrEmpty(strSwePrefix))
             {
-                Webservices ws = new Webservices();
-                string strEnvelopeText = arrReturnValues[0];
-                string strTemplateDataset = arrReturnValues[1];
-                int i = 0;
-                foreach (string strUri in Constants.URIS_SNODAS_SWE)
+                Uri clipFileUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, false));
+                string[] arrReturnValues = await GeodatabaseTools.QueryAoiEnvelopeAsync(clipFileUri, Constants.FILE_AOI_PRISM_VECTOR);
+                if (arrReturnValues.Length == 2)
                 {
-                    Uri imageServiceUri = new Uri(Module1.Current.Settings.m_snodasSweUri + strUri + Constants.URI_IMAGE_SERVER);
-                    string strOutputPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, true) + Constants.FILES_SNODAS_SWE[i];
-                    success = await GeoprocessingTools.ClipRasterAsync(imageServiceUri.AbsoluteUri, strEnvelopeText, strOutputPath, strTemplateDataset,
-                        "", true, Module1.Current.Aoi.FilePath, Module1.Current.Aoi.SnapRasterPath);
-                    if (success != BA_ReturnCode.Success)
+                    string strEnvelopeText = arrReturnValues[0];
+                    string strTemplateDataset = arrReturnValues[1];
+                    int i = 0;
+                    foreach (string strUri in Constants.URIS_SNODAS_SWE)
                     {
-                        break;
+                        Uri imageServiceUri = new Uri(strSwePrefix + strUri + Constants.URI_IMAGE_SERVER);
+                        string strOutputPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, true) + Constants.FILES_SNODAS_SWE[i];
+                        success = await GeoprocessingTools.ClipRasterAsync(imageServiceUri.AbsoluteUri, strEnvelopeText, strOutputPath, strTemplateDataset,
+                            "", true, Module1.Current.Aoi.FilePath, Module1.Current.Aoi.SnapRasterPath);
+                        if (success != BA_ReturnCode.Success)
+                        {
+                            break;
+                        }
+                        i++;
                     }
-                    i++;
                 }
+                // Update layer metadata
+                IDictionary<string, dynamic> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
+                dynamic updateDataSource = dictDataSources[Constants.DATA_TYPE_SWE];
+                updateDataSource.dateClipped = DateTime.Now;
+                if (dictLocalDataSources.ContainsKey(Constants.DATA_TYPE_SWE))
+                {
+                    dictLocalDataSources[Constants.DATA_TYPE_SWE] = updateDataSource;
+                }
+                else
+                {
+                    dictLocalDataSources.Add(Constants.DATA_TYPE_SWE, updateDataSource);
+                }
+
             }
             return success;
         }
