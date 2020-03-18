@@ -31,7 +31,8 @@ namespace bagis_pro
         SNOTEL,
         SCOS,
         SITES_ALL,
-        SNODAS_SWE
+        SNODAS_SWE,
+        PRISM
     }
 
     public enum SiteType

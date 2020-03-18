@@ -178,22 +178,19 @@ namespace bagis_pro
             return returnValue;
         }
 
-        public async Task<IDictionary<string, BA_Objects.DataSource>> QueryDataSourcesAsync(string webserviceUrl)
+        public async Task<IDictionary<string, dynamic>> QueryDataSourcesAsync(string webserviceUrl)
         {
-            IDictionary<string, BA_Objects.DataSource> dictDataSources = new Dictionary<string, BA_Objects.DataSource>();
+            IDictionary<string, dynamic> dictDataSources = new Dictionary<string, dynamic>();
             webserviceUrl = webserviceUrl + @"/api/rest/desktop/settings/bagis-pro/";
             EsriHttpResponseMessage response = new EsriHttpClient().Get(webserviceUrl);
-            dynamic dataSourcesResp = JObject.Parse(await response.Content.ReadAsStringAsync());
-            foreach (dynamic dSource in dataSourcesResp.datasources)
+            JObject jsonVal = JObject.Parse(await response.Content.ReadAsStringAsync()) as JObject;
+            dynamic dataSources = jsonVal;
+            foreach (dynamic dSource in dataSources)
             {
                 string key = dSource.layerType;
                 if (!dictDataSources.ContainsKey(key))
                 {
-                    BA_Objects.DataSource newSource = new BA_Objects.DataSource();
-                    newSource.layerType = key;
-                    newSource.description = dSource.description;
-                    newSource.uri = dSource.uri;
-                    dictDataSources.Add(key, newSource);
+                    dictDataSources.Add(key, dSource);
                 }
             }
             return dictDataSources;

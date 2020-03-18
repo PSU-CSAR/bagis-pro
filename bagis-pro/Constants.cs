@@ -22,6 +22,7 @@ namespace bagis_pro
         public const string MAPS_ELEV_ZONE = "Elevation Zones";
         public const string MAPS_SLOPE_ZONE = "Slope Zones";
         public const string MAPS_ASPECT_ZONE = "Aspect Zones";
+        public const string MAPS_PRISM_ZONE = "Precipitation Zones";
         public const string MAPS_SNOTEL_REPRESENTED = "SNOTEL Sites Represented Area";
         public const string MAPS_SNOW_COURSE_REPRESENTED = "Snow Course Sites Represented Area";
         public const string MAPS_ALL_SITES_REPRESENTED = "All Sites Represented Area";
@@ -43,6 +44,7 @@ namespace bagis_pro
         public const string FILE_ELEV_ZONE = "elevzone";
         public const string FILE_SLOPE_ZONE = "slpzone";
         public const string FILE_ASPECT_ZONE = "aspzone";
+        public const string FILE_PRECIP_ZONE = "preczone";
         //public const string FILE_SNOTEL_REPRESENTED = "npactual";
         public const string FILE_SNOTEL_REPRESENTED = "snotel_rep";
         //public const string FILE_SCOS_REPRESENTED = "nppseduo";
@@ -104,6 +106,7 @@ namespace bagis_pro
                                                                 "MapButtonPalette_BtnSnowCourse_State",
                                                                 "MapButtonPalette_BtnSitesAll_State",
                                                                 "MapButtonPalette_BtnAspect_State",
+                                                                "MapButtonPalette_BtnPrism_State",
                                                                 "MapButtonPalette_BtnSlope_State",
                                                                 "MapButtonPalette_BtnJanSwe_State"};
     }

@@ -176,9 +176,19 @@ namespace bagis_pro
                     //success = await MapTools.DisplayStretchRasterWithSymbolAsync(uri, Constants.MAPS_SNODAS_SWE_JAN, "ColorBrewer Schemes (RGB)",
                     //            "Green-Blue (Continuous)", 30, false);
                     string strLayerFilePath = @"C:\Docs\animas_AOI_prms\maps_publish\SWE.lyrx";
-                    success = await MapTools.DisplayRasterFromLayerFileAsync(uri, Constants.MAPS_SNODAS_SWE_JAN, strLayerFilePath, 30);
+                    success = await MapTools.DisplayRasterFromLayerFileAsync(uri, Constants.MAPS_SNODAS_SWE_JAN, strLayerFilePath, 30, false);
                     if (success == BA_ReturnCode.Success)
                         Module1.ActivateState("MapButtonPalette_BtnJanSwe_State");
+
+                    // add Precipitation layer
+                    strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
+                        Constants.FILE_PRECIP_ZONE;
+                    uri = new Uri(strPath);
+                    success = await MapTools.DisplayRasterWithSymbolAsync(uri, Constants.MAPS_PRISM_ZONE, "ArcGIS Colors",
+                               "Precipitation", "NAME", 30, false);
+                    if (success == BA_ReturnCode.Success)
+                        Module1.ActivateState("MapButtonPalette_BtnPrism_State");
+
 
                     // create map elements
                     await MapTools.AddMapElements(Constants.MAPS_DEFAULT_LAYOUT_NAME, "ArcGIS Colors", "1.5 Point");
@@ -507,7 +517,7 @@ namespace bagis_pro
 
         public static async Task RemoveLayersfromMapFrame()
         {
-            string[] arrLayerNames = new string[12];
+            string[] arrLayerNames = new string[13];
             arrLayerNames[0] = Constants.MAPS_AOI_BOUNDARY;
             arrLayerNames[1] = Constants.MAPS_STREAMS;
             arrLayerNames[2] = Constants.MAPS_SNOTEL;
@@ -520,6 +530,7 @@ namespace bagis_pro
             arrLayerNames[9] = Constants.MAPS_ASPECT_ZONE;
             arrLayerNames[10] = Constants.MAPS_ALL_SITES_REPRESENTED;
             arrLayerNames[11] = Constants.MAPS_SNODAS_SWE_JAN;
+            arrLayerNames[12] = Constants.MAPS_PRISM_ZONE;
             var map = MapView.Active.Map;
             await QueuedTask.Run(() =>
             {
@@ -656,7 +667,7 @@ namespace bagis_pro
         }
 
         public static async Task<BA_ReturnCode> DisplayRasterFromLayerFileAsync(Uri rasterUri, string displayName, 
-            string layerFilePath, int transparency)
+            string layerFilePath, int transparency, bool bIsVisible)
         {
             // parse the uri for the folder and file
             string strFileName = null;
@@ -700,6 +711,7 @@ namespace bagis_pro
                     //Set the name and transparency
                     rasterLayer?.SetName(displayName);
                     rasterLayer?.SetTransparency(transparency);
+                    rasterLayer?.SetVisibility(bIsVisible);
                 }
             });
             return BA_ReturnCode.Success;
@@ -1120,6 +1132,25 @@ namespace bagis_pro
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;
+                case BagisMapType.PRISM:
+                    lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
+                                                   Constants.MAPS_HILLSHADE, Constants.MAPS_PRISM_ZONE};
+                    lstLegendLayers = new List<string> { Constants.MAPS_PRISM_ZONE };
+                    if (Module1.Current.AoiHasSnotel == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOTEL);
+                        lstLegendLayers.Add(Constants.MAPS_SNOTEL);
+                    }
+                    if (Module1.Current.AoiHasSnowCourse == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOW_COURSE);
+                        lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE);
+                    }
+                    mapDefinition = new BA_Objects.MapDefinition("PRECIPITATION DISTRIBUTION",
+                        "Precipitation Units = Inches", Constants.FILE_EXPORT_MAP_PRECIPITATION_PDF);
+                    mapDefinition.LayerList = lstLayers;
+                    mapDefinition.LegendLayerList = lstLegendLayers;
+                    break;
                 case BagisMapType.SNOTEL:
                     lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_ELEV_ZONE,
@@ -1232,7 +1263,7 @@ namespace bagis_pro
             //BA_ReturnCode success = await MapTools.DisplayStretchRasterWithSymbolAsync(uriSnodasGdb, strNewLayerName, "ColorBrewer Schemes (RGB)",
             //            "Green-Blue (Continuous)", 30, false);
             string strLayerFilePath = @"C:\Docs\animas_AOI_prms\maps_publish\SWE.lyrx";
-            BA_ReturnCode success = await MapTools.DisplayRasterFromLayerFileAsync(uriSnodasGdb, strNewLayerName, strLayerFilePath, 30);
+            BA_ReturnCode success = await MapTools.DisplayRasterFromLayerFileAsync(uriSnodasGdb, strNewLayerName, strLayerFilePath, 30, false);
 
             //Get map definition
             BA_Objects.MapDefinition thisMap = new BA_Objects.MapDefinition(strTitle,
