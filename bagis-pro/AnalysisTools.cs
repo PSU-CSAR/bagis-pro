@@ -521,7 +521,7 @@ namespace bagis_pro
                 {
                     dictLocalDataSources.Add(Constants.DATA_TYPE_SWE, updateDataSource);
                 }
-
+                success = GeneralTools.SaveDataSourcesToFile(dictLocalDataSources);
             }
             return success;
         }

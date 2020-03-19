@@ -265,6 +265,30 @@ namespace bagis_pro
             }
             return dictDataSources;
         }
+
+        public static BA_ReturnCode SaveDataSourcesToFile(IDictionary<string, dynamic> dictDataSources)
+        {
+            JObject jsonVal = new JObject();
+            string strDataSourcesFile = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAPS + "\\" +
+                Constants.FILE_MAP_PARAMETERS;
+            if (File.Exists(strDataSourcesFile))
+            {
+                using (StreamReader file = File.OpenText(strDataSourcesFile))
+                using (JsonTextReader reader = new JsonTextReader(file))
+                {
+                    jsonVal = (JObject)JToken.ReadFrom(reader);
+                }
+            }
+
+            JArray arrDataSources = new JArray();
+            foreach (string key in dictDataSources.Keys)
+            {
+                arrDataSources.Add(dictDataSources[key]);
+            }
+            jsonVal["dataSources"] = arrDataSources;
+            File.WriteAllText(strDataSourcesFile, jsonVal.ToString());
+            return BA_ReturnCode.Success;
+        }
     }
 
 }

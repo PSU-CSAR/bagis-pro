@@ -23,29 +23,6 @@ namespace bagis_pro.Menus
         {
             try
             {
-                //Webservices ws = new Webservices();
-                //IDictionary<string, dynamic> dictDataSources =
-                //    await ws.QueryDataSourcesAsync(@"https://test.ebagis.geog.pdx.edu");
-                //foreach (string s in dictDataSources.Keys)
-                //{
-                //    dynamic dataSource = dictDataSources[s];
-                //    string strUri = dataSource.uri;
-                //}
-
-                // strong typed instance 
-                //var jsonObject = new JObject();
-                //dynamic arrDataSources = new JArray() as dynamic;
-                //dynamic addSource = new JObject();
-                //addSource.description = "SWE Data Source - Averaged daily SNOw Data Assimilation System (SNODAS) Snow Water Equivalent (SWE) from 2004 to 2019 data";
-                //addSource.layerType = "Snotel SWE";
-                //addSource.uri = @"http://bagis.geog.pdx.edu/arcgis/services/DAILY_SWE_NORMALS/";
-                //addSource.dateClipped = DateTime.Now;
-                //arrDataSources.Add(addSource);
-
-                //jsonObject.Add("dataSources", arrDataSources);
-
-                //System.IO.File.WriteAllText(Module1.Current.Aoi.FilePath + @"C:\Docs\animas_AOI_prms\maps\map_parameters.json", jsonObject.ToString());
-
                 OpenItemDialog selectAoiDialog = new OpenItemDialog()
                 {
                     Title = "Select AOI Folder",
