@@ -103,6 +103,9 @@ namespace bagis_pro
         public const int VALUE_NO_DATA_9999 = -9999;
         public const string VALUE_NO_DATA = "NoData";
 
+        public const string UNITS_INCHES = "Inches";
+        public const string UNITS_MILLIMETERS = "Millimeters";
+
         // States that control the map display buttons
         // JanSwe always needs to be last so that we can export the other months directly
         public static string[] STATES_MAP_BUTTON => new string[] {"MapButtonPalette_BtnElevation_State",

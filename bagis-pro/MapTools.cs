@@ -170,15 +170,7 @@ namespace bagis_pro
                         Module1.ActivateState("MapButtonPalette_BtnAspect_State");
 
                     // add SNOTEL SWE layer
-                    strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers, true) +
-                        Constants.FILES_SNODAS_SWE[0];
-                    uri = new Uri(strPath);
-                    //success = await MapTools.DisplayStretchRasterWithSymbolAsync(uri, Constants.MAPS_SNODAS_SWE_JAN, "ColorBrewer Schemes (RGB)",
-                    //            "Green-Blue (Continuous)", 30, false);
-                    success = await MapTools.DisplayRasterFromLayerFileAsync(uri, Constants.MAPS_SNODAS_SWE_JAN, Module1.Current.Aoi.FilePath + @"\maps_publish\SWE.lyrx", 
-                        30, false);
-                    if (success == BA_ReturnCode.Success)
-                        Module1.ActivateState("MapButtonPalette_BtnJanSwe_State");
+                    success = await DisplaySWEMapAsync();
 
                     // add Precipitation layer
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
@@ -215,10 +207,10 @@ namespace bagis_pro
                Layout layout = null;
                Project proj = Project.Current;
 
-                //Finding the first project item with name matches with mapName
-                LayoutProjectItem lytItem =
-                   proj.GetItems<LayoutProjectItem>()
-                       .FirstOrDefault(m => m.Name.Equals(layoutName, StringComparison.CurrentCultureIgnoreCase));
+               //Finding the first project item with name matches with mapName
+               LayoutProjectItem lytItem =
+                  proj.GetItems<LayoutProjectItem>()
+                      .FirstOrDefault(m => m.Name.Equals(layoutName, StringComparison.CurrentCultureIgnoreCase));
                if (lytItem != null)
                {
                    layout = lytItem.GetLayout();
@@ -237,18 +229,18 @@ namespace bagis_pro
         {
             await QueuedTask.Run(() =>
            {
-                //Finding the mapFrame with mapFrameName
-                if (!(oLayout.FindElement(mapFrameName) is MapFrame mfElm))
+               //Finding the mapFrame with mapFrameName
+               if (!(oLayout.FindElement(mapFrameName) is MapFrame mfElm))
                {
-                    //Build 2D envelope geometry
-                    Coordinate2D mf_ll = new Coordinate2D(xMin, yMin);
+                   //Build 2D envelope geometry
+                   Coordinate2D mf_ll = new Coordinate2D(xMin, yMin);
                    Coordinate2D mf_ur = new Coordinate2D(xMax, yMax);
                    Envelope mf_env = EnvelopeBuilder.CreateEnvelope(mf_ll, mf_ur);
                    mfElm = LayoutElementFactory.Instance.CreateMapFrame(oLayout, mf_env, oMap);
                    mfElm.SetName(mapFrameName);
                }
-                // Remove border from map frame
-                var mapFrameDefn = mfElm.GetDefinition() as CIMMapFrame;
+               // Remove border from map frame
+               var mapFrameDefn = mfElm.GetDefinition() as CIMMapFrame;
                mapFrameDefn.GraphicFrame.BorderSymbol = new CIMSymbolReference
                {
                    Symbol = SymbolFactory.Instance.ConstructLineSymbol(ColorFactory.Instance.BlackRGB, 0, SimpleLineStyle.Null)
@@ -626,7 +618,8 @@ namespace bagis_pro
         }
 
         public static async Task<BA_ReturnCode> DisplayStretchRasterWithSymbolAsync(Uri rasterUri, string displayName, string styleCategory, string styleName,
-            int transparency, bool isVisible)
+            int transparency, bool isVisible, bool useCustomMinMax, double stretchMax, double stretchMin,
+            double labelMax, double labelMin)
         {
             // parse the uri for the folder and file
             string strFileName = null;
@@ -660,13 +653,14 @@ namespace bagis_pro
                     rasterLayer.SetName(displayName);
                     rasterLayer.SetVisibility(isVisible);
                     // Create and deploy the unique values renderer
-                    await MapTools.SetToStretchValueColorizer(displayName, styleCategory, styleName);
+                    await MapTools.SetToStretchValueColorizer(displayName, styleCategory, styleName, useCustomMinMax,
+                        stretchMin, stretchMax, labelMin, labelMax);
                 }
             });
             return BA_ReturnCode.Success;
         }
 
-        public static async Task<BA_ReturnCode> DisplayRasterFromLayerFileAsync(Uri rasterUri, string displayName, 
+        public static async Task<BA_ReturnCode> DisplayRasterFromLayerFileAsync(Uri rasterUri, string displayName,
             string layerFilePath, int transparency, bool bIsVisible)
         {
             // parse the uri for the folder and file
@@ -691,7 +685,7 @@ namespace bagis_pro
                 // Create the raster layer on the active map
                 await QueuedTask.Run(() =>
                 {
-                    rasterLayer = (RasterLayer) LayerFactory.Instance.CreateLayer(rasterUri, MapView.Active.Map);
+                    rasterLayer = (RasterLayer)LayerFactory.Instance.CreateLayer(rasterUri, MapView.Active.Map);
                 });
 
                 // Set raster layer transparency and name
@@ -703,7 +697,7 @@ namespace bagis_pro
 
                     //Get the colorizer from the layer file
                     var layerDefs = cimLyrDoc.LayerDefinitions;
-                    var colorizerFromLayerFile = ((CIMRasterLayer) cimLyrDoc.LayerDefinitions[0]).Colorizer as CIMRasterStretchColorizer;
+                    var colorizerFromLayerFile = ((CIMRasterLayer)cimLyrDoc.LayerDefinitions[0]).Colorizer as CIMRasterStretchColorizer;
 
                     //Apply the colorizer to the raster layer
                     rasterLayer?.SetColorizer(colorizerFromLayerFile);
@@ -712,6 +706,13 @@ namespace bagis_pro
                     rasterLayer?.SetName(displayName);
                     rasterLayer?.SetTransparency(transparency);
                     rasterLayer?.SetVisibility(bIsVisible);
+
+                    if (rasterLayer?.GetColorizer() is CIMRasterStretchColorizer)
+                    {
+                        // if the stretch renderer is used get the selected band index
+                        var stretchColorizer = rasterLayer?.GetColorizer() as CIMRasterStretchColorizer;
+                        RasterStretchType mine = stretchColorizer.StretchType;
+                    }
                 }
             });
             return BA_ReturnCode.Success;
@@ -747,14 +748,15 @@ namespace bagis_pro
             });
         }
 
-        public static async Task SetToStretchValueColorizer(string layerName, string styleCategory, string styleName)
+        public static async Task SetToStretchValueColorizer(string layerName, string styleCategory, string styleName,
+            bool useCustomMinMax, double stretchMax, double stretchMin, double labelMax, double labelMin)
         {
             // Get the layer we want to symbolize from the map
             Layer oLayer =
                 MapView.Active.Map.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(layerName, StringComparison.CurrentCultureIgnoreCase));
             if (oLayer == null)
                 return;
-            RasterLayer rasterLayer = (RasterLayer) oLayer;
+            RasterLayer rasterLayer = (RasterLayer)oLayer;
 
             StyleProjectItem style =
                 Project.Current.GetItems<StyleProjectItem>().FirstOrDefault(s => s.Name == styleCategory);
@@ -769,6 +771,38 @@ namespace bagis_pro
             //Create a new Stretch colorizer using the colorizer definition created above.
             CIMRasterStretchColorizer newStretchColorizer =
               await rasterLayer.CreateColorizerAsync(stretchColorizerDef) as CIMRasterStretchColorizer;
+
+            if (useCustomMinMax == true)
+            {
+                //Customize min and max
+                newStretchColorizer.StretchType = RasterStretchType.MinimumMaximum;
+                newStretchColorizer.StatsType = RasterStretchStatsType.GlobalStats;
+                StatsHistogram histo = newStretchColorizer.StretchStats;
+                histo.max = stretchMax;
+                histo.min = stretchMin;
+                newStretchColorizer.StretchStats = histo;
+
+                //Update labels
+                string strLabelMin = Convert.ToString(Math.Round(stretchMin, 2));
+                string strLabelMax = Convert.ToString(Math.Round(stretchMax, 2));
+                if (stretchMin != labelMin)
+                {
+                    strLabelMin = Convert.ToString(Math.Round(labelMin, 2));
+                }
+                if (stretchMax != labelMax)
+                {
+                    strLabelMax = Convert.ToString(Math.Round(labelMax, 2));
+                }
+                CIMRasterStretchClass[] stretchClasses = newStretchColorizer.StretchClasses;
+                if (stretchClasses.Length == 3)
+                {
+                    stretchClasses[0].Label = strLabelMin;  // The min values are in first position
+                    stretchClasses[0].Value = labelMin;
+                    stretchClasses[2].Label = strLabelMax;  // The max values are in last position
+                    stretchClasses[2].Value = labelMax;
+                }
+            }
+
             // Set the new colorizer on the raster layer.
             rasterLayer.SetColorizer(newStretchColorizer);
         }
@@ -876,13 +910,13 @@ namespace bagis_pro
             //Construct on the worker thread
             await QueuedTask.Run(() =>
            {
-                //Build 2D envelope geometry
-                Coordinate2D leg_ll = new Coordinate2D(0.5, 0.3);
+               //Build 2D envelope geometry
+               Coordinate2D leg_ll = new Coordinate2D(0.5, 0.3);
                Coordinate2D leg_ur = new Coordinate2D(2.14, 2.57);
                Envelope leg_env = EnvelopeBuilder.CreateEnvelope(leg_ll, leg_ur);
 
-                //Reference MF, create legend and add to layout
-                MapFrame mapFrame = layout.FindElement(Constants.MAPS_DEFAULT_MAP_FRAME_NAME) as MapFrame;
+               //Reference MF, create legend and add to layout
+               MapFrame mapFrame = layout.FindElement(Constants.MAPS_DEFAULT_MAP_FRAME_NAME) as MapFrame;
                if (mapFrame == null)
                {
                    ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("Map frame not found", "WARNING");
@@ -892,23 +926,23 @@ namespace bagis_pro
                legendElm.SetName(Constants.MAPS_LEGEND);
                legendElm.SetAnchor(Anchor.BottomLeftCorner);
 
-                // Turn off all of the layers to start
-                CIMLegend cimLeg = legendElm.GetDefinition() as CIMLegend;
+               // Turn off all of the layers to start
+               CIMLegend cimLeg = legendElm.GetDefinition() as CIMLegend;
                foreach (CIMLegendItem legItem in cimLeg.Items)
                {
                    legItem.ShowHeading = false;
                    legItem.IsVisible = false;
                }
 
-                // Format other elements in the legend
-                cimLeg.GraphicFrame.BorderSymbol = new CIMSymbolReference
+               // Format other elements in the legend
+               cimLeg.GraphicFrame.BorderSymbol = new CIMSymbolReference
                {
                    Symbol = SymbolFactory.Instance.ConstructLineSymbol(ColorFactory.Instance.BlackRGB, 1.5, SimpleLineStyle.Solid)
                };
                cimLeg.GraphicFrame.BorderGapX = 3;
                cimLeg.GraphicFrame.BorderGapY = 3;
-                // Apply the changes
-                legendElm.SetDefinition(cimLeg);
+               // Apply the changes
+               legendElm.SetDefinition(cimLeg);
 
            });
         }
@@ -1215,8 +1249,7 @@ namespace bagis_pro
             Module1.DeactivateState("BtnMapLoad_State");
         }
 
-        public static async Task<IList<string>> PublishSnodasSweMapsAsync(Uri uriSnodasGdb, int idxDisplayedMap, Map map, Layout layout,
-            string strLayerFilePath)
+        public static async Task<IList<string>> PublishSnodasSweMapsAsync(Uri uriSnodasGdb, int idxDisplayedMap, Map map, Layout layout)
         {
             List<string> lstPdfFilesToAppend = new List<string>();
 
@@ -1225,7 +1258,7 @@ namespace bagis_pro
             {
                 string strPdfFile = await PublishSnodasSweMapAsync(uriSnodasGdb, Constants.FILES_SNODAS_SWE[idx - 1], map, Constants.LAYER_NAMES_SNODAS_SWE[idx - 1],
                     layout, Constants.LAYER_NAMES_SNODAS_SWE[idx], Constants.FILES_SNODAS_SWE[idx], Constants.MAP_TITLES_SNODAS_SWE[idx],
-                    strLayerFilePath, Constants.FILE_EXPORT_MAPS_SWE[idx], true);
+                    Constants.FILE_EXPORT_MAPS_SWE[idx], true);
                 if (!String.IsNullOrEmpty(strPdfFile))
                 {
                     lstPdfFilesToAppend.Add(strPdfFile);
@@ -1234,13 +1267,13 @@ namespace bagis_pro
             // Switch the map back to January so it matches the menu item
             string strFile = await PublishSnodasSweMapAsync(uriSnodasGdb, Constants.FILES_SNODAS_SWE[idx - 1], map, Constants.LAYER_NAMES_SNODAS_SWE[idx - 1],
                 layout, Constants.LAYER_NAMES_SNODAS_SWE[idxDisplayedMap], Constants.FILES_SNODAS_SWE[idxDisplayedMap], Constants.MAP_TITLES_SNODAS_SWE[idxDisplayedMap],
-                strLayerFilePath, Constants.FILE_EXPORT_MAPS_SWE[idxDisplayedMap], false);
+                Constants.FILE_EXPORT_MAPS_SWE[idxDisplayedMap], false);
 
             return lstPdfFilesToAppend;
         }
 
         private static async Task<string> PublishSnodasSweMapAsync(Uri uriSnodasGdb, string strDisplayedRaster, Map map, string displayedLayerName,
-                                            Layout layout, string strNewLayerName, string strRaster, string strTitle, string strLayerFilePath,
+                                            Layout layout, string strNewLayerName, string strRaster, string strTitle,
                                             string strFileMapExport, bool bExportMap)
         {
             RasterDataset rDataset = null;
@@ -1293,20 +1326,6 @@ namespace bagis_pro
                     textBox.SetGraphic(graphic);
                     success = BA_ReturnCode.Success;
                 }
-                // Check if the Stretch colorizer can be applied to the raster layer.
-                if (rasterLayer.GetApplicableColorizers().Contains(RasterColorizerType.StretchColorizer))
-                {
-                    //Get the Layer Document from the lyrx file
-                    var lyrDocFromLyrxFile = new LayerDocument(strLayerFilePath);
-                    var cimLyrDoc = lyrDocFromLyrxFile.GetCIMLayerDocument();
-
-                    //Get the colorizer from the layer file
-                    var layerDefs = cimLyrDoc.LayerDefinitions;
-                    var colorizerFromLayerFile = ((CIMRasterLayer)cimLyrDoc.LayerDefinitions[0]).Colorizer as CIMRasterStretchColorizer;
-
-                    // Set the new colorizer on the raster layer.
-                    rasterLayer.SetColorizer(colorizerFromLayerFile);
-                }
             });
             if (success == BA_ReturnCode.Success && bExportMap == true)
             {
@@ -1322,6 +1341,53 @@ namespace bagis_pro
                 return "";
             }
         }
-    }
 
+        public static async Task<BA_ReturnCode> DisplaySWEMapAsync()
+        {
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            IDictionary<string, dynamic> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
+            dynamic oDataSource = null;
+            if (dictLocalDataSources.ContainsKey(Constants.DATA_TYPE_SWE))
+            {
+                oDataSource = dictLocalDataSources[Constants.DATA_TYPE_SWE];
+            }
+            if (oDataSource != null)
+            {
+                string strPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, true) +
+                    Constants.FILES_SNODAS_SWE[0];
+                Uri uri = new Uri(strPath);
+                double dblStretchMin = oDataSource.minValue;
+                double dblStretchMax = oDataSource.maxValue;
+                double dblLabelMin = dblStretchMin;
+                double dblLabelMax = dblStretchMax;
+                if (! Module1.Current.Settings.m_sweDisplayUnits.Equals(oDataSource.units))
+                {
+                    switch (Module1.Current.Settings.m_sweDisplayUnits)
+                    {
+                        case Constants.UNITS_INCHES:
+                            dblLabelMin = LinearUnit.Millimeters.ConvertTo(dblStretchMin, LinearUnit.Inches);
+                            dblLabelMax = LinearUnit.Millimeters.ConvertTo(dblStretchMax, LinearUnit.Inches);
+                            break;
+                        case Constants.UNITS_MILLIMETERS:
+                            dblLabelMin = LinearUnit.Inches.ConvertTo(dblStretchMin, LinearUnit.Millimeters);
+                            dblLabelMax = LinearUnit.Inches.ConvertTo(dblStretchMax, LinearUnit.Millimeters);
+                            break;
+                        default:
+                            MessageBox.Show("The display units are invalid!!", "BAGIS-PRO");
+                            return success;
+                    }
+                }
+
+                success = await MapTools.DisplayStretchRasterWithSymbolAsync(uri, Constants.MAPS_SNODAS_SWE_JAN, "ColorBrewer Schemes (RGB)",
+                            "Green-Blue (Continuous)", 30, false, true, dblStretchMin, dblStretchMax, dblLabelMin,
+                            dblLabelMax);
+                //success = await MapTools.DisplayRasterFromLayerFileAsync(uri, Constants.MAPS_SNODAS_SWE_JAN, Module1.Current.Aoi.FilePath + @"\maps_publish\SWE_1.lyrx",
+                //    30, false);
+                if (success == BA_ReturnCode.Success)
+                    Module1.ActivateState("MapButtonPalette_BtnJanSwe_State");
+            }
+            return success;
+        }
+
+    }
 }
