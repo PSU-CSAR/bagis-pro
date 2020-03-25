@@ -489,6 +489,8 @@ namespace bagis_pro
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
             if (!String.IsNullOrEmpty(strSwePrefix))
             {
+                double dblOverallMin = 9999;
+                double dblOverallMax = -9999;
                 Uri clipFileUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, false));
                 string[] arrReturnValues = await GeodatabaseTools.QueryAoiEnvelopeAsync(clipFileUri, Constants.FILE_AOI_PRISM_VECTOR);
                 if (arrReturnValues.Length == 2)
@@ -506,6 +508,28 @@ namespace bagis_pro
                         {
                             break;
                         }
+                        else
+                        {
+                            double dblMin = -1;
+                            var parameters = Geoprocessing.MakeValueArray(strOutputPath, "MINIMUM");
+                            var environments = Geoprocessing.MakeEnvironmentArray(workspace: Module1.Current.Aoi.FilePath);
+                            IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("GetRasterProperties_management", parameters, environments,
+                                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                            bool isDouble = Double.TryParse(Convert.ToString(gpResult.ReturnValue), out dblMin);
+                            if (isDouble && dblMin < dblOverallMin)
+                            {
+                                dblOverallMin = dblMin;
+                            }
+                            double dblMax = -1;
+                            parameters = Geoprocessing.MakeValueArray(strOutputPath, "MAXIMUM");
+                            gpResult = await Geoprocessing.ExecuteToolAsync("GetRasterProperties_management", parameters, environments,
+                                ArcGIS.Desktop.Framework.Threading.Tasks.CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                            isDouble = Double.TryParse(Convert.ToString(gpResult.ReturnValue), out dblMax);
+                            if (isDouble && dblMax > dblOverallMax)
+                            {
+                                dblOverallMax = dblMax;
+                            }
+                        }
                         i++;
                     }
                 }
@@ -513,6 +537,9 @@ namespace bagis_pro
                 IDictionary<string, dynamic> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
                 dynamic updateDataSource = dictDataSources[Constants.DATA_TYPE_SWE];
                 updateDataSource.dateClipped = DateTime.Now;
+                updateDataSource.minValue = dblOverallMin;
+                updateDataSource.maxValue = dblOverallMax;
+                updateDataSource.units = dictDataSources[Constants.DATA_TYPE_SWE].units;
                 if (dictLocalDataSources.ContainsKey(Constants.DATA_TYPE_SWE))
                 {
                     dictLocalDataSources[Constants.DATA_TYPE_SWE] = updateDataSource;

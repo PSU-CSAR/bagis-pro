@@ -1162,7 +1162,7 @@ namespace bagis_pro
                         lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE);
                     }
                     mapDefinition = new BA_Objects.MapDefinition(Constants.MAP_TITLES_SNODAS_SWE[0],
-                        "Depth Units = Inches", Constants.FILE_EXPORT_MAP_SWE_JANUARY_PDF);
+                        "Depth Units = " + Module1.Current.Settings.m_sweDisplayUnits, Constants.FILE_EXPORT_MAP_SWE_JANUARY_PDF);
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;
@@ -1360,7 +1360,7 @@ namespace bagis_pro
                 double dblStretchMax = oDataSource.maxValue;
                 double dblLabelMin = dblStretchMin;
                 double dblLabelMax = dblStretchMax;
-                if (! Module1.Current.Settings.m_sweDisplayUnits.Equals(oDataSource.units))
+                if ( oDataSource.units != null && !Module1.Current.Settings.m_sweDisplayUnits.Equals(oDataSource.units))
                 {
                     switch (Module1.Current.Settings.m_sweDisplayUnits)
                     {
