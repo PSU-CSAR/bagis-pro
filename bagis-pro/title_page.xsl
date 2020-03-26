@@ -10,29 +10,36 @@
     <html xmlns="http://www.w3.org/1999/xhtml">
 
       <style type="text/css">
-          .style1
-          {
-          height: 650px;
-          }
-          .style2
-          {
-          font-family: Arial, Helvetica, sans-serif;
-          text-align: center;
-          font-size: large;
-          font-weight: bold;
-          }
-          .style3
-          {
-          font-family: Arial, Helvetica, sans-serif;
-          padding: 1px 4px;
-          }
-          .footer {
-          width: 100%;
-          text-align: center;
-          font-family: Arial, Helvetica, sans-serif;
-          }
+        .style1
+        {
+        height: 650px;
+        }
+        .style2
+        {
+        font-family: Arial, Helvetica, sans-serif;
+        text-align: center;
+        font-size: large;
+        font-weight: bold;
+        }
+        .style3
+        {
+        font-family: Arial, Helvetica, sans-serif;
+        padding: 1px 4px;
+        }
+        .style4
+        {
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 90%;
+        padding-top: 1px;
+        padding-left: 10px;
+        }
+        .footer {
+        width: 100%;
+        text-align: center;
+        font-family: Arial, Helvetica, sans-serif;
+        }
 
-        </style>
+      </style>
   <head/>
   <body>
         <div class="style2">
@@ -144,6 +151,24 @@
                     <xsl:if test="has_scos_sites = 'true' and has_snotel_sites = 'true'"> (SNOTEL AND SNOW COURSE SITES REPRESENTATION)</xsl:if>
                   </td>
                 </tr>
+              </table>
+              <table>
+                <tr>
+                  <td class="style3">
+                    Data sources:
+                  </td>
+                </tr>
+                <xsl:for-each select="data_sources/DataSource">
+                    <tr>
+                      <td class="style4">
+                        <xsl:value-of select="description" />
+                        <br/>
+                        Clipped from: <xsl:value-of select="uri" />
+                        <br/>
+                        Clipped on: <xsl:value-of select="DateClippedText" />
+                      </td>
+                    </tr>
+                </xsl:for-each>
               </table>
             </div>
                    

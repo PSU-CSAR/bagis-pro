@@ -182,6 +182,20 @@ namespace bagis_pro
                     }
                 }
 
+                //Printing data sources
+                IDictionary<string, dynamic> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
+                string[] keys = { Constants.DATA_TYPE_SWE, Constants.DATA_TYPE_PRECIPITATION};
+                IList < BA_Objects.DataSource > lstDataSources = new List<BA_Objects.DataSource>();
+                foreach (string strKey in keys)
+                {
+                    if (dictLocalDataSources.ContainsKey(strKey))
+                    {
+                        dynamic dynSource = dictLocalDataSources[strKey];
+                        BA_Objects.DataSource newSource = new BA_Objects.DataSource(dynSource);
+                        lstDataSources.Add(newSource);
+                    }
+                }
+
                 // Serialize the title page object
                 BA_Objects.ExportTitlePage tPage = new BA_Objects.ExportTitlePage
                 {
@@ -207,6 +221,12 @@ namespace bagis_pro
                     represented_all_sites_percent = pctAllSitesRepresented,
                     date_created = DateTime.Now
                 };
+                if (lstDataSources.Count > 0)
+                {
+                    BA_Objects.DataSource[] data_sources = new BA_Objects.DataSource[lstDataSources.Count];
+                    lstDataSources.CopyTo(data_sources, 0);
+                    tPage.data_sources = data_sources;
+                }
                 string publishFolder = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE;
                 string myXmlFile = publishFolder + "\\" + Constants.FILE_TITLE_PAGE_XML;
                 System.Xml.Serialization.XmlSerializer writer = new System.Xml.Serialization.XmlSerializer(tPage.GetType());
