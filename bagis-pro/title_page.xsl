@@ -29,7 +29,7 @@
         .style4
         {
         font-family: Arial, Helvetica, sans-serif;
-        font-size: 90%;
+        font-size: 95%;
         padding-top: 1px;
         padding-left: 10px;
         }
