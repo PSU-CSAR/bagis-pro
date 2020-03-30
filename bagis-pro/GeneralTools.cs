@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.XPath;
 using System.Xml.Xsl;
+using Microsoft.Office.Interop.Excel;
 
 namespace bagis_pro
 {
@@ -308,6 +309,30 @@ namespace bagis_pro
             jsonVal["dataSources"] = arrDataSources;
             File.WriteAllText(strDataSourcesFile, jsonVal.ToString());
             return BA_ReturnCode.Success;
+        }
+
+        public static async Task<BA_ReturnCode> GenerateTablesAsync()
+        {
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
+
+            // Declare Excel object variables
+            Application objExcel = new Application();
+            Workbook bkWorkBook = objExcel.Workbooks.Add();  //a file in excel
+
+            // Create SNOTEL Distribution Worksheet
+            Worksheet pSNOTELWorksheet = bkWorkBook.Sheets.Add();
+            pSNOTELWorksheet.Name = "SNOTEL";
+
+            // Create Elevation Distribution Worksheet
+            Worksheet pAreaElvWorksheet = bkWorkBook.Sheets.Add();
+            pSNOTELWorksheet.Name = "Area Elevations";
+
+            success = await ExcelTools.CreateElevationTableAsync(pAreaElvWorksheet, 0);
+
+            objExcel.Visible = true;
+
+            success = BA_ReturnCode.Success;
+            return success;
         }
     }
 

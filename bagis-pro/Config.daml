@@ -42,6 +42,7 @@
           <button refID="bagis_pro_Menus_MnuMaps_BtnMapLoad" size="middle" />
           <buttonPalette refID="bagis_pro_Buttons_MapButtonPalette" size="middle" />
           <button refID="bagis_pro_Buttons_BtnExportToPdf" size="middle" />
+          <button refID="bagis_pro_Buttons_BtnExcelTables" size="middle" />
         </group>
       </groups>
       <toolbars>
@@ -112,6 +113,11 @@
         <button id="bagis_pro_Buttons_BtnExportToPdf" caption="Export Map Package to PDF" className="bagis_pro.Buttons.BtnExportToPdf" loadOnClick="true" smallImage="Images\PdfIcon.png" largeImage="Images\PdfIcon.png" condition="BtnExportToPdf_Condition">
           <tooltip heading="Export Map Package to PDF">Export Map Package to PDF<disabledText /></tooltip>
         </button>
+        <button id="bagis_pro_Buttons_BtnExcelTables" caption="Excel Tables" className="bagis_pro.Buttons.BtnExcelTables" loadOnClick="true" smallImage="Images\excel.png" largeImage="Images\excel.png" condition="Aoi_Selected_Condition">
+          <tooltip heading="Excel Tables">
+            Excel Tables<disabledText />
+          </tooltip>
+        </button>
         <button id="MapButtonPalette_BtnElevation" caption="Elevation Distribution" className="bagis_pro.Buttons.MapButtonPalette_BtnElevation" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnElevation_Condition">
           <tooltip heading="Palette Button 1">ToolTip<disabledText /></tooltip>
         </button>
@@ -145,12 +151,12 @@
           </tooltip>
         </button>
 
-        <button id="bagis_pro_Buttons_BtnGenerateLayers" caption="Generate Analysis Layers" className="bagis_pro.Buttons.BtnGenerateLayers" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/CalculateGeometry16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/CalculateGeometry32.png">
+        <button id="bagis_pro_Buttons_BtnGenerateLayers" caption="Generate Analysis Layers" className="bagis_pro.Buttons.BtnGenerateLayers" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/CalculateGeometry16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/CalculateGeometry32.png" condition="Aoi_Selected_Condition">
           <tooltip heading="Tooltip Heading">
             <disabledText />
           </tooltip>
         </button>
-        <button id="bagis_pro_Buttons_BtnClipLayers" caption="Clip Layers" className="bagis_pro.Buttons.BtnClipLayers" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/PaperClip16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/PaperClip32.png">
+        <button id="bagis_pro_Buttons_BtnClipLayers" caption="Clip Layers" className="bagis_pro.Buttons.BtnClipLayers" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/PaperClip16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/PaperClip32.png" condition="Aoi_Selected_Condition">
           <tooltip heading="Tooltip Heading">
             <disabledText />
           </tooltip>
@@ -195,6 +201,9 @@
     <insertCondition id="BtnExportToPdf_Condition" caption="Export PDF">
       <state id="BtnMapLoad_State" />
     </insertCondition>
+    <insertCondition id="BtnExcelTables_Condition" caption="Excel Tables">
+      <state id="BtnMapLoad_State" />
+    </insertCondition>
     <insertCondition id="MapButtonPalette_BtnElevation_Condition" caption="Map Disabled">
       <state id="MapButtonPalette_BtnElevation_State" />
     </insertCondition>
@@ -218,6 +227,9 @@
     </insertCondition>
     <insertCondition id="MapButtonPalette_BtnPrecip_Condition" caption="Map Disabled">
       <state id="MapButtonPalette_BtnPrecip_State" />
+    </insertCondition>
+    <insertCondition id="Aoi_Selected_Condition" caption="AOI selected">
+      <state id="Aoi_Selected_State" />
     </insertCondition>
   </conditions>
 </ArcGIS>

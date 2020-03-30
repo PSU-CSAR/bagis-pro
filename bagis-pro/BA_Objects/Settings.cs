@@ -13,6 +13,8 @@ namespace bagis_pro.BA_Objects
         public string m_nameField = "name";
         public string m_eBagisServer = "https://test.ebagis.geog.pdx.edu";
         public string m_sweDisplayUnits = "Inches";
+        public string m_demUnits = "Meters";
+        public string m_demDisplayUnits = "Feet";
 
         public Settings()
         {

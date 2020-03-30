@@ -96,6 +96,7 @@ namespace bagis_pro
         public const string FIELD_USGS_ID = "USGS_ID";
         public const string FIELD_NEAR_ID = "NEAR_FID";
         public const string FIELD_NEAR_DIST = "NEAR_DIST";
+        public const string FIELD_VALUE = "VALUE";
 
         public const string DATA_TYPE_SWE = "Snotel SWE";
         public const string DATA_TYPE_PRECIPITATION = "Precipitation";

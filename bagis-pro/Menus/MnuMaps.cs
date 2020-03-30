@@ -33,13 +33,14 @@ namespace bagis_pro.Menus
                 bool? boolOk = selectAoiDialog.ShowDialog();
                 if (boolOk == true)
                 {
+                    Module1.DeactivateState("Aoi_Selected_State");
                     IEnumerable<Item> selectedItems = selectAoiDialog.Items;
                     foreach (Item selectedItem in selectedItems)    // there will only be one
                     {
                         FolderType fType = await GeodatabaseTools.GetAoiFolderTypeAsync(selectedItem.Path);
                         if (fType != FolderType.AOI)
                         {
-                            ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("!!The selected folder does not contain a valid AOI", "BAGIS Pro");
+                            MessageBox.Show("!!The selected folder does not contain a valid AOI", "BAGIS Pro");
                         }
                         else
                         {
@@ -48,7 +49,8 @@ namespace bagis_pro.Menus
                             // Store current AOI in Module1
                             Module1.Current.Aoi = oAoi;
                             Module1.Current.CboCurrentAoi.SetAoiName(oAoi.Name);
-                            ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("AOI is set to " + oAoi.Name + "!", "BAGIS PRO");
+                            Module1.ActivateState("Aoi_Selected_State");
+                            MessageBox.Show("AOI is set to " + oAoi.Name + "!", "BAGIS PRO");
                         }
 
                     }

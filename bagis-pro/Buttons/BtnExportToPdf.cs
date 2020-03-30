@@ -125,5 +125,18 @@ namespace bagis_pro.Buttons
         }
     }
 
- 
+    internal class BtnExcelTables : Button
+    {
+        protected async override void OnClick()
+        {
+            try
+            {
+                BA_ReturnCode success = await GeneralTools.GenerateTablesAsync();
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show("An error occurred while trying to export the tables!! " + e.Message, "BAGIS PRO");
+            }
+        }
+    }
 }
