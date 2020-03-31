@@ -19,7 +19,7 @@ namespace bagis_pro
 
             //read class definition for chart and table labeling
             Uri uriElevZones = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false));
-            IList<BA_Objects.Interval> lstInterval = await GeneralTools.ReadReclassRasterAttribute(uriElevZones, Constants.FILE_ELEV_ZONE);
+            IList<BA_Objects.Interval> lstInterval = await GeodatabaseTools.ReadReclassRasterAttribute(uriElevZones, Constants.FILE_ELEV_ZONE);
 
             //===========================
             //Zonal Statistics

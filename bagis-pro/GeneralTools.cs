@@ -15,7 +15,6 @@ using System.Xml;
 using System.Xml.XPath;
 using System.Xml.Xsl;
 using Microsoft.Office.Interop.Excel;
-using ArcGIS.Core.Data.Raster;
 
 namespace bagis_pro
 {
@@ -345,67 +344,6 @@ namespace bagis_pro
             return success;
         }
 
-        public static async Task<IList<BA_Objects.Interval>> ReadReclassRasterAttribute(Uri gdbUri, string rasterName)
-        {
-            IList<BA_Objects.Interval> lstInterval = new List<BA_Objects.Interval>();
-            await QueuedTask.Run(() => {
-                using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(gdbUri)))
-                using (RasterDataset rasterDataset = geodatabase.OpenDataset<RasterDataset>(rasterName))
-                {
-                    RasterBandDefinition bandDefinition = rasterDataset.GetBand(0).GetDefinition();
-                    Tuple<double, double> tupleSize = bandDefinition.GetMeanCellSize();
-                    if (Math.Round(tupleSize.Item1, 5) != Math.Round(tupleSize.Item2, 5))
-                    {
-                        MessageBox.Show("The X and Y cell size values are not the same for " + gdbUri.LocalPath + "\\" +
-                                rasterName + ". This may cause problems with some BAGIS functions!!", "BAGIS-PRO");
-                    }
-                    double cellSize = (tupleSize.Item1 + tupleSize.Item2) / 2;
-
-                    Raster raster = rasterDataset.CreateDefaultRaster();
-                    using (Table rasterTable = raster.GetAttributeTable())
-                    {
-                        TableDefinition definition = rasterTable.GetDefinition();
-                        int idxName = definition.FindField(Constants.FIELD_NAME);
-                        int idxLowerBound = definition.FindField(Constants.FIELD_LBOUND);
-                        int idxUpperBound = definition.FindField(Constants.FIELD_UBOUND);
-                        int idxCount = definition.FindField(Constants.FIELD_COUNT);
-                        using (RowCursor cursor = rasterTable.Search())
-                        {
-                            while (cursor.MoveNext())
-                            {
-                                BA_Objects.Interval interval = new BA_Objects.Interval();
-                                Row row = cursor.Current;
-                                interval.Value = row[Constants.FIELD_VALUE];
-                                if (idxName > 0)
-                                {
-                                    interval.Name = Convert.ToString(row[idxName]);
-                                }
-                                else
-                                {
-                                    interval.Name = Constants.VALUE_UNKNOWN;
-                                }
-                                if (idxUpperBound > 0)
-                                {
-                                    interval.UpperBound = Convert.ToDouble(row[idxUpperBound]);
-                                }
-                                if (idxLowerBound > 0)
-                                {
-                                    interval.LowerBound = Convert.ToDouble(row[idxLowerBound]);
-                                }
-                                if (idxCount > 0)
-                                {
-                                    interval.Area = cellSize * Convert.ToInt32(row[idxCount]);
-                                }
-                                lstInterval.Add(interval);
-                            }
-                        }
-                    }
-                }
-            });
-
-
-            return lstInterval;
-        }
     }
 
 
