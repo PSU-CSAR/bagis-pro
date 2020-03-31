@@ -47,6 +47,8 @@ namespace bagis_pro
                 {
                     demElevMinMeters = lstResult[0];
                     demElevMaxMeters = lstResult[1];
+                    Module1.Current.Aoi.MinElevMeters = demElevMinMeters;
+                    Module1.Current.Aoi.MaxElevMeters = demElevMaxMeters;
                 }
                 else
                 {

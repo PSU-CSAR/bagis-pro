@@ -25,6 +25,8 @@ namespace bagis_pro.BA_Objects
         {
             m_strName = strName;
             m_strFilePath = strFilePath;
+            m_dblMinElev = Constants.VALUE_NO_DATA_9999;
+            m_dblMaxElev = Constants.VALUE_NO_DATA_9999;
         }
 
         public string Name
