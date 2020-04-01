@@ -45,6 +45,8 @@ namespace bagis_pro
         public const string FILE_SLOPE_ZONE = "slpzone";
         public const string FILE_ASPECT_ZONE = "aspzone";
         public const string FILE_PRECIP_ZONE = "preczone";
+        public const string FILE_SNOTEL_ZONE = "stelzone";
+        public const string FILE_SCOS_ZONE = "scoszone";
         //public const string FILE_SNOTEL_REPRESENTED = "npactual";
         public const string FILE_SNOTEL_REPRESENTED = "snotel_rep";
         //public const string FILE_SCOS_REPRESENTED = "nppseduo";
