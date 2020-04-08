@@ -15,6 +15,7 @@ using System.Xml;
 using System.Xml.XPath;
 using System.Xml.Xsl;
 using Microsoft.Office.Interop.Excel;
+using ArcGIS.Desktop.Core;
 
 namespace bagis_pro
 {
@@ -349,8 +350,180 @@ namespace bagis_pro
             return success;
         }
 
+        public static async Task<string> GetBagisTag(string layerPath, string propertyPath)
+        {
+            string strReturn = "";
+            var fc = ItemFactory.Instance.Create(layerPath, ItemFactory.ItemType.PathItem);
+            if (fc != null)
+            {
+                string strXml = string.Empty;
+                strXml = await QueuedTask.Run(() => fc.GetXml());
+                //check metadata was returned
+                if (!string.IsNullOrEmpty(strXml))
+                {
+                    //use the metadata; Create a .NET XmlDocument and load the schema
+                    XmlDocument myXml = new XmlDocument();
+                    myXml.LoadXml(strXml);
+                    //Select the nodes from the fully qualified XPath
+                    XmlNodeList propertyNodes = myXml.SelectNodes(propertyPath);
+                    //Place each innerText into a list to return
+                    foreach(XmlNode pNode in propertyNodes)
+                    {
+                        if (pNode.InnerText.IndexOf(Constants.META_TAG_PREFIX) > -1)
+                        {
+                            return pNode.InnerText;
+                        }
+                    }
+                }
+            }
+            return strReturn;
+        }
+
+        //strSplit should be ; for local files and ! for image services
+        public static string GetValueForKey(string innerText, string keyText, char charSplit)
+        {
+            string strValue = "";
+            string[] arrContents = innerText.Split(charSplit);
+            foreach (string pValue in arrContents)
+            {
+                //This tag contains the zUnitCategory
+                if (pValue.IndexOf(keyText) > -1)
+                {
+                    //Example: ZUnitCategory|Depth
+                    strValue = pValue.Substring(pValue.IndexOf("|") + 1);
+                    //Strip trailing ";" if exists
+                    if (strValue.Substring(strValue.Length - 1)== ";")
+                    {
+                        strValue = strValue.Remove(strValue.Length - 1, 1);
+                    }
+                    break;
+                }
+            }
+            return strValue;
+        }
+
+        public static async Task<BA_ReturnCode> UpdateMetadata(string layerPath, string propertyPath,
+                                                               string innerText, int matchLength)
+        {
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            var fc = ItemFactory.Instance.Create(layerPath, ItemFactory.ItemType.PathItem);
+            if (fc != null)
+            {
+                string strXml = string.Empty;
+                strXml = await QueuedTask.Run(() => fc.GetXml());
+                //check metadata was returned
+                if (!string.IsNullOrEmpty(strXml))
+                {
+                    //use the metadata; Create a .NET XmlDocument and load the schema
+                    XmlDocument myXml = new XmlDocument();
+                    myXml.LoadXml(strXml);
+                    //Check to see if the parent node exists
+                    char sep = '/';
+                    int lastSep = propertyPath.LastIndexOf(sep);
+                    string parentNodePath = propertyPath.Substring(0, lastSep);
+                    XmlNodeList parentNodeList = myXml.SelectNodes(parentNodePath);
+                    if (parentNodeList.Count < 1)
+                    {
+                        AddMetadataNode(ref myXml, parentNodePath, sep);
+                        parentNodeList = myXml.SelectNodes(parentNodePath);
+                    }
+                    // Assume we want the first one
+                    XmlNode parentNode = parentNodeList[0];
+                    string childNodeName = propertyPath.Substring(lastSep + 1);
+                    XmlNodeList propertyNodeList = parentNode.ChildNodes;
+                    string matchPrefix = innerText.Substring(0, matchLength);
+                    bool foundIt = false;
+                    foreach(XmlNode pNode in propertyNodeList)
+                    {
+                        //Is the node the same node name we need to update?
+                        if (pNode.Name == childNodeName)
+                        {
+                            //Is the first part of the innerText the same as what we want to update? 
+                            if (pNode.InnerText.Length > matchLength &&
+                                pNode.InnerText.Substring(0, matchLength) == matchPrefix)
+                            {
+                                //If so, update the innerText
+                                pNode.InnerText = innerText;
+                                foundIt = true;
+                            }
+                        }
+                    }
+                    //If it didn't exist, we need to create a new node
+                    if (foundIt == false)
+                    {
+                        // Create the child node
+                        XmlNode childNode = myXml.CreateNode(XmlNodeType.Element, childNodeName, null);
+                        childNode.InnerText = innerText;
+                        // Attach the child to the parent
+                        parentNode.AppendChild(childNode);
+                    }
+
+                    await QueuedTask.Run(() => fc.SetXml(myXml.OuterXml));
+
+                }
+            }
+            success = BA_ReturnCode.Success;
+            return success;
+        }
+
+        //This is a simplified updating of the BAGIS tag for a new layer
+        //Because we create the new layer, we assume there is no existing metadata
+        public static async Task<BA_ReturnCode> CreateMetadataUnits(string layerPath, string strCategory,
+                                                                    string strUnits)
+        {
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            //We need to add a new tag at "/metadata/dataIdInfo/searchKeys/keyword"
+            System.Text.StringBuilder sb = new System.Text.StringBuilder();
+            sb.Append(Constants.META_TAG_PREFIX);
+            sb.Append(Constants.META_TAG_ZUNIT_CATEGORY + strCategory + "; ");
+            sb.Append(Constants.META_TAG_ZUNIT_VALUE + strUnits + "; ");
+            sb.Append(Constants.META_TAG_SUFFIX);
+            success = await GeneralTools.UpdateMetadata(layerPath, Constants.META_TAG_XPATH, sb.ToString(),
+                Constants.META_TAG_PREFIX.Length);
+            success = BA_ReturnCode.Success;
+            return success;
+        }
+
+    //This function adds a node to an xml document; The node is identified by its XPath
+    //The separator is usually a "/"
+    //An example XPath is: /metadata/dataIdInfo/searchKeys/keyword
+        public static BA_ReturnCode AddMetadataNode(ref XmlDocument pXmlDoc, string nodePath, char sep)
+        {
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            // Parse the propertyPath into its components
+            string[] propNames = nodePath.Split(sep);
+            string parentXPath = null;
+            XmlNode parentNode = null;
+            foreach (var pName in propNames)
+            {
+                if (!string.IsNullOrEmpty(pName))
+                {
+                    parentXPath = parentXPath + sep + pName;
+                    // Select the nodes from the fully qualified XPath
+                    XmlNodeList propertyNodes = pXmlDoc.SelectNodes(parentXPath);
+                    if (propertyNodes.Count > 0)
+                        // parentXPath exists
+                        // assume the node we want is the first one
+                        parentNode = propertyNodes[0];
+                    else
+                    {
+                        // Create the new child node
+                        XmlNode newChildNode = pXmlDoc.CreateNode(XmlNodeType.Element, pName, null/* TODO Change to default(_) if this is not a reference type */);
+                        // append it to the parent
+                        parentNode.AppendChild(newChildNode);
+                        parentNode = newChildNode;
+                    }
+                }
+            }
+            success = BA_ReturnCode.Success;
+            return success;
+        }
+
+
+
+
     }
 
 
 
-}
+    }

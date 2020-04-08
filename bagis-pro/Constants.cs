@@ -113,6 +113,8 @@ namespace bagis_pro
 
         public const string UNITS_INCHES = "Inches";
         public const string UNITS_MILLIMETERS = "Millimeters";
+        public const string UNITS_FEET = "Feet";
+        public const string UNITS_METERS = "Meters";
 
         // States that control the map display buttons
         // JanSwe always needs to be last so that we can export the other months directly
@@ -124,6 +126,15 @@ namespace bagis_pro
                                                                 "MapButtonPalette_BtnPrism_State",
                                                                 "MapButtonPalette_BtnSlope_State",
                                                                 "MapButtonPalette_BtnJanSwe_State"};
+
+        public static string META_TAG_XPATH = @"/metadata/dataIdInfo/searchKeys/keyword";
+        public static string META_TAG_PREFIX = "BAGIS Tag < Please do not modify: ";
+        public static string META_TAG_SUFFIX = " > End Tag";
+        public static string META_TAG_ZUNIT_CATEGORY = "ZUnitCategory|";
+        public static string META_TAG_ZUNIT_VALUE = "ZUnit|";
+        public static string META_TAG_BUFFER_DISTANCE = "BufferDistance|";
+        public static string META_TAG_XUNIT_VALUE = "XUnit|";
+        public static string META_TAG_CATEGORY_SNODAS = "Snotel SWE";
     }
 
 }

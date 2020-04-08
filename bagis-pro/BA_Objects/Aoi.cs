@@ -15,6 +15,7 @@ namespace bagis_pro.BA_Objects
         double m_dblMaxElev = Constants.VALUE_NO_DATA_9999;
         double m_dblSiteElevRangeFeet = 500;
         double m_dblSiteBufferDistMiles = 5.642;
+        LinearUnit m_elevationUnits;
 
         public Aoi()
         {
@@ -27,6 +28,7 @@ namespace bagis_pro.BA_Objects
             m_strFilePath = strFilePath;
             m_dblMinElev = Constants.VALUE_NO_DATA_9999;
             m_dblMaxElev = Constants.VALUE_NO_DATA_9999;
+            m_elevationUnits = LinearUnit.Meters;
         }
 
         public string Name
@@ -47,9 +49,19 @@ namespace bagis_pro.BA_Objects
             }
         }
 
-        public LinearUnit LinearUnits
+        public string ElevationUnits
         {
-            get { return LinearUnit.Meters; }
+            set
+            {
+                if (value.Equals(Constants.UNITS_METERS))
+                {
+                    m_elevationUnits = LinearUnit.Meters;
+                }
+                else
+                {
+                    m_elevationUnits = LinearUnit.Feet;
+                }
+            }
         }
 
         public double MinElevMeters

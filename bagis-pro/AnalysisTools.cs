@@ -525,7 +525,7 @@ namespace bagis_pro
                             double dblMax = -1;
                             parameters = Geoprocessing.MakeValueArray(strOutputPath, "MAXIMUM");
                             gpResult = await Geoprocessing.ExecuteToolAsync("GetRasterProperties_management", parameters, environments,
-                                ArcGIS.Desktop.Framework.Threading.Tasks.CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
                             isDouble = Double.TryParse(Convert.ToString(gpResult.ReturnValue), out dblMax);
                             if (isDouble && dblMax > dblOverallMax)
                             {
@@ -533,6 +533,12 @@ namespace bagis_pro
                             }
                         }
                         i++;
+                        // update units in layer metadata
+                        if (success == BA_ReturnCode.Success)
+                        {
+                            string strUnits = dictDataSources[Constants.DATA_TYPE_SWE].units;
+                            success = await GeneralTools.CreateMetadataUnits(strOutputPath, Constants.META_TAG_CATEGORY_SNODAS, strUnits);
+                }
                     }
                 }
                 // Update layer metadata
@@ -551,6 +557,7 @@ namespace bagis_pro
                     dictLocalDataSources.Add(Constants.DATA_TYPE_SWE, updateDataSource);
                 }
                 success = GeneralTools.SaveDataSourcesToFile(dictLocalDataSources);
+
             }
             return success;
         }
