@@ -316,6 +316,7 @@ namespace bagis_pro
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
 
+
             // Declare Excel object variables
             Application objExcel = new Application();
             Workbook bkWorkBook = objExcel.Workbooks.Add();  //a file in excel
@@ -327,6 +328,11 @@ namespace bagis_pro
             // Create Elevation Distribution Worksheet
             Worksheet pAreaElvWorksheet = bkWorkBook.Sheets.Add();
             pAreaElvWorksheet.Name = "Area Elevations";
+
+            // Create PRISM Distribution Worksheet
+            Worksheet pPRISMWorkSheet = bkWorkBook.Sheets.Add();
+            pPRISMWorkSheet.Name = "PRISM";
+
 
             //Query min/max from dem
             string sMask = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_RASTER;
@@ -344,9 +350,18 @@ namespace bagis_pro
             {
                 success = await ExcelTools.CreateSnotelTableAsync(pSNOTELWorksheet, pAreaElvWorksheet);
             }
+
+            string strPrecipPath = Module1.Current.Aoi.FilePath + Module1.Current.Settings.m_precipFile;
+            double MaxPRISMValue = await ExcelTools.CreatePrecipitationTableAsync(pPRISMWorkSheet,
+                strPrecipPath, elevMinMeters);
+
+            // copy DEM area and %_area to the PRISM table
+            success = ExcelTools.CopyCells(pAreaElvWorksheet, 3, pPRISMWorkSheet, 12);
+            success = ExcelTools.CopyCells(pAreaElvWorksheet, 10, pPRISMWorkSheet, 13);
+            success = ExcelTools.EstimatePrecipitationVolume(pPRISMWorkSheet, 12, 7, 14, 15);
+
             objExcel.Visible = true;
 
-            success = BA_ReturnCode.Success;
             return success;
         }
 

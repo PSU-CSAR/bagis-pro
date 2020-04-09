@@ -43,4 +43,25 @@ namespace bagis_pro
         PSEUDO,
         SITES_ALL
     }
+
+    public enum PrismFile
+    {
+        jan,
+        feb,
+        mar,
+        apr,
+        may,
+        jun,
+        jul,
+        aug,
+        sep,
+        oct,
+        nov,
+        dec,
+        q1,
+        q2,
+        q3,
+        q4,
+        annual
+    }
 }

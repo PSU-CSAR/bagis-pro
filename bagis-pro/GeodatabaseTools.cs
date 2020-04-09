@@ -558,5 +558,20 @@ namespace bagis_pro
             return lstInterval;
         }
 
+        public static async Task<double> GetCellSize(Uri gdbUri, string rasterName)
+        {
+            double cellSize = 0.0F;
+            await QueuedTask.Run(() => {
+                using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(gdbUri)))
+                using (RasterDataset rasterDataset = geodatabase.OpenDataset<RasterDataset>(rasterName))
+                {
+                    RasterBandDefinition bandDefinition = rasterDataset.GetBand(0).GetDefinition();
+                    Tuple<double, double> tupleSize = bandDefinition.GetMeanCellSize();
+                    cellSize = (tupleSize.Item1 + tupleSize.Item2) / 2;
+                }
+            });
+            return cellSize;
+        }
+
     }
 }
