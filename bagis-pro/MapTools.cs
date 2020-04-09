@@ -1360,7 +1360,18 @@ namespace bagis_pro
                 double dblStretchMax = oDataSource.maxValue;
                 double dblLabelMin = dblStretchMin;
                 double dblLabelMax = dblStretchMax;
-                if ( oDataSource.units != null && !Module1.Current.Settings.m_sweDisplayUnits.Equals(oDataSource.units))
+                string layerUnits = "";
+                string strBagisTag = await GeneralTools.GetBagisTag(strPath, Constants.META_TAG_XPATH);
+                if (! string.IsNullOrEmpty(strBagisTag))
+                {
+                    layerUnits = GeneralTools.GetValueForKey(strBagisTag, Constants.META_TAG_ZUNIT_VALUE, ';');
+                }
+                if (string.IsNullOrEmpty(layerUnits))
+                {
+                    MessageBox.Show("Unable to read units from layer. Reading from local config file!!", "BAGIS-PRO");
+                    layerUnits = oDataSource.units;
+                }
+                if ( layerUnits != null && !Module1.Current.Settings.m_sweDisplayUnits.Equals(layerUnits))
                 {
                     switch (Module1.Current.Settings.m_sweDisplayUnits)
                     {
