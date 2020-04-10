@@ -16,6 +16,8 @@ namespace bagis_pro.BA_Objects
         double m_dblSiteElevRangeFeet = 500;
         double m_dblSiteBufferDistMiles = 5.642;
         LinearUnit m_elevationUnits;
+        bool m_bHasSnotel;
+        bool m_bHasSnowCourse;
 
         public Aoi()
         {
@@ -29,6 +31,8 @@ namespace bagis_pro.BA_Objects
             m_dblMinElev = Constants.VALUE_NO_DATA_9999;
             m_dblMaxElev = Constants.VALUE_NO_DATA_9999;
             m_elevationUnits = LinearUnit.Meters;
+            m_bHasSnotel = false;
+            m_bHasSnowCourse = false;
         }
 
         public string Name
@@ -95,6 +99,24 @@ namespace bagis_pro.BA_Objects
         public string SnapRasterPath
         {
             get { return GeodatabaseTools.GetGeodatabasePath(m_strFilePath, GeodatabaseNames.Surfaces, true) + Constants.FILE_DEM_FILLED; }
+        }
+
+        public bool HasSnotel
+        {
+            get { return m_bHasSnotel; }
+            set
+            {
+                m_bHasSnotel = value;
+            }
+        }
+
+        public bool HasSnowCourse
+        {
+            get { return m_bHasSnowCourse; }
+            set
+            {
+               m_bHasSnowCourse = value;
+            }
         }
     }
 }

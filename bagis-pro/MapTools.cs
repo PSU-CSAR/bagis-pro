@@ -125,7 +125,7 @@ namespace bagis_pro
                     success = await MapTools.AddPointMarkersAsync(uri, Constants.MAPS_SNOTEL, ColorFactory.Instance.BlueRGB,
                         SimpleMarkerStyle.X, 10);
                     if (success == BA_ReturnCode.Success)
-                        Module1.Current.AoiHasSnotel = true;
+                        Module1.Current.Aoi.HasSnotel = true;
 
                     // add Snow Course Layer
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers, true) +
@@ -134,7 +134,7 @@ namespace bagis_pro
                     success = await MapTools.AddPointMarkersAsync(uri, Constants.MAPS_SNOW_COURSE, CIMColor.CreateRGBColor(0, 255, 255),
                         SimpleMarkerStyle.Star, 12);
                     if (success == BA_ReturnCode.Success)
-                        Module1.Current.AoiHasSnowCourse = true;
+                        Module1.Current.Aoi.HasSnowCourse = true;
 
                     // add hillshade layer
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Surfaces, true) +
@@ -1093,12 +1093,12 @@ namespace bagis_pro
                     lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_ELEV_ZONE};
                     lstLegendLayers = new List<string> { Constants.MAPS_ELEV_ZONE };
-                    if (Module1.Current.AoiHasSnotel == true)
+                    if (Module1.Current.Aoi.HasSnotel == true)
                     {
                         lstLayers.Add(Constants.MAPS_SNOTEL);
                         lstLegendLayers.Add(Constants.MAPS_SNOTEL);
                     }
-                    if (Module1.Current.AoiHasSnowCourse == true)
+                    if (Module1.Current.Aoi.HasSnowCourse == true)
                     {
                         lstLayers.Add(Constants.MAPS_SNOW_COURSE);
                         lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE);
@@ -1113,12 +1113,12 @@ namespace bagis_pro
                     lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_SLOPE_ZONE};
                     lstLegendLayers = new List<string> { Constants.MAPS_SLOPE_ZONE };
-                    if (Module1.Current.AoiHasSnotel == true)
+                    if (Module1.Current.Aoi.HasSnotel == true)
                     {
                         lstLayers.Add(Constants.MAPS_SNOTEL);
                         lstLegendLayers.Add(Constants.MAPS_SNOTEL);
                     }
-                    if (Module1.Current.AoiHasSnowCourse == true)
+                    if (Module1.Current.Aoi.HasSnowCourse == true)
                     {
                         lstLayers.Add(Constants.MAPS_SNOW_COURSE);
                         lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE);
@@ -1132,12 +1132,12 @@ namespace bagis_pro
                     lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_ASPECT_ZONE};
                     lstLegendLayers = new List<string> { Constants.MAPS_ASPECT_ZONE };
-                    if (Module1.Current.AoiHasSnotel == true)
+                    if (Module1.Current.Aoi.HasSnotel == true)
                     {
                         lstLayers.Add(Constants.MAPS_SNOTEL);
                         lstLegendLayers.Add(Constants.MAPS_SNOTEL);
                     }
-                    if (Module1.Current.AoiHasSnowCourse == true)
+                    if (Module1.Current.Aoi.HasSnowCourse == true)
                     {
                         lstLayers.Add(Constants.MAPS_SNOW_COURSE);
                         lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE);
@@ -1151,12 +1151,12 @@ namespace bagis_pro
                     lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_SNODAS_SWE_JAN};
                     lstLegendLayers = new List<string> { Constants.MAPS_SNODAS_SWE_JAN };
-                    if (Module1.Current.AoiHasSnotel == true)
+                    if (Module1.Current.Aoi.HasSnotel == true)
                     {
                         lstLayers.Add(Constants.MAPS_SNOTEL);
                         lstLegendLayers.Add(Constants.MAPS_SNOTEL);
                     }
-                    if (Module1.Current.AoiHasSnowCourse == true)
+                    if (Module1.Current.Aoi.HasSnowCourse == true)
                     {
                         lstLayers.Add(Constants.MAPS_SNOW_COURSE);
                         lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE);
@@ -1170,12 +1170,12 @@ namespace bagis_pro
                     lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_PRISM_ZONE};
                     lstLegendLayers = new List<string> { Constants.MAPS_PRISM_ZONE };
-                    if (Module1.Current.AoiHasSnotel == true)
+                    if (Module1.Current.Aoi.HasSnotel == true)
                     {
                         lstLayers.Add(Constants.MAPS_SNOTEL);
                         lstLegendLayers.Add(Constants.MAPS_SNOTEL);
                     }
-                    if (Module1.Current.AoiHasSnowCourse == true)
+                    if (Module1.Current.Aoi.HasSnowCourse == true)
                     {
                         lstLayers.Add(Constants.MAPS_SNOW_COURSE);
                         lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE);
@@ -1190,7 +1190,7 @@ namespace bagis_pro
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_ELEV_ZONE,
                                                    Constants.MAPS_SNOTEL_REPRESENTED};
                     lstLegendLayers = new List<string> { Constants.MAPS_SNOTEL_REPRESENTED };
-                    if (Module1.Current.AoiHasSnotel == true)
+                    if (Module1.Current.Aoi.HasSnotel == true)
                     {
                         lstLayers.Add(Constants.MAPS_SNOTEL);
                         lstLegendLayers.Add(Constants.MAPS_SNOTEL);
@@ -1205,7 +1205,7 @@ namespace bagis_pro
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_ELEV_ZONE,
                                                    Constants.MAPS_SNOW_COURSE_REPRESENTED};
                     lstLegendLayers = new List<string> { Constants.MAPS_SNOW_COURSE_REPRESENTED };
-                    if (Module1.Current.AoiHasSnowCourse == true)
+                    if (Module1.Current.Aoi.HasSnowCourse == true)
                     {
                         lstLayers.Add(Constants.MAPS_SNOW_COURSE);
                         lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE);
@@ -1220,12 +1220,12 @@ namespace bagis_pro
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_ELEV_ZONE,
                                                    Constants.MAPS_ALL_SITES_REPRESENTED};
                     lstLegendLayers = new List<string> { Constants.MAPS_ALL_SITES_REPRESENTED };
-                    if (Module1.Current.AoiHasSnowCourse == true)
+                    if (Module1.Current.Aoi.HasSnowCourse == true)
                     {
                         lstLayers.Add(Constants.MAPS_SNOW_COURSE);
                         lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE);
                     }
-                    if (Module1.Current.AoiHasSnotel == true)
+                    if (Module1.Current.Aoi.HasSnotel == true)
                     {
                         lstLayers.Add(Constants.MAPS_SNOTEL);
                         lstLegendLayers.Add(Constants.MAPS_SNOTEL);

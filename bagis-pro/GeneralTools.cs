@@ -345,8 +345,8 @@ namespace bagis_pro
 
             success = await ExcelTools.CreateElevationTableAsync(pAreaElvWorksheet, elevMinMeters);
 
-            bool bHasSnotel = await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false)), Constants.FILE_SNOTEL_ZONE);
-            if (bHasSnotel)
+            Module1.Current.Aoi.HasSnotel = await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false)), Constants.FILE_SNOTEL_ZONE);
+            if (Module1.Current.Aoi.HasSnotel)
             {
                 success = await ExcelTools.CreateSnotelTableAsync(pSNOTELWorksheet, pAreaElvWorksheet);
             }

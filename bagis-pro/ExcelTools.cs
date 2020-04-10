@@ -8,6 +8,7 @@ using ArcGIS.Core.Geometry;
 using ArcGIS.Desktop.Core.Geoprocessing;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
 using Microsoft.Office.Interop.Excel;
+using Microsoft.Office.Core;
 
 namespace bagis_pro
 {
@@ -141,6 +142,9 @@ namespace bagis_pro
             return success;
         }
 
+        // count the number of records in a worksheet based on the values on the first column
+        // aspect, slope, snotel, and snow course tables have a beginning_row value of 2
+        // other tables have a value of 3.
         private static long CountRecords(Worksheet pWorksheet, int beginningRow)
         {
             long validRow = 0;
@@ -481,6 +485,177 @@ namespace bagis_pro
                 pctRange.Value = volumeRange.Value * 100 / total_vol;
             }
             return BA_ReturnCode.Success;
+        }
+
+        public static BA_ReturnCode CreateCombinedChart(Worksheet pPRISMWorkSheet, Worksheet pElvWorksheet, Worksheet pChartsWorksheet,
+                                                        Worksheet pSNOTELWorksheet, int topPosition)
+        {
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
+
+            long nrecords = ExcelTools.CountRecords(pElvWorksheet, 2);
+            long ElevReturn = nrecords + 2;
+            nrecords = ExcelTools.CountRecords(pPRISMWorkSheet, 2);
+            long PRISMReturn = nrecords + 2;
+            nrecords = ExcelTools.CountRecords(pSNOTELWorksheet, 1);
+            long SNOTELReturn = nrecords - 1; // not counting the last record, i.e., not presented
+
+            //@ToDo: Enable when we have snow course layer
+            //nrecords = ExcelTools.CountRecords(pSnowCourseWorksheet, 1);
+            //long SnowCourseReturn = nrecords - 1; //not counting the last record, i.e., not presented
+            //@ToDo: Enable when we have start supporting psites
+            //nrecords = ExcelTools.CountRecords(pPseudoWorkSheet, 1);
+            //long PseudoReturn = nrecords - 1 //not counting the last record, i.e., not presented
+
+            Microsoft.Office.Interop.Excel.Shape myShape = pChartsWorksheet.Shapes.AddChart2();
+            Chart myChart = myShape.Chart;
+
+            // Determine Z Mapping Unit and Create Value Axis Title
+            string AxisTitleUnit = " (" + Module1.Current.Settings.m_demDisplayUnits + ")";
+
+            // Set SNOTEL Ranges
+            string vSNOTELValueRange = "";
+            string xSNOTELValueRange = "";
+            if (Module1.Current.Aoi.HasSnotel)
+            {
+                xSNOTELValueRange = "A2:A" + SNOTELReturn;
+                vSNOTELValueRange = "K2:K" + SNOTELReturn;
+            }
+
+            //@ToDo: Enable when we have snow course layer
+            //Set SnowCourse Ranges
+            //string vSnowCourseValueRange = "";
+            //string xSnowCourseValueRange = "";
+            //if (Module1.Current.Aoi.HasSnowCourse)
+            //{
+            //    xSnowCourseValueRange = "A2:A" + SnowCourseReturn;
+            //    vSnowCourseValueRange = "K2:K" + SnowCourseReturn;
+            //}
+
+            //@ToDo: Enable when we enable psites
+            //Set Pseudo-site Ranges
+            //string vPseudoValueRange = "";
+            //string xPseudoValueRange = "";
+            //if (Module1.Current.Aoi.HasPseudo)
+            //{
+            //    xPseudoValueRange = "A2:A" + PseudoReturn;
+            //    vPseudoValueRange = "K2:K" + PseudoReturn;
+            //}
+
+            // Set PRISM Data Ranges
+            string PRISMRange = "";
+            string xPRISMValueRange = "";
+            string vPRISMValueRange = "";
+            PRISMRange = "J3:J" + PRISMReturn;
+            xPRISMValueRange = "A3:A" + PRISMReturn;
+            vPRISMValueRange = "O3:O" + PRISMReturn;
+
+            // Set Elevation Ranges
+            string sElevRange = "";
+            string sElevValueRange = "";
+            sElevRange = "K2:K" + ElevReturn;
+            sElevValueRange = "A2:A" + ElevReturn;
+
+            // Clear Styles
+            myChart.ClearToMatchStyle();
+            //Insert Title
+            myChart.HasTitle = true;
+            myChart.HasLegend = true;
+            myChart.ChartTitle.Caption = "Area-Elevation, Precipitation  and Site Distribution";
+            //Set Chart Type and Data Range
+            myChart.ChartType = Microsoft.Office.Interop.Excel.XlChartType.xlXYScatter;
+            myChart.SetSourceData(pPRISMWorkSheet.Range[PRISMRange]);
+            //Set Element Positions
+            myChart.SetElement(MsoChartElementType.msoElementChartTitleAboveChart);
+            myChart.SetElement(MsoChartElementType.msoElementLegendBottom);
+            //Set Chart Position
+            myChart.Parent.Left = Constants.EXCEL_CHART_SPACING;
+            myChart.Parent.Width = Constants.EXCEL_CHART_WIDTH;
+            myChart.Parent.Height = Constants.EXCEL_CHART_HEIGHT;
+            myChart.Parent.Top = topPosition;
+            // Clear Previous Series
+            while (myChart.SeriesCollection().Count > 0)
+            {
+                myChart.SeriesCollection().Item(1).Delete();
+            }
+
+            // SNOTEL Series
+            Series SNOTELSeries;
+            if (Module1.Current.Aoi.HasSnotel && SNOTELReturn > 0)
+            {
+                SNOTELSeries = myChart.SeriesCollection().NewSeries;
+                SNOTELSeries.Name = "SNOTEL";
+                //Set Series Values
+                SNOTELSeries.Values = pSNOTELWorksheet.Range[xSNOTELValueRange];
+                SNOTELSeries.XValues = pSNOTELWorksheet.Range[vSNOTELValueRange];
+                //Set Series Formats
+                SNOTELSeries.MarkerStyle = Microsoft.Office.Interop.Excel.XlMarkerStyle.xlMarkerStyleTriangle;
+                SNOTELSeries.MarkerForegroundColor = (int) XlRgbColor.rgbBlack;
+                SNOTELSeries.MarkerBackgroundColor = (int) XlRgbColor.rgbBlack;
+                //Set Axis Group
+                SNOTELSeries.AxisGroup = Microsoft.Office.Interop.Excel.XlAxisGroup.xlPrimary;
+            }
+
+            //@ToDo: Enable when we have a snow course worksheet
+            // Snow Course Series
+            //Series scSeries;
+            //if (Module1.Current.Aoi.HasSnowCourse && SnowCourseReturn > 0)
+            //{
+            //    scSeries = myChart.SeriesCollection().NewSeries;
+            //    scSeries.Name = "Snow Course";
+            //    //Set Series Values
+            //    scSeries.Values = pSnowCourseWorksheet.Range[xSnowCourseValueRange];
+            //    scSeries.XValues = pSnowCourseWorksheet.Range[vSnowCourseValueRange];
+            //    //Set Series Formats
+            //    scSeries.MarkerStyle = Microsoft.Office.Interop.Excel.XlMarkerStyle.xlMarkerStyleTriangle;
+            //    scSeries.MarkerForegroundColor = (int)XlRgbColor.rgbBlack;
+            //    scSeries.MarkerBackgroundColor = (int)XlRgbColor.rgbBlack;
+            //    //Set Axis Group
+            //    scSeries.AxisGroup = Microsoft.Office.Interop.Excel.XlAxisGroup.xlPrimary;
+            //}
+
+            //@ToDo format pseudo site series when we start supporting psites
+
+            // Elevation Series
+            Series ElvSeries = myChart.SeriesCollection().NewSeries;
+            ElvSeries.Name = "Elevation";
+            // Set Series Values
+            ElvSeries.Values = pElvWorksheet.Range[sElevValueRange];
+            ElvSeries.XValues = pElvWorksheet.Range[sElevRange];
+            // Set Series Formats
+            ElvSeries.Smooth = false;
+            ElvSeries.Format.Line.DashStyle = MsoLineDashStyle.msoLineSolid;
+            System.Drawing.Color color = System.Drawing.Color.FromArgb(74, 126, 187);
+            ElvSeries.Format.Line.ForeColor.RGB = System.Drawing.ColorTranslator.ToOle(color);
+            ElvSeries.MarkerStyle = Microsoft.Office.Interop.Excel.XlMarkerStyle.xlMarkerStyleNone;
+            // Set Axis Group
+            ElvSeries.AxisGroup = Microsoft.Office.Interop.Excel.XlAxisGroup.xlPrimary;
+            //Set to be first plotted series
+            ElvSeries.PlotOrder = 1;
+
+            //PRISM Series
+            Series PRISM = myChart.SeriesCollection().NewSeries;
+            PRISM.Name = "Precipitation";
+            // Set Series Values
+            PRISM.Values = pPRISMWorkSheet.Range[xPRISMValueRange];
+            PRISM.XValues = pPRISMWorkSheet.Range[vPRISMValueRange];
+            // Set Series Formats
+            PRISM.Smooth = false;
+            PRISM.Format.Line.DashStyle = MsoLineDashStyle.msoLineSolid;
+            color = System.Drawing.Color.FromArgb(204, 0, 0);
+            PRISM.Format.Line.ForeColor.RGB = System.Drawing.ColorTranslator.ToOle(color);
+            PRISM.Format.Line.BackColor.RGB = System.Drawing.ColorTranslator.ToOle(color);
+            PRISM.MarkerStyle = Microsoft.Office.Interop.Excel.XlMarkerStyle.xlMarkerStyleSquare;
+            //Set Axis Group
+            PRISM.AxisGroup = Microsoft.Office.Interop.Excel.XlAxisGroup.xlSecondary;
+            //Set to be first plotted series
+            PRISM.PlotOrder = 1;
+
+            // Start here:  Set Variables Associates with each Axis
+
+
+
+            success = BA_ReturnCode.Success;
+            return success;
         }
     }
 }
