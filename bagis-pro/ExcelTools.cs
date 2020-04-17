@@ -153,11 +153,11 @@ namespace bagis_pro
                 long count = pWorksheet.UsedRange.Rows.Count;
                 for (int i = beginningRow; i < count; i++)
                 {
-                    Range cell = pWorksheet.UsedRange.Cells[i, 1];
-                    string strCell = cell.ToString();
+                    var cellValue = (pWorksheet.UsedRange.Cells[i, 1] as Range).Value;
+                    string strCell = Convert.ToString(cellValue);
                     if (! String.IsNullOrEmpty(strCell))
                     {
-                        validRow = validRow++;
+                        validRow++;
                     }
                 }
             }
@@ -488,7 +488,8 @@ namespace bagis_pro
         }
 
         public static BA_ReturnCode CreateCombinedChart(Worksheet pPRISMWorkSheet, Worksheet pElvWorksheet, Worksheet pChartsWorksheet,
-                                                        Worksheet pSNOTELWorksheet, int topPosition)
+                                                        Worksheet pSNOTELWorksheet, int topPosition, double Y_Max, double Y_Min,
+                                                        double Y_Unit, double MaxPRISMValue)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
 
@@ -650,12 +651,77 @@ namespace bagis_pro
             //Set to be first plotted series
             PRISM.PlotOrder = 1;
 
-            // Start here:  Set Variables Associates with each Axis
+            // Set Variables Associates with each Axis
+            // Bottom Axis
+            Axis axis = (Axis)myChart.Axes(Microsoft.Office.Interop.Excel.XlAxisType.xlCategory, 
+                Microsoft.Office.Interop.Excel.XlAxisGroup.xlPrimary);
+            axis.HasTitle = true;
+            axis.AxisTitle.Characters.Text = "% AOI Area below Elevation";
+            axis.AxisTitle.Orientation = 0;
+            axis.MaximumScale = 100.1;
+            axis.MinimumScale = 0.0F;
 
+            // Left Side Axis
+            axis = (Axis)myChart.Axes(Microsoft.Office.Interop.Excel.XlAxisType.xlValue,
+                Microsoft.Office.Interop.Excel.XlAxisGroup.xlPrimary);
+            axis.HasTitle = true;
+            axis.AxisTitle.Characters.Text = "Elevation" + AxisTitleUnit;
+            axis.AxisTitle.Orientation = 90;
+            axis.MaximumScale = Y_Max;
+            axis.MinimumScale = Y_Min;
+            axis.MajorUnit = Y_Unit;
 
+            // Right Side Axis
+            axis = (Axis)myChart.Axes(Microsoft.Office.Interop.Excel.XlAxisType.xlValue,
+                Microsoft.Office.Interop.Excel.XlAxisGroup.xlSecondary);
+            axis.HasTitle = true;
+            axis.AxisTitle.Characters.Text = "Elevation" + AxisTitleUnit;
+            axis.AxisTitle.Orientation = 90;
+            axis.MaximumScale = Y_Max;
+            axis.MinimumScale = Y_Min;
+            axis.MajorUnit = Y_Unit;
+
+            // Top Axis
+            axis = (Axis)myChart.Axes(Microsoft.Office.Interop.Excel.XlAxisType.xlCategory,
+                Microsoft.Office.Interop.Excel.XlAxisGroup.xlSecondary);
+            axis.HasTitle = true;
+            axis.AxisTitle.Characters.Text = "Precipitation Distribution (% contribution by elevation zone)";
+            axis.AxisTitle.Orientation = "0";
+            axis.MaximumScale = MaxPRISMValue;
+            axis.MinimumScale = 0.0F; ;
+
+            // Insert Axes
+            myChart.HasAxis[Microsoft.Office.Interop.Excel.XlAxisType.xlCategory, Microsoft.Office.Interop.Excel.XlAxisGroup.xlPrimary] = true;
+            myChart.HasAxis[Microsoft.Office.Interop.Excel.XlAxisType.xlCategory, Microsoft.Office.Interop.Excel.XlAxisGroup.xlSecondary] = true;
+            myChart.HasAxis[Microsoft.Office.Interop.Excel.XlAxisType.xlValue, Microsoft.Office.Interop.Excel.XlAxisGroup.xlPrimary] = true;
+            myChart.HasAxis[Microsoft.Office.Interop.Excel.XlAxisType.xlValue, Microsoft.Office.Interop.Excel.XlAxisGroup.xlSecondary] = true;
+
+            //@ToDo: Implement textbox
+            //pChartsWorksheet.Shapes.AddTextbox();
 
             success = BA_ReturnCode.Success;
             return success;
+        }
+
+        public static double ConfigureYAxis(double minvalue, double maxvalue, double interval, 
+            ref double Chart_YMaxScale)
+        {
+            // returning the min scale
+            double chart_YMinScale = -99.0f;
+            int quotient = Convert.ToInt32(minvalue / interval);
+            chart_YMinScale = quotient * interval;
+            int modvalue = Convert.ToInt16(maxvalue % interval);
+            if (modvalue == 0)
+            {
+                quotient = Convert.ToInt32(maxvalue / interval);
+            }
+            else
+            {
+                quotient = Convert.ToInt32(maxvalue / interval) + 1;
+            }
+
+            Chart_YMaxScale = quotient * interval;  // Setting the max scale by ref
+            return chart_YMinScale;
         }
     }
 }

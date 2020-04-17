@@ -321,6 +321,10 @@ namespace bagis_pro
             Application objExcel = new Application();
             Workbook bkWorkBook = objExcel.Workbooks.Add();  //a file in excel
 
+            //Create Charts Worksheet
+            Worksheet pChartsWorksheet = bkWorkBook.Sheets.Add();
+            pChartsWorksheet.Name = "Charts";
+
             // Create SNOTEL Distribution Worksheet
             Worksheet pSNOTELWorksheet = bkWorkBook.Sheets.Add();
             pSNOTELWorksheet.Name = "SNOTEL";
@@ -334,13 +338,16 @@ namespace bagis_pro
             pPRISMWorkSheet.Name = "PRISM";
 
 
+
             //Query min/max from dem
             string sMask = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_RASTER;
             IList<double> lstResult = await GeoprocessingTools.GetDemStatsAsync(Module1.Current.Aoi.FilePath, sMask, 0.005);
             double elevMinMeters = -1;
+            double elevMaxMeters = -1;
             if (lstResult.Count == 2)   // We expect the min and max values in that order
             {
                 elevMinMeters = lstResult[0];
+                elevMaxMeters = lstResult[1];
             }
 
             success = await ExcelTools.CreateElevationTableAsync(pAreaElvWorksheet, elevMinMeters);
@@ -359,6 +366,20 @@ namespace bagis_pro
             success = ExcelTools.CopyCells(pAreaElvWorksheet, 3, pPRISMWorkSheet, 12);
             success = ExcelTools.CopyCells(pAreaElvWorksheet, 10, pPRISMWorkSheet, 13);
             success = ExcelTools.EstimatePrecipitationVolume(pPRISMWorkSheet, 12, 7, 14, 15);
+            double Y_Unit = Module1.Current.Settings.m_elevInterval;
+            double Y_Max = -99.0F;
+            double minValue = elevMinMeters;
+            double maxValue = elevMaxMeters;
+            //aoiDemMin is always in meters
+            if (Module1.Current.Settings.m_demDisplayUnits.Equals("Feet"))
+            {
+                minValue = ArcGIS.Core.Geometry.LinearUnit.Meters.ConvertTo(elevMinMeters, ArcGIS.Core.Geometry.LinearUnit.Feet);
+                maxValue = ArcGIS.Core.Geometry.LinearUnit.Meters.ConvertTo(elevMaxMeters, ArcGIS.Core.Geometry.LinearUnit.Feet);
+            }
+
+            double Y_Min = ExcelTools.ConfigureYAxis(minValue, maxValue, Y_Unit, ref Y_Max);
+            success = ExcelTools.CreateCombinedChart(pPRISMWorkSheet, pAreaElvWorksheet, pChartsWorksheet, pSNOTELWorksheet,
+                Constants.EXCEL_CHART_SPACING, Y_Max, Y_Min, Y_Unit, MaxPRISMValue);
 
             objExcel.Visible = true;
 
