@@ -321,13 +321,13 @@ namespace bagis_pro
             Application objExcel = new Application();
             Workbook bkWorkBook = objExcel.Workbooks.Add();  //a file in excel
 
-            //Create Charts Worksheet
-            Worksheet pChartsWorksheet = bkWorkBook.Sheets.Add();
-            pChartsWorksheet.Name = "Charts";
-
             // Create SNOTEL Distribution Worksheet
             Worksheet pSNOTELWorksheet = bkWorkBook.Sheets.Add();
             pSNOTELWorksheet.Name = "SNOTEL";
+
+            // Create Snow Course Distribution Worksheet
+            Worksheet pSnowCourseWorksheet = bkWorkBook.Sheets.Add();
+            pSnowCourseWorksheet.Name = "Snow Course";
 
             // Create Elevation Distribution Worksheet
             Worksheet pAreaElvWorksheet = bkWorkBook.Sheets.Add();
@@ -337,6 +337,9 @@ namespace bagis_pro
             Worksheet pPRISMWorkSheet = bkWorkBook.Sheets.Add();
             pPRISMWorkSheet.Name = "PRISM";
 
+            //Create Charts Worksheet
+            Worksheet pChartsWorksheet = bkWorkBook.Sheets.Add();
+            pChartsWorksheet.Name = "Charts";
 
 
             //Query min/max from dem
@@ -355,7 +358,13 @@ namespace bagis_pro
             Module1.Current.Aoi.HasSnotel = await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false)), Constants.FILE_SNOTEL_ZONE);
             if (Module1.Current.Aoi.HasSnotel)
             {
-                success = await ExcelTools.CreateSnotelTableAsync(pSNOTELWorksheet, pAreaElvWorksheet);
+                success = await ExcelTools.CreateSitesTableAsync(pSNOTELWorksheet, pAreaElvWorksheet, Constants.FILE_SNOTEL_ZONE);
+            }
+
+            Module1.Current.Aoi.HasSnowCourse = await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false)), Constants.FILE_SCOS_ZONE);
+            if (Module1.Current.Aoi.HasSnowCourse)
+            {
+                success = await ExcelTools.CreateSitesTableAsync(pSnowCourseWorksheet, pAreaElvWorksheet, Constants.FILE_SCOS_ZONE);
             }
 
             string strPrecipPath = Module1.Current.Aoi.FilePath + Module1.Current.Settings.m_precipFile;
@@ -379,7 +388,7 @@ namespace bagis_pro
 
             double Y_Min = ExcelTools.ConfigureYAxis(minValue, maxValue, Y_Unit, ref Y_Max);
             success = ExcelTools.CreateCombinedChart(pPRISMWorkSheet, pAreaElvWorksheet, pChartsWorksheet, pSNOTELWorksheet,
-                Constants.EXCEL_CHART_SPACING, Y_Max, Y_Min, Y_Unit, MaxPRISMValue);
+                pSnowCourseWorksheet, Constants.EXCEL_CHART_SPACING, Y_Max, Y_Min, Y_Unit, MaxPRISMValue);
 
             objExcel.Visible = true;
 

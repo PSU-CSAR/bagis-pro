@@ -12,6 +12,15 @@ using Microsoft.Office.Core;
 
 namespace bagis_pro
 {
+    class ChartTextBoxSettings
+    {
+        public int Left;
+        public int Top;
+        public int Width = Constants.EXCEL_CHART_WIDTH;
+        public int Height = Constants.EXCEL_CHART_DESCR_HEIGHT;
+        public string Message = "";
+    }
+
     class ExcelTools
     {
         public static async Task<BA_ReturnCode> CreateElevationTableAsync(Worksheet pworksheet, double aoiDemMin)
@@ -143,8 +152,8 @@ namespace bagis_pro
         }
 
         // count the number of records in a worksheet based on the values on the first column
-        // aspect, slope, snotel, and snow course tables have a beginning_row value of 2
-        // other tables have a value of 3.
+        // aspect, slope, snotel, and snow course tables have a beginning_row value of 1
+        // other tables have a value of 2.
         private static long CountRecords(Worksheet pWorksheet, int beginningRow)
         {
             long validRow = 0;
@@ -164,7 +173,7 @@ namespace bagis_pro
             return validRow;
         }
 
-        public static async Task<BA_ReturnCode> CreateSnotelTableAsync(Worksheet pworksheet, Worksheet pElevWorkSheet)
+        public static async Task<BA_ReturnCode> CreateSitesTableAsync(Worksheet pworksheet, Worksheet pElevWorkSheet, string strZonesFile)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
             Uri uriSnotelZones = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false));
@@ -180,7 +189,7 @@ namespace bagis_pro
                 string sMask = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_RASTER;
                 var environments = Geoprocessing.MakeEnvironmentArray(workspace: Module1.Current.Aoi.FilePath, snapRaster: Module1.Current.Aoi.SnapRasterPath,
                     mask: sMask);
-                string strInZoneData = uriSnotelZones.LocalPath + "\\" + Constants.FILE_SNOTEL_ZONE;
+                string strInZoneData = uriSnotelZones.LocalPath + "\\" + strZonesFile;
                 string strInValueRaster = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Surfaces, true) + Constants.FILE_DEM_FILLED;
                 string strOutTable = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) + strTable;
                 var parameters = Geoprocessing.MakeValueArray(strInZoneData, Constants.FIELD_VALUE, strInValueRaster, strOutTable);
@@ -488,7 +497,7 @@ namespace bagis_pro
         }
 
         public static BA_ReturnCode CreateCombinedChart(Worksheet pPRISMWorkSheet, Worksheet pElvWorksheet, Worksheet pChartsWorksheet,
-                                                        Worksheet pSNOTELWorksheet, int topPosition, double Y_Max, double Y_Min,
+                                                        Worksheet pSNOTELWorksheet, Worksheet pSnowCourseWorkSheet, int topPosition, double Y_Max, double Y_Min,
                                                         double Y_Unit, double MaxPRISMValue)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
@@ -497,12 +506,8 @@ namespace bagis_pro
             long ElevReturn = nrecords + 2;
             nrecords = ExcelTools.CountRecords(pPRISMWorkSheet, 2);
             long PRISMReturn = nrecords + 2;
-            nrecords = ExcelTools.CountRecords(pSNOTELWorksheet, 1);
-            long SNOTELReturn = nrecords - 1; // not counting the last record, i.e., not presented
-
-            //@ToDo: Enable when we have snow course layer
-            //nrecords = ExcelTools.CountRecords(pSnowCourseWorksheet, 1);
-            //long SnowCourseReturn = nrecords - 1; //not counting the last record, i.e., not presented
+            long SNOTELReturn = ExcelTools.CountRecords(pSNOTELWorksheet, 1);
+            long SnowCourseReturn = ExcelTools.CountRecords(pSnowCourseWorkSheet, 1);
             //@ToDo: Enable when we have start supporting psites
             //nrecords = ExcelTools.CountRecords(pPseudoWorkSheet, 1);
             //long PseudoReturn = nrecords - 1 //not counting the last record, i.e., not presented
@@ -522,15 +527,14 @@ namespace bagis_pro
                 vSNOTELValueRange = "K2:K" + SNOTELReturn;
             }
 
-            //@ToDo: Enable when we have snow course layer
             //Set SnowCourse Ranges
-            //string vSnowCourseValueRange = "";
-            //string xSnowCourseValueRange = "";
-            //if (Module1.Current.Aoi.HasSnowCourse)
-            //{
-            //    xSnowCourseValueRange = "A2:A" + SnowCourseReturn;
-            //    vSnowCourseValueRange = "K2:K" + SnowCourseReturn;
-            //}
+            string vSnowCourseValueRange = "";
+            string xSnowCourseValueRange = "";
+            if (Module1.Current.Aoi.HasSnowCourse)
+            {
+                xSnowCourseValueRange = "A2:A" + SnowCourseReturn;
+                vSnowCourseValueRange = "K2:K" + SnowCourseReturn;
+            }
 
             //@ToDo: Enable when we enable psites
             //Set Pseudo-site Ranges
@@ -562,6 +566,7 @@ namespace bagis_pro
             myChart.HasTitle = true;
             myChart.HasLegend = true;
             myChart.ChartTitle.Caption = "Area-Elevation, Precipitation  and Site Distribution";
+            myChart.ChartTitle.Font.Bold = true;
             //Set Chart Type and Data Range
             myChart.ChartType = Microsoft.Office.Interop.Excel.XlChartType.xlXYScatter;
             myChart.SetSourceData(pPRISMWorkSheet.Range[PRISMRange]);
@@ -577,6 +582,25 @@ namespace bagis_pro
             while (myChart.SeriesCollection().Count > 0)
             {
                 myChart.SeriesCollection().Item(1).Delete();
+            }
+
+            // Snow Course Series
+            Series scSeries;
+            System.Drawing.Color color;
+            if (Module1.Current.Aoi.HasSnowCourse && SnowCourseReturn > 0)
+            {
+                scSeries = myChart.SeriesCollection().NewSeries;
+                scSeries.Name = "Snow Course";
+                //Set Series Values
+                scSeries.Values = pSnowCourseWorkSheet.Range[xSnowCourseValueRange];
+                scSeries.XValues = pSnowCourseWorkSheet.Range[vSnowCourseValueRange];
+                //Set Series Formats
+                scSeries.MarkerStyle = Microsoft.Office.Interop.Excel.XlMarkerStyle.xlMarkerStyleTriangle;
+                color = System.Drawing.Color.FromArgb(246, 32, 10);
+                scSeries.MarkerForegroundColor = System.Drawing.ColorTranslator.ToOle(color);
+                scSeries.MarkerBackgroundColor = System.Drawing.ColorTranslator.ToOle(color);
+                //Set Axis Group
+                scSeries.AxisGroup = Microsoft.Office.Interop.Excel.XlAxisGroup.xlPrimary;
             }
 
             // SNOTEL Series
@@ -596,24 +620,6 @@ namespace bagis_pro
                 SNOTELSeries.AxisGroup = Microsoft.Office.Interop.Excel.XlAxisGroup.xlPrimary;
             }
 
-            //@ToDo: Enable when we have a snow course worksheet
-            // Snow Course Series
-            //Series scSeries;
-            //if (Module1.Current.Aoi.HasSnowCourse && SnowCourseReturn > 0)
-            //{
-            //    scSeries = myChart.SeriesCollection().NewSeries;
-            //    scSeries.Name = "Snow Course";
-            //    //Set Series Values
-            //    scSeries.Values = pSnowCourseWorksheet.Range[xSnowCourseValueRange];
-            //    scSeries.XValues = pSnowCourseWorksheet.Range[vSnowCourseValueRange];
-            //    //Set Series Formats
-            //    scSeries.MarkerStyle = Microsoft.Office.Interop.Excel.XlMarkerStyle.xlMarkerStyleTriangle;
-            //    scSeries.MarkerForegroundColor = (int)XlRgbColor.rgbBlack;
-            //    scSeries.MarkerBackgroundColor = (int)XlRgbColor.rgbBlack;
-            //    //Set Axis Group
-            //    scSeries.AxisGroup = Microsoft.Office.Interop.Excel.XlAxisGroup.xlPrimary;
-            //}
-
             //@ToDo format pseudo site series when we start supporting psites
 
             // Elevation Series
@@ -625,7 +631,7 @@ namespace bagis_pro
             // Set Series Formats
             ElvSeries.Smooth = false;
             ElvSeries.Format.Line.DashStyle = MsoLineDashStyle.msoLineSolid;
-            System.Drawing.Color color = System.Drawing.Color.FromArgb(74, 126, 187);
+            color = System.Drawing.Color.FromArgb(74, 126, 187);
             ElvSeries.Format.Line.ForeColor.RGB = System.Drawing.ColorTranslator.ToOle(color);
             ElvSeries.MarkerStyle = Microsoft.Office.Interop.Excel.XlMarkerStyle.xlMarkerStyleNone;
             // Set Axis Group
@@ -658,6 +664,7 @@ namespace bagis_pro
             axis.HasTitle = true;
             axis.AxisTitle.Characters.Text = "% AOI Area below Elevation";
             axis.AxisTitle.Orientation = 0;
+            axis.AxisTitle.Font.Bold = true;
             axis.MaximumScale = 100.1;
             axis.MinimumScale = 0.0F;
 
@@ -667,6 +674,7 @@ namespace bagis_pro
             axis.HasTitle = true;
             axis.AxisTitle.Characters.Text = "Elevation" + AxisTitleUnit;
             axis.AxisTitle.Orientation = 90;
+            axis.AxisTitle.Font.Bold = true;
             axis.MaximumScale = Y_Max;
             axis.MinimumScale = Y_Min;
             axis.MajorUnit = Y_Unit;
@@ -676,6 +684,7 @@ namespace bagis_pro
                 Microsoft.Office.Interop.Excel.XlAxisGroup.xlSecondary);
             axis.HasTitle = true;
             axis.AxisTitle.Characters.Text = "Elevation" + AxisTitleUnit;
+            axis.AxisTitle.Font.Bold = true;
             axis.AxisTitle.Orientation = 90;
             axis.MaximumScale = Y_Max;
             axis.MinimumScale = Y_Min;
@@ -686,6 +695,7 @@ namespace bagis_pro
                 Microsoft.Office.Interop.Excel.XlAxisGroup.xlSecondary);
             axis.HasTitle = true;
             axis.AxisTitle.Characters.Text = "Precipitation Distribution (% contribution by elevation zone)";
+            axis.AxisTitle.Font.Bold = true;
             axis.AxisTitle.Orientation = "0";
             axis.MaximumScale = MaxPRISMValue;
             axis.MinimumScale = 0.0F; ;
@@ -696,9 +706,21 @@ namespace bagis_pro
             myChart.HasAxis[Microsoft.Office.Interop.Excel.XlAxisType.xlValue, Microsoft.Office.Interop.Excel.XlAxisGroup.xlPrimary] = true;
             myChart.HasAxis[Microsoft.Office.Interop.Excel.XlAxisType.xlValue, Microsoft.Office.Interop.Excel.XlAxisGroup.xlSecondary] = true;
 
-            //@ToDo: Implement textbox
-            //pChartsWorksheet.Shapes.AddTextbox();
-
+            // Descriptive textbox
+            StringBuilder sb = new StringBuilder();
+            sb.Append("Area-Elevation, Precipitation and Site Distribution chart \r\n");
+            sb.Append("The chart shows the percentage of the precipitation contributed by the user-specified elevation intervals");
+            sb.Append("and the snow monitoring sites plotted on the Area-Elevation Distribution curve according to the sites'");
+            sb.Append("elevation. The chart tells if the snow monitoring sites record the major precipitation in the AOI.");
+            ChartTextBoxSettings textBoxSettings = new ChartTextBoxSettings
+            {
+                Left = Constants.EXCEL_CHART_SPACING,
+                Top = topPosition + Constants.EXCEL_CHART_HEIGHT + 10,
+                Message = sb.ToString()
+            };
+            pChartsWorksheet.Shapes.AddTextbox(MsoTextOrientation.msoTextOrientationHorizontal, textBoxSettings.Left,
+                                               textBoxSettings.Top, textBoxSettings.Width, textBoxSettings.Height).
+                                               TextFrame.Characters().Text = textBoxSettings.Message;
             success = BA_ReturnCode.Success;
             return success;
         }
@@ -708,16 +730,16 @@ namespace bagis_pro
         {
             // returning the min scale
             double chart_YMinScale = -99.0f;
-            int quotient = Convert.ToInt32(minvalue / interval);
+            int quotient = (int) (minvalue / interval);
             chart_YMinScale = quotient * interval;
-            int modvalue = Convert.ToInt16(maxvalue % interval);
+            int modvalue = (int) (maxvalue % interval);
             if (modvalue == 0)
             {
-                quotient = Convert.ToInt32(maxvalue / interval);
+                quotient = (int) (maxvalue / interval);
             }
             else
             {
-                quotient = Convert.ToInt32(maxvalue / interval) + 1;
+                quotient = (int) (maxvalue / interval) + 1;
             }
 
             Chart_YMaxScale = quotient * interval;  // Setting the max scale by ref
