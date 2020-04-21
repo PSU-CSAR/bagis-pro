@@ -315,31 +315,35 @@ namespace bagis_pro
         public static async Task<BA_ReturnCode> GenerateTablesAsync(bool bInteractive)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
-
-
             // Declare Excel object variables
             Application objExcel = new Application();
             Workbook bkWorkBook = objExcel.Workbooks.Add();  //a file in excel
 
-            // Create SNOTEL Distribution Worksheet
-            Worksheet pSNOTELWorksheet = bkWorkBook.Sheets.Add();
-            pSNOTELWorksheet.Name = "SNOTEL";
+            try
+            {
+                // Create SNOTEL Distribution Worksheet
+                Worksheet pSNOTELWorksheet = bkWorkBook.Sheets.Add();
+                pSNOTELWorksheet.Name = "SNOTEL";
 
-            // Create Snow Course Distribution Worksheet
-            Worksheet pSnowCourseWorksheet = bkWorkBook.Sheets.Add();
-            pSnowCourseWorksheet.Name = "Snow Course";
+                // Create Snow Course Distribution Worksheet
+                Worksheet pSnowCourseWorksheet = bkWorkBook.Sheets.Add();
+                pSnowCourseWorksheet.Name = "Snow Course";
 
-            // Create Elevation Distribution Worksheet
-            Worksheet pAreaElvWorksheet = bkWorkBook.Sheets.Add();
-            pAreaElvWorksheet.Name = "Area Elevations";
+                //Create Slope Distribution Worksheet
+                Worksheet pSlopeWorksheet = bkWorkBook.Sheets.Add();
+                pSlopeWorksheet.Name = "Slope";
 
-            // Create PRISM Distribution Worksheet
-            Worksheet pPRISMWorkSheet = bkWorkBook.Sheets.Add();
-            pPRISMWorkSheet.Name = "PRISM";
+                // Create Elevation Distribution Worksheet
+                Worksheet pAreaElvWorksheet = bkWorkBook.Sheets.Add();
+                pAreaElvWorksheet.Name = "Area Elevations";
 
-            //Create Charts Worksheet
-            Worksheet pChartsWorksheet = bkWorkBook.Sheets.Add();
-            pChartsWorksheet.Name = "Charts";
+                // Create PRISM Distribution Worksheet
+                Worksheet pPRISMWorkSheet = bkWorkBook.Sheets.Add();
+                pPRISMWorkSheet.Name = "PRISM";
+
+                //Create Charts Worksheet
+                Worksheet pChartsWorksheet = bkWorkBook.Sheets.Add();
+                pChartsWorksheet.Name = "Charts";
 
 
             //Query min/max from dem
@@ -379,6 +383,7 @@ namespace bagis_pro
             double Y_Max = -99.0F;
             double minValue = elevMinMeters;
             double maxValue = elevMaxMeters;
+                int leftPosition = Constants.EXCEL_CHART_WIDTH + (Constants.EXCEL_CHART_SPACING * 10);
             //aoiDemMin is always in meters
             if (Module1.Current.Settings.m_demDisplayUnits.Equals("Feet"))
             {
@@ -386,9 +391,16 @@ namespace bagis_pro
                 maxValue = ArcGIS.Core.Geometry.LinearUnit.Meters.ConvertTo(elevMaxMeters, ArcGIS.Core.Geometry.LinearUnit.Feet);
             }
 
-            double Y_Min = ExcelTools.ConfigureYAxis(minValue, maxValue, Y_Unit, ref Y_Max);
-            success = ExcelTools.CreateCombinedChart(pPRISMWorkSheet, pAreaElvWorksheet, pChartsWorksheet, pSNOTELWorksheet,
-                pSnowCourseWorksheet, Constants.EXCEL_CHART_SPACING, Y_Max, Y_Min, Y_Unit, MaxPRISMValue);
+                double Y_Min = ExcelTools.ConfigureYAxis(minValue, maxValue, Y_Unit, ref Y_Max);
+                success = ExcelTools.CreateCombinedChart(pPRISMWorkSheet, pAreaElvWorksheet, pChartsWorksheet, pSNOTELWorksheet,
+                    pSnowCourseWorksheet, Constants.EXCEL_CHART_SPACING, Y_Max, Y_Min, Y_Unit, MaxPRISMValue);
+
+                success = await ExcelTools.CreateSlopeTableAsync(pSlopeWorksheet);
+                if (success == BA_ReturnCode.Success)
+                {
+                    success = ExcelTools.CreateSlopeChart(pSlopeWorksheet, pChartsWorksheet, 
+                        Constants.EXCEL_CHART_SPACING, leftPosition);
+                }
 
             //Publish Charts Tab
             if (bInteractive == false)
@@ -419,8 +431,26 @@ namespace bagis_pro
                 pChartsWorksheet.ExportAsFixedFormat(XlFixedFormatType.xlTypePDF, pathToSave);
             }
 
-            objExcel.Visible = bInteractive;
             return success;
+            }
+            catch (Exception e)
+            {
+                Debug.Print("GenerateTablesAsync exception: " + e.StackTrace + "/r/n");
+                return BA_ReturnCode.UnknownError;
+            }
+            finally
+            {
+                if (bInteractive == true)
+                {
+                    objExcel.Visible = true;
+                }
+                else
+                {
+                    bkWorkBook.Close(false);
+                    objExcel.Quit();
+                    objExcel = null;
+                }
+            }
         }
 
         public static async Task<string> GetBagisTag(string layerPath, string propertyPath)

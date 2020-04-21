@@ -745,5 +745,182 @@ namespace bagis_pro
             Chart_YMaxScale = quotient * interval;  // Setting the max scale by ref
             return chart_YMinScale;
         }
+
+        public static async Task<BA_ReturnCode> CreateSlopeTableAsync(Worksheet pworksheet)
+        {
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
+
+            //read class definition for chart and table labeling
+            Uri uriSlopeZones = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false));
+            IList<BA_Objects.Interval> lstInterval = await GeodatabaseTools.ReadReclassRasterAttribute(uriSlopeZones, Constants.FILE_SLOPE_ZONE);
+
+            //===========================
+            //Zonal Statistics
+            //===========================
+            string strTable = "tblZones";
+            IGPResult gpResult = await QueuedTask.Run(() =>
+            {
+                string sMask = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_RASTER;
+                var environments = Geoprocessing.MakeEnvironmentArray(workspace: Module1.Current.Aoi.FilePath, snapRaster: Module1.Current.Aoi.SnapRasterPath,
+                    mask: sMask);
+                string strInZoneData = uriSlopeZones.LocalPath + "\\" + Constants.FILE_SLOPE_ZONE;
+                string strInValueRaster = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Surfaces, true) + Constants.FILE_SLOPE;
+                string strOutTable = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) + strTable;
+                var parameters = Geoprocessing.MakeValueArray(strInZoneData, Constants.FIELD_VALUE, strInValueRaster, strOutTable);
+                return Geoprocessing.ExecuteToolAsync("ZonalStatisticsAsTable", parameters, environments,
+                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+            });
+            if (gpResult.IsFailed)
+            {
+                success = BA_ReturnCode.UnknownError;
+            }
+            else
+            {
+                success = BA_ReturnCode.Success;
+            }
+
+            //=============================================
+            // Create Field Titles
+            //=============================================
+            pworksheet.Cells[1, 1] = "SLOPE";
+            pworksheet.Cells[1, 2] = "COUNT";
+            pworksheet.Cells[1, 3] = "AREA";
+            pworksheet.Cells[1, 4] = "MIN";
+            pworksheet.Cells[1, 5] = "MAX";
+            pworksheet.Cells[1, 6] = "RANGE";
+            pworksheet.Cells[1, 7] = "MEAN";
+            pworksheet.Cells[1, 8] = "STD";
+            pworksheet.Cells[1, 9] = "SUM";
+            pworksheet.Cells[1, 10] = "%_AREA";
+            //============================================
+            // Populate Elevation and Percent Area Rows
+            //============================================
+            Uri analysisUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false));
+            await QueuedTask.Run(() => {
+                using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(analysisUri)))
+                using (Table statisticsTable = geodatabase.OpenDataset<Table>(strTable))
+                {
+                    long rasterValueCount = statisticsTable.GetCount();
+                    long sumOfCount = 0;
+                    using (RowCursor rowCursor = statisticsTable.Search(new QueryFilter(), false))
+                    {
+                        while (rowCursor.MoveNext())
+                        {
+                            using (Row row = rowCursor.Current)
+                            {
+                                sumOfCount = sumOfCount + Convert.ToInt32(row["COUNT"]);
+                            }
+                        }
+                    }
+
+                    double percentArea = 0;
+                    int i = 0;
+                    using (RowCursor rowCursor = statisticsTable.Search(new QueryFilter(), false))
+                    {
+                        while (rowCursor.MoveNext())
+                        {
+                            using (Row row = rowCursor.Current)
+                            {
+                                double count = Convert.ToDouble(row[Constants.FIELD_COUNT]);
+                                percentArea = percentArea + (count / sumOfCount * 100);
+                                // Populate Excel Table
+                                double dblUpperBound = lstInterval[i].UpperBound;
+                                if (!Module1.Current.Settings.m_demDisplayUnits.Equals(Module1.Current.Settings.m_demUnits))
+                                {
+                                    if (Module1.Current.Settings.m_demDisplayUnits.Equals("Meters") &&
+                                        Module1.Current.Settings.m_demUnits.Equals("Feet"))
+                                    {
+                                        dblUpperBound = LinearUnit.Feet.ConvertTo(dblUpperBound, LinearUnit.Meters);
+                                    }
+                                    else if (Module1.Current.Settings.m_demDisplayUnits.Equals("Feet") &&
+                                             Module1.Current.Settings.m_demUnits.Equals("Meters"))
+                                    {
+                                        dblUpperBound = LinearUnit.Meters.ConvertTo(dblUpperBound, LinearUnit.Feet);
+                                    }
+                                }
+                                pworksheet.Cells[i + 2, 1] = lstInterval[i].Name;
+                                pworksheet.Cells[i + 2, 2] = row[Constants.FIELD_COUNT];
+                                pworksheet.Cells[i + 2, 3] = Math.Round(Convert.ToDouble(row["AREA"]), 0);
+                                pworksheet.Cells[i + 2, 4] = row["MIN"];
+                                pworksheet.Cells[i + 2, 5] = row["MAX"];
+                                pworksheet.Cells[i + 2, 6] = row["RANGE"];
+                                pworksheet.Cells[i + 2, 7] = row["MEAN"];
+                                pworksheet.Cells[i + 2, 8] = row["STD"];
+                                pworksheet.Cells[i + 2, 9] = row["SUM"];
+                                pworksheet.Cells[i + 2, 10] = count / sumOfCount * 100;
+                                i++;
+                            }
+                        }
+                    }
+                }
+            });
+
+            success = BA_ReturnCode.Success;
+            return success;
+        }
+
+        public static BA_ReturnCode CreateSlopeChart(Worksheet pSlopeWorksheet, Worksheet pChartsWorksheet,
+            int topPosition, int leftPosition)
+        {
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            long nrecords = ExcelTools.CountRecords(pSlopeWorksheet, 1);
+
+            // ===========================
+            // Make Chart
+            // ===========================
+            Microsoft.Office.Interop.Excel.Shape myShape = pChartsWorksheet.Shapes.AddChart2();
+            Chart myChart = myShape.Chart;
+
+            string ValueRange = "A2:A" + (nrecords + 1) + "," + "J2:J" + (nrecords + 1);
+
+            // Clear Styles
+            myChart.ClearToMatchStyle();
+            // Set Title
+            myChart.HasTitle = true;
+            myChart.ChartTitle.Caption = "Slope Distribution";
+            myChart.ChartTitle.Font.Bold = true;
+            // Set Position and Location
+            myChart.Parent.Left = leftPosition;
+            myChart.Parent.Width = Constants.EXCEL_CHART_WIDTH;
+            myChart.Parent.Top = topPosition;
+            myChart.Parent.Height = Constants.EXCEL_CHART_HEIGHT;
+            // Set Chart Type and Value Range
+            myChart.ChartType = Microsoft.Office.Interop.Excel.XlChartType.xlColumnClustered;
+            myChart.SetSourceData(pSlopeWorksheet.Range[ValueRange]);
+            
+            // Set Axis Properties
+            Axis categoryAxis = (Axis)myChart.Axes(Microsoft.Office.Interop.Excel.XlAxisType.xlCategory,
+                Microsoft.Office.Interop.Excel.XlAxisGroup.xlPrimary);
+            Axis valueAxis = (Axis)myChart.Axes(Microsoft.Office.Interop.Excel.XlAxisType.xlValue,
+                Microsoft.Office.Interop.Excel.XlAxisGroup.xlPrimary);
+            categoryAxis.HasTitle = true;
+            categoryAxis.AxisTitle.Characters.Text = "Percent Slope";
+            categoryAxis.AxisTitle.Font.Bold = true;
+            valueAxis.HasTitle = true;
+            valueAxis.AxisTitle.Font.Bold = true;
+            valueAxis.AxisTitle.Characters.Text = "% AOI Area";
+            valueAxis.MinimumScale = 0;
+            // Set Element Positions
+            myChart.SetElement(MsoChartElementType.msoElementChartTitleAboveChart);
+            myChart.SetElement(MsoChartElementType.msoElementLegendNone);
+
+            // Descriptive textbox
+            StringBuilder sb = new StringBuilder();
+            sb.Append("Slope Distribution chart \r\n");
+            sb.Append("The chart shows the percentage of AOI area in each slope interval.");
+            ChartTextBoxSettings textBoxSettings = new ChartTextBoxSettings
+            {
+                Left = leftPosition,
+                Top = topPosition + Constants.EXCEL_CHART_HEIGHT + 10,
+                Message = sb.ToString()
+            };
+            pChartsWorksheet.Shapes.AddTextbox(MsoTextOrientation.msoTextOrientationHorizontal, textBoxSettings.Left,
+                                               textBoxSettings.Top, textBoxSettings.Width, textBoxSettings.Height).
+                                               TextFrame.Characters().Text = textBoxSettings.Message;
+
+            success = BA_ReturnCode.Success;
+            return success;
+        }
     }
+
 }

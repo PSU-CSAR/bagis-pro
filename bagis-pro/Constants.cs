@@ -53,6 +53,7 @@ namespace bagis_pro
         public const string FILE_SCOS_REPRESENTED = "scos_rep";
         public const string FILE_SITES_REPRESENTED = "sites_rep";
         public const string FILE_POURPOINT = "pourpoint";
+        public const string FILE_SLOPE = "slope";
         public const string FILE_MAP_PARAMETERS = "map_parameters.json";
         public const string FILE_EXPORT_MAP_ELEV_PDF = "map_elevation.pdf";
         public const string FILE_EXPORT_MAP_SNOTEL_PDF = "map_elevation_snotel.pdf";
