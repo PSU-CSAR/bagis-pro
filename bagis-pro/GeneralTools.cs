@@ -312,7 +312,7 @@ namespace bagis_pro
             return BA_ReturnCode.Success;
         }
 
-        public static async Task<BA_ReturnCode> GenerateTablesAsync()
+        public static async Task<BA_ReturnCode> GenerateTablesAsync(bool bInteractive)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
 
@@ -390,8 +390,36 @@ namespace bagis_pro
             success = ExcelTools.CreateCombinedChart(pPRISMWorkSheet, pAreaElvWorksheet, pChartsWorksheet, pSNOTELWorksheet,
                 pSnowCourseWorksheet, Constants.EXCEL_CHART_SPACING, Y_Max, Y_Min, Y_Unit, MaxPRISMValue);
 
-            objExcel.Visible = true;
+            //Publish Charts Tab
+            if (bInteractive == false)
+            {
+                string sOutputFolder = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\";
+                string pathToSave = sOutputFolder + Constants.FILE_EXPORT_CHART_AREA_ELEV_PRECIP_SITE_PDF;
 
+                XlPaperSize oPaperSize = XlPaperSize.xlPaperLetter;
+                try
+                {
+                    oPaperSize = pChartsWorksheet.PageSetup.PaperSize;
+                }
+                catch (Exception e)
+                {
+
+                    Debug.Print("GenerateTablesAsync exception: " + e.Message);
+                    MessageBox.Show("An error occurred while querying Excel's paper size! Please test printing from Excel and try again", "BAGIS-PRO");
+                    return BA_ReturnCode.UnknownError;
+                }
+
+                XlPaperSize oReqPaperSize = XlPaperSize.xlPaperLetter;
+                pChartsWorksheet.PageSetup.Zoom = false;
+                pChartsWorksheet.PageSetup.PaperSize = oReqPaperSize;
+                pChartsWorksheet.PageSetup.FitToPagesTall = 1;
+                pChartsWorksheet.PageSetup.FitToPagesWide = 1;
+                pChartsWorksheet.PageSetup.PrintArea = "$A$1:$M$29";
+                pChartsWorksheet.PageSetup.CenterHeader = "&C&\"Arial,Bold\"&16 " + Module1.Current.Aoi.Name;
+                pChartsWorksheet.ExportAsFixedFormat(XlFixedFormatType.xlTypePDF, pathToSave);
+            }
+
+            objExcel.Visible = bInteractive;
             return success;
         }
 

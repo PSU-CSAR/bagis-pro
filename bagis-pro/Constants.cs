@@ -66,6 +66,7 @@ namespace bagis_pro
         public static readonly string[] FILE_EXPORT_MAPS_SWE = new string[] { FILE_EXPORT_MAP_SWE_JANUARY_PDF, "map_snodas_swe_february.pdf", "map_snodas_swe_march.pdf", 
                                                                               "map_snodas_swe_april.pdf", "map_snodas_swe_may.pdf", "map_snodas_swe_june.pdf",
                                                                               "map_snodas_swe_december.pdf"};
+        public const string FILE_EXPORT_CHART_AREA_ELEV_PRECIP_SITE_PDF = "chart_area_elev_precip_site.pdf";
         public const string FILE_EXPORT_MAPS_ALL_PDF = "all_maps_charts.pdf";
         public const string FILE_TITLE_PAGE_XSL = "title_page.xsl";
         public const string FILE_TITLE_PAGE_XML = "title_page.xml";
