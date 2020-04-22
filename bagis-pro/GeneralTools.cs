@@ -405,7 +405,8 @@ namespace bagis_pro
             //Publish Charts Tab
             if (bInteractive == false)
             {
-                string sOutputFolder = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\";
+                    // Combined chart
+                    string sOutputFolder = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\";
                 string pathToSave = sOutputFolder + Constants.FILE_EXPORT_CHART_AREA_ELEV_PRECIP_SITE_PDF;
 
                 XlPaperSize oPaperSize = XlPaperSize.xlPaperLetter;
@@ -429,9 +430,15 @@ namespace bagis_pro
                 pChartsWorksheet.PageSetup.PrintArea = "$A$1:$M$29";
                 pChartsWorksheet.PageSetup.CenterHeader = "&C&\"Arial,Bold\"&16 " + Module1.Current.Aoi.Name;
                 pChartsWorksheet.ExportAsFixedFormat(XlFixedFormatType.xlTypePDF, pathToSave);
+
+                    // slope chart
+                    pathToSave = sOutputFolder + "\\" + Constants.FILE_EXPORT_CHART_SLOPE_PDF;
+                    pChartsWorksheet.PageSetup.PrintArea = "$N$1:$AA$29";
+                    pChartsWorksheet.ExportAsFixedFormat(XlFixedFormatType.xlTypePDF, pathToSave);
+
             }
 
-            return success;
+                return success;
             }
             catch (Exception e)
             {

@@ -41,7 +41,8 @@ namespace bagis_pro.Buttons
                     Constants.FILE_EXPORT_MAP_PRECIPITATION_PDF, Constants.FILE_EXPORT_MAPS_SWE[0], Constants.FILE_EXPORT_MAPS_SWE[1],
                     Constants.FILE_EXPORT_MAPS_SWE[2], Constants.FILE_EXPORT_MAPS_SWE[3], Constants.FILE_EXPORT_MAPS_SWE[4],
                     Constants.FILE_EXPORT_MAPS_SWE[5], Constants.FILE_EXPORT_MAPS_SWE[6], Constants.FILE_EXPORT_MAP_ASPECT_PDF,
-                    Constants.FILE_EXPORT_MAP_SLOPE_PDF, Constants.FILE_EXPORT_CHART_AREA_ELEV_PRECIP_SITE_PDF};
+                    Constants.FILE_EXPORT_MAP_SLOPE_PDF, Constants.FILE_EXPORT_CHART_AREA_ELEV_PRECIP_SITE_PDF,
+                    Constants.FILE_EXPORT_CHART_SLOPE_PDF};
                 foreach(string strButtonState in Constants.STATES_MAP_BUTTON)
                 {
                     if (FrameworkApplication.State.Contains(strButtonState))
