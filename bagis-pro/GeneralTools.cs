@@ -333,6 +333,10 @@ namespace bagis_pro
                 Worksheet pSlopeWorksheet = bkWorkBook.Sheets.Add();
                 pSlopeWorksheet.Name = "Slope";
 
+                //Create Aspect Distribution Worksheet
+                Worksheet pAspectWorksheet = bkWorkBook.Sheets.Add();
+                pAspectWorksheet.Name = "Aspect";
+
                 // Create Elevation Distribution Worksheet
                 Worksheet pAreaElvWorksheet = bkWorkBook.Sheets.Add();
                 pAreaElvWorksheet.Name = "Area Elevations";
@@ -402,6 +406,14 @@ namespace bagis_pro
                         Constants.EXCEL_CHART_SPACING, leftPosition);
                 }
 
+                success = await ExcelTools.CreateAspectTableAsync(pAspectWorksheet);
+                int topPosition = Constants.EXCEL_CHART_HEIGHT + (Constants.EXCEL_CHART_SPACING * 25);
+                if (success == BA_ReturnCode.Success)
+                {
+                    success = ExcelTools.CreateAspectChart(pAspectWorksheet, pChartsWorksheet, 
+                        topPosition, Constants.EXCEL_CHART_SPACING);
+                }
+
             //Publish Charts Tab
             if (bInteractive == false)
             {
@@ -436,7 +448,13 @@ namespace bagis_pro
                     pChartsWorksheet.PageSetup.PrintArea = "$N$1:$AA$29";
                     pChartsWorksheet.ExportAsFixedFormat(XlFixedFormatType.xlTypePDF, pathToSave);
 
-            }
+                    // aspect chart
+                    pathToSave = sOutputFolder + "\\" + Constants.FILE_EXPORT_CHART_ASPECT_PDF;
+                    pChartsWorksheet.PageSetup.PrintArea = "$A$32:$M$61";
+                    pChartsWorksheet.ExportAsFixedFormat(XlFixedFormatType.xlTypePDF, pathToSave);
+
+
+                }
 
                 return success;
             }
