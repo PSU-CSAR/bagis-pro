@@ -29,9 +29,7 @@ namespace bagis_pro
                 if (System.IO.Directory.Exists(strAoiPath))
                 {
                     // Initialize AOI object
-                    oAoi = new BA_Objects.Aoi("animas_AOI_prms", strAoiPath);
-                    // Store current AOI in Module1
-                    Module1.Current.Aoi = oAoi;
+                    await GeneralTools.SetAoi(strAoiPath);
                 }
                 else
                 {

@@ -16,6 +16,7 @@ using ArcGIS.Desktop.Framework.Contracts;
 using ArcGIS.Desktop.Framework.Dialogs;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
 using ArcGIS.Desktop.Mapping;
+using System.IO;
 
 namespace bagis_pro
 {
@@ -93,11 +94,21 @@ namespace bagis_pro
             }
         }
 
+        protected override bool Initialize()
+        {
+            string ModuleLocation = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+            string nLogConfigLocation = Path.Combine(ModuleLocation, "NLog.config");
+
+            ModuleLogManager = new BA_Objects.LoggerManager(nLogConfigLocation);
+            return true;
+        }
+
         internal BA_Objects.Aoi Aoi { get; set; } = new BA_Objects.Aoi();
         internal BA_Objects.Settings Settings { get; set; } = new BA_Objects.Settings();
         internal bool MapDisplayElevationInMeters { get; } = false;
         internal string DisplayedMap { get; set; } = "";
         internal bool MapFinishedLoading { get; set; } = false;
         internal Buttons.CboCurrentAoi CboCurrentAoi { get; set; }
-}
+        public BA_Objects.ILoggerManager ModuleLogManager;
+    }
 }

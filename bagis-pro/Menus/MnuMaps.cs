@@ -44,18 +44,14 @@ namespace bagis_pro.Menus
                         }
                         else
                         {
-                            // Initialize AOI object
-                            BA_Objects.Aoi oAoi = new BA_Objects.Aoi(System.IO.Path.GetFileName(selectedItem.Path), selectedItem.Path);
-                            // Check for default units
-                            string strSurfacesGdb = GeodatabaseTools.GetGeodatabasePath(selectedItem.Path, GeodatabaseNames.Surfaces, false);
-                            var fcPath = strSurfacesGdb + "\\" + Constants.FILE_DEM_FILLED;
-                            string strBagisTag = await GeneralTools.GetBagisTag(fcPath, Constants.META_TAG_XPATH);
-                            oAoi.ElevationUnits = GeneralTools.GetValueForKey(strBagisTag, Constants.META_TAG_ZUNIT_VALUE, ';');
-                            // Store current AOI in Module1
-                            Module1.Current.Aoi = oAoi;
-                            Module1.Current.CboCurrentAoi.SetAoiName(oAoi.Name);
-                            Module1.ActivateState("Aoi_Selected_State");
-                            MessageBox.Show("AOI is set to " + oAoi.Name + "!", "BAGIS PRO");
+                            if (await GeneralTools.SetAoi(selectedItem.Path) == BA_ReturnCode.Success)
+                            {
+                                MessageBox.Show("AOI is set to " + Module1.Current.Aoi.Name + "!", "BAGIS PRO");
+                            }
+                            else
+                            {
+                                MessageBox.Show("Unable to set AOI!", "BAGIS PRO");
+                            }
                         }
 
                     }

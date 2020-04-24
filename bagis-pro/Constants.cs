@@ -92,6 +92,7 @@ namespace bagis_pro
 
         public const string FOLDER_MAP_PACKAGE = "maps_publish";
         public const string FOLDER_MAPS = "maps";
+        public const string FOLDER_LOGS = "logs";
 
         public const string FIELD_AOI_AREA = "AOISHPAREA";
         public const string FIELD_SITE_ELEV = "BA_SELEV";

@@ -138,6 +138,7 @@ namespace bagis_pro.Buttons
             catch (Exception e)
             {
                 MessageBox.Show("An error occurred while trying to export the tables!! " + e.Message, "BAGIS PRO");
+                Module1.Current.ModuleLogManager.LogError("An error occurred while trying to export the tables!! " + e.Message);
             }
         }
     }
