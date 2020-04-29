@@ -21,7 +21,7 @@ namespace bagis_pro
 {
     public class MapTools
     {
-        public static async Task DisplayMaps(string strAoiPath)
+        public static async Task<BA_ReturnCode> DisplayMaps(string strAoiPath)
         {
             BA_Objects.Aoi oAoi = Module1.Current.Aoi;
             if (String.IsNullOrEmpty(oAoi.Name))
@@ -48,7 +48,7 @@ namespace bagis_pro
                     MessageBoxResult oRes = ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show(strMessage, "BAGIS", MessageBoxButton.YesNo);
                     if (oRes != MessageBoxResult.Yes)
                     {
-                        return;
+                        return BA_ReturnCode.OtherError;
                     }
                 }
 
@@ -194,8 +194,10 @@ namespace bagis_pro
                     //zoom to aoi boundary layer
                     double bufferFactor = 1.1;
                     bool bZoomed = await MapTools.ZoomToExtentAsync(aoiUri, bufferFactor);
+                    return success;
                 }
             }
+            return BA_ReturnCode.UnknownError;
         }
 
         public static async Task<Layout> GetDefaultLayoutAsync(string layoutName)
@@ -391,8 +393,10 @@ namespace bagis_pro
                     }
                     catch (GeodatabaseTableException e)
                     {
-                        Debug.WriteLine("AddLineLayerAsync: Unable to open feature class " + strFileName);
-                        Debug.WriteLine("AddLineLayerAsync: " + e.Message);
+                        Module1.Current.ModuleLogManager.LogError(nameof(AddLineLayerAsync),
+                            "Unable to open feature class " + strFileName);
+                        Module1.Current.ModuleLogManager.LogError(nameof(AddLineLayerAsync),
+                            "Exception: " + e.Message);
                         return;
                     }
                 }
@@ -438,8 +442,10 @@ namespace bagis_pro
                     }
                     catch (GeodatabaseTableException e)
                     {
-                        Debug.WriteLine("DisplayPointMarkersAsync: Unable to open feature class " + strFileName);
-                        Debug.WriteLine("DisplayPointMarkersAsync: " + e.Message);
+                        Module1.Current.ModuleLogManager.LogError(nameof(AddPointMarkersAsync),
+                             "Unable to open feature class " + strFileName);
+                        Module1.Current.ModuleLogManager.LogError(nameof(AddPointMarkersAsync),
+                            "Exception: " + e.Message);
                         success = BA_ReturnCode.ReadError;
                         return;
                     }
@@ -1239,7 +1245,7 @@ namespace bagis_pro
 
         public static void DeactivateMapButtons()
         {
-            foreach (string strButtonState in Constants.STATES_MAP_BUTTON)
+            foreach (string strButtonState in Constants.STATES_MAP_BUTTONS)
             {
                 Module1.DeactivateState(strButtonState);
             }

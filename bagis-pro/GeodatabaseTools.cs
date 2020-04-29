@@ -103,7 +103,8 @@ namespace bagis_pro
                 }
                 catch (Exception e)
                 {
-                    Debug.WriteLine("QueryTableForSingleValueAsync Exception: " + e.Message);
+                    Module1.Current.ModuleLogManager.LogError(nameof(QueryTableForSingleValueAsync),
+                        "Exception: " + e.Message);
                 }
             });
             return returnValue;
@@ -134,8 +135,10 @@ namespace bagis_pro
                     }
                     catch (GeodatabaseTableException e)
                     {
-                        Debug.WriteLine("DisplayRasterAsync: Unable to open raster " + strFileName);
-                        Debug.WriteLine("DisplayRasterAsync: " + e.Message);
+                        Module1.Current.ModuleLogManager.LogError(nameof(GetRasterStats),
+                            "Unable to open raster " + strFileName);
+                        Module1.Current.ModuleLogManager.LogError(nameof(GetRasterStats),
+                            "Exception: " + e.Message);
                         return;
                     }
                 }

@@ -4,10 +4,10 @@ namespace bagis_pro.BA_Objects
 {
     public interface ILoggerManager
     {
-        void LogInfo(string message);
-        void LogWarn(string message);
-        void LogDebug(string message);
-        void LogError(string message);
+        void LogInfo(string functionName, string message);
+        void LogWarn(string functionName, string message);
+        void LogDebug(string functionName, string message);
+        void LogError(string functionName, string message);
         void UpdateLogFileLocation(string strFilePath);
     }
 
@@ -22,24 +22,24 @@ namespace bagis_pro.BA_Objects
             this.logger = LogManager.GetCurrentClassLogger();
         }
 
-        public void LogDebug(string message)
+        public void LogDebug(string functionName, string message)
         {
-            this.logger.Debug(message);
+            this.logger.Debug(functionName + ": " + message);
         }
 
-        public void LogError(string message)
+        public void LogError(string functionName, string message)
         {
-            this.logger.Error(message);
+            this.logger.Error(functionName + ": " + message);
         }
 
-        public void LogInfo(string message)
+        public void LogInfo(string functionName, string message)
         {
-            this.logger.Info(message);
+            this.logger.Info(functionName + ": " + message);
         }
 
-        public void LogWarn(string message)
+        public void LogWarn(string functionName, string message)
         {
-            this.logger.Warn(message);
+            this.logger.Warn(functionName + ": " + message);
         }
 
         public void UpdateLogFileLocation (string strFilePath)

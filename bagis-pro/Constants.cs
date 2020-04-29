@@ -124,7 +124,7 @@ namespace bagis_pro
 
         // States that control the map display buttons
         // JanSwe always needs to be last so that we can export the other months directly
-        public static string[] STATES_MAP_BUTTON => new string[] {"MapButtonPalette_BtnElevation_State",
+        public static string[] STATES_MAP_BUTTONS => new string[] {"MapButtonPalette_BtnElevation_State",
                                                                 "MapButtonPalette_BtnSnotel_State",
                                                                 "MapButtonPalette_BtnSnowCourse_State",
                                                                 "MapButtonPalette_BtnSitesAll_State",

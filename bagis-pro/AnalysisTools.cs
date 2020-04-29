@@ -38,8 +38,10 @@ namespace bagis_pro
                 }
 
                 //1. Get min/max DEM elevation for reclassing raster. We only want to do this once
-                Debug.WriteLine("START: GenerateSiteLayersAsync");
-                Debug.WriteLine("GetDemStatsAsync");
+                Module1.Current.ModuleLogManager.LogDebug(nameof(GenerateSiteLayersAsync),
+                    "START: GenerateSiteLayersAsync");
+                Module1.Current.ModuleLogManager.LogDebug(nameof(GenerateSiteLayersAsync),
+                    "GetDemStatsAsync");
                 IList<double> lstResult = await GeoprocessingTools.GetDemStatsAsync(Module1.Current.Aoi.FilePath, "", 0.005);
                 double demElevMinMeters = -1;
                 double demElevMaxMeters = -1;

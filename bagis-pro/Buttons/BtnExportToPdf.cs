@@ -43,7 +43,21 @@ namespace bagis_pro.Buttons
                     Constants.FILE_EXPORT_MAPS_SWE[5], Constants.FILE_EXPORT_MAPS_SWE[6], Constants.FILE_EXPORT_MAP_ASPECT_PDF,
                     Constants.FILE_EXPORT_MAP_SLOPE_PDF, Constants.FILE_EXPORT_CHART_AREA_ELEV_PRECIP_SITE_PDF,
                     Constants.FILE_EXPORT_CHART_SLOPE_PDF, Constants.FILE_EXPORT_CHART_ASPECT_PDF};
-                foreach(string strButtonState in Constants.STATES_MAP_BUTTON)
+
+                // Load the maps if they aren't in the viewer already
+                BA_ReturnCode success = BA_ReturnCode.UnknownError;
+                if (! FrameworkApplication.State.Contains(Constants.STATES_MAP_BUTTONS[0]))
+                {
+                    success = await MapTools.DisplayMaps(Module1.Current.Aoi.FilePath);
+                }
+
+                if (success != BA_ReturnCode.Success)
+                {
+                    MessageBox.Show("Unable to load maps. The map package cannot be exported!!", "BAGIS-PRO");
+                    return;
+                }
+
+                foreach (string strButtonState in Constants.STATES_MAP_BUTTONS)
                 {
                     if (FrameworkApplication.State.Contains(strButtonState))
                     {
@@ -81,15 +95,15 @@ namespace bagis_pro.Buttons
                     IList<string> lstSweFilesToAppend = await MapTools.PublishSnodasSweMapsAsync(snodasUri, 0, map, layout);
                     if (lstSweFilesToAppend.Count < 1)
                     {
-                        Debug.WriteLine("BtnExportToPdf_onClick: No swe pdf files were created");
+                        Module1.Current.ModuleLogManager.LogError(nameof(OnClick),
+                            "No swe pdf files were created");
                     }
                 }
                 else
                 {
-                    Debug.WriteLine("BtnExportToPdf_onClick: January SWE Map must be displayed to export other months!!");
+                    Module1.Current.ModuleLogManager.LogError(nameof(OnClick),
+                        "January SWE Map must be displayed to export other months!");
                 }
-
-
 
                 await GeneralTools.GenerateMapsTitlePage();
 
@@ -138,7 +152,8 @@ namespace bagis_pro.Buttons
             catch (Exception e)
             {
                 MessageBox.Show("An error occurred while trying to export the tables!! " + e.Message, "BAGIS PRO");
-                Module1.Current.ModuleLogManager.LogError("An error occurred while trying to export the tables!! " + e.Message);
+                Module1.Current.ModuleLogManager.LogError(nameof(OnClick), 
+                    "An error occurred while trying to export the tables!! " + e.Message);
             }
         }
     }

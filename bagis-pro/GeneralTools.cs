@@ -16,6 +16,7 @@ using System.Xml.XPath;
 using System.Xml.Xsl;
 using Microsoft.Office.Interop.Excel;
 using ArcGIS.Desktop.Core;
+using System.Reflection;
 
 namespace bagis_pro
 {
@@ -71,7 +72,8 @@ namespace bagis_pro
                     {
                         await QueuedTask.Run(() => layout.Export(PDF));  //Export the layout to PDF on the worker thread
                     }
-                    Debug.WriteLine("PDF file created!!");
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(ExportMapToPdfAsync),
+                        "PDF file created!!");
                     return BA_ReturnCode.Success;
                 }
                 else
@@ -255,10 +257,13 @@ namespace bagis_pro
                         PdfSharp.PageSize.Letter);
                     titlePageDoc.Save(publishFolder + "\\" + Constants.FILE_TITLE_PAGE_PDF);
                 }
-                Debug.WriteLine("Title page created!!");
+                Module1.Current.ModuleLogManager.LogDebug(nameof(GenerateMapsTitlePage),
+                    "Title page created!!");
             }
             catch (Exception e)
             {
+                Module1.Current.ModuleLogManager.LogError(nameof(GenerateMapsTitlePage),
+                    "Exception: " + e.Message);
                 MessageBox.Show("An error occurred while trying to parse the XML!! " + e.Message, "BAGIS PRO");
             }
         }
@@ -360,23 +365,23 @@ namespace bagis_pro
                 elevMinMeters = lstResult[0];
                 elevMaxMeters = lstResult[1];
             }
-                Module1.Current.ModuleLogManager.LogDebug("Queried min/max from DEM. Min is " + elevMinMeters);
+                Module1.Current.ModuleLogManager.LogDebug(nameof(GenerateTablesAsync), "Queried min/max from DEM. Min is " + elevMinMeters);
 
                 success = await ExcelTools.CreateElevationTableAsync(pAreaElvWorksheet, elevMinMeters);
-                Module1.Current.ModuleLogManager.LogInfo("Created Elevation Table");
+                Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Created Elevation Table");
 
                 Module1.Current.Aoi.HasSnotel = await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false)), Constants.FILE_SNOTEL_ZONE);
                 if (Module1.Current.Aoi.HasSnotel)
                 {
                     success = await ExcelTools.CreateSitesTableAsync(pSNOTELWorksheet, pAreaElvWorksheet, Constants.FILE_SNOTEL_ZONE);
-                    Module1.Current.ModuleLogManager.LogInfo("Created Snotel sites Table");
+                    Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Created Snotel sites Table");
                 }
 
                 Module1.Current.Aoi.HasSnowCourse = await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false)), Constants.FILE_SCOS_ZONE);
                 if (Module1.Current.Aoi.HasSnowCourse)
                 {
                     success = await ExcelTools.CreateSitesTableAsync(pSnowCourseWorksheet, pAreaElvWorksheet, Constants.FILE_SCOS_ZONE);
-                    Module1.Current.ModuleLogManager.LogInfo("Created Snow Course sites Table");
+                    Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Created Snow Course sites Table");
                 }
 
                 string strPrecipPath = Module1.Current.Aoi.FilePath + Module1.Current.Settings.m_precipFile;
@@ -402,25 +407,25 @@ namespace bagis_pro
                 double Y_Min = ExcelTools.ConfigureYAxis(minValue, maxValue, Y_Unit, ref Y_Max);
                 success = ExcelTools.CreateCombinedChart(pPRISMWorkSheet, pAreaElvWorksheet, pChartsWorksheet, pSNOTELWorksheet,
                     pSnowCourseWorksheet, Constants.EXCEL_CHART_SPACING, Y_Max, Y_Min, Y_Unit, MaxPRISMValue);
-                Module1.Current.ModuleLogManager.LogInfo("Created Combined Chart");
+                Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Created Combined Chart");
 
                 success = await ExcelTools.CreateSlopeTableAsync(pSlopeWorksheet);
-                Module1.Current.ModuleLogManager.LogInfo("Created Slope Table");
+                Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Created Slope Table");
                 if (success == BA_ReturnCode.Success)
                 {
                     success = ExcelTools.CreateSlopeChart(pSlopeWorksheet, pChartsWorksheet, 
                         Constants.EXCEL_CHART_SPACING, leftPosition);
-                    Module1.Current.ModuleLogManager.LogInfo("Created Slope Chart");
+                    Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Created Slope Chart");
                 }
 
                 success = await ExcelTools.CreateAspectTableAsync(pAspectWorksheet);
-                Module1.Current.ModuleLogManager.LogInfo("Created Aspect Table");
+                Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Created Aspect Table");
                 int topPosition = Constants.EXCEL_CHART_HEIGHT + (Constants.EXCEL_CHART_SPACING * 25);
                 if (success == BA_ReturnCode.Success)
                 {
                     success = ExcelTools.CreateAspectChart(pAspectWorksheet, pChartsWorksheet, 
                         topPosition, Constants.EXCEL_CHART_SPACING);
-                    Module1.Current.ModuleLogManager.LogInfo("Created Aspect Chart");
+                    Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Created Aspect Chart");
                 }
 
             //Publish Charts Tab
@@ -437,8 +442,8 @@ namespace bagis_pro
                 }
                 catch (Exception e)
                 {
-
-                    Debug.Print("GenerateTablesAsync exception: " + e.Message);
+                    Module1.Current.ModuleLogManager.LogError(nameof(GenerateTablesAsync),
+                        "Exception: " + e.Message);
                     MessageBox.Show("An error occurred while querying Excel's paper size! Please test printing from Excel and try again", "BAGIS-PRO");
                     return BA_ReturnCode.UnknownError;
                 }
@@ -451,19 +456,19 @@ namespace bagis_pro
                 pChartsWorksheet.PageSetup.PrintArea = "$A$1:$M$29";
                 pChartsWorksheet.PageSetup.CenterHeader = "&C&\"Arial,Bold\"&16 " + Module1.Current.Aoi.Name;
                 pChartsWorksheet.ExportAsFixedFormat(XlFixedFormatType.xlTypePDF, pathToSave);
-                    Module1.Current.ModuleLogManager.LogInfo("Published combined chart to PDF");
+                    Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Published combined chart to PDF");
 
                     // slope chart
                     pathToSave = sOutputFolder + "\\" + Constants.FILE_EXPORT_CHART_SLOPE_PDF;
                     pChartsWorksheet.PageSetup.PrintArea = "$N$1:$AA$29";
                     pChartsWorksheet.ExportAsFixedFormat(XlFixedFormatType.xlTypePDF, pathToSave);
-                    Module1.Current.ModuleLogManager.LogInfo("Published slope chart to PDF");
+                    Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Published slope chart to PDF");
 
                     // aspect chart
                     pathToSave = sOutputFolder + "\\" + Constants.FILE_EXPORT_CHART_ASPECT_PDF;
                     pChartsWorksheet.PageSetup.PrintArea = "$A$32:$M$61";
                     pChartsWorksheet.ExportAsFixedFormat(XlFixedFormatType.xlTypePDF, pathToSave);
-                    Module1.Current.ModuleLogManager.LogInfo("Published aspect chart to PDF");
+                    Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Published aspect chart to PDF");
 
 
                 }
@@ -472,7 +477,7 @@ namespace bagis_pro
             }
             catch (Exception e)
             {
-                Module1.Current.ModuleLogManager.LogError("GenerateTablesAsync exception: " + e.StackTrace);
+                Module1.Current.ModuleLogManager.LogError(nameof(GenerateTablesAsync), "Exception: " + e.StackTrace);
                 return BA_ReturnCode.UnknownError;
             }
             finally
@@ -673,6 +678,7 @@ namespace bagis_pro
                 // Store current AOI in Module1
                 Module1.Current.Aoi = oAoi;
                 Module1.Current.CboCurrentAoi.SetAoiName(oAoi.Name);
+                MapTools.DeactivateMapButtons();
                 Module1.ActivateState("Aoi_Selected_State");
                 // Make directory for log if it doesn't exist
                 if (!Directory.Exists(Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_LOGS))

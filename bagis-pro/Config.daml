@@ -113,7 +113,7 @@
         <button id="bagis_pro_Buttons_BtnExportToPdf" caption="Export Map Package to PDF" className="bagis_pro.Buttons.BtnExportToPdf" loadOnClick="true" smallImage="Images\PdfIcon.png" largeImage="Images\PdfIcon.png" condition="BtnExportToPdf_Condition">
           <tooltip heading="Export Map Package to PDF">Export Map Package to PDF<disabledText /></tooltip>
         </button>
-        <button id="bagis_pro_Buttons_BtnExcelTables" caption="Excel Tables" className="bagis_pro.Buttons.BtnExcelTables" loadOnClick="true" smallImage="Images\excel.png" largeImage="Images\excel.png" condition="Aoi_Selected_Condition">
+        <button id="bagis_pro_Buttons_BtnExcelTables" caption="Excel Tables" className="bagis_pro.Buttons.BtnExcelTables" loadOnClick="true" smallImage="Images\excel.png" largeImage="Images\excel.png" condition="BtnExcelTables_Condition">
           <tooltip heading="Excel Tables">
             Excel Tables<disabledText />
           </tooltip>
@@ -199,10 +199,10 @@
       <state id="MnuBasinAnalyst_BasinInfo_State" />
     </insertCondition>
     <insertCondition id="BtnExportToPdf_Condition" caption="Export PDF">
-      <state id="BtnMapLoad_State" />
+      <state id="Aoi_Selected_State" />
     </insertCondition>
     <insertCondition id="BtnExcelTables_Condition" caption="Excel Tables">
-      <state id="BtnMapLoad_State" />
+      <state id="Aoi_Selected_State" />
     </insertCondition>
     <insertCondition id="MapButtonPalette_BtnElevation_Condition" caption="Map Disabled">
       <state id="MapButtonPalette_BtnElevation_State" />

@@ -33,7 +33,8 @@ namespace bagis_pro
             }
             catch (Exception e)
             {
-                Debug.WriteLine("GetDemStatsAsync: " + e.Message);
+                Module1.Current.ModuleLogManager.LogError(nameof(GetDemStatsAsync),
+                    "Exception: " + e.Message);
             }
             return returnList;
         }
