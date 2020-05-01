@@ -1065,6 +1065,15 @@ namespace bagis_pro
 
             return success;
         }
+
+        public static async Task<BA_ReturnCode> CreateRepresentPrecipTable(Worksheet pworksheet)
+        {
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
+
+
+
+            return success;
+        }
     }
 
 }

@@ -350,6 +350,16 @@ namespace bagis_pro
                 Worksheet pPRISMWorkSheet = bkWorkBook.Sheets.Add();
                 pPRISMWorkSheet.Name = "PRISM";
 
+                // Create Site Precipitation Worksheet
+                Worksheet pPrecipSiteWorksheet = bkWorkBook.Sheets.Add();
+                pPrecipSiteWorksheet.Name = "Elev-Precip Sites";
+
+                // Create Elevation Precipitation Worksheet
+                Worksheet pPrecipDemElevWorksheet = bkWorkBook.Sheets.Add();
+                pPrecipDemElevWorksheet.Name = "Elev-Precip AOI";
+
+
+
                 //Create Charts Worksheet
                 Worksheet pChartsWorksheet = bkWorkBook.Sheets.Add();
                 pChartsWorksheet.Name = "Charts";

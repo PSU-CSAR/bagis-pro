@@ -15,8 +15,8 @@
       <!-- uncomment to have the control hosted on a separate tab-->
       <tabs>
         <tab id="BAGIS_Tab1" caption="BAGIS">
-          <group refID="bagis_pro_Groups_BasinAnalyst" />
-          <group refID="bagis_pro_Groups_Basin" />
+          <!--<group refID="bagis_pro_Groups_BasinAnalyst" />
+          <group refID="bagis_pro_Groups_Basin" /> -->
           <group refID="bagis_pro_Groups_Maps" />
         </tab>
       </tabs>

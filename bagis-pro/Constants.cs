@@ -140,7 +140,7 @@ namespace bagis_pro
         public static string META_TAG_ZUNIT_VALUE = "ZUnit|";
         public static string META_TAG_BUFFER_DISTANCE = "BufferDistance|";
         public static string META_TAG_XUNIT_VALUE = "XUnit|";
-        public static string META_TAG_CATEGORY_SNODAS = "Snotel SWE";
+        public static string META_TAG_CATEGORY_DEPTH = "Depth";
 
         public static int EXCEL_CHART_SPACING = 5;
         public static int EXCEL_CHART_HEIGHT = 330;

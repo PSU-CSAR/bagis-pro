@@ -496,9 +496,12 @@ namespace bagis_pro
         public static async Task<BA_ReturnCode> ClipSnotelSWELayersAsync()
         {
             Webservices ws = new Webservices();
+            Module1.Current.ModuleLogManager.LogDebug(nameof(ClipSnotelSWELayersAsync),
+                "Contacting webservices server to retrieve Snotel SWE metadata");
             IDictionary<string, dynamic> dictDataSources =
                 await ws.QueryDataSourcesAsync(Module1.Current.Settings.m_eBagisServer);
             string strSwePrefix = dictDataSources[Constants.DATA_TYPE_SWE].uri;
+
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
             if (!String.IsNullOrEmpty(strSwePrefix))
             {
@@ -508,6 +511,8 @@ namespace bagis_pro
                 string[] arrReturnValues = await GeodatabaseTools.QueryAoiEnvelopeAsync(clipFileUri, Constants.FILE_AOI_PRISM_VECTOR);
                 if (arrReturnValues.Length == 2)
                 {
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(ClipSnotelSWELayersAsync),
+                        "Retrieved the AOI envelope from " + Constants.FILE_AOI_PRISM_VECTOR + " layer for clipping");
                     string strEnvelopeText = arrReturnValues[0];
                     string strTemplateDataset = arrReturnValues[1];
                     int i = 0;
@@ -517,8 +522,12 @@ namespace bagis_pro
                         string strOutputPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, true) + Constants.FILES_SNODAS_SWE[i];
                         success = await GeoprocessingTools.ClipRasterAsync(imageServiceUri.AbsoluteUri, strEnvelopeText, strOutputPath, strTemplateDataset,
                             "", true, Module1.Current.Aoi.FilePath, Module1.Current.Aoi.SnapRasterPath);
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(ClipSnotelSWELayersAsync),
+                            "Clipped " + Constants.FILES_SNODAS_SWE[i] + " layer");
                         if (success != BA_ReturnCode.Success)
                         {
+                            Module1.Current.ModuleLogManager.LogError(nameof(ClipSnotelSWELayersAsync),
+                                 "An error occurred while clipping. Process halted");
                             break;
                         }
                         else
@@ -541,6 +550,8 @@ namespace bagis_pro
                             if (isDouble && dblMax > dblOverallMax)
                             {
                                 dblOverallMax = dblMax;
+                                Module1.Current.ModuleLogManager.LogDebug(nameof(ClipSnotelSWELayersAsync),
+                                    "Updated overall SWE maximum to " + dblOverallMax);
                             }
                         }
                         i++;
@@ -548,8 +559,13 @@ namespace bagis_pro
                         if (success == BA_ReturnCode.Success)
                         {
                             string strUnits = dictDataSources[Constants.DATA_TYPE_SWE].units;
-                            success = await GeneralTools.CreateMetadataUnits(strOutputPath, Constants.META_TAG_CATEGORY_SNODAS, strUnits);
-                }
+                            success = await GeneralTools.CreateMetadataUnits(strOutputPath, Constants.META_TAG_CATEGORY_DEPTH, strUnits);
+                            if (success == BA_ReturnCode.Success)
+                            {
+                                Module1.Current.ModuleLogManager.LogDebug(nameof(ClipSnotelSWELayersAsync),
+                                    "Updated metadata in " + strOutputPath);
+                            }
+                        }
                     }
                 }
                 // Update layer metadata
@@ -568,6 +584,9 @@ namespace bagis_pro
                     dictLocalDataSources.Add(Constants.DATA_TYPE_SWE, updateDataSource);
                 }
                 success = GeneralTools.SaveDataSourcesToFile(dictLocalDataSources);
+                Module1.Current.ModuleLogManager.LogDebug(nameof(ClipSnotelSWELayersAsync),
+                    "Updated settings metadata for AOI");
+
 
             }
             return success;
