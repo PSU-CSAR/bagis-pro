@@ -243,9 +243,8 @@ namespace bagis_pro
             }
             catch (Exception e)
             {
-                Debug.Print("CountFeaturesAsync error opening table!!");
-                Debug.Print("Exception: " + e.Message);
-
+                Module1.Current.ModuleLogManager.LogError(nameof(CountFeaturesAsync),
+                    "Exception: " + e.Message);
             }
             return retVal;
         }
@@ -282,7 +281,8 @@ namespace bagis_pro
             }
             catch (Exception e)
             {
-                Debug.Print("CalculateTotalPolygonAreaAsync exception: " + e.Message);
+                Module1.Current.ModuleLogManager.LogError(nameof(CalculateTotalPolygonAreaAsync),
+                    "Exception: " + e.Message);
                 dblRetVal = -1;
             }
 
@@ -369,7 +369,8 @@ namespace bagis_pro
                 }
                 catch (Exception e)
                 {
-                    Debug.WriteLine("AttributeExistsAsync Exception: " + e.Message);
+                    Module1.Current.ModuleLogManager.LogError(nameof(AttributeExistsAsync),
+                        "Exception: " + e.Message);
                 }
             });
             return bExists;
@@ -435,7 +436,8 @@ namespace bagis_pro
             {
                 if (Project.Current.HasEdits)
                     await Project.Current.DiscardEditsAsync();
-                Debug.Print("UpdateFeatureAttributesAsync: " + errorMsg);
+                Module1.Current.ModuleLogManager.LogError(nameof(UpdateFeatureAttributesAsync),
+                    "Exception: " + errorMsg);
                 return BA_ReturnCode.UnknownError;
             }
         }

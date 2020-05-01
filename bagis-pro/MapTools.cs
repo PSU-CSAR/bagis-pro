@@ -564,8 +564,10 @@ namespace bagis_pro
                     }
                     catch (GeodatabaseTableException e)
                     {
-                        Debug.WriteLine("DisplayRasterAsync: Unable to open raster " + strFileName);
-                        Debug.WriteLine("DisplayRasterAsync: " + e.Message);
+                        Module1.Current.ModuleLogManager.LogError(nameof(DisplayRasterAsync),
+                            "Unable to open raster " + strFileName);
+                        Module1.Current.ModuleLogManager.LogError(nameof(DisplayRasterAsync),
+                            "Exception: " + e.Message);
                         return;
                     }
                 }
@@ -595,7 +597,8 @@ namespace bagis_pro
             bool bExists = await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(strFolderPath), strFileName);
             if (!bExists)
             {
-                Debug.Print("DisplayRasterWithSymbolAsync: Unable to add locate raster!!");
+                Module1.Current.ModuleLogManager.LogError(nameof(DisplayRasterWithSymbolAsync),
+                    "Unable to add locate raster!!");
                 return BA_ReturnCode.ReadError;
             }
             // Open the requested raster so we know it exists; return if it doesn't
@@ -637,7 +640,8 @@ namespace bagis_pro
             bool bExists = await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(strFolderPath), strFileName);
             if (!bExists)
             {
-                Debug.Print("DisplayStretchRasterWithSymbolAsync: Unable to add locate raster!!");
+                Module1.Current.ModuleLogManager.LogError(nameof(DisplayStretchRasterWithSymbolAsync),
+                    "Unable to add locate raster!!");
                 return BA_ReturnCode.ReadError;
             }
             // Open the requested raster so we know it exists; return if it doesn't
@@ -679,7 +683,8 @@ namespace bagis_pro
             bool bExists = await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(strFolderPath), strFileName);
             if (!bExists)
             {
-                Debug.Print("DisplayRasterFromLayerFileAsync: Unable to add locate raster!!");
+                Module1.Current.ModuleLogManager.LogError(nameof(DisplayRasterFromLayerFileAsync),
+                    "Unable to add locate raster!!");
                 return BA_ReturnCode.ReadError;
             }
             // Open the requested raster so we know it exists; return if it doesn't
@@ -1296,8 +1301,10 @@ namespace bagis_pro
                     }
                     catch (GeodatabaseTableException e)
                     {
-                        Debug.WriteLine("UpdateSnodasSweMapDataAsync: Unable to open raster " + strRaster);
-                        Debug.WriteLine("UpdateSnodasSweMapDataAsync: " + e.Message);
+                        Module1.Current.ModuleLogManager.LogError(nameof(PublishSnodasSweMapAsync),
+                           "Unable to open raster " + strRaster);
+                        Module1.Current.ModuleLogManager.LogError(nameof(PublishSnodasSweMapAsync),
+                            "Exception: " + e.Message);
                         return;
                     }
                 }

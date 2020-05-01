@@ -142,7 +142,8 @@ namespace bagis_pro
 
                             aSite.SiteType = sType;
                             lstSites.Add(aSite);
-                            Debug.WriteLine("Added site " + aSite.Name + " to list");
+                            Module1.Current.ModuleLogManager.LogDebug(nameof(AssembleSitesListAsync),
+                                "Added site " + aSite.Name + " to list");
                         }
                     }
                 }
@@ -171,7 +172,8 @@ namespace bagis_pro
                 var environments = Geoprocessing.MakeEnvironmentArray(workspace: Module1.Current.Aoi.FilePath);
                 gpResult = await Geoprocessing.ExecuteToolAsync("CreateFeatureclass_management", parameters, environments,
                     CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                Debug.WriteLine("Create temporary feature class for site " + aSite.Name);
+                Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateRepresentedArea),
+                    "Create temporary feature class for site " + aSite.Name);
 
                 Uri gdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false));
                 await QueuedTask.Run(() =>
@@ -229,7 +231,8 @@ namespace bagis_pro
                 environments = Geoprocessing.MakeEnvironmentArray(mask: maskPath, workspace: Module1.Current.Aoi.FilePath);
                 gpResult = await Geoprocessing.ExecuteToolAsync("Reclassify_sa", parameters, environments,
                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                Debug.WriteLine("Execute reclass with mask set to buffered point");
+                Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateRepresentedArea),
+                    "Execute reclass with mask set to buffered point");
 
                 //7. Save the reclass as a poly so we can merge with other buffered site polys
                 string siteRepFileName = AnalysisTools.GetSiteScenarioFileName(aSite);
@@ -241,7 +244,8 @@ namespace bagis_pro
                 {
                     sb.Append(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) + siteRepFileName);
                     sb.Append(";");
-                    Debug.WriteLine("Finished processing site " + aSite.Name);
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateRepresentedArea),
+                        "Finished processing site " + aSite.Name);
                 }
             }
 
@@ -260,7 +264,8 @@ namespace bagis_pro
                     parameters = Geoprocessing.MakeValueArray(outputUnionPath, outputDissolvePath);
                     gpResult = await Geoprocessing.ExecuteToolAsync("Dissolve_management", parameters, environments,
                         CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                    Debug.WriteLine("Finished merging sites");
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateRepresentedArea),
+                        "Finished merging sites");
                 }
                 else
                 {
@@ -274,7 +279,8 @@ namespace bagis_pro
                     parameters = Geoprocessing.MakeValueArray(outputDissolvePath, sMask, outputClipPath);
                     gpResult = await Geoprocessing.ExecuteToolAsync("Clip_analysis", parameters, environments,
                         CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                    Debug.WriteLine("Finished clipping sites layer");
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateRepresentedArea),
+                        "Finished clipping sites layer");
                     Uri uriAnalysis = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis));
                     foreach (string fileName in lstLayersToDelete)
                     {
@@ -287,7 +293,8 @@ namespace bagis_pro
                     {
                         await GeoprocessingTools.DeleteDatasetAsync(uriAnalysis.LocalPath + "\\" + tmpOutputFile);
                     }
-                    Debug.WriteLine("Finished deleting temp files");
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateRepresentedArea),
+                        "Finished deleting temp files");
                 }
                 else
                 {
@@ -324,13 +331,15 @@ namespace bagis_pro
                 parameters = Geoprocessing.MakeValueArray(outputUnionPath, outputDissolvePath);
                 gpResult = await Geoprocessing.ExecuteToolAsync("Dissolve_management", parameters, environments,
                     CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                Debug.WriteLine("Finished merging all sites");
+                Module1.Current.ModuleLogManager.LogDebug(nameof(CombineSitesRepresentedArea),
+                    "Finished merging all sites");
                 Uri analysisUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis));
                 if (await GeodatabaseTools.FeatureClassExistsAsync(analysisUri, tmpUnion))
                 {
                     await GeoprocessingTools.DeleteDatasetAsync(analysisUri.LocalPath + "\\" + tmpUnion);
                 }
-                Debug.WriteLine("Deleted temp file");
+                Module1.Current.ModuleLogManager.LogDebug(nameof(CombineSitesRepresentedArea),
+                    "Deleted temp file");
             }
             else
             {

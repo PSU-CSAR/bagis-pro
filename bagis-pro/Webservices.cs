@@ -172,7 +172,8 @@ namespace bagis_pro
                 }
                 catch (Exception e)
                 {
-                    Debug.WriteLine("QueryServiceForSingleValueAsync Exception: " + e.Message);
+                    Module1.Current.ModuleLogManager.LogError(nameof(QueryServiceForSingleValueAsync),
+                        "Exception: " + e.Message);
                 }
             });
             return returnValue;
