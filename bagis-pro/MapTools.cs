@@ -168,7 +168,7 @@ namespace bagis_pro
                         Module1.ActivateState("MapButtonPalette_BtnAspect_State");
 
                     // add SNOTEL SWE layer
-                    success = await DisplaySWEMapAsync();
+                    success = await DisplaySWEMapAsync(3);
 
                     // add Precipitation layer
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
@@ -188,7 +188,7 @@ namespace bagis_pro
                     // update map elements for default map (elevation)
                     BA_Objects.MapDefinition defaultMap = MapTools.LoadMapDefinition(BagisMapType.ELEVATION);
                     await MapTools.UpdateMapElementsAsync(layout, Module1.Current.Aoi.Name.ToUpper(), defaultMap);
-                    await MapTools.UpdateLegendAsync(layout, defaultMap);
+                    await MapTools.UpdateLegendAsync(layout, defaultMap.LegendLayerList);
 
 
                     //zoom to aoi boundary layer
@@ -956,7 +956,7 @@ namespace bagis_pro
            });
         }
 
-        public async static Task UpdateLegendAsync(Layout layout, BA_Objects.MapDefinition mapDefinition)
+        public async static Task UpdateLegendAsync(Layout layout, IList<string> lstLegendLayer)
         {
             await QueuedTask.Run(() =>
             {
@@ -970,7 +970,7 @@ namespace bagis_pro
                         var legend = elem as CIMLegend;
                         foreach (var legendItem in legend.Items)
                         {
-                            if (mapDefinition.LegendLayerList.Contains(legendItem.Name))
+                            if (lstLegendLayer.Contains(legendItem.Name))
                             {
                                 legendItem.IsVisible = true;
                             }
@@ -1158,8 +1158,8 @@ namespace bagis_pro
                     break;
                 case BagisMapType.SNODAS_SWE:
                     lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
-                                                   Constants.MAPS_HILLSHADE, Constants.MAPS_SNODAS_SWE_JAN};
-                    lstLegendLayers = new List<string> { Constants.MAPS_SNODAS_SWE_JAN };
+                                                   Constants.MAPS_HILLSHADE, Constants.LAYER_NAMES_SNODAS_SWE[3]};
+                    lstLegendLayers = new List<string> { Constants.LAYER_NAMES_SNODAS_SWE[3] };
                     if (Module1.Current.Aoi.HasSnotel == true)
                     {
                         lstLayers.Add(Constants.MAPS_SNOTEL);
@@ -1170,8 +1170,8 @@ namespace bagis_pro
                         lstLayers.Add(Constants.MAPS_SNOW_COURSE);
                         lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE);
                     }
-                    mapDefinition = new BA_Objects.MapDefinition(Constants.MAP_TITLES_SNODAS_SWE[0],
-                        "Depth Units = " + Module1.Current.Settings.m_sweDisplayUnits, Constants.FILE_EXPORT_MAP_SWE_JANUARY_PDF);
+                    mapDefinition = new BA_Objects.MapDefinition(Constants.MAP_TITLES_SNODAS_SWE[3],
+                        "Depth Units = " + Module1.Current.Settings.m_sweDisplayUnits, Constants.FILE_EXPORT_MAPS_SWE[3]);
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;
@@ -1258,41 +1258,19 @@ namespace bagis_pro
             Module1.DeactivateState("BtnMapLoad_State");
         }
 
-        public static async Task<IList<string>> PublishSnodasSweMapsAsync(Uri uriSnodasGdb, int idxDisplayedMap, Map map, Layout layout)
-        {
-            List<string> lstPdfFilesToAppend = new List<string>();
-
-            int idx = 1;
-            for (idx = 1; idx < Constants.FILES_SNODAS_SWE.Length; idx++) //start with the second raster, the first is already displayed
-            {
-                string strPdfFile = await PublishSnodasSweMapAsync(uriSnodasGdb, Constants.FILES_SNODAS_SWE[idx - 1], map, Constants.LAYER_NAMES_SNODAS_SWE[idx - 1],
-                    layout, Constants.LAYER_NAMES_SNODAS_SWE[idx], Constants.FILES_SNODAS_SWE[idx], Constants.MAP_TITLES_SNODAS_SWE[idx],
-                    Constants.FILE_EXPORT_MAPS_SWE[idx], true);
-                if (!String.IsNullOrEmpty(strPdfFile))
-                {
-                    lstPdfFilesToAppend.Add(strPdfFile);
-                }
-            }
-            // Switch the map back to January so it matches the menu item
-            string strFile = await PublishSnodasSweMapAsync(uriSnodasGdb, Constants.FILES_SNODAS_SWE[idx - 1], map, Constants.LAYER_NAMES_SNODAS_SWE[idx - 1],
-                layout, Constants.LAYER_NAMES_SNODAS_SWE[idxDisplayedMap], Constants.FILES_SNODAS_SWE[idxDisplayedMap], Constants.MAP_TITLES_SNODAS_SWE[idxDisplayedMap],
-                Constants.FILE_EXPORT_MAPS_SWE[idxDisplayedMap], false);
-
-            return lstPdfFilesToAppend;
-        }
-
-        private static async Task<string> PublishSnodasSweMapAsync(Uri uriSnodasGdb, string strDisplayedRaster, Map map, string displayedLayerName,
-                                            Layout layout, string strNewLayerName, string strRaster, string strTitle,
-                                            string strFileMapExport, bool bExportMap)
+        public static async Task<BA_ReturnCode> LoadSweMapAsync(string strRaster, Map map,
+                                     Layout layout, string strNewLayerName, string strTitle,
+                                     string strFileMapExport)
         {
             RasterDataset rDataset = null;
             Layer oLayer = null;
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            Uri uriSweGdb = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers));
             await QueuedTask.Run(() =>
             {
                 // Opens a file geodatabase. This will open the geodatabase if the folder exists and contains a valid geodatabase.
                 using (Geodatabase geodatabase =
-                    new Geodatabase(new FileGeodatabaseConnectionPath(uriSnodasGdb)))
+                    new Geodatabase(new FileGeodatabaseConnectionPath(uriSweGdb)))
                 {
                     // Use the geodatabase.
                     try
@@ -1301,9 +1279,9 @@ namespace bagis_pro
                     }
                     catch (GeodatabaseTableException e)
                     {
-                        Module1.Current.ModuleLogManager.LogError(nameof(PublishSnodasSweMapAsync),
+                        Module1.Current.ModuleLogManager.LogError(nameof(LoadSweMapAsync),
                            "Unable to open raster " + strRaster);
-                        Module1.Current.ModuleLogManager.LogError(nameof(PublishSnodasSweMapAsync),
+                        Module1.Current.ModuleLogManager.LogError(nameof(LoadSweMapAsync),
                             "Exception: " + e.Message);
                         return;
                     }
@@ -1312,7 +1290,7 @@ namespace bagis_pro
 
             await QueuedTask.Run(() =>
             {
-                oLayer = map.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(displayedLayerName, StringComparison.CurrentCultureIgnoreCase));
+                oLayer = map.Layers.FirstOrDefault<Layer>(m => m.Name.Contains(" 1 SWE"));
             });
 
             RasterLayer rasterLayer = (RasterLayer)oLayer;
@@ -1338,22 +1316,48 @@ namespace bagis_pro
                     success = BA_ReturnCode.Success;
                 }
             });
-            if (success == BA_ReturnCode.Success && bExportMap == true)
+
+            // toggle layers according to map definition
+            var allLayers = MapView.Active.Map.Layers.ToList();
+            IList<string> lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
+                                                         Constants.MAPS_HILLSHADE, strNewLayerName};
+            IList<string> lstLegend = new List<string> { strNewLayerName };
+
+            if (Module1.Current.Aoi.HasSnotel == true)
             {
-                Module1.Current.DisplayedMap = strFileMapExport;
-                success = await GeneralTools.ExportMapToPdfAsync();
+                lstLayers.Add(Constants.MAPS_SNOTEL);
+                lstLegend.Add(Constants.MAPS_SNOTEL);
             }
+            if (Module1.Current.Aoi.HasSnowCourse == true)
+            {
+                lstLayers.Add(Constants.MAPS_SNOW_COURSE);
+                lstLegend.Add(Constants.MAPS_SNOW_COURSE);
+            }
+            await QueuedTask.Run(() =>
+            {
+                foreach (var layer in allLayers)
+                {
+                    if (lstLayers.Contains(layer.Name))
+                    {
+                        layer.SetVisibility(true);
+                    }
+                    else
+                    {
+                        layer.SetVisibility(false);
+                    }
+                }
+            });
+
+            await MapTools.UpdateLegendAsync(layout, lstLegend);
+
             if (success == BA_ReturnCode.Success)
             {
-                return strFileMapExport;
+                Module1.Current.DisplayedMap = strFileMapExport;
             }
-            else
-            {
-                return "";
-            }
+            return success;
         }
 
-        public static async Task<BA_ReturnCode> DisplaySWEMapAsync()
+        public static async Task<BA_ReturnCode> DisplaySWEMapAsync(int idxDefaultMonth)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
             IDictionary<string, dynamic> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
@@ -1365,7 +1369,7 @@ namespace bagis_pro
             if (oDataSource != null)
             {
                 string strPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, true) +
-                    Constants.FILES_SNODAS_SWE[0];
+                    Constants.FILES_SNODAS_SWE[idxDefaultMonth];
                 Uri uri = new Uri(strPath);
                 double dblStretchMin = oDataSource.minValue;
                 double dblStretchMax = oDataSource.maxValue;
@@ -1400,13 +1404,44 @@ namespace bagis_pro
                     }
                 }
 
-                success = await MapTools.DisplayStretchRasterWithSymbolAsync(uri, Constants.MAPS_SNODAS_SWE_JAN, "ColorBrewer Schemes (RGB)",
+                success = await MapTools.DisplayStretchRasterWithSymbolAsync(uri, Constants.LAYER_NAMES_SNODAS_SWE[idxDefaultMonth], "ColorBrewer Schemes (RGB)",
                             "Green-Blue (Continuous)", 30, false, true, dblStretchMin, dblStretchMax, dblLabelMin,
                             dblLabelMax);
-                //success = await MapTools.DisplayRasterFromLayerFileAsync(uri, Constants.MAPS_SNODAS_SWE_JAN, Module1.Current.Aoi.FilePath + @"\maps_publish\SWE_1.lyrx",
-                //    30, false);
+                IList<string> lstLayersFiles = new List<string>();
                 if (success == BA_ReturnCode.Success)
-                    Module1.ActivateState("MapButtonPalette_BtnJanSwe_State");
+                {
+                    await QueuedTask.Run(() =>
+                    {
+                        // Opens a file geodatabase. This will open the geodatabase if the folder exists and contains a valid geodatabase.
+                        Uri layersUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers));
+                        using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(layersUri)))
+                        {
+                            IReadOnlyList<RasterDatasetDefinition> definitions = geodatabase.GetDefinitions<RasterDatasetDefinition>();
+                            foreach (RasterDatasetDefinition def in definitions)
+                            {
+                                lstLayersFiles.Add(def.GetName());
+                            }
+                        }
+                    });
+                    int idx = 0;
+                    foreach (string strSweName in Constants.FILES_SNODAS_SWE)
+                    {
+                        switch (idx)
+                        {
+                            case 0:     //January
+                                Module1.ActivateState("MapButtonPalette_BtnSweJan_State");
+                                break;
+                            case 3:     //April
+                                Module1.ActivateState("MapButtonPalette_BtnSweApr_State");
+                                break;
+                            case 4:     //May
+                                Module1.ActivateState("MapButtonPalette_BtnSweMay_State");
+                                break;
+                        }
+                        idx++;
+                    }
+                }
+                
             }
             return success;
         }

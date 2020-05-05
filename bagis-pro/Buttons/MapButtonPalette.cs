@@ -46,7 +46,7 @@ namespace bagis_pro.Buttons
 
             Layout layout = await MapTools.GetDefaultLayoutAsync(Constants.MAPS_DEFAULT_LAYOUT_NAME);
             await MapTools.UpdateMapElementsAsync(layout, Module1.Current.Aoi.Name.ToUpper(), thisMap);
-            await MapTools.UpdateLegendAsync(layout, thisMap);
+            await MapTools.UpdateLegendAsync(layout, thisMap.LegendLayerList);
             Module1.Current.DisplayedMap = thisMap.PdfFileName;
         }
     }
@@ -153,19 +153,76 @@ namespace bagis_pro.Buttons
         }
     }
 
-    internal class MapButtonPalette_BtnJanSwe : Button
+    internal class MapButtonPalette_BtnSweJan : Button
     {
         protected override async void OnClick()
         {
             try
             {
                 Module1.Current.MapFinishedLoading = false;
-                await ToggleMapDisplay.Toggle(BagisMapType.SNODAS_SWE);
+                Map map = MapView.Active.Map;
+                Layout layout = await MapTools.GetDefaultLayoutAsync(Constants.MAPS_DEFAULT_LAYOUT_NAME);
+                int idxJan = 0;
+                await MapTools.LoadSweMapAsync(Constants.FILES_SNODAS_SWE[idxJan], map, layout,
+                    Constants.LAYER_NAMES_SNODAS_SWE[idxJan], Constants.MAP_TITLES_SNODAS_SWE[idxJan],
+                    Constants.FILE_EXPORT_MAPS_SWE[idxJan]);
                 Module1.Current.MapFinishedLoading = true;
             }
             catch (Exception e)
             {
                 MessageBox.Show("Unable to display SNODAS SWE map!!" + e.Message, "BAGIS-PRO");
+                Module1.Current.ModuleLogManager.LogError(nameof(MapButtonPalette_BtnSweJan),
+                    "Exception: " + e.Message);
+            }
+        }
+    }
+
+    internal class MapButtonPalette_BtnSweApr : Button
+    {
+        protected override async void OnClick()
+        {
+            try
+            {
+                Module1.Current.MapFinishedLoading = false;
+                int idxApr = 3;
+                Map map = MapView.Active.Map;
+                Layout layout = await MapTools.GetDefaultLayoutAsync(Constants.MAPS_DEFAULT_LAYOUT_NAME);
+                await MapTools.LoadSweMapAsync(Constants.FILES_SNODAS_SWE[idxApr], map, layout,
+                    Constants.LAYER_NAMES_SNODAS_SWE[idxApr], Constants.MAP_TITLES_SNODAS_SWE[idxApr],
+                    Constants.FILE_EXPORT_MAPS_SWE[idxApr]);
+                Module1.Current.MapFinishedLoading = true;
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show("Unable to display SNODAS SWE map!!" + e.Message, "BAGIS-PRO");
+                Module1.Current.ModuleLogManager.LogError(nameof(MapButtonPalette_BtnSweApr),
+                    "Exception: " + e.Message);
+
+            }
+        }
+    }
+
+    internal class MapButtonPalette_BtnSweMay : Button
+    {
+        protected override async void OnClick()
+        {
+            try
+            {
+                Module1.Current.MapFinishedLoading = false;
+                int idxMay = 4;
+                Map map = MapView.Active.Map;
+                Layout layout = await MapTools.GetDefaultLayoutAsync(Constants.MAPS_DEFAULT_LAYOUT_NAME);
+                await MapTools.LoadSweMapAsync(Constants.FILES_SNODAS_SWE[idxMay], map, layout,
+                    Constants.LAYER_NAMES_SNODAS_SWE[idxMay], Constants.MAP_TITLES_SNODAS_SWE[idxMay],
+                    Constants.FILE_EXPORT_MAPS_SWE[idxMay]);
+
+                Module1.Current.MapFinishedLoading = true;
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show("Unable to display SNODAS SWE map!!" + e.Message, "BAGIS-PRO");
+                Module1.Current.ModuleLogManager.LogError(nameof(MapButtonPalette_BtnSweMay),
+                    "Exception: " + e.Message);
             }
         }
     }

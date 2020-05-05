@@ -64,6 +64,8 @@ namespace bagis_pro.Buttons
                         int foundS1 = strButtonState.IndexOf("_State");
                         string strMapButton = strButtonState.Remove(foundS1);
                         ICommand cmd = FrameworkApplication.GetPlugInWrapper(strMapButton) as ICommand;
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(BtnExportToPdf), 
+                            "About to toggle map button " + strMapButton);
 
                         if ((cmd != null))
                         {
@@ -82,29 +84,10 @@ namespace bagis_pro.Buttons
                         while (Module1.Current.MapFinishedLoading == false);
 
                         BA_ReturnCode success2 = await GeneralTools.ExportMapToPdfAsync();    // export each map to pdf
-                        success2 = await GeneralTools.GenerateTablesAsync(false);   // export the tables to pdf
                     }
                 }
 
-                // Export remaining SNODAS SWE maps
-                if (Module1.Current.DisplayedMap.Equals(Constants.FILE_EXPORT_MAP_SWE_JANUARY_PDF))
-                {
-                    Uri snodasUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers));
-                    Map map = MapView.Active.Map;
-                    Layout layout = await MapTools.GetDefaultLayoutAsync(Constants.MAPS_DEFAULT_LAYOUT_NAME);
-                    IList<string> lstSweFilesToAppend = await MapTools.PublishSnodasSweMapsAsync(snodasUri, 0, map, layout);
-                    if (lstSweFilesToAppend.Count < 1)
-                    {
-                        Module1.Current.ModuleLogManager.LogError(nameof(OnClick),
-                            "No swe pdf files were created");
-                    }
-                }
-                else
-                {
-                    Module1.Current.ModuleLogManager.LogError(nameof(OnClick),
-                        "January SWE Map must be displayed to export other months!");
-                }
-
+                success = await GeneralTools.GenerateTablesAsync(false);   // export the tables to pdf
                 await GeneralTools.GenerateMapsTitlePage();
 
                 // Initialize output document

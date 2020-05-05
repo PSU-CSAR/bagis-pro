@@ -61,7 +61,9 @@
           <button refID="MapButtonPalette_BtnSnotel" />
           <button refID="MapButtonPalette_BtnSnowCourse" />
           <button refID="MapButtonPalette_BtnSitesAll" />
-          <button refID="MapButtonPalette_BtnJanSwe" />
+          <button refID="MapButtonPalette_BtnSweApr" />
+          <button refID="MapButtonPalette_BtnSweMay" />
+          <button refID="MapButtonPalette_BtnSweJan" />
         </buttonPalette>
       </palettes>
       <controls>
@@ -140,12 +142,23 @@
           <tooltip heading="Palette Button 5">
             ToolTip<disabledText /></tooltip>
         </button>
-        <button id="MapButtonPalette_BtnJanSwe" caption="SWE January Distribution" className="bagis_pro.Buttons.MapButtonPalette_BtnJanSwe" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnJanSwe_Condition">
-          <tooltip heading="Palette Button 5">
+        <button id="MapButtonPalette_BtnSweJan" caption="SWE January Distribution" className="bagis_pro.Buttons.MapButtonPalette_BtnSweJan" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSweJan_Condition">
+          <tooltip heading="SWE January Distribution">
             ToolTip<disabledText />
           </tooltip>
         </button>
-        <button id="MapButtonPalette_BtnPrism" caption="Precipitation Distribution" className="bagis_pro.Buttons.MapButtonPalette_BtnPrism" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnJanSwe_Condition">
+        <button id="MapButtonPalette_BtnSweApr" caption="SWE April Distribution" className="bagis_pro.Buttons.MapButtonPalette_BtnSweApr" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSweApr_Condition">
+          <tooltip heading="SWE April Distribution">
+            ToolTip<disabledText />
+          </tooltip>
+        </button>
+        <button id="MapButtonPalette_BtnSweMay" caption="SWE May Distribution" className="bagis_pro.Buttons.MapButtonPalette_BtnSweMay" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSweMay_Condition">
+          <tooltip heading="SWE May Distribution">
+            ToolTip<disabledText />
+          </tooltip>
+        </button>
+
+        <button id="MapButtonPalette_BtnPrism" caption="Precipitation Distribution" className="bagis_pro.Buttons.MapButtonPalette_BtnPrism" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnPrism_Condition">
           <tooltip heading="Palette Button 6">
             ToolTip<disabledText />
           </tooltip>
@@ -222,11 +235,17 @@
     <insertCondition id="MapButtonPalette_BtnSitesAll_Condition" caption="Map Disabled">
       <state id="MapButtonPalette_BtnSitesAll_State" />
     </insertCondition>
-    <insertCondition id="MapButtonPalette_BtnJanSwe_Condition" caption="Map Disabled">
-      <state id="MapButtonPalette_BtnJanSwe_State" />
+    <insertCondition id="MapButtonPalette_BtnSweJan_Condition" caption="Map Disabled">
+      <state id="MapButtonPalette_BtnSweJan_State" />
     </insertCondition>
-    <insertCondition id="MapButtonPalette_BtnPrecip_Condition" caption="Map Disabled">
-      <state id="MapButtonPalette_BtnPrecip_State" />
+    <insertCondition id="MapButtonPalette_BtnSweApr_Condition" caption="Map Disabled">
+      <state id="MapButtonPalette_BtnSweApr_State" />
+    </insertCondition>
+    <insertCondition id="MapButtonPalette_BtnSweMay_Condition" caption="Map Disabled">
+      <state id="MapButtonPalette_BtnSweMay_State" />
+    </insertCondition>
+    <insertCondition id="MapButtonPalette_BtnPrism_Condition" caption="Map Disabled">
+      <state id="MapButtonPalette_BtnPrism_State" />
     </insertCondition>
     <insertCondition id="Aoi_Selected_Condition" caption="AOI selected">
       <state id="Aoi_Selected_State" />
