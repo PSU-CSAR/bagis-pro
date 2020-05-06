@@ -37,11 +37,11 @@ namespace bagis_pro
 
     public enum SiteType
     {
-        MISSING,
-        SNOTEL,
-        SNOW_COURSE,
-        PSEUDO,
-        SITES_ALL
+        Missing,
+        Snotel,
+        SnowCourse,
+        Pseudo,
+        SitesAll
     }
 
     public enum PrismFile

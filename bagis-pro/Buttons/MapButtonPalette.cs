@@ -160,10 +160,8 @@ namespace bagis_pro.Buttons
             try
             {
                 Module1.Current.MapFinishedLoading = false;
-                Map map = MapView.Active.Map;
-                Layout layout = await MapTools.GetDefaultLayoutAsync(Constants.MAPS_DEFAULT_LAYOUT_NAME);
                 int idxJan = 0;
-                await MapTools.LoadSweMapAsync(Constants.FILES_SNODAS_SWE[idxJan], map, layout,
+                await MapTools.LoadSweMapAsync(Constants.FILES_SNODAS_SWE[idxJan],
                     Constants.LAYER_NAMES_SNODAS_SWE[idxJan], Constants.MAP_TITLES_SNODAS_SWE[idxJan],
                     Constants.FILE_EXPORT_MAPS_SWE[idxJan]);
                 Module1.Current.MapFinishedLoading = true;
@@ -185,9 +183,7 @@ namespace bagis_pro.Buttons
             {
                 Module1.Current.MapFinishedLoading = false;
                 int idxApr = 3;
-                Map map = MapView.Active.Map;
-                Layout layout = await MapTools.GetDefaultLayoutAsync(Constants.MAPS_DEFAULT_LAYOUT_NAME);
-                await MapTools.LoadSweMapAsync(Constants.FILES_SNODAS_SWE[idxApr], map, layout,
+                await MapTools.LoadSweMapAsync(Constants.FILES_SNODAS_SWE[idxApr],
                     Constants.LAYER_NAMES_SNODAS_SWE[idxApr], Constants.MAP_TITLES_SNODAS_SWE[idxApr],
                     Constants.FILE_EXPORT_MAPS_SWE[idxApr]);
                 Module1.Current.MapFinishedLoading = true;
@@ -210,9 +206,7 @@ namespace bagis_pro.Buttons
             {
                 Module1.Current.MapFinishedLoading = false;
                 int idxMay = 4;
-                Map map = MapView.Active.Map;
-                Layout layout = await MapTools.GetDefaultLayoutAsync(Constants.MAPS_DEFAULT_LAYOUT_NAME);
-                await MapTools.LoadSweMapAsync(Constants.FILES_SNODAS_SWE[idxMay], map, layout,
+                await MapTools.LoadSweMapAsync(Constants.FILES_SNODAS_SWE[idxMay],
                     Constants.LAYER_NAMES_SNODAS_SWE[idxMay], Constants.MAP_TITLES_SNODAS_SWE[idxMay],
                     Constants.FILE_EXPORT_MAPS_SWE[idxMay]);
 

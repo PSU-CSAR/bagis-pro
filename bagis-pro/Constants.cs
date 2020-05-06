@@ -55,7 +55,7 @@ namespace bagis_pro
         public const string FILE_POURPOINT = "pourpoint";
         public const string FILE_SLOPE = "slope";
         public const string FILE_ASPECT = "aspect";
-        public const string FILE_MAP_PARAMETERS = "map_parameters.json";
+        public const string FILE_SETTINGS = "analysis.xml";
         public const string FILE_EXPORT_MAP_ELEV_PDF = "map_elevation.pdf";
         public const string FILE_EXPORT_MAP_SNOTEL_PDF = "map_elevation_snotel.pdf";
         public const string FILE_EXPORT_MAP_SCOS_PDF = "map_elevation_sc.pdf";

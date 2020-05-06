@@ -71,19 +71,24 @@ namespace bagis_pro.Buttons
                         {
                             do
                             {
-                                await Task.Delay(TimeSpan.FromSeconds(0.5));  // build in delay until the command can execute
+                                await Task.Delay(TimeSpan.FromSeconds(0.4));  // build in delay until the command can execute
                             }
                             while (!cmd.CanExecute(null));
                             cmd.Execute(null);
                         }
-
+ 
                         do
                         {
-                            await Task.Delay(TimeSpan.FromSeconds(0.5));  // build in delay so maps can load
+                            await Task.Delay(TimeSpan.FromSeconds(0.4));  // build in delay so maps can load
                         }
                         while (Module1.Current.MapFinishedLoading == false);
 
                         BA_ReturnCode success2 = await GeneralTools.ExportMapToPdfAsync();    // export each map to pdf
+                    }
+                    else
+                    {
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(BtnExportToPdf),
+                            strButtonState + " not enabled for this AOI ");
                     }
                 }
 

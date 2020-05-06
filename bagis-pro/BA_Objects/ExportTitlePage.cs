@@ -79,38 +79,4 @@ namespace bagis_pro.BA_Objects
         }
     }
 
-    public class DataSource
-    {
-        public string uri;
-        public string description;
-        private DateTime _dateClipped;
-
-        public DataSource()
-        {
-
-        }
-
-        public DataSource(dynamic dynSource)
-        {
-            uri = dynSource.uri;
-            description = dynSource.description;
-            _dateClipped = dynSource.dateClipped;
-        }
-
-        public DateTime DateClipped
-        {
-            set { this._dateClipped = value; }
-        }
-
-        public string DateClippedText
-        {
-            get
-            {
-                return _dateClipped.ToString("MMMM d, yyyy");
-            }
-            set
-            { /*Do nothing; Required for serialization */}
-        }
-
-    }
 }

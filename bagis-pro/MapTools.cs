@@ -1258,12 +1258,13 @@ namespace bagis_pro
             Module1.DeactivateState("BtnMapLoad_State");
         }
 
-        public static async Task<BA_ReturnCode> LoadSweMapAsync(string strRaster, Map map,
-                                     Layout layout, string strNewLayerName, string strTitle,
-                                     string strFileMapExport)
+        public static async Task<BA_ReturnCode> LoadSweMapAsync(string strRaster, string strNewLayerName, 
+                                                                string strTitle, string strFileMapExport)
         {
             RasterDataset rDataset = null;
             Layer oLayer = null;
+            Map map = MapView.Active.Map;
+            Layout layout = await MapTools.GetDefaultLayoutAsync(Constants.MAPS_DEFAULT_LAYOUT_NAME);
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
             Uri uriSweGdb = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers));
             await QueuedTask.Run(() =>
@@ -1290,7 +1291,7 @@ namespace bagis_pro
 
             await QueuedTask.Run(() =>
             {
-                oLayer = map.Layers.FirstOrDefault<Layer>(m => m.Name.Contains(" 1 SWE"));
+                oLayer = map.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(Module1.Current.DisplayedSweMap, StringComparison.CurrentCultureIgnoreCase));
             });
 
             RasterLayer rasterLayer = (RasterLayer)oLayer;
@@ -1353,6 +1354,7 @@ namespace bagis_pro
             if (success == BA_ReturnCode.Success)
             {
                 Module1.Current.DisplayedMap = strFileMapExport;
+                Module1.Current.DisplayedSweMap = strNewLayerName; 
             }
             return success;
         }
@@ -1443,6 +1445,7 @@ namespace bagis_pro
                 }
                 
             }
+            Module1.Current.DisplayedSweMap = Constants.LAYER_NAMES_SNODAS_SWE[idxDefaultMonth];
             return success;
         }
 

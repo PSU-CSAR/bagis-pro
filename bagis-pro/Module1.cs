@@ -110,5 +110,6 @@ namespace bagis_pro
         internal bool MapFinishedLoading { get; set; } = false;
         internal Buttons.CboCurrentAoi CboCurrentAoi { get; set; }
         public BA_Objects.ILoggerManager ModuleLogManager;
+        internal string DisplayedSweMap { get; set; } = "";
     }
 }

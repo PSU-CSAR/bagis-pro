@@ -275,21 +275,24 @@ namespace bagis_pro
         public static IDictionary<string, dynamic> QueryLocalDataSources()
         {
             IDictionary<string, dynamic> dictDataSources = new Dictionary<string, dynamic>();
-            string strDataSourcesFile = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAPS + "\\" +
-                Constants.FILE_MAP_PARAMETERS;
-            if (File.Exists(strDataSourcesFile))
+            string settingsPath = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAPS + "\\" +
+                Constants.FILE_SETTINGS;
+            if (File.Exists(settingsPath))
             {
-                using (StreamReader file = File.OpenText(strDataSourcesFile))
-                using (JsonTextReader reader = new JsonTextReader(file))
+                BA_Objects.Analysis oAnalysis = null;
+                using (var file = new StreamReader(settingsPath))
                 {
-                    JObject jsonVal = (JObject)JToken.ReadFrom(reader);
-                    JArray arrDataSources = (JArray)jsonVal["dataSources"];
-                    foreach (dynamic dSource in arrDataSources)
+                    var reader = new System.Xml.Serialization.XmlSerializer(typeof(BA_Objects.Analysis));
+                    oAnalysis = (BA_Objects.Analysis)reader.Deserialize(file);
+                }
+                if (oAnalysis.DataSources != null)
+                {
+                    foreach (var oSource in oAnalysis.DataSources)
                     {
-                        string key = dSource.layerType;
+                        string key = oSource.layerType;
                         if (!dictDataSources.ContainsKey(key))
                         {
-                            dictDataSources.Add(key, dSource);
+                            dictDataSources.Add(key, oSource);
                         }
                     }
                 }
@@ -318,6 +321,14 @@ namespace bagis_pro
             }
             jsonVal["dataSources"] = arrDataSources;
             File.WriteAllText(strDataSourcesFile, jsonVal.ToString());
+            string strSettingsFile = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAPS + "\\" +
+                Constants.FILE_SETTINGS;
+            if (File.Exists(strSettingsFile))
+            {
+                
+
+            }
+
             return BA_ReturnCode.Success;
         }
 
@@ -707,6 +718,39 @@ namespace bagis_pro
                 // Set logger to AOI directory
                 string logFolderName = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_LOGS;
                 Module1.Current.ModuleLogManager.UpdateLogFileLocation(logFolderName);
+
+                // Test XML serialization
+                string settingsPath = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAPS + "\\" +
+                    Constants.FILE_SETTINGS;
+                BA_Objects.Analysis oAnalysis = null;
+                using (var file = new StreamReader(settingsPath))
+                {
+                    var reader = new System.Xml.Serialization.XmlSerializer(typeof(BA_Objects.Analysis));
+                    oAnalysis = (BA_Objects.Analysis) reader.Deserialize(file);
+                }
+
+                BA_Objects.DataSource oSource = new BA_Objects.DataSource();
+                oSource.units = "Millimeters";
+                oSource.description = "SWE Data Source - Averaged daily SNOw Data Assimilation System (SNODAS) Snow Water Equivalent (SWE) from 2004 to 2019 data";
+                oSource.layerType = "Snotel SWE";
+                oSource.uri = "http://bagis.geog.pdx.edu/arcgis/services/DAILY_SWE_NORMALS/";
+                oSource.DateClipped = DateTime.Now;
+                oSource.minValue = 0.0;
+                oSource.maxValue = 759.1875;
+                List<BA_Objects.DataSource> lstDataSources = oAnalysis.DataSources;
+                if (lstDataSources == null)
+                {
+                    lstDataSources = new List<BA_Objects.DataSource>();
+                }
+                lstDataSources.Add(oSource);
+                oAnalysis.DataSources = lstDataSources;
+                string tempPath = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAPS + "\\test.xml";
+                using (var file_stream = File.Create(tempPath))
+                {
+                    var serializer = new System.Xml.Serialization.XmlSerializer(typeof(BA_Objects.Analysis));
+                    serializer.Serialize(file_stream, oAnalysis);
+                }
+
                 return BA_ReturnCode.Success;
             }
             catch (Exception)

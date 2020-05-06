@@ -63,7 +63,7 @@ namespace bagis_pro
                 BA_ReturnCode success = BA_ReturnCode.UnknownError;
                 if (bHasSnotel)
                 {
-                    lstSites = await AnalysisTools.AssembleSitesListAsync(Constants.FILE_SNOTEL, SiteType.SNOTEL);
+                    lstSites = await AnalysisTools.AssembleSitesListAsync(Constants.FILE_SNOTEL, SiteType.Snotel.ToString());
                     success = await AnalysisTools.CalculateRepresentedArea(demElevMinMeters, demElevMaxMeters, lstSites, Constants.FILE_SNOTEL_REPRESENTED);
                     if (success != BA_ReturnCode.Success)
                         bHasSnotel = false;
@@ -72,7 +72,7 @@ namespace bagis_pro
                 // snow course sites
                 if (bHasSnowCourse)
                 {
-                    lstSites = await AnalysisTools.AssembleSitesListAsync(Constants.FILE_SNOW_COURSE, SiteType.SNOW_COURSE);
+                    lstSites = await AnalysisTools.AssembleSitesListAsync(Constants.FILE_SNOW_COURSE, SiteType.SnowCourse.ToString());
                     success = await AnalysisTools.CalculateRepresentedArea(demElevMinMeters, demElevMaxMeters, lstSites, Constants.FILE_SCOS_REPRESENTED);
                     if (success != BA_ReturnCode.Success)
                         bHasSnowCourse = false;
@@ -100,7 +100,7 @@ namespace bagis_pro
 
         }
 
-        public static async Task<IList<BA_Objects.Site>> AssembleSitesListAsync(string sitesFileName, SiteType sType)
+        public static async Task<IList<BA_Objects.Site>> AssembleSitesListAsync(string sitesFileName, string sType)
         {
             //2. Buffer point from feature class and query site information
             Uri layersUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, false));
@@ -140,7 +140,7 @@ namespace bagis_pro
                                 aSite.ObjectId = Convert.ToInt32(nextFeature[idx]);
                             }
 
-                            aSite.SiteType = sType;
+                            aSite.SiteTypeText = sType;
                             lstSites.Add(aSite);
                             Module1.Current.ModuleLogManager.LogDebug(nameof(AssembleSitesListAsync),
                                 "Added site " + aSite.Name + " to list");
