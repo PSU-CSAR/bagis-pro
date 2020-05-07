@@ -513,7 +513,7 @@ namespace bagis_pro
 
         public static async Task RemoveLayersfromMapFrame()
         {
-            string[] arrLayerNames = new string[13];
+            string[] arrLayerNames = new string[19];
             arrLayerNames[0] = Constants.MAPS_AOI_BOUNDARY;
             arrLayerNames[1] = Constants.MAPS_STREAMS;
             arrLayerNames[2] = Constants.MAPS_SNOTEL;
@@ -525,8 +525,13 @@ namespace bagis_pro
             arrLayerNames[8] = Constants.MAPS_SLOPE_ZONE;
             arrLayerNames[9] = Constants.MAPS_ASPECT_ZONE;
             arrLayerNames[10] = Constants.MAPS_ALL_SITES_REPRESENTED;
-            arrLayerNames[11] = Constants.MAPS_SNODAS_SWE_JAN;
-            arrLayerNames[12] = Constants.MAPS_PRISM_ZONE;
+            arrLayerNames[11] = Constants.MAPS_PRISM_ZONE;
+            int idxLayerNames = 12;
+            for (int i=0; i < Constants.LAYER_NAMES_SNODAS_SWE.Length; i++)
+            {
+                arrLayerNames[idxLayerNames] = Constants.LAYER_NAMES_SNODAS_SWE[i];
+                idxLayerNames++;
+            }
             var map = MapView.Active.Map;
             await QueuedTask.Run(() =>
             {
@@ -1362,8 +1367,8 @@ namespace bagis_pro
         public static async Task<BA_ReturnCode> DisplaySWEMapAsync(int idxDefaultMonth)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
-            IDictionary<string, dynamic> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
-            dynamic oDataSource = null;
+            IDictionary<string, BA_Objects.DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
+            BA_Objects.DataSource oDataSource = null;
             if (dictLocalDataSources.ContainsKey(Constants.DATA_TYPE_SWE))
             {
                 oDataSource = dictLocalDataSources[Constants.DATA_TYPE_SWE];

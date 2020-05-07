@@ -569,12 +569,14 @@ namespace bagis_pro
                     }
                 }
                 // Update layer metadata
-                IDictionary<string, dynamic> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
-                dynamic updateDataSource = dictDataSources[Constants.DATA_TYPE_SWE];
-                updateDataSource.dateClipped = DateTime.Now;
-                updateDataSource.minValue = dblOverallMin;
-                updateDataSource.maxValue = dblOverallMax;
-                updateDataSource.units = dictDataSources[Constants.DATA_TYPE_SWE].units;
+                IDictionary<string, BA_Objects.DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
+
+                BA_Objects.DataSource updateDataSource = new BA_Objects.DataSource(dictDataSources[Constants.DATA_TYPE_SWE])
+                {
+                    DateClipped = DateTime.Now,
+                    minValue = dblOverallMin,
+                    maxValue = dblOverallMax
+                };
                 if (dictLocalDataSources.ContainsKey(Constants.DATA_TYPE_SWE))
                 {
                     dictLocalDataSources[Constants.DATA_TYPE_SWE] = updateDataSource;

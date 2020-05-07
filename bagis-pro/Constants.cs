@@ -26,7 +26,6 @@ namespace bagis_pro
         public const string MAPS_SNOTEL_REPRESENTED = "SNOTEL Sites Represented Area";
         public const string MAPS_SNOW_COURSE_REPRESENTED = "Snow Course Sites Represented Area";
         public const string MAPS_ALL_SITES_REPRESENTED = "All Sites Represented Area";
-        public const string MAPS_SNODAS_SWE_JAN = "January 1 SWE";
 
         public const string MAPS_LEGEND = "Legend";
         public const string MAPS_TITLE = "Title";
@@ -64,8 +63,7 @@ namespace bagis_pro
         public const string FILE_EXPORT_MAP_ASPECT_PDF = "map_aspect.pdf";
         public const string FILE_EXPORT_MAP_SLOPE_PDF = "map_slope.pdf";
         public const string FILE_EXPORT_MAP_ELEVATION_SNOTEL_PDF = "map_elevation_snotel.pdf";
-        public const string FILE_EXPORT_MAP_SWE_JANUARY_PDF = "map_snodas_swe_january.pdf";
-        public static readonly string[] FILE_EXPORT_MAPS_SWE = new string[] { FILE_EXPORT_MAP_SWE_JANUARY_PDF, "map_snodas_swe_february.pdf", "map_snodas_swe_march.pdf", 
+        public static readonly string[] FILE_EXPORT_MAPS_SWE = new string[] { "map_snodas_swe_january.pdf", "map_snodas_swe_february.pdf", "map_snodas_swe_march.pdf", 
                                                                               "map_snodas_swe_april.pdf", "map_snodas_swe_may.pdf", "map_snodas_swe_june.pdf",
                                                                               "map_snodas_swe_december.pdf"};
         public const string FILE_EXPORT_CHART_AREA_ELEV_PRECIP_SITE_PDF = "chart_area_elev_precip_site.pdf";
@@ -82,7 +80,7 @@ namespace bagis_pro
         public static readonly string[] FILES_SNODAS_SWE = new string[] { "swe_jan_01", "swe_feb_01", "swe_mar_01",
                                                                           "swe_apr_01", "swe_may_01", "swe_jun_01",
                                                                           "swe_dec_01"};
-        public static readonly string[] LAYER_NAMES_SNODAS_SWE = new string[] { MAPS_SNODAS_SWE_JAN, "February 1 SWE", "March 1 SWE", "April 1 SWE",
+        public static readonly string[] LAYER_NAMES_SNODAS_SWE = new string[] { "January 1 SWE", "February 1 SWE", "March 1 SWE", "April 1 SWE",
                                                                                 "May 1 SWE", "June 1 SWE", "December 1 SWE" };
         public static readonly string[] MAP_TITLES_SNODAS_SWE = new string[] { "SNODAS SWE JAN 1ST", "SNODAS SWE FEB 1ST", "SNODAS SWE MAR 1ST",
                                                                                "SNODAS SWE APR 1ST", "SNODAS SWE MAY 1ST", "SNODAS SWE JUN 1ST",

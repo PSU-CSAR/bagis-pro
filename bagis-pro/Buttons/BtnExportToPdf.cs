@@ -45,7 +45,7 @@ namespace bagis_pro.Buttons
                     Constants.FILE_EXPORT_CHART_SLOPE_PDF, Constants.FILE_EXPORT_CHART_ASPECT_PDF};
 
                 // Load the maps if they aren't in the viewer already
-                BA_ReturnCode success = BA_ReturnCode.UnknownError;
+                BA_ReturnCode success = BA_ReturnCode.Success;
                 if (! FrameworkApplication.State.Contains(Constants.STATES_MAP_BUTTONS[0]))
                 {
                     success = await MapTools.DisplayMaps(Module1.Current.Aoi.FilePath);

@@ -191,15 +191,14 @@ namespace bagis_pro
                 }
 
                 //Printing data sources
-                IDictionary<string, dynamic> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
+                IDictionary<string, BA_Objects.DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
                 string[] keys = { Constants.DATA_TYPE_SWE, Constants.DATA_TYPE_PRECIPITATION};
                 IList < BA_Objects.DataSource > lstDataSources = new List<BA_Objects.DataSource>();
                 foreach (string strKey in keys)
                 {
                     if (dictLocalDataSources.ContainsKey(strKey))
                     {
-                        dynamic dynSource = dictLocalDataSources[strKey];
-                        BA_Objects.DataSource newSource = new BA_Objects.DataSource(dynSource);
+                        BA_Objects.DataSource newSource = dictLocalDataSources[strKey];
                         lstDataSources.Add(newSource);
                     }
                 }
@@ -272,9 +271,9 @@ namespace bagis_pro
             }
         }
 
-        public static IDictionary<string, dynamic> QueryLocalDataSources()
+        public static IDictionary<string, BA_Objects.DataSource> QueryLocalDataSources()
         {
-            IDictionary<string, dynamic> dictDataSources = new Dictionary<string, dynamic>();
+            IDictionary<string, BA_Objects.DataSource> dictDataSources = new Dictionary<string, BA_Objects.DataSource>();
             string settingsPath = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAPS + "\\" +
                 Constants.FILE_SETTINGS;
             if (File.Exists(settingsPath))
@@ -285,7 +284,7 @@ namespace bagis_pro
                     var reader = new System.Xml.Serialization.XmlSerializer(typeof(BA_Objects.Analysis));
                     oAnalysis = (BA_Objects.Analysis)reader.Deserialize(file);
                 }
-                if (oAnalysis.DataSources != null)
+                if (oAnalysis.DataSources != null && oAnalysis.DataSources.Count > 0)
                 {
                     foreach (var oSource in oAnalysis.DataSources)
                     {
@@ -296,39 +295,46 @@ namespace bagis_pro
                         }
                     }
                 }
+                else
+                {
+                    // Make a copy of the file under a different name. It is from BAGIS V3 and we want to preserve it
+                    string destPath = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAPS + "\\" +
+                        "analysis_" + DateTime.Now.ToString("yyyyMMdd") + ".xml";
+                    File.Copy(settingsPath, destPath, true);
+                }
             }
             return dictDataSources;
         }
 
-        public static BA_ReturnCode SaveDataSourcesToFile(IDictionary<string, dynamic> dictDataSources)
+        public static BA_ReturnCode SaveDataSourcesToFile(IDictionary<string, BA_Objects.DataSource> dictDataSources)
         {
-            JObject jsonVal = new JObject();
-            string strDataSourcesFile = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAPS + "\\" +
-                Constants.FILE_MAP_PARAMETERS;
-            if (File.Exists(strDataSourcesFile))
-            {
-                using (StreamReader file = File.OpenText(strDataSourcesFile))
-                using (JsonTextReader reader = new JsonTextReader(file))
-                {
-                    jsonVal = (JObject)JToken.ReadFrom(reader);
-                }
-            }
-
-            JArray arrDataSources = new JArray();
+            // Put the data sources into a list that can be added to the Analysis object
+            List<BA_Objects.DataSource> lstDataSources = new List<BA_Objects.DataSource>();
             foreach (string key in dictDataSources.Keys)
             {
-                arrDataSources.Add(dictDataSources[key]);
+                lstDataSources.Add(dictDataSources[key]);
             }
-            jsonVal["dataSources"] = arrDataSources;
-            File.WriteAllText(strDataSourcesFile, jsonVal.ToString());
+
+            // Open the current Analysis.xml from disk, if it exists
+            BA_Objects.Analysis oAnalysis = new BA_Objects.Analysis();
             string strSettingsFile = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAPS + "\\" +
                 Constants.FILE_SETTINGS;
             if (File.Exists(strSettingsFile))
             {
-                
-
+                using (var file = new StreamReader(strSettingsFile))
+                {
+                    var reader = new System.Xml.Serialization.XmlSerializer(typeof(BA_Objects.Analysis));
+                    oAnalysis = (BA_Objects.Analysis)reader.Deserialize(file);
+                }
             }
 
+            // Overwrite the datasources on the analysis object and save
+            oAnalysis.DataSources = lstDataSources;
+            using (var file_stream = File.Create(strSettingsFile))
+            {
+                var serializer = new System.Xml.Serialization.XmlSerializer(typeof(BA_Objects.Analysis));
+                serializer.Serialize(file_stream, oAnalysis);
+            }
             return BA_ReturnCode.Success;
         }
 
