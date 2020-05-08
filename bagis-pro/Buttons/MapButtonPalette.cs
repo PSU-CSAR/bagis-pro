@@ -175,6 +175,50 @@ namespace bagis_pro.Buttons
         }
     }
 
+    internal class MapButtonPalette_BtnSweFeb : Button
+    {
+        protected override async void OnClick()
+        {
+            try
+            {
+                Module1.Current.MapFinishedLoading = false;
+                int idxFeb = 1;
+                await MapTools.LoadSweMapAsync(Constants.FILES_SNODAS_SWE[idxFeb],
+                    Constants.LAYER_NAMES_SNODAS_SWE[idxFeb], Constants.MAP_TITLES_SNODAS_SWE[idxFeb],
+                    Constants.FILE_EXPORT_MAPS_SWE[idxFeb]);
+                Module1.Current.MapFinishedLoading = true;
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show("Unable to display SNODAS SWE map!!" + e.Message, "BAGIS-PRO");
+                Module1.Current.ModuleLogManager.LogError(nameof(MapButtonPalette_BtnSweFeb),
+                    "Exception: " + e.Message);
+            }
+        }
+    }
+
+    internal class MapButtonPalette_BtnSweMar : Button
+    {
+        protected override async void OnClick()
+        {
+            try
+            {
+                Module1.Current.MapFinishedLoading = false;
+                int idxMar = 2;
+                await MapTools.LoadSweMapAsync(Constants.FILES_SNODAS_SWE[idxMar],
+                    Constants.LAYER_NAMES_SNODAS_SWE[idxMar], Constants.MAP_TITLES_SNODAS_SWE[idxMar],
+                    Constants.FILE_EXPORT_MAPS_SWE[idxMar]);
+                Module1.Current.MapFinishedLoading = true;
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show("Unable to display SNODAS SWE map!!" + e.Message, "BAGIS-PRO");
+                Module1.Current.ModuleLogManager.LogError(nameof(MapButtonPalette_BtnSweMar),
+                    "Exception: " + e.Message);
+            }
+        }
+    }
+
     internal class MapButtonPalette_BtnSweApr : Button
     {
         protected override async void OnClick()
@@ -216,6 +260,52 @@ namespace bagis_pro.Buttons
             {
                 MessageBox.Show("Unable to display SNODAS SWE map!!" + e.Message, "BAGIS-PRO");
                 Module1.Current.ModuleLogManager.LogError(nameof(MapButtonPalette_BtnSweMay),
+                    "Exception: " + e.Message);
+            }
+        }
+    }
+
+    internal class MapButtonPalette_BtnSweJun : Button
+    {
+        protected override async void OnClick()
+        {
+            try
+            {
+                Module1.Current.MapFinishedLoading = false;
+                int idxJun = 5;
+                await MapTools.LoadSweMapAsync(Constants.FILES_SNODAS_SWE[idxJun],
+                    Constants.LAYER_NAMES_SNODAS_SWE[idxJun], Constants.MAP_TITLES_SNODAS_SWE[idxJun],
+                    Constants.FILE_EXPORT_MAPS_SWE[idxJun]);
+
+                Module1.Current.MapFinishedLoading = true;
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show("Unable to display SNODAS SWE map!!" + e.Message, "BAGIS-PRO");
+                Module1.Current.ModuleLogManager.LogError(nameof(MapButtonPalette_BtnSweJun),
+                    "Exception: " + e.Message);
+            }
+        }
+    }
+
+    internal class MapButtonPalette_BtnSweDec : Button
+    {
+        protected override async void OnClick()
+        {
+            try
+            {
+                Module1.Current.MapFinishedLoading = false;
+                int idxDec = 6;
+                await MapTools.LoadSweMapAsync(Constants.FILES_SNODAS_SWE[idxDec],
+                    Constants.LAYER_NAMES_SNODAS_SWE[idxDec], Constants.MAP_TITLES_SNODAS_SWE[idxDec],
+                    Constants.FILE_EXPORT_MAPS_SWE[idxDec]);
+
+                Module1.Current.MapFinishedLoading = true;
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show("Unable to display SNODAS SWE map!!" + e.Message, "BAGIS-PRO");
+                Module1.Current.ModuleLogManager.LogError(nameof(MapButtonPalette_BtnSweDec),
                     "Exception: " + e.Message);
             }
         }

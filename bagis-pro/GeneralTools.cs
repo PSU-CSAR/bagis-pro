@@ -401,14 +401,24 @@ namespace bagis_pro
                 success = await ExcelTools.CreateElevationTableAsync(pAreaElvWorksheet, elevMinMeters);
                 Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Created Elevation Table");
 
-                Module1.Current.Aoi.HasSnotel = await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false)), Constants.FILE_SNOTEL_ZONE);
+                Module1.Current.Aoi.HasSnotel = true;
+                int intSites = await GeodatabaseTools.CountFeaturesAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, false)), Constants.FILE_SNOTEL);
+                if (intSites < 1)
+                {
+                    Module1.Current.Aoi.HasSnotel = false;
+                }
                 if (Module1.Current.Aoi.HasSnotel)
                 {
                     success = await ExcelTools.CreateSitesTableAsync(pSNOTELWorksheet, pAreaElvWorksheet, Constants.FILE_SNOTEL_ZONE);
                     Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Created Snotel sites Table");
                 }
 
-                Module1.Current.Aoi.HasSnowCourse = await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false)), Constants.FILE_SCOS_ZONE);
+                Module1.Current.Aoi.HasSnowCourse = true;
+                intSites = await GeodatabaseTools.CountFeaturesAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, false)), Constants.FILE_SNOW_COURSE);
+                if (intSites < 1)
+                {
+                    Module1.Current.Aoi.HasSnowCourse = false;
+                }
                 if (Module1.Current.Aoi.HasSnowCourse)
                 {
                     success = await ExcelTools.CreateSitesTableAsync(pSnowCourseWorksheet, pAreaElvWorksheet, Constants.FILE_SCOS_ZONE);

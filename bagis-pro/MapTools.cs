@@ -1433,17 +1433,32 @@ namespace bagis_pro
                     int idx = 0;
                     foreach (string strSweName in Constants.FILES_SNODAS_SWE)
                     {
-                        switch (idx)
+                        if (lstLayersFiles.Contains(strSweName))
                         {
-                            case 0:     //January
-                                Module1.ActivateState("MapButtonPalette_BtnSweJan_State");
-                                break;
-                            case 3:     //April
-                                Module1.ActivateState("MapButtonPalette_BtnSweApr_State");
-                                break;
-                            case 4:     //May
-                                Module1.ActivateState("MapButtonPalette_BtnSweMay_State");
-                                break;
+                            switch (idx)
+                            {
+                                case 0:     //January
+                                    Module1.ActivateState("MapButtonPalette_BtnSweJan_State");
+                                    break;
+                                case 1:     //February
+                                    Module1.ActivateState("MapButtonPalette_BtnSweFeb_State");
+                                    break;
+                                case 2:     //March
+                                    Module1.ActivateState("MapButtonPalette_BtnSweMar_State");
+                                    break;
+                                case 3:     //April
+                                    Module1.ActivateState("MapButtonPalette_BtnSweApr_State");
+                                    break;
+                                case 4:     //May
+                                    Module1.ActivateState("MapButtonPalette_BtnSweMay_State");
+                                    break;
+                                case 5:     //June
+                                    Module1.ActivateState("MapButtonPalette_BtnSweJun_State");
+                                    break;
+                                case 6:     //December
+                                    Module1.ActivateState("MapButtonPalette_BtnSweDec_State");
+                                    break;
+                            }
                         }
                         idx++;
                     }

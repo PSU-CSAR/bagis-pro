@@ -130,8 +130,12 @@ namespace bagis_pro
                                                                 "MapButtonPalette_BtnPrism_State",
                                                                 "MapButtonPalette_BtnSlope_State",
                                                                 "MapButtonPalette_BtnSweJan_State",
+                                                                "MapButtonPalette_BtnSweFeb_State",
+                                                                "MapButtonPalette_BtnSweMar_State",
                                                                 "MapButtonPalette_BtnSweApr_State",
-                                                                "MapButtonPalette_BtnSweMay_State"};
+                                                                "MapButtonPalette_BtnSweMay_State",
+                                                                "MapButtonPalette_BtnSweJun_State",
+                                                                "MapButtonPalette_BtnSweDec_State"};
 
         public static string META_TAG_XPATH = @"/metadata/dataIdInfo/searchKeys/keyword";
         public static string META_TAG_PREFIX = "BAGIS Tag < Please do not modify: ";
