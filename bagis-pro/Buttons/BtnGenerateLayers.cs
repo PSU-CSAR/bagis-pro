@@ -34,26 +34,4 @@ namespace bagis_pro.Buttons
         }
     }
 
-    internal class BtnClipLayers : Button
-    {
-        protected async override void OnClick()
-        {
-            if (String.IsNullOrEmpty(Module1.Current.Aoi.Name))
-            {
-                MessageBox.Show("No AOI selected for analysis !!", "BAGIS-PRO");
-                return;
-            }
-
-            BA_ReturnCode success = await AnalysisTools.ClipSnotelSWELayersAsync();
-
-            if (success == BA_ReturnCode.Success)
-            {
-                MessageBox.Show("Analysis layers clipped!!", "BAGIS-PRO");
-            }
-            else
-            {
-                MessageBox.Show("An error occurred while trying to clip the layers !!", "BAGIS-PRO");
-            }
-        }
-    }
 }

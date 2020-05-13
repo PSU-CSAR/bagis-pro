@@ -160,11 +160,16 @@
     <Compile Include="BA_Objects\ExportTitlePage.cs" />
     <Compile Include="BA_Objects\MapDefinition.cs" />
     <Compile Include="BA_Objects\Site.cs" />
+    <Compile Include="Buttons\BtnClipLayers.cs" />
     <Compile Include="Buttons\BtnExportToPdf.cs" />
     <Compile Include="Buttons\BtnGenerateLayers.cs" />
     <Compile Include="Buttons\CboCurrentAoi.cs" />
     <Compile Include="Buttons\MapButtonPalette.cs" />
     <Compile Include="Constants.cs" />
+    <Compile Include="DockpaneLayers.xaml.cs">
+      <DependentUpon>DockpaneLayers.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="DockpaneLayersViewModel.cs" />
     <Compile Include="ExcelTools.cs" />
     <Compile Include="GeneralTools.cs" />
     <Compile Include="GeodatabaseTools.cs" />
@@ -223,6 +228,10 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
+    <AddInContent Include="Images\GenericButtonPurple16.png" />
+    <AddInContent Include="Images\GenericButtonPurple32.png" />
+    <AddInContent Include="DarkImages\GenericButtonPurple16.png" />
+    <AddInContent Include="DarkImages\GenericButtonPurple32.png" />
     <Content Include="NLog.config">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
@@ -269,6 +278,12 @@
       <Isolated>False</Isolated>
       <EmbedInteropTypes>True</EmbedInteropTypes>
     </COMReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Page Include="DockpaneLayers.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!--
