@@ -46,6 +46,7 @@ namespace bagis_pro
       /// Text shown near the top of the DockPane.
       /// </summary>
 	  private string _heading = "Manage Layers";
+        private bool _reclipSwe_Checked = true;
       public string Heading
       {
         get { return _heading; }
@@ -54,6 +55,15 @@ namespace bagis_pro
           SetProperty(ref _heading, value, () => Heading);
         }
       }
+
+        public bool ReclipSwe_Checked
+        {
+            get { return _reclipSwe_Checked; }
+            set
+            {
+                SetProperty(ref _reclipSwe_Checked, value, () => ReclipSwe_Checked);
+            }
+        }
 
       public RelayCommand CmdClipLayers
         {
@@ -77,8 +87,11 @@ namespace bagis_pro
                                     return;
                                 }
 
-                                
-                                BA_ReturnCode success = await AnalysisTools.ClipSnotelSWELayersAsync();
+                                BA_ReturnCode success = BA_ReturnCode.Success;
+                                if (_reclipSwe_Checked)
+                                {
+                                    success = await AnalysisTools.ClipSnotelSWELayersAsync();
+                                }
 
                                 if (success == BA_ReturnCode.Success)
                                 {

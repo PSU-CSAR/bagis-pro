@@ -29,7 +29,7 @@ namespace bagis_pro
                 if (System.IO.Directory.Exists(strAoiPath))
                 {
                     // Initialize AOI object
-                    await GeneralTools.SetAoi(strAoiPath);
+                    GeneralTools.SetAoi(strAoiPath);
                 }
                 else
                 {
@@ -187,8 +187,8 @@ namespace bagis_pro
 
                     // update map elements for default map (elevation)
                     BA_Objects.MapDefinition defaultMap = MapTools.LoadMapDefinition(BagisMapType.ELEVATION);
-                    await MapTools.UpdateMapElementsAsync(layout, Module1.Current.Aoi.Name.ToUpper(), defaultMap);
-                    await MapTools.UpdateLegendAsync(layout, defaultMap.LegendLayerList);
+                    await MapTools.UpdateMapElementsAsync(Module1.Current.Aoi.Name.ToUpper(), defaultMap);
+                    await MapTools.UpdateLegendAsync(defaultMap.LegendLayerList);
 
 
                     //zoom to aoi boundary layer
@@ -202,7 +202,7 @@ namespace bagis_pro
 
         public static async Task<Layout> GetDefaultLayoutAsync(string layoutName)
         {
-            return await QueuedTask.Run(() =>
+           return await QueuedTask.Run(() =>
            {
                Layout layout = null;
                Project proj = Project.Current;
@@ -961,10 +961,30 @@ namespace bagis_pro
            });
         }
 
-        public async static Task UpdateLegendAsync(Layout layout, IList<string> lstLegendLayer)
+        public async static Task UpdateLegendAsync(IList<string> lstLegendLayer)
         {
             await QueuedTask.Run(() =>
             {
+                Project proj = Project.Current;
+
+                //Get the default map layout
+                LayoutProjectItem lytItem =
+                   proj.GetItems<LayoutProjectItem>()
+                       .FirstOrDefault(m => m.Name.Equals(Constants.MAPS_DEFAULT_LAYOUT_NAME,
+                       StringComparison.CurrentCultureIgnoreCase));
+                Layout layout = null;
+                if (lytItem != null)
+                {
+                    layout = lytItem.GetLayout();
+                }
+                else
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(UpdateLegendAsync),
+                        "Unable to find default layout!!");
+                    MessageBox.Show("Unable to find default layout. Cannot update legend!");
+                    return;
+                }
+
                 //Get LayoutCIM and iterate through its elements
                 var layoutDef = layout.GetDefinition();
 
@@ -991,10 +1011,30 @@ namespace bagis_pro
             });
         }
 
-        public static async Task UpdateMapElementsAsync(Layout layout, string titleText, BA_Objects.MapDefinition mapDefinition)
+        public static async Task UpdateMapElementsAsync(string titleText, BA_Objects.MapDefinition mapDefinition)
         {
-            if (layout != null)
+            await QueuedTask.Run(() =>
             {
+                Project proj = Project.Current;
+
+                //Get the default map layout
+                LayoutProjectItem lytItem =
+                   proj.GetItems<LayoutProjectItem>()
+                       .FirstOrDefault(m => m.Name.Equals(Constants.MAPS_DEFAULT_LAYOUT_NAME,
+                       StringComparison.CurrentCultureIgnoreCase));
+                Layout layout = null;
+                if (lytItem != null)
+                {
+                    layout = lytItem.GetLayout();
+                }
+                else
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(UpdateMapElementsAsync),
+                        "Unable to find default layout!!");
+                    MessageBox.Show("Unable to find default layout. Cannot update map elements!");
+                    return;
+                }
+
                 if (!String.IsNullOrEmpty(titleText))
                 {
                     if (titleText != null)
@@ -1002,12 +1042,10 @@ namespace bagis_pro
                         GraphicElement textBox = layout.FindElement(Constants.MAPS_TITLE) as GraphicElement;
                         if (textBox != null)
                         {
-                            await QueuedTask.Run(() =>
-                            {
-                                CIMTextGraphic graphic = (CIMTextGraphic)textBox.Graphic;
-                                graphic.Text = titleText;
-                                textBox.SetGraphic(graphic);
-                            });
+                            CIMTextGraphic graphic = (CIMTextGraphic)textBox.Graphic;
+                            graphic.Text = titleText;
+                            textBox.SetGraphic(graphic);
+
                         }
                     }
                     if (mapDefinition.SubTitle != null)
@@ -1015,12 +1053,9 @@ namespace bagis_pro
                         GraphicElement textBox = layout.FindElement(Constants.MAPS_SUBTITLE) as GraphicElement;
                         if (textBox != null)
                         {
-                            await QueuedTask.Run(() =>
-                            {
-                                CIMTextGraphic graphic = (CIMTextGraphic)textBox.Graphic;
-                                graphic.Text = mapDefinition.SubTitle;
-                                textBox.SetGraphic(graphic);
-                            });
+                            CIMTextGraphic graphic = (CIMTextGraphic)textBox.Graphic;
+                            graphic.Text = mapDefinition.SubTitle;
+                            textBox.SetGraphic(graphic);
                         }
                     }
                     if (mapDefinition.UnitsText != null)
@@ -1028,16 +1063,13 @@ namespace bagis_pro
                         GraphicElement textBox = layout.FindElement(Constants.MAPS_TEXTBOX1) as GraphicElement;
                         if (textBox != null)
                         {
-                            await QueuedTask.Run(() =>
-                            {
-                                CIMTextGraphic graphic = (CIMTextGraphic)textBox.Graphic;
-                                graphic.Text = mapDefinition.UnitsText;
-                                textBox.SetGraphic(graphic);
-                            });
+                            CIMTextGraphic graphic = (CIMTextGraphic)textBox.Graphic;
+                            graphic.Text = mapDefinition.UnitsText;
+                            textBox.SetGraphic(graphic);
                         }
                     }
                 }
-            }
+            });
         }
 
         public static async Task DisplayNorthArrowAsync(Layout layout, string mapFrameName)
@@ -1269,11 +1301,30 @@ namespace bagis_pro
             RasterDataset rDataset = null;
             Layer oLayer = null;
             Map map = MapView.Active.Map;
-            Layout layout = await MapTools.GetDefaultLayoutAsync(Constants.MAPS_DEFAULT_LAYOUT_NAME);
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
             Uri uriSweGdb = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers));
+            Layout layout = null;
             await QueuedTask.Run(() =>
             {
+                Project proj = Project.Current;
+
+                //Get the default map layout
+                LayoutProjectItem lytItem =
+                   proj.GetItems<LayoutProjectItem>()
+                       .FirstOrDefault(m => m.Name.Equals(Constants.MAPS_DEFAULT_LAYOUT_NAME, 
+                       StringComparison.CurrentCultureIgnoreCase));
+                if (lytItem != null)
+                {
+                    layout = lytItem.GetLayout();
+                }
+                else
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(LoadSweMapAsync),
+                        "Unable to find default layout!!");
+                    MessageBox.Show("Unable to find default layout. Cannot display maps!");
+                    return;
+                }
+
                 // Opens a file geodatabase. This will open the geodatabase if the folder exists and contains a valid geodatabase.
                 using (Geodatabase geodatabase =
                     new Geodatabase(new FileGeodatabaseConnectionPath(uriSweGdb)))
@@ -1292,14 +1343,10 @@ namespace bagis_pro
                         return;
                     }
                 }
-            });
-
-            await QueuedTask.Run(() =>
-            {
                 oLayer = map.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(Module1.Current.DisplayedSweMap, StringComparison.CurrentCultureIgnoreCase));
             });
 
-            RasterLayer rasterLayer = (RasterLayer)oLayer;
+            RasterLayer rasterLayer = (RasterLayer) oLayer;
             // Create a new Stretch Colorizer Definition using the default constructor.
             StretchColorizerDefinition stretchColorizerDef_default = new StretchColorizerDefinition();
             // Create a new Stretch colorizer using the colorizer definition created above.
@@ -1354,7 +1401,7 @@ namespace bagis_pro
                 }
             });
 
-            await MapTools.UpdateLegendAsync(layout, lstLegend);
+            await MapTools.UpdateLegendAsync(lstLegend);
 
             if (success == BA_ReturnCode.Success)
             {

@@ -160,7 +160,6 @@
     <Compile Include="BA_Objects\ExportTitlePage.cs" />
     <Compile Include="BA_Objects\MapDefinition.cs" />
     <Compile Include="BA_Objects\Site.cs" />
-    <Compile Include="Buttons\BtnClipLayers.cs" />
     <Compile Include="Buttons\BtnExportToPdf.cs" />
     <Compile Include="Buttons\BtnGenerateLayers.cs" />
     <Compile Include="Buttons\CboCurrentAoi.cs" />

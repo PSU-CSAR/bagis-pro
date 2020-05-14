@@ -17,6 +17,7 @@ using System.Xml.Xsl;
 using Microsoft.Office.Interop.Excel;
 using ArcGIS.Desktop.Core;
 using System.Reflection;
+using ArcGIS.Core.Data.Raster;
 
 namespace bagis_pro
 {
@@ -705,73 +706,97 @@ namespace bagis_pro
             return success;
         }
 
-        public static async Task<BA_ReturnCode> SetAoi(string strAoiPath)
+        public static void SetAoi(string strAoiPath)
         {
             // Initialize AOI object
             BA_Objects.Aoi oAoi = new BA_Objects.Aoi(Path.GetFileName(strAoiPath), strAoiPath);
-            // Check for default units
             try
-            { 
+            {
                 string strSurfacesGdb = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Surfaces, false);
                 var fcPath = strSurfacesGdb + "\\" + Constants.FILE_DEM_FILLED;
-                string strBagisTag = await GeneralTools.GetBagisTag(fcPath, Constants.META_TAG_XPATH);
-                oAoi.ElevationUnits = GeneralTools.GetValueForKey(strBagisTag, Constants.META_TAG_ZUNIT_VALUE, ';');
-                // Store current AOI in Module1
-                Module1.Current.Aoi = oAoi;
-                Module1.Current.CboCurrentAoi.SetAoiName(oAoi.Name);
-                MapTools.DeactivateMapButtons();
-                Module1.ActivateState("Aoi_Selected_State");
-                // Make directory for log if it doesn't exist
-                if (!Directory.Exists(Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_LOGS))
+                QueuedTask.Run(() =>
                 {
-                    DirectoryInfo info = Directory.CreateDirectory(Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_LOGS);
-                    if (info == null)
+                    FolderType fType = FolderType.FOLDER;
+                    Uri gdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, false));
+                    if (Directory.Exists(gdbUri.LocalPath))
                     {
-                        MessageBox.Show("Unable to create logs directory in Aoi folder!!", "BAGIS-PRO");
-                        return BA_ReturnCode.WriteError;
+                        Uri uriToCheck = new Uri(gdbUri.LocalPath + Constants.FILE_AOI_RASTER);
+                        using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(gdbUri)))
+                        {
+                            IReadOnlyList<RasterDatasetDefinition> definitions = geodatabase.GetDefinitions<RasterDatasetDefinition>();
+                            foreach (RasterDatasetDefinition def in definitions)
+                            {
+                                if (def.GetName().Equals(Constants.FILE_AOI_RASTER))
+                                {
+                                    fType = FolderType.AOI;
+                                    break;
+                                }
+                            }
+                        }
                     }
-                }
-                // Set logger to AOI directory
-                string logFolderName = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_LOGS;
-                Module1.Current.ModuleLogManager.UpdateLogFileLocation(logFolderName);
 
-                // Test XML serialization
-                string settingsPath = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAPS + "\\" +
-                    Constants.FILE_SETTINGS;
-                BA_Objects.Analysis oAnalysis = null;
-                using (var file = new StreamReader(settingsPath))
-                {
-                    var reader = new System.Xml.Serialization.XmlSerializer(typeof(BA_Objects.Analysis));
-                    oAnalysis = (BA_Objects.Analysis) reader.Deserialize(file);
-                }
+                    if (fType != FolderType.AOI)
+                    {
+                        MessageBox.Show("!!The selected folder does not contain a valid AOI", "BAGIS Pro");
+                        return;
+                    }
 
-                BA_Objects.DataSource oSource = new BA_Objects.DataSource();
-                oSource.units = "Millimeters";
-                oSource.description = "SWE Data Source - Averaged daily SNOw Data Assimilation System (SNODAS) Snow Water Equivalent (SWE) from 2004 to 2019 data";
-                oSource.layerType = "Snotel SWE";
-                oSource.uri = "http://bagis.geog.pdx.edu/arcgis/services/DAILY_SWE_NORMALS/";
-                oSource.DateClipped = DateTime.Now;
-                oSource.minValue = 0.0;
-                oSource.maxValue = 759.1875;
-                List<BA_Objects.DataSource> lstDataSources = oAnalysis.DataSources;
-                if (lstDataSources == null)
-                {
-                    lstDataSources = new List<BA_Objects.DataSource>();
-                }
-                lstDataSources.Add(oSource);
-                oAnalysis.DataSources = lstDataSources;
-                string tempPath = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAPS + "\\test.xml";
-                using (var file_stream = File.Create(tempPath))
-                {
-                    var serializer = new System.Xml.Serialization.XmlSerializer(typeof(BA_Objects.Analysis));
-                    serializer.Serialize(file_stream, oAnalysis);
-                }
+                    // Check for default units
+                    var fc = ItemFactory.Instance.Create(fcPath, ItemFactory.ItemType.PathItem);
+                    if (fc != null)
+                    {
+                        string strXml = string.Empty;
+                        strXml = fc.GetXml();
+                        //check metadata was returned
+                        if (!string.IsNullOrEmpty(strXml))
+                        {
+                            //use the metadata; Create a .NET XmlDocument and load the schema
+                            XmlDocument myXml = new XmlDocument();
+                            myXml.LoadXml(strXml);
+                            //Select the nodes from the fully qualified XPath
+                            XmlNodeList propertyNodes = myXml.SelectNodes(Constants.META_TAG_XPATH);
+                            //Place each innerText into a list to return
+                            foreach (XmlNode pNode in propertyNodes)
+                            {
+                                if (pNode.InnerText.IndexOf(Constants.META_TAG_PREFIX) > -1)
+                                {
+                                    string strBagisTag = pNode.InnerText;
+                                    oAoi.ElevationUnits = GeneralTools.GetValueForKey(strBagisTag, Constants.META_TAG_ZUNIT_VALUE, ';');
+                                }
+                            }
+                        }
+                    }
 
-                return BA_ReturnCode.Success;
+                    // Make directory for log if it doesn't exist
+                    if (!Directory.Exists(Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_LOGS))
+                    {
+                        DirectoryInfo info = Directory.CreateDirectory(Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_LOGS);
+                        if (info == null)
+                        {
+                            MessageBox.Show("Unable to create logs directory in Aoi folder!!", "BAGIS-PRO");
+                        }
+                    }
+                    // Set logger to AOI directory
+                    string logFolderName = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_LOGS;
+                    Module1.Current.ModuleLogManager.UpdateLogFileLocation(logFolderName);
+
+                    // Store current AOI in Module1
+                    Module1.Current.Aoi = oAoi;
+                    Module1.Current.CboCurrentAoi.SetAoiName(oAoi.Name);
+                    MapTools.DeactivateMapButtons();
+                    Module1.ActivateState("Aoi_Selected_State");
+
+
+                    MessageBox.Show("AOI is set to " + Module1.Current.Aoi.Name + "!", "BAGIS PRO");
+ 
+
+                });
+               
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                return BA_ReturnCode.UnknownError;
+                Module1.Current.ModuleLogManager.LogError(nameof(SetAoi),
+                    "Exception: " + e.Message);
             }
         }
 

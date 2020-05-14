@@ -22,12 +22,13 @@ namespace bagis_pro.Buttons
 {
     internal class ToggleMapDisplay
     {
-        public static async Task Toggle(BagisMapType mapType)
+        public static async Task ToggleAsync(BagisMapType mapType)
         {
             //Get map definition
             BA_Objects.MapDefinition thisMap = MapTools.LoadMapDefinition(mapType);
-            
+
             // toggle layers according to map definition
+            Module1.Current.MapFinishedLoading = false;
             var allLayers = MapView.Active.Map.Layers.ToList();
             await QueuedTask.Run(() =>
             {
@@ -44,22 +45,20 @@ namespace bagis_pro.Buttons
                 }
             });
 
-            Layout layout = await MapTools.GetDefaultLayoutAsync(Constants.MAPS_DEFAULT_LAYOUT_NAME);
-            await MapTools.UpdateMapElementsAsync(layout, Module1.Current.Aoi.Name.ToUpper(), thisMap);
-            await MapTools.UpdateLegendAsync(layout, thisMap.LegendLayerList);
+            await MapTools.UpdateMapElementsAsync(Module1.Current.Aoi.Name.ToUpper(), thisMap);
+            await MapTools.UpdateLegendAsync(thisMap.LegendLayerList);
+            Module1.Current.MapFinishedLoading = true;
             Module1.Current.DisplayedMap = thisMap.PdfFileName;
         }
     }
 
     internal class MapButtonPalette_BtnElevation : Button
     {
-        protected async override void OnClick()
+        protected override async void OnClick()
         {
             try
-            {
-                Module1.Current.MapFinishedLoading = false;
-                await ToggleMapDisplay.Toggle(BagisMapType.ELEVATION);
-                Module1.Current.MapFinishedLoading = true;
+            {               
+                await ToggleMapDisplay.ToggleAsync(BagisMapType.ELEVATION);
             }
             catch (Exception e)
             {
@@ -74,9 +73,7 @@ namespace bagis_pro.Buttons
         {
             try
             {
-                Module1.Current.MapFinishedLoading = false;
-                await ToggleMapDisplay.Toggle(BagisMapType.SLOPE);
-                Module1.Current.MapFinishedLoading = true;
+                await ToggleMapDisplay.ToggleAsync(BagisMapType.SLOPE);
             }
             catch (Exception e)
             {
@@ -91,9 +88,7 @@ namespace bagis_pro.Buttons
         {
             try
             {
-                Module1.Current.MapFinishedLoading = false;
-                await ToggleMapDisplay.Toggle(BagisMapType.ASPECT);
-                Module1.Current.MapFinishedLoading = true;
+                await ToggleMapDisplay.ToggleAsync(BagisMapType.ASPECT);
             }
             catch (Exception e)
             {
@@ -108,9 +103,7 @@ namespace bagis_pro.Buttons
         {
             try
             {
-                Module1.Current.MapFinishedLoading = false;
-                await ToggleMapDisplay.Toggle(BagisMapType.SNOTEL);
-                Module1.Current.MapFinishedLoading = true;
+                await ToggleMapDisplay.ToggleAsync(BagisMapType.SNOTEL);
             }
             catch (Exception e)
             {
@@ -125,9 +118,7 @@ namespace bagis_pro.Buttons
         {
             try
             {
-                Module1.Current.MapFinishedLoading = false;
-                await ToggleMapDisplay.Toggle(BagisMapType.SCOS);
-                Module1.Current.MapFinishedLoading = true;
+                await ToggleMapDisplay.ToggleAsync(BagisMapType.SCOS);
             }
             catch (Exception e)
             {
@@ -142,9 +133,7 @@ namespace bagis_pro.Buttons
         {
             try
             {
-                Module1.Current.MapFinishedLoading = false;
-                await ToggleMapDisplay.Toggle(BagisMapType.SITES_ALL);
-                Module1.Current.MapFinishedLoading = true;
+                await ToggleMapDisplay.ToggleAsync(BagisMapType.SITES_ALL);
             }
             catch (Exception e)
             {
@@ -318,7 +307,7 @@ namespace bagis_pro.Buttons
             try
             {
                 Module1.Current.MapFinishedLoading = false;
-                await ToggleMapDisplay.Toggle(BagisMapType.PRISM);
+                await ToggleMapDisplay.ToggleAsync(BagisMapType.PRISM);
                 Module1.Current.MapFinishedLoading = true;
             }
             catch (Exception e)

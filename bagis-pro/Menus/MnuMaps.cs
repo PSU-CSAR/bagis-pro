@@ -19,7 +19,7 @@ namespace bagis_pro.Menus
 {
     internal class MnuMaps_BtnSelectAoi : Button
     {
-        protected async override void OnClick()
+        protected override void OnClick()
         {
             try
             {
@@ -35,27 +35,8 @@ namespace bagis_pro.Menus
                 {
                     Module1.DeactivateState("Aoi_Selected_State");
                     IEnumerable<Item> selectedItems = selectAoiDialog.Items;
-                    foreach (Item selectedItem in selectedItems)    // there will only be one
-                    {
-                        FolderType fType = await GeodatabaseTools.GetAoiFolderTypeAsync(selectedItem.Path);
-                        if (fType != FolderType.AOI)
-                        {
-                            MessageBox.Show("!!The selected folder does not contain a valid AOI", "BAGIS Pro");
-                        }
-                        else
-                        {
-                            if (await GeneralTools.SetAoi(selectedItem.Path) == BA_ReturnCode.Success)
-                            {
-                                MessageBox.Show("AOI is set to " + Module1.Current.Aoi.Name + "!", "BAGIS PRO");
-                            }
-                            else
-                            {
-                                MessageBox.Show("Unable to set AOI!", "BAGIS PRO");
-                            }
-                        }
-
-                    }
-
+                    var e = selectedItems.FirstOrDefault();
+                    GeneralTools.SetAoi(e.Path);
                 }
             }
             catch (Exception e)
