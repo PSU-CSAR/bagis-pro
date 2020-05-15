@@ -39,8 +39,8 @@ namespace bagis_pro
             {
                 //string sMask = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_VECTOR;
                 string sMask = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_RASTER;
-                var environments = Geoprocessing.MakeEnvironmentArray(workspace: Module1.Current.Aoi.FilePath, snapRaster: Module1.Current.Aoi.SnapRasterPath,
-                    mask: sMask);
+                var environments = Geoprocessing.MakeEnvironmentArray(workspace: Module1.Current.Aoi.FilePath, 
+                    snapRaster: BA_Objects.Aoi.SnapRasterPath(Module1.Current.Aoi.FilePath), mask: sMask);
                 string strInZoneData = uriElevZones.LocalPath + "\\" + Constants.FILE_ELEV_ZONE;
                 string strInValueRaster = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Surfaces, true) + Constants.FILE_DEM_FILLED;
                 string strOutTable = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) + strTable;
@@ -187,7 +187,8 @@ namespace bagis_pro
             {
                 //string sMask = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_VECTOR;
                 string sMask = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_RASTER;
-                var environments = Geoprocessing.MakeEnvironmentArray(workspace: Module1.Current.Aoi.FilePath, snapRaster: Module1.Current.Aoi.SnapRasterPath,
+                var environments = Geoprocessing.MakeEnvironmentArray(workspace: Module1.Current.Aoi.FilePath, 
+                    snapRaster: BA_Objects.Aoi.SnapRasterPath(Module1.Current.Aoi.FilePath),
                     mask: sMask);
                 string strInZoneData = uriSnotelZones.LocalPath + "\\" + strZonesFile;
                 string strInValueRaster = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Surfaces, true) + Constants.FILE_DEM_FILLED;
@@ -307,7 +308,7 @@ namespace bagis_pro
             IGPResult gpResult = await QueuedTask.Run(() =>
             {
                 string sMask = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_RASTER;
-                var environments = Geoprocessing.MakeEnvironmentArray(workspace: Module1.Current.Aoi.FilePath, snapRaster: Module1.Current.Aoi.SnapRasterPath,
+                var environments = Geoprocessing.MakeEnvironmentArray(workspace: Module1.Current.Aoi.FilePath, snapRaster: BA_Objects.Aoi.SnapRasterPath(Module1.Current.Aoi.FilePath),
                     mask: sMask, cellSize: dblCellSize);
                 string strInZoneData = uriElevZones.LocalPath + "\\" + Constants.FILE_ELEV_ZONE;
                 string strOutTable = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) + strTable;
@@ -761,7 +762,7 @@ namespace bagis_pro
             IGPResult gpResult = await QueuedTask.Run(() =>
             {
                 string sMask = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_RASTER;
-                var environments = Geoprocessing.MakeEnvironmentArray(workspace: Module1.Current.Aoi.FilePath, snapRaster: Module1.Current.Aoi.SnapRasterPath,
+                var environments = Geoprocessing.MakeEnvironmentArray(workspace: Module1.Current.Aoi.FilePath, snapRaster: BA_Objects.Aoi.SnapRasterPath(Module1.Current.Aoi.FilePath),
                     mask: sMask);
                 string strInZoneData = uriSlopeZones.LocalPath + "\\" + Constants.FILE_SLOPE_ZONE;
                 string strInValueRaster = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Surfaces, true) + Constants.FILE_SLOPE;
@@ -920,7 +921,7 @@ namespace bagis_pro
             IGPResult gpResult = await QueuedTask.Run(() =>
             {
                 string sMask = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_RASTER;
-                var environments = Geoprocessing.MakeEnvironmentArray(workspace: Module1.Current.Aoi.FilePath, snapRaster: Module1.Current.Aoi.SnapRasterPath,
+                var environments = Geoprocessing.MakeEnvironmentArray(workspace: Module1.Current.Aoi.FilePath, snapRaster: BA_Objects.Aoi.SnapRasterPath(Module1.Current.Aoi.FilePath),
                     mask: sMask);
                 string strInZoneData = uriAspectZones.LocalPath + "\\" + Constants.FILE_ASPECT_ZONE;
                 string strInValueRaster = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Surfaces, true) + Constants.FILE_ASPECT;

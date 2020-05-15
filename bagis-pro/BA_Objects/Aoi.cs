@@ -96,9 +96,10 @@ namespace bagis_pro.BA_Objects
             get { return m_dblSiteBufferDistMiles; }
         }
 
-        public string SnapRasterPath
+        public static string SnapRasterPath(string aoiPath)
         {
-            get { return GeodatabaseTools.GetGeodatabasePath(m_strFilePath, GeodatabaseNames.Surfaces, true) + Constants.FILE_DEM_FILLED; }
+            return GeodatabaseTools.GetGeodatabasePath(aoiPath, GeodatabaseNames.Surfaces, true) 
+                    + Constants.FILE_DEM_FILLED; 
         }
 
         public bool HasSnotel

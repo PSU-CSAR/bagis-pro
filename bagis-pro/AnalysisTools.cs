@@ -493,7 +493,7 @@ namespace bagis_pro
             return arrReturnValues;
         }
 
-        public static async Task<BA_ReturnCode> ClipSnotelSWELayersAsync()
+        public static async Task<BA_ReturnCode> ClipSnotelSWELayersAsync(string strAoiPath)
         {
             Webservices ws = new Webservices();
             Module1.Current.ModuleLogManager.LogDebug(nameof(ClipSnotelSWELayersAsync),
@@ -507,7 +507,7 @@ namespace bagis_pro
             {
                 double dblOverallMin = 9999;
                 double dblOverallMax = -9999;
-                Uri clipFileUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, false));
+                Uri clipFileUri = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, false));
                 string[] arrReturnValues = await GeodatabaseTools.QueryAoiEnvelopeAsync(clipFileUri, Constants.FILE_AOI_PRISM_VECTOR);
                 if (arrReturnValues.Length == 2)
                 {
@@ -519,9 +519,9 @@ namespace bagis_pro
                     foreach (string strUri in Constants.URIS_SNODAS_SWE)
                     {
                         Uri imageServiceUri = new Uri(strSwePrefix + strUri + Constants.URI_IMAGE_SERVER);
-                        string strOutputPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, true) + Constants.FILES_SNODAS_SWE[i];
+                        string strOutputPath = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers, true) + Constants.FILES_SNODAS_SWE[i];
                         success = await GeoprocessingTools.ClipRasterAsync(imageServiceUri.AbsoluteUri, strEnvelopeText, strOutputPath, strTemplateDataset,
-                            "", true, Module1.Current.Aoi.FilePath, Module1.Current.Aoi.SnapRasterPath);
+                            "", true, strAoiPath, BA_Objects.Aoi.SnapRasterPath(strAoiPath));
                         Module1.Current.ModuleLogManager.LogDebug(nameof(ClipSnotelSWELayersAsync),
                             "Clipped " + Constants.FILES_SNODAS_SWE[i] + " layer");
                         if (success != BA_ReturnCode.Success)
@@ -534,7 +534,7 @@ namespace bagis_pro
                         {
                             double dblMin = -1;
                             var parameters = Geoprocessing.MakeValueArray(strOutputPath, "MINIMUM");
-                            var environments = Geoprocessing.MakeEnvironmentArray(workspace: Module1.Current.Aoi.FilePath);
+                            var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath);
                             IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("GetRasterProperties_management", parameters, environments,
                                 CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
                             bool isDouble = Double.TryParse(Convert.ToString(gpResult.ReturnValue), out dblMin);

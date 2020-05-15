@@ -23,23 +23,27 @@ namespace bagis_pro
     internal class DockpaneLayersViewModel : DockPane
     {   
       private const string _dockPaneID = "bagis_pro_DockpaneLayers";
-      private bool _clipIsRunning;
-      private RelayCommand _clipLayersCommand;
 
+        protected DockpaneLayersViewModel()
+        {
 
-      protected DockpaneLayersViewModel() {  }  
+        }
 
-      /// <summary>
-      /// Show the DockPane.
-      /// </summary>
-      internal static void Show()
+        /// <summary>
+        /// Show the DockPane.
+        /// </summary>
+        internal static void Show()
       {        
         DockPane pane = FrameworkApplication.DockPaneManager.Find(_dockPaneID);
         if (pane == null)
           return;
 
-
-        pane.Activate();
+            // Don't show if aoi condition not enabled
+            if (!FrameworkApplication.State.Contains("Aoi_Selected_State"))
+            {
+                return;
+            }
+            pane.Activate();
       }
 
       /// <summary>
@@ -65,50 +69,48 @@ namespace bagis_pro
             }
         }
 
-      public RelayCommand CmdClipLayers
+        public ICommand CmdClipLayers
         {
             get
             {
-                return _clipLayersCommand
-                  ?? (_clipLayersCommand = new RelayCommand(
-                    async () =>
-                            {
-                                if (_clipIsRunning)
-                                {
-                                    return;
-                                }
-
-                                _clipIsRunning = true;
-                                CmdClipLayers.RaiseCanExecuteChanged();
-
-                                if (String.IsNullOrEmpty(Module1.Current.Aoi.Name))
-                                {
-                                    MessageBox.Show("No AOI selected for analysis !!", "BAGIS-PRO");
-                                    return;
-                                }
-
-                                BA_ReturnCode success = BA_ReturnCode.Success;
-                                if (_reclipSwe_Checked)
-                                {
-                                    success = await AnalysisTools.ClipSnotelSWELayersAsync();
-                                }
-
-                                if (success == BA_ReturnCode.Success)
-                                {
-                                    MessageBox.Show("Analysis layers clipped!!", "BAGIS-PRO");
-                                }
-                                else
-                                {
-                                    MessageBox.Show("An error occurred while trying to clip the layers !!", "BAGIS-PRO");
-                                }
-
-                                _clipIsRunning = false;
-                                CmdClipLayers.RaiseCanExecuteChanged();
-                            },
-                            () => !_clipIsRunning));
+                return new RelayCommand(async () => {
+                    // Create from template
+                    await ClipLayersAsync(_reclipSwe_Checked);
+                });
             }
         }
 
+        private async Task ClipLayersAsync(bool clipSwe)
+        {
+            try
+            {
+                if (String.IsNullOrEmpty(Module1.Current.Aoi.Name))
+                {
+                    MessageBox.Show("No AOI selected for analysis !!", "BAGIS-PRO");
+                    return;
+                }
+
+                BA_ReturnCode success = BA_ReturnCode.Success;
+                if (clipSwe)
+                {
+                    success = await AnalysisTools.ClipSnotelSWELayersAsync(Module1.Current.Aoi.FilePath);
+                }
+
+                if (success == BA_ReturnCode.Success)
+                {
+                    MessageBox.Show("Analysis layers clipped!!", "BAGIS-PRO");
+                }
+                else
+                {
+                    MessageBox.Show("An error occurred while trying to clip the layers !!", "BAGIS-PRO");
+                }
+            }
+            catch (Exception ex)
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(ClipLayersAsync),
+                    "Exception: " + ex.Message);
+            }
+        }
 
 }
 
