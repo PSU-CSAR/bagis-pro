@@ -50,8 +50,16 @@ namespace bagis_pro
       /// Text shown near the top of the DockPane.
       /// </summary>
 	  private string _heading = "Manage Layers";
+        private bool _SWE_Checked = false;
+        private string _SWEBufferDistance = "";
+        private string _SWEBufferUnits = "";
         private bool _reclipSwe_Checked = true;
-      public string Heading
+        private bool _prism_Checked = false;
+        private string _prismBufferDistance = "";
+        private string _prismBufferUnits = "";
+        private bool _reclipPrism_Checked = false;
+
+        public string Heading
       {
         get { return _heading; }
         set
@@ -66,6 +74,69 @@ namespace bagis_pro
             set
             {
                 SetProperty(ref _reclipSwe_Checked, value, () => ReclipSwe_Checked);
+            }
+        }
+
+        public bool SWE_Checked
+        {
+            get { return _SWE_Checked; }
+            set
+            {
+                SetProperty(ref _SWE_Checked, value, () => SWE_Checked);
+            }
+        }
+
+        public string SWEBufferDistance
+        {
+            get { return _SWEBufferDistance; }
+            set
+            {
+                SetProperty(ref _SWEBufferDistance, value, () => SWEBufferDistance);
+            }
+        }
+
+        public string SWEBufferUnits
+        {
+            get { return _SWEBufferUnits; }
+            set
+            {
+                SetProperty(ref _SWEBufferUnits, value, () => SWEBufferUnits);
+            }
+        }
+
+        public bool Prism_Checked
+        {
+            get { return _prism_Checked; }
+            set
+            {
+                SetProperty(ref _prism_Checked, value, () => Prism_Checked);
+            }
+        }
+
+        public string PrismBufferDistance
+        {
+            get { return _prismBufferDistance; }
+            set
+            {
+                SetProperty(ref _prismBufferDistance, value, () => PrismBufferDistance);
+            }
+        }
+
+        public string PrismBufferUnits
+        {
+            get { return _prismBufferUnits; }
+            set
+            {
+                SetProperty(ref _prismBufferUnits, value, () => PrismBufferUnits);
+            }
+        }
+
+        public bool ReclipPrism_Checked
+        {
+            get { return _reclipPrism_Checked; }
+            set
+            {
+                SetProperty(ref _reclipPrism_Checked, value, () => ReclipPrism_Checked);
             }
         }
 

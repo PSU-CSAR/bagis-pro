@@ -17,6 +17,8 @@ namespace bagis_pro.BA_Objects
         public string m_demDisplayUnits = "Feet";
         public string m_precipFile = @"\prism.gdb\annual";
         public double m_elevInterval = 1000.0F;
+        public double m_prismBufferDistance = 1000.0F;
+        public string m_prismBufferUnits = "Meters";
 
         public Settings()
         {

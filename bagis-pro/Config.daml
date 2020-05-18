@@ -110,7 +110,7 @@
         <tool id="bagis_pro_Basin_SetDEMExtentTool" caption="SetDEMExtentTool" className="bagis_pro.Basin.SetDEMExtentTool" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/EditingSketchSquareAndFinish16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/EditingSketchSquareAndFinish32.png" condition="esri_mapping_mapPane">
           <tooltip heading="Tooltip Heading">Set extent of DEM for basin<disabledText /></tooltip>
         </tool>
-        <button id="bagis_pro_Menus_MnuMaps_BtnMapLoad" caption="Load Maps" className="bagis_pro.Menus.MnuMaps_BtnMapLoad" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/MapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/MapFrame32.png">
+        <button id="bagis_pro_Menus_MnuMaps_BtnMapLoad" caption="Load Maps" className="bagis_pro.Menus.MnuMaps_BtnMapLoad" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/MapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/MapFrame32.png" condition="BtnLoadMaps_Condition">
           <tooltip heading="Load Maps">
             Click to load maps<disabledText /></tooltip>
         </button>
@@ -198,6 +198,9 @@
       <state id="Aoi_Selected_State" />
     </insertCondition>
     <insertCondition id="BtnExcelTables_Condition" caption="Excel Tables">
+      <state id="Aoi_Selected_State" />
+    </insertCondition>
+    <insertCondition id="BtnLoadMaps_Condition" caption="Load Maps">
       <state id="Aoi_Selected_State" />
     </insertCondition>
     <insertCondition id="MapButtonPalette_BtnElevation_Condition" caption="Map Disabled">

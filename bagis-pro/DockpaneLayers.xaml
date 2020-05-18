@@ -42,25 +42,26 @@
             <Label x:Name="lblClip" Content="Clip" HorizontalAlignment="Left" VerticalAlignment="Top" RenderTransformOrigin="0.418,-0.102" AllowDrop="True"/>
         </DockPanel>
         <DockPanel Grid.Row="1" Grid.Column="0"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
-            <CheckBox x:Name="chkPrism" Content="PRISM" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,0,0,0"/>
+            <CheckBox x:Name="chkPrism" Content="PRISM" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,0,0,0" IsChecked="{Binding Prism_Checked}"/>
         </DockPanel>
         <DockPanel Grid.Row="1" Grid.Column="1"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
-            <TextBox x:Name="txtPrismBuffer" HorizontalAlignment="Right" TextWrapping="NoWrap"  Width="70" Text="1000" Height="20" TextAlignment="Right"/>
+            <TextBox x:Name="txtPrismBuffer" HorizontalAlignment="Right" TextWrapping="NoWrap"  Width="70" Text="{Binding PrismBufferDistance}" Height="20" TextAlignment="Right"/>
         </DockPanel>
         <DockPanel Grid.Row="1" Grid.Column="2"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
-            <Label x:Name="lblPrismBufferUnits" Content="Meters" HorizontalAlignment="Left"  VerticalAlignment="Center" />
+            <Label x:Name="lblPrismBufferUnits" Content="{Binding PrismBufferUnits}" HorizontalAlignment="Left"  VerticalAlignment="Center" />
         </DockPanel>
         <DockPanel Grid.Row="1" Grid.Column="3"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
-            <CheckBox x:Name="chkReclipPrism" Content="" HorizontalAlignment="Center"  Height="14" VerticalAlignment="Center"/>
+            <CheckBox x:Name="chkReclipPrism" Content="" HorizontalAlignment="Center"  Height="14" VerticalAlignment="Center"
+                      IsChecked="{Binding ReclipPrism_Checked}"/>
         </DockPanel>
         <DockPanel Grid.Row="2" Grid.Column="0"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
-            <CheckBox x:Name="chkSWE" Content="SWE" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,0,0,0"/>
+            <CheckBox x:Name="chkSWE" Content="SWE" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,0,0,0" IsChecked="{Binding SWE_Checked}"/>
         </DockPanel>
         <DockPanel Grid.Row="2" Grid.Column="1"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
-            <TextBox x:Name="txtSweBuffer" HorizontalAlignment="Right" TextWrapping="NoWrap"  Width="70" Text="1000" Height="20" TextAlignment="Right" Margin="5,0,0,0"/>
+            <TextBox x:Name="txtSweBuffer" HorizontalAlignment="Right" TextWrapping="NoWrap"  Width="70" Text="{Binding SWEBufferDistance}" Height="20" TextAlignment="Right" Margin="5,0,0,0"/>
         </DockPanel>
         <DockPanel Grid.Row="2" Grid.Column="2"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
-            <Label x:Name="lblSweBufferUnits" Content="Meters" HorizontalAlignment="Left"  VerticalAlignment="Center" />
+            <Label x:Name="lblSweBufferUnits" Content="{Binding SWEBufferUnits}" HorizontalAlignment="Left"  VerticalAlignment="Center" />
         </DockPanel>
         <DockPanel Grid.Row="2" Grid.Column="3"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
             <CheckBox x:Name="chkReclipSwe" Content="" HorizontalAlignment="Center"  Height="14" VerticalAlignment="Center"

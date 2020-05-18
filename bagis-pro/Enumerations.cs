@@ -46,22 +46,22 @@ namespace bagis_pro
 
     public enum PrismFile
     {
-        jan,
-        feb,
-        mar,
-        apr,
-        may,
-        jun,
-        jul,
-        aug,
-        sep,
-        oct,
-        nov,
-        dec,
-        q1,
-        q2,
-        q3,
-        q4,
-        annual
+        Jan,
+        Feb,
+        Mar,
+        Apr,
+        May,
+        Jun,
+        Jul,
+        Aug,
+        Sep,
+        Oct,
+        Nov,
+        Dec,
+        Q1,
+        Q2,
+        Q3,
+        Q4,
+        Annual
     }
 }

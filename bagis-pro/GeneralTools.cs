@@ -18,6 +18,7 @@ using Microsoft.Office.Interop.Excel;
 using ArcGIS.Desktop.Core;
 using System.Reflection;
 using ArcGIS.Core.Data.Raster;
+using ArcGIS.Desktop.Framework;
 
 namespace bagis_pro
 {
@@ -710,6 +711,8 @@ namespace bagis_pro
         {
             // Initialize AOI object
             BA_Objects.Aoi oAoi = new BA_Objects.Aoi(Path.GetFileName(strAoiPath), strAoiPath);
+            // Set reference to dockpane to update layers
+            var layersPane = (DockpaneLayersViewModel) FrameworkApplication.DockPaneManager.Find("bagis_pro_DockpaneLayers");
             try
             {
                 string strSurfacesGdb = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Surfaces, false);
@@ -748,22 +751,10 @@ namespace bagis_pro
                         string strXml = string.Empty;
                         strXml = fc.GetXml();
                         //check metadata was returned
-                        if (!string.IsNullOrEmpty(strXml))
+                        string strBagisTag = GetBagisTag(strXml);
+                        if (! string.IsNullOrEmpty(strBagisTag))
                         {
-                            //use the metadata; Create a .NET XmlDocument and load the schema
-                            XmlDocument myXml = new XmlDocument();
-                            myXml.LoadXml(strXml);
-                            //Select the nodes from the fully qualified XPath
-                            XmlNodeList propertyNodes = myXml.SelectNodes(Constants.META_TAG_XPATH);
-                            //Place each innerText into a list to return
-                            foreach (XmlNode pNode in propertyNodes)
-                            {
-                                if (pNode.InnerText.IndexOf(Constants.META_TAG_PREFIX) > -1)
-                                {
-                                    string strBagisTag = pNode.InnerText;
-                                    oAoi.ElevationUnits = GeneralTools.GetValueForKey(strBagisTag, Constants.META_TAG_ZUNIT_VALUE, ';');
-                                }
-                            }
+                            oAoi.ElevationUnits = GetValueForKey(strBagisTag, Constants.META_TAG_ZUNIT_VALUE, ';');
                         }
                     }
 
@@ -780,6 +771,133 @@ namespace bagis_pro
                     string logFolderName = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_LOGS;
                     Module1.Current.ModuleLogManager.UpdateLogFileLocation(logFolderName);
 
+                    // Update PRISM data status
+                    gdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Prism, false));
+                    bool bExists = false;
+                    if (gdbUri.IsFile)
+                    {
+                        string strFolderPath = Path.GetDirectoryName(gdbUri.LocalPath);
+                        if (Directory.Exists(strFolderPath))
+                        {
+                            using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(gdbUri)))
+                                {
+                                    IReadOnlyList<RasterDatasetDefinition> definitions = geodatabase.GetDefinitions<RasterDatasetDefinition>();
+                                    foreach (RasterDatasetDefinition def in definitions)
+                                    {
+                                        if (def.GetName().Equals(PrismFile.Annual.ToString()))
+                                        {
+                                            bExists = true;
+                                            break;
+                                        }
+                                    }
+                                }
+                        }
+                    }
+                    layersPane.Prism_Checked = bExists;
+                    fcPath = gdbUri.LocalPath + "\\" + PrismFile.Annual.ToString();
+                    string bufferDistance = Convert.ToString(Module1.Current.Settings.m_prismBufferDistance);
+                    string bufferUnits = Module1.Current.Settings.m_prismBufferUnits;
+                    if (bExists)
+                    {
+                        // Check for default units
+                        fc = ItemFactory.Instance.Create(fcPath, ItemFactory.ItemType.PathItem);
+                        if (fc != null)
+                        {
+                            string strXml = string.Empty;
+                            strXml = fc.GetXml();
+                            //check metadata was returned
+                            string strBagisTag = GetBagisTag(strXml);
+                            if (!string.IsNullOrEmpty(strBagisTag))
+                            {
+                                string tempBufferDistance = GetValueForKey(strBagisTag, Constants.META_TAG_BUFFER_DISTANCE, ';');
+                                string tempBufferUnits = GetValueForKey(strBagisTag, Constants.META_TAG_XUNIT_VALUE, ';');
+                                if (!String.IsNullOrEmpty(tempBufferDistance))
+                                {
+                                    bufferDistance = tempBufferDistance;
+                                }
+                                else
+                                {
+                                    Module1.Current.ModuleLogManager.LogDebug(nameof(SetAoi),
+                                        "Unable to locate PRISM buffer distance on annual layer. Using default");
+                                }
+                                if (!String.IsNullOrEmpty(tempBufferUnits))
+                                {
+                                    bufferUnits = tempBufferUnits;
+                                }
+                                else
+                                {
+                                    Module1.Current.ModuleLogManager.LogDebug(nameof(SetAoi),
+                                        "Unable to locate PRISM units on annual layer. Using default");
+                                }
+                            }
+                        }
+                        layersPane.PrismBufferDistance = bufferDistance;
+                        layersPane.PrismBufferUnits = bufferUnits;
+                    }
+
+                    // Update SWE data status
+                    gdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers, false));
+                    bExists = false;
+                    if (gdbUri.IsFile)
+                    {
+                        string strFolderPath = Path.GetDirectoryName(gdbUri.LocalPath);
+                        if (Directory.Exists(strFolderPath))
+                        {
+                            using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(gdbUri)))
+                            {
+                                IReadOnlyList<RasterDatasetDefinition> definitions = geodatabase.GetDefinitions<RasterDatasetDefinition>();
+                                foreach (RasterDatasetDefinition def in definitions)
+                                {
+                                    if (def.GetName().Equals(Constants.FILES_SNODAS_SWE[3]))
+                                    {
+                                        bExists = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    layersPane.SWE_Checked = bExists;
+                    fcPath = gdbUri.LocalPath + "\\" + Constants.FILES_SNODAS_SWE[3];
+                    bufferDistance = Convert.ToString(Module1.Current.Settings.m_prismBufferDistance);
+                    bufferUnits = Module1.Current.Settings.m_prismBufferUnits;
+                    if (bExists)
+                    {
+                        // Check for default units
+                        fc = ItemFactory.Instance.Create(fcPath, ItemFactory.ItemType.PathItem);
+                        if (fc != null)
+                        {
+                            string strXml = string.Empty;
+                            strXml = fc.GetXml();
+                            //check metadata was returned
+                            string strBagisTag = GetBagisTag(strXml);
+                            if (!string.IsNullOrEmpty(strBagisTag))
+                            {
+                                string tempBufferDistance = GetValueForKey(strBagisTag, Constants.META_TAG_BUFFER_DISTANCE, ';');
+                                string tempBufferUnits = GetValueForKey(strBagisTag, Constants.META_TAG_XUNIT_VALUE, ';');
+                                if (!String.IsNullOrEmpty(tempBufferDistance))
+                                {
+                                    bufferDistance = tempBufferDistance;
+                                }
+                                else
+                                {
+                                    Module1.Current.ModuleLogManager.LogDebug(nameof(SetAoi),
+                                        "Unable to locate SWE buffer distance on April layer. Using PRISM default");
+                                }
+                                if (!String.IsNullOrEmpty(tempBufferUnits))
+                                {
+                                    bufferUnits = tempBufferUnits;
+                                }
+                                else
+                                {
+                                    Module1.Current.ModuleLogManager.LogDebug(nameof(SetAoi),
+                                        "Unable to locate SWE units on April layer. Using PRISM default");
+                                }
+                            }
+                        }
+                        layersPane.SWEBufferDistance = bufferDistance;
+                        layersPane.SWEBufferUnits = bufferUnits;
+                    }
                     // Store current AOI in Module1
                     Module1.Current.Aoi = oAoi;
                     Module1.Current.CboCurrentAoi.SetAoiName(oAoi.Name);
@@ -788,8 +906,6 @@ namespace bagis_pro
 
 
                     MessageBox.Show("AOI is set to " + Module1.Current.Aoi.Name + "!", "BAGIS PRO");
- 
-
                 });
                
             }
@@ -798,6 +914,29 @@ namespace bagis_pro
                 Module1.Current.ModuleLogManager.LogError(nameof(SetAoi),
                     "Exception: " + e.Message);
             }
+        }
+
+        private static string GetBagisTag(string strXml)
+        {
+            string strRetVal = "";
+            //check metadata was returned
+            if (!string.IsNullOrEmpty(strXml))
+            {
+                //use the metadata; Create a .NET XmlDocument and load the schema
+                XmlDocument myXml = new XmlDocument();
+                myXml.LoadXml(strXml);
+                //Select the nodes from the fully qualified XPath
+                XmlNodeList propertyNodes = myXml.SelectNodes(Constants.META_TAG_XPATH);
+                //Place each innerText into a list to return
+                foreach (XmlNode pNode in propertyNodes)
+                {
+                    if (pNode.InnerText.IndexOf(Constants.META_TAG_PREFIX) > -1)
+                    {
+                        strRetVal = pNode.InnerText;
+                    }
+                }
+            }
+            return strRetVal;
         }
 
 
