@@ -53,11 +53,20 @@ namespace bagis_pro
         private bool _SWE_Checked = false;
         private string _SWEBufferDistance = "";
         private string _SWEBufferUnits = "";
-        private bool _reclipSwe_Checked = true;
+        private bool _reclipSwe_Checked = false;
         private bool _prism_Checked = false;
         private string _prismBufferDistance = "";
         private string _prismBufferUnits = "";
         private bool _reclipPrism_Checked = false;
+        private bool _SNOTEL_Checked = false;
+        private string _snotelBufferDistance = "";
+        private string _snotelBufferUnits = "";
+        private bool _reclipSnotel_Checked = false;
+        private bool _snowCos_Checked = false;
+        private string _snowCosBufferDistance = "";
+        private string _snowCosBufferUnits = "";
+        private bool _reclipSnowCos_Checked = false;
+
 
         public string Heading
       {
@@ -138,6 +147,98 @@ namespace bagis_pro
             {
                 SetProperty(ref _reclipPrism_Checked, value, () => ReclipPrism_Checked);
             }
+        }
+
+        public bool SNOTEL_Checked
+        {
+            get { return _SNOTEL_Checked; }
+            set
+            {
+                SetProperty(ref _SNOTEL_Checked, value, () => SNOTEL_Checked);
+            }
+        }
+
+        public string SnotelBufferDistance
+        {
+            get { return _snotelBufferDistance; }
+            set
+            {
+                SetProperty(ref _snotelBufferDistance, value, () => SnotelBufferDistance);
+            }
+        }
+
+        public string SnotelBufferUnits
+        {
+            get { return _snotelBufferUnits; }
+            set
+            {
+                SetProperty(ref _snotelBufferUnits, value, () => SnotelBufferUnits);
+            }
+        }
+
+        public bool ReclipSNOTEL_Checked
+        {
+            get { return _reclipSnotel_Checked; }
+            set
+            {
+                SetProperty(ref _reclipSnotel_Checked, value, () => ReclipSNOTEL_Checked);
+            }
+        }
+
+        public bool SnowCos_Checked
+        {
+            get { return _snowCos_Checked; }
+            set
+            {
+                SetProperty(ref _snowCos_Checked, value, () => SnowCos_Checked);
+            }
+        }
+
+        public string SnowCosBufferDistance
+        {
+            get { return _snowCosBufferDistance; }
+            set
+            {
+                SetProperty(ref _snowCosBufferDistance, value, () => SnowCosBufferDistance);
+            }
+        }
+
+        public string SnowCosBufferUnits
+        {
+            get { return _snowCosBufferUnits; }
+            set
+            {
+                SetProperty(ref _snowCosBufferUnits, value, () => SnowCosBufferUnits);
+            }
+        }
+
+        public bool ReclipSnowCos_Checked
+        {
+            get { return _reclipSnowCos_Checked; }
+            set
+            {
+                SetProperty(ref _reclipSnowCos_Checked, value, () => ReclipSnowCos_Checked);
+            }
+        }
+
+        public void ResetView()
+        {
+            Prism_Checked = false;
+            PrismBufferDistance = Convert.ToString(Module1.Current.Settings.m_prismBufferDistance);
+            PrismBufferUnits = Convert.ToString(Module1.Current.Settings.m_prismBufferUnits);
+            ReclipPrism_Checked = false;
+            SWE_Checked = false;
+            SWEBufferDistance = Convert.ToString(Module1.Current.Settings.m_prismBufferDistance);
+            SWEBufferUnits = Convert.ToString(Module1.Current.Settings.m_prismBufferUnits);
+            ReclipSwe_Checked = false;
+            SNOTEL_Checked = false;
+            SnotelBufferDistance = Convert.ToString(Module1.Current.Settings.m_snotelBufferDistance);
+            SnotelBufferUnits = Convert.ToString(Module1.Current.Settings.m_snotelBufferUnits);
+            ReclipSNOTEL_Checked = false;
+            SnowCos_Checked = false;
+            SnowCosBufferDistance = Convert.ToString(Module1.Current.Settings.m_snotelBufferDistance);
+            SnowCosBufferUnits = Convert.ToString(Module1.Current.Settings.m_snotelBufferUnits);
+            ReclipSnowCos_Checked = false;
         }
 
         public ICommand CmdClipLayers

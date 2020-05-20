@@ -77,8 +77,9 @@ namespace bagis_pro
         public static readonly string[] URIS_SNODAS_SWE = new string[] { "daily_swe_normal_jan_01", "daily_swe_normal_feb_01", "daily_swe_normal_mar_01",
                                                                          "daily_swe_normal_apr_01", "daily_swe_normal_may_01", "daily_swe_normal_jun_01",
                                                                          "daily_swe_normal_dec_01"};
+        public const string FILE_SNODAS_SWE_APRIL = "swe_apr_01";
         public static readonly string[] FILES_SNODAS_SWE = new string[] { "swe_jan_01", "swe_feb_01", "swe_mar_01",
-                                                                          "swe_apr_01", "swe_may_01", "swe_jun_01",
+                                                                          FILE_SNODAS_SWE_APRIL, "swe_may_01", "swe_jun_01",
                                                                           "swe_dec_01"};
         public static readonly string[] LAYER_NAMES_SNODAS_SWE = new string[] { "January 1 SWE", "February 1 SWE", "March 1 SWE", "April 1 SWE",
                                                                                 "May 1 SWE", "June 1 SWE", "December 1 SWE" };

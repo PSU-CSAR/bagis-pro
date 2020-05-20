@@ -19,6 +19,10 @@ namespace bagis_pro.BA_Objects
         public double m_elevInterval = 1000.0F;
         public double m_prismBufferDistance = 1000.0F;
         public string m_prismBufferUnits = "Meters";
+        public double m_snotelBufferDistance = 100.0F;
+        public string m_snotelBufferUnits = "Meters";
+
+
 
         public Settings()
         {

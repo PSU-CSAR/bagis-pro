@@ -772,6 +772,7 @@ namespace bagis_pro
                     Module1.Current.ModuleLogManager.UpdateLogFileLocation(logFolderName);
 
                     // Update PRISM data status
+                    layersPane.ResetView();
                     gdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Prism, false));
                     bool bExists = false;
                     if (gdbUri.IsFile)
@@ -795,8 +796,6 @@ namespace bagis_pro
                     }
                     layersPane.Prism_Checked = bExists;
                     fcPath = gdbUri.LocalPath + "\\" + PrismFile.Annual.ToString();
-                    string bufferDistance = Convert.ToString(Module1.Current.Settings.m_prismBufferDistance);
-                    string bufferUnits = Module1.Current.Settings.m_prismBufferUnits;
                     if (bExists)
                     {
                         // Check for default units
@@ -813,7 +812,7 @@ namespace bagis_pro
                                 string tempBufferUnits = GetValueForKey(strBagisTag, Constants.META_TAG_XUNIT_VALUE, ';');
                                 if (!String.IsNullOrEmpty(tempBufferDistance))
                                 {
-                                    bufferDistance = tempBufferDistance;
+                                    layersPane.PrismBufferDistance = tempBufferDistance;
                                 }
                                 else
                                 {
@@ -822,7 +821,7 @@ namespace bagis_pro
                                 }
                                 if (!String.IsNullOrEmpty(tempBufferUnits))
                                 {
-                                    bufferUnits = tempBufferUnits;
+                                    layersPane.PrismBufferUnits = tempBufferUnits;
                                 }
                                 else
                                 {
@@ -830,12 +829,13 @@ namespace bagis_pro
                                         "Unable to locate PRISM units on annual layer. Using default");
                                 }
                             }
-                        }
-                        layersPane.PrismBufferDistance = bufferDistance;
-                        layersPane.PrismBufferUnits = bufferUnits;
+                        }                       
                     }
 
-                    // Update SWE data status
+                    // Update data status for files in layers.gdb
+                    string[] arrCheckLayers = new string[] { Constants.FILE_SNODAS_SWE_APRIL, Constants.FILE_SNOTEL,
+                                                             Constants.FILE_SNOW_COURSE};
+                    bool[] arrLayerExists = new bool[] { false, false, false};
                     gdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers, false));
                     bExists = false;
                     if (gdbUri.IsFile)
@@ -846,58 +846,87 @@ namespace bagis_pro
                             using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(gdbUri)))
                             {
                                 IReadOnlyList<RasterDatasetDefinition> definitions = geodatabase.GetDefinitions<RasterDatasetDefinition>();
-                                foreach (RasterDatasetDefinition def in definitions)
-                                {
-                                    if (def.GetName().Equals(Constants.FILES_SNODAS_SWE[3]))
+                                IReadOnlyList<FeatureClassDefinition> featureDefinitions = geodatabase.GetDefinitions<FeatureClassDefinition>();
+                                int j = 0;
+                                foreach (var layerName in arrCheckLayers)
+                                {                                   
+                                    foreach (RasterDatasetDefinition def in definitions)
                                     {
-                                        bExists = true;
-                                        break;
+                                        if (def.GetName().Equals(layerName))
+                                        {
+                                            arrLayerExists[j] = true;
+                                            break;
+                                        }
+                                    }
+                                    foreach (FeatureClassDefinition def in featureDefinitions)
+                                    {
+                                        if (def.GetName().Equals(layerName))
+                                        {
+                                            arrLayerExists[j] = true;
+                                            break;
+                                        }
+                                    }
+                                    j++;
+                                }
+                            }
+
+                            int i = 0;
+                            foreach (var layerName in arrCheckLayers)
+                            {
+                                string bufferDistance = "";
+                                string bufferUnits = "";
+                                if (arrLayerExists[i] == true)
+                                {
+                                    // Check for default units
+                                    fcPath = gdbUri.LocalPath + "\\" + layerName;
+                                    fc = ItemFactory.Instance.Create(fcPath, ItemFactory.ItemType.PathItem);
+                                    if (fc != null)
+                                    {
+                                        string strXml = string.Empty;
+                                        strXml = fc.GetXml();
+                                        //check metadata was returned
+                                        string strBagisTag = GetBagisTag(strXml);
+                                        if (!string.IsNullOrEmpty(strBagisTag))
+                                        {
+                                            bufferDistance = GetValueForKey(strBagisTag, Constants.META_TAG_BUFFER_DISTANCE, ';');
+                                            bufferUnits = GetValueForKey(strBagisTag, Constants.META_TAG_XUNIT_VALUE, ';');
+                                        }
+                                    }
+                                    switch (layerName)
+                                    {
+                                        case Constants.FILE_SNODAS_SWE_APRIL:
+                                            layersPane.SWE_Checked = true;
+                                            if (!string.IsNullOrEmpty(bufferDistance))
+                                                layersPane.SWEBufferDistance = bufferDistance;
+                                            if (!string.IsNullOrEmpty(bufferUnits))
+                                                layersPane.SWEBufferUnits = bufferUnits;
+                                            break;
+                                        case Constants.FILE_SNOTEL:
+                                            layersPane.SNOTEL_Checked = true;
+                                            if (!string.IsNullOrEmpty(bufferDistance))
+                                                layersPane.SnotelBufferDistance = bufferDistance;
+                                            if (!string.IsNullOrEmpty(bufferUnits))
+                                                layersPane.SnotelBufferUnits = bufferUnits;
+                                            break;
+                                        case Constants.FILE_SNOW_COURSE:
+                                            layersPane.SnowCos_Checked = true;
+                                            if (!string.IsNullOrEmpty(bufferDistance))
+                                                layersPane.SnowCosBufferDistance = bufferDistance;
+                                            if (!string.IsNullOrEmpty(bufferUnits))
+                                                layersPane.SnowCosBufferUnits = bufferUnits;
+                                            break;
+                                        default:
+                                            Module1.Current.ModuleLogManager.LogError(nameof(SetAoi),
+                                                "Unidentified layer name");
+                                            break;
                                     }
                                 }
+
+                                i++;
                             }
                         }
                     }
-                    layersPane.SWE_Checked = bExists;
-                    fcPath = gdbUri.LocalPath + "\\" + Constants.FILES_SNODAS_SWE[3];
-                    bufferDistance = Convert.ToString(Module1.Current.Settings.m_prismBufferDistance);
-                    bufferUnits = Module1.Current.Settings.m_prismBufferUnits;
-                    if (bExists)
-                    {
-                        // Check for default units
-                        fc = ItemFactory.Instance.Create(fcPath, ItemFactory.ItemType.PathItem);
-                        if (fc != null)
-                        {
-                            string strXml = string.Empty;
-                            strXml = fc.GetXml();
-                            //check metadata was returned
-                            string strBagisTag = GetBagisTag(strXml);
-                            if (!string.IsNullOrEmpty(strBagisTag))
-                            {
-                                string tempBufferDistance = GetValueForKey(strBagisTag, Constants.META_TAG_BUFFER_DISTANCE, ';');
-                                string tempBufferUnits = GetValueForKey(strBagisTag, Constants.META_TAG_XUNIT_VALUE, ';');
-                                if (!String.IsNullOrEmpty(tempBufferDistance))
-                                {
-                                    bufferDistance = tempBufferDistance;
-                                }
-                                else
-                                {
-                                    Module1.Current.ModuleLogManager.LogDebug(nameof(SetAoi),
-                                        "Unable to locate SWE buffer distance on April layer. Using PRISM default");
-                                }
-                                if (!String.IsNullOrEmpty(tempBufferUnits))
-                                {
-                                    bufferUnits = tempBufferUnits;
-                                }
-                                else
-                                {
-                                    Module1.Current.ModuleLogManager.LogDebug(nameof(SetAoi),
-                                        "Unable to locate SWE units on April layer. Using PRISM default");
-                                }
-                            }
-                        }
-                        layersPane.SWEBufferDistance = bufferDistance;
-                        layersPane.SWEBufferUnits = bufferUnits;
-                    }
+
                     // Store current AOI in Module1
                     Module1.Current.Aoi = oAoi;
                     Module1.Current.CboCurrentAoi.SetAoiName(oAoi.Name);
