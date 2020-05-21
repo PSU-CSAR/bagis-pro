@@ -594,6 +594,174 @@ namespace bagis_pro
             return success;
         }
 
+
+        //@ToDo: Separate method for calculating and storing SWE overall min/max
+        public static async Task <BA_ReturnCode> ClipLayersAsync(string strAoiPath, string strDataType, 
+            string strBufferDistance, string strBufferUnits)
+        {
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
+
+            Webservices ws = new Webservices();
+            Module1.Current.ModuleLogManager.LogDebug(nameof(ClipLayersAsync),
+                "Contacting webservices server to retrieve layer metadata");
+            IDictionary<string, dynamic> dictDataSources =
+                await ws.QueryDataSourcesAsync(Module1.Current.Settings.m_eBagisServer);
+            string strWsPrefix = dictDataSources[strDataType].uri;
+
+            string strClipGdb = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Prism, false);
+            string strClipFile = Constants.FILE_AOI_PRISM_VECTOR;
+            
+            if (!String.IsNullOrEmpty(strWsPrefix))
+            {
+                await QueuedTask.Run(() =>
+                {
+                    // Check for PRISM units
+                    string strPrismPath = strClipGdb + "\\" + PrismFile.Annual.ToString();
+                    var fc = ArcGIS.Desktop.Core.ItemFactory.Instance.Create(strPrismPath,
+                        ArcGIS.Desktop.Core.ItemFactory.ItemType.PathItem);
+                    string pBufferDistance = "";
+                    string pBufferUnits = "";
+                    if (fc != null)
+                    {
+                        string strXml = string.Empty;
+                        strXml = fc.GetXml();
+                        //check metadata was returned
+                        string strBagisTag = GeneralTools.GetBagisTag(strXml);
+                        if (!string.IsNullOrEmpty(strBagisTag))
+                        {
+                            pBufferDistance = GeneralTools.GetValueForKey(strBagisTag, Constants.META_TAG_BUFFER_DISTANCE, ';');
+                            pBufferUnits = GeneralTools.GetValueForKey(strBagisTag, Constants.META_TAG_XUNIT_VALUE, ';');
+                        }
+                    }
+
+                    // if the buffer is different from PRISM, we need to create a new buffer file
+                    string strTempBuffer = "tmpBuffer";
+                    string strTempBuffer2 = "";
+                    if (!strBufferDistance.Trim().Equals(pBufferDistance.Trim()) || 
+                        !strBufferUnits.Trim().Equals(pBufferUnits.Trim()))
+                    {
+                        string strAoiBoundaryPath = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, true) +
+                            Constants.FILE_AOI_VECTOR;
+                        string strOutputFeatures = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, true) +
+                            strTempBuffer;
+                        string strDistance = strBufferDistance + " " + strBufferUnits;
+                        var parameters = Geoprocessing.MakeValueArray(strAoiBoundaryPath, strOutputFeatures, strDistance, "",
+                                                                          "", "ALL");
+                        var gpResult = Geoprocessing.ExecuteToolAsync("Buffer_analysis", parameters, null,
+                                             CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                        if (gpResult.Result.IsFailed)
+                        {
+                            Module1.Current.ModuleLogManager.LogError(nameof(ClipLayersAsync),
+                               "Unable to buffer aoi_v. Error code: " + gpResult.Result.ErrorCode );
+                            MessageBox.Show("Unable to buffer aoi_v. Clipping cancelled!!", "BAGIS-PRO");
+                            return;
+                        }
+
+                        strClipFile = strTempBuffer;
+                        strClipGdb = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, false);
+                    }
+
+                    // Check to make sure the buffer file only has one feature; No dangles
+                    int featureCount = 0;
+                    using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(strClipGdb))))
+                    using (Table table = geodatabase.OpenDataset<Table>(strClipFile))
+                    {
+                        featureCount = table.GetCount();
+                    }
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(ClipLayersAsync),
+                        "Number of features in clip file: " + featureCount);
+
+                    // If > 1 feature, buffer the clip file again
+                    if (featureCount > 1)
+                    {
+                        strTempBuffer2 = "tempBuffer2";
+                        var parameters = Geoprocessing.MakeValueArray(strClipGdb + "\\" + strClipFile,
+                            strClipGdb + "\\" + strTempBuffer2, "0.5 Meters", "", "", "ALL");
+                        var gpResult = Geoprocessing.ExecuteToolAsync("Buffer_analysis", parameters, null,
+                                             CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                        if (gpResult.Result.IsFailed)
+                        {
+                            Module1.Current.ModuleLogManager.LogError(nameof(ClipLayersAsync),
+                               "Unable to buffer " + strClipFile + ". Error code: " + gpResult.Result.ErrorCode);
+                            MessageBox.Show("Unable to buffer aoi_v. Clipping cancelled!!", "BAGIS-PRO");
+                            return;
+                        }
+                        strClipFile = strTempBuffer2;
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(ClipLayersAsync),
+                            "Run buffer tool again because clip file has > 2 features");
+                    }
+
+                    // Query the extent for the clip
+                    string strClipEnvelope = "";
+                    using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(strClipGdb))))
+                    using (Table table = geodatabase.OpenDataset<Table>(strClipFile))
+                    {
+                        QueryFilter queryFilter = new QueryFilter();
+                        using (RowCursor cursor = table.Search(queryFilter, false))
+                        {
+                            while (cursor.MoveNext())
+                            {
+                                using (Feature feature = (Feature) cursor.Current)
+                                {
+                                    Geometry aoiGeo = feature.GetShape();
+                                    strClipEnvelope = aoiGeo.Extent.XMin + " " + aoiGeo.Extent.YMin + " " + aoiGeo.Extent.XMax + " " + aoiGeo.Extent.YMax;
+                                }
+                            }
+                        }
+                    }
+                    if (String.IsNullOrEmpty(strClipEnvelope))
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(ClipLayersAsync),
+                            "Unable obtain clipping envelope from " + strClipGdb + "\\" + strClipFile);
+                        MessageBox.Show("Unable obtain clipping envelope from " + strClipGdb + "\\" + strClipFile + " Clipping cancelled!!", "BAGIS-PRO");
+                        return;
+                    }
+
+                    // Prepare the data to be clipped depending on data type
+                    string[] arrClipUris = Constants.URIS_SNODAS_SWE;
+                    string[] arrClippedFileNames = Constants.FILES_SNODAS_SWE;
+                    string strOutputGdb = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers, true);
+
+
+                    int i = 0;
+                    foreach (string strUri in arrClipUris)
+                    {
+                        Uri imageServiceUri = new Uri(strWsPrefix + strUri + Constants.URI_IMAGE_SERVER);
+                        string strOutputRaster = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers, true) + arrClippedFileNames[i];
+                        string strTemplateDataset = strClipGdb + "\\" + strClipFile;
+
+                        //success = await GeoprocessingTools.ClipRasterAsync(imageServiceUri.AbsoluteUri, strEnvelopeText, strOutputPath, strTemplateDataset,
+                        //    "", true, strAoiPath, BA_Objects.Aoi.SnapRasterPath(strAoiPath));
+
+                        var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath, snapRaster: BA_Objects.Aoi.SnapRasterPath(strAoiPath));
+                        var parameters = Geoprocessing.MakeValueArray(imageServiceUri.AbsoluteUri, strClipEnvelope, strOutputRaster, strTemplateDataset,
+                                            "", "ClippingGeometry");
+                        var gpResult = Geoprocessing.ExecuteToolAsync("Clip_management", parameters, null,
+                                        CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                        if (gpResult.Result.IsFailed)
+                        {
+                            Module1.Current.ModuleLogManager.LogError(nameof(ClipLayersAsync),
+                               "Unable to clip " + strClipFile + ". Error code: " + gpResult.Result.ErrorCode);
+                            MessageBox.Show("Unable to clip. Clipping cancelled!!", "BAGIS-PRO");
+                            return;
+                        }
+                        else
+                        {
+                            Module1.Current.ModuleLogManager.LogDebug(nameof(ClipLayersAsync),
+                                "Clipped " + arrClippedFileNames[i] + " layer");
+
+                        }
+                        i++;
+                    }
+
+
+
+                });
+            }
+
+            return success;
+        }
     }
+
 
 }

@@ -945,7 +945,7 @@ namespace bagis_pro
             }
         }
 
-        private static string GetBagisTag(string strXml)
+        public static string GetBagisTag(string strXml)
         {
             string strRetVal = "";
             //check metadata was returned

@@ -265,7 +265,9 @@ namespace bagis_pro
                 BA_ReturnCode success = BA_ReturnCode.Success;
                 if (clipSwe)
                 {
-                    success = await AnalysisTools.ClipSnotelSWELayersAsync(Module1.Current.Aoi.FilePath);
+                    //success = await AnalysisTools.ClipSnotelSWELayersAsync(Module1.Current.Aoi.FilePath);
+                    success = await AnalysisTools.ClipLayersAsync(Module1.Current.Aoi.FilePath, Constants.DATA_TYPE_SWE,
+                        SWEBufferDistance, SWEBufferUnits);
                 }
 
                 if (success == BA_ReturnCode.Success)
