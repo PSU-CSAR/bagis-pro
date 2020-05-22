@@ -590,7 +590,7 @@ namespace bagis_pro
             return strValue;
         }
 
-        public static async Task<BA_ReturnCode> UpdateMetadata(string layerPath, string propertyPath,
+        public static async Task<BA_ReturnCode> UpdateMetadataAsync(string layerPath, string propertyPath,
                                                                string innerText, int matchLength)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
@@ -654,6 +654,60 @@ namespace bagis_pro
             return success;
         }
 
+        public static XmlDocument UpdateMetadata(string strXml, string propertyPath,
+                                                   string innerText, int matchLength)
+        {
+            XmlDocument myXml = new XmlDocument();
+            if (!string.IsNullOrEmpty(strXml))
+                {
+                    //use the metadata; Create a .NET XmlDocument and load the schema
+                    myXml.LoadXml(strXml);
+                    //Check to see if the parent node exists
+                    char sep = '/';
+                    int lastSep = propertyPath.LastIndexOf(sep);
+                    string parentNodePath = propertyPath.Substring(0, lastSep);
+                    XmlNodeList parentNodeList = myXml.SelectNodes(parentNodePath);
+                    if (parentNodeList.Count < 1)
+                    {
+                        AddMetadataNode(ref myXml, parentNodePath, sep);
+                        parentNodeList = myXml.SelectNodes(parentNodePath);
+                    }
+                    // Assume we want the first one
+                    XmlNode parentNode = parentNodeList[0];
+                    string childNodeName = propertyPath.Substring(lastSep + 1);
+                    XmlNodeList propertyNodeList = parentNode.ChildNodes;
+                    string matchPrefix = innerText.Substring(0, matchLength);
+                    bool foundIt = false;
+                    foreach (XmlNode pNode in propertyNodeList)
+                    {
+                        //Is the node the same node name we need to update?
+                        if (pNode.Name == childNodeName)
+                        {
+                            //Is the first part of the innerText the same as what we want to update? 
+                            if (pNode.InnerText.Length > matchLength &&
+                                pNode.InnerText.Substring(0, matchLength) == matchPrefix)
+                            {
+                                //If so, update the innerText
+                                pNode.InnerText = innerText;
+                                foundIt = true;
+                            }
+                        }
+                    }
+                    //If it didn't exist, we need to create a new node
+                    if (foundIt == false)
+                    {
+                        // Create the child node
+                        XmlNode childNode = myXml.CreateNode(XmlNodeType.Element, childNodeName, null);
+                        childNode.InnerText = innerText;
+                        // Attach the child to the parent
+                        parentNode.AppendChild(childNode);
+                    }
+
+                    //await QueuedTask.Run(() => fc.SetXml(myXml.OuterXml));
+            }
+            return myXml;
+        }
+
         //This is a simplified updating of the BAGIS tag for a new layer
         //Because we create the new layer, we assume there is no existing metadata
         public static async Task<BA_ReturnCode> CreateMetadataUnits(string layerPath, string strCategory,
@@ -666,7 +720,7 @@ namespace bagis_pro
             sb.Append(Constants.META_TAG_ZUNIT_CATEGORY + strCategory + "; ");
             sb.Append(Constants.META_TAG_ZUNIT_VALUE + strUnits + "; ");
             sb.Append(Constants.META_TAG_SUFFIX);
-            success = await GeneralTools.UpdateMetadata(layerPath, Constants.META_TAG_XPATH, sb.ToString(),
+            success = await GeneralTools.UpdateMetadataAsync(layerPath, Constants.META_TAG_XPATH, sb.ToString(),
                 Constants.META_TAG_PREFIX.Length);
             success = BA_ReturnCode.Success;
             return success;

@@ -26,12 +26,10 @@ namespace bagis_pro.Menus
                 OpenItemDialog selectAoiDialog = new OpenItemDialog()
                 {
                     Title = "Select AOI Folder",
-                    InitialLocation = System.IO.Directory.GetCurrentDirectory(),
                     MultiSelect = false,
                     Filter = ItemFilters.folders
                 };
-                bool? boolOk = selectAoiDialog.ShowDialog();
-                if (boolOk == true)
+                if (selectAoiDialog.ShowDialog() == true)
                 {
                     Module1.DeactivateState("Aoi_Selected_State");
                     IEnumerable<Item> selectedItems = selectAoiDialog.Items;

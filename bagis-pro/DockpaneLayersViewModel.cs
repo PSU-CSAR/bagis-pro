@@ -9,6 +9,7 @@ using ArcGIS.Core.Data;
 using ArcGIS.Core.Geometry;
 using ArcGIS.Desktop.Catalog;
 using ArcGIS.Desktop.Core;
+using ArcGIS.Desktop.Core.Geoprocessing;
 using ArcGIS.Desktop.Editing;
 using ArcGIS.Desktop.Extensions;
 using ArcGIS.Desktop.Framework;
@@ -247,12 +248,12 @@ namespace bagis_pro
             {
                 return new RelayCommand(async () => {
                     // Create from template
-                    await ClipLayersAsync(_reclipSwe_Checked);
+                    await ClipLayersAsync(_reclipSwe_Checked, _reclipPrism_Checked);
                 });
             }
         }
 
-        private async Task ClipLayersAsync(bool clipSwe)
+        private async Task ClipLayersAsync(bool clipSwe, bool clipPrism)
         {
             try
             {
@@ -263,11 +264,68 @@ namespace bagis_pro
                 }
 
                 BA_ReturnCode success = BA_ReturnCode.Success;
+                if (clipPrism)
+                {
+                    success = await AnalysisTools.ClipLayersAsync(Module1.Current.Aoi.FilePath, Constants.DATA_TYPE_PRECIPITATION,
+                        PrismBufferDistance, PrismBufferUnits);
+
+                }
                 if (clipSwe)
                 {
-                    //success = await AnalysisTools.ClipSnotelSWELayersAsync(Module1.Current.Aoi.FilePath);
                     success = await AnalysisTools.ClipLayersAsync(Module1.Current.Aoi.FilePath, Constants.DATA_TYPE_SWE,
                         SWEBufferDistance, SWEBufferUnits);
+                    // Calculate and record overall min and max for symbology
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        double dblOverallMin = 9999;
+                        double dblOverallMax = -9999;
+                        string strLayersGdb = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, true);
+                        foreach (var fName in Constants.FILES_SNODAS_SWE)
+                        {
+                            string strOutputPath = strLayersGdb + fName;
+                            double dblMin = -1;
+                            var parameters = Geoprocessing.MakeValueArray(strOutputPath, "MINIMUM");
+                            var environments = Geoprocessing.MakeEnvironmentArray(workspace: Module1.Current.Aoi.FilePath);
+                            IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("GetRasterProperties_management", parameters, environments,
+                                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                            bool isDouble = Double.TryParse(Convert.ToString(gpResult.ReturnValue), out dblMin);
+                            if (isDouble && dblMin < dblOverallMin)
+                            {
+                                dblOverallMin = dblMin;
+                                Module1.Current.ModuleLogManager.LogDebug(nameof(ClipLayersAsync),
+                                    "Updated overall SWE minimum to " + dblOverallMin);
+                            }
+                            double dblMax = -1;
+                            parameters = Geoprocessing.MakeValueArray(strOutputPath, "MAXIMUM");
+                            gpResult = await Geoprocessing.ExecuteToolAsync("GetRasterProperties_management", parameters, environments,
+                                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                            isDouble = Double.TryParse(Convert.ToString(gpResult.ReturnValue), out dblMax);
+                            if (isDouble && dblMax > dblOverallMax)
+                            {
+                                dblOverallMax = dblMax;
+                                Module1.Current.ModuleLogManager.LogDebug(nameof(ClipLayersAsync),
+                                    "Updated overall SWE maximum to " + dblOverallMax);
+                            }
+                        }
+                        // Save overall min and max in metadata
+                        IDictionary<string, BA_Objects.DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
+                        if (dictLocalDataSources.ContainsKey(Constants.DATA_TYPE_SWE))
+                        {
+                            BA_Objects.DataSource dataSource = dictLocalDataSources[Constants.DATA_TYPE_SWE];
+                            dataSource.minValue = dblOverallMin;
+                            dataSource.maxValue = dblOverallMax;
+                            success = GeneralTools.SaveDataSourcesToFile(dictLocalDataSources);
+                            Module1.Current.ModuleLogManager.LogDebug(nameof(ClipLayersAsync),
+                                "Updated settings overall min and max metadata for SWE");
+                        }
+                        else
+                        {
+                            MessageBox.Show("An error occurred while trying to update the SWE layer metadata!!");
+                            Module1.Current.ModuleLogManager.LogError(nameof(ClipLayersAsync),
+                                "Unable to locate SWE metadata entry to update");
+                        }
+                        success = GeneralTools.SaveDataSourcesToFile(dictLocalDataSources);
+                    }
                 }
 
                 if (success == BA_ReturnCode.Success)

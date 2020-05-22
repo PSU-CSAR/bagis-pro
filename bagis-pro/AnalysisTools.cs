@@ -722,17 +722,33 @@ namespace bagis_pro
                     string[] arrClippedFileNames = Constants.FILES_SNODAS_SWE;
                     string strOutputGdb = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers, true);
 
+                    // Reset some variables if clipping PRISM
+                    if (strDataType.Equals(Constants.DATA_TYPE_PRECIPITATION))
+                    {
+                        int prismCount = Enum.GetNames(typeof(PrismFile)).Length;
+                        Array.Resize<string>(ref arrClipUris, prismCount);
+                        int j = 0;
+                        foreach (var month in Enum.GetValues(typeof(PrismServiceNames)))
+                        {
+                            arrClipUris[j] = month.ToString();
+                            j++;
+                        }
+                        Array.Resize<string>(ref arrClippedFileNames, prismCount);
+                        j = 0;
+                        foreach (var month in Enum.GetValues(typeof(PrismFile)))
+                        {
+                            arrClippedFileNames[j] = month.ToString();
+                            j++;
+                        }
+                        strOutputGdb = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Prism, true);
+                    }
 
                     int i = 0;
                     foreach (string strUri in arrClipUris)
                     {
                         Uri imageServiceUri = new Uri(strWsPrefix + strUri + Constants.URI_IMAGE_SERVER);
-                        string strOutputRaster = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers, true) + arrClippedFileNames[i];
+                        string strOutputRaster = strOutputGdb + arrClippedFileNames[i];
                         string strTemplateDataset = strClipGdb + "\\" + strClipFile;
-
-                        //success = await GeoprocessingTools.ClipRasterAsync(imageServiceUri.AbsoluteUri, strEnvelopeText, strOutputPath, strTemplateDataset,
-                        //    "", true, strAoiPath, BA_Objects.Aoi.SnapRasterPath(strAoiPath));
-
                         var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath, snapRaster: BA_Objects.Aoi.SnapRasterPath(strAoiPath));
                         var parameters = Geoprocessing.MakeValueArray(imageServiceUri.AbsoluteUri, strClipEnvelope, strOutputRaster, strTemplateDataset,
                                             "", "ClippingGeometry");
@@ -749,16 +765,58 @@ namespace bagis_pro
                         {
                             Module1.Current.ModuleLogManager.LogDebug(nameof(ClipLayersAsync),
                                 "Clipped " + arrClippedFileNames[i] + " layer");
-
                         }
                         i++;
+
+                        //We need to add a new tag at "/metadata/dataIdInfo/searchKeys/keyword"
+                        StringBuilder sb = new StringBuilder();
+                        sb.Append(Constants.META_TAG_PREFIX);
+                        // Z Units
+                        string strUnits = dictDataSources[strDataType].units;
+                        sb.Append(Constants.META_TAG_ZUNIT_CATEGORY + Constants.META_TAG_CATEGORY_DEPTH + "; ");
+                        sb.Append(Constants.META_TAG_ZUNIT_VALUE + strUnits + "; ");
+                        // Buffer Distance
+                        sb.Append(Constants.META_TAG_BUFFER_DISTANCE + strBufferDistance + "; ");
+                        // X Units
+                        sb.Append(Constants.META_TAG_XUNIT_VALUE + strBufferUnits + "; ");
+                        sb.Append(Constants.META_TAG_SUFFIX);
+
+                        //Update the metadata
+                        fc = ArcGIS.Desktop.Core.ItemFactory.Instance.Create(strOutputRaster,
+                            ArcGIS.Desktop.Core.ItemFactory.ItemType.PathItem);
+                        if (fc != null)
+                        {
+                            string strXml = string.Empty;
+                            strXml = fc.GetXml();
+                            System.Xml.XmlDocument xmlDocument = GeneralTools.UpdateMetadata(strXml, Constants.META_TAG_XPATH, sb.ToString(),
+                                Constants.META_TAG_PREFIX.Length);
+
+                            fc.SetXml(xmlDocument.OuterXml);
+                        }
+
                     }
 
+                    // Update layer metadata
+                    IDictionary<string, BA_Objects.DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
 
-
+                    BA_Objects.DataSource updateDataSource = new BA_Objects.DataSource(dictDataSources[strDataType])
+                    {
+                        DateClipped = DateTime.Now,
+                    };
+                    if (dictLocalDataSources.ContainsKey(strDataType))
+                    {
+                        dictLocalDataSources[strDataType] = updateDataSource;
+                    }
+                    else
+                    {
+                        dictLocalDataSources.Add(strDataType, updateDataSource);
+                    }
+                    success = GeneralTools.SaveDataSourcesToFile(dictLocalDataSources);
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(ClipLayersAsync),
+                        "Updated settings metadata for " + strDataType);
                 });
             }
-
+            success = BA_ReturnCode.Success;
             return success;
         }
     }
