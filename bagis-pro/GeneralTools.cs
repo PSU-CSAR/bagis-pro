@@ -813,7 +813,7 @@ namespace bagis_pro
                     }
 
                     // Make directory for log if it doesn't exist
-                    if (!Directory.Exists(Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_LOGS))
+                    if (!Directory.Exists(strAoiPath + "\\" + Constants.FOLDER_LOGS))
                     {
                         DirectoryInfo info = Directory.CreateDirectory(Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_LOGS);
                         if (info == null)
@@ -822,7 +822,7 @@ namespace bagis_pro
                         }
                     }
                     // Set logger to AOI directory
-                    string logFolderName = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_LOGS;
+                    string logFolderName = strAoiPath + "\\" + Constants.FOLDER_LOGS;
                     Module1.Current.ModuleLogManager.UpdateLogFileLocation(logFolderName);
 
                     // Update PRISM data status
@@ -982,7 +982,7 @@ namespace bagis_pro
                     }
 
                     // Store current AOI in Module1
-                    Module1.Current.Aoi = oAoi;
+                    Module1.Current.Aoi = oAoi;           
                     Module1.Current.CboCurrentAoi.SetAoiName(oAoi.Name);
                     MapTools.DeactivateMapButtons();
                     Module1.ActivateState("Aoi_Selected_State");

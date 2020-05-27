@@ -25,32 +25,39 @@ namespace bagis_pro
     {   
       private const string _dockPaneID = "bagis_pro_DockpaneLayers";
 
-        protected DockpaneLayersViewModel()
-        {
-
-        }
+        protected DockpaneLayersViewModel() {}
 
         /// <summary>
         /// Show the DockPane.
         /// </summary>
         internal static void Show()
-      {        
-        DockPane pane = FrameworkApplication.DockPaneManager.Find(_dockPaneID);
-        if (pane == null)
-          return;
-
-            // Don't show if aoi condition not enabled
-            if (!FrameworkApplication.State.Contains("Aoi_Selected_State"))
-            {
+        {
+            DockPane pane = FrameworkApplication.DockPaneManager.Find(_dockPaneID);
+            if (pane == null)
                 return;
-            }
-            pane.Activate();
-      }
 
-      /// <summary>
-      /// Text shown near the top of the DockPane.
-      /// </summary>
-	  private string _heading = "Manage Layers";
+            pane.Activate();
+        }
+
+        /// <summary>
+        /// Hide the pane if there is no current AOI when Pro starts up
+        /// </summary>
+        /// <param name="isVisible"></param>
+        protected override void OnShow(bool isVisible)
+        {
+            if (isVisible == true)
+            {
+                if (Module1.Current.CboCurrentAoi == null)
+                {
+                    this.Hide();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Text shown near the top of the DockPane.
+        /// </summary>
+        private string _heading = "Manage Layers";
         private bool _SWE_Checked = false;
         private string _SWEBufferDistance = "";
         private string _SWEBufferUnits = "";
@@ -248,12 +255,13 @@ namespace bagis_pro
             {
                 return new RelayCommand(async () => {
                     // Create from template
-                    await ClipLayersAsync(_reclipSwe_Checked, _reclipPrism_Checked);
+                    await ClipLayersAsync(ReclipSwe_Checked, ReclipPrism_Checked, ReclipSNOTEL_Checked, 
+                        ReclipSnowCos_Checked);
                 });
             }
         }
 
-        private async Task ClipLayersAsync(bool clipSwe, bool clipPrism)
+        private async Task ClipLayersAsync(bool clipSwe, bool clipPrism, bool clipSnotel, bool clipSnowCos)
         {
             try
             {
@@ -263,17 +271,54 @@ namespace bagis_pro
                     return;
                 }
 
+                if (clipSwe == false && clipPrism == false && 
+                    clipSnotel == false && clipSnowCos == false)
+                {
+                    MessageBox.Show("No layers selected to clip !!", "BAGIS-PRO");
+                    return;
+                }
+
+                var layersPane = (DockpaneLayersViewModel)FrameworkApplication.DockPaneManager.Find("bagis_pro_DockpaneLayers");
                 BA_ReturnCode success = BA_ReturnCode.Success;
+
+                // Check for PRISM units
+                string strPrismPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Prism, true) 
+                    + PrismFile.Annual.ToString();
+                var fc = ItemFactory.Instance.Create(strPrismPath, ItemFactory.ItemType.PathItem);
+                string pBufferDistance = "";
+                string pBufferUnits = "";
+
+                await QueuedTask.Run(() =>
+                {
+                    if (fc != null)
+                    {
+                        string strXml = string.Empty;
+                        strXml = fc.GetXml();
+                        //check metadata was returned
+                        string strBagisTag = GeneralTools.GetBagisTag(strXml);
+                        if (!string.IsNullOrEmpty(strBagisTag))
+                        {
+                            pBufferDistance = GeneralTools.GetValueForKey(strBagisTag, Constants.META_TAG_BUFFER_DISTANCE, ';');
+                            pBufferUnits = GeneralTools.GetValueForKey(strBagisTag, Constants.META_TAG_XUNIT_VALUE, ';');
+                        }
+                    }   
+                });
+
                 if (clipPrism)
                 {
                     success = await AnalysisTools.ClipLayersAsync(Module1.Current.Aoi.FilePath, Constants.DATA_TYPE_PRECIPITATION,
-                        PrismBufferDistance, PrismBufferUnits);
+                        pBufferDistance, pBufferUnits, PrismBufferDistance, PrismBufferUnits);
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        layersPane.ReclipPrism_Checked = false;
+                        layersPane.Prism_Checked = true;
+                    }
 
                 }
                 if (clipSwe)
                 {
                     success = await AnalysisTools.ClipLayersAsync(Module1.Current.Aoi.FilePath, Constants.DATA_TYPE_SWE,
-                        SWEBufferDistance, SWEBufferUnits);
+                        pBufferDistance, pBufferUnits, SWEBufferDistance, SWEBufferUnits);
                     // Calculate and record overall min and max for symbology
                     if (success == BA_ReturnCode.Success)
                     {
@@ -325,6 +370,12 @@ namespace bagis_pro
                                 "Unable to locate SWE metadata entry to update");
                         }
                         success = GeneralTools.SaveDataSourcesToFile(dictLocalDataSources);
+
+                        if (success == BA_ReturnCode.Success)
+                        {
+                            layersPane.ReclipSwe_Checked = false;
+                            layersPane.SWE_Checked = true;
+                        }
                     }
                 }
 
@@ -353,7 +404,8 @@ namespace bagis_pro
 	{
 		protected override void OnClick()
 		{
-			DockpaneLayersViewModel.Show();
-		}
-  }	
+            DockpaneLayersViewModel.Show();
+
+        }
+    }	
 }

@@ -15,9 +15,10 @@ namespace bagis_pro
     public class AnalysisTools
     {
 
-        public static async Task GenerateSiteLayersAsync()
+        public static async Task<BA_ReturnCode> GenerateSiteLayersAsync()
         {
             BA_Objects.Aoi currentAoi = Module1.Current.Aoi;
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
 
             try
             {
@@ -34,7 +35,7 @@ namespace bagis_pro
                 if (!bHasSnotel && !bHasSnowCourse)
                 {
                     MessageBox.Show("No SNOTEL or Snow Course layers found for AOI. Site Layers cannot be generated!!");
-                    return;
+                    return success;
                 }
 
                 //1. Get min/max DEM elevation for reclassing raster. We only want to do this once
@@ -55,12 +56,11 @@ namespace bagis_pro
                 else
                 {
                     MessageBox.Show("Unable to read DEM. No Site layers can be generated!!", "BAGIS-PRO");
-                    return;
+                    return success;
                 }
 
                 // snotel sites
                 IList<BA_Objects.Site> lstSites = null;
-                BA_ReturnCode success = BA_ReturnCode.UnknownError;
                 if (bHasSnotel)
                 {
                     lstSites = await AnalysisTools.AssembleSitesListAsync(Constants.FILE_SNOTEL, SiteType.Snotel.ToString());
@@ -92,10 +92,12 @@ namespace bagis_pro
                         success = await GeoprocessingTools.DeleteDatasetAsync(pathToDelete);
                     }
                 }
+                return success;
             }
             catch (Exception e)
             {
                 MessageBox.Show("GenerateSiteLayersAsync Exception: " + e.Message, "BAGIS PRO");
+                return success;
             }
 
         }
@@ -597,7 +599,7 @@ namespace bagis_pro
 
         //@ToDo: Separate method for calculating and storing SWE overall min/max
         public static async Task <BA_ReturnCode> ClipLayersAsync(string strAoiPath, string strDataType, 
-            string strBufferDistance, string strBufferUnits)
+            string prismBufferDistance, string prismBufferUnits, string strBufferDistance, string strBufferUnits)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
 
@@ -615,30 +617,11 @@ namespace bagis_pro
             {
                 await QueuedTask.Run(() =>
                 {
-                    // Check for PRISM units
-                    string strPrismPath = strClipGdb + "\\" + PrismFile.Annual.ToString();
-                    var fc = ArcGIS.Desktop.Core.ItemFactory.Instance.Create(strPrismPath,
-                        ArcGIS.Desktop.Core.ItemFactory.ItemType.PathItem);
-                    string pBufferDistance = "";
-                    string pBufferUnits = "";
-                    if (fc != null)
-                    {
-                        string strXml = string.Empty;
-                        strXml = fc.GetXml();
-                        //check metadata was returned
-                        string strBagisTag = GeneralTools.GetBagisTag(strXml);
-                        if (!string.IsNullOrEmpty(strBagisTag))
-                        {
-                            pBufferDistance = GeneralTools.GetValueForKey(strBagisTag, Constants.META_TAG_BUFFER_DISTANCE, ';');
-                            pBufferUnits = GeneralTools.GetValueForKey(strBagisTag, Constants.META_TAG_XUNIT_VALUE, ';');
-                        }
-                    }
-
                     // if the buffer is different from PRISM, we need to create a new buffer file
                     string strTempBuffer = "tmpBuffer";
                     string strTempBuffer2 = "";
-                    if (!strBufferDistance.Trim().Equals(pBufferDistance.Trim()) || 
-                        !strBufferUnits.Trim().Equals(pBufferUnits.Trim()))
+                    if (!strBufferDistance.Trim().Equals(prismBufferDistance.Trim()) || 
+                        !strBufferUnits.Trim().Equals(prismBufferUnits.Trim()))
                     {
                         string strAoiBoundaryPath = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, true) +
                             Constants.FILE_AOI_VECTOR;
@@ -658,11 +641,31 @@ namespace bagis_pro
                         }
 
                         strClipFile = strTempBuffer;
-                        strClipGdb = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, false);
+                        if (strDataType.Equals(Constants.DATA_TYPE_PRECIPITATION))
+                        {
+                            // Copy the buffered file into the aoi.gdb
+                            parameters = Geoprocessing.MakeValueArray(strOutputFeatures, GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, true) +
+                                Constants.FILE_AOI_PRISM_VECTOR);
+                            gpResult = Geoprocessing.ExecuteToolAsync("CopyFeatures", parameters, null,
+                                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                            if (gpResult.Result.IsFailed)
+                            {
+                                Module1.Current.ModuleLogManager.LogError(nameof(ClipLayersAsync),
+                                   "Unable to update p_aoi_v. Error code: " + gpResult.Result.ErrorCode);
+                                MessageBox.Show("Unable to update p_aoi_v. Clipping cancelled!!", "BAGIS-PRO");
+                                return;
+                            }
+                            else
+                            {
+                                Module1.Current.ModuleLogManager.LogDebug(nameof(ClipLayersAsync),
+                                    "Saved updated p_aoi_v to aoi.gdb");
+                            }
+                        }
                     }
 
                     // Check to make sure the buffer file only has one feature; No dangles
                     int featureCount = 0;
+                    strClipGdb = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, false);
                     using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(strClipGdb))))
                     using (Table table = geodatabase.OpenDataset<Table>(strClipFile))
                     {
@@ -782,7 +785,7 @@ namespace bagis_pro
                         sb.Append(Constants.META_TAG_SUFFIX);
 
                         //Update the metadata
-                        fc = ArcGIS.Desktop.Core.ItemFactory.Instance.Create(strOutputRaster,
+                        var fc = ArcGIS.Desktop.Core.ItemFactory.Instance.Create(strOutputRaster,
                             ArcGIS.Desktop.Core.ItemFactory.ItemType.PathItem);
                         if (fc != null)
                         {

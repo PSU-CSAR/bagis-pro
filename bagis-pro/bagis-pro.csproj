@@ -161,10 +161,13 @@
     <Compile Include="BA_Objects\MapDefinition.cs" />
     <Compile Include="BA_Objects\Site.cs" />
     <Compile Include="Buttons\BtnExportToPdf.cs" />
-    <Compile Include="Buttons\BtnGenerateLayers.cs" />
     <Compile Include="Buttons\CboCurrentAoi.cs" />
     <Compile Include="Buttons\MapButtonPalette.cs" />
     <Compile Include="Constants.cs" />
+    <Compile Include="DockAnalysisLayers.xaml.cs">
+      <DependentUpon>DockAnalysisLayers.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="DockAnalysisLayersViewModel.cs" />
     <Compile Include="DockpaneLayers.xaml.cs">
       <DependentUpon>DockpaneLayers.xaml</DependentUpon>
     </Compile>
@@ -279,6 +282,10 @@
     </COMReference>
   </ItemGroup>
   <ItemGroup>
+    <Page Include="DockAnalysisLayers.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="DockpaneLayers.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
