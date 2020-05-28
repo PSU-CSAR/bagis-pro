@@ -15,13 +15,12 @@ namespace bagis_pro.BA_Objects
         public string m_sweDisplayUnits = "Inches";
         public string m_demUnits = "Meters";
         public string m_demDisplayUnits = "Feet";
-        public string m_precipFile = @"\prism.gdb\annual";
+        public string m_precipFile = @"\prism.gdb\Annual";
         public double m_elevInterval = 1000.0F;
         public double m_prismBufferDistance = 1000.0F;
         public string m_prismBufferUnits = "Meters";
         public double m_snotelBufferDistance = 100.0F;
         public string m_snotelBufferUnits = "Meters";
-
 
 
         public Settings()

@@ -125,13 +125,26 @@ namespace bagis_pro
 
                 if (calculateRepresented)
                 {
-                    await AnalysisTools.GenerateSiteLayersAsync();
+                    success = await AnalysisTools.GenerateSiteLayersAsync();
                     if (success == BA_ReturnCode.Success)
                     {
                         layersPane.RepresentedArea_Checked = false;
                     }
 
                 }
+
+                if (calculatePrism)
+                {
+                    string strLayer = System.IO.Path.GetFileName(Module1.Current.Settings.m_precipFile);
+                    success = await AnalysisTools.CalculatePrismZonesAsync(Module1.Current.Aoi.FilePath, strLayer);
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        layersPane.RepresentedArea_Checked = false;
+                    }
+
+                }
+
+
                 if (success == BA_ReturnCode.Success)
                 {
                     MessageBox.Show("Analysis layers generated !!", "BAGIS-PRO");
