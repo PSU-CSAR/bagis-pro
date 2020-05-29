@@ -136,7 +136,8 @@ namespace bagis_pro
                 if (calculatePrism)
                 {
                     string strLayer = System.IO.Path.GetFileName(Module1.Current.Settings.m_precipFile);
-                    success = await AnalysisTools.CalculatePrismZonesAsync(Module1.Current.Aoi.FilePath, strLayer);
+                    success = await AnalysisTools.CalculatePrismZonesAsync(Module1.Current.Aoi.FilePath, strLayer,
+                        Module1.Current.Settings.m_precipZonesCount);
                     if (success == BA_ReturnCode.Success)
                     {
                         layersPane.RepresentedArea_Checked = false;

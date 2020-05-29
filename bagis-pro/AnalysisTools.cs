@@ -846,7 +846,8 @@ namespace bagis_pro
             return success;
         }
 
-        public static async Task<BA_ReturnCode> CalculatePrismZonesAsync(string strAoiPath, string strLayerPath)
+        public static async Task<BA_ReturnCode> CalculatePrismZonesAsync(string strAoiPath, string strLayerPath,
+            int intPrecipZonesCount)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
 
@@ -890,6 +891,11 @@ namespace bagis_pro
                         "Unable to calculate PRISM maximum");
                     return;
                 }
+
+                IList<BA_Objects.Interval> lstInterval = null;
+                int zones = GeneralTools.CreateRangeArray(dblMin, dblMax, 5, out lstInterval);
+
+
             });
             return success;
         }

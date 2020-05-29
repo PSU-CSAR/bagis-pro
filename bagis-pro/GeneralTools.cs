@@ -1022,9 +1022,96 @@ namespace bagis_pro
             return strRetVal;
         }
 
+        public static int CreateRangeArray(double minval, double maxval, double interval, out IList<BA_Objects.Interval> rangearr)
+        {
+            //check the decimal place of the interval value
+            string intvstring = Convert.ToString(interval);
+            //determine the interval decimal place to add an increment value to the lower bound
+            int position = intvstring.IndexOf(".");
+            int scalefactor;
+            int inc_value;
 
+            if (position == -1 && interval > 1)
+            {
+                scalefactor = 1;    //interval is an integer larger than 1
+                inc_value = 1;
+            }
+            else if (interval == 1)
+            {
+                scalefactor = 10;
+                inc_value = 1 / 10;
+            }
+            else
+            {
+                scalefactor = 10 ^ (intvstring.Length - position);
+                inc_value = 1 / (10 ^ (intvstring.Length - position));
+            }
+            //adjust value based on the scalefactor
+            if (scalefactor > 1)
+            {
+                minval = Math.Round(minval * scalefactor - 0.5);
+                maxval = Math.Round(maxval * scalefactor + 0.5);
+                interval = interval * scalefactor;
+            }
+            // calculate the number of intervals
+            int begincnt = Convert.ToInt16(minval / interval);
+            int endcnt = Convert.ToInt16(maxval / interval) + 1;
+            int rightoffset;
+            //rightoffset indicates if the upperbound of the last interval equals maxval
+            if (maxval % interval == 0)
+            {
+                rightoffset = 1;
+            }
+            else
+            {
+                rightoffset = 0;
+            }
+            int ninterval = endcnt - begincnt - rightoffset;
+            if (ninterval <= 0)
+            {
+                ninterval = 1;
+            }
+            // set the min and max range values
+            rangearr = new List<BA_Objects.Interval>();
+            for (int i = 0; i < ninterval; i++)
+            {
+                rangearr.Add(new BA_Objects.Interval());
+            }
+            rangearr[0].LowerBound = minval / scalefactor;
 
+            // set intermediate range values
+            double Value = (begincnt + 1) * interval;
+            for (int j = 0; j < ninterval; j++)
+            {
+                rangearr[j].Value = j;
+                rangearr[j].UpperBound = Value / scalefactor;
+                if (j + 1 < ninterval)
+                {
+                    rangearr[j + 1].LowerBound = Value / scalefactor;
+                }
+                Value = Value + interval;
+                if (j == 1)
+                {
+                    rangearr[j].Name = rangearr[j].LowerBound + " - " + rangearr[j].UpperBound;
+                }
+                else
+                {
+                    rangearr[j].Name = rangearr[j].LowerBound + " - " + rangearr[j].UpperBound;
+                }
+            }
 
+            rangearr[ninterval - 1].Value = ninterval;
+            rangearr[ninterval - 1].UpperBound = maxval / scalefactor;
+            if (ninterval > 1)
+            {
+                rangearr[ninterval - 1].Name = rangearr[ninterval - 1].LowerBound + " - " + rangearr[ninterval - 1].UpperBound;
+            }
+            else
+            {
+                rangearr[ninterval - 1].Name = rangearr[ninterval - 1].LowerBound + " - " + rangearr[ninterval - 1].UpperBound;
+            }
+            return ninterval;
+        }
     }
 
 
