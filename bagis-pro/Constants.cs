@@ -105,6 +105,7 @@ namespace bagis_pro
         public const string FIELD_NEAR_DIST = "NEAR_DIST";
         public const string FIELD_VALUE = "VALUE";
         public const string FIELD_NAME = "NAME";
+        public const int FIELD_NAME_WIDTH = 60;
         public const string FIELD_LBOUND = "LBOUND";
         public const string FIELD_UBOUND = "UBOUND";
         public const string FIELD_COUNT = "COUNT";
