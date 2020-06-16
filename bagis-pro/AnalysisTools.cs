@@ -852,59 +852,62 @@ namespace bagis_pro
             int intPrecipZonesCount)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            EditOperation editOperation = new EditOperation();
 
             await QueuedTask.Run(() =>
             {
-            // Get min and max values for layer
-            string strPrismPath = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Prism, true) +
-                                    strLayerPath;
-            var parameters = Geoprocessing.MakeValueArray(strPrismPath, "MINIMUM");
-            var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath);
-            var gpResult = Geoprocessing.ExecuteToolAsync("GetRasterProperties_management", parameters, environments,
-                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-            double dblMin = -999;
-            double dblMax = 999;
-            bool isDouble = Double.TryParse(Convert.ToString(gpResult.Result.ReturnValue), out dblMin);
-            if (isDouble)
-            {
-                Module1.Current.ModuleLogManager.LogDebug(nameof(CalculatePrismZonesAsync),
-                    "Found prism minimum to be " + dblMin);
-            }
-            else
-            {
-                MessageBox.Show("Unable to extract minimum PRISM value. Calculation halted !!", "BAGIS-PRO");
-                Module1.Current.ModuleLogManager.LogError(nameof(CalculatePrismZonesAsync),
-                    "Unable to calculate PRISM miniumum");
-                return;
-            }
-            parameters = Geoprocessing.MakeValueArray(strPrismPath, "MAXIMUM");
-            gpResult = Geoprocessing.ExecuteToolAsync("GetRasterProperties_management", parameters, environments,
-                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-            isDouble = Double.TryParse(Convert.ToString(gpResult.Result.ReturnValue), out dblMax);
-            if (isDouble)
-            {
-                Module1.Current.ModuleLogManager.LogDebug(nameof(CalculatePrismZonesAsync),
+                // Get min and max values for layer
+                string strPrismPath = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Prism, true) +
+                                        strLayerPath;
+                var parameters = Geoprocessing.MakeValueArray(strPrismPath, "MINIMUM");
+                var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath);
+                var gpResult = Geoprocessing.ExecuteToolAsync("GetRasterProperties_management", parameters, environments,
+                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                double dblMin = -999;
+                double dblMax = 999;
+                bool isDouble = Double.TryParse(Convert.ToString(gpResult.Result.ReturnValue), out dblMin);
+                if (isDouble)
+                {
+                    dblMin = Math.Round(dblMin - 0.005, 2);
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(CalculatePrismZonesAsync),
+                        "Found prism minimum to be " + dblMin);
+                }
+                else
+                {
+                    MessageBox.Show("Unable to extract minimum PRISM value. Calculation halted !!", "BAGIS-PRO");
+                    Module1.Current.ModuleLogManager.LogError(nameof(CalculatePrismZonesAsync),
+                        "Unable to calculate PRISM miniumum");
+                    return;
+                }
+                parameters = Geoprocessing.MakeValueArray(strPrismPath, "MAXIMUM");
+                gpResult = Geoprocessing.ExecuteToolAsync("GetRasterProperties_management", parameters, environments,
+                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                isDouble = Double.TryParse(Convert.ToString(gpResult.Result.ReturnValue), out dblMax);
+                if (isDouble)
+                {
+                    dblMax = Math.Round(dblMax + 0.005, 2);
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(CalculatePrismZonesAsync),
                     "Found prism maximum to be " + dblMax);
-            }
-            else
-            {
-                MessageBox.Show("Unable to extract maximum PRISM value. Calculation halted !!", "BAGIS-PRO");
-                Module1.Current.ModuleLogManager.LogError(nameof(CalculatePrismZonesAsync),
-                    "Unable to calculate PRISM maximum");
-                return;
-            }
+                }
+                else
+                {
+                    MessageBox.Show("Unable to extract maximum PRISM value. Calculation halted !!", "BAGIS-PRO");
+                    Module1.Current.ModuleLogManager.LogError(nameof(CalculatePrismZonesAsync),
+                        "Unable to calculate PRISM maximum");
+                    return;
+                }
 
                 // determine interval value based on # map classes
                 double dblInterval = (dblMax - dblMin) / intPrecipZonesCount;
-                // round the number to 2 decimal places
-                dblInterval = Math.Round(dblInterval, 2);
+                // round the number to 1 decimal places
+                dblInterval = Math.Round(dblInterval, 1);
                 IList<BA_Objects.Interval> lstInterval = null;
                 int zones = GeneralTools.CreateRangeArray(dblMin, dblMax, dblInterval, out lstInterval);
                 StringBuilder sb = new StringBuilder();
                 for (int i = 0; i < lstInterval.Count; i++)
                 {
                     BA_Objects.Interval nextInterval = lstInterval[i];
-                    sb.Append(nextInterval.LowerBound + " "  + nextInterval.UpperBound +
+                    sb.Append(nextInterval.LowerBound + " " + nextInterval.UpperBound +
                         " " + nextInterval.Value + "; ");
                 }
                 Module1.Current.ModuleLogManager.LogDebug(nameof(CalculatePrismZonesAsync),
@@ -964,8 +967,6 @@ namespace bagis_pro
                         "New fields added");
                     }
                 }
-                bool modificationResult = false;
-                string errorMsg = "";
                 if (success == BA_ReturnCode.Success)
                 {
                     Uri gdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Analysis));
@@ -977,16 +978,15 @@ namespace bagis_pro
                         Table rasterTable = raster.GetAttributeTable();
                         TableDefinition definition = rasterTable.GetDefinition();
                         QueryFilter oQueryFilter = new QueryFilter();
-                        EditOperation editOperation = new EditOperation();
                         editOperation.Callback(context => {
                             foreach (BA_Objects.Interval interval in lstInterval)
-                            {                                
+                            {
                                 oQueryFilter.WhereClause = " Value = " + interval.Value;
                                 using (RowCursor rowCursor = rasterTable.Search(oQueryFilter, false))
                                 {
                                     // Only one row should be returned
                                     rowCursor.MoveNext();
-                                    using (Row row = (Row) rowCursor.Current)
+                                    using (Row row = (Row)rowCursor.Current)
                                     {
                                         // In order to update the the attribute table has to be called before any changes are made to the row
                                         context.Invalidate(row);
@@ -1012,34 +1012,13 @@ namespace bagis_pro
                                 }
                             }
                         }, rasterTable);
-
-                        try
-                        {
-                            modificationResult = editOperation.Execute();
-                            if (!modificationResult) errorMsg = editOperation.ErrorMessage;
-                        }
-                        catch (GeodatabaseException exObj)
-                        {
-                            success = BA_ReturnCode.WriteError;
-                            errorMsg = exObj.Message;
-                        }
-
-                        if (String.IsNullOrEmpty(errorMsg))
-                        {
-                            ArcGIS.Desktop.Core.Project.Current.SaveEditsAsync();
-                            success = BA_ReturnCode.Success;
-                        }
-                        else
-                        {
-                            if (ArcGIS.Desktop.Core.Project.Current.HasEdits)
-                                ArcGIS.Desktop.Core.Project.Current.DiscardEditsAsync();
-                            Module1.Current.ModuleLogManager.LogError(nameof(CalculatePrismZonesAsync),
-                                "Exception: " + errorMsg);
-                            success = BA_ReturnCode.UnknownError;
-                        }
                     }
                 }
             });
+            if (success == BA_ReturnCode.Success)
+            { 
+                success = await GeodatabaseTools.CommitChangesAsync(editOperation);
+            }
             return success;
         }
     }

@@ -1027,11 +1027,11 @@ namespace bagis_pro
             //check the decimal place of the interval value
             string intvstring = Convert.ToString(interval);
             //determine the interval decimal place to add an increment value to the lower bound
-            int position = intvstring.IndexOf(".");
+            int position = intvstring.IndexOf(".") + 1;     // converting this from vb .net; Easiest to just add 1 to value
             int scalefactor;
-            int inc_value;
+            double inc_value;
 
-            if (position == -1 && interval > 1)
+            if (position == 0 && interval > 1)
             {
                 scalefactor = 1;    //interval is an integer larger than 1
                 inc_value = 1;
@@ -1043,8 +1043,8 @@ namespace bagis_pro
             }
             else
             {
-                scalefactor = 10 ^ (intvstring.Length - position);
-                inc_value = 1 / (10 ^ (intvstring.Length - position));
+                scalefactor = Convert.ToInt32(Math.Pow(10,(intvstring.Length - position)));
+                inc_value = 1 / (Math.Pow(10, (intvstring.Length - position)));
             }
             //adjust value based on the scalefactor
             if (scalefactor > 1)

@@ -578,5 +578,42 @@ namespace bagis_pro
             return cellSize;
         }
 
+        public static async Task<BA_ReturnCode> CommitChangesAsync(EditOperation editOperation)
+        {
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            bool bModificationResult = false;
+            string errorMsg = "";
+            await QueuedTask.Run(() =>
+            {
+                try
+                {
+                    bModificationResult = editOperation.Execute();
+                    if (! bModificationResult) errorMsg = editOperation.ErrorMessage;
+                }
+                catch (GeodatabaseException exObj)
+                {
+                    success = BA_ReturnCode.WriteError;
+                    errorMsg = exObj.Message;
+                }
+
+                if (String.IsNullOrEmpty(errorMsg))
+                {
+                    Project.Current.SaveEditsAsync();
+                    success = BA_ReturnCode.Success;
+                }
+                else
+                {
+                    if (Project.Current.HasEdits)
+                        Project.Current.DiscardEditsAsync();
+                    Module1.Current.ModuleLogManager.LogError(nameof(CommitChangesAsync),
+                    "Exception: " + errorMsg);
+                    success = BA_ReturnCode.UnknownError;
+                }
+            });
+            return success;
+        }
+
     }
+
+    
 }
