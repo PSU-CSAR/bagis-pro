@@ -59,6 +59,7 @@ namespace bagis_pro
         private string _heading = "Calculate Analysis Layers";
         private bool _RepresentedArea_Checked = false;
         private bool _PrismZones_Checked = false;
+        private bool _AspectZones_Checked = false;
         public string Heading
         {
             get { return _heading; }
@@ -86,10 +87,20 @@ namespace bagis_pro
             }
         }
 
+        public bool AspectZones_Checked
+        {
+            get { return _AspectZones_Checked; }
+            set
+            {
+                SetProperty(ref _AspectZones_Checked, value, () => AspectZones_Checked);
+            }
+        }
+
         public void ResetView()
         {
             RepresentedArea_Checked = false;
             PrismZones_Checked = false;
+            AspectZones_Checked = false;
         }
 
         public ICommand CmdGenerateLayers
@@ -99,12 +110,12 @@ namespace bagis_pro
                 return new RelayCommand(async () =>
                 {
                     // Create from template
-                    await GenerateLayersAsync(RepresentedArea_Checked, PrismZones_Checked);
+                    await GenerateLayersAsync(RepresentedArea_Checked, PrismZones_Checked, AspectZones_Checked);
                 });
             }
         }
 
-        private async Task GenerateLayersAsync(bool calculateRepresented, bool calculatePrism)
+        private async Task GenerateLayersAsync(bool calculateRepresented, bool calculatePrism, bool calculateAspect)
         {
             try
             {
@@ -114,7 +125,7 @@ namespace bagis_pro
                     return;
                 }
 
-                if (calculateRepresented == false && calculatePrism == false)
+                if (calculateRepresented == false && calculatePrism == false && calculateAspect == false)
                 {
                     MessageBox.Show("No layers selected to generate !!", "BAGIS-PRO");
                     return;
@@ -135,13 +146,21 @@ namespace bagis_pro
 
                 if (calculatePrism)
                 {
-                    string strLayer = System.IO.Path.GetFileName(Module1.Current.Settings.m_precipFile);
-                    success = await AnalysisTools.CalculatePrismZonesAsync(Module1.Current.Aoi.FilePath, strLayer,
-                        Module1.Current.Settings.m_precipZonesCount);
+                    string strLayer = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Prism, true) +
+                                      System.IO.Path.GetFileName(Module1.Current.Settings.m_precipFile);
+                    string strZonesRaster = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) +
+                        Constants.FILE_PRECIP_ZONE;
+                    string strMaskPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_PRISM_VECTOR;
+                    success = await AnalysisTools.CalculateZonesAsync(Module1.Current.Aoi.FilePath, strLayer,
+                        Module1.Current.Settings.m_precipZonesCount, strZonesRaster, strMaskPath, "PRISM");
                     if (success == BA_ReturnCode.Success)
                     {
                         layersPane.RepresentedArea_Checked = false;
                     }
+                }
+
+                if (calculateAspect)
+                {
 
                 }
 
