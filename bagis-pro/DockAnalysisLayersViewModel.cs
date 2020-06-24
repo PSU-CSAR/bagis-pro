@@ -161,7 +161,17 @@ namespace bagis_pro
 
                 if (calculateAspect)
                 {
-
+                    string strLayer = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Surfaces, true) +
+                        System.IO.Path.GetFileName(Constants.FILE_ASPECT);
+                    string strZonesRaster = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) +
+                        Constants.FILE_ASPECT_ZONE;
+                    string strMaskPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_PRISM_VECTOR;
+                    success = await AnalysisTools.CalculateZonesAsync(Module1.Current.Aoi.FilePath, strLayer,
+                        Module1.Current.Settings.m_precipZonesCount, strZonesRaster, strMaskPath, "ASPECT");
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        layersPane.RepresentedArea_Checked = false;
+                    }
                 }
 
 

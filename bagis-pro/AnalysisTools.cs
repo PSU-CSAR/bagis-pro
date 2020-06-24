@@ -856,51 +856,65 @@ namespace bagis_pro
 
             await QueuedTask.Run(() =>
             {
-                // Get min and max values for layer
-                var parameters = Geoprocessing.MakeValueArray(strSourceLayer, "MINIMUM");
-                var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath);
-                var gpResult = Geoprocessing.ExecuteToolAsync("GetRasterProperties_management", parameters, environments,
-                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
                 double dblMin = -999;
                 double dblMax = 999;
-                bool isDouble = Double.TryParse(Convert.ToString(gpResult.Result.ReturnValue), out dblMin);
-                if (isDouble)
+                double dblInterval = 999;
+                IReadOnlyList<string> parameters = null;
+                IReadOnlyList<KeyValuePair<string, string>> environments = null;
+                Task<IGPResult> gpResult = null;
+                if (!strMessageKey.Equals("ASPECT"))
                 {
-                    dblMin = Math.Round(dblMin - 0.005, 2);
-                    Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateZonesAsync),
-                        "Found " + strMessageKey  + " minimum to be " + dblMin);
-                }
-                else
-                {
-                    MessageBox.Show("Unable to extract minimum " + strMessageKey + " value. Calculation halted !!", "BAGIS-PRO");
-                    Module1.Current.ModuleLogManager.LogError(nameof(CalculateZonesAsync),
-                        "Unable to calculate " + strMessageKey + " miniumum");
-                    return;
-                }
-                parameters = Geoprocessing.MakeValueArray(strSourceLayer, "MAXIMUM");
-                gpResult = Geoprocessing.ExecuteToolAsync("GetRasterProperties_management", parameters, environments,
-                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                isDouble = Double.TryParse(Convert.ToString(gpResult.Result.ReturnValue), out dblMax);
-                if (isDouble)
-                {
-                    dblMax = Math.Round(dblMax + 0.005, 2);
-                    Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateZonesAsync),
-                    "Found " + strMessageKey + " maximum to be " + dblMax);
-                }
-                else
-                {
-                    MessageBox.Show("Unable to extract maximum " + strMessageKey + " value. Calculation halted !!", "BAGIS-PRO");
-                    Module1.Current.ModuleLogManager.LogError(nameof(CalculateZonesAsync),
-                        "Unable to calculate " + strMessageKey + " maximum");
-                    return;
+                    // Get min and max values for layer
+                    parameters = Geoprocessing.MakeValueArray(strSourceLayer, "MINIMUM");
+                    environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath);
+                    gpResult = Geoprocessing.ExecuteToolAsync("GetRasterProperties_management", parameters, environments,
+                        CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                    bool isDouble = Double.TryParse(Convert.ToString(gpResult.Result.ReturnValue), out dblMin);
+                    if (isDouble)
+                    {
+                        dblMin = Math.Round(dblMin - 0.005, 2);
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateZonesAsync),
+                            "Found " + strMessageKey + " minimum to be " + dblMin);
+                    }
+                    else
+                    {
+                        MessageBox.Show("Unable to extract minimum " + strMessageKey + " value. Calculation halted !!", "BAGIS-PRO");
+                        Module1.Current.ModuleLogManager.LogError(nameof(CalculateZonesAsync),
+                            "Unable to calculate " + strMessageKey + " miniumum");
+                        return;
+                    }
+                    parameters = Geoprocessing.MakeValueArray(strSourceLayer, "MAXIMUM");
+                    gpResult = Geoprocessing.ExecuteToolAsync("GetRasterProperties_management", parameters, environments,
+                        CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                    isDouble = Double.TryParse(Convert.ToString(gpResult.Result.ReturnValue), out dblMax);
+                    if (isDouble)
+                    {
+                        dblMax = Math.Round(dblMax + 0.005, 2);
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateZonesAsync),
+                        "Found " + strMessageKey + " maximum to be " + dblMax);
+                    }
+                    else
+                    {
+                        MessageBox.Show("Unable to extract maximum " + strMessageKey + " value. Calculation halted !!", "BAGIS-PRO");
+                        Module1.Current.ModuleLogManager.LogError(nameof(CalculateZonesAsync),
+                            "Unable to calculate " + strMessageKey + " maximum");
+                        return;
+                    }
+                    // determine interval value based on # map classes
+                    dblInterval = (dblMax - dblMin) / intZonesCount;
+                    // round the number to 1 decimal places
+                    dblInterval = Math.Round(dblInterval, 1);
                 }
 
-                // determine interval value based on # map classes
-                double dblInterval = (dblMax - dblMin) / intZonesCount;
-                // round the number to 1 decimal places
-                dblInterval = Math.Round(dblInterval, 1);
                 IList<BA_Objects.Interval> lstInterval = null;
-                int zones = GeneralTools.CreateRangeArray(dblMin, dblMax, dblInterval, out lstInterval);
+                if (strMessageKey.Equals("ASPECT"))
+                {
+                    lstInterval = AnalysisTools.GetAspectClasses(Module1.Current.Settings.m_aspectDirections);
+                }
+                else
+                {
+                    int zones = GeneralTools.CreateRangeArray(dblMin, dblMax, dblInterval, out lstInterval);
+                }
                 StringBuilder sb = new StringBuilder();
                 for (int i = 0; i < lstInterval.Count; i++)
                 {
@@ -937,8 +951,8 @@ namespace bagis_pro
                 {
                     // Add fields to table so we can process the interval list
                     string strAddFields = Constants.FIELD_NAME + " TEXT # " + Constants.FIELD_NAME_WIDTH + " # #;" +
-                                          Constants.FIELD_UBOUND + " DOUBLE # # # #;" +
-                                          Constants.FIELD_LBOUND + " DOUBLE # # # #";
+                                          Constants.FIELD_LBOUND + " DOUBLE # # # #;" +
+                                          Constants.FIELD_UBOUND + " DOUBLE # # # #";
                     parameters = Geoprocessing.MakeValueArray(strOutputLayer, strAddFields);
                     gpResult = Geoprocessing.ExecuteToolAsync("AddFields_management", parameters, null,
                         CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
@@ -1017,10 +1031,10 @@ namespace bagis_pro
             return success;
         }
 
-        public IList<BA_Objects.Interval> GetAspectClasses(int aspectDirections = 16)
+        public static IList<BA_Objects.Interval> GetAspectClasses(int aspectDirections = 16)
         {
             IList<BA_Objects.Interval> lstIntervals = new List<BA_Objects.Interval>();
-            int aspectCount = aspectDirections + 1;
+            int aspectCount = aspectDirections + 2;
             string[] aspectName = new string[aspectCount];
             double interval = 0.0F;
 
@@ -1091,6 +1105,29 @@ namespace bagis_pro
                 UpperBound = interval / 2
             };
             lstIntervals.Add(northInterval);
+
+            for (int i = 3; i < aspectDirections + 2; i++)
+            {
+                BA_Objects.Interval nextInterval = new BA_Objects.Interval
+                {
+                    Value = i - 1,
+                    Name = aspectName[i - 1],
+                    LowerBound = lstIntervals.ElementAt(i-2).UpperBound,
+                    UpperBound = lstIntervals.ElementAt(i-2).UpperBound + interval
+                };
+                lstIntervals.Add(nextInterval);
+            }
+
+            // north again
+            northInterval = new BA_Objects.Interval
+            {
+                Value = 1,
+                Name = "N",
+                LowerBound = lstIntervals.ElementAt(aspectDirections).UpperBound,
+                UpperBound = 360
+            };
+            lstIntervals.Add(northInterval);
+
             return lstIntervals;
         }
     }

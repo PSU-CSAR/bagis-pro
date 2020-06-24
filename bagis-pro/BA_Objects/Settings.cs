@@ -22,7 +22,7 @@ namespace bagis_pro.BA_Objects
         public string m_prismBufferUnits = "Meters";
         public double m_snotelBufferDistance = 100.0F;
         public string m_snotelBufferUnits = "Meters";
-
+        public int m_aspectDirections = 8;
 
         public Settings()
         {
