@@ -911,6 +911,10 @@ namespace bagis_pro
                 {
                     lstInterval = AnalysisTools.GetAspectClasses(Module1.Current.Settings.m_aspectDirections);
                 }
+                else if (strMessageKey.Equals("SLOPE"))
+                {
+                    lstInterval = AnalysisTools.GetSlopeClasses();
+                }
                 else
                 {
                     int zones = GeneralTools.CreateRangeArray(dblMin, dblMax, dblInterval, out lstInterval);
@@ -1127,6 +1131,113 @@ namespace bagis_pro
                 UpperBound = 360
             };
             lstIntervals.Add(northInterval);
+
+            return lstIntervals;
+        }
+
+        public static IList<BA_Objects.Interval> GetSlopeClasses()
+        {
+            IList<BA_Objects.Interval> lstIntervals = new List<BA_Objects.Interval>();
+
+            // flat
+            BA_Objects.Interval nextInterval = new BA_Objects.Interval
+            {
+                Value = 1,
+                Name = "Flat - 10%",
+                LowerBound = 0,
+                UpperBound = 10
+            };
+            lstIntervals.Add(nextInterval);
+
+            // 10 - 20
+            nextInterval = new BA_Objects.Interval
+            {
+                Value = 2,
+                Name = "10% - 20%",
+                LowerBound = 10,
+                UpperBound = 20
+            };
+            lstIntervals.Add(nextInterval);
+
+            // 20 - 30
+            nextInterval = new BA_Objects.Interval
+            {
+                Value = 3,
+                Name = "20% - 30%",
+                LowerBound = 20,
+                UpperBound = 30
+            };
+            lstIntervals.Add(nextInterval);
+
+            // 30 - 40
+            nextInterval = new BA_Objects.Interval
+            {
+                Value = 4,
+                Name = "30% - 40%",
+                LowerBound = 30,
+                UpperBound = 40
+            };
+            lstIntervals.Add(nextInterval);
+
+            // 40 - 50
+            nextInterval = new BA_Objects.Interval
+            {
+                Value = 5,
+                Name = "40% - 50%",
+                LowerBound = 40,
+                UpperBound = 50
+            };
+            lstIntervals.Add(nextInterval);
+
+            // 50 - 75
+            nextInterval = new BA_Objects.Interval
+            {
+                Value = 6,
+                Name = "50% - 70%",
+                LowerBound = 50,
+                UpperBound = 75
+            };
+            lstIntervals.Add(nextInterval);
+
+            // 75 - 100
+            nextInterval = new BA_Objects.Interval
+            {
+                Value = 7,
+                Name = "75% - 100%",
+                LowerBound = 75,
+                UpperBound = 100
+            };
+            lstIntervals.Add(nextInterval);
+
+            // 100 - 150
+            nextInterval = new BA_Objects.Interval
+            {
+                Value = 8,
+                Name = "100% - 150%",
+                LowerBound = 100,
+                UpperBound = 150
+            };
+            lstIntervals.Add(nextInterval);
+
+            // 150 - 200
+            nextInterval = new BA_Objects.Interval
+            {
+                Value = 9,
+                Name = "150% - 200%",
+                LowerBound = 150,
+                UpperBound = 200
+            };
+            lstIntervals.Add(nextInterval);
+
+            // > 200
+            nextInterval = new BA_Objects.Interval
+            {
+                Value = 10,
+                Name = "> 200%",
+                LowerBound = 200,
+                UpperBound = 999
+            };
+            lstIntervals.Add(nextInterval);
 
             return lstIntervals;
         }

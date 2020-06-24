@@ -60,6 +60,8 @@ namespace bagis_pro
         private bool _RepresentedArea_Checked = false;
         private bool _PrismZones_Checked = false;
         private bool _AspectZones_Checked = false;
+        private bool _SlopeZones_Checked = false;
+        private bool _ElevationZones_Checked = false;
         public string Heading
         {
             get { return _heading; }
@@ -96,11 +98,31 @@ namespace bagis_pro
             }
         }
 
+        public bool SlopeZones_Checked
+        {
+            get { return _SlopeZones_Checked; }
+            set
+            {
+                SetProperty(ref _SlopeZones_Checked, value, () => SlopeZones_Checked);
+            }
+        }
+
+        public bool ElevationZones_Checked
+        {
+            get { return _ElevationZones_Checked; }
+            set
+            {
+                SetProperty(ref _ElevationZones_Checked, value, () => ElevationZones_Checked);
+            }
+        }
+
         public void ResetView()
         {
             RepresentedArea_Checked = false;
             PrismZones_Checked = false;
             AspectZones_Checked = false;
+            SlopeZones_Checked = false;
+            ElevationZones_Checked = false;
         }
 
         public ICommand CmdGenerateLayers
@@ -110,12 +132,14 @@ namespace bagis_pro
                 return new RelayCommand(async () =>
                 {
                     // Create from template
-                    await GenerateLayersAsync(RepresentedArea_Checked, PrismZones_Checked, AspectZones_Checked);
+                    await GenerateLayersAsync(RepresentedArea_Checked, PrismZones_Checked, AspectZones_Checked,
+                        SlopeZones_Checked, ElevationZones_Checked);
                 });
             }
         }
 
-        private async Task GenerateLayersAsync(bool calculateRepresented, bool calculatePrism, bool calculateAspect)
+        private async Task GenerateLayersAsync(bool calculateRepresented, bool calculatePrism, bool calculateAspect,
+            bool calculateSlope, bool calculateElevation)
         {
             try
             {
@@ -125,7 +149,8 @@ namespace bagis_pro
                     return;
                 }
 
-                if (calculateRepresented == false && calculatePrism == false && calculateAspect == false)
+                if (calculateRepresented == false && calculatePrism == false && calculateAspect == false
+                    && calculateSlope == false && calculateElevation == false)
                 {
                     MessageBox.Show("No layers selected to generate !!", "BAGIS-PRO");
                     return;
@@ -170,7 +195,41 @@ namespace bagis_pro
                         Module1.Current.Settings.m_precipZonesCount, strZonesRaster, strMaskPath, "ASPECT");
                     if (success == BA_ReturnCode.Success)
                     {
-                        layersPane.RepresentedArea_Checked = false;
+                        layersPane.AspectZones_Checked = false;
+                    }
+                }
+
+                if (calculateSlope)
+                {
+                    string strLayer = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Surfaces, true) +
+                        System.IO.Path.GetFileName(Constants.FILE_SLOPE);
+                    string strZonesRaster = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) +
+                        Constants.FILE_SLOPE_ZONE;
+                    string strMaskPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_PRISM_VECTOR;
+                    success = await AnalysisTools.CalculateZonesAsync(Module1.Current.Aoi.FilePath, strLayer,
+                        Module1.Current.Settings.m_precipZonesCount, strZonesRaster, strMaskPath, "SLOPE");
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        layersPane.SlopeZones_Checked = false;
+                    }
+                }
+
+                if (calculateElevation)
+                {
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(GenerateLayersAsync),
+                        "GetDemStatsAsync");
+                    IList<double> lstResult = await GeoprocessingTools.GetDemStatsAsync(Module1.Current.Aoi.FilePath, "", 0.005);
+                    double demElevMinMeters = -1;
+                    double demElevMaxMeters = -1;
+                    if (lstResult.Count == 2)   // We expect the min and max values in that order
+                    {
+                        demElevMinMeters = lstResult[0];
+                        demElevMaxMeters = lstResult[1];
+                    }
+                    else
+                    {
+                        MessageBox.Show("Unable to read DEM. Elevation zones cannot be generated!!", "BAGIS-PRO");
+                        return;
                     }
                 }
 
