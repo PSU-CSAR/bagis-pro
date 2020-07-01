@@ -176,23 +176,26 @@ namespace bagis_pro
                     string strZonesRaster = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) +
                         Constants.FILE_PRECIP_ZONE;
                     string strMaskPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_PRISM_VECTOR;
+                    IList<BA_Objects.Interval> lstInterval = await AnalysisTools.GetPrismClassesAsync(Module1.Current.Aoi.FilePath,
+                        strLayer, Module1.Current.Settings.m_precipZonesCount);
                     success = await AnalysisTools.CalculateZonesAsync(Module1.Current.Aoi.FilePath, strLayer,
-                        Module1.Current.Settings.m_precipZonesCount, strZonesRaster, strMaskPath, "PRISM");
+                        lstInterval, strZonesRaster, strMaskPath, "PRISM");
                     if (success == BA_ReturnCode.Success)
                     {
-                        layersPane.RepresentedArea_Checked = false;
+                        layersPane.PrismZones_Checked = false;
                     }
                 }
 
                 if (calculateAspect)
                 {
                     string strLayer = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Surfaces, true) +
-                        System.IO.Path.GetFileName(Constants.FILE_ASPECT);
+                        Constants.FILE_ASPECT;
                     string strZonesRaster = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) +
                         Constants.FILE_ASPECT_ZONE;
-                    string strMaskPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_PRISM_VECTOR;
+                    string strMaskPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_VECTOR;
+                    IList<BA_Objects.Interval> lstInterval = AnalysisTools.GetAspectClasses(Module1.Current.Settings.m_aspectDirections);
                     success = await AnalysisTools.CalculateZonesAsync(Module1.Current.Aoi.FilePath, strLayer,
-                        Module1.Current.Settings.m_precipZonesCount, strZonesRaster, strMaskPath, "ASPECT");
+                        lstInterval, strZonesRaster, strMaskPath, "ASPECT");
                     if (success == BA_ReturnCode.Success)
                     {
                         layersPane.AspectZones_Checked = false;
@@ -202,12 +205,13 @@ namespace bagis_pro
                 if (calculateSlope)
                 {
                     string strLayer = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Surfaces, true) +
-                        System.IO.Path.GetFileName(Constants.FILE_SLOPE);
+                        Constants.FILE_SLOPE;
                     string strZonesRaster = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) +
                         Constants.FILE_SLOPE_ZONE;
-                    string strMaskPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_PRISM_VECTOR;
+                    string strMaskPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_VECTOR;
+                    IList<BA_Objects.Interval> lstInterval = AnalysisTools.GetSlopeClasses();
                     success = await AnalysisTools.CalculateZonesAsync(Module1.Current.Aoi.FilePath, strLayer,
-                        Module1.Current.Settings.m_precipZonesCount, strZonesRaster, strMaskPath, "SLOPE");
+                        lstInterval, strZonesRaster, strMaskPath, "SLOPE");
                     if (success == BA_ReturnCode.Success)
                     {
                         layersPane.SlopeZones_Checked = false;
@@ -229,10 +233,53 @@ namespace bagis_pro
                     else
                     {
                         MessageBox.Show("Unable to read DEM. Elevation zones cannot be generated!!", "BAGIS-PRO");
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(GenerateLayersAsync),
+                            "Unable to read min/max elevation from DEM");
                         return;
                     }
-                }
 
+                    double aoiElevMin = demElevMinMeters;
+                    double aoiElevMax = demElevMaxMeters;
+                    if (! Module1.Current.Settings.m_demUnits.Equals(Module1.Current.Settings.m_demDisplayUnits))
+                    {
+                        if (Module1.Current.Settings.m_demDisplayUnits.Equals("Feet"))
+                        {
+                            aoiElevMin = LinearUnit.Meters.ConvertTo(demElevMinMeters, LinearUnit.Feet);
+                            aoiElevMax = LinearUnit.Meters.ConvertTo(demElevMaxMeters, LinearUnit.Feet);
+                        }
+                        else if (Module1.Current.Settings.m_demUnits.Equals("Feet"))
+                        {
+                            aoiElevMin = LinearUnit.Feet.ConvertTo(demElevMinMeters, LinearUnit.Meters);
+                            aoiElevMax = LinearUnit.Feet.ConvertTo(demElevMaxMeters, LinearUnit.Meters);
+                        }
+                    }
+
+                    short[] arrTestIntervals = new short[] { 5000, 2500, 1000, 500, 250, 200, 100, 50 };
+                    short bestInterval = 50;
+                    var range = aoiElevMax - aoiElevMin;
+                    foreach (var testInterval in arrTestIntervals)
+                    {
+                        double dblZoneCount = range / testInterval;
+                        if (dblZoneCount >= Module1.Current.Settings.m_minElevZones)
+                        {
+                            bestInterval = testInterval;
+                            break;
+                        }
+                    }
+                    IList<BA_Objects.Interval> lstInterval = AnalysisTools.GetElevationClasses(aoiElevMin, aoiElevMax,
+                        bestInterval, Module1.Current.Settings.m_demUnits, Module1.Current.Settings.m_demDisplayUnits);
+                    string strLayer = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Surfaces, true) +
+                        Constants.FILE_DEM_FILLED;
+                    string strZonesRaster = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) +
+                        Constants.FILE_ELEV_ZONE;
+                    string strMaskPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_VECTOR;
+                    success = await AnalysisTools.CalculateZonesAsync(Module1.Current.Aoi.FilePath, strLayer,
+                        lstInterval, strZonesRaster, strMaskPath, "ELEVATION");
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        layersPane.ElevationZones_Checked = false;
+                    }
+                }
 
                 if (success == BA_ReturnCode.Success)
                 {

@@ -21,13 +21,13 @@ namespace bagis_pro
                 var parameters = Geoprocessing.MakeValueArray(sDemPath, "MINIMUM");
                 var environments = Geoprocessing.MakeEnvironmentArray(workspace: aoiPath, mask: maskPath);              
                 IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("GetRasterProperties_management", parameters, environments,
-                    ArcGIS.Desktop.Framework.Threading.Tasks.CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
                 bool success = Double.TryParse(Convert.ToString(gpResult.ReturnValue), out dblMin);
                 returnList.Add(dblMin - adjustmentFactor);
                 double dblMax = -1;
                 parameters = Geoprocessing.MakeValueArray(sDemPath, "MAXIMUM");
                 gpResult = await Geoprocessing.ExecuteToolAsync("GetRasterProperties_management", parameters, environments,
-                    ArcGIS.Desktop.Framework.Threading.Tasks.CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
                 success = Double.TryParse(Convert.ToString(gpResult.ReturnValue), out dblMax);
                 returnList.Add(dblMax + adjustmentFactor);
             }
