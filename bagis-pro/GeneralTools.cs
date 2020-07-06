@@ -401,7 +401,15 @@ namespace bagis_pro
                 Module1.Current.ModuleLogManager.LogDebug(nameof(GenerateTablesAsync), "Queried min/max from DEM. Min is " + elevMinMeters);
 
                 success = await ExcelTools.CreateElevationTableAsync(pAreaElvWorksheet, elevMinMeters);
-                Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Created Elevation Table");
+                if (success == BA_ReturnCode.Success)
+                {
+                    Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Created Elevation Table");
+                }
+                else
+                {
+                    Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "An error occurred while trying to create the Elevation Table");
+                    return success;
+                }
 
                 Module1.Current.Aoi.HasSnotel = true;
                 int intSites = await GeodatabaseTools.CountFeaturesAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, false)), Constants.FILE_SNOTEL);
@@ -525,7 +533,7 @@ namespace bagis_pro
             }
             finally
             {
-                if (bInteractive == true)
+                if (bInteractive == true && success == BA_ReturnCode.Success)
                 {
                     objExcel.Visible = true;
                 }

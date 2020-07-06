@@ -567,7 +567,7 @@ namespace bagis_pro
                     {
                         rDataset = geodatabase.OpenDataset<RasterDataset>(strFileName);
                     }
-                    catch (GeodatabaseTableException e)
+                    catch (Exception e)
                     {
                         Module1.Current.ModuleLogManager.LogError(nameof(DisplayRasterAsync),
                             "Unable to open raster " + strFileName);

@@ -1,6 +1,7 @@
 ﻿using ArcGIS.Core.Data;
 using ArcGIS.Core.Data.Raster;
 using ArcGIS.Core.Geometry;
+using ArcGIS.Desktop.Core;
 using ArcGIS.Desktop.Core.Geoprocessing;
 using ArcGIS.Desktop.Editing;
 using ArcGIS.Desktop.Framework.Dialogs;
@@ -964,11 +965,36 @@ namespace bagis_pro
                         }, rasterTable);
                     }
                 }
+                if (success == BA_ReturnCode.Success)
+                {
+                    bool bModificationResult = false;
+                    string errorMsg = "";
+                    try
+                    {
+                        bModificationResult = editOperation.Execute();
+                        if (!bModificationResult) errorMsg = editOperation.ErrorMessage;
+                    }
+                    catch (GeodatabaseException exObj)
+                    {
+                        success = BA_ReturnCode.WriteError;
+                        errorMsg = exObj.Message;
+                    }
+
+                    if (String.IsNullOrEmpty(errorMsg))
+                    {
+                        Project.Current.SaveEditsAsync();
+                        success = BA_ReturnCode.Success;
+                    }
+                    else
+                    {
+                        if (Project.Current.HasEdits)
+                            Project.Current.DiscardEditsAsync();
+                        Module1.Current.ModuleLogManager.LogError(nameof(CalculateZonesAsync),
+                            "Exception: " + errorMsg);
+                        success = BA_ReturnCode.UnknownError;
+                    }
+                }
             });
-            if (success == BA_ReturnCode.Success)
-            { 
-                success = await GeodatabaseTools.CommitChangesAsync(editOperation);
-            }
             return success;
         }
 

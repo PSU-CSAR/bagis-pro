@@ -9,6 +9,8 @@ using ArcGIS.Desktop.Core.Geoprocessing;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
 using Microsoft.Office.Interop.Excel;
 using Microsoft.Office.Core;
+using ArcGIS.Core.Data.Raster;
+using ArcGIS.Desktop.Framework.Dialogs;
 
 namespace bagis_pro
 {
@@ -27,17 +29,93 @@ namespace bagis_pro
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
 
-            //read class definition for chart and table labeling
-            Uri uriElevZones = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false));
-            IList<BA_Objects.Interval> lstInterval = await GeodatabaseTools.ReadReclassRasterAttribute(uriElevZones, Constants.FILE_ELEV_ZONE);
-
-            //===========================
-            //Zonal Statistics
-            //===========================
-            string strTable = "tblZones";
-            IGPResult gpResult = await QueuedTask.Run(() =>
+            await QueuedTask.Run(() =>
             {
-                //string sMask = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_VECTOR;
+                //read class definition for chart and table labeling
+                Uri uriElevZones = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false));
+                IList<BA_Objects.Interval> lstInterval = new List<BA_Objects.Interval>();
+                bool bElevZonesExist = false;
+
+                using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(uriElevZones)))
+                { 
+                    IReadOnlyList<RasterDatasetDefinition> definitions = geodatabase.GetDefinitions<RasterDatasetDefinition>();
+                    foreach (RasterDatasetDefinition def in definitions)
+                    {
+                        if (def.GetName().Equals(Constants.FILE_ELEV_ZONE))
+                        {
+                            bElevZonesExist = true;
+                            break;
+                        }
+                    }
+
+                    if (bElevZonesExist)
+                    {
+                        using (RasterDataset rasterDataset = geodatabase.OpenDataset<RasterDataset>(Constants.FILE_ELEV_ZONE))
+                        {
+                            RasterBandDefinition bandDefinition = rasterDataset.GetBand(0).GetDefinition();
+                            Tuple<double, double> tupleSize = bandDefinition.GetMeanCellSize();
+                            if (Math.Round(tupleSize.Item1, 5) != Math.Round(tupleSize.Item2, 5))
+                            {
+                                ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("The X and Y cell size values are not the same for " + uriElevZones.LocalPath + "\\" +
+                                        Constants.FILE_ELEV_ZONE + ". This may cause problems with some BAGIS functions!!", "BAGIS-PRO");
+                            }
+                            double cellSize = (tupleSize.Item1 + tupleSize.Item2) / 2;
+
+                            Raster raster = rasterDataset.CreateDefaultRaster();
+                            using (Table rasterTable = raster.GetAttributeTable())
+                            {
+                                TableDefinition definition = rasterTable.GetDefinition();
+                                int idxName = definition.FindField(Constants.FIELD_NAME);
+                                int idxLowerBound = definition.FindField(Constants.FIELD_LBOUND);
+                                int idxUpperBound = definition.FindField(Constants.FIELD_UBOUND);
+                                int idxCount = definition.FindField(Constants.FIELD_COUNT);
+                                using (RowCursor cursor = rasterTable.Search())
+                                {
+                                    while (cursor.MoveNext())
+                                    {
+                                        BA_Objects.Interval interval = new BA_Objects.Interval();
+                                        Row row = cursor.Current;
+                                        interval.Value = row[Constants.FIELD_VALUE];
+                                        if (idxName > 0)
+                                        {
+                                            interval.Name = Convert.ToString(row[idxName]);
+                                        }
+                                        else
+                                        {
+                                            interval.Name = Constants.VALUE_UNKNOWN;
+                                        }
+                                        if (idxUpperBound > 0)
+                                        {
+                                            interval.UpperBound = Convert.ToDouble(row[idxUpperBound]);
+                                        }
+                                        if (idxLowerBound > 0)
+                                        {
+                                            interval.LowerBound = Convert.ToDouble(row[idxLowerBound]);
+                                        }
+                                        if (idxCount > 0)
+                                        {
+                                            interval.Area = cellSize * Convert.ToInt32(row[idxCount]);
+                                        }
+                                        lstInterval.Add(interval);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(CreateElevationTableAsync),
+                            "Unable to locate " + Constants.FILE_ELEV_ZONE + ". The elevation table cannot be created");
+                        MessageBox.Show("Unable to locate " + Constants.FILE_ELEV_ZONE +
+                                        ". The elevation table cannot be created", "BAGIS-PRO");
+                        success = BA_ReturnCode.ReadError;
+                        return;
+                    }
+
+                //===========================
+                //Zonal Statistics
+                //===========================
+                string strTable = "tblZones";
                 string sMask = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_RASTER;
                 var environments = Geoprocessing.MakeEnvironmentArray(workspace: Module1.Current.Aoi.FilePath, 
                     snapRaster: BA_Objects.Aoi.SnapRasterPath(Module1.Current.Aoi.FilePath), mask: sMask);
@@ -45,98 +123,106 @@ namespace bagis_pro
                 string strInValueRaster = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Surfaces, true) + Constants.FILE_DEM_FILLED;
                 string strOutTable = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) + strTable;
                 var parameters = Geoprocessing.MakeValueArray(strInZoneData, Constants.FIELD_VALUE, strInValueRaster, strOutTable);
-                return Geoprocessing.ExecuteToolAsync("ZonalStatisticsAsTable", parameters, environments,
+                var gpResult = Geoprocessing.ExecuteToolAsync("ZonalStatisticsAsTable", parameters, environments,
                             CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-            });
-            if (gpResult.IsFailed)
-            {
-                success = BA_ReturnCode.UnknownError;
-            }
-            else
-            {
-                success = BA_ReturnCode.Success;
-            }
-
-            //=============================================
-            // Create Field Titles
-            //=============================================
-            pworksheet.Cells[1, 1] = "VALUE";
-            pworksheet.Cells[1, 2] = "COUNT";
-            pworksheet.Cells[1, 3] = "AREA";
-            pworksheet.Cells[1, 4] = "MIN";
-            pworksheet.Cells[1, 5] = "MAX";
-            pworksheet.Cells[1, 6] = "RANGE";
-            pworksheet.Cells[1, 7] = "MEAN";
-            pworksheet.Cells[1, 8] = "STD";
-            pworksheet.Cells[1, 9] = "SUM";
-            pworksheet.Cells[1, 10] = "%_AREA";
-            pworksheet.Cells[1, 11] = "%_AREA_ELV";
-            pworksheet.Cells[1, 12] = "LABEL";
-
-            //============================================
-            // Populate Elevation and Percent Area Rows
-            //============================================
-            Uri analysisUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false));
-            await QueuedTask.Run(() => {
-                using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(analysisUri)))
-            using (Table statisticsTable = geodatabase.OpenDataset<Table>(strTable))
-            {
-                long rasterValueCount = statisticsTable.GetCount();
-                long sumOfCount = 0;
-                using (RowCursor rowCursor = statisticsTable.Search(new QueryFilter(), false))
+                if (gpResult.Result.IsFailed)
                 {
-                    while (rowCursor.MoveNext())
+                    Module1.Current.ModuleLogManager.LogError(nameof(CreateElevationTableAsync),
+                        "Failed to reclass " + Constants.FILE_ELEV_ZONE + " raster. Error code: " + gpResult.Result.ErrorCode);
+                    foreach (var objMessage in gpResult.Result.Messages)
                     {
-                        using (Row row = rowCursor.Current)
-                        {
-                            sumOfCount = sumOfCount + Convert.ToInt32(row["COUNT"]);
-                        }
+                        IGPMessage msg = (IGPMessage)objMessage;
+                        Module1.Current.ModuleLogManager.LogError(nameof(CreateElevationTableAsync),
+                            msg.Text);
                     }
+
+                    success = BA_ReturnCode.UnknownError;
+                }
+                else
+                {
+                    success = BA_ReturnCode.Success;
                 }
 
-                double percentArea = 0;
-                int i = 0;
-                using (RowCursor rowCursor = statisticsTable.Search(new QueryFilter(), false))
+                //=============================================
+                // Create Field Titles
+                //=============================================
+                pworksheet.Cells[1, 1] = "VALUE";
+                pworksheet.Cells[1, 2] = "COUNT";
+                pworksheet.Cells[1, 3] = "AREA";
+                pworksheet.Cells[1, 4] = "MIN";
+                pworksheet.Cells[1, 5] = "MAX";
+                pworksheet.Cells[1, 6] = "RANGE";
+                pworksheet.Cells[1, 7] = "MEAN";
+                pworksheet.Cells[1, 8] = "STD";
+                pworksheet.Cells[1, 9] = "SUM";
+                pworksheet.Cells[1, 10] = "%_AREA";
+                pworksheet.Cells[1, 11] = "%_AREA_ELV";
+                pworksheet.Cells[1, 12] = "LABEL";
+
+                //============================================
+                // Populate Elevation and Percent Area Rows
+                //============================================
+                if (success == BA_ReturnCode.Success)
                 {
-                    while (rowCursor.MoveNext())
-                    {
-                        using (Row row = rowCursor.Current)
+                        using (Table statisticsTable = geodatabase.OpenDataset<Table>(strTable))
                         {
-                            double count = Convert.ToDouble(row[Constants.FIELD_COUNT]);
-                            percentArea = percentArea + (count / sumOfCount * 100);
-                            // Populate Excel Table
-                            double dblUpperBound = lstInterval[i].UpperBound;
-                            if (!Module1.Current.Settings.m_demDisplayUnits.Equals(Module1.Current.Settings.m_demUnits))
+                            long rasterValueCount = statisticsTable.GetCount();
+                            long sumOfCount = 0;
+                            using (RowCursor rowCursor = statisticsTable.Search(new QueryFilter(), false))
                             {
-                                if (Module1.Current.Settings.m_demDisplayUnits.Equals("Meters") &&
-                                    Module1.Current.Settings.m_demUnits.Equals("Feet"))
+                                while (rowCursor.MoveNext())
+                                {
+                                    using (Row row = rowCursor.Current)
                                     {
-                                        dblUpperBound = LinearUnit.Feet.ConvertTo(dblUpperBound, LinearUnit.Meters);
+                                        sumOfCount = sumOfCount + Convert.ToInt32(row["COUNT"]);
                                     }
-                                else if (Module1.Current.Settings.m_demDisplayUnits.Equals("Feet") &&
-                                         Module1.Current.Settings.m_demUnits.Equals("Meters"))
-                                    {
-                                        dblUpperBound = LinearUnit.Meters.ConvertTo(dblUpperBound, LinearUnit.Feet);
-                                    }
+                                }
                             }
-                            pworksheet.Cells[i + 3, 1] = dblUpperBound;
-                            pworksheet.Cells[i + 3, 2] = row[Constants.FIELD_COUNT];
-                            pworksheet.Cells[i + 3, 3] = Math.Round(Convert.ToDouble(row["AREA"]),0);
-                            pworksheet.Cells[i + 3, 4] = row["MIN"];
-                            pworksheet.Cells[i + 3, 5] = row["MAX"];
-                            pworksheet.Cells[i + 3, 6] = row["RANGE"];
-                            pworksheet.Cells[i + 3, 7] = row["MEAN"];
-                            pworksheet.Cells[i + 3, 8] = row["STD"];
-                            pworksheet.Cells[i + 3, 9] = row["SUM"];
-                            pworksheet.Cells[i + 3, 10] = count / sumOfCount * 100;
-                            pworksheet.Cells[i + 3, 11] = percentArea;
-                            pworksheet.Cells[i + 3, 12] = lstInterval[i].Name; 
-                            i++;
+
+                            double percentArea = 0;
+                            int i = 0;
+                            using (RowCursor rowCursor = statisticsTable.Search(new QueryFilter(), false))
+                            {
+                                while (rowCursor.MoveNext())
+                                {
+                                    using (Row row = rowCursor.Current)
+                                    {
+                                        double count = Convert.ToDouble(row[Constants.FIELD_COUNT]);
+                                        percentArea = percentArea + (count / sumOfCount * 100);
+                                        // Populate Excel Table
+                                        double dblUpperBound = lstInterval[i].UpperBound;
+                                        if (!Module1.Current.Settings.m_demDisplayUnits.Equals(Module1.Current.Settings.m_demUnits))
+                                        {
+                                            if (Module1.Current.Settings.m_demDisplayUnits.Equals("Meters") &&
+                                                Module1.Current.Settings.m_demUnits.Equals("Feet"))
+                                            {
+                                                dblUpperBound = LinearUnit.Feet.ConvertTo(dblUpperBound, LinearUnit.Meters);
+                                            }
+                                            else if (Module1.Current.Settings.m_demDisplayUnits.Equals("Feet") &&
+                                                     Module1.Current.Settings.m_demUnits.Equals("Meters"))
+                                            {
+                                                dblUpperBound = LinearUnit.Meters.ConvertTo(dblUpperBound, LinearUnit.Feet);
+                                            }
+                                        }
+                                        pworksheet.Cells[i + 3, 1] = dblUpperBound;
+                                        pworksheet.Cells[i + 3, 2] = row[Constants.FIELD_COUNT];
+                                        pworksheet.Cells[i + 3, 3] = Math.Round(Convert.ToDouble(row["AREA"]), 0);
+                                        pworksheet.Cells[i + 3, 4] = row["MIN"];
+                                        pworksheet.Cells[i + 3, 5] = row["MAX"];
+                                        pworksheet.Cells[i + 3, 6] = row["RANGE"];
+                                        pworksheet.Cells[i + 3, 7] = row["MEAN"];
+                                        pworksheet.Cells[i + 3, 8] = row["STD"];
+                                        pworksheet.Cells[i + 3, 9] = row["SUM"];
+                                        pworksheet.Cells[i + 3, 10] = count / sumOfCount * 100;
+                                        pworksheet.Cells[i + 3, 11] = percentArea;
+                                        pworksheet.Cells[i + 3, 12] = lstInterval[i].Name;
+                                        i++;
+                                    }
+                                }
+                            }
                         }
-                    }
                 }
-            }
-            });
+            }   // End Geodatabase using
 
             //aoiDemMin is always in meters
             //Make First Elevation Interval the Min of AOI DEM
@@ -146,10 +232,9 @@ namespace bagis_pro
             }
             pworksheet.Cells[2, 1] = aoiDemMin;  //Value
             pworksheet.Cells[2, 11] = 0;         //PERCENT_AREA_ELEVATION
-
-            success = BA_ReturnCode.Success;
-            return success;
-        }
+        });
+        return success;
+    }
 
         // count the number of records in a worksheet based on the values on the first column
         // aspect, slope, snotel, and snow course tables have a beginning_row value of 1

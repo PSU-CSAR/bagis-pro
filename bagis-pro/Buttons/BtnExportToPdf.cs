@@ -93,6 +93,10 @@ namespace bagis_pro.Buttons
                 }
 
                 success = await GeneralTools.GenerateTablesAsync(false);   // export the tables to pdf
+                if (!success.Equals(BA_ReturnCode.Success))
+                {
+                    MessageBox.Show("An error occurred while generating the Excel tables!!", "BAGIS-PRO");
+                }
                 await GeneralTools.GenerateMapsTitlePage();
 
                 // Initialize output document
@@ -136,10 +140,14 @@ namespace bagis_pro.Buttons
             try
             {
                 BA_ReturnCode success = await GeneralTools.GenerateTablesAsync(true);
+                if (!success.Equals(BA_ReturnCode.Success))
+                {
+                    MessageBox.Show("An error occurred while generating the Excel tables!!", "BAGIS-PRO");
+                }
             }
             catch (Exception e)
             {
-                MessageBox.Show("An error occurred while trying to export the tables!! " + e.Message, "BAGIS PRO");
+                MessageBox.Show("An exception occurred while trying to export the tables!! " + e.Message, "BAGIS PRO");
                 Module1.Current.ModuleLogManager.LogError(nameof(OnClick), 
                     "An error occurred while trying to export the tables!! " + e.Message);
             }

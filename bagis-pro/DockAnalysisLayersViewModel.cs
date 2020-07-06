@@ -156,6 +156,15 @@ namespace bagis_pro
                     return;
                 }
 
+                var cmdShowHistory = FrameworkApplication.GetPlugInWrapper("esri_geoprocessing_showToolHistory") as ICommand;
+                if (cmdShowHistory != null)
+                {
+                    if (cmdShowHistory.CanExecute(null))
+                    {
+                        cmdShowHistory.Execute(null);
+                    }
+                }
+
                 var layersPane = (DockAnalysisLayersViewModel)FrameworkApplication.DockPaneManager.Find("bagis_pro_DockAnalysisLayers");
                 BA_ReturnCode success = BA_ReturnCode.Success;
 
