@@ -177,22 +177,24 @@ namespace bagis_pro
             await QueuedTask.Run(() =>
             {
                 using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(polyFeatureGdbUri)))
-                using (Table table = geodatabase.OpenDataset<Table>(polyFeatureName))
                 {
-                    QueryFilter queryFilter = new QueryFilter();
-                    double maxArea = -1;    // We will report the points in the largest polygon if > 1
-                    using (RowCursor cursor = table.Search(queryFilter, false))
+                    using (Table table = geodatabase.OpenDataset<Table>(polyFeatureName))
                     {
-                        while (cursor.MoveNext())
+                        QueryFilter queryFilter = new QueryFilter();
+                        double maxArea = -1;    // We will report the points in the largest polygon if > 1
+                        using (RowCursor cursor = table.Search(queryFilter, false))
                         {
-                            using (Feature feature = (Feature)cursor.Current)
+                            while (cursor.MoveNext())
                             {
-                                Geometry areaGeo = feature.GetShape();
-                                var area = GeometryEngine.Instance.Area(areaGeo);
-                                if (area > maxArea)
+                                using (Feature feature = (Feature)cursor.Current)
                                 {
-                                    maxArea = area;
-                                    polyGeometry = feature.GetShape();
+                                    Geometry areaGeo = feature.GetShape();
+                                    var area = GeometryEngine.Instance.Area(areaGeo);
+                                    if (area > maxArea)
+                                    {
+                                        maxArea = area;
+                                        polyGeometry = feature.GetShape();
+                                    }
                                 }
                             }
                         }
@@ -201,24 +203,44 @@ namespace bagis_pro
                 if (polyGeometry != null)
                 {
                     using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(pointFeatureGdbUri)))
-                    using (FeatureClass pointFeatureClass = geodatabase.OpenDataset<FeatureClass>(pointFeatureName))
                     {
-                        // Using a spatial query filter to find all features which have a certain district name and lying within a given Polygon.
-                        SpatialQueryFilter spatialQueryFilter = new SpatialQueryFilter
+                        bool bExists = false;
+                        IReadOnlyList<FeatureClassDefinition> definitions = geodatabase.GetDefinitions<FeatureClassDefinition>();
+                        foreach (FeatureClassDefinition def in definitions)
                         {
-                            FilterGeometry = polyGeometry,
-                            SpatialRelationship = SpatialRelationship.Contains
-                        };
-
-                        using (RowCursor aCursor = pointFeatureClass.Search(spatialQueryFilter, false))
-                        {
-                            while (aCursor.MoveNext())
+                            if (def.GetName().Equals(pointFeatureName) || def.GetAliasName().Equals(pointFeatureName))
                             {
-                                using (Feature feature = (Feature)aCursor.Current)
+                                bExists = true;
+                                break;
+                            }
+                        }
+                        if (bExists)
+                        {
+                            using (FeatureClass pointFeatureClass = geodatabase.OpenDataset<FeatureClass>(pointFeatureName))
+                            {
+                                // Using a spatial query filter to find all features which have a certain district name and lying within a given Polygon.
+                                SpatialQueryFilter spatialQueryFilter = new SpatialQueryFilter
                                 {
-                                    retVal++;
+                                    FilterGeometry = polyGeometry,
+                                    SpatialRelationship = SpatialRelationship.Contains
+                                };
+
+                                using (RowCursor aCursor = pointFeatureClass.Search(spatialQueryFilter, false))
+                                {
+                                    while (aCursor.MoveNext())
+                                    {
+                                        using (Feature feature = (Feature)aCursor.Current)
+                                        {
+                                            retVal++;
+                                        }
+                                    }
                                 }
                             }
+                        }
+                        else
+                        {
+                            Module1.Current.ModuleLogManager.LogError(nameof(CountPointsWithinInFeatureAsync),
+                                "Unable to locate point class " + pointFeatureName);
                         }
                     }
                 }

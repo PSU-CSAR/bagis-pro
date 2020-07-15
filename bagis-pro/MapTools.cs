@@ -186,10 +186,17 @@ namespace bagis_pro
                     await MapTools.DisplayScaleBarAsync(layout, Constants.MAPS_DEFAULT_MAP_FRAME_NAME);
 
                     // update map elements for default map (elevation)
-                    BA_Objects.MapDefinition defaultMap = MapTools.LoadMapDefinition(BagisMapType.ELEVATION);
-                    await MapTools.UpdateMapElementsAsync(Module1.Current.Aoi.Name.ToUpper(), defaultMap);
-                    await MapTools.UpdateLegendAsync(defaultMap.LegendLayerList);
-
+                    if (FrameworkApplication.State.Contains("MapButtonPalette_BtnElevation_State"))
+                    {
+                        BA_Objects.MapDefinition defaultMap = MapTools.LoadMapDefinition(BagisMapType.ELEVATION);
+                        await MapTools.UpdateMapElementsAsync(Module1.Current.Aoi.Name.ToUpper(), defaultMap);
+                        await MapTools.UpdateLegendAsync(defaultMap.LegendLayerList);
+                    }
+                    else
+                    {
+                        MessageBox.Show("The default Elevation Zones map could not be loaded. Use " +
+                                        "the Display Maps buttons to display other maps!!", "BAGIS-PRO");
+                    }
 
                     //zoom to aoi boundary layer
                     double bufferFactor = 1.1;
@@ -613,7 +620,15 @@ namespace bagis_pro
                 // Create the raster layer on the active map
                 await QueuedTask.Run(() =>
                 {
-                    rasterLayer = (RasterLayer)LayerFactory.Instance.CreateLayer(rasterUri, MapView.Active.Map);
+                    try
+                    {
+                        rasterLayer = (RasterLayer)LayerFactory.Instance.CreateLayer(rasterUri, MapView.Active.Map);
+                    }
+                    catch (Exception e)
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(DisplayRasterWithSymbolAsync),
+                            e.Message);
+                    }
                 });
 
                 // Set raster layer transparency and name
@@ -633,6 +648,7 @@ namespace bagis_pro
             int transparency, bool isVisible, bool useCustomMinMax, double stretchMax, double stretchMin,
             double labelMax, double labelMin)
         {
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
             // parse the uri for the folder and file
             string strFileName = null;
             string strFolderPath = null;
@@ -647,7 +663,7 @@ namespace bagis_pro
             {
                 Module1.Current.ModuleLogManager.LogError(nameof(DisplayStretchRasterWithSymbolAsync),
                     "Unable to add locate raster!!");
-                return BA_ReturnCode.ReadError;
+                return success;
             }
             // Open the requested raster so we know it exists; return if it doesn't
             await QueuedTask.Run(async () =>
@@ -656,7 +672,15 @@ namespace bagis_pro
                 // Create the raster layer on the active map
                 await QueuedTask.Run(() =>
                 {
-                    rasterLayer = (RasterLayer)LayerFactory.Instance.CreateLayer(rasterUri, MapView.Active.Map);
+                    try
+                    {
+                        rasterLayer = (RasterLayer)LayerFactory.Instance.CreateLayer(rasterUri, MapView.Active.Map);
+                    }
+                    catch (Exception e)
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(DisplayStretchRasterWithSymbolAsync),
+                            e.Message);
+                    }
                 });
 
                 // Set raster layer transparency and name
@@ -668,9 +692,10 @@ namespace bagis_pro
                     // Create and deploy the unique values renderer
                     await MapTools.SetToStretchValueColorizer(displayName, styleCategory, styleName, useCustomMinMax,
                         stretchMin, stretchMax, labelMin, labelMax);
+                    success = BA_ReturnCode.Success;
                 }
             });
-            return BA_ReturnCode.Success;
+            return success;
         }
 
         public static async Task<BA_ReturnCode> DisplayRasterFromLayerFileAsync(Uri rasterUri, string displayName,
@@ -1360,7 +1385,14 @@ namespace bagis_pro
                     oLayer.ReplaceDataSource(rDataset);
                     oLayer.SetName(strNewLayerName);
                 }
-                GraphicElement textBox = layout.FindElement(Constants.MAPS_SUBTITLE) as GraphicElement;
+                GraphicElement textBox = layout.FindElement(Constants.MAPS_TITLE) as GraphicElement;
+                if (textBox != null)
+                {
+                    CIMTextGraphic graphic = (CIMTextGraphic)textBox.Graphic;
+                    graphic.Text = Module1.Current.Aoi.Name.ToUpper();
+                    textBox.SetGraphic(graphic);
+                }
+                textBox = layout.FindElement(Constants.MAPS_SUBTITLE) as GraphicElement;
                 if (textBox != null)
                 {
                     CIMTextGraphic graphic = (CIMTextGraphic)textBox.Graphic;

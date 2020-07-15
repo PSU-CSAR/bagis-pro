@@ -617,7 +617,7 @@ namespace bagis_pro
 
             if (!String.IsNullOrEmpty(strWsPrefix))
             {
-                await QueuedTask.Run(() =>
+                await QueuedTask.Run(async () =>
                 {
                     // if the buffer is different from PRISM, we need to create a new buffer file
                     string strTempBuffer = "tmpBuffer";
@@ -759,12 +759,12 @@ namespace bagis_pro
                         var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath, snapRaster: BA_Objects.Aoi.SnapRasterPath(strAoiPath));
                         var parameters = Geoprocessing.MakeValueArray(imageServiceUri.AbsoluteUri, strClipEnvelope, strOutputRaster, strTemplateDataset,
                                             "", "ClippingGeometry");
-                        var gpResult = Geoprocessing.ExecuteToolAsync("Clip_management", parameters, environments,
+                        var gpResult = await Geoprocessing.ExecuteToolAsync("Clip_management", parameters, environments,
                                         CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                        if (gpResult.Result.IsFailed)
+                        if (gpResult.IsFailed)
                         {
                             Module1.Current.ModuleLogManager.LogError(nameof(ClipLayersAsync),
-                               "Unable to clip " + strClipFile + ". Error code: " + gpResult.Result.ErrorCode);
+                               "Unable to clip " + strClipFile + ". Error code: " + gpResult.ErrorCode);
                             MessageBox.Show("Unable to clip. Clipping cancelled!!", "BAGIS-PRO");
                             return;
                         }
