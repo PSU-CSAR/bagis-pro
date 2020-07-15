@@ -112,6 +112,8 @@ namespace bagis_pro
 
         public const string DATA_TYPE_SWE = "Snotel SWE";
         public const string DATA_TYPE_PRECIPITATION = "Precipitation";
+        public const string DATA_TYPE_SNOTEL = "SNOTEL";
+        public const string DATA_TYPE_SNOW_COURSE = "Snow Course";
 
         public const int VALUE_NO_DATA_9999 = -9999;
         public const string VALUE_NO_DATA = "NoData";

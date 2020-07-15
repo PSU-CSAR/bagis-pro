@@ -71,25 +71,27 @@
             <CheckBox x:Name="chkSnotel" Content="SNOTEL" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,0,0,0" IsChecked="{Binding SNOTEL_Checked}" IsEnabled="False"/>
         </DockPanel>
         <DockPanel Grid.Row="3" Grid.Column="1"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
-            <TextBox x:Name="txtSnotelBuffer" HorizontalAlignment="Right" TextWrapping="NoWrap"  Width="70" Text="{Binding SnotelBufferDistance}" Height="20" TextAlignment="Right" Margin="5,0,0,0" IsEnabled="False"/>
+            <TextBox x:Name="txtSnotelBuffer" HorizontalAlignment="Right" TextWrapping="NoWrap"  Width="70" Text="{Binding SnotelBufferDistance}" Height="20" TextAlignment="Right" Margin="5,0,0,0" IsEnabled="True"/>
         </DockPanel>
         <DockPanel Grid.Row="3" Grid.Column="2"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
             <Label x:Name="lblSnotelBufferUnits" Content="{Binding SnotelBufferUnits}" HorizontalAlignment="Left"  VerticalAlignment="Center" />
         </DockPanel>
         <DockPanel Grid.Row="3" Grid.Column="3"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
-            <CheckBox x:Name="chkReclipSnotel" Content="" HorizontalAlignment="Center"  Height="14" VerticalAlignment="Bottom" IsEnabled="False" Margin="0,0,0,8.4"/>
+            <CheckBox x:Name="chkReclipSnotel" Content="" HorizontalAlignment="Center"  Height="14" VerticalAlignment="Bottom" IsEnabled="True" Margin="0,0,0,8.4"
+                      IsChecked="{Binding ReclipSNOTEL_Checked}"/>
         </DockPanel>
         <DockPanel Grid.Row="4" Grid.Column="0"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
             <CheckBox x:Name="chkSnowCourse" Content="Snow Course" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,0,0,0" IsChecked="{Binding SnowCos_Checked}" IsEnabled="False" />
         </DockPanel>
         <DockPanel Grid.Row="4" Grid.Column="1"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
-            <TextBox x:Name="txtSnowCourse" HorizontalAlignment="Right" TextWrapping="NoWrap"  Width="70" Text="{Binding SnowCosBufferDistance}" Height="20" TextAlignment="Right" Margin="5,0,0,0" IsEnabled="False"/>
+            <TextBox x:Name="txtSnowCourse" HorizontalAlignment="Right" TextWrapping="NoWrap"  Width="70" Text="{Binding SnowCosBufferDistance}" Height="20" TextAlignment="Right" Margin="5,0,0,0" IsEnabled="True"/>
         </DockPanel>
         <DockPanel Grid.Row="4" Grid.Column="2"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
             <Label x:Name="lblSnowCourseBufferUnits" Content="{Binding SnowCosBufferUnits}" HorizontalAlignment="Left"  VerticalAlignment="Center" />
         </DockPanel>
         <DockPanel Grid.Row="4" Grid.Column="3"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
-            <CheckBox x:Name="chkReclipSnowCourse" Content="" HorizontalAlignment="Center"  Height="14" VerticalAlignment="Center" IsEnabled="False"/>
+            <CheckBox x:Name="chkReclipSnowCourse" Content="" HorizontalAlignment="Center"  Height="14" VerticalAlignment="Center" IsEnabled="True"
+                      IsChecked="{Binding ReclipSnowCos_Checked}"/>
         </DockPanel>
         <Button x:Name="button" Content="Clip Layers" Grid.Column="3"  Grid.Row="6" VerticalAlignment="Center" Width="75" Command="{Binding CmdClipLayers}" Margin="0,0,5,0"/>
     </Grid>

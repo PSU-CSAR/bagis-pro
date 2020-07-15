@@ -1289,6 +1289,113 @@ namespace bagis_pro
             }
             return lstIntervals;
         }
+
+        public static async Task<BA_ReturnCode> ClipSnoLayersAsync(string strAoiPath, bool bClipSnotel, 
+            string snotelBufferDistance, bool bClipSnowCos, string snowCosBufferDistance)
+        {
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            string[] arrLayersToDelete = new string[2];
+            string strAoiBoundaryPath = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, true) +
+                Constants.FILE_AOI_VECTOR;
+            string strTempBuffer = "tmpBuffer";
+            string snotelClipLayer = "";
+            string snowCosClipLayer = "";
+
+            Webservices ws = new Webservices();
+            Module1.Current.ModuleLogManager.LogDebug(nameof(ClipSnoLayersAsync),
+                "Contacting webservices server to retrieve layer metadata");
+            IDictionary<string, dynamic> dictDataSources =
+                await ws.QueryDataSourcesAsync(Module1.Current.Settings.m_eBagisServer);
+
+            // Get the buffer layers
+            if (bClipSnotel)
+            {
+                // if the buffer distance is null, we will use the AOI boundary to clip
+                if (!String.IsNullOrEmpty(snotelBufferDistance))
+                {
+                    string strOutputFeatures = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, true) +
+                        strTempBuffer;
+                    var parameters = Geoprocessing.MakeValueArray(strAoiBoundaryPath, strOutputFeatures, snotelBufferDistance, "",
+                                                                      "", "ALL");
+                    var gpResult = await Geoprocessing.ExecuteToolAsync("Buffer_analysis", parameters, null,
+                                         CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                    if (gpResult.IsFailed)
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(ClipSnoLayersAsync),
+                           "Unable to buffer aoi_v. Error code: " + gpResult.ErrorCode);
+                        MessageBox.Show("Unable to buffer aoi_v. Clipping cancelled!!", "BAGIS-PRO");
+                        return success;
+                    }
+                    arrLayersToDelete[0] = strTempBuffer;
+                    snotelClipLayer = strTempBuffer;
+
+                    // Check to make sure the buffer file only has one feature; No dangles
+                    int featureCount = 0;
+                    string strClipGdb = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, false);
+                    await QueuedTask.Run(async () =>
+                    {
+
+                        using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(strClipGdb))))
+                        using (Table table = geodatabase.OpenDataset<Table>(snotelClipLayer))
+                        {
+                            featureCount = table.GetCount();
+                        }
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(ClipSnoLayersAsync),
+                            "Number of features in clip file: " + featureCount);
+
+                        // If > 1 feature, buffer the clip file again
+                        if (featureCount > 1)
+                        {
+                            string strTempBuffer2 = "tempBuffer2";
+                            parameters = Geoprocessing.MakeValueArray(strClipGdb + "\\" + snotelClipLayer,
+                                strClipGdb + "\\" + strTempBuffer2, "0.5 Meters", "", "", "ALL");
+                            gpResult = await Geoprocessing.ExecuteToolAsync("Buffer_analysis", parameters, null,
+                                             CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                            if (gpResult.IsFailed)
+                            {
+                                Module1.Current.ModuleLogManager.LogError(nameof(ClipLayersAsync),
+                                   "Unable to buffer " + snotelClipLayer + ". Error code: " + gpResult.ErrorCode);
+                                MessageBox.Show("Unable to buffer aoi_v. Clipping cancelled!!", "BAGIS-PRO");
+                                return;
+                            }
+                            snotelClipLayer = strTempBuffer2;
+                            arrLayersToDelete[1] = strTempBuffer;
+                            Module1.Current.ModuleLogManager.LogDebug(nameof(ClipLayersAsync),
+                                "Ran buffer tool again because clip file has > 2 features");
+                        }
+
+                        string strWsUri = dictDataSources[Constants.DATA_TYPE_SNOTEL].uri;
+                        string strOutputRaster = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers, true) + Constants.FILE_SNOTEL;
+                        string strTemplateDataset = strClipGdb + "\\" + snotelClipLayer;
+                        var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath);
+                        parameters = Geoprocessing.MakeValueArray(strWsUri, strTemplateDataset, strOutputRaster, "");
+                        gpResult = await Geoprocessing.ExecuteToolAsync("Clip_analysis", parameters, environments,
+                                        CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                        if (gpResult.IsFailed)
+                        {
+                            Module1.Current.ModuleLogManager.LogError(nameof(ClipSnoLayersAsync),
+                               "Unable to clip " + snotelClipLayer + ". Error code: " + gpResult.ErrorCode);
+                            MessageBox.Show("Unable to clip. Clipping cancelled!!", "BAGIS-PRO");
+                            return;
+                        }
+                        else
+                        {
+                            Module1.Current.ModuleLogManager.LogDebug(nameof(ClipSnoLayersAsync),
+                                "Clipped " + snotelClipLayer + " layer");
+                        }
+                    });
+                }
+                else
+                {
+                    snotelClipLayer = Constants.FILE_AOI_VECTOR;
+                }
+
+
+            }
+
+            success = BA_ReturnCode.Success;
+            return success;
+        }
     }
 
 }

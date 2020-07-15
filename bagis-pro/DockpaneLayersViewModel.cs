@@ -388,6 +388,26 @@ namespace bagis_pro
                     }
                 }
 
+                if (clipSnotel || clipSnowCos)
+                {
+                    string snotelBufferDistance = "";
+                    string snowCosBufferDistance = "";
+                    double dblDistance = -1;
+                    bool isDouble = Double.TryParse(SnotelBufferDistance, out dblDistance);
+                    if (isDouble && dblDistance > 0)
+                    {
+                        snotelBufferDistance = SnotelBufferDistance + " " + SnotelBufferUnits;
+                    }
+                    isDouble = Double.TryParse(SnowCosBufferDistance, out dblDistance);
+                    if (isDouble && dblDistance > 0)
+                    {
+                        snowCosBufferDistance = SnotelBufferDistance + " " + SnotelBufferUnits;
+                    }
+
+                    success = await AnalysisTools.ClipSnoLayersAsync(Module1.Current.Aoi.FilePath, clipSnotel, snotelBufferDistance,
+                        clipSnowCos, snowCosBufferDistance);
+                }
+
                 if (success == BA_ReturnCode.Success)
                 {
                     MessageBox.Show("Analysis layers clipped!!", "BAGIS-PRO");
