@@ -394,18 +394,31 @@ namespace bagis_pro
                     string snowCosBufferDistance = "";
                     double dblDistance = -1;
                     bool isDouble = Double.TryParse(SnotelBufferDistance, out dblDistance);
-                    if (isDouble && dblDistance > 0)
+                    if (clipSnotel && isDouble && dblDistance > 0)
                     {
                         snotelBufferDistance = SnotelBufferDistance + " " + SnotelBufferUnits;
                     }
                     isDouble = Double.TryParse(SnowCosBufferDistance, out dblDistance);
-                    if (isDouble && dblDistance > 0)
+                    if (clipSnowCos && isDouble && dblDistance > 0)
                     {
-                        snowCosBufferDistance = SnotelBufferDistance + " " + SnotelBufferUnits;
+                        snowCosBufferDistance = SnowCosBufferDistance + " " + SnowCosBufferUnits;
                     }
 
                     success = await AnalysisTools.ClipSnoLayersAsync(Module1.Current.Aoi.FilePath, clipSnotel, snotelBufferDistance,
                         clipSnowCos, snowCosBufferDistance);
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        if (clipSnotel)
+                        {
+                            layersPane.ReclipSNOTEL_Checked = false;
+                            layersPane.SNOTEL_Checked = true;
+                        }
+                        if (clipSnowCos)
+                        {
+                            layersPane.ReclipSnowCos_Checked = false;
+                            layersPane.SnowCos_Checked = true;
+                        }
+                    }
                 }
 
                 if (success == BA_ReturnCode.Success)

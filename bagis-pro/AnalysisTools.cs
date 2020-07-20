@@ -790,8 +790,8 @@ namespace bagis_pro
                         sb.Append(Constants.META_TAG_SUFFIX);
 
                         //Update the metadata
-                        var fc = ArcGIS.Desktop.Core.ItemFactory.Instance.Create(strOutputRaster,
-                            ArcGIS.Desktop.Core.ItemFactory.ItemType.PathItem);
+                        var fc = ItemFactory.Instance.Create(strOutputRaster,
+                            ItemFactory.ItemType.PathItem);
                         if (fc != null)
                         {
                             string strXml = string.Empty;
@@ -1296,13 +1296,10 @@ namespace bagis_pro
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
             string[] arrLayersToDelete = new string[2];
-            string strAoiBoundaryPath = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, true) +
-                Constants.FILE_AOI_VECTOR;
-            string strTempBuffer = "tmpBuffer";
             string snotelClipLayer = "";
-            string strOutputFc = "";
-            string strOutputLayer = "tmpSnow";
-            string strFinalOutputLayer = "";
+            string[] strOutputFc = new string[2];
+            string[] strOutputLayer = { "tmpSno", "tmpSnowCos" };
+            string strFinalSnotelOutputLayer = Constants.FILE_SNOTEL;
             string snowCosClipLayer = "";
             string strClipGdb = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, false);
 
@@ -1329,59 +1326,17 @@ namespace bagis_pro
             // Get the buffer layers
             if (bClipSnotel)
             {
-                strFinalOutputLayer = Constants.FILE_SNOTEL;
                 // if the buffer distance is null, we will use the AOI boundary to clip
                 if (!String.IsNullOrEmpty(snotelBufferDistance))
                 {
-                    string strOutputFeatures = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, true) +
-                        strTempBuffer;
-                    var parametersBuff = Geoprocessing.MakeValueArray(strAoiBoundaryPath, strOutputFeatures, snotelBufferDistance, "",
-                                                                      "", "ALL");
-                    var gpResultBuff = await Geoprocessing.ExecuteToolAsync("Buffer_analysis", parametersBuff, null,
-                                         CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                    if (gpResultBuff.IsFailed)
+                    snotelClipLayer = await AnalysisTools.GetSnoClipLayer(strAoiPath, strClipGdb, snotelBufferDistance);
+                    if (string.IsNullOrEmpty(snotelClipLayer))
                     {
                         Module1.Current.ModuleLogManager.LogError(nameof(ClipSnoLayersAsync),
-                           "Unable to buffer aoi_v. Error code: " + gpResultBuff.ErrorCode);
-                        MessageBox.Show("Unable to buffer aoi_v. Clipping cancelled!!", "BAGIS-PRO");
+                            "Unable to calculate snotel clip layer");
+                        MessageBox.Show("Unable to generate SNOTEL clip layer. Clipping cancelled!!", "BAGIS-PRO");
                         return success;
                     }
-                    arrLayersToDelete[0] = strTempBuffer;
-                    snotelClipLayer = strTempBuffer;
-
-                    // Check to make sure the buffer file only has one feature; No dangles
-                    int featureCount = 0;
-                    await QueuedTask.Run(async () =>
-                    {
-                        using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(strClipGdb))))
-                        using (Table table = geodatabase.OpenDataset<Table>(snotelClipLayer))
-                        {
-                            featureCount = table.GetCount();
-                        }
-                        Module1.Current.ModuleLogManager.LogDebug(nameof(ClipSnoLayersAsync),
-                            "Number of features in clip file: " + featureCount);
-
-                        // If > 1 feature, buffer the clip file again
-                        if (featureCount > 1)
-                        {
-                            string strTempBuffer2 = "tempBuffer2";
-                            parametersBuff = Geoprocessing.MakeValueArray(strClipGdb + "\\" + snotelClipLayer,
-                                strClipGdb + "\\" + strTempBuffer2, "0.5 Meters", "", "", "ALL");
-                            gpResultBuff = await Geoprocessing.ExecuteToolAsync("Buffer_analysis", parametersBuff, null,
-                                             CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                            if (gpResultBuff.IsFailed)
-                            {
-                                Module1.Current.ModuleLogManager.LogError(nameof(ClipLayersAsync),
-                                   "Unable to buffer " + snotelClipLayer + ". Error code: " + gpResultBuff.ErrorCode);
-                                MessageBox.Show("Unable to buffer aoi_v. Clipping cancelled!!", "BAGIS-PRO");
-                                return;
-                            }
-                            snotelClipLayer = strTempBuffer2;
-                            arrLayersToDelete[1] = strTempBuffer;
-                            Module1.Current.ModuleLogManager.LogDebug(nameof(ClipLayersAsync),
-                                "Ran buffer tool again because clip file has > 2 features");
-                        }
-                    });
                 }
                 else
                 {
@@ -1389,10 +1344,10 @@ namespace bagis_pro
                 }
 
                 string strWsUri = dictDataSources[Constants.DATA_TYPE_SNOTEL].uri;
-                strOutputFc = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers, true) + strOutputLayer;
+                strOutputFc[0] = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers, true) + strOutputLayer[0];
                 string strTemplateDataset = strClipGdb + "\\" + snotelClipLayer;
                 var environmentsClip = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath);
-                var parametersClip = Geoprocessing.MakeValueArray(strWsUri, strTemplateDataset, strOutputFc, "");
+                var parametersClip = Geoprocessing.MakeValueArray(strWsUri, strTemplateDataset, strOutputFc[0], "");
                 var gpResultClip = await Geoprocessing.ExecuteToolAsync("Clip_analysis", parametersClip, environmentsClip,
                                         CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
                 if (gpResultClip.IsFailed)
@@ -1409,74 +1364,134 @@ namespace bagis_pro
                 }
             }
 
-            // @ToDo: Clip Snow Course Layer
+            // Clip Snow Course Layer
+            if (bClipSnowCos)
+            {
+                // if the buffer distance is null, we will use the AOI boundary to clip
+                if (!String.IsNullOrEmpty(snowCosBufferDistance))
+                {
+                    // See if we can re-use the snotel clip layer
+                    if (snowCosBufferDistance.Equals(snotelBufferDistance))
+                    {
+                        snowCosClipLayer = snotelClipLayer;
+                    }
+                    else
+                    {
+                        snowCosClipLayer = await AnalysisTools.GetSnoClipLayer(strAoiPath, strClipGdb, snowCosBufferDistance);
+                        if (string.IsNullOrEmpty(snowCosClipLayer))
+                        {
+                            Module1.Current.ModuleLogManager.LogError(nameof(ClipSnoLayersAsync),
+                                "Unable to calculate snow course clip layer");
+                            MessageBox.Show("Unable to generate snow course clip layer. Clipping cancelled!!", "BAGIS-PRO");
+                            return success;
+                        }
+                    }
+                }
+                else
+                {
+                    snowCosClipLayer = Constants.FILE_AOI_VECTOR;
+                }
+
+                string strWsUri = dictDataSources[Constants.DATA_TYPE_SNOW_COURSE].uri;
+                strOutputFc[1] = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers, true) + strOutputLayer[1];
+                string strTemplateDataset = strClipGdb + "\\" + snowCosClipLayer;
+                var environmentsClip = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath);
+                var parametersClip = Geoprocessing.MakeValueArray(strWsUri, strTemplateDataset, strOutputFc[1], "");
+                var gpResultClip = await Geoprocessing.ExecuteToolAsync("Clip_analysis", parametersClip, environmentsClip,
+                                        CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                if (gpResultClip.IsFailed)
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(ClipSnoLayersAsync),
+                       "Unable to clip " + snowCosClipLayer + ". Error code: " + gpResultClip.ErrorCode);
+                    MessageBox.Show("Unable to clip. Clipping cancelled!!", "BAGIS-PRO");
+                    return success;
+                }
+                else
+                {
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(ClipSnoLayersAsync),
+                        "Clipped " + snowCosClipLayer + " layer");
+                }
+            }
 
             // Add attribute fields
-            success = await GeoprocessingTools.AddFieldAsync(strOutputFc, Constants.FIELD_SITE_NAME, "TEXT");
-            if (success == BA_ReturnCode.Success)
+            foreach (var strFc in strOutputFc)
             {
-                success = await GeoprocessingTools.AddFieldAsync(strOutputFc, Constants.FIELD_SITE_ELEV, "DOUBLE");
-            }
-            if (success != BA_ReturnCode.Success)
-            {
-                 Module1.Current.ModuleLogManager.LogError(nameof(ClipSnoLayersAsync),
-                      "Unable to add fields to " + strOutputFc);
-                 MessageBox.Show("Unable to add fields to " + strOutputFc + ". Clipping cancelled!!", "BAGIS-PRO");
-                 return success;
-            }
-
-            string sourceName = Convert.ToString(oSettings.snotelName);
-            if (String.IsNullOrEmpty(snotelClipLayer))  // This is a snow course layer
-            {
-                sourceName = Convert.ToString(oSettings.snowCourseName);
-            }
-            string sourceElev = Convert.ToString(oSettings.snotelElev);
-            if (String.IsNullOrEmpty(snotelClipLayer))  // This is a snow course layer
-            {
-               sourceElev = Convert.ToString(oSettings.snowCourseElev);
+                if (!String.IsNullOrEmpty(strFc))
+                {
+                    success = await GeoprocessingTools.AddFieldAsync(strFc, Constants.FIELD_SITE_NAME, "TEXT");
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        success = await GeoprocessingTools.AddFieldAsync(strFc, Constants.FIELD_SITE_ELEV, "DOUBLE");
+                    }
+                    if (success != BA_ReturnCode.Success)
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(ClipSnoLayersAsync),
+                             "Unable to add fields to " + strFc);
+                        MessageBox.Show("Unable to add fields to " + strFc + ". Clipping cancelled!!", "BAGIS-PRO");
+                        return success;
+                    }
+                }
             }
 
             bool modificationResult = false;
             string errorMsg = "";
-            await QueuedTask.Run(async () =>
+            await QueuedTask.Run(() =>
             {
-            Uri gdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers));
-            using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(gdbUri)))
-            using (Table table = geodatabase.OpenDataset<Table>(strOutputLayer))
-            {
-                QueryFilter queryFilter = new QueryFilter();
-                EditOperation editOperation = new EditOperation();
-                editOperation.Callback(context => {
-                    using (RowCursor aCursor = table.Search(queryFilter, false))
+                // Copy site name into ba_sname field
+                Uri gdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers));
+                using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(gdbUri)))
+                {
+                    int i = 0;
+                    foreach (var strFc in strOutputFc)
                     {
-                        while (aCursor.MoveNext())
+                        if (!String.IsNullOrEmpty(strFc))
                         {
-                            using (Feature feature = (Feature)aCursor.Current)
+                            string sourceName = Convert.ToString(oSettings.snotelName);
+                            if (i == 1)  // This is a snow course layer
                             {
-                                // name
-                                int idxSource = feature.FindField(sourceName);
-                                int idxTarget = feature.FindField(Constants.FIELD_SITE_NAME);
-                                if (idxSource > -1)
+                                sourceName = Convert.ToString(oSettings.snowCourseName);
+                            }
+                            using (Table table = geodatabase.OpenDataset<Table>(strOutputLayer[i]))
+                            {
+                                QueryFilter queryFilter = new QueryFilter();
+                                EditOperation editOperation = new EditOperation();
+                                editOperation.Callback(context =>
                                 {
-                                    feature[idxTarget] = feature[idxSource];
+                                    using (RowCursor aCursor = table.Search(queryFilter, false))
+                                    {
+                                        while (aCursor.MoveNext())
+                                        {
+                                            using (Feature feature = (Feature)aCursor.Current)
+                                            {
+                                            // name
+                                            int idxSource = feature.FindField(sourceName);
+                                                int idxTarget = feature.FindField(Constants.FIELD_SITE_NAME);
+                                                if (idxSource > -1)
+                                                {
+                                                    feature[idxTarget] = feature[idxSource];
+                                                }
+                                                feature.Store();
+                                            // Has to be called after the store too
+                                            context.Invalidate(feature);
+                                            }
+                                        }
+                                    }
+                                }, table);
+                                try
+                                {
+                                    modificationResult = editOperation.Execute();
+                                    if (!modificationResult) errorMsg = editOperation.ErrorMessage;
                                 }
-                                feature.Store();
-                                // Has to be called after the store too
-                                context.Invalidate(feature);
+                                catch (GeodatabaseException exObj)
+                                {
+                                    errorMsg = exObj.Message;
+                                }
                             }
                         }
+                        i++;
                     }
-                }, table);
-                try
-                {
-                    modificationResult = editOperation.Execute();
-                    if (!modificationResult) errorMsg = editOperation.ErrorMessage;
+
                 }
-                catch (GeodatabaseException exObj)
-                {
-                    errorMsg = exObj.Message;
-                }
-            }
             });
 
             if (String.IsNullOrEmpty(errorMsg))
@@ -1495,8 +1510,8 @@ namespace bagis_pro
             var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath);
             string demPath = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Surfaces, true) +
                 Constants.FILE_DEM_FILLED;
-            string finalOutputPath = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers, true) + strFinalOutputLayer;
-            var parameters = Geoprocessing.MakeValueArray(strOutputFc, demPath, finalOutputPath, "NONE", "ALL");
+            string finalOutputPath = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers, true) + strFinalSnotelOutputLayer;
+            var parameters = Geoprocessing.MakeValueArray(strOutputFc[0], demPath, finalOutputPath, "NONE", "ALL");
             var gpResult = await Geoprocessing.ExecuteToolAsync("ExtractValuesToPoints", parameters, environments,
                                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
             if (gpResult.IsFailed)
@@ -1534,7 +1549,105 @@ namespace bagis_pro
                     }
                 }
             }
+
+            // Save buffer distance and units in metadata
+            string[] arrPieces = snotelBufferDistance.Split(' ');
+            string strBufferDistance = "0";
+            string strBufferUnits = "Meters";
+            if (arrPieces.Length == 2)
+            {
+                strBufferDistance = arrPieces[0];
+                strBufferUnits = arrPieces[1];
+            }
+            // We need to add a new tag at "/metadata/dataIdInfo/searchKeys/keyword"
+            StringBuilder sb = new StringBuilder();
+            sb.Append(Constants.META_TAG_PREFIX);
+            // Buffer Distance
+            sb.Append(Constants.META_TAG_BUFFER_DISTANCE + strBufferDistance + "; ");
+            // X Units
+            sb.Append(Constants.META_TAG_XUNIT_VALUE + strBufferUnits + "; ");
+            sb.Append(Constants.META_TAG_SUFFIX);
+
+            //Update the metadata
+            var fc = ItemFactory.Instance.Create(finalOutputPath,
+                ItemFactory.ItemType.PathItem);
+            if (fc != null)
+            {
+                await QueuedTask.Run(() =>
+                {
+                    string strXml = string.Empty;
+                    strXml = fc.GetXml();
+                    System.Xml.XmlDocument xmlDocument = GeneralTools.UpdateMetadata(strXml, Constants.META_TAG_XPATH, sb.ToString(),
+                        Constants.META_TAG_PREFIX.Length);
+
+                    fc.SetXml(xmlDocument.OuterXml);
+                });
+            }
+
+
             return success;
+        }
+
+        public static async Task<string> GetSnoClipLayer(string strAoiPath, string strClipGdb, string strBufferDistance)
+        {
+            string strTempBuffer = "tmpBuffer";
+            string strSnoClipLayer = "";
+            string strLayerToDelete = "";
+            string strAoiBoundaryPath = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, true) +
+                Constants.FILE_AOI_VECTOR;
+            string strOutputFeatures = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, true) +
+                strTempBuffer;
+            var parametersBuff = Geoprocessing.MakeValueArray(strAoiBoundaryPath, strOutputFeatures, strBufferDistance, "",
+                                                              "", "ALL");
+            var gpResultBuff = await Geoprocessing.ExecuteToolAsync("Buffer_analysis", parametersBuff, null,
+                                 CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+            if (gpResultBuff.IsFailed)
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(GetSnoClipLayer),
+                   "Unable to buffer aoi_v. Error code: " + gpResultBuff.ErrorCode);
+                MessageBox.Show("Unable to buffer aoi_v. Clipping cancelled!!", "BAGIS-PRO");
+                return strSnoClipLayer;
+            }
+
+            // Check to make sure the buffer file only has one feature; No dangles
+            int featureCount = 0;
+            await QueuedTask.Run(async () =>
+            {
+                using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(strClipGdb))))
+                using (Table table = geodatabase.OpenDataset<Table>(strTempBuffer))
+                {
+                    featureCount = table.GetCount();
+                }
+                Module1.Current.ModuleLogManager.LogDebug(nameof(GetSnoClipLayer),
+                    "Number of features in clip file: " + featureCount);
+
+                // If > 1 feature, buffer the clip file again
+                if (featureCount > 1)
+                {
+                    string strTempBuffer2 = "tempBuffer2";
+                    strLayerToDelete = strTempBuffer;
+                    parametersBuff = Geoprocessing.MakeValueArray(strClipGdb + "\\" + strTempBuffer,
+                        strClipGdb + "\\" + strTempBuffer2, "0.5 Meters", "", "", "ALL");
+                    gpResultBuff = await Geoprocessing.ExecuteToolAsync("Buffer_analysis", parametersBuff, null,
+                                     CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                    if (gpResultBuff.IsFailed)
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(ClipLayersAsync),
+                           "Unable to buffer " + strTempBuffer + ". Error code: " + gpResultBuff.ErrorCode);
+                        MessageBox.Show("Unable to temporary clip file. Clipping cancelled!!", "BAGIS-PRO");
+                        return;
+                    }
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(ClipLayersAsync),
+                        "Ran buffer tool again because clip file has > 2 features");
+                    BA_ReturnCode success = await GeoprocessingTools.DeleteDatasetAsync(strClipGdb + "\\" + strTempBuffer);
+                    strSnoClipLayer = strTempBuffer2;
+                }
+                else
+                {
+                    strSnoClipLayer = strTempBuffer;
+                }
+            });
+            return strSnoClipLayer;
         }
     }
 
