@@ -109,6 +109,7 @@ namespace bagis_pro
         public const string FIELD_LBOUND = "LBOUND";
         public const string FIELD_UBOUND = "UBOUND";
         public const string FIELD_COUNT = "COUNT";
+        public const string FIELD_RASTERVALU = "RASTERVALU";   //Field generated when using BA_ExtractValuesToPoints to populate BA_SELEV from DEM
 
         public const string DATA_TYPE_SWE = "Snotel SWE";
         public const string DATA_TYPE_PRECIPITATION = "Precipitation";

@@ -455,8 +455,6 @@ namespace bagis_pro
                                 }
                             }
                         }
-
-
                     }, featureClass);
 
                     try

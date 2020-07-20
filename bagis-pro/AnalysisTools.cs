@@ -1301,7 +1301,8 @@ namespace bagis_pro
             string strTempBuffer = "tmpBuffer";
             string snotelClipLayer = "";
             string strOutputFc = "";
-            string strOutputLayer = "";
+            string strOutputLayer = "tmpSnow";
+            string strFinalOutputLayer = "";
             string snowCosClipLayer = "";
             string strClipGdb = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, false);
 
@@ -1328,7 +1329,7 @@ namespace bagis_pro
             // Get the buffer layers
             if (bClipSnotel)
             {
-                strOutputLayer = Constants.FILE_SNOTEL;
+                strFinalOutputLayer = Constants.FILE_SNOTEL;
                 // if the buffer distance is null, we will use the AOI boundary to clip
                 if (!String.IsNullOrEmpty(snotelBufferDistance))
                 {
@@ -1390,14 +1391,14 @@ namespace bagis_pro
                 string strWsUri = dictDataSources[Constants.DATA_TYPE_SNOTEL].uri;
                 strOutputFc = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers, true) + strOutputLayer;
                 string strTemplateDataset = strClipGdb + "\\" + snotelClipLayer;
-                var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath);
-                var parameters = Geoprocessing.MakeValueArray(strWsUri, strTemplateDataset, strOutputFc, "");
-                var gpResult = await Geoprocessing.ExecuteToolAsync("Clip_analysis", parameters, environments,
+                var environmentsClip = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath);
+                var parametersClip = Geoprocessing.MakeValueArray(strWsUri, strTemplateDataset, strOutputFc, "");
+                var gpResultClip = await Geoprocessing.ExecuteToolAsync("Clip_analysis", parametersClip, environmentsClip,
                                         CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                if (gpResult.IsFailed)
+                if (gpResultClip.IsFailed)
                 {
                     Module1.Current.ModuleLogManager.LogError(nameof(ClipSnoLayersAsync),
-                       "Unable to clip " + snotelClipLayer + ". Error code: " + gpResult.ErrorCode);
+                       "Unable to clip " + snotelClipLayer + ". Error code: " + gpResultClip.ErrorCode);
                     MessageBox.Show("Unable to clip. Clipping cancelled!!", "BAGIS-PRO");
                     return success;
                 }
@@ -1437,51 +1438,50 @@ namespace bagis_pro
 
             bool modificationResult = false;
             string errorMsg = "";
-            await QueuedTask.Run(async() =>
+            await QueuedTask.Run(async () =>
             {
-                Uri gdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers));
-                using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(gdbUri)))
-                using (Table table = geodatabase.OpenDataset<Table>(strOutputLayer))
-                {
-                    QueryFilter queryFilter = new QueryFilter();
-                    EditOperation editOperation = new EditOperation();
-                    editOperation.Callback(context => {
-                        using (RowCursor aCursor = table.Search(queryFilter, false))
+            Uri gdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers));
+            using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(gdbUri)))
+            using (Table table = geodatabase.OpenDataset<Table>(strOutputLayer))
+            {
+                QueryFilter queryFilter = new QueryFilter();
+                EditOperation editOperation = new EditOperation();
+                editOperation.Callback(context => {
+                    using (RowCursor aCursor = table.Search(queryFilter, false))
+                    {
+                        while (aCursor.MoveNext())
                         {
-                            while (aCursor.MoveNext())
+                            using (Feature feature = (Feature)aCursor.Current)
                             {
-                                using (Feature feature = (Feature) aCursor.Current)
+                                // name
+                                int idxSource = feature.FindField(sourceName);
+                                int idxTarget = feature.FindField(Constants.FIELD_SITE_NAME);
+                                if (idxSource > -1)
                                 {
-                                    // name
-                                    int idxSource = feature.FindField(sourceName);
-                                    int idxTarget = feature.FindField(Constants.FIELD_SITE_NAME);
-                                    if (idxSource > -1)
-                                    {
-                                        feature[idxTarget] = feature[idxSource];                                    
-                                    }
-                                    feature.Store();
-                                    // Has to be called after the store too
-                                    context.Invalidate(feature);
+                                    feature[idxTarget] = feature[idxSource];
                                 }
+                                feature.Store();
+                                // Has to be called after the store too
+                                context.Invalidate(feature);
                             }
                         }
-                    }, table);
-                    try
-                    {
-                        modificationResult = editOperation.Execute();
-                        if (!modificationResult) errorMsg = editOperation.ErrorMessage;
                     }
-                    catch (GeodatabaseException exObj)
-                    {
-                        errorMsg = exObj.Message;
-                    }
+                }, table);
+                try
+                {
+                    modificationResult = editOperation.Execute();
+                    if (!modificationResult) errorMsg = editOperation.ErrorMessage;
                 }
+                catch (GeodatabaseException exObj)
+                {
+                    errorMsg = exObj.Message;
+                }
+            }
             });
 
             if (String.IsNullOrEmpty(errorMsg))
             {
                 await Project.Current.SaveEditsAsync();
-                return success;
             }
             else
             {
@@ -1491,6 +1491,50 @@ namespace bagis_pro
                     "Exception: " + errorMsg);
                 return BA_ReturnCode.UnknownError;
             }
+
+            var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath);
+            string demPath = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Surfaces, true) +
+                Constants.FILE_DEM_FILLED;
+            string finalOutputPath = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers, true) + strFinalOutputLayer;
+            var parameters = Geoprocessing.MakeValueArray(strOutputFc, demPath, finalOutputPath, "NONE", "ALL");
+            var gpResult = await Geoprocessing.ExecuteToolAsync("ExtractValuesToPoints", parameters, environments,
+                               CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+            if (gpResult.IsFailed)
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(ClipSnoLayersAsync),
+                    "Unable to extract values to points for site elevation. Error code: " + gpResult.ErrorCode);
+                MessageBox.Show("Unable extract site elevation. Clipping cancelled!!", "BAGIS-PRO");
+                return success;
+            }
+            else
+            {
+                Module1.Current.ModuleLogManager.LogDebug(nameof(ClipSnoLayersAsync),
+                    "Extracted values to points for site elevations");
+                string strExpression = "!" + Constants.FIELD_RASTERVALU + "!";
+                parameters = Geoprocessing.MakeValueArray(finalOutputPath, Constants.FIELD_SITE_ELEV, strExpression);
+                gpResult = await Geoprocessing.ExecuteToolAsync("CalculateField_management", parameters, environments,
+                   CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                if (gpResult.IsFailed)
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(ClipSnoLayersAsync),
+                        "Unable to copy elevation to BA_ELEV. Error code: " + gpResult.ErrorCode);
+                    MessageBox.Show("Unable copy site elevation. Clipping cancelled!!", "BAGIS-PRO");
+                    return success;
+                }
+                else
+                {
+                    string[] arrDeleteFields = { Constants.FIELD_RASTERVALU };
+                    success = await GeoprocessingTools.DeleteFeatureClassFieldsAsync(finalOutputPath, arrDeleteFields);
+                    if (success != BA_ReturnCode.Success)
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(ClipSnoLayersAsync),
+                            "Unable to delete field " + Constants.FIELD_RASTERVALU + ". Error code: " + gpResult.ErrorCode);
+                        MessageBox.Show("Unable to delete field " + Constants.FIELD_RASTERVALU + ". Clipping cancelled!!", "BAGIS-PRO");
+                        return success;
+                    }
+                }
+            }
+            return success;
         }
     }
 
