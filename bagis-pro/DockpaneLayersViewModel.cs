@@ -240,11 +240,11 @@ namespace bagis_pro
             SWEBufferUnits = Convert.ToString(Module1.Current.Settings.m_prismBufferUnits);
             ReclipSwe_Checked = false;
             SNOTEL_Checked = false;
-            SnotelBufferDistance = Convert.ToString(Module1.Current.Settings.m_snotelBufferDistance);
+            SnotelBufferDistance = "";
             SnotelBufferUnits = Convert.ToString(Module1.Current.Settings.m_snotelBufferUnits);
             ReclipSNOTEL_Checked = false;
             SnowCos_Checked = false;
-            SnowCosBufferDistance = Convert.ToString(Module1.Current.Settings.m_snotelBufferDistance);
+            SnowCosBufferDistance = "";
             SnowCosBufferUnits = Convert.ToString(Module1.Current.Settings.m_snotelBufferUnits);
             ReclipSnowCos_Checked = false;
         }

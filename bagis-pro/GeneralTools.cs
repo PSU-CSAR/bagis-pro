@@ -192,7 +192,8 @@ namespace bagis_pro
 
                 //Printing data sources
                 IDictionary<string, BA_Objects.DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
-                string[] keys = { Constants.DATA_TYPE_SWE, Constants.DATA_TYPE_PRECIPITATION};
+                string[] keys = { Constants.DATA_TYPE_SWE, Constants.DATA_TYPE_PRECIPITATION, Constants.DATA_TYPE_SNOTEL,
+                                  Constants.DATA_TYPE_SNOW_COURSE};
                 IList < BA_Objects.DataSource > lstDataSources = new List<BA_Objects.DataSource>();
                 foreach (string strKey in keys)
                 {
@@ -964,14 +965,26 @@ namespace bagis_pro
                                         case Constants.FILE_SNOTEL:
                                             layersPane.SNOTEL_Checked = true;
                                             if (!string.IsNullOrEmpty(bufferDistance))
+                                            {
                                                 layersPane.SnotelBufferDistance = bufferDistance;
+                                            }
+                                            else
+                                            {
+                                                layersPane.SnotelBufferDistance = "";
+                                            }
                                             if (!string.IsNullOrEmpty(bufferUnits))
                                                 layersPane.SnotelBufferUnits = bufferUnits;
                                             break;
                                         case Constants.FILE_SNOW_COURSE:
                                             layersPane.SnowCos_Checked = true;
                                             if (!string.IsNullOrEmpty(bufferDistance))
+                                            {
                                                 layersPane.SnowCosBufferDistance = bufferDistance;
+                                            }
+                                            else
+                                            {
+                                                layersPane.SnowCosBufferDistance = "";
+                                            }
                                             if (!string.IsNullOrEmpty(bufferUnits))
                                                 layersPane.SnowCosBufferUnits = bufferUnits;
                                             break;
