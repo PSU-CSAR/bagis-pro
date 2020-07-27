@@ -96,6 +96,7 @@ namespace bagis_pro
         public const string FIELD_AOI_AREA = "AOISHPAREA";
         public const string FIELD_SITE_ELEV = "BA_SELEV";
         public const string FIELD_SITE_NAME = "BA_SNAME";
+        public const string FIELD_SITE_TYPE = "BA_STYPE";
         public const string FIELD_OBJECT_ID = "OBJECTID";
         public const string FIELD_STATION_TRIPLET = "stationTriplet";
         public const string FIELD_STATION_NAME = "stationName";
@@ -115,6 +116,8 @@ namespace bagis_pro
         public const string DATA_TYPE_PRECIPITATION = "Precipitation";
         public const string DATA_TYPE_SNOTEL = "SNOTEL";
         public const string DATA_TYPE_SNOW_COURSE = "Snow Course";
+        public const string SITE_TYPE_SNOW_COURSE = "scos";
+        public const string SITE_TYPE_SNOTEL = "stel";
 
         public const int VALUE_NO_DATA_9999 = -9999;
         public const string VALUE_NO_DATA = "NoData";

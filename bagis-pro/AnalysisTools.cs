@@ -1420,15 +1420,19 @@ namespace bagis_pro
             // Add attribute fields
             int snotelCount = 0;
             int snowCosCount = 0;
+            int i = 0;
             foreach (var strFc in strOutputFc)
             {
-                int i = 0;
                 if (!String.IsNullOrEmpty(strFc))
                 {
                     success = await GeoprocessingTools.AddFieldAsync(strFc, Constants.FIELD_SITE_NAME, "TEXT");
                     if (success == BA_ReturnCode.Success)
                     {
                         success = await GeoprocessingTools.AddFieldAsync(strFc, Constants.FIELD_SITE_ELEV, "DOUBLE");
+                        if (success == BA_ReturnCode.Success)
+                        {
+                            success = await GeoprocessingTools.AddFieldAsync(strFc, Constants.FIELD_SITE_TYPE, "TEXT");
+                        }
                     }
                     if (success != BA_ReturnCode.Success)
                     {
@@ -1469,9 +1473,19 @@ namespace bagis_pro
                                                 // name
                                                 int idxSource = feature.FindField(sourceName);
                                                 int idxTarget = feature.FindField(Constants.FIELD_SITE_NAME);
-                                                if (idxSource > -1)
+                                                if (idxSource > -1 && idxTarget > -1)
                                                 {
                                                     feature[idxTarget] = feature[idxSource];
+                                                }
+                                                string siteType = Constants.SITE_TYPE_SNOTEL;
+                                                if (i == 1)
+                                                {
+                                                    siteType = Constants.SITE_TYPE_SNOW_COURSE;
+                                                }
+                                                idxTarget = feature.FindField(Constants.FIELD_SITE_TYPE);
+                                                if (idxTarget > -1)
+                                                {
+                                                    feature[idxTarget] = siteType;
                                                 }
                                                 feature.Store();
                                                 // Has to be called after the store too
