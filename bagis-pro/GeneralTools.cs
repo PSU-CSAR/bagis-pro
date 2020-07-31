@@ -895,8 +895,8 @@ namespace bagis_pro
 
                     // Update data status for files in layers.gdb
                     string[] arrCheckLayers = new string[] { Constants.FILE_SNODAS_SWE_APRIL, Constants.FILE_SNOTEL,
-                                                             Constants.FILE_SNOW_COURSE};
-                    bool[] arrLayerExists = new bool[] { false, false, false};
+                                                             Constants.FILE_SNOW_COURSE, Constants.FILE_ROADS};
+                    bool[] arrLayerExists = new bool[] { false, false, false, false};
                     gdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers, false));
                     bExists = false;
                     if (gdbUri.IsFile)
@@ -988,6 +988,20 @@ namespace bagis_pro
                                             if (!string.IsNullOrEmpty(bufferUnits))
                                                 layersPane.SnowCosBufferUnits = bufferUnits;
                                             break;
+                                        case Constants.FILE_ROADS:
+                                            layersPane.Roads_Checked = true;
+                                            if (!string.IsNullOrEmpty(bufferDistance))
+                                            {
+                                                layersPane.RoadsBufferDistance = bufferDistance;
+                                            }
+                                            else
+                                            {
+                                                layersPane.RoadsBufferDistance = "";
+                                            }
+                                            if (!string.IsNullOrEmpty(bufferUnits))
+                                                layersPane.RoadsBufferUnits = bufferUnits;
+                                            break;
+
                                         default:
                                             Module1.Current.ModuleLogManager.LogError(nameof(SetAoi),
                                                 "Unidentified layer name");

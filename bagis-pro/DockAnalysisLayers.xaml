@@ -23,6 +23,7 @@
             <RowDefinition Height="30"/>
             <RowDefinition Height="30"/>
             <RowDefinition Height="30"/>
+            <RowDefinition Height="30"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="30"/>
         </Grid.RowDefinitions>
@@ -71,6 +72,14 @@
             <CheckBox x:Name="chkSlopeZones" Content="" HorizontalAlignment="Center"  Height="14" VerticalAlignment="Center"
                       IsChecked="{Binding SlopeZones_Checked}"/>
         </DockPanel>
-        <Button x:Name="button" Content="Generate Layers" Grid.Column="2"  Grid.Row="6" VerticalAlignment="Center" Width="90" Command="{Binding CmdGenerateLayers}" Margin="5,0,0,0" HorizontalAlignment="Right" HorizontalContentAlignment="Right"/>
+        <DockPanel Grid.Row="6" Grid.Column="0"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
+            <Label  Content="USFS Roads Proximity" HorizontalAlignment="Left" VerticalAlignment="Center"  Padding="5,0,20,0"/>
+        </DockPanel>
+        <DockPanel Grid.Row="6" Grid.Column="1"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
+            <CheckBox x:Name="chkRoads" Content="" HorizontalAlignment="Center"  Height="14" VerticalAlignment="Center"
+                      IsChecked="{Binding Roads_Checked}"/>
+        </DockPanel>
+
+        <Button x:Name="button" Content="Generate Layers" Grid.Column="2"  Grid.Row="7" VerticalAlignment="Center" Width="90" Command="{Binding CmdGenerateLayers}" Margin="5,0,0,0" HorizontalAlignment="Right" HorizontalContentAlignment="Right"/>
     </Grid>
 </UserControl>

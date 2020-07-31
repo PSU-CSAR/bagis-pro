@@ -22,6 +22,7 @@
             <RowDefinition Height="30"/>
             <RowDefinition Height="30"/>
             <RowDefinition Height="30"/>
+            <RowDefinition Height="30"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="30"/>
         </Grid.RowDefinitions>
@@ -92,6 +93,20 @@
         <DockPanel Grid.Row="4" Grid.Column="3"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
             <CheckBox x:Name="chkReclipSnowCourse" Content="" HorizontalAlignment="Center"  Height="14" VerticalAlignment="Center" IsEnabled="True"
                       IsChecked="{Binding ReclipSnowCos_Checked}"/>
+        </DockPanel>
+        <DockPanel Grid.Row="5" Grid.Column="0"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
+            <CheckBox x:Name="chkRoads" Content="Roads" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,0,0,0" IsChecked="{Binding Roads_Checked}" IsEnabled="False" />
+        </DockPanel>
+        <DockPanel Grid.Row="5" Grid.Column="1"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
+            <TextBox x:Name="txtRoads" HorizontalAlignment="Right" TextWrapping="NoWrap"  Width="70" Text="{Binding RoadsBufferDistance}" Height="20" TextAlignment="Right" Margin="5,0,0,0" IsEnabled="True"/>
+        </DockPanel>
+        <DockPanel Grid.Row="5" Grid.Column="2"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
+            <Label x:Name="lblRoadsUnits" Content="{Binding RoadsBufferUnits}" HorizontalAlignment="Left"  VerticalAlignment="Center" />
+        </DockPanel>
+
+        <DockPanel Grid.Row="5" Grid.Column="3"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
+            <CheckBox x:Name="chkReclipRoads" Content="" HorizontalAlignment="Center"  Height="14" VerticalAlignment="Center" IsEnabled="True"
+                      IsChecked="{Binding ReclipRoads_Checked}"/>
         </DockPanel>
         <Button x:Name="button" Content="Clip Layers" Grid.Column="3"  Grid.Row="6" VerticalAlignment="Center" Width="75" Command="{Binding CmdClipLayers}" Margin="0,0,5,0"/>
     </Grid>

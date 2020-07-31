@@ -62,6 +62,7 @@ namespace bagis_pro
         private bool _AspectZones_Checked = false;
         private bool _SlopeZones_Checked = false;
         private bool _ElevationZones_Checked = false;
+        private bool _Roads_Checked = false;
         public string Heading
         {
             get { return _heading; }
@@ -116,6 +117,15 @@ namespace bagis_pro
             }
         }
 
+        public bool Roads_Checked
+        {
+            get { return _Roads_Checked; }
+            set
+            {
+                SetProperty(ref _Roads_Checked, value, () => Roads_Checked);
+            }
+        }
+
         public void ResetView()
         {
             RepresentedArea_Checked = false;
@@ -123,6 +133,7 @@ namespace bagis_pro
             AspectZones_Checked = false;
             SlopeZones_Checked = false;
             ElevationZones_Checked = false;
+            Roads_Checked = false;
         }
 
         public ICommand CmdGenerateLayers
@@ -133,13 +144,13 @@ namespace bagis_pro
                 {
                     // Create from template
                     await GenerateLayersAsync(RepresentedArea_Checked, PrismZones_Checked, AspectZones_Checked,
-                        SlopeZones_Checked, ElevationZones_Checked);
+                        SlopeZones_Checked, ElevationZones_Checked, Roads_Checked);
                 });
             }
         }
 
         private async Task GenerateLayersAsync(bool calculateRepresented, bool calculatePrism, bool calculateAspect,
-            bool calculateSlope, bool calculateElevation)
+            bool calculateSlope, bool calculateElevation, bool bufferRoads)
         {
             try
             {
@@ -150,7 +161,7 @@ namespace bagis_pro
                 }
 
                 if (calculateRepresented == false && calculatePrism == false && calculateAspect == false
-                    && calculateSlope == false && calculateElevation == false)
+                    && calculateSlope == false && calculateElevation == false && bufferRoads == false)
                 {
                     MessageBox.Show("No layers selected to generate !!", "BAGIS-PRO");
                     return;

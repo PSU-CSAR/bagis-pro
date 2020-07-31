@@ -33,6 +33,7 @@ namespace bagis_pro
         public const string MAPS_TEXTBOX1 = "TextBox1";
 
         public const string FILE_AOI_VECTOR = "aoi_v";
+        public const string FILE_AOI_BUFFERED_VECTOR = "aoib_v";
         public const string FILE_AOI_PRISM_VECTOR = "p_aoi_v";
         public const string FILE_AOI_RASTER = "aoibagis";
         public const string FILE_STREAMS = "aoi_streams";
@@ -54,6 +55,7 @@ namespace bagis_pro
         public const string FILE_POURPOINT = "pourpoint";
         public const string FILE_SLOPE = "slope";
         public const string FILE_ASPECT = "aspect";
+        public const string FILE_ROADS = "fs_roads";
         public const string FILE_SETTINGS = "analysis.xml";
         public const string FILE_EXPORT_MAP_ELEV_PDF = "map_elevation.pdf";
         public const string FILE_EXPORT_MAP_SNOTEL_PDF = "map_elevation_snotel.pdf";
@@ -116,6 +118,7 @@ namespace bagis_pro
         public const string DATA_TYPE_PRECIPITATION = "Precipitation";
         public const string DATA_TYPE_SNOTEL = "SNOTEL";
         public const string DATA_TYPE_SNOW_COURSE = "Snow Course";
+        public const string DATA_TYPE_ROADS = "Roads";
         public const string SITE_TYPE_SNOW_COURSE = "scos";
         public const string SITE_TYPE_SNOTEL = "stel";
 

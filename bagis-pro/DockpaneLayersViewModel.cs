@@ -74,6 +74,10 @@ namespace bagis_pro
         private string _snowCosBufferDistance = "";
         private string _snowCosBufferUnits = "";
         private bool _reclipSnowCos_Checked = false;
+        private bool _roads_Checked = false;
+        private string _roadsBufferDistance = "";
+        private string _roadsBufferUnits = "";
+        private bool _reclipRoads_Checked = false;
 
 
         public string Heading
@@ -229,6 +233,42 @@ namespace bagis_pro
             }
         }
 
+        public bool Roads_Checked
+        {
+            get { return _roads_Checked; }
+            set
+            {
+                SetProperty(ref _roads_Checked, value, () => Roads_Checked);
+            }
+        }
+
+        public string RoadsBufferDistance
+        {
+            get { return _roadsBufferDistance; }
+            set
+            {
+                SetProperty(ref _roadsBufferDistance, value, () => RoadsBufferDistance);
+            }
+        }
+
+        public string RoadsBufferUnits
+        {
+            get { return _roadsBufferUnits; }
+            set
+            {
+                SetProperty(ref _roadsBufferUnits, value, () => RoadsBufferUnits);
+            }
+        }
+
+        public bool ReclipRoads_Checked
+        {
+            get { return _reclipRoads_Checked; }
+            set
+            {
+                SetProperty(ref _reclipRoads_Checked, value, () => ReclipRoads_Checked);
+            }
+        }
+
         public void ResetView()
         {
             Prism_Checked = false;
@@ -247,6 +287,10 @@ namespace bagis_pro
             SnowCosBufferDistance = "";
             SnowCosBufferUnits = Convert.ToString(Module1.Current.Settings.m_snotelBufferUnits);
             ReclipSnowCos_Checked = false;
+            Roads_Checked = false;
+            RoadsBufferDistance = "";
+            RoadsBufferUnits = Convert.ToString(Module1.Current.Settings.m_roadsBufferUnits);
+            ReclipRoads_Checked = false;
         }
 
         public ICommand CmdClipLayers
@@ -256,12 +300,13 @@ namespace bagis_pro
                 return new RelayCommand(async () => {
                     // Create from template
                     await ClipLayersAsync(ReclipSwe_Checked, ReclipPrism_Checked, ReclipSNOTEL_Checked, 
-                        ReclipSnowCos_Checked);
+                        ReclipSnowCos_Checked, ReclipRoads_Checked);
                 });
             }
         }
 
-        private async Task ClipLayersAsync(bool clipSwe, bool clipPrism, bool clipSnotel, bool clipSnowCos)
+        private async Task ClipLayersAsync(bool clipSwe, bool clipPrism, bool clipSnotel, bool clipSnowCos,
+            bool clipRoads)
         {
             try
             {
@@ -272,7 +317,7 @@ namespace bagis_pro
                 }
 
                 if (clipSwe == false && clipPrism == false && 
-                    clipSnotel == false && clipSnowCos == false)
+                    clipSnotel == false && clipSnowCos == false && clipRoads == false)
                 {
                     MessageBox.Show("No layers selected to clip !!", "BAGIS-PRO");
                     return;
@@ -322,7 +367,6 @@ namespace bagis_pro
                         layersPane.ReclipPrism_Checked = false;
                         layersPane.Prism_Checked = true;
                     }
-
                 }
                 if (clipSwe)
                 {
@@ -418,6 +462,19 @@ namespace bagis_pro
                             layersPane.ReclipSnowCos_Checked = false;
                             layersPane.SnowCos_Checked = true;
                         }
+                    }
+                }
+
+                if (clipRoads)
+                {
+                    string strOutputFc = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, true)
+                        + Constants.FILE_ROADS;
+                    success = await AnalysisTools.ClipFeatureLayerAsync(Module1.Current.Aoi.FilePath, strOutputFc, Constants.DATA_TYPE_ROADS,
+                        RoadsBufferDistance, RoadsBufferUnits);
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        layersPane.ReclipPrism_Checked = false;
+                        layersPane.Prism_Checked = true;
                     }
                 }
 
