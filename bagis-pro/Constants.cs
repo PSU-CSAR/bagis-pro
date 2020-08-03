@@ -26,6 +26,7 @@ namespace bagis_pro
         public const string MAPS_SNOTEL_REPRESENTED = "SNOTEL Sites Represented Area";
         public const string MAPS_SNOW_COURSE_REPRESENTED = "Snow Course Sites Represented Area";
         public const string MAPS_ALL_SITES_REPRESENTED = "All Sites Represented Area";
+        public const string MAPS_PROXIMITY_ROADS = "Proximity Roads";
 
         public const string MAPS_LEGEND = "Legend";
         public const string MAPS_TITLE = "Title";
@@ -47,6 +48,7 @@ namespace bagis_pro
         public const string FILE_PRECIP_ZONE = "preczone";
         public const string FILE_SNOTEL_ZONE = "stelzone";
         public const string FILE_SCOS_ZONE = "scoszone";
+        public const string FILE_ROADS_ZONE = "roadszone";
         //public const string FILE_SNOTEL_REPRESENTED = "npactual";
         public const string FILE_SNOTEL_REPRESENTED = "snotel_rep";
         //public const string FILE_SCOS_REPRESENTED = "nppseduo";
@@ -68,6 +70,7 @@ namespace bagis_pro
         public static readonly string[] FILE_EXPORT_MAPS_SWE = new string[] { "map_snodas_swe_january.pdf", "map_snodas_swe_february.pdf", "map_snodas_swe_march.pdf", 
                                                                               "map_snodas_swe_april.pdf", "map_snodas_swe_may.pdf", "map_snodas_swe_june.pdf",
                                                                               "map_snodas_swe_december.pdf"};
+        public const string FILE_EXPORT_MAP_ROADS_PDF = "map_roads.pdf";
         public const string FILE_EXPORT_CHART_AREA_ELEV_PRECIP_SITE_PDF = "chart_area_elev_precip_site.pdf";
         public const string FILE_EXPORT_CHART_SLOPE_PDF = "chart_slope.pdf";
         public const string FILE_EXPORT_CHART_ASPECT_PDF = "chart_aspect.pdf";

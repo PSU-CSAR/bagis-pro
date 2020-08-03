@@ -301,6 +301,25 @@ namespace bagis_pro
                     }
                 }
 
+                if (bufferRoads)
+                {
+                    Uri uri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers));
+                    bool bExists = await GeodatabaseTools.FeatureClassExistsAsync(uri, Constants.FILE_ROADS);
+                    if (!bExists)
+                    {
+                        MessageBox.Show("The roads layer is missing. Clip the roads layer before creating the roads analysis layer!!", "BAGIS-PRO");
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(GenerateLayersAsync),
+                            "Unable to buffer roads because fs_roads layer does not exist. Process stopped!!");
+                        return;
+                    }
+                    string strDistance = Module1.Current.Settings.m_roadsAnalysisBufferDistance + " " +
+                        Module1.Current.Settings.m_roadsAnalysisBufferUnits;
+                    string strOutputPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) +
+                        Constants.FILE_ROADS_ZONE;
+                    success = await GeoprocessingTools.BufferLinesAsync(uri.AbsolutePath + "\\" + Constants.FILE_ROADS, strOutputPath, strDistance,
+                        "", "", "");
+                }
+
                 if (success == BA_ReturnCode.Success)
                 {
                     MessageBox.Show("Analysis layers generated !!", "BAGIS-PRO");

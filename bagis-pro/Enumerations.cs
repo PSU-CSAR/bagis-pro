@@ -32,7 +32,8 @@ namespace bagis_pro
         SCOS,
         SITES_ALL,
         SNODAS_SWE,
-        PRISM
+        PRISM,
+        ROADS
     }
 
     public enum SiteType

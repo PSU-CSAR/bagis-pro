@@ -124,10 +124,48 @@ namespace bagis_pro
             });
             if (gpResult.IsFailed)
             {
+                Module1.Current.ModuleLogManager.LogError(nameof(BufferAsync),
+                    "Unable to buffer features. Error code: " + gpResult.ErrorCode);
                 return BA_ReturnCode.UnknownError;
             }
             else
             {
+                Module1.Current.ModuleLogManager.LogDebug(nameof(BufferAsync), "Features buffered successfully");
+                return BA_ReturnCode.Success;
+            }
+        }
+
+        public static async Task<BA_ReturnCode> BufferLinesAsync(string strInputFeatures, string strOutputFeatures, string strDistance,
+                                                string strLineSide, string strLineEndOption, string strDissolveOption)
+        {
+            if (String.IsNullOrEmpty(strLineSide))
+            {
+                strLineSide = "FULL";
+            }
+            if (String.IsNullOrEmpty(strLineEndOption))
+            {
+                strLineEndOption = "ROUND";
+            }
+            if (String.IsNullOrEmpty(strDissolveOption))
+            {
+                strDissolveOption = "ALL";
+            }
+            IGPResult gpResult = await QueuedTask.Run(() =>
+            {
+                var parameters = Geoprocessing.MakeValueArray(strInputFeatures, strOutputFeatures, strDistance, strLineSide,
+                                                              strLineEndOption, strDissolveOption);
+                return Geoprocessing.ExecuteToolAsync("Buffer_analysis", parameters, null,
+                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+            });
+            if (gpResult.IsFailed)
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(BufferLinesAsync),
+                    "Unable to buffer features. Error code: " + gpResult.ErrorCode);
+                return BA_ReturnCode.UnknownError;
+            }
+            else
+            {
+                Module1.Current.ModuleLogManager.LogDebug(nameof(BufferLinesAsync), "Lines buffered successfully");
                 return BA_ReturnCode.Success;
             }
         }

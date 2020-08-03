@@ -1775,7 +1775,6 @@ namespace bagis_pro
 
                     // Update layer metadata
                     IDictionary<string, BA_Objects.DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
-
                     BA_Objects.DataSource updateDataSource = new BA_Objects.DataSource(dictDataSources[strDataType])
                     {
                         DateClipped = DateTime.Now,

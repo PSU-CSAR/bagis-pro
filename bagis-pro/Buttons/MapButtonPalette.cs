@@ -142,6 +142,21 @@ namespace bagis_pro.Buttons
         }
     }
 
+    internal class MapButtonPalette_BtnRoads : Button
+    {
+        protected override async void OnClick()
+        {
+            try
+            {
+                await ToggleMapDisplay.ToggleAsync(BagisMapType.ROADS);
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show("Unable to display roads map!!" + e.Message, "BAGIS-PRO");
+            }
+        }
+    }
+
     internal class MapButtonPalette_BtnSweJan : Button
     {
         protected override async void OnClick()

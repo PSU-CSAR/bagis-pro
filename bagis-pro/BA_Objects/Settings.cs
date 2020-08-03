@@ -26,6 +26,8 @@ namespace bagis_pro.BA_Objects
         public string m_roadsBufferUnits = "Meters";
         public int m_aspectDirections = 8;
         public int m_minElevZones = 10;
+        public string m_roadsAnalysisBufferDistance = "300";
+        public string m_roadsAnalysisBufferUnits = "Feet";
 
         public Settings()
         {
