@@ -26,7 +26,6 @@ namespace bagis_pro
         public const string MAPS_SNOTEL_REPRESENTED = "SNOTEL Sites Represented Area";
         public const string MAPS_SNOW_COURSE_REPRESENTED = "Snow Course Sites Represented Area";
         public const string MAPS_ALL_SITES_REPRESENTED = "All Sites Represented Area";
-        public const string MAPS_PROXIMITY_ROADS = "Proximity Roads";
 
         public const string MAPS_LEGEND = "Legend";
         public const string MAPS_TITLE = "Title";

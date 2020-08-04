@@ -111,10 +111,19 @@ namespace bagis_pro
                         Module1.ActivateState("MapButtonPalette_BtnSitesAll_State");
 
                     // add roads layer
+                    Module1.Current.RoadsLayerLegend = "Within unknown distance of access road";
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
                         Constants.FILE_ROADS_ZONE;
+                    // Get buffer units out of the metadata so we can set the layer name
+                    string strBagisTag = await GeneralTools.GetBagisTagAsync(strPath, Constants.META_TAG_XPATH);
+                    if (! String.IsNullOrEmpty(strBagisTag))
+                    {
+                        string strBufferDistance = GeneralTools.GetValueForKey(strBagisTag, Constants.META_TAG_BUFFER_DISTANCE, ';');
+                        string strBufferUnits = GeneralTools.GetValueForKey(strBagisTag, Constants.META_TAG_XUNIT_VALUE, ';');
+                        Module1.Current.RoadsLayerLegend = "Within " + strBufferDistance + " " + strBufferUnits + " of access road";
+                    }
                     uri = new Uri(strPath);
-                    success = await MapTools.AddPolygonLayerAsync(uri, fillColor, false, Constants.MAPS_PROXIMITY_ROADS);
+                    success = await MapTools.AddPolygonLayerAsync(uri, fillColor, false, Module1.Current.RoadsLayerLegend);
                     if (success.Equals(BA_ReturnCode.Success))
                         Module1.ActivateState("MapButtonPalette_BtnRoads_State");
 
@@ -349,35 +358,26 @@ namespace bagis_pro
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
             await QueuedTask.Run(() =>
             {
-                FeatureClass fClass = null;
-                // Opens a file geodatabase. This will open the geodatabase if the folder exists and contains a valid geodatabase.
-                using (Geodatabase geodatabase =
-                    new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(strFolderPath))))
+                //Define a simple renderer to symbolize the feature class.
+                var simpleRender = new SimpleRendererDefinition
                 {
-                    // Use the geodatabase.
-                    fClass = geodatabase.OpenDataset<FeatureClass>(strFileName);
-                }
-                if (String.IsNullOrEmpty(displayName))
-                {
-                    displayName = fClass.GetDefinition().GetAliasName();
-                }
-                // Create symbology for feature layer
-                var flyrCreatnParam = new FeatureLayerCreationParams(fClass)
-                {
-                    Name = displayName,
-                    IsVisible = true,
-                    RendererDefinition = new SimpleRendererDefinition()
-                    {
-                        //SymbolTemplate = SymbolFactory.Instance.ConstructPolygonSymbol(fillColor).MakeSymbolReference()
-                        SymbolTemplate = SymbolFactory.Instance.ConstructPolygonSymbol(
+                    SymbolTemplate = SymbolFactory.Instance.ConstructPolygonSymbol(
                         fillColor, SimpleFillStyle.Solid,
                         SymbolFactory.Instance.ConstructStroke(ColorFactory.Instance.BlackRGB, 0))
                         .MakeSymbolReference()
-                    }
+
+                };
+                //Define some of the Feature Layer's parameters
+                var flyrCreatnParam = new FeatureLayerCreationParams(uri)
+                {
+                    Name = displayName,
+                    IsVisible = isVisible,
                 };
 
                 FeatureLayer fLayer = LayerFactory.Instance.CreateLayer<FeatureLayer>(flyrCreatnParam, MapView.Active.Map);
-                fLayer.SetVisibility(isVisible);
+                // Create and apply the renderer
+                CIMRenderer renderer = fLayer?.CreateRenderer(simpleRender);
+                fLayer.SetRenderer(renderer);
                 success = BA_ReturnCode.Success;
             });
             return success;
@@ -540,7 +540,7 @@ namespace bagis_pro
             arrLayerNames[9] = Constants.MAPS_ASPECT_ZONE;
             arrLayerNames[10] = Constants.MAPS_ALL_SITES_REPRESENTED;
             arrLayerNames[11] = Constants.MAPS_PRISM_ZONE;
-            arrLayerNames[12] = Constants.MAPS_PROXIMITY_ROADS;
+            arrLayerNames[12] = Module1.Current.RoadsLayerLegend;
             int idxLayerNames = 13;
             for (int i=0; i < Constants.LAYER_NAMES_SNODAS_SWE.Length; i++)
             {
@@ -1317,9 +1317,9 @@ namespace bagis_pro
                 case BagisMapType.ROADS:
                     lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_ELEV_ZONE,
-                                                   Constants.MAPS_PROXIMITY_ROADS};
-                    lstLegendLayers = new List<string> { Constants.MAPS_PROXIMITY_ROADS };
-                    mapDefinition = new BA_Objects.MapDefinition("WITHIN XXX FEET OF ACCESS ROAD",
+                                                   Module1.Current.RoadsLayerLegend};
+                    lstLegendLayers = new List<string> { Module1.Current.RoadsLayerLegend };
+                    mapDefinition = new BA_Objects.MapDefinition("PROXIMITY TO ACCESS ROAD",
                         " ", Constants.FILE_EXPORT_MAP_ROADS_PDF);
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
@@ -1481,7 +1481,7 @@ namespace bagis_pro
                 double dblLabelMin = dblStretchMin;
                 double dblLabelMax = dblStretchMax;
                 string layerUnits = "";
-                string strBagisTag = await GeneralTools.GetBagisTag(strPath, Constants.META_TAG_XPATH);
+                string strBagisTag = await GeneralTools.GetBagisTagAsync(strPath, Constants.META_TAG_XPATH);
                 if (! string.IsNullOrEmpty(strBagisTag))
                 {
                     layerUnits = GeneralTools.GetValueForKey(strBagisTag, Constants.META_TAG_ZUNIT_VALUE, ';');

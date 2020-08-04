@@ -318,6 +318,42 @@ namespace bagis_pro
                         Constants.FILE_ROADS_ZONE;
                     success = await GeoprocessingTools.BufferLinesAsync(uri.AbsolutePath + "\\" + Constants.FILE_ROADS, strOutputPath, strDistance,
                         "", "", "");
+
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        // Save buffer distance and units in metadata
+                        string strBufferDistance = Module1.Current.Settings.m_roadsAnalysisBufferDistance;
+                        string strBufferUnits = Module1.Current.Settings.m_roadsAnalysisBufferUnits;
+                        // We need to add a new tag at "/metadata/dataIdInfo/searchKeys/keyword"
+                        StringBuilder sb = new StringBuilder();
+                        sb.Append(Constants.META_TAG_PREFIX);
+                        // Buffer Distance
+                        sb.Append(Constants.META_TAG_BUFFER_DISTANCE + strBufferDistance + "; ");
+                        // X Units
+                        sb.Append(Constants.META_TAG_XUNIT_VALUE + strBufferUnits + "; ");
+                        sb.Append(Constants.META_TAG_SUFFIX);
+
+                        //Update the metadata
+                        var fc = ItemFactory.Instance.Create(strOutputPath,
+                            ItemFactory.ItemType.PathItem);
+                        if (fc != null)
+                        {
+                            await QueuedTask.Run(() =>
+                            {
+                                string strXml = string.Empty;
+                                strXml = fc.GetXml();
+                                System.Xml.XmlDocument xmlDocument = GeneralTools.UpdateMetadata(strXml, Constants.META_TAG_XPATH, sb.ToString(),
+                                    Constants.META_TAG_PREFIX.Length);
+
+                                fc.SetXml(xmlDocument.OuterXml);
+                            });
+                        }
+                    }
+
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        layersPane.Roads_Checked = false;
+                    }
                 }
 
                 if (success == BA_ReturnCode.Success)

@@ -545,7 +545,7 @@ namespace bagis_pro
             }
         }
 
-        public static async Task<string> GetBagisTag(string layerPath, string propertyPath)
+        public static async Task<string> GetBagisTagAsync(string layerPath, string propertyPath)
         {
             string strReturn = "";
             var fc = ItemFactory.Instance.Create(layerPath, ItemFactory.ItemType.PathItem);

@@ -111,5 +111,6 @@ namespace bagis_pro
         internal Buttons.CboCurrentAoi CboCurrentAoi { get; set; }
         public BA_Objects.ILoggerManager ModuleLogManager;
         internal string DisplayedSweMap { get; set; } = "";
+        internal string RoadsLayerLegend { get; set; } = "";
     }
 }
