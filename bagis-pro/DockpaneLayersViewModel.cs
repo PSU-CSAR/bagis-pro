@@ -473,8 +473,12 @@ namespace bagis_pro
                         RoadsBufferDistance, RoadsBufferUnits);
                     if (success == BA_ReturnCode.Success)
                     {
-                        layersPane.ReclipPrism_Checked = false;
-                        layersPane.Prism_Checked = true;
+                        layersPane.ReclipRoads_Checked = false;
+                        layersPane.Roads_Checked = true;
+                    }
+                    else
+                    {
+                        MessageBox.Show("An error occurred while clipping the roads. Check the log file!!", "BAGIS-PRO");
                     }
                 }
 

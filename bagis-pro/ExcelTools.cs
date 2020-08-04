@@ -1093,7 +1093,6 @@ namespace bagis_pro
         public static BA_ReturnCode CreateAspectChart(Worksheet pAspectWorksheet, Worksheet pChartsWorksheet,
             int topPosition, int leftPosition)
         {
-            BA_ReturnCode success = BA_ReturnCode.UnknownError;
             long nrecords = ExcelTools.CountRecords(pAspectWorksheet, 1);
 
             // ===========================
@@ -1147,9 +1146,7 @@ namespace bagis_pro
             pChartsWorksheet.Shapes.AddTextbox(MsoTextOrientation.msoTextOrientationHorizontal, textBoxSettings.Left,
                                                textBoxSettings.Top, textBoxSettings.Width, textBoxSettings.Height).
                                                TextFrame.Characters().Text = textBoxSettings.Message;
-
-
-            return success;
+            return BA_ReturnCode.Success;
         }
 
         public static async Task<BA_ReturnCode> CreateRepresentPrecipTable(Worksheet pworksheet)
