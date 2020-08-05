@@ -17,15 +17,16 @@
     </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="30"/>
-            <RowDefinition Height="30"/>
-            <RowDefinition Height="30"/>
-            <RowDefinition Height="30"/>
-            <RowDefinition Height="30"/>
-            <RowDefinition Height="30"/>
-            <RowDefinition Height="30"/>
+            <RowDefinition Height="25"/>
+            <RowDefinition Height="25"/>
+            <RowDefinition Height="25"/>
+            <RowDefinition Height="25"/>
+            <RowDefinition Height="25"/>
+            <RowDefinition Height="25"/>
+            <RowDefinition Height="25"/>
+            <RowDefinition Height="25"/>
             <RowDefinition Height="*"/>
-            <RowDefinition Height="30"/>
+            <RowDefinition Height="25"/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto"/>
@@ -79,7 +80,13 @@
             <CheckBox x:Name="chkRoads" Content="" HorizontalAlignment="Center"  Height="14" VerticalAlignment="Center"
                       IsChecked="{Binding Roads_Checked}"/>
         </DockPanel>
-
-        <Button x:Name="button" Content="Generate Layers" Grid.Column="2"  Grid.Row="7" VerticalAlignment="Center" Width="90" Command="{Binding CmdGenerateLayers}" Margin="5,0,0,0" HorizontalAlignment="Right" HorizontalContentAlignment="Right"/>
+        <DockPanel Grid.Row="7" Grid.Column="0"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
+            <Label  Content="Public Land" HorizontalAlignment="Left" VerticalAlignment="Center"  Padding="5,0,20,0"/>
+        </DockPanel>
+        <DockPanel Grid.Row="7" Grid.Column="1"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
+            <CheckBox x:Name="chkPublicLands" Content="" HorizontalAlignment="Center"  Height="14" VerticalAlignment="Center"
+                      IsChecked="{Binding PublicLand_Checked}"/>
+        </DockPanel>
+        <Button x:Name="button" Content="Generate Layers" Grid.Column="2"  Grid.Row="8" VerticalAlignment="Center" Width="90" Command="{Binding CmdGenerateLayers}" Margin="5,0,0,0" HorizontalAlignment="Right" HorizontalContentAlignment="Right"/>
     </Grid>
 </UserControl>

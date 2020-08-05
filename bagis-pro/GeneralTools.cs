@@ -193,7 +193,7 @@ namespace bagis_pro
                 //Printing data sources
                 IDictionary<string, BA_Objects.DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
                 string[] keys = { Constants.DATA_TYPE_SWE, Constants.DATA_TYPE_PRECIPITATION, Constants.DATA_TYPE_SNOTEL,
-                                  Constants.DATA_TYPE_SNOW_COURSE, Constants.DATA_TYPE_ROADS };
+                                  Constants.DATA_TYPE_SNOW_COURSE, Constants.DATA_TYPE_ROADS, Constants.DATA_TYPE_PUBLIC_LAND };
                 IList < BA_Objects.DataSource > lstDataSources = new List<BA_Objects.DataSource>();
                 foreach (string strKey in keys)
                 {
@@ -895,8 +895,9 @@ namespace bagis_pro
 
                     // Update data status for files in layers.gdb
                     string[] arrCheckLayers = new string[] { Constants.FILE_SNODAS_SWE_APRIL, Constants.FILE_SNOTEL,
-                                                             Constants.FILE_SNOW_COURSE, Constants.FILE_ROADS};
-                    bool[] arrLayerExists = new bool[] { false, false, false, false};
+                                                             Constants.FILE_SNOW_COURSE, Constants.FILE_ROADS,
+                                                             Constants.FILE_PUBLIC_LAND};
+                    bool[] arrLayerExists = new bool[] { false, false, false, false, false};
                     gdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers, false));
                     bExists = false;
                     if (gdbUri.IsFile)
@@ -1001,7 +1002,19 @@ namespace bagis_pro
                                             if (!string.IsNullOrEmpty(bufferUnits))
                                                 layersPane.RoadsBufferUnits = bufferUnits;
                                             break;
-
+                                        case Constants.FILE_PUBLIC_LAND:
+                                            layersPane.PublicLands_Checked = true;
+                                            if (!string.IsNullOrEmpty(bufferDistance))
+                                            {
+                                                layersPane.PublicLandsBufferDistance = bufferDistance;
+                                            }
+                                            else
+                                            {
+                                                layersPane.PublicLandsBufferDistance = "";
+                                            }
+                                            if (!string.IsNullOrEmpty(bufferUnits))
+                                                layersPane.PublicLandsBufferUnits = bufferUnits;
+                                            break;
                                         default:
                                             Module1.Current.ModuleLogManager.LogError(nameof(SetAoi),
                                                 "Unidentified layer name");

@@ -48,6 +48,7 @@ namespace bagis_pro
         public const string FILE_SNOTEL_ZONE = "stelzone";
         public const string FILE_SCOS_ZONE = "scoszone";
         public const string FILE_ROADS_ZONE = "roadszone";
+        public const string FILE_PUBLIC_LAND_ZONE = "publiclandszone";
         //public const string FILE_SNOTEL_REPRESENTED = "npactual";
         public const string FILE_SNOTEL_REPRESENTED = "snotel_rep";
         //public const string FILE_SCOS_REPRESENTED = "nppseduo";
@@ -57,6 +58,7 @@ namespace bagis_pro
         public const string FILE_SLOPE = "slope";
         public const string FILE_ASPECT = "aspect";
         public const string FILE_ROADS = "fs_roads";
+        public const string FILE_PUBLIC_LAND = "public_lands";
         public const string FILE_SETTINGS = "analysis.xml";
         public const string FILE_EXPORT_MAP_ELEV_PDF = "map_elevation.pdf";
         public const string FILE_EXPORT_MAP_SNOTEL_PDF = "map_elevation_snotel.pdf";
@@ -121,6 +123,7 @@ namespace bagis_pro
         public const string DATA_TYPE_SNOTEL = "SNOTEL";
         public const string DATA_TYPE_SNOW_COURSE = "Snow Course";
         public const string DATA_TYPE_ROADS = "Roads";
+        public const string DATA_TYPE_PUBLIC_LAND = "Public Land";
         public const string SITE_TYPE_SNOW_COURSE = "scos";
         public const string SITE_TYPE_SNOTEL = "stel";
 

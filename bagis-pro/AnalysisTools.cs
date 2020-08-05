@@ -6,6 +6,7 @@ using ArcGIS.Desktop.Core.Geoprocessing;
 using ArcGIS.Desktop.Editing;
 using ArcGIS.Desktop.Framework.Dialogs;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
+using ArcGIS.Desktop.Mapping;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -1647,7 +1648,7 @@ namespace bagis_pro
                     string strTempBuffer = "tmpBuffer";
                     // a buffer distance was requested
                     string strTempBuffer2 = "";
-                    if (! String.IsNullOrEmpty(strBufferDistance))
+                    if (!String.IsNullOrEmpty(strBufferDistance))
                     {
                         string strAoiBoundaryPath = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, true) +
                             Constants.FILE_AOI_VECTOR;
@@ -1795,6 +1796,52 @@ namespace bagis_pro
 
             return success;
         }
+
+        public static async Task<BA_ReturnCode> GetPublicLandsAsync (string strAoiPath)
+        {
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            Uri uriLayers = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers));
+            bool bExists = await GeodatabaseTools.FeatureClassExistsAsync(uriLayers, Constants.FILE_PUBLIC_LAND);
+            if (! bExists)
+            {
+                MessageBox.Show("The public land layer is missing. Clip the public land layer before creating the public land analysis layer!!", "BAGIS-PRO");
+                Module1.Current.ModuleLogManager.LogDebug(nameof(GetPublicLandsAsync),
+                    "Unable to extract public lands because public_lands layer does not exist. Process stopped!!");
+                return success;
+            }
+            string strInputFc = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Analysis, true) + Constants.FILE_PUBLIC_LAND;
+            Uri uriFull = new Uri(strInputFc);
+            await QueuedTask.Run( () =>
+            {
+
+
+                var slectionLayer = LayerFactory.Instance.CreateFeatureLayer(uriFull, MapView.Active.Map, 0, "Selection Layer");
+            slectionLayer.SetDefinitionQuery("Public_ = 1");
+            string copyOutputPath = uriLayers.LocalPath + "\\tmpCopy";
+            var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath);
+            var parameters = Geoprocessing.MakeValueArray(slectionLayer, copyOutputPath);
+            var gpResult = Geoprocessing.ExecuteToolAsync("CopyFeatures_management", parameters, environments,
+                                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+            if (gpResult.Result.IsFailed)
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(GetPublicLandsAsync),
+                   "Unable to copy selected features. Error code: " + gpResult.Result.ErrorCode);
+                MessageBox.Show("Unable to copy selected features. Extraction cancelled!!", "BAGIS-PRO");
+                return;
+            }
+            else
+            {
+                    // Remove temporary layer
+                    MapView.Active.Map.RemoveLayer(slectionLayer);
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(GetPublicLandsAsync),
+                    "Copied selected features to a temporary layer");
+            }
+
+
+            });
+            success = BA_ReturnCode.Success;
+            return success;
+        }
     }
 
-    }
+}

@@ -78,6 +78,11 @@ namespace bagis_pro
         private string _roadsBufferDistance = "";
         private string _roadsBufferUnits = "";
         private bool _reclipRoads_Checked = false;
+        private bool _publicLands_Checked = false;
+        private string _publicLandsBufferDistance = "";
+        private string _publicLandsBufferUnits = "";
+        private bool _reclipPublicLands_Checked = false;
+
 
 
         public string Heading
@@ -269,6 +274,42 @@ namespace bagis_pro
             }
         }
 
+        public bool PublicLands_Checked
+        {
+            get { return _publicLands_Checked; }
+            set
+            {
+                SetProperty(ref _publicLands_Checked, value, () => PublicLands_Checked);
+            }
+        }
+
+        public string PublicLandsBufferDistance
+        {
+            get { return _publicLandsBufferDistance; }
+            set
+            {
+                SetProperty(ref _publicLandsBufferDistance, value, () => PublicLandsBufferDistance);
+            }
+        }
+
+        public string PublicLandsBufferUnits
+        {
+            get { return _publicLandsBufferUnits; }
+            set
+            {
+                SetProperty(ref _publicLandsBufferUnits, value, () => PublicLandsBufferUnits);
+            }
+        }
+
+        public bool ReclipPublicLands_Checked
+        {
+            get { return _reclipPublicLands_Checked; }
+            set
+            {
+                SetProperty(ref _reclipPublicLands_Checked, value, () => ReclipPublicLands_Checked);
+            }
+        }
+
         public void ResetView()
         {
             Prism_Checked = false;
@@ -291,6 +332,10 @@ namespace bagis_pro
             RoadsBufferDistance = "";
             RoadsBufferUnits = Convert.ToString(Module1.Current.Settings.m_roadsBufferUnits);
             ReclipRoads_Checked = false;
+            PublicLands_Checked = false;
+            PublicLandsBufferDistance = "";
+            PublicLandsBufferUnits = Convert.ToString(Module1.Current.Settings.m_roadsBufferUnits);
+            ReclipPublicLands_Checked = false;
         }
 
         public ICommand CmdClipLayers
@@ -300,13 +345,13 @@ namespace bagis_pro
                 return new RelayCommand(async () => {
                     // Create from template
                     await ClipLayersAsync(ReclipSwe_Checked, ReclipPrism_Checked, ReclipSNOTEL_Checked, 
-                        ReclipSnowCos_Checked, ReclipRoads_Checked);
+                        ReclipSnowCos_Checked, ReclipRoads_Checked, _reclipPublicLands_Checked);
                 });
             }
         }
 
         private async Task ClipLayersAsync(bool clipSwe, bool clipPrism, bool clipSnotel, bool clipSnowCos,
-            bool clipRoads)
+            bool clipRoads, bool clipPublicLands)
         {
             try
             {
@@ -317,7 +362,8 @@ namespace bagis_pro
                 }
 
                 if (clipSwe == false && clipPrism == false && 
-                    clipSnotel == false && clipSnowCos == false && clipRoads == false)
+                    clipSnotel == false && clipSnowCos == false && clipRoads == false &&
+                    clipPublicLands == false)
                 {
                     MessageBox.Show("No layers selected to clip !!", "BAGIS-PRO");
                     return;
@@ -479,6 +525,23 @@ namespace bagis_pro
                     else
                     {
                         MessageBox.Show("An error occurred while clipping the roads. Check the log file!!", "BAGIS-PRO");
+                    }
+                }
+
+                if (clipPublicLands)
+                {
+                    string strOutputFc = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, true)
+                        + Constants.FILE_PUBLIC_LAND;
+                    success = await AnalysisTools.ClipFeatureLayerAsync(Module1.Current.Aoi.FilePath, strOutputFc, Constants.DATA_TYPE_PUBLIC_LAND,
+                        PublicLandsBufferDistance, PublicLandsBufferUnits);
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        layersPane.ReclipPublicLands_Checked = false;
+                        layersPane.PublicLands_Checked = true;
+                    }
+                    else
+                    {
+                        MessageBox.Show("An error occurred while clipping the public lands. Check the log file!!", "BAGIS-PRO");
                     }
                 }
 

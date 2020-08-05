@@ -17,14 +17,15 @@
     </UserControl.Resources>
     <Grid x:Name="Manage_Layers">
         <Grid.RowDefinitions>
-            <RowDefinition Height="30"/>
-            <RowDefinition Height="30"/>
-            <RowDefinition Height="30"/>
-            <RowDefinition Height="30"/>
-            <RowDefinition Height="30"/>
-            <RowDefinition Height="30"/>
+            <RowDefinition Height="25"/>
+            <RowDefinition Height="25"/>
+            <RowDefinition Height="25"/>
+            <RowDefinition Height="25"/>
+            <RowDefinition Height="25"/>
+            <RowDefinition Height="25"/>
+            <RowDefinition Height="25"/>
             <RowDefinition Height="*"/>
-            <RowDefinition Height="30"/>
+            <RowDefinition Height="25"/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto"/>
@@ -103,11 +104,23 @@
         <DockPanel Grid.Row="5" Grid.Column="2"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
             <Label x:Name="lblRoadsUnits" Content="{Binding RoadsBufferUnits}" HorizontalAlignment="Left"  VerticalAlignment="Center" />
         </DockPanel>
-
         <DockPanel Grid.Row="5" Grid.Column="3"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
             <CheckBox x:Name="chkReclipRoads" Content="" HorizontalAlignment="Center"  Height="14" VerticalAlignment="Center" IsEnabled="True"
                       IsChecked="{Binding ReclipRoads_Checked}"/>
         </DockPanel>
-        <Button x:Name="button" Content="Clip Layers" Grid.Column="3"  Grid.Row="6" VerticalAlignment="Center" Width="75" Command="{Binding CmdClipLayers}" Margin="0,0,5,0"/>
+        <DockPanel Grid.Row="6" Grid.Column="0"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
+            <CheckBox x:Name="chkPublicLands" Content="Public Lands" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,0,0,0" IsChecked="{Binding PublicLands_Checked}" IsEnabled="False" />
+        </DockPanel>
+        <DockPanel Grid.Row="6" Grid.Column="1"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
+            <TextBox x:Name="txtPublicLands" HorizontalAlignment="Right" TextWrapping="NoWrap"  Width="70" Text="{Binding PublicLandsBufferDistance}" Height="20" TextAlignment="Right" Margin="5,0,0,0" IsEnabled="True"/>
+        </DockPanel>
+        <DockPanel Grid.Row="6" Grid.Column="2"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
+            <Label x:Name="lblPublicLandsUnits" Content="{Binding PublicLandsBufferUnits}" HorizontalAlignment="Left"  VerticalAlignment="Center" />
+        </DockPanel>
+        <DockPanel Grid.Row="6" Grid.Column="3"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
+            <CheckBox x:Name="chkReclipPublicLands" Content="" HorizontalAlignment="Center"  Height="14" VerticalAlignment="Center" IsEnabled="True"
+                      IsChecked="{Binding ReclipPublicLands_Checked}"/>
+        </DockPanel>
+        <Button x:Name="button" Content="Clip Layers" Grid.Column="3"  Grid.Row="7" VerticalAlignment="Center" Width="75" Command="{Binding CmdClipLayers}" Margin="0,0,5,0"/>
     </Grid>
 </UserControl>

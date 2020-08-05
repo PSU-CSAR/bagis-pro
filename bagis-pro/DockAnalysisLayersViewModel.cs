@@ -63,6 +63,7 @@ namespace bagis_pro
         private bool _SlopeZones_Checked = false;
         private bool _ElevationZones_Checked = false;
         private bool _Roads_Checked = false;
+        private bool _PublicLand_Checked = false;
         public string Heading
         {
             get { return _heading; }
@@ -126,6 +127,15 @@ namespace bagis_pro
             }
         }
 
+        public bool PublicLand_Checked
+        {
+            get { return _PublicLand_Checked; }
+            set
+            {
+                SetProperty(ref _PublicLand_Checked, value, () => PublicLand_Checked);
+            }
+        }
+
         public void ResetView()
         {
             RepresentedArea_Checked = false;
@@ -134,6 +144,7 @@ namespace bagis_pro
             SlopeZones_Checked = false;
             ElevationZones_Checked = false;
             Roads_Checked = false;
+            PublicLand_Checked = false;
         }
 
         public ICommand CmdGenerateLayers
@@ -144,13 +155,13 @@ namespace bagis_pro
                 {
                     // Create from template
                     await GenerateLayersAsync(RepresentedArea_Checked, PrismZones_Checked, AspectZones_Checked,
-                        SlopeZones_Checked, ElevationZones_Checked, Roads_Checked);
+                        SlopeZones_Checked, ElevationZones_Checked, Roads_Checked, PublicLand_Checked);
                 });
             }
         }
 
         private async Task GenerateLayersAsync(bool calculateRepresented, bool calculatePrism, bool calculateAspect,
-            bool calculateSlope, bool calculateElevation, bool bufferRoads)
+            bool calculateSlope, bool calculateElevation, bool bufferRoads, bool extractPublicLand)
         {
             try
             {
@@ -161,7 +172,8 @@ namespace bagis_pro
                 }
 
                 if (calculateRepresented == false && calculatePrism == false && calculateAspect == false
-                    && calculateSlope == false && calculateElevation == false && bufferRoads == false)
+                    && calculateSlope == false && calculateElevation == false && bufferRoads == false
+                    && extractPublicLand == false)
                 {
                     MessageBox.Show("No layers selected to generate !!", "BAGIS-PRO");
                     return;
@@ -353,6 +365,16 @@ namespace bagis_pro
                     if (success == BA_ReturnCode.Success)
                     {
                         layersPane.Roads_Checked = false;
+                    }
+                }
+
+                if (extractPublicLand)
+                {
+                    success = await AnalysisTools.GetPublicLandsAsync(Module1.Current.Aoi.FilePath);
+
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        layersPane.PublicLand_Checked = false;
                     }
                 }
 
