@@ -157,6 +157,21 @@ namespace bagis_pro.Buttons
         }
     }
 
+    internal class MapButtonPalette_BtnPublicLand : Button
+    {
+        protected override async void OnClick()
+        {
+            try
+            {
+                await ToggleMapDisplay.ToggleAsync(BagisMapType.PUBLIC_LAND);
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show("Unable to display public land map!!" + e.Message, "BAGIS-PRO");
+            }
+        }
+    }
+
     internal class MapButtonPalette_BtnSweJan : Button
     {
         protected override async void OnClick()

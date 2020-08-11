@@ -70,6 +70,7 @@
           <button refID="MapButtonPalette_BtnSweJun" />
           <button refID="MapButtonPalette_BtnSweDec" />
           <button refID="MapButtonPalette_BtnRoads" />
+          <button refID="MapButtonPalette_BtnPublicLand" />
         </buttonPalette>
       </palettes>
       <controls>
@@ -139,19 +140,61 @@
           <tooltip heading="Palette Button 4">
             ToolTip<disabledText /></tooltip>
         </button>
-        <button id="MapButtonPalette_BtnSnowCourse" caption="Snow Course Sites Distribution" className="bagis_pro.Buttons.MapButtonPalette_BtnSnowCourse" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSnowCourse_Condition"><tooltip heading="Palette Button 4">
-            ToolTip<disabledText /></tooltip></button><button id="MapButtonPalette_BtnSitesAll" caption="All Sites Distribution" className="bagis_pro.Buttons.MapButtonPalette_BtnSitesAll" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSitesAll_Condition"><tooltip heading="Palette Button 5">
-            ToolTip<disabledText /></tooltip></button><button id="MapButtonPalette_BtnSweJan" caption="SWE January Distribution" className="bagis_pro.Buttons.MapButtonPalette_BtnSweJan" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSweJan_Condition"><tooltip heading="SWE January Distribution">
-            ToolTip<disabledText /></tooltip></button><button id="MapButtonPalette_BtnSweFeb" caption="SWE February Distribution" className="bagis_pro.Buttons.MapButtonPalette_BtnSweFeb" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSweFeb_Condition"><tooltip heading="SWE February Distribution">
-            ToolTip<disabledText /></tooltip></button><button id="MapButtonPalette_BtnSweMar" caption="SWE March Distribution" className="bagis_pro.Buttons.MapButtonPalette_BtnSweMar" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSweMar_Condition"><tooltip heading="SWE March Distribution">
-            ToolTip<disabledText /></tooltip></button><button id="MapButtonPalette_BtnSweApr" caption="SWE April Distribution" className="bagis_pro.Buttons.MapButtonPalette_BtnSweApr" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSweApr_Condition"><tooltip heading="SWE April Distribution">
-            ToolTip<disabledText /></tooltip></button><button id="MapButtonPalette_BtnSweMay" caption="SWE May Distribution" className="bagis_pro.Buttons.MapButtonPalette_BtnSweMay" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSweMay_Condition"><tooltip heading="SWE May Distribution">
-            ToolTip<disabledText /></tooltip></button><button id="MapButtonPalette_BtnSweJun" caption="SWE June Distribution" className="bagis_pro.Buttons.MapButtonPalette_BtnSweJun" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSweJun_Condition"><tooltip heading="SWE June Distribution">
-            ToolTip<disabledText /></tooltip></button><button id="MapButtonPalette_BtnSweDec" caption="SWE December Distribution" className="bagis_pro.Buttons.MapButtonPalette_BtnSweDec" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSweDec_Condition"><tooltip heading="SWE December Distribution">
-            ToolTip<disabledText /></tooltip></button><button id="MapButtonPalette_BtnPrism" caption="Precipitation Distribution" className="bagis_pro.Buttons.MapButtonPalette_BtnPrism" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnPrism_Condition"><tooltip heading="Palette Button 6">
-            ToolTip<disabledText /></tooltip></button>
+        <button id="MapButtonPalette_BtnSnowCourse" caption="Snow Course Sites Distribution" className="bagis_pro.Buttons.MapButtonPalette_BtnSnowCourse" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSnowCourse_Condition">
+          <tooltip heading="Display Map">
+            ToolTip<disabledText />
+          </tooltip>
+        </button>
+        <button id="MapButtonPalette_BtnSitesAll" caption="All Sites Distribution" className="bagis_pro.Buttons.MapButtonPalette_BtnSitesAll" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSitesAll_Condition">
+          <tooltip heading="Display Map">
+            ToolTip<disabledText />
+          </tooltip>
+        </button>
+        <button id="MapButtonPalette_BtnSweJan" caption="SWE January Distribution" className="bagis_pro.Buttons.MapButtonPalette_BtnSweJan" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSweJan_Condition">
+          <tooltip heading="Display Map">
+            ToolTip<disabledText />
+          </tooltip>
+        </button>
+        <button id="MapButtonPalette_BtnSweFeb" caption="SWE February Distribution" className="bagis_pro.Buttons.MapButtonPalette_BtnSweFeb" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSweFeb_Condition">
+          <tooltip heading="Display Map">
+            ToolTip<disabledText />
+          </tooltip>
+        </button>
+        <button id="MapButtonPalette_BtnSweMar" caption="SWE March Distribution" className="bagis_pro.Buttons.MapButtonPalette_BtnSweMar" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSweMar_Condition">
+          <tooltip heading="Display Map">
+            ToolTip<disabledText />
+          </tooltip>
+        </button>
+        <button id="MapButtonPalette_BtnSweApr" caption="SWE April Distribution" className="bagis_pro.Buttons.MapButtonPalette_BtnSweApr" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSweApr_Condition">
+          <tooltip heading="Display Map">
+            ToolTip<disabledText />
+          </tooltip>
+        </button>
+        <button id="MapButtonPalette_BtnSweMay" caption="SWE May Distribution" className="bagis_pro.Buttons.MapButtonPalette_BtnSweMay" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSweMay_Condition">
+          <tooltip heading="Display Map">
+            ToolTip<disabledText />
+          </tooltip></button>
+        <button id="MapButtonPalette_BtnSweJun" caption="SWE June Distribution" className="bagis_pro.Buttons.MapButtonPalette_BtnSweJun" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSweJun_Condition">
+          <tooltip heading="Display Map">
+            ToolTip<disabledText />
+          </tooltip></button>
+        <button id="MapButtonPalette_BtnSweDec" caption="SWE December Distribution" className="bagis_pro.Buttons.MapButtonPalette_BtnSweDec" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSweDec_Condition">
+          <tooltip heading="Display Map">
+            ToolTip<disabledText />
+          </tooltip>
+        </button>
+        <button id="MapButtonPalette_BtnPrism" caption="Precipitation Distribution" className="bagis_pro.Buttons.MapButtonPalette_BtnPrism" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnPrism_Condition">
+          <tooltip heading="Display Map">
+            ToolTip<disabledText />
+          </tooltip>
+        </button>
         <button id="MapButtonPalette_BtnRoads" caption="Access Roads Proximity" className="bagis_pro.Buttons.MapButtonPalette_BtnRoads" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnRoads_Condition">
-          <tooltip heading="Palette Button 4">
+          <tooltip heading="Display Map">
+            ToolTip<disabledText />
+          </tooltip>
+        </button>
+        <button id="MapButtonPalette_BtnPublicLand" caption="Public Non_Wilderness Land" className="bagis_pro.Buttons.MapButtonPalette_BtnPublicLand" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnPublicLand_Condition">
+          <tooltip heading="Display Map">
             ToolTip<disabledText />
           </tooltip>
         </button>
@@ -256,5 +299,9 @@
     <insertCondition id="MapButtonPalette_BtnRoads_Condition" caption="Map Disabled">
       <state id="MapButtonPalette_BtnRoads_State" />
     </insertCondition>
+    <insertCondition id="MapButtonPalette_BtnPublicLand_Condition" caption="Map Disabled">
+      <state id="MapButtonPalette_BtnPublicLand_State" />
+    </insertCondition>
+
   </conditions>
 </ArcGIS>

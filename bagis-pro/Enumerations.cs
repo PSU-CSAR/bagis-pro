@@ -33,7 +33,8 @@ namespace bagis_pro
         SITES_ALL,
         SNODAS_SWE,
         PRISM,
-        ROADS
+        ROADS,
+        PUBLIC_LAND
     }
 
     public enum SiteType

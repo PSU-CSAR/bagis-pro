@@ -26,6 +26,7 @@ namespace bagis_pro
         public const string MAPS_SNOTEL_REPRESENTED = "SNOTEL Sites Represented Area";
         public const string MAPS_SNOW_COURSE_REPRESENTED = "Snow Course Sites Represented Area";
         public const string MAPS_ALL_SITES_REPRESENTED = "All Sites Represented Area";
+        public const string MAPS_PUBLIC_LAND = "Public, Non-Wilderness Land";
 
         public const string MAPS_LEGEND = "Legend";
         public const string MAPS_TITLE = "Title";
@@ -72,6 +73,7 @@ namespace bagis_pro
                                                                               "map_snodas_swe_april.pdf", "map_snodas_swe_may.pdf", "map_snodas_swe_june.pdf",
                                                                               "map_snodas_swe_december.pdf"};
         public const string FILE_EXPORT_MAP_ROADS_PDF = "map_roads.pdf";
+        public const string FILE_EXPORT_MAP_PUBLIC_LAND_PDF = "map_public_land.pdf";
         public const string FILE_EXPORT_CHART_AREA_ELEV_PRECIP_SITE_PDF = "chart_area_elev_precip_site.pdf";
         public const string FILE_EXPORT_CHART_SLOPE_PDF = "chart_slope.pdf";
         public const string FILE_EXPORT_CHART_ASPECT_PDF = "chart_aspect.pdf";
@@ -117,6 +119,7 @@ namespace bagis_pro
         public const string FIELD_UBOUND = "UBOUND";
         public const string FIELD_COUNT = "COUNT";
         public const string FIELD_RASTERVALU = "RASTERVALU";   //Field generated when using BA_ExtractValuesToPoints to populate BA_SELEV from DEM
+        public const string FIELD_PUBLIC = "Public_";   //Indicates public land on the Public Lands layer
 
         public const string DATA_TYPE_SWE = "Snotel SWE";
         public const string DATA_TYPE_PRECIPITATION = "Precipitation";
@@ -152,7 +155,8 @@ namespace bagis_pro
                                                                 "MapButtonPalette_BtnSweMay_State",
                                                                 "MapButtonPalette_BtnSweJun_State",
                                                                 "MapButtonPalette_BtnSweDec_State",
-                                                                "MapButtonPalette_BtnRoads_State"};
+                                                                "MapButtonPalette_BtnRoads_State",
+                                                                "MapButtonPalette_BtnPublicLand_State"};
 
         public static string META_TAG_XPATH = @"/metadata/dataIdInfo/searchKeys/keyword";
         public static string META_TAG_PREFIX = "BAGIS Tag < Please do not modify: ";

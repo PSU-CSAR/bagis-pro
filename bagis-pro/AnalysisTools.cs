@@ -1809,35 +1809,55 @@ namespace bagis_pro
                     "Unable to extract public lands because public_lands layer does not exist. Process stopped!!");
                 return success;
             }
-            string strInputFc = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Analysis, true) + Constants.FILE_PUBLIC_LAND;
+            string strInputFc = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers, true) + Constants.FILE_PUBLIC_LAND;
             Uri uriFull = new Uri(strInputFc);
             await QueuedTask.Run( () =>
             {
-
-
+                // Create feature layer so we can use definition query to select public lands
                 var slectionLayer = LayerFactory.Instance.CreateFeatureLayer(uriFull, MapView.Active.Map, 0, "Selection Layer");
-            slectionLayer.SetDefinitionQuery("Public_ = 1");
-            string copyOutputPath = uriLayers.LocalPath + "\\tmpCopy";
-            var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath);
-            var parameters = Geoprocessing.MakeValueArray(slectionLayer, copyOutputPath);
-            var gpResult = Geoprocessing.ExecuteToolAsync("CopyFeatures_management", parameters, environments,
+                slectionLayer.SetDefinitionQuery(Constants.FIELD_PUBLIC + " = 1");
+                string copyOutputPath = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Analysis, true) + "tmpCopy";
+                // Copy selected features to a new, temporary feature class
+                var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath);
+                var parameters = Geoprocessing.MakeValueArray(slectionLayer, copyOutputPath);
+                var gpResult = Geoprocessing.ExecuteToolAsync("CopyFeatures_management", parameters, environments,
                                     CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-            if (gpResult.Result.IsFailed)
-            {
-                Module1.Current.ModuleLogManager.LogError(nameof(GetPublicLandsAsync),
-                   "Unable to copy selected features. Error code: " + gpResult.Result.ErrorCode);
-                MessageBox.Show("Unable to copy selected features. Extraction cancelled!!", "BAGIS-PRO");
-                return;
-            }
-            else
-            {
+                if (gpResult.Result.IsFailed)
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(GetPublicLandsAsync),
+                    "Unable to copy selected features. Error code: " + gpResult.Result.ErrorCode);
+                    MessageBox.Show("Unable to copy selected features. Extraction cancelled!!", "BAGIS-PRO");
+                    return;
+                }
+                else
+                {
                     // Remove temporary layer
                     MapView.Active.Map.RemoveLayer(slectionLayer);
                     Module1.Current.ModuleLogManager.LogDebug(nameof(GetPublicLandsAsync),
                     "Copied selected features to a temporary layer");
-            }
-
-
+                }
+                // Merge features into a single feature for display and analysis
+                parameters = Geoprocessing.MakeValueArray(copyOutputPath, GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Analysis, true) + Constants.FILE_PUBLIC_LAND_ZONE,
+                    Constants.FIELD_PUBLIC, "", "MULTI_PART", "DISSOLVE_LINES");
+                gpResult = Geoprocessing.ExecuteToolAsync("Dissolve_management", parameters, environments,
+                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                if (gpResult.Result.IsFailed)
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(GetPublicLandsAsync),
+                    "Unable to dissolve public lands temp feature class. Error code: " + gpResult.Result.ErrorCode);
+                    MessageBox.Show("Unable to dissolve public lands features!!", "BAGIS-PRO");
+                    return;
+                }
+                else
+                {
+                     Module1.Current.ModuleLogManager.LogDebug(nameof(GetPublicLandsAsync),
+                    "Dissolved public lands layer");
+                    parameters = Geoprocessing.MakeValueArray(copyOutputPath);
+                    gpResult = Geoprocessing.ExecuteToolAsync("Delete_management", parameters, environments,
+                        CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(GetPublicLandsAsync),
+                        "Deleted temporary public lands layer");
+                }
             });
             success = BA_ReturnCode.Success;
             return success;
