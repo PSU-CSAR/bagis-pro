@@ -172,6 +172,21 @@ namespace bagis_pro.Buttons
         }
     }
 
+    internal class MapButtonPalette_BtnSitesLocationZone : Button
+    {
+        protected override async void OnClick()
+        {
+            try
+            {
+                await ToggleMapDisplay.ToggleAsync(BagisMapType.SITES_LOCATION);
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show("Unable to display potential site location map!!" + e.Message, "BAGIS-PRO");
+            }
+        }
+    }
+
     internal class MapButtonPalette_BtnSweJan : Button
     {
         protected override async void OnClick()

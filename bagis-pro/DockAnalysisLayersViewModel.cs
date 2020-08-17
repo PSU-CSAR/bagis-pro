@@ -378,6 +378,42 @@ namespace bagis_pro
                     }
                 }
 
+                if (bufferRoads || extractPublicLand)
+                {
+                    // if either of the underlying layers changed, we need to recalculate the
+                    // potential sites layer
+                    Uri uriLayersGdb = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis));
+                    string[] arrSiteFileNames = {Constants.FILE_PUBLIC_LAND_ZONE, Constants.FILE_ROADS_ZONE};
+                    IList<string> lstIntersectLayers = new List<string>();
+                    foreach (var fileName in arrSiteFileNames)
+                    {
+                        bool bExists = await GeodatabaseTools.FeatureClassExistsAsync(uriLayersGdb, fileName);
+                        if (bExists)
+                        {
+                            lstIntersectLayers.Add(uriLayersGdb.LocalPath + "\\" + fileName);
+                        }
+                    }
+                    if (lstIntersectLayers.Count > 0)   // Make sure we have > 0 layers to intersect
+                    {
+                        string[] arrIntersectLayers = lstIntersectLayers.ToArray();
+                        string strOutputPath = uriLayersGdb.LocalPath + "\\" + Constants.FILE_SITES_LOCATION_ZONE;
+                        success = await GeoprocessingTools.IntersectUnrankedAsync(Module1.Current.Aoi.FilePath, arrIntersectLayers, strOutputPath,
+                            "ONLY_FID");
+                        if (success != BA_ReturnCode.Success)
+                        {
+                            MessageBox.Show("An error occurred while generating the site location layers map!!", "BAGIS-PRO");
+                            Module1.Current.ModuleLogManager.LogError(nameof(GenerateLayersAsync),
+                                "No site location layers exist to intersect. sitesloczone cannot be created!");
+                        }
+                    }
+                    else
+                    {
+                        MessageBox.Show("No site location layers exist to merge!!", "BAGIS-PRO");
+                        Module1.Current.ModuleLogManager.LogError(nameof(GenerateLayersAsync),
+                            "An error occured while using the Intersect tool to generate sitesloczone !");
+                    }
+                }
+
                 if (success == BA_ReturnCode.Success)
                 {
                     MessageBox.Show("Analysis layers generated !!", "BAGIS-PRO");

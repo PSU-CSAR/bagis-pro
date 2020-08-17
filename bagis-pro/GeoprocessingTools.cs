@@ -196,5 +196,25 @@ namespace bagis_pro
                 return BA_ReturnCode.Success;
             }
         }
+
+        public static async Task<BA_ReturnCode> IntersectUnrankedAsync(string strWorkspace, string[] arrInputLayers, string outputLayerPath,
+                                                                       string joinAttributes)
+        {
+             IGPResult gpResult = await QueuedTask.Run(() =>
+            {
+                var environments = Geoprocessing.MakeEnvironmentArray(workspace: strWorkspace);
+                var parameters = Geoprocessing.MakeValueArray(arrInputLayers, outputLayerPath, joinAttributes);
+                return Geoprocessing.ExecuteToolAsync("Intersect_analysis", parameters, null,
+                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+            });
+            if (gpResult.IsFailed)
+            {
+                return BA_ReturnCode.UnknownError;
+            }
+            else
+            {
+                return BA_ReturnCode.Success;
+            }
+        }
     }
 }

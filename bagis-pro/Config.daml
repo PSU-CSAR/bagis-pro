@@ -71,6 +71,7 @@
           <button refID="MapButtonPalette_BtnSweDec" />
           <button refID="MapButtonPalette_BtnRoads" />
           <button refID="MapButtonPalette_BtnPublicLand" />
+          <button refID="MapButtonPalette_BtnSitesLocationZone" />
         </buttonPalette>
       </palettes>
       <controls>
@@ -198,6 +199,11 @@
             ToolTip<disabledText />
           </tooltip>
         </button>
+        <button id="MapButtonPalette_BtnSitesLocationZone" caption="Potential Site Locations" className="bagis_pro.Buttons.MapButtonPalette_BtnSitesLocationZone" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSitesLocationZone_Condition">
+          <tooltip heading="Display Map">
+            ToolTip<disabledText />
+          </tooltip>
+        </button>
         <comboBox id="bagis_pro_Buttons_CboCurrentAoi" className="bagis_pro.Buttons.CboCurrentAoi" itemWidth="180" isEditable="false" isReadOnly="true" resizable="true"><tooltip heading="Tooltip Heading">Selected AOI<disabledText /></tooltip></comboBox><labelControl id="bagis_pro_Buttons_LblCurrentAoi" caption="  Selected AOI" /><button id="bagis_pro_DockpaneLayers_ShowButton" caption="Clip Layers" className="DockpaneLayers_ShowButton" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/PaperClip32.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/PaperClip32.png" condition="Aoi_Selected_Condition"><tooltip heading="Clip Layers">
             Clip Layers<disabledText /></tooltip></button>
         <button id="bagis_pro_DockAnalysisLayers_ShowButton" caption="Generate Analysis Layers" className="DockAnalysisLayers_ShowButton" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/CalculateGeometry16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/CalculateGeometry32.png" condition="Aoi_Selected_Condition" ><tooltip heading="Generate Layers">Generate Layers<disabledText /></tooltip></button></controls>
@@ -301,6 +307,9 @@
     </insertCondition>
     <insertCondition id="MapButtonPalette_BtnPublicLand_Condition" caption="Map Disabled">
       <state id="MapButtonPalette_BtnPublicLand_State" />
+    </insertCondition>
+    <insertCondition id="MapButtonPalette_BtnSitesLocationZone_Condition" caption="Map Disabled">
+      <state id="MapButtonPalette_BtnSitesLocationZone_State" />
     </insertCondition>
 
   </conditions>

@@ -27,6 +27,7 @@ namespace bagis_pro
         public const string MAPS_SNOW_COURSE_REPRESENTED = "Snow Course Sites Represented Area";
         public const string MAPS_ALL_SITES_REPRESENTED = "All Sites Represented Area";
         public const string MAPS_PUBLIC_LAND = "Public, Non-Wilderness Land";
+        public const string MAPS_SITES_LOCATION = "Meet All Criteria";
 
         public const string MAPS_LEGEND = "Legend";
         public const string MAPS_TITLE = "Title";
@@ -50,6 +51,7 @@ namespace bagis_pro
         public const string FILE_SCOS_ZONE = "scoszone";
         public const string FILE_ROADS_ZONE = "roadszone";
         public const string FILE_PUBLIC_LAND_ZONE = "publiclandszone";
+        public const string FILE_SITES_LOCATION_ZONE = "sitesloczone";
         //public const string FILE_SNOTEL_REPRESENTED = "npactual";
         public const string FILE_SNOTEL_REPRESENTED = "snotel_rep";
         //public const string FILE_SCOS_REPRESENTED = "nppseduo";
@@ -74,6 +76,7 @@ namespace bagis_pro
                                                                               "map_snodas_swe_december.pdf"};
         public const string FILE_EXPORT_MAP_ROADS_PDF = "map_roads.pdf";
         public const string FILE_EXPORT_MAP_PUBLIC_LAND_PDF = "map_public_land.pdf";
+        public const string FILE_EXPORT_MAP_SITES_LOCATION_PDF = "map_sites_location.pdf";
         public const string FILE_EXPORT_CHART_AREA_ELEV_PRECIP_SITE_PDF = "chart_area_elev_precip_site.pdf";
         public const string FILE_EXPORT_CHART_SLOPE_PDF = "chart_slope.pdf";
         public const string FILE_EXPORT_CHART_ASPECT_PDF = "chart_aspect.pdf";
@@ -156,7 +159,8 @@ namespace bagis_pro
                                                                 "MapButtonPalette_BtnSweJun_State",
                                                                 "MapButtonPalette_BtnSweDec_State",
                                                                 "MapButtonPalette_BtnRoads_State",
-                                                                "MapButtonPalette_BtnPublicLand_State"};
+                                                                "MapButtonPalette_BtnPublicLand_State",
+                                                                "MapButtonPalette_BtnSitesLocationZone_State"};
 
         public static string META_TAG_XPATH = @"/metadata/dataIdInfo/searchKeys/keyword";
         public static string META_TAG_PREFIX = "BAGIS Tag < Please do not modify: ";
