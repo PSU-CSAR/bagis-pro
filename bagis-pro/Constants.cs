@@ -62,6 +62,8 @@ namespace bagis_pro
         public const string FILE_ASPECT = "aspect";
         public const string FILE_ROADS = "fs_roads";
         public const string FILE_PUBLIC_LAND = "public_lands";
+        public const string FILE_PREC_MEAN_ELEV = "precmeanelev";
+        public const string FILE_ASP_ZONE_PREC = "aspzoneprec";
         public const string FILE_SETTINGS = "analysis.xml";
         public const string FILE_EXPORT_MAP_ELEV_PDF = "map_elevation.pdf";
         public const string FILE_EXPORT_MAP_SNOTEL_PDF = "map_elevation_snotel.pdf";

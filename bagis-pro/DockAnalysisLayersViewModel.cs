@@ -64,6 +64,7 @@ namespace bagis_pro
         private bool _ElevationZones_Checked = false;
         private bool _Roads_Checked = false;
         private bool _PublicLand_Checked = false;
+        private bool _ElevPrecipCorr_Checked = false;
         public string Heading
         {
             get { return _heading; }
@@ -136,6 +137,15 @@ namespace bagis_pro
             }
         }
 
+        public bool ElevPrecipCorr_Checked
+        {
+            get { return _ElevPrecipCorr_Checked; }
+            set
+            {
+                SetProperty(ref _ElevPrecipCorr_Checked, value, () => ElevPrecipCorr_Checked);
+            }
+        }
+
         public void ResetView()
         {
             RepresentedArea_Checked = false;
@@ -145,6 +155,7 @@ namespace bagis_pro
             ElevationZones_Checked = false;
             Roads_Checked = false;
             PublicLand_Checked = false;
+            ElevPrecipCorr_Checked = false;
         }
 
         public ICommand CmdGenerateLayers
@@ -155,13 +166,14 @@ namespace bagis_pro
                 {
                     // Create from template
                     await GenerateLayersAsync(RepresentedArea_Checked, PrismZones_Checked, AspectZones_Checked,
-                        SlopeZones_Checked, ElevationZones_Checked, Roads_Checked, PublicLand_Checked);
+                        SlopeZones_Checked, ElevationZones_Checked, Roads_Checked, PublicLand_Checked, ElevPrecipCorr_Checked);
                 });
             }
         }
 
         private async Task GenerateLayersAsync(bool calculateRepresented, bool calculatePrism, bool calculateAspect,
-            bool calculateSlope, bool calculateElevation, bool bufferRoads, bool extractPublicLand)
+            bool calculateSlope, bool calculateElevation, bool bufferRoads, bool extractPublicLand,
+            bool elevPrecipCorr)
         {
             try
             {
@@ -173,7 +185,7 @@ namespace bagis_pro
 
                 if (calculateRepresented == false && calculatePrism == false && calculateAspect == false
                     && calculateSlope == false && calculateElevation == false && bufferRoads == false
-                    && extractPublicLand == false)
+                    && extractPublicLand == false && elevPrecipCorr == false)
                 {
                     MessageBox.Show("No layers selected to generate !!", "BAGIS-PRO");
                     return;
@@ -361,7 +373,6 @@ namespace bagis_pro
                             });
                         }
                     }
-
                     if (success == BA_ReturnCode.Success)
                     {
                         layersPane.Roads_Checked = false;
@@ -411,6 +422,22 @@ namespace bagis_pro
                         MessageBox.Show("No site location layers exist to merge!!", "BAGIS-PRO");
                         Module1.Current.ModuleLogManager.LogError(nameof(GenerateLayersAsync),
                             "An error occured while using the Intersect tool to generate sitesloczone !");
+                    }
+                }
+
+                if (elevPrecipCorr == true)
+                {
+                    string strLayer = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Prism, true) +
+                  System.IO.Path.GetFileName(Module1.Current.Settings.m_precipFile);
+
+                    Uri uriPrism = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Prism));
+                    success = await AnalysisTools.CalculateElevPrecipCorr(Module1.Current.Aoi.FilePath, uriPrism, 
+                        System.IO.Path.GetFileName(Module1.Current.Settings.m_precipFile));
+
+
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        layersPane.ElevPrecipCorr_Checked = false;
                     }
                 }
 

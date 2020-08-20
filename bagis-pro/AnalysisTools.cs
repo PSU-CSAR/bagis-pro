@@ -1862,6 +1862,78 @@ namespace bagis_pro
             success = BA_ReturnCode.Success;
             return success;
         }
+
+        public static async Task<BA_ReturnCode> CalculateElevPrecipCorr(string strAoiPath, Uri uriPrism, string prismFile )
+        {
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            IList<BA_Objects.Interval> lstInterval = AnalysisTools.GetAspectClasses(Module1.Current.Settings.m_aspectDirections);
+
+            // Create the elevation-precipitation layer
+            Uri uriSurfaces = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Surfaces));
+            Uri uriAnalysis = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Analysis));
+            double dblDemCellSize = await GeodatabaseTools.GetCellSize(uriSurfaces, Constants.FILE_DEM_FILLED);
+            double dblPrismCellSize = await GeodatabaseTools.GetCellSize(uriPrism, prismFile);
+            string demPath = uriSurfaces.LocalPath + "\\" + Constants.FILE_DEM_FILLED;
+            string precipMeanPath = uriAnalysis.LocalPath + "\\" + Constants.FILE_PREC_MEAN_ELEV;
+            int intCellFactor = (int) Math.Round(dblPrismCellSize / dblDemCellSize, 0);
+            double cellSize = dblPrismCellSize / intCellFactor;
+
+            // Run aggregate tool
+            var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath, 
+                snapRaster: uriPrism.LocalPath + "\\" + prismFile, cellSize: cellSize);
+            var parameters = Geoprocessing.MakeValueArray(demPath, precipMeanPath, intCellFactor, "MEAN" );
+            var gpResult = await Geoprocessing.ExecuteToolAsync("Aggregate", parameters, environments,
+                                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+            if (gpResult.IsFailed)
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(CalculateElevPrecipCorr),
+                "Unable aggregate DEM. Error code: " + gpResult.ErrorCode);
+                MessageBox.Show("Unable aggregate DEM. Calculation cancelled!!", "BAGIS-PRO");
+                return success;
+            }
+            else
+            {
+                // Remove temporary layer
+                Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateElevPrecipCorr),
+                    "Aggregate tool run successfully on DEM");
+                success = BA_ReturnCode.Success;
+            }
+
+            if (success == BA_ReturnCode.Success)
+            {
+                double dblAspectCellSize = await GeodatabaseTools.GetCellSize(uriAnalysis, Constants.FILE_ASPECT_ZONE);
+                if (dblPrismCellSize != dblAspectCellSize)
+                {
+                    // Execute focal statistics to account for differing cell sizes
+                    //"Rectangle 935.365128254473 935.365128254473 MAP"
+                    string aspectPath = uriAnalysis.LocalPath + "\\" + Constants.FILE_ASPECT_ZONE;
+                    string outputPath = uriAnalysis.LocalPath + "\\" + Constants.FILE_ASP_ZONE_PREC;
+                    string neighborhood = "Rectangle " + dblPrismCellSize + " " + dblPrismCellSize + " MAP";
+                    parameters = Geoprocessing.MakeValueArray(aspectPath, outputPath, neighborhood, "MAJORITY", "DATA");
+                    environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath,
+                        snapRaster: uriPrism.LocalPath + "\\" + prismFile, cellSize: dblPrismCellSize);
+                    gpResult = await Geoprocessing.ExecuteToolAsync("FocalStatistics_sa", parameters, environments,
+                        CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                    if (gpResult.IsFailed)
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(CalculateElevPrecipCorr),
+                        "Focal statistics failed for aspzones layer. Error code: " + gpResult.ErrorCode);
+                        MessageBox.Show("Focal statistics failed for aspzones layer. Calculation cancelled!!", "BAGIS-PRO");
+                        success = BA_ReturnCode.UnknownError;
+                        return success;
+                    }
+                    else
+                    {
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateElevPrecipCorr),
+                            "Focal statistics for aspzones layer run successfully");
+                    }
+                }
+
+            }
+
+            return success;
+        }
+
     }
 
 }
