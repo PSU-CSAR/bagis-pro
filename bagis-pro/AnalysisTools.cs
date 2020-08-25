@@ -1569,7 +1569,7 @@ namespace bagis_pro
             string strSnoClipLayer = "";
             string strLayerToDelete = "";
             string strAoiBoundaryPath = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, true) +
-                Constants.FILE_AOI_VECTOR;
+                Constants.FILE_AOI_BUFFERED_VECTOR;
             string strOutputFeatures = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, true) +
                 strTempBuffer;
             var parametersBuff = Geoprocessing.MakeValueArray(strAoiBoundaryPath, strOutputFeatures, strBufferDistance, "",
@@ -1866,13 +1866,14 @@ namespace bagis_pro
         public static async Task<BA_ReturnCode> CalculateElevPrecipCorr(string strAoiPath, Uri uriPrism, string prismFile )
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
-            IList<BA_Objects.Interval> lstInterval = AnalysisTools.GetAspectClasses(Module1.Current.Settings.m_aspectDirections);
+            IList<BA_Objects.Interval> lstAspectInterval = AnalysisTools.GetAspectClasses(Module1.Current.Settings.m_aspectDirections);
 
             // Create the elevation-precipitation layer
             Uri uriSurfaces = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Surfaces));
             Uri uriAnalysis = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Analysis));
-            double dblDemCellSize = await GeodatabaseTools.GetCellSize(uriSurfaces, Constants.FILE_DEM_FILLED);
-            double dblPrismCellSize = await GeodatabaseTools.GetCellSize(uriPrism, prismFile);
+            Uri uriLayers = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers));
+            double dblDemCellSize = await GeodatabaseTools.GetCellSizeAsync(uriSurfaces, Constants.FILE_DEM_FILLED);
+            double dblPrismCellSize = await GeodatabaseTools.GetCellSizeAsync(uriPrism, prismFile);
             string demPath = uriSurfaces.LocalPath + "\\" + Constants.FILE_DEM_FILLED;
             string precipMeanPath = uriAnalysis.LocalPath + "\\" + Constants.FILE_PREC_MEAN_ELEV;
             int intCellFactor = (int) Math.Round(dblPrismCellSize / dblDemCellSize, 0);
@@ -1901,15 +1902,16 @@ namespace bagis_pro
 
             if (success == BA_ReturnCode.Success)
             {
-                double dblAspectCellSize = await GeodatabaseTools.GetCellSize(uriAnalysis, Constants.FILE_ASPECT_ZONE);
+                double dblAspectCellSize = await GeodatabaseTools.GetCellSizeAsync(uriAnalysis, Constants.FILE_ASPECT_ZONE);
+                string aspectZonesPath = uriAnalysis.LocalPath + "\\" + Constants.FILE_ASPECT_ZONE;
                 if (dblPrismCellSize != dblAspectCellSize)
                 {
                     // Execute focal statistics to account for differing cell sizes
                     //"Rectangle 935.365128254473 935.365128254473 MAP"
                     string aspectPath = uriAnalysis.LocalPath + "\\" + Constants.FILE_ASPECT_ZONE;
-                    string outputPath = uriAnalysis.LocalPath + "\\" + Constants.FILE_ASP_ZONE_PREC;
+                    aspectZonesPath = uriAnalysis.LocalPath + "\\" + Constants.FILE_ASP_ZONE_PREC;
                     string neighborhood = "Rectangle " + dblPrismCellSize + " " + dblPrismCellSize + " MAP";
-                    parameters = Geoprocessing.MakeValueArray(aspectPath, outputPath, neighborhood, "MAJORITY", "DATA");
+                    parameters = Geoprocessing.MakeValueArray(aspectPath, aspectZonesPath, neighborhood, "MAJORITY", "DATA");
                     environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath,
                         snapRaster: uriPrism.LocalPath + "\\" + prismFile, cellSize: dblPrismCellSize);
                     gpResult = await Geoprocessing.ExecuteToolAsync("FocalStatistics_sa", parameters, environments,
@@ -1929,6 +1931,101 @@ namespace bagis_pro
                     }
                 }
 
+                //Run Sample tool to extract elevation/precipitation for PRISM cell locations; The output is a table
+                StringBuilder sb = new StringBuilder();
+                sb.Append(aspectZonesPath + "; ");    // aspzone or aspzoneprec
+                sb.Append(uriPrism.LocalPath + "\\" + prismFile + "; ");
+                sb.Append(precipMeanPath);
+                //Environment settings are same as Focal Statistics
+                parameters = Geoprocessing.MakeValueArray(sb.ToString(), uriPrism.LocalPath + "\\" + prismFile,
+                    uriAnalysis.LocalPath + "\\" + Constants.FILE_ASP_ZONE_PREC_TBL, "NEAREST");
+                gpResult = await Geoprocessing.ExecuteToolAsync("Sample_sa", parameters, environments,
+                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                if (gpResult.IsFailed)
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(CalculateElevPrecipCorr),
+                        "Sample tool failed to create precmeanelev_tbl. Error code: " + gpResult.ErrorCode);
+                    MessageBox.Show("Sample tool failed to run. Calculation cancelled!!", "BAGIS-PRO");
+                    success = BA_ReturnCode.UnknownError;
+                    return success;
+                }
+                else
+                {
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateElevPrecipCorr),
+                        "Sample tool run successfully");
+                }
+
+                success = await GeoprocessingTools.AddFieldAsync(uriAnalysis.LocalPath + "\\" + Constants.FILE_ASP_ZONE_PREC_TBL, Constants.FIELD_ASPECT, "TEXT");
+                if (success == BA_ReturnCode.Success)
+                {
+                   string errorMsg = "";
+                   bool modificationResult = false;
+                   await QueuedTask.Run(() =>
+                   {
+                        // Copy aspect value into ba_aspect field
+                        EditOperation editOperation = new EditOperation();
+                        using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(uriAnalysis)))
+                        using (Table table = geodatabase.OpenDataset<Table>(Constants.FILE_ASP_ZONE_PREC_TBL))
+                        {
+                            TableDefinition defTable = table.GetDefinition();
+                            int idxAspect = defTable.FindField(Constants.FIELD_ASPECT);
+                            if (idxAspect < 0)
+                            {
+                                Module1.Current.ModuleLogManager.LogError(nameof(CalculateElevPrecipCorr),
+                                    "Unable to locate BA_ASPECT field in precmeanelev_tbl. Cannot update field");
+                                MessageBox.Show("Unable to locate BA_ASPECT field in precmeanelev_tbl. Calculation cancelled!!", "BAGIS-PRO");
+                                success = BA_ReturnCode.UnknownError;
+                                return;
+                            }
+                            QueryFilter queryFilter = new QueryFilter();
+                           string strQueryFieldName = Constants.FILE_ASP_ZONE_PREC + "_Band_1";
+                           editOperation.Callback(context =>
+                           {
+                                for (int i = 0; i < lstAspectInterval.Count - 1; i++)
+                                {
+                                    queryFilter.WhereClause = strQueryFieldName + " = " + lstAspectInterval[i].Value;
+                                    using (RowCursor aCursor = table.Search(queryFilter, false))
+                                    {
+                                        while (aCursor.MoveNext())
+                                        {
+                                            using (Row row = aCursor.Current)
+                                            {
+                                                row[idxAspect] = lstAspectInterval[i].Name;
+                                                row.Store();
+                                                // Has to be called after the store too
+                                                context.Invalidate(row);
+                                            }
+                                        }
+                                    }
+                                }
+                            }, table);
+                            try
+                            {
+                                modificationResult = editOperation.Execute();
+                                if (!modificationResult) errorMsg = editOperation.ErrorMessage;
+                            }
+                            catch (GeodatabaseException exObj)
+                            {
+                                errorMsg = exObj.Message;
+                            }
+                        }
+                    });
+
+                    if (String.IsNullOrEmpty(errorMsg))
+                    {
+                        await Project.Current.SaveEditsAsync();
+                    }
+                    else
+                    {
+                        if (Project.Current.HasEdits)
+                            await Project.Current.DiscardEditsAsync();
+                        Module1.Current.ModuleLogManager.LogError(nameof(CalculateElevPrecipCorr),
+                            "Exception: " + errorMsg);
+                        return BA_ReturnCode.UnknownError;
+                    }
+                }
+
+                success = await GeodatabaseTools.CreateSitesLayerAsync(uriLayers);
             }
 
             return success;

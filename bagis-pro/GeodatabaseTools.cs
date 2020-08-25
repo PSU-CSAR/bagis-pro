@@ -604,7 +604,7 @@ namespace bagis_pro
             return lstInterval;
         }
 
-        public static async Task<double> GetCellSize(Uri gdbUri, string rasterName)
+        public static async Task<double> GetCellSizeAsync(Uri gdbUri, string rasterName)
         {
             double cellSize = 0.0F;
             await QueuedTask.Run(() => {
@@ -617,6 +617,160 @@ namespace bagis_pro
                 }
             });
             return cellSize;
+        }
+
+        public static async Task<BA_ReturnCode> CreateSitesLayerAsync(Uri gdbUri)
+        {
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            bool hasSnotel = await FeatureClassExistsAsync(gdbUri, Constants.FILE_SNOTEL);
+            bool hasSiteType = false;
+            bool bUpdateSnotel = false;
+            bool bUpdateSnowCourse = false;
+            if (hasSnotel)
+            {
+                hasSiteType = await AttributeExistsAsync(gdbUri, Constants.FILE_SNOTEL, Constants.FIELD_SITE_TYPE);
+                if (hasSiteType == false)
+                {
+                    success = await GeoprocessingTools.AddFieldAsync(gdbUri.LocalPath + "\\" + Constants.FILE_SNOTEL,
+                        Constants.FIELD_SITE_TYPE, "TEXT");
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        bUpdateSnotel = true;
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(CreateSitesLayerAsync),
+                            "Added ba_site_type field to Snotel");
+                    }
+                }
+            }
+            bool hasSnowCourse = await FeatureClassExistsAsync(gdbUri, Constants.FILE_SNOW_COURSE);
+            if (hasSnowCourse)
+            {
+                hasSiteType = await AttributeExistsAsync(gdbUri, Constants.FILE_SNOW_COURSE, Constants.FIELD_SITE_TYPE);
+                if (hasSiteType == false)
+                {
+                    success = await GeoprocessingTools.AddFieldAsync(gdbUri.LocalPath + "\\" + Constants.FILE_SNOW_COURSE,
+                        Constants.FIELD_SITE_TYPE, "TEXT");
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        bUpdateSnowCourse = true;
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(CreateSitesLayerAsync),
+                            "Added ba_site_type field to Snow Course");
+                    }
+                }
+            }
+
+            bool modificationResult = false;
+            string errorMsg = "";
+            await QueuedTask.Run(() => {
+                using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(gdbUri)))
+                {
+                    if (bUpdateSnotel)
+                    {
+                        using (FeatureClass featureClass = geodatabase.OpenDataset<FeatureClass>(Constants.FILE_SNOTEL))
+                        {
+                            FeatureClassDefinition featureClassDefinition = featureClass.GetDefinition();
+                            int idxSiteType = featureClassDefinition.FindField(Constants.FIELD_SITE_TYPE);
+                            if (idxSiteType > 0)
+                            {
+                                EditOperation editOperation = new EditOperation();
+                                editOperation.Callback(context =>
+                                {
+                                    using (RowCursor rowCursor = featureClass.Search(new QueryFilter(), false))
+                                    {
+                                        while (rowCursor.MoveNext())
+                                        {
+                                            using (Feature feature = (Feature)rowCursor.Current)
+                                            {
+                                            // In order to update the the attribute table has to be called before any changes are made to the row
+                                            context.Invalidate(feature);
+                                                feature[idxSiteType] = Constants.SITE_TYPE_SNOTEL;
+                                                feature.Store();
+                                            // Has to be called after the store too
+                                            context.Invalidate(feature);
+                                            }
+                                        }
+                                    }
+                                }, featureClass);
+
+                                try
+                                {
+                                    modificationResult = editOperation.Execute();
+                                    if (!modificationResult) errorMsg = editOperation.ErrorMessage;
+                                }
+                                catch (GeodatabaseException exObj)
+                                {
+                                    errorMsg = exObj.Message;
+                                }
+                            }
+                            else
+                            {
+                                Module1.Current.ModuleLogManager.LogDebug(nameof(CreateSitesLayerAsync),
+                                    "Unable to locate ba_site_type field on snotel_sites. Field could not be updated");
+                                return;
+                            }
+                        }
+                    }
+                    if (bUpdateSnowCourse)
+                    {
+                        using (FeatureClass featureClass = geodatabase.OpenDataset<FeatureClass>(Constants.FILE_SNOW_COURSE))
+                        {
+                            FeatureClassDefinition featureClassDefinition = featureClass.GetDefinition();
+                            int idxSiteType = featureClassDefinition.FindField(Constants.FIELD_SITE_TYPE);
+                            if (idxSiteType > 0)
+                            {
+                                EditOperation editOperation = new EditOperation();
+                                editOperation.Callback(context =>
+                                {
+                                    using (RowCursor rowCursor = featureClass.Search(new QueryFilter(), false))
+                                    {
+                                        while (rowCursor.MoveNext())
+                                        {
+                                            using (Feature feature = (Feature)rowCursor.Current)
+                                            {
+                                                // In order to update the the attribute table has to be called before any changes are made to the row
+                                                context.Invalidate(feature);
+                                                feature[idxSiteType] = Constants.SITE_TYPE_SNOW_COURSE;
+                                                feature.Store();
+                                                // Has to be called after the store too
+                                                context.Invalidate(feature);
+                                            }
+                                        }
+                                    }
+                                }, featureClass);
+
+                                try
+                                {
+                                    modificationResult = editOperation.Execute();
+                                    if (!modificationResult) errorMsg = editOperation.ErrorMessage;
+                                }
+                                catch (GeodatabaseException exObj)
+                                {
+                                    errorMsg = exObj.Message;
+                                }
+                            }
+                            else
+                            {
+                                Module1.Current.ModuleLogManager.LogDebug(nameof(CreateSitesLayerAsync),
+                                    "Unable to locate ba_site_type field on snow_course_sites. Field could not be updated");
+                                return;
+                            }
+                        }
+                    }
+                }
+            });
+            if (String.IsNullOrEmpty(errorMsg))
+            {
+                await Project.Current.SaveEditsAsync();
+            }
+            else
+            {
+                if (Project.Current.HasEdits)
+                    await Project.Current.DiscardEditsAsync();
+                Module1.Current.ModuleLogManager.LogError(nameof(CreateSitesLayerAsync),
+                    "Exception: " + errorMsg);
+                return BA_ReturnCode.UnknownError;
+            }
+            success = BA_ReturnCode.Success;
+            return success;
         }
     }
 

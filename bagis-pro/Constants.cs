@@ -64,6 +64,7 @@ namespace bagis_pro
         public const string FILE_PUBLIC_LAND = "public_lands";
         public const string FILE_PREC_MEAN_ELEV = "precmeanelev";
         public const string FILE_ASP_ZONE_PREC = "aspzoneprec";
+        public const string FILE_ASP_ZONE_PREC_TBL = "precmeanelev_tbl";
         public const string FILE_SETTINGS = "analysis.xml";
         public const string FILE_EXPORT_MAP_ELEV_PDF = "map_elevation.pdf";
         public const string FILE_EXPORT_MAP_SNOTEL_PDF = "map_elevation_snotel.pdf";
@@ -110,6 +111,7 @@ namespace bagis_pro
         public const string FIELD_SITE_ELEV = "BA_SELEV";
         public const string FIELD_SITE_NAME = "BA_SNAME";
         public const string FIELD_SITE_TYPE = "BA_STYPE";
+        public const string FIELD_ASPECT = "BA_ASPECT";
         public const string FIELD_OBJECT_ID = "OBJECTID";
         public const string FIELD_STATION_TRIPLET = "stationTriplet";
         public const string FIELD_STATION_NAME = "stationName";

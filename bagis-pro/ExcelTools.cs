@@ -389,7 +389,7 @@ namespace bagis_pro
             //===========================
             string strTable = "tblZones";
             // We assume elevation zones is the smaller cell size. Could not find api to set cell size to minimum of layers
-            double dblCellSize = await GeodatabaseTools.GetCellSize(uriElevZones, Constants.FILE_ELEV_ZONE);
+            double dblCellSize = await GeodatabaseTools.GetCellSizeAsync(uriElevZones, Constants.FILE_ELEV_ZONE);
             IGPResult gpResult = await QueuedTask.Run(() =>
             {
                 string sMask = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_RASTER;
