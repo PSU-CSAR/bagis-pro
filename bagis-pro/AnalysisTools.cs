@@ -2025,7 +2025,79 @@ namespace bagis_pro
                     }
                 }
 
-                success = await GeodatabaseTools.CreateSitesLayerAsync(uriLayers);
+                string sitesPath = await GeodatabaseTools.CreateSitesLayerAsync(uriLayers);
+                if (! string.IsNullOrEmpty(sitesPath))
+                {
+                    string snotelPrecipPath = uriAnalysis.LocalPath + "\\" + Constants.FILE_PREC_STEL;
+                    string tempSnotelPrecipPath = uriAnalysis.LocalPath + "\\tmpSnoExtract";
+                    environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath, snapRaster: uriPrism.LocalPath + "\\" + prismFile);
+                    parameters = Geoprocessing.MakeValueArray(sitesPath, uriPrism.LocalPath + "\\" + prismFile, tempSnotelPrecipPath, "NONE", "VALUE_ONLY");
+                    gpResult = await Geoprocessing.ExecuteToolAsync("ExtractValuesToPoints_sa", parameters, environments,
+                        CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                    if (gpResult.IsFailed)
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(CalculateElevPrecipCorr),
+                            "Extract values to points tool failed to create tmpSnoExtract. Error code: " + gpResult.ErrorCode);
+                        MessageBox.Show("Extract values to points tool failed to run. Calculation cancelled!!", "BAGIS-PRO");
+                        success = BA_ReturnCode.UnknownError;
+                        return success;
+                    }
+                    else
+                    {
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateElevPrecipCorr),
+                            "Extract values to points tool run successfully");
+                        // Rename extracted precip field
+                        parameters = Geoprocessing.MakeValueArray(tempSnotelPrecipPath, Constants.FIELD_RASTERVALU, Constants.FIELD_PRECIP, Constants.FIELD_PRECIP);
+                        gpResult = await Geoprocessing.ExecuteToolAsync("AlterField_management", parameters, environments,
+                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                        if (gpResult.IsFailed)
+                        {
+                            Module1.Current.ModuleLogManager.LogError(nameof(CalculateElevPrecipCorr),
+                                "Alter field tool failed to rename RASTERVALU field. Error code: " + gpResult.ErrorCode);
+                            MessageBox.Show("Alter field tool failed to rename RASTERVALU field. Calculation cancelled!!", "BAGIS-PRO");
+                            success = BA_ReturnCode.UnknownError;
+                            return success;
+                        }
+                        else
+                        {
+                            Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateElevPrecipCorr),
+                                "RASTERVALU field renamed successfully");
+                        }
+                    }
+                    parameters = Geoprocessing.MakeValueArray(tempSnotelPrecipPath, aspectZonesPath, snotelPrecipPath, "NONE", "VALUE_ONLY");
+                    gpResult = await Geoprocessing.ExecuteToolAsync("ExtractValuesToPoints_sa", parameters, environments,
+                        CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                    if (gpResult.IsFailed)
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(CalculateElevPrecipCorr),
+                            "Extract values to points tool failed to update prec_stel. Error code: " + gpResult.ErrorCode);
+                        MessageBox.Show("Extract values to points tool failed to run. Calculation cancelled!!", "BAGIS-PRO");
+                        success = BA_ReturnCode.UnknownError;
+                        return success;
+                    }
+                    else
+                    {
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateElevPrecipCorr),
+                            "Extract values to points tool run successfully");
+                        // Rename extracted aspect field
+                        parameters = Geoprocessing.MakeValueArray(snotelPrecipPath, Constants.FIELD_RASTERVALU, Constants.FIELD_ASPECT, Constants.FIELD_ASPECT);
+                        gpResult = await Geoprocessing.ExecuteToolAsync("AlterField_management", parameters, environments,
+                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                        if (gpResult.IsFailed)
+                        {
+                            Module1.Current.ModuleLogManager.LogError(nameof(CalculateElevPrecipCorr),
+                                "Alter field tool failed to rename RASTERVALU field. Error code: " + gpResult.ErrorCode);
+                            MessageBox.Show("Alter field tool failed to rename RASTERVALU field. Calculation cancelled!!", "BAGIS-PRO");
+                            success = BA_ReturnCode.UnknownError;
+                            return success;
+                        }
+                        else
+                        {
+                            Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateElevPrecipCorr),
+                                "RASTERVALU field renamed successfully");
+                        }
+                    }
+                }
             }
 
             return success;

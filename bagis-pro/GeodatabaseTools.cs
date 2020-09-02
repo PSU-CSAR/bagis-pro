@@ -3,6 +3,7 @@ using ArcGIS.Core.Data;
 using ArcGIS.Core.Data.Raster;
 using ArcGIS.Core.Geometry;
 using ArcGIS.Desktop.Core;
+using ArcGIS.Desktop.Core.Geoprocessing;
 using ArcGIS.Desktop.Editing;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
 using ArcGIS.Desktop.Mapping;
@@ -619,7 +620,7 @@ namespace bagis_pro
             return cellSize;
         }
 
-        public static async Task<BA_ReturnCode> CreateSitesLayerAsync(Uri gdbUri)
+        public static async Task<string> CreateSitesLayerAsync(Uri gdbUri)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
             bool hasSnotel = await FeatureClassExistsAsync(gdbUri, Constants.FILE_SNOTEL);
@@ -767,10 +768,44 @@ namespace bagis_pro
                     await Project.Current.DiscardEditsAsync();
                 Module1.Current.ModuleLogManager.LogError(nameof(CreateSitesLayerAsync),
                     "Exception: " + errorMsg);
-                return BA_ReturnCode.UnknownError;
+                return "";
             }
-            success = BA_ReturnCode.Success;
-            return success;
+
+            string returnPath = "";
+            if (hasSnotel && !hasSnowCourse)
+            {
+                // No snow course to merge; return path to Snotel layer
+                returnPath = gdbUri.LocalPath + Constants.FILE_SNOTEL;
+
+            }
+            else if (!hasSnotel && hasSnowCourse)
+            {
+                // No snotel to merge; return path to snow course layer
+                returnPath = gdbUri.LocalPath + Constants.FILE_SNOW_COURSE;
+            }
+            else
+            {
+                // merge snotel and snow course
+                string featuresToMerge = gdbUri.LocalPath + "\\" + Constants.FILE_SNOTEL + "; " +
+                                         gdbUri.LocalPath + "\\" + Constants.FILE_SNOW_COURSE;
+                string analysisPath = GeodatabaseTools.GetGeodatabasePath(System.IO.Path.GetDirectoryName(gdbUri.LocalPath), GeodatabaseNames.Analysis, true);
+                returnPath = analysisPath + Constants.FILE_MERGED_SITES;
+                var parameters = Geoprocessing.MakeValueArray(featuresToMerge, returnPath, "", "NO_SOURCE_INFO");
+                IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("Merge_management", parameters, null,
+                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                if (gpResult.IsFailed)
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(CreateSitesLayerAsync),
+                        "Unable to merge features. Error code: " + gpResult.ErrorCode);
+                    returnPath = ""; ;
+                }
+                else
+                {
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(CreateSitesLayerAsync),
+                        "Sites merged successfully");
+                }
+            }
+            return returnPath;
         }
     }
 
