@@ -1149,13 +1149,68 @@ namespace bagis_pro
             return BA_ReturnCode.Success;
         }
 
-        public static async Task<BA_ReturnCode> CreateRepresentPrecipTable(Worksheet pworksheet)
+        public static async Task<BA_ReturnCode> CreateRepresentPrecipTableAsync(Worksheet pworksheet, string precipPath)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            //=============================================
+            //Create Field Titles
+            //=============================================
+            int idxPrecipExcelCol = 1;
+            int idxElevExcelCol = 2;
+            int idxAspectExcelCol = 3;
 
+            pworksheet.Cells[1, idxPrecipExcelCol] = "Precipitation (" + Constants.UNITS_INCHES + ")";
+            pworksheet.Cells[1, idxElevExcelCol] = "Elevation (" + Module1.Current.Settings.m_demDisplayUnits + ")";
+            pworksheet.Cells[1, idxAspectExcelCol] = "ASPECT";
 
+            Uri analysisUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false));
+            await QueuedTask.Run(() => {
+                using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(analysisUri)))
+                using (Table statisticsTable = geodatabase.OpenDataset<Table>(Constants.FILE_ASP_ZONE_PREC_TBL))
+                {
+                    TableDefinition definition = statisticsTable.GetDefinition();
+                    string prismFieldName = System.IO.Path.GetFileName(precipPath) + "_band_1";
+                    string elevFieldName = Constants.FILE_PREC_MEAN_ELEV + "_band_1";
+                    int idxPrecipTableCol = definition.FindField(prismFieldName);
+                    int idxElevTableCol = definition.FindField(elevFieldName);
+                    int idxAspectTableCol = definition.FindField(Constants.FIELD_ASPECT);
 
-            return success;
+                    if (idxPrecipTableCol > -1 && idxElevTableCol > -1 && idxAspectTableCol > -1)
+                    {
+                        QueryFilter pQFilter = new QueryFilter();
+                        pQFilter.WhereClause = prismFieldName + " is not null and " + elevFieldName + " is not null";
+                        int idxRow = 2;
+                        using (RowCursor cursor = statisticsTable.Search(pQFilter, false))
+                        {
+                            while (cursor.MoveNext())
+                            {
+                                Row pRow = cursor.Current;
+                                pworksheet.Cells[idxRow, idxPrecipExcelCol] = Convert.ToDouble(pRow[idxPrecipTableCol]);
+                                double elevation = Convert.ToDouble(pRow[idxElevTableCol]);
+                                if (Module1.Current.Settings.m_demDisplayUnits.Equals("Meters") &&
+                                    Module1.Current.Settings.m_demUnits.Equals("Feet"))
+                                {
+                                    elevation = LinearUnit.Feet.ConvertTo(elevation, LinearUnit.Meters);
+                                }
+                                else if (Module1.Current.Settings.m_demDisplayUnits.Equals("Feet") &&
+                                         Module1.Current.Settings.m_demUnits.Equals("Meters"))
+                                {
+                                    elevation = LinearUnit.Meters.ConvertTo(elevation, LinearUnit.Feet);
+                                }
+                                pworksheet.Cells[idxRow, idxElevExcelCol] = elevation;
+                                string aspect = Convert.ToString(pRow[idxAspectTableCol]);
+                                if (string.IsNullOrEmpty(aspect))
+                                {
+                                    aspect = "Unknown";
+                                }
+                                pworksheet.Cells[idxRow, idxAspectExcelCol] = aspect;
+                                idxRow++;
+                            }
+                        }
+                    }
+                }
+            });
+            return BA_ReturnCode.Success;
         }
     }
 

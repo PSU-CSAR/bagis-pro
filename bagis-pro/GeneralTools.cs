@@ -380,15 +380,16 @@ namespace bagis_pro
                 Worksheet pPrecipDemElevWorksheet = bkWorkBook.Sheets.Add();
                 pPrecipDemElevWorksheet.Name = "Elev-Precip AOI";
 
-
-
                 //Create Charts Worksheet
                 Worksheet pChartsWorksheet = bkWorkBook.Sheets.Add();
                 pChartsWorksheet.Name = "Charts";
 
+                //Create Charts Worksheet
+                Worksheet pPrecipChart = bkWorkBook.Sheets.Add();
+                pPrecipChart.Name = "Elev-Precip Chart";
 
-            //Query min/max from dem
-            string sMask = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_RASTER;
+                //Query min/max from dem
+                string sMask = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_RASTER;
             IList<double> lstResult = await GeoprocessingTools.GetDemStatsAsync(Module1.Current.Aoi.FilePath, sMask, 0.005);
             double elevMinMeters = -1;
             double elevMaxMeters = -1;
@@ -478,8 +479,15 @@ namespace bagis_pro
                     Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Created Aspect Chart");
                 }
 
-            //Publish Charts Tab
-            if (bInteractive == false)
+                //Elevation-Precipitation Correlation Chart
+                bool bLayerExists = await GeodatabaseTools.FeatureClassExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false)), Constants.FILE_PREC_STEL);
+                if (bLayerExists)
+                {
+                    success = await ExcelTools.CreateRepresentPrecipTableAsync(pPrecipDemElevWorksheet, strPrecipPath);
+                }
+
+                //Publish Charts Tab
+                if (bInteractive == false)
             {
                 // Combined chart
                 string sOutputFolder = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\";

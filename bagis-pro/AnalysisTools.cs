@@ -1958,70 +1958,13 @@ namespace bagis_pro
                 success = await GeoprocessingTools.AddFieldAsync(uriAnalysis.LocalPath + "\\" + Constants.FILE_ASP_ZONE_PREC_TBL, Constants.FIELD_ASPECT, "TEXT");
                 if (success == BA_ReturnCode.Success)
                 {
-                   string errorMsg = "";
-                   bool modificationResult = false;
-                   await QueuedTask.Run(() =>
-                   {
-                        // Copy aspect value into ba_aspect field
-                        EditOperation editOperation = new EditOperation();
-                        using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(uriAnalysis)))
-                        using (Table table = geodatabase.OpenDataset<Table>(Constants.FILE_ASP_ZONE_PREC_TBL))
-                        {
-                            TableDefinition defTable = table.GetDefinition();
-                            int idxAspect = defTable.FindField(Constants.FIELD_ASPECT);
-                            if (idxAspect < 0)
-                            {
-                                Module1.Current.ModuleLogManager.LogError(nameof(CalculateElevPrecipCorr),
-                                    "Unable to locate BA_ASPECT field in precmeanelev_tbl. Cannot update field");
-                                MessageBox.Show("Unable to locate BA_ASPECT field in precmeanelev_tbl. Calculation cancelled!!", "BAGIS-PRO");
-                                success = BA_ReturnCode.UnknownError;
-                                return;
-                            }
-                            QueryFilter queryFilter = new QueryFilter();
-                           string strQueryFieldName = Constants.FILE_ASP_ZONE_PREC + "_Band_1";
-                           editOperation.Callback(context =>
-                           {
-                                for (int i = 0; i < lstAspectInterval.Count - 1; i++)
-                                {
-                                    queryFilter.WhereClause = strQueryFieldName + " = " + lstAspectInterval[i].Value;
-                                    using (RowCursor aCursor = table.Search(queryFilter, false))
-                                    {
-                                        while (aCursor.MoveNext())
-                                        {
-                                            using (Row row = aCursor.Current)
-                                            {
-                                                row[idxAspect] = lstAspectInterval[i].Name;
-                                                row.Store();
-                                                // Has to be called after the store too
-                                                context.Invalidate(row);
-                                            }
-                                        }
-                                    }
-                                }
-                            }, table);
-                            try
-                            {
-                                modificationResult = editOperation.Execute();
-                                if (!modificationResult) errorMsg = editOperation.ErrorMessage;
-                            }
-                            catch (GeodatabaseException exObj)
-                            {
-                                errorMsg = exObj.Message;
-                            }
-                        }
-                    });
-
-                    if (String.IsNullOrEmpty(errorMsg))
+                    success = await UpdateAspectDirectionsAsync(uriAnalysis, Constants.FILE_ASP_ZONE_PREC_TBL, 
+                        lstAspectInterval, Constants.FILE_ASP_ZONE_PREC + "_Band_1");
+                    if (success != BA_ReturnCode.Success)
                     {
-                        await Project.Current.SaveEditsAsync();
-                    }
-                    else
-                    {
-                        if (Project.Current.HasEdits)
-                            await Project.Current.DiscardEditsAsync();
-                        Module1.Current.ModuleLogManager.LogError(nameof(CalculateElevPrecipCorr),
-                            "Exception: " + errorMsg);
-                        return BA_ReturnCode.UnknownError;
+                        MessageBox.Show("Unable to update aspect directions in " + Constants.FILE_ASP_ZONE_PREC_TBL 
+                            + ". Calculation cancelled!!", "BAGIS-PRO");
+                        return success;
                     }
                 }
 
@@ -2062,6 +2005,7 @@ namespace bagis_pro
                         {
                             Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateElevPrecipCorr),
                                 "RASTERVALU field renamed successfully");
+
                         }
                     }
                     parameters = Geoprocessing.MakeValueArray(tempSnotelPrecipPath, aspectZonesPath, snotelPrecipPath, "NONE", "VALUE_ONLY");
@@ -2077,30 +2021,100 @@ namespace bagis_pro
                     }
                     else
                     {
-                        Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateElevPrecipCorr),
-                            "Extract values to points tool run successfully");
-                        // Rename extracted aspect field
-                        parameters = Geoprocessing.MakeValueArray(snotelPrecipPath, Constants.FIELD_RASTERVALU, Constants.FIELD_ASPECT, Constants.FIELD_ASPECT);
-                        gpResult = await Geoprocessing.ExecuteToolAsync("AlterField_management", parameters, environments,
-                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                        if (gpResult.IsFailed)
-                        {
-                            Module1.Current.ModuleLogManager.LogError(nameof(CalculateElevPrecipCorr),
-                                "Alter field tool failed to rename RASTERVALU field. Error code: " + gpResult.ErrorCode);
-                            MessageBox.Show("Alter field tool failed to rename RASTERVALU field. Calculation cancelled!!", "BAGIS-PRO");
-                            success = BA_ReturnCode.UnknownError;
-                            return success;
-                        }
-                        else
+                        if (success == BA_ReturnCode.Success)
                         {
                             Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateElevPrecipCorr),
-                                "RASTERVALU field renamed successfully");
+                                "Extract values to points tool run successfully");
+                            success = await GeoprocessingTools.AddFieldAsync(uriAnalysis.LocalPath + "\\" + Constants.FILE_PREC_STEL, Constants.FIELD_ASPECT, "TEXT");
+                            success = await UpdateAspectDirectionsAsync(uriAnalysis, Constants.FILE_PREC_STEL,
+                                lstAspectInterval, Constants.FIELD_RASTERVALU);
+                            if (success != BA_ReturnCode.Success)
+                            {
+                                MessageBox.Show("Unable to update aspect directions in " + Constants.FILE_PREC_STEL
+                                    + ". Calculation cancelled!!", "BAGIS-PRO");
+                                return success;
+                            }
+                            // delete raster_valu field from prec_stel
+                            string[] arrFieldsToDelete = new string[] { Constants.FIELD_RASTERVALU};
+                            success = await GeoprocessingTools.DeleteFeatureClassFieldsAsync(uriAnalysis.LocalPath + "\\" + Constants.FILE_PREC_STEL,
+                                arrFieldsToDelete);
+                            // delete temporary tmpSnoExtract file
+                            success = await GeoprocessingTools.DeleteDatasetAsync(tempSnotelPrecipPath);
                         }
                     }
                 }
             }
 
             return success;
+        }
+
+        private static async Task<BA_ReturnCode> UpdateAspectDirectionsAsync(Uri uriAnalysis, string strUpdateFc,
+            IList<BA_Objects.Interval> lstAspectInterval, string strQueryFieldName)
+        {
+            string errorMsg = "";
+            bool modificationResult = false;
+            await QueuedTask.Run(() =>
+            {
+                // Copy aspect value into ba_aspect field
+                EditOperation editOperation = new EditOperation();
+                using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(uriAnalysis)))
+                using (Table table = geodatabase.OpenDataset<Table>(strUpdateFc))
+                {
+                    TableDefinition defTable = table.GetDefinition();
+                    int idxAspect = defTable.FindField(Constants.FIELD_ASPECT);
+                    if (idxAspect < 0)
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(UpdateAspectDirectionsAsync),
+                            "Unable to locate BA_ASPECT field in " + strUpdateFc + ". Cannot update field");
+                        MessageBox.Show("Unable to locate BA_ASPECT field in " + strUpdateFc + ". Calculation cancelled!!", "BAGIS-PRO");
+                        return;
+                    }
+                    QueryFilter queryFilter = new QueryFilter();
+                    editOperation.Callback(context =>
+                    {
+                        for (int i = 0; i < lstAspectInterval.Count - 1; i++)
+                        {
+                            queryFilter.WhereClause = strQueryFieldName + " = " + lstAspectInterval[i].Value;
+                            using (RowCursor aCursor = table.Search(queryFilter, false))
+                            {
+                                while (aCursor.MoveNext())
+                                {
+                                    using (Row row = aCursor.Current)
+                                    {
+                                        row[idxAspect] = lstAspectInterval[i].Name;
+                                        row.Store();
+                                        // Has to be called after the store too
+                                        context.Invalidate(row);
+                                    }
+                                }
+                            }
+                        }
+                    }, table);
+                    try
+                    {
+                        modificationResult = editOperation.Execute();
+                        if (!modificationResult) errorMsg = editOperation.ErrorMessage;
+                    }
+                    catch (GeodatabaseException exObj)
+                    {
+                        errorMsg = exObj.Message;
+                    }
+                }
+            });
+
+            if (String.IsNullOrEmpty(errorMsg))
+            {
+                await Project.Current.SaveEditsAsync();
+            }
+            else
+            {
+                if (Project.Current.HasEdits)
+                    await Project.Current.DiscardEditsAsync();
+                Module1.Current.ModuleLogManager.LogError(nameof(UpdateAspectDirectionsAsync),
+                    "Exception: " + errorMsg);
+                return BA_ReturnCode.UnknownError;
+            }
+            return BA_ReturnCode.Success;
         }
 
     }

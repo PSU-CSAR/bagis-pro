@@ -775,13 +775,13 @@ namespace bagis_pro
             if (hasSnotel && !hasSnowCourse)
             {
                 // No snow course to merge; return path to Snotel layer
-                returnPath = gdbUri.LocalPath + Constants.FILE_SNOTEL;
+                returnPath = gdbUri.LocalPath + "\\" + Constants.FILE_SNOTEL;
 
             }
             else if (!hasSnotel && hasSnowCourse)
             {
                 // No snotel to merge; return path to snow course layer
-                returnPath = gdbUri.LocalPath + Constants.FILE_SNOW_COURSE;
+                returnPath = gdbUri.LocalPath + "\\" + Constants.FILE_SNOW_COURSE;
             }
             else
             {
