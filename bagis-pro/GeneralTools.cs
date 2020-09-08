@@ -484,6 +484,16 @@ namespace bagis_pro
                 if (bLayerExists)
                 {
                     success = await ExcelTools.CreateRepresentPrecipTableAsync(pPrecipDemElevWorksheet, strPrecipPath);
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        success = await ExcelTools.CreateSnotelPrecipTableAsync(pPrecipSiteWorksheet, 
+                            new List<BA_Objects.Site>());
+                    }
+                }
+                else
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(GenerateTablesAsync), Constants.FILE_PREC_STEL +
+                        " is missing. Precipitation correlation tables and chart cannot be created!");
                 }
 
                 //Publish Charts Tab

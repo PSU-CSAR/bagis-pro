@@ -139,6 +139,7 @@ namespace bagis_pro
         public const string DATA_TYPE_PUBLIC_LAND = "Public Land";
         public const string SITE_TYPE_SNOW_COURSE = "scos";
         public const string SITE_TYPE_SNOTEL = "stel";
+        public const string SITE_TYPE_PSEUDO = "psite";
 
         public const int VALUE_NO_DATA_9999 = -9999;
         public const string VALUE_NO_DATA = "NoData";

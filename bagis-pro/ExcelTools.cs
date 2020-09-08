@@ -1151,7 +1151,6 @@ namespace bagis_pro
 
         public static async Task<BA_ReturnCode> CreateRepresentPrecipTableAsync(Worksheet pworksheet, string precipPath)
         {
-            BA_ReturnCode success = BA_ReturnCode.UnknownError;
             //=============================================
             //Create Field Titles
             //=============================================
@@ -1209,6 +1208,111 @@ namespace bagis_pro
                         }
                     }
                 }
+            });
+            return BA_ReturnCode.Success;
+        }
+
+        public static async Task<BA_ReturnCode> CreateSnotelPrecipTableAsync(Worksheet pworksheet,
+            IList<BA_Objects.Site> lstSelectedSites)
+        {
+            //=============================================
+            //Create Field Titles
+            //=============================================
+            int idxElevExcelCol = 1;
+            int idxNameExcelCol = 2;
+            int idxTypeExcelCol = 3;
+            int idxPrecipExcelCol = 4;
+            int idxAspectExcelCol = 5;
+
+            pworksheet.Cells[1, idxElevExcelCol] = Constants.FIELD_SITE_ELEV;
+            pworksheet.Cells[1, idxNameExcelCol] = Constants.FIELD_SITE_NAME;
+            pworksheet.Cells[1, idxTypeExcelCol] = Constants.FIELD_SITE_TYPE;
+            //RASTERVALU after extract values to points
+            pworksheet.Cells[1, idxPrecipExcelCol] = "Precipitation (" + Constants.UNITS_INCHES + ")";
+            pworksheet.Cells[1, idxAspectExcelCol] = Constants.FIELD_ASPECT;
+
+            Uri analysisUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false));
+            await QueuedTask.Run(() => {
+            using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(analysisUri)))
+            using (FeatureClass featureClass = geodatabase.OpenDataset<FeatureClass>(Constants.FILE_PREC_STEL))
+            {
+                FeatureClassDefinition definition = featureClass.GetDefinition();
+                int idxPrecipTableCol = definition.FindField(Constants.FIELD_PRECIP);
+                int idxElevTableCol = definition.FindField(Constants.FIELD_SITE_ELEV);
+                int idxNameTableCol = definition.FindField(Constants.FIELD_SITE_NAME);
+                int idxTypeTableCol = definition.FindField(Constants.FIELD_SITE_TYPE);
+                int idxAspectTableCol = definition.FindField(Constants.FIELD_ASPECT);
+
+                if (idxPrecipTableCol > -1 && idxElevTableCol > -1 && idxNameTableCol > -1 &&
+                    idxTypeTableCol > -1 && idxAspectTableCol > -1)
+                {
+                    QueryFilter pQFilter = new QueryFilter();
+                    using (RowCursor cursor = featureClass.Search(pQFilter, false))
+                    {
+                        int idxRow = 2;
+                        while (cursor.MoveNext())
+                        {
+                            Row pRow = cursor.Current;
+                            bool bAddRow = true;
+                            if (lstSelectedSites.Count > 0)
+                            {
+                                bAddRow = false;
+                                string strName = Convert.ToString(pRow[idxNameTableCol]);
+                                double dblElevation = Convert.ToDouble(pRow[idxNameExcelCol]);
+                                string strSiteType = Convert.ToString(pRow[idxTypeTableCol]);
+                                    foreach (var aSite in lstSelectedSites)
+                                    {
+                                        if (strName.Equals(aSite.Name) && dblElevation == aSite.Elevation)
+                                        {
+                                            if (aSite.SiteType.Equals(SiteType.Snotel) && strSiteType.Equals(Constants.SITE_TYPE_SNOTEL))
+                                            {
+                                                bAddRow = true;
+                                                break;
+                                            }
+                                            else if (aSite.SiteType.Equals(SiteType.SnowCourse) && strSiteType.Equals(Constants.SITE_TYPE_SNOW_COURSE))
+                                            {
+                                                bAddRow = true;
+                                                break;
+                                            }
+                                            else if (aSite.SiteType.Equals(SiteType.Pseudo) && strSiteType.Equals(Constants.SITE_TYPE_PSEUDO))
+                                            {
+                                                bAddRow = true;
+                                                break;
+                                            }
+                                        }
+                                    }
+                            }
+                            if (bAddRow == true)
+                                {
+                                    pworksheet.Cells[idxRow, idxPrecipExcelCol] = Convert.ToDouble(pRow[idxPrecipTableCol]);
+                                    string aspect = Convert.ToString(pRow[idxAspectTableCol]);
+                                    if (string.IsNullOrEmpty(aspect))
+                                    {
+                                        aspect = "Unknown";
+                                    }
+                                    pworksheet.Cells[idxRow, idxAspectExcelCol] = aspect;
+                                    double elevation = Convert.ToDouble(pRow[idxElevTableCol]);
+                                    if (Module1.Current.Settings.m_demDisplayUnits.Equals("Meters") &&
+                                        Module1.Current.Settings.m_demUnits.Equals("Feet"))
+                                    {
+                                        elevation = LinearUnit.Feet.ConvertTo(elevation, LinearUnit.Meters);
+                                    }
+                                    else if (Module1.Current.Settings.m_demDisplayUnits.Equals("Feet") &&
+                                             Module1.Current.Settings.m_demUnits.Equals("Meters"))
+                                    {
+                                        elevation = LinearUnit.Meters.ConvertTo(elevation, LinearUnit.Feet);
+                                    }
+                                    pworksheet.Cells[idxRow, idxElevExcelCol] = elevation; pworksheet.Cells[idxRow, idxNameExcelCol] = Convert.ToString(pRow[idxNameTableCol]);
+                                    pworksheet.Cells[idxRow, idxTypeExcelCol] = Convert.ToString(pRow[idxTypeTableCol]);
+
+                                    idxRow++;
+                                }
+
+                            }
+                    }
+                }
+            }
+
             });
             return BA_ReturnCode.Success;
         }
