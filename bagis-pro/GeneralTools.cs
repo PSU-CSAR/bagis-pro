@@ -380,15 +380,15 @@ namespace bagis_pro
                 Worksheet pPrecipDemElevWorksheet = bkWorkBook.Sheets.Add();
                 pPrecipDemElevWorksheet.Name = "Elev-Precip AOI";
 
-                //Create Charts Worksheet
-                Worksheet pChartsWorksheet = bkWorkBook.Sheets.Add();
-                pChartsWorksheet.Name = "Charts";
-
-                //Create Charts Worksheet
+                // Create Elev-Precip Chart Worksheet
                 Worksheet pPrecipChart = bkWorkBook.Sheets.Add();
                 pPrecipChart.Name = "Elev-Precip Chart";
 
-                //Query min/max from dem
+                // Create Charts Worksheet
+                Worksheet pChartsWorksheet = bkWorkBook.Sheets.Add();
+                pChartsWorksheet.Name = "Charts";
+
+                // Query min/max from dem
                 string sMask = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_RASTER;
             IList<double> lstResult = await GeoprocessingTools.GetDemStatsAsync(Module1.Current.Aoi.FilePath, sMask, 0.005);
             double elevMinMeters = -1;
@@ -481,13 +481,22 @@ namespace bagis_pro
 
                 //Elevation-Precipitation Correlation Chart
                 bool bLayerExists = await GeodatabaseTools.FeatureClassExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false)), Constants.FILE_PREC_STEL);
+                int intMinPrecip = -1;
                 if (bLayerExists)
                 {
-                    success = await ExcelTools.CreateRepresentPrecipTableAsync(pPrecipDemElevWorksheet, strPrecipPath);
-                    if (success == BA_ReturnCode.Success)
+                    intMinPrecip = await ExcelTools.CreateRepresentPrecipTableAsync(pPrecipDemElevWorksheet, strPrecipPath);
+                    if (intMinPrecip != 999)
                     {
+                        Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Created represented precip table");
                         success = await ExcelTools.CreateSnotelPrecipTableAsync(pPrecipSiteWorksheet, 
                             new List<BA_Objects.Site>());
+                    }
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Created Snotel Represented Precip Table");
+                        success = ExcelTools.CreateRepresentPrecipChart(pPrecipDemElevWorksheet, pPrecipSiteWorksheet, pPrecipChart, intMinPrecip, Y_Min);
+                        Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Created Represented Precip Chart");
+
                     }
                 }
                 else

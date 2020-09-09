@@ -183,7 +183,8 @@ namespace bagis_pro
         public static int EXCEL_CHART_HEIGHT = 330;
         public static int EXCEL_CHART_WIDTH = 600;
         public static int EXCEL_CHART_DESCR_HEIGHT = 70;
-
+        public static int EXCEL_LARGE_CHART_WIDTH = 800;
+        public static int EXCEL_LARGE_CHART_HEIGHT = 500;
 
     }
 

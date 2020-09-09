@@ -1149,7 +1149,7 @@ namespace bagis_pro
             return BA_ReturnCode.Success;
         }
 
-        public static async Task<BA_ReturnCode> CreateRepresentPrecipTableAsync(Worksheet pworksheet, string precipPath)
+        public static async Task<int> CreateRepresentPrecipTableAsync(Worksheet pworksheet, string precipPath)
         {
             //=============================================
             //Create Field Titles
@@ -1163,6 +1163,7 @@ namespace bagis_pro
             pworksheet.Cells[1, idxAspectExcelCol] = "ASPECT";
 
             Uri analysisUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false));
+            double minPrecipValue = 999.0F;
             await QueuedTask.Run(() => {
                 using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(analysisUri)))
                 using (Table statisticsTable = geodatabase.OpenDataset<Table>(Constants.FILE_ASP_ZONE_PREC_TBL))
@@ -1184,7 +1185,10 @@ namespace bagis_pro
                             while (cursor.MoveNext())
                             {
                                 Row pRow = cursor.Current;
-                                pworksheet.Cells[idxRow, idxPrecipExcelCol] = Convert.ToDouble(pRow[idxPrecipTableCol]);
+                                double precip = Convert.ToDouble(pRow[idxPrecipTableCol]);
+                                pworksheet.Cells[idxRow, idxPrecipExcelCol] = precip;
+                                if (precip < minPrecipValue)
+                                    minPrecipValue = precip;
                                 double elevation = Convert.ToDouble(pRow[idxElevTableCol]);
                                 if (Module1.Current.Settings.m_demDisplayUnits.Equals("Meters") &&
                                     Module1.Current.Settings.m_demUnits.Equals("Feet"))
@@ -1209,7 +1213,7 @@ namespace bagis_pro
                     }
                 }
             });
-            return BA_ReturnCode.Success;
+            return (int)minPrecipValue;
         }
 
         public static async Task<BA_ReturnCode> CreateSnotelPrecipTableAsync(Worksheet pworksheet,
@@ -1316,6 +1320,126 @@ namespace bagis_pro
             });
             return BA_ReturnCode.Success;
         }
-    }
 
-}
+        public static BA_ReturnCode CreateRepresentPrecipChart(Worksheet pPrecipElvWorksheet, Worksheet pPrecipSiteWorksheet,
+            Worksheet pChartsWorksheet, int intMinPrecip, double minValue)
+        {
+            // ===========================
+            // Make Chart
+            // ===========================
+            Microsoft.Office.Interop.Excel.Shape myShape = pChartsWorksheet.Shapes.AddChart2();
+            Chart myChart = myShape.Chart;
+
+            int legendTop = 25;
+            int plotWidth = 575;
+
+            // Clear Styles
+            myChart.ClearToMatchStyle();
+            // Set Title
+            myChart.HasTitle = true;
+            myChart.HasLegend = true;
+            myChart.ChartTitle.Caption = "Elevation Precipitation";
+            myChart.ChartTitle.Font.Bold = true;
+            // Set Chart Type and Data Range
+            myChart.ChartType = Microsoft.Office.Interop.Excel.XlChartType.xlXYScatter;
+            // Set Position and Location
+            myChart.Parent.Left = Constants.EXCEL_CHART_SPACING;
+            myChart.Parent.Width = Constants.EXCEL_LARGE_CHART_WIDTH;
+            myChart.Parent.Top = Constants.EXCEL_CHART_SPACING;
+            myChart.Parent.Height = Constants.EXCEL_LARGE_CHART_HEIGHT;
+
+            // Set series for precip/elevation values
+            long nrecords = ExcelTools.CountRecords(pPrecipElvWorksheet, 1);
+            string precipValueRange = "A2:A" + (nrecords + 1) ;
+            string xDemValueRange = "B2:B" + (nrecords + 1);
+
+            // precip/elevation values scatterplot for each cell
+            Series series = myChart.SeriesCollection().NewSeries;
+            series.Name = "AOI";
+            //Set Series Values
+            series.Values = pPrecipElvWorksheet.Range[precipValueRange];
+            series.XValues = pPrecipElvWorksheet.Range[xDemValueRange];
+            //Set Series Formats
+            series.MarkerStyle = Microsoft.Office.Interop.Excel.XlMarkerStyle.xlMarkerStyleDiamond;
+            series.MarkerSize = 7;
+
+            // trendline for aoi dataset
+            Microsoft.Office.Interop.Excel.Trendlines trendlines = series.Trendlines();
+            Trendline trendline = trendlines.Add(Microsoft.Office.Interop.Excel.XlTrendlineType.xlLinear, Type.Missing,
+                Type.Missing, Type.Missing, Type.Missing, Type.Missing,
+                true, true, "Linear (AOI)");
+            trendline.DataLabel.Left = 710;
+            trendline.DataLabel.Top = legendTop + 100;
+            trendline.DataLabel.Font.Size = 20;
+            trendline.DataLabel.Font.Color = (int)XlRgbColor.rgbBlue;
+            trendline.Format.Line.Weight = 1.5F;
+            trendline.Format.Line.DashStyle = MsoLineDashStyle.msoLineSolid;
+            trendline.Format.Line.ForeColor.RGB = (int)XlRgbColor.rgbBlue;
+
+            // Set series for SNOTEL precip/elevation values
+            nrecords = ExcelTools.CountRecords(pPrecipSiteWorksheet, 1);
+            precipValueRange = "D2:D" + (nrecords + 1);
+            string xElevValueRange = "A2:A" + (nrecords + 1);
+            Series ser2 = myChart.SeriesCollection().NewSeries;
+            ser2.Name = "Sites";
+            //Set ser2 Values
+            ser2.Values = pPrecipSiteWorksheet.Range[precipValueRange];
+            ser2.XValues = pPrecipSiteWorksheet.Range[xElevValueRange];
+            //Set ser2 Formats
+            ser2.MarkerStyle = Microsoft.Office.Interop.Excel.XlMarkerStyle.xlMarkerStyleSquare;
+            ser2.MarkerSize = 7;
+            ser2.MarkerBackgroundColor = (int)XlRgbColor.rgbRed;
+            ser2.MarkerForegroundColor = (int)XlRgbColor.rgbRed;
+
+            if (nrecords > 1)
+            {
+                Microsoft.Office.Interop.Excel.Trendlines trendlines2 = ser2.Trendlines();
+                Trendline trendline2 = trendlines2.Add(Microsoft.Office.Interop.Excel.XlTrendlineType.xlLinear, Type.Missing,
+                    Type.Missing, Type.Missing, Type.Missing, Type.Missing,
+                    true, true, "Linear (Sites)");
+                trendline2.DataLabel.Left = 710;
+                trendline2.DataLabel.Top = legendTop + 180;
+                trendline2.DataLabel.Font.Size = 20;
+                trendline2.DataLabel.Font.Color = (int)XlRgbColor.rgbOrange;
+                trendline2.Format.Line.Weight = 1.5F;
+                trendline2.Format.Line.DashStyle = MsoLineDashStyle.msoLineSolid;
+                trendline2.Format.Line.ForeColor.RGB = (int)XlRgbColor.rgbOrange;
+            }
+            else
+            {
+                MessageBox.Show("Warning: Your sites data did not contain enough sites to generate a trendline!", "BAGIS-PRO");
+                Module1.Current.ModuleLogManager.LogError(nameof(CreateRepresentPrecipChart),
+                    "Your sites data did not contain enough sites to generate a trendline!");
+            }
+
+            // Set Element Positions
+            myChart.SetElement(MsoChartElementType.msoElementChartTitleAboveChart);
+            myChart.SetElement(MsoChartElementType.msoElementLegendRight);
+            myChart.Legend.Top = legendTop;
+            myChart.Legend.Left = plotWidth + 20;
+            myChart.PlotArea.Width = plotWidth;
+
+            // Left Side Axis
+            Axis yAxis = (Axis)myChart.Axes(Microsoft.Office.Interop.Excel.XlAxisType.xlValue,
+                Microsoft.Office.Interop.Excel.XlAxisGroup.xlPrimary);
+            yAxis.HasTitle = true;
+            yAxis.AxisTitle.Text = "Precipitation (" + Constants.UNITS_INCHES + ")";
+            yAxis.AxisTitle.Orientation = 90;
+            yAxis.MinimumScale = intMinPrecip - 1;
+
+            // Bottom Axis
+            Axis categoryAxis = (Axis)myChart.Axes(Microsoft.Office.Interop.Excel.XlAxisType.xlCategory,
+                Microsoft.Office.Interop.Excel.XlAxisGroup.xlPrimary);
+            categoryAxis.HasTitle = true;
+            categoryAxis.AxisTitle.Text = "Elevation (" + Module1.Current.Settings.m_demDisplayUnits + ")";
+            categoryAxis.AxisTitle.Orientation = 0;
+            // minValue was already converted to display units by the calling function
+            categoryAxis.MinimumScale = (int) minValue;
+
+            return BA_ReturnCode.Success;
+
+        }
+
+        }
+
+    }
