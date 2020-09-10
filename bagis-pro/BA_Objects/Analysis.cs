@@ -33,6 +33,7 @@ namespace bagis_pro.BA_Objects
         public Site[] Scenario2Sites;
         public AreaStatistics AreaStatistics;
         public List<DataSource> DataSources;
+        public short ElevationZonesInterval;
 
         public string DateCreatedText
         {

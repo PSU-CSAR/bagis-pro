@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -321,6 +322,28 @@ namespace bagis_pro
                         lstInterval, strZonesRaster, strMaskPath, "ELEVATION");
                     if (success == BA_ReturnCode.Success)
                     {
+                        // Record the bestInterval to be used later by the charts functionality
+                        // Open the current Analysis.xml from disk, if it exists
+                        BA_Objects.Analysis oAnalysis = new BA_Objects.Analysis();
+                        string strSettingsFile = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAPS + "\\" +
+                            Constants.FILE_SETTINGS;
+                        if (File.Exists(strSettingsFile))
+                        {
+                            using (var file = new StreamReader(strSettingsFile))
+                            {
+                                var reader = new System.Xml.Serialization.XmlSerializer(typeof(BA_Objects.Analysis));
+                                oAnalysis = (BA_Objects.Analysis)reader.Deserialize(file);
+                            }
+                        }
+                        // Set the elevation interval on the analysis object and save
+                        oAnalysis.ElevationZonesInterval = bestInterval;
+                        using (var file_stream = File.Create(strSettingsFile))
+                        {
+                            var serializer = new System.Xml.Serialization.XmlSerializer(typeof(BA_Objects.Analysis));
+                            serializer.Serialize(file_stream, oAnalysis);
+                            Module1.Current.ModuleLogManager.LogDebug(nameof(GenerateLayersAsync),
+                                "Set elevation interval in analysis.xml file");
+                        }
                         layersPane.ElevationZones_Checked = false;
                     }
                 }

@@ -1425,7 +1425,12 @@ namespace bagis_pro
             yAxis.HasTitle = true;
             yAxis.AxisTitle.Text = "Precipitation (" + Constants.UNITS_INCHES + ")";
             yAxis.AxisTitle.Orientation = 90;
+            yAxis.AxisTitle.Font.Bold = true;
             yAxis.MinimumScale = intMinPrecip - 1;
+            yAxis.TickLabels.Font.Size = 10;
+            yAxis.MajorTickMark = Microsoft.Office.Interop.Excel.XlTickMark.xlTickMarkOutside;
+            yAxis.Border.LineStyle = XlLineStyle.xlContinuous;
+            yAxis.Border.Color = (int)XlRgbColor.rgbGray;
 
             // Bottom Axis
             Axis categoryAxis = (Axis)myChart.Axes(Microsoft.Office.Interop.Excel.XlAxisType.xlCategory,
@@ -1433,9 +1438,30 @@ namespace bagis_pro
             categoryAxis.HasTitle = true;
             categoryAxis.AxisTitle.Text = "Elevation (" + Module1.Current.Settings.m_demDisplayUnits + ")";
             categoryAxis.AxisTitle.Orientation = 0;
+            categoryAxis.AxisTitle.Font.Bold = true;
             // minValue was already converted to display units by the calling function
             categoryAxis.MinimumScale = (int) minValue;
+            categoryAxis.TickLabels.Font.Size = 10;
+            categoryAxis.MajorTickMark = Microsoft.Office.Interop.Excel.XlTickMark.xlTickMarkOutside;
+            categoryAxis.Border.LineStyle = XlLineStyle.xlContinuous;
+            categoryAxis.Border.Color = (int)XlRgbColor.rgbGray;
 
+            // Descriptive textbox
+            StringBuilder sb = new StringBuilder();
+            sb.Append("Elevation Precipitation Correlation chart \r\n");
+            sb.Append("Precipitation value for each data location (blue) and snow monitoring site (red) within the AOI is plotted against the elevation at the location. ");
+            sb.Append("The chart indicates if elevation is a good predictor of precipitation and ");
+            sb.Append("if the precipitation observed on snow monitoring sites are showing similar relationship.");
+            ChartTextBoxSettings textBoxSettings = new ChartTextBoxSettings
+            {
+                Left = Constants.EXCEL_CHART_SPACING,
+                Top = Constants.EXCEL_LARGE_CHART_HEIGHT + 10,
+                Width = Constants.EXCEL_LARGE_CHART_WIDTH,
+                Message = sb.ToString()
+            };
+            pChartsWorksheet.Shapes.AddTextbox(MsoTextOrientation.msoTextOrientationHorizontal, textBoxSettings.Left,
+                                               textBoxSettings.Top, textBoxSettings.Width, textBoxSettings.Height).
+                                               TextFrame.Characters().Text = textBoxSettings.Message;
             return BA_ReturnCode.Success;
 
         }

@@ -443,7 +443,23 @@ namespace bagis_pro
             success = ExcelTools.CopyCells(pAreaElvWorksheet, 3, pPRISMWorkSheet, 12);
             success = ExcelTools.CopyCells(pAreaElvWorksheet, 10, pPRISMWorkSheet, 13);
             success = ExcelTools.EstimatePrecipitationVolume(pPRISMWorkSheet, 12, 7, 14, 15);
-            double Y_Unit = Module1.Current.Settings.m_elevInterval;
+                // Try to get elevation interval from analysis.xml settings file
+                BA_Objects.Analysis oAnalysis = new BA_Objects.Analysis();
+                string strSettingsFile = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAPS + "\\" +
+                    Constants.FILE_SETTINGS;
+                if (File.Exists(strSettingsFile))
+                {
+                    using (var file = new StreamReader(strSettingsFile))
+                    {
+                        var reader = new System.Xml.Serialization.XmlSerializer(typeof(BA_Objects.Analysis));
+                        oAnalysis = (BA_Objects.Analysis)reader.Deserialize(file);
+                    }
+                }
+                double Y_Unit = Module1.Current.Settings.m_elevInterval;
+                if (oAnalysis.ElevationZonesInterval > 0)
+                {
+                    Y_Unit = oAnalysis.ElevationZonesInterval;
+                }
             double Y_Max = -99.0F;
             double minValue = elevMinMeters;
             double maxValue = elevMaxMeters;
