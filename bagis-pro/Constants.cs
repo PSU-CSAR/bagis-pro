@@ -85,6 +85,7 @@ namespace bagis_pro
         public const string FILE_EXPORT_CHART_AREA_ELEV_PRECIP_SITE_PDF = "chart_area_elev_precip_site.pdf";
         public const string FILE_EXPORT_CHART_SLOPE_PDF = "chart_slope.pdf";
         public const string FILE_EXPORT_CHART_ASPECT_PDF = "chart_aspect.pdf";
+        public const string FILE_EXPORT_CHART_ELEV_PRECIP_CORR_PDF = "chart_elev_precip_correlation.pdf";
         public const string FILE_EXPORT_MAPS_ALL_PDF = "all_maps_charts.pdf";
         public const string FILE_TITLE_PAGE_XSL = "title_page.xsl";
         public const string FILE_TITLE_PAGE_XML = "title_page.xml";

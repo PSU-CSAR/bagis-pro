@@ -289,13 +289,13 @@ namespace bagis_pro
                     {
                         if (Module1.Current.Settings.m_demDisplayUnits.Equals("Feet"))
                         {
-                            aoiElevMin = LinearUnit.Meters.ConvertTo(demElevMinMeters, LinearUnit.Feet);
-                            aoiElevMax = LinearUnit.Meters.ConvertTo(demElevMaxMeters, LinearUnit.Feet);
+                            aoiElevMin = Math.Round(LinearUnit.Meters.ConvertTo(demElevMinMeters, LinearUnit.Feet), 2);
+                            aoiElevMax = Math.Round(LinearUnit.Meters.ConvertTo(demElevMaxMeters, LinearUnit.Feet), 2);
                         }
                         else if (Module1.Current.Settings.m_demUnits.Equals("Feet"))
                         {
-                            aoiElevMin = LinearUnit.Feet.ConvertTo(demElevMinMeters, LinearUnit.Meters);
-                            aoiElevMax = LinearUnit.Feet.ConvertTo(demElevMaxMeters, LinearUnit.Meters);
+                            aoiElevMin = Math.Round(LinearUnit.Feet.ConvertTo(demElevMinMeters, LinearUnit.Meters), 2);
+                            aoiElevMax = Math.Round(LinearUnit.Feet.ConvertTo(demElevMaxMeters, LinearUnit.Meters), 2);
                         }
                     }
 

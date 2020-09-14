@@ -372,17 +372,30 @@ namespace bagis_pro
                 Worksheet pPRISMWorkSheet = bkWorkBook.Sheets.Add();
                 pPRISMWorkSheet.Name = "PRISM";
 
-                // Create Site Precipitation Worksheet
-                Worksheet pPrecipSiteWorksheet = bkWorkBook.Sheets.Add();
-                pPrecipSiteWorksheet.Name = "Elev-Precip Sites";
+                // Do we create the Elevation-Precip tables and chart?
+                Worksheet pPrecipSiteWorksheet = null;
+                Worksheet pPrecipDemElevWorksheet = null;
+                Worksheet pPrecipChartWorksheet = null;
+                bool bPrecStelLayerExists = await GeodatabaseTools.FeatureClassExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false)), Constants.FILE_PREC_STEL);
+                if (bPrecStelLayerExists)
+                {
+                    // Create Site Precipitation Worksheet
+                    pPrecipSiteWorksheet = bkWorkBook.Sheets.Add();
+                    pPrecipSiteWorksheet.Name = "Elev-Precip Sites";
 
-                // Create Elevation Precipitation Worksheet
-                Worksheet pPrecipDemElevWorksheet = bkWorkBook.Sheets.Add();
-                pPrecipDemElevWorksheet.Name = "Elev-Precip AOI";
+                    // Create Elevation Precipitation Worksheet
+                    pPrecipDemElevWorksheet = bkWorkBook.Sheets.Add();
+                    pPrecipDemElevWorksheet.Name = "Elev-Precip AOI";
 
-                // Create Elev-Precip Chart Worksheet
-                Worksheet pPrecipChart = bkWorkBook.Sheets.Add();
-                pPrecipChart.Name = "Elev-Precip Chart";
+                    // Create Elev-Precip Chart Worksheet
+                    pPrecipChartWorksheet = bkWorkBook.Sheets.Add();
+                    pPrecipChartWorksheet.Name = "Elev-Precip Chart";
+                }
+                else
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(GenerateTablesAsync), Constants.FILE_PREC_STEL +
+                        " is missing. Precipitation correlation tables and chart cannot be created!");
+                }
 
                 // Create Charts Worksheet
                 Worksheet pChartsWorksheet = bkWorkBook.Sheets.Add();
@@ -496,9 +509,8 @@ namespace bagis_pro
                 }
 
                 //Elevation-Precipitation Correlation Chart
-                bool bLayerExists = await GeodatabaseTools.FeatureClassExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false)), Constants.FILE_PREC_STEL);
                 int intMinPrecip = -1;
-                if (bLayerExists)
+                if (bPrecStelLayerExists)
                 {
                     intMinPrecip = await ExcelTools.CreateRepresentPrecipTableAsync(pPrecipDemElevWorksheet, strPrecipPath);
                     if (intMinPrecip != 999)
@@ -510,15 +522,10 @@ namespace bagis_pro
                     if (success == BA_ReturnCode.Success)
                     {
                         Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Created Snotel Represented Precip Table");
-                        success = ExcelTools.CreateRepresentPrecipChart(pPrecipDemElevWorksheet, pPrecipSiteWorksheet, pPrecipChart, intMinPrecip, Y_Min);
+                        success = ExcelTools.CreateRepresentPrecipChart(pPrecipDemElevWorksheet, pPrecipSiteWorksheet, pPrecipChartWorksheet, intMinPrecip, Y_Min);
                         Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Created Represented Precip Chart");
 
                     }
-                }
-                else
-                {
-                    Module1.Current.ModuleLogManager.LogError(nameof(GenerateTablesAsync), Constants.FILE_PREC_STEL +
-                        " is missing. Precipitation correlation tables and chart cannot be created!");
                 }
 
                 //Publish Charts Tab
@@ -563,10 +570,26 @@ namespace bagis_pro
                 pChartsWorksheet.ExportAsFixedFormat(XlFixedFormatType.xlTypePDF, pathToSave);
                 Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Published aspect chart to PDF");
 
+                    // Elev-Precip Chart Tab
+                    if (bPrecStelLayerExists)
+                    {
+                        oPaperSize = pPrecipChartWorksheet.PageSetup.PaperSize;
+                        pPrecipChartWorksheet.PageSetup.Orientation = XlPageOrientation.xlLandscape;
+                        pPrecipChartWorksheet.PageSetup.Zoom = false;
+                        pPrecipChartWorksheet.PageSetup.PaperSize = oReqPaperSize;
+                        pPrecipChartWorksheet.PageSetup.FitToPagesTall = 1;
+                        pPrecipChartWorksheet.PageSetup.FitToPagesWide = 1;
+                        pPrecipChartWorksheet.PageSetup.CenterHeader = "&C&\"Arial,Bold\"&16 " + Module1.Current.Aoi.Name;
+                        pathToSave = sOutputFolder + "\\" + Constants.FILE_EXPORT_CHART_ELEV_PRECIP_CORR_PDF;
+                        pPrecipChartWorksheet.ExportAsFixedFormat(XlFixedFormatType.xlTypePDF, pathToSave);
+                        pPrecipChartWorksheet.PageSetup.PaperSize = oPaperSize;
+                        Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Published elevation-precipitation correlation chart to PDF");
 
-            }
+                    }
 
-            return success;
+                }
+
+                return success;
             }
             catch (Exception e)
             {
@@ -1116,7 +1139,7 @@ namespace bagis_pro
             //check the decimal place of the interval value
             string intvstring = Convert.ToString(interval);
             //determine the interval decimal place to add an increment value to the lower bound
-            int position = intvstring.IndexOf(".") + 1;     // converting this from vb .net; Easiest to just add 1 to value
+            int position = intvstring.IndexOf(".") + 1;
             int scalefactor;
             double inc_value;
 
@@ -1143,8 +1166,8 @@ namespace bagis_pro
                 interval = interval * scalefactor;
             }
             // calculate the number of intervals
-            int begincnt = Convert.ToInt16(minval / interval);
-            int endcnt = Convert.ToInt16(maxval / interval) + 1;
+            int begincnt = Convert.ToInt16(Math.Floor(minval / interval));
+            int endcnt = Convert.ToInt16(Math.Floor(maxval / interval)) + 1;
             int rightoffset;
             //rightoffset indicates if the upperbound of the last interval equals maxval
             if (maxval % interval == 0)
@@ -1189,7 +1212,7 @@ namespace bagis_pro
                 }
             }
 
-            rangearr[ninterval - 1].Value = ninterval;
+            rangearr[ninterval - 1].Value = ninterval - 1;
             rangearr[ninterval - 1].UpperBound = maxval / scalefactor;
             if (ninterval > 1)
             {
