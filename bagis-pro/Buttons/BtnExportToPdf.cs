@@ -46,6 +46,30 @@ namespace bagis_pro.Buttons
                     Constants.FILE_EXPORT_MAP_ROADS_PDF,
                     Constants.FILE_EXPORT_MAP_PUBLIC_LAND_PDF, Constants.FILE_EXPORT_MAP_SITES_LOCATION_PDF};
 
+                // Delete any old PDF files
+                foreach (var item in lstFilesToAppend)
+                {
+                    string strPath = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE
+                        + "\\" + item;
+                    if (System.IO.File.Exists(strPath))
+                    {
+                        try
+                        {
+                            System.IO.File.Delete(strPath);
+                        }
+                        catch (Exception)
+                        {
+                            System.Windows.MessageBoxResult res =
+                                MessageBox.Show("Unable to delete file before creating new pdf. Do you want to close the file and try again?",
+                                "BAGIS-PRO", System.Windows.MessageBoxButton.YesNo);
+                            if (res == System.Windows.MessageBoxResult.Yes)
+                            {
+                                return;
+                            }
+                        }
+                    }
+                }
+
                 // Load the maps if they aren't in the viewer already
                 BA_ReturnCode success = BA_ReturnCode.Success;
                 if (! FrameworkApplication.State.Contains(Constants.STATES_MAP_BUTTONS[0]))
@@ -141,7 +165,9 @@ namespace bagis_pro.Buttons
         {
             try
             {
+                Module1.DeactivateState("BtnExcelTables_State");
                 BA_ReturnCode success = await GeneralTools.GenerateTablesAsync(true);
+                Module1.ActivateState("BtnExcelTables_State");
                 if (!success.Equals(BA_ReturnCode.Success))
                 {
                     MessageBox.Show("An error occurred while generating the Excel tables!!", "BAGIS-PRO");

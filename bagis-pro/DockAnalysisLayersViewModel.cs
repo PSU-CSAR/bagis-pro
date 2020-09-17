@@ -419,6 +419,7 @@ namespace bagis_pro
                     Uri uriLayersGdb = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis));
                     string[] arrSiteFileNames = {Constants.FILE_PUBLIC_LAND_ZONE, Constants.FILE_ROADS_ZONE};
                     IList<string> lstIntersectLayers = new List<string>();
+                    string strOutputPath = uriLayersGdb.LocalPath + "\\" + Constants.FILE_SITES_LOCATION_ZONE;
                     foreach (var fileName in arrSiteFileNames)
                     {
                         bool bExists = await GeodatabaseTools.FeatureClassExistsAsync(uriLayersGdb, fileName);
@@ -427,10 +428,9 @@ namespace bagis_pro
                             lstIntersectLayers.Add(uriLayersGdb.LocalPath + "\\" + fileName);
                         }
                     }
-                    if (lstIntersectLayers.Count > 0)   // Make sure we have > 0 layers to intersect
+                    if (lstIntersectLayers.Count > 1)   // Make sure we have > 1 layers to intersect
                     {
                         string[] arrIntersectLayers = lstIntersectLayers.ToArray();
-                        string strOutputPath = uriLayersGdb.LocalPath + "\\" + Constants.FILE_SITES_LOCATION_ZONE;
                         success = await GeoprocessingTools.IntersectUnrankedAsync(Module1.Current.Aoi.FilePath, arrIntersectLayers, strOutputPath,
                             "ONLY_FID");
                         if (success != BA_ReturnCode.Success)
@@ -438,6 +438,16 @@ namespace bagis_pro
                             MessageBox.Show("An error occurred while generating the site location layers map!!", "BAGIS-PRO");
                             Module1.Current.ModuleLogManager.LogError(nameof(GenerateLayersAsync),
                                 "No site location layers exist to intersect. sitesloczone cannot be created!");
+                        }
+                    }
+                    else if (lstIntersectLayers.Count == 1)
+                    {
+                        success = await GeoprocessingTools.CopyFeaturesAsync(Module1.Current.Aoi.FilePath,lstIntersectLayers[0], 
+                            strOutputPath);
+                        if (success == BA_ReturnCode.Success)
+                        {
+                            Module1.Current.ModuleLogManager.LogDebug(nameof(GenerateLayersAsync),
+                                "Only one site location layer found. sitesloczone created by copying that layer");
                         }
                     }
                     else

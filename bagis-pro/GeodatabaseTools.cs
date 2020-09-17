@@ -807,6 +807,35 @@ namespace bagis_pro
             }
             return returnPath;
         }
+
+        public static async Task<bool> TableExistsAsync(Uri gdbUri, string tableName)
+        {
+            bool bExists = false;
+            if (gdbUri.IsFile)
+            {
+                string strFolderPath = System.IO.Path.GetDirectoryName(gdbUri.LocalPath);
+                if (System.IO.Directory.Exists(strFolderPath))
+                {
+                    await QueuedTask.Run(() =>
+                    {
+
+                        using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(gdbUri)))
+                        {
+                            IReadOnlyList<TableDefinition> definitions = geodatabase.GetDefinitions<TableDefinition>();
+                            foreach (TableDefinition def in definitions)
+                            {
+                                if (def.GetName().Equals(tableName) || def.GetAliasName().Equals(tableName))
+                                {
+                                    bExists = true;
+                                    break;
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+            return bExists;
+        }
     }
 
     

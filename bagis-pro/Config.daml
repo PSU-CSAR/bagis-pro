@@ -252,7 +252,10 @@
       <state id="Aoi_Selected_State" />
     </insertCondition>
     <insertCondition id="BtnExcelTables_Condition" caption="Excel Tables">
-      <state id="Aoi_Selected_State" />
+      <and>
+        <state id="Aoi_Selected_State" />
+        <state id="BtnExcelTables_State" />
+      </and>
     </insertCondition>
     <insertCondition id="BtnLoadMaps_Condition" caption="Load Maps">
       <state id="Aoi_Selected_State" />

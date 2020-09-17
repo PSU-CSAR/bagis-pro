@@ -376,13 +376,10 @@ namespace bagis_pro
                 Worksheet pPrecipSiteWorksheet = null;
                 Worksheet pPrecipDemElevWorksheet = null;
                 Worksheet pPrecipChartWorksheet = null;
+                bool bPrecMeanElevTableExists = await GeodatabaseTools.TableExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false)), Constants.FILE_ASP_ZONE_PREC_TBL);
                 bool bPrecStelLayerExists = await GeodatabaseTools.FeatureClassExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false)), Constants.FILE_PREC_STEL);
-                if (bPrecStelLayerExists)
+                if (bPrecMeanElevTableExists)
                 {
-                    // Create Site Precipitation Worksheet
-                    pPrecipSiteWorksheet = bkWorkBook.Sheets.Add();
-                    pPrecipSiteWorksheet.Name = "Elev-Precip Sites";
-
                     // Create Elevation Precipitation Worksheet
                     pPrecipDemElevWorksheet = bkWorkBook.Sheets.Add();
                     pPrecipDemElevWorksheet.Name = "Elev-Precip AOI";
@@ -390,6 +387,12 @@ namespace bagis_pro
                     // Create Elev-Precip Chart Worksheet
                     pPrecipChartWorksheet = bkWorkBook.Sheets.Add();
                     pPrecipChartWorksheet.Name = "Elev-Precip Chart";
+                }
+                if (bPrecStelLayerExists)
+                {
+                    // Create Site Precipitation Worksheet
+                    pPrecipSiteWorksheet = bkWorkBook.Sheets.Add();
+                    pPrecipSiteWorksheet.Name = "Elev-Precip Sites";
                 }
                 else
                 {
@@ -510,22 +513,22 @@ namespace bagis_pro
 
                 //Elevation-Precipitation Correlation Chart
                 int intMinPrecip = -1;
-                if (bPrecStelLayerExists)
+                if (bPrecMeanElevTableExists)
                 {
                     intMinPrecip = await ExcelTools.CreateRepresentPrecipTableAsync(pPrecipDemElevWorksheet, strPrecipPath);
-                    if (intMinPrecip != 999)
-                    {
-                        Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Created represented precip table");
-                        success = await ExcelTools.CreateSnotelPrecipTableAsync(pPrecipSiteWorksheet, 
+                    Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Created represented precip table");
+                }
+                if (intMinPrecip != 999 && bPrecStelLayerExists)
+                {
+                    success = await ExcelTools.CreateSnotelPrecipTableAsync(pPrecipSiteWorksheet, 
                             new List<BA_Objects.Site>());
-                    }
-                    if (success == BA_ReturnCode.Success)
-                    {
-                        Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Created Snotel Represented Precip Table");
-                        success = ExcelTools.CreateRepresentPrecipChart(pPrecipDemElevWorksheet, pPrecipSiteWorksheet, pPrecipChartWorksheet, intMinPrecip, Y_Min);
-                        Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Created Represented Precip Chart");
+                    Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Created Snotel Represented Precip Table");
 
-                    }
+                }
+                if (intMinPrecip != 999)
+                {
+                    success = ExcelTools.CreateRepresentPrecipChart(pPrecipDemElevWorksheet, pPrecipSiteWorksheet, pPrecipChartWorksheet, intMinPrecip, Y_Min);
+                    Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Created Represented Precip Chart");
                 }
 
                 //Publish Charts Tab
@@ -571,7 +574,7 @@ namespace bagis_pro
                 Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Published aspect chart to PDF");
 
                     // Elev-Precip Chart Tab
-                    if (bPrecStelLayerExists)
+                    if (bPrecMeanElevTableExists)
                     {
                         oPaperSize = pPrecipChartWorksheet.PageSetup.PaperSize;
                         pPrecipChartWorksheet.PageSetup.Orientation = XlPageOrientation.xlLandscape;
@@ -1098,6 +1101,7 @@ namespace bagis_pro
                     Module1.Current.CboCurrentAoi.SetAoiName(oAoi.Name);
                     MapTools.DeactivateMapButtons();
                     Module1.ActivateState("Aoi_Selected_State");
+                    Module1.ActivateState("BtnExcelTables_State");
 
 
                     MessageBox.Show("AOI is set to " + Module1.Current.Aoi.Name + "!", "BAGIS PRO");

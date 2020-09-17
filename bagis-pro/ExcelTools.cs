@@ -1376,40 +1376,43 @@ namespace bagis_pro
             trendline.Format.Line.DashStyle = MsoLineDashStyle.msoLineSolid;
             trendline.Format.Line.ForeColor.RGB = (int)XlRgbColor.rgbBlue;
 
-            // Set series for SNOTEL precip/elevation values
-            nrecords = ExcelTools.CountRecords(pPrecipSiteWorksheet, 1);
-            precipValueRange = "D2:D" + (nrecords + 1);
-            string xElevValueRange = "A2:A" + (nrecords + 1);
-            Series ser2 = myChart.SeriesCollection().NewSeries;
-            ser2.Name = "Sites";
-            //Set ser2 Values
-            ser2.Values = pPrecipSiteWorksheet.Range[precipValueRange];
-            ser2.XValues = pPrecipSiteWorksheet.Range[xElevValueRange];
-            //Set ser2 Formats
-            ser2.MarkerStyle = Microsoft.Office.Interop.Excel.XlMarkerStyle.xlMarkerStyleSquare;
-            ser2.MarkerSize = 7;
-            ser2.MarkerBackgroundColor = (int)XlRgbColor.rgbRed;
-            ser2.MarkerForegroundColor = (int)XlRgbColor.rgbRed;
+            if (pPrecipSiteWorksheet != null)
+            {
+                // Set series for SNOTEL precip/elevation values
+                nrecords = ExcelTools.CountRecords(pPrecipSiteWorksheet, 1);
+                precipValueRange = "D2:D" + (nrecords + 1);
+                string xElevValueRange = "A2:A" + (nrecords + 1);
+                Series ser2 = myChart.SeriesCollection().NewSeries;
+                ser2.Name = "Sites";
+                //Set ser2 Values
+                ser2.Values = pPrecipSiteWorksheet.Range[precipValueRange];
+                ser2.XValues = pPrecipSiteWorksheet.Range[xElevValueRange];
+                //Set ser2 Formats
+                ser2.MarkerStyle = Microsoft.Office.Interop.Excel.XlMarkerStyle.xlMarkerStyleSquare;
+                ser2.MarkerSize = 7;
+                ser2.MarkerBackgroundColor = (int)XlRgbColor.rgbRed;
+                ser2.MarkerForegroundColor = (int)XlRgbColor.rgbRed;
 
-            if (nrecords > 1)
-            {
-                Microsoft.Office.Interop.Excel.Trendlines trendlines2 = ser2.Trendlines();
-                Trendline trendline2 = trendlines2.Add(Microsoft.Office.Interop.Excel.XlTrendlineType.xlLinear, Type.Missing,
-                    Type.Missing, Type.Missing, Type.Missing, Type.Missing,
-                    true, true, "Linear (Sites)");
-                trendline2.DataLabel.Left = 710;
-                trendline2.DataLabel.Top = legendTop + 180;
-                trendline2.DataLabel.Font.Size = 20;
-                trendline2.DataLabel.Font.Color = (int)XlRgbColor.rgbOrange;
-                trendline2.Format.Line.Weight = 1.5F;
-                trendline2.Format.Line.DashStyle = MsoLineDashStyle.msoLineSolid;
-                trendline2.Format.Line.ForeColor.RGB = (int)XlRgbColor.rgbOrange;
-            }
-            else
-            {
-                MessageBox.Show("Warning: Your sites data did not contain enough sites to generate a trendline!", "BAGIS-PRO");
-                Module1.Current.ModuleLogManager.LogError(nameof(CreateRepresentPrecipChart),
-                    "Your sites data did not contain enough sites to generate a trendline!");
+                if (nrecords > 1)
+                {
+                    Microsoft.Office.Interop.Excel.Trendlines trendlines2 = ser2.Trendlines();
+                    Trendline trendline2 = trendlines2.Add(Microsoft.Office.Interop.Excel.XlTrendlineType.xlLinear, Type.Missing,
+                        Type.Missing, Type.Missing, Type.Missing, Type.Missing,
+                        true, true, "Linear (Sites)");
+                    trendline2.DataLabel.Left = 710;
+                    trendline2.DataLabel.Top = legendTop + 180;
+                    trendline2.DataLabel.Font.Size = 20;
+                    trendline2.DataLabel.Font.Color = (int)XlRgbColor.rgbOrange;
+                    trendline2.Format.Line.Weight = 1.5F;
+                    trendline2.Format.Line.DashStyle = MsoLineDashStyle.msoLineSolid;
+                    trendline2.Format.Line.ForeColor.RGB = (int)XlRgbColor.rgbOrange;
+                }
+                else
+                {
+                    MessageBox.Show("Warning: Your sites data did not contain enough sites to generate a trendline!", "BAGIS-PRO");
+                    Module1.Current.ModuleLogManager.LogError(nameof(CreateRepresentPrecipChart),
+                        "Your sites data did not contain enough sites to generate a trendline!");
+                }
             }
 
             // Set Element Positions

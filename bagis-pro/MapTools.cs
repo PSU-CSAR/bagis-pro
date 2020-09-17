@@ -1201,9 +1201,8 @@ namespace bagis_pro
                         lstLayers.Add(Constants.MAPS_SNOW_COURSE);
                         lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE);
                     }
-                    // @ToDo: manage elevation units better
                     mapDefinition = new BA_Objects.MapDefinition("ELEVATION DISTRIBUTION",
-                        "Elevation Units = Feet", Constants.FILE_EXPORT_MAP_ELEV_PDF);
+                        "Elevation Units = " + Module1.Current.Settings.m_demDisplayUnits, Constants.FILE_EXPORT_MAP_ELEV_PDF);
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;
@@ -1358,6 +1357,16 @@ namespace bagis_pro
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_ELEV_ZONE,
                                                    Constants.MAPS_SITES_LOCATION};
                     lstLegendLayers = new List<string> { Constants.MAPS_SITES_LOCATION };
+                    if (Module1.Current.Aoi.HasSnowCourse == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOW_COURSE);
+                        lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE);
+                    }
+                    if (Module1.Current.Aoi.HasSnotel == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOTEL);
+                        lstLegendLayers.Add(Constants.MAPS_SNOTEL);
+                    }
                     mapDefinition = new BA_Objects.MapDefinition("POTENTIAL SITE LOCATIONS",
                         " ", Constants.FILE_EXPORT_MAP_SITES_LOCATION_PDF);
                     mapDefinition.LayerList = lstLayers;
