@@ -9,9 +9,6 @@ namespace bagis_pro.BA_Objects
 {
     class Settings
     {
-        public string m_pourpointUri = "https://services.arcgis.com/SXbDpmb7xQkk44JV/arcgis/rest/services/stations_USGS_ACTIVE/FeatureServer/0";
-        public string m_settingsUri = "https://ebagis.geog.pdx.edu/api/rest/desktop/settings/";
-        public string m_nameField = "name";
         public string m_eBagisServer = "https://test.ebagis.geog.pdx.edu";
         public string m_sweDisplayUnits = "Inches";
         public string m_demUnits = "Meters";

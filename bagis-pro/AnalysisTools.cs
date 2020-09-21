@@ -383,12 +383,26 @@ namespace bagis_pro
             string[] arrReturnValues = new string[] { strTriplet, strStationName };
             Uri ppUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi));
             string strPourpointClassPath = ppUri.LocalPath + "\\" + Constants.FILE_POURPOINT;
-            string usgsServiceLayerId = Module1.Current.Settings.m_pourpointUri.Split('/').Last();
+            Webservices ws = new Webservices();
+            Module1.Current.ModuleLogManager.LogDebug(nameof(GetStationValues),
+                "Contacting webservices server to retrieve pourpoint layer uri");
+            var url = Module1.Current.Settings.m_eBagisServer + Constants.URI_DESKTOP_SETTINGS;
+            var response = new EsriHttpClient().Get(url);
+            var json = await response.Content.ReadAsStringAsync();
+            dynamic oSettings = JObject.Parse(json);
+            if (oSettings == null || String.IsNullOrEmpty(Convert.ToString(oSettings.gaugeStation)))
+            {
+                Module1.Current.ModuleLogManager.LogDebug(nameof(GetStationValues),
+                    "Unable to retrieve pourpoint settings from " + url);
+                MessageBox.Show("Unable to retrieve pourpoint settings. Clipping cancelled!!", "BAGIS-PRO");
+                return null;
+            }
+            string strWsUri = oSettings.gaugeStation;
+            string usgsServiceLayerId = strWsUri.Split('/').Last();
             int intTrim = usgsServiceLayerId.Length + 1;
-            string usgsTempString = Module1.Current.Settings.m_pourpointUri.Substring(0, Module1.Current.Settings.m_pourpointUri.Length - intTrim);
+            string usgsTempString = strWsUri.Substring(0, strWsUri.Length - intTrim);
             Uri usgsServiceUri = new Uri(usgsTempString);
 
-            Webservices ws = new Webservices();
             bool bUpdateTriplet = false;
             bool bUpdateAwdb = false;
             bool bUpdateStationName = false;
@@ -439,7 +453,7 @@ namespace bagis_pro
                         {
                             bUpdateTriplet = true;
                         }
-                        strStationName = await ws.QueryServiceForSingleValueAsync(usgsServiceUri, usgsServiceLayerId, Module1.Current.Settings.m_nameField, queryFilter);
+                        strStationName = await ws.QueryServiceForSingleValueAsync(usgsServiceUri, usgsServiceLayerId, (string) oSettings.gaugeStationName, queryFilter);
                         if (!string.IsNullOrEmpty(strStationName))
                         {
                             bUpdateStationName = true;
@@ -449,7 +463,7 @@ namespace bagis_pro
                 if (string.IsNullOrEmpty(strTriplet))
                 {
                     // If triplet is still null, use the near tool
-                    BA_ReturnCode success = await GeoprocessingTools.NearAsync(strPourpointClassPath, Module1.Current.Settings.m_pourpointUri);
+                    BA_ReturnCode success = await GeoprocessingTools.NearAsync(strPourpointClassPath, strWsUri);
                     if (success == BA_ReturnCode.Success)
                     {
                         QueryFilter queryFilter = new QueryFilter();
@@ -468,7 +482,7 @@ namespace bagis_pro
                             {
                                 bUpdateAwdb = true;
                             }
-                            strStationName = await ws.QueryServiceForSingleValueAsync(usgsServiceUri, usgsServiceLayerId, Module1.Current.Settings.m_nameField, queryFilter);
+                            strStationName = await ws.QueryServiceForSingleValueAsync(usgsServiceUri, usgsServiceLayerId, (string) oSettings.gaugeStationName, queryFilter);
                             if (!string.IsNullOrEmpty(strStationName))
                             {
                                 bUpdateStationName = true;
@@ -1212,7 +1226,7 @@ namespace bagis_pro
             IDictionary<string, dynamic> dictDataSources =
                 await ws.QueryDataSourcesAsync(Module1.Current.Settings.m_eBagisServer);
 
-            var url = Module1.Current.Settings.m_settingsUri;
+            var url = Module1.Current.Settings.m_eBagisServer + Constants.URI_DESKTOP_SETTINGS;
             var response = new EsriHttpClient().Get(url);
             var json = await response.Content.ReadAsStringAsync();
             dynamic oSettings = JObject.Parse(json);
@@ -1223,7 +1237,6 @@ namespace bagis_pro
                 MessageBox.Show("Unable to retrieve snotel layer settings. Clipping cancelled!!", "BAGIS-PRO");
                 return success;
             }
-
 
             // Get the buffer layers
             if (bClipSnotel)
@@ -1554,9 +1567,10 @@ namespace bagis_pro
                     success = GeneralTools.SaveDataSourcesToFile(dictLocalDataSources);
                     Module1.Current.ModuleLogManager.LogDebug(nameof(ClipSnoLayersAsync),
                         "Updated settings metadata for AOI");
+                    // Delete the temporary layer
+                    success = await GeoprocessingTools.DeleteDatasetAsync(strOutputFc[j]);
                 }
-                // Delete the temporary layer
-                success = await GeoprocessingTools.DeleteDatasetAsync(strOutputFc[j]);
+
                 j++;
             }
 

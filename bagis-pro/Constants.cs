@@ -104,11 +104,13 @@ namespace bagis_pro
                                                                                "SNODAS SWE APR 1ST", "SNODAS SWE MAY 1ST", "SNODAS SWE JUN 1ST",
                                                                                "SNODAS SWE DEC 1ST"};
         public const string URI_IMAGE_SERVER = "/ImageServer";
+        public const string URI_DESKTOP_SETTINGS = "/api/rest/desktop/settings/";
 
 
         public const string FOLDER_MAP_PACKAGE = "maps_publish";
         public const string FOLDER_MAPS = "maps";
         public const string FOLDER_LOGS = "logs";
+        public const string FOLDER_SETTINGS = "BAGIS";
 
         public const string FIELD_AOI_AREA = "AOISHPAREA";
         public const string FIELD_SITE_ELEV = "BA_SELEV";

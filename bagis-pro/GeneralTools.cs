@@ -1228,6 +1228,29 @@ namespace bagis_pro
             }
             return ninterval;
         }
+
+        public static string GetBagisSettingsPath()
+        {
+            string settingsPath = Environment.GetEnvironmentVariable(Constants.FOLDER_SETTINGS);
+            // Note: this environment variable is starting with Windows 7; We use this for Windows 7 instead of the TEMP variables because
+            // ArcGIS 10 deletes items from the TEMP folder under Windows 7
+            if (string.IsNullOrEmpty(settingsPath))
+            {
+                settingsPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            }
+            if (string.IsNullOrEmpty(settingsPath))     // then, try the TMP folder
+            {
+                settingsPath = Environment.GetEnvironmentVariable("TMP");
+            }
+            if (string.IsNullOrEmpty(settingsPath))     // then, try the TEMP folder
+            {
+                settingsPath = Environment.GetEnvironmentVariable("TEMP");
+            }
+            Module1.Current.SettingsPath = settingsPath;
+            Module1.Current.ModuleLogManager.LogDebug(nameof(GetBagisSettingsPath),
+                "Settings path set to " + settingsPath);
+            return settingsPath;
+        }
     }
 
 

@@ -18,6 +18,7 @@
           <!--<group refID="bagis_pro_Groups_BasinAnalyst" />
           <group refID="bagis_pro_Groups_Basin" /> -->
           <group refID="bagis_pro_Groups_Maps" />
+          <group refID="bagis_pro_Groups_Tools" />
         </tab>
       </tabs>
       <groups>
@@ -29,6 +30,7 @@
           <toolbar refID="BAGIS_V4_Toolbar1" /> -->
           <tool refID="bagis_pro_Basin_SetDEMExtenttTool" size="large" />
           <button refID="bagis_pro_Maps_Tables_Button1" size="large" />
+          <button refID="bagis_pro_DocBatchPdfTool_ShowButton" size="large" />
         </group>
         <group id="bagis_pro_Groups_Basin" appearsOnAddInTab="false">
           <menu refID="bagis_pro_Menus_MnuBasin" size="middle" />
@@ -44,6 +46,9 @@
           <buttonPalette refID="bagis_pro_Buttons_MapButtonPalette" size="middle" />
           <button refID="bagis_pro_Buttons_BtnExportToPdf" size="middle" />
           <button refID="bagis_pro_Buttons_BtnExcelTables" size="middle" />
+        </group>
+        <group id="bagis_pro_Groups_Tools" appearsOnAddInTab="false" caption="Tools">
+          <button refID="bagis_pro_Buttons_BtnBatchPdfTool" size="middle" />
         </group>
       </groups>
       <toolbars>
@@ -143,70 +148,74 @@
         </button>
         <button id="MapButtonPalette_BtnSnowCourse" caption="Snow Course Sites Distribution" className="bagis_pro.Buttons.MapButtonPalette_BtnSnowCourse" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSnowCourse_Condition">
           <tooltip heading="Display Map">
-            ToolTip<disabledText />
-          </tooltip>
+            ToolTip<disabledText /></tooltip>
         </button>
         <button id="MapButtonPalette_BtnSitesAll" caption="All Sites Distribution" className="bagis_pro.Buttons.MapButtonPalette_BtnSitesAll" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSitesAll_Condition">
           <tooltip heading="Display Map">
-            ToolTip<disabledText />
-          </tooltip>
+            ToolTip<disabledText /></tooltip>
         </button>
         <button id="MapButtonPalette_BtnSweJan" caption="SWE January Distribution" className="bagis_pro.Buttons.MapButtonPalette_BtnSweJan" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSweJan_Condition">
           <tooltip heading="Display Map">
-            ToolTip<disabledText />
-          </tooltip>
+            ToolTip<disabledText /></tooltip>
         </button>
         <button id="MapButtonPalette_BtnSweFeb" caption="SWE February Distribution" className="bagis_pro.Buttons.MapButtonPalette_BtnSweFeb" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSweFeb_Condition">
           <tooltip heading="Display Map">
-            ToolTip<disabledText />
-          </tooltip>
+            ToolTip<disabledText /></tooltip>
         </button>
         <button id="MapButtonPalette_BtnSweMar" caption="SWE March Distribution" className="bagis_pro.Buttons.MapButtonPalette_BtnSweMar" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSweMar_Condition">
           <tooltip heading="Display Map">
-            ToolTip<disabledText />
-          </tooltip>
+            ToolTip<disabledText /></tooltip>
         </button>
         <button id="MapButtonPalette_BtnSweApr" caption="SWE April Distribution" className="bagis_pro.Buttons.MapButtonPalette_BtnSweApr" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSweApr_Condition">
           <tooltip heading="Display Map">
-            ToolTip<disabledText />
-          </tooltip>
+            ToolTip<disabledText /></tooltip>
         </button>
         <button id="MapButtonPalette_BtnSweMay" caption="SWE May Distribution" className="bagis_pro.Buttons.MapButtonPalette_BtnSweMay" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSweMay_Condition">
           <tooltip heading="Display Map">
-            ToolTip<disabledText />
-          </tooltip></button>
+            ToolTip<disabledText /></tooltip>
+        </button>
         <button id="MapButtonPalette_BtnSweJun" caption="SWE June Distribution" className="bagis_pro.Buttons.MapButtonPalette_BtnSweJun" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSweJun_Condition">
           <tooltip heading="Display Map">
-            ToolTip<disabledText />
-          </tooltip></button>
+            ToolTip<disabledText /></tooltip>
+        </button>
         <button id="MapButtonPalette_BtnSweDec" caption="SWE December Distribution" className="bagis_pro.Buttons.MapButtonPalette_BtnSweDec" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSweDec_Condition">
           <tooltip heading="Display Map">
-            ToolTip<disabledText />
-          </tooltip>
+            ToolTip<disabledText /></tooltip>
         </button>
         <button id="MapButtonPalette_BtnPrism" caption="Precipitation Distribution" className="bagis_pro.Buttons.MapButtonPalette_BtnPrism" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnPrism_Condition">
           <tooltip heading="Display Map">
-            ToolTip<disabledText />
-          </tooltip>
+            ToolTip<disabledText /></tooltip>
         </button>
         <button id="MapButtonPalette_BtnRoads" caption="Access Roads Proximity" className="bagis_pro.Buttons.MapButtonPalette_BtnRoads" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnRoads_Condition">
           <tooltip heading="Display Map">
-            ToolTip<disabledText />
-          </tooltip>
+            ToolTip<disabledText /></tooltip>
         </button>
         <button id="MapButtonPalette_BtnPublicLand" caption="Public Non_Wilderness Land" className="bagis_pro.Buttons.MapButtonPalette_BtnPublicLand" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnPublicLand_Condition">
           <tooltip heading="Display Map">
-            ToolTip<disabledText />
-          </tooltip>
+            ToolTip<disabledText /></tooltip>
         </button>
         <button id="MapButtonPalette_BtnSitesLocationZone" caption="Potential Site Locations" className="bagis_pro.Buttons.MapButtonPalette_BtnSitesLocationZone" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSitesLocationZone_Condition">
           <tooltip heading="Display Map">
-            ToolTip<disabledText />
-          </tooltip>
+            ToolTip<disabledText /></tooltip>
         </button>
-        <comboBox id="bagis_pro_Buttons_CboCurrentAoi" className="bagis_pro.Buttons.CboCurrentAoi" itemWidth="180" isEditable="false" isReadOnly="true" resizable="true"><tooltip heading="Tooltip Heading">Selected AOI<disabledText /></tooltip></comboBox><labelControl id="bagis_pro_Buttons_LblCurrentAoi" caption="  Selected AOI" /><button id="bagis_pro_DockpaneLayers_ShowButton" caption="Clip Layers" className="DockpaneLayers_ShowButton" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/PaperClip32.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/PaperClip32.png" condition="Aoi_Selected_Condition"><tooltip heading="Clip Layers">
-            Clip Layers<disabledText /></tooltip></button>
-        <button id="bagis_pro_DockAnalysisLayers_ShowButton" caption="Generate Analysis Layers" className="DockAnalysisLayers_ShowButton" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/CalculateGeometry16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/CalculateGeometry32.png" condition="Aoi_Selected_Condition" ><tooltip heading="Generate Layers">Generate Layers<disabledText /></tooltip></button></controls>
+        <comboBox id="bagis_pro_Buttons_CboCurrentAoi" className="bagis_pro.Buttons.CboCurrentAoi" itemWidth="180" isEditable="false" isReadOnly="true" resizable="true">
+          <tooltip heading="Tooltip Heading">Selected AOI<disabledText /></tooltip>
+        </comboBox>
+        <labelControl id="bagis_pro_Buttons_LblCurrentAoi" caption="  Selected AOI" />
+        <button id="bagis_pro_DockpaneLayers_ShowButton" caption="Clip Layers" className="DockpaneLayers_ShowButton" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/PaperClip32.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/PaperClip32.png" condition="Aoi_Selected_Condition">
+          <tooltip heading="Clip Layers">
+            Clip Layers<disabledText /></tooltip>
+        </button>
+        <button id="bagis_pro_DockAnalysisLayers_ShowButton" caption="Generate Analysis Layers" className="DockAnalysisLayers_ShowButton" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/CalculateGeometry16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/CalculateGeometry32.png" condition="Aoi_Selected_Condition">
+          <tooltip heading="Generate Layers">Generate Layers<disabledText /></tooltip>
+        </button>
+        <button id="bagis_pro_Buttons_BtnBatchPdfTool" caption="Batch PDF Export" className="bagis_pro.Buttons.BtnBatchPdfTool" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/JobExport16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/JobExport32.png">
+          <tooltip heading="Tooltip Heading">Batch PDF Export<disabledText /></tooltip>
+        </button>
+        <button id="bagis_pro_DocBatchPdfTool_ShowButton" caption="Show DocBatchPdfTool" className="DocBatchPdfTool_ShowButton" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericButtonPurple16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericButtonPurple32.png">
+          <tooltip heading="Show Dockpane">Show Dockpane<disabledText /></tooltip>
+        </button>
+      </controls>
       <menus>
         <menu id="bagis_pro_Menus_MnuBasinAnalyst" caption="Basin Analysis">
           <button refID="bagis_pro_Menus_MnuBasinAnalyst_AddRefLayers" />
@@ -234,6 +243,9 @@
         </dockPane>
         <dockPane id="bagis_pro_DockAnalysisLayers" caption="Calculate Analysis Layers" className="DockAnalysisLayersViewModel" dock="group" dockWith="esri_core_catalogDockPane">
           <content className="DockAnalysisLayersView" />
+        </dockPane>
+        <dockPane id="bagis_pro_DocBatchPdfTool" caption="DocBatchPdfTool" className="DocBatchPdfToolViewModel" dock="group" dockWith="esri_core_contentsDockPane">
+          <content className="DocBatchPdfToolView" />
         </dockPane>
       </dockPanes>
     </insertModule>
@@ -314,6 +326,5 @@
     <insertCondition id="MapButtonPalette_BtnSitesLocationZone_Condition" caption="Map Disabled">
       <state id="MapButtonPalette_BtnSitesLocationZone_State" />
     </insertCondition>
-
   </conditions>
 </ArcGIS>

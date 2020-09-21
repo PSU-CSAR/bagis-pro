@@ -112,5 +112,6 @@ namespace bagis_pro
         public BA_Objects.ILoggerManager ModuleLogManager;
         internal string DisplayedSweMap { get; set; } = "";
         internal string RoadsLayerLegend { get; set; } = "";
+        internal string SettingsPath { get; set; } = "";
     }
 }
