@@ -17,6 +17,8 @@ using ArcGIS.Desktop.Core;
 using System.Reflection;
 using ArcGIS.Core.Data.Raster;
 using ArcGIS.Desktop.Framework;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace bagis_pro
 {
@@ -451,7 +453,7 @@ namespace bagis_pro
                     Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Created Snow Course sites Table");
                 }
 
-                string strPrecipPath = Module1.Current.Aoi.FilePath + Module1.Current.Settings.m_precipFile;
+                string strPrecipPath = Module1.Current.Aoi.FilePath + Module1.Current.BatchToolSettings.AoiPrecipFile;
                  double MaxPRISMValue = await ExcelTools.CreatePrecipitationTableAsync(pPRISMWorkSheet,
                     strPrecipPath, elevMinMeters);
 
@@ -471,7 +473,7 @@ namespace bagis_pro
                         oAnalysis = (BA_Objects.Analysis)reader.Deserialize(file);
                     }
                 }
-                double Y_Unit = Module1.Current.Settings.m_elevInterval;
+                double Y_Unit = Convert.ToDouble(Module1.Current.BatchToolSettings.DefaultDemInterval);
                 if (oAnalysis.ElevationZonesInterval > 0)
                 {
                     Y_Unit = oAnalysis.ElevationZonesInterval;
@@ -480,8 +482,9 @@ namespace bagis_pro
             double minValue = elevMinMeters;
             double maxValue = elevMaxMeters;
                 int leftPosition = Constants.EXCEL_CHART_WIDTH + (Constants.EXCEL_CHART_SPACING * 10);
-            //aoiDemMin is always in meters
-            if (Module1.Current.Settings.m_demDisplayUnits.Equals("Feet"))
+                //aoiDemMin is always in meters
+                string strDemDisplayUnits = (string) Module1.Current.BatchToolSettings.DemDisplayUnits;
+            if (strDemDisplayUnits.Equals("Feet"))
             {
                 minValue = ArcGIS.Core.Geometry.LinearUnit.Meters.ConvertTo(elevMinMeters, ArcGIS.Core.Geometry.LinearUnit.Feet);
                 maxValue = ArcGIS.Core.Geometry.LinearUnit.Meters.ConvertTo(elevMaxMeters, ArcGIS.Core.Geometry.LinearUnit.Feet);
@@ -845,6 +848,51 @@ namespace bagis_pro
             var layersPane = (DockpaneLayersViewModel) FrameworkApplication.DockPaneManager.Find("bagis_pro_DockpaneLayers");
             try
             {
+                // Load batch tool settings; Make sure we have the central BAGIS folder
+                string strSettingsPath = GetBagisSettingsPath();
+                if (!string.IsNullOrEmpty(strSettingsPath))
+                {
+                    string strTempPath = strSettingsPath + @"\" + Constants.FOLDER_SETTINGS;
+                    if (!Directory.Exists(strTempPath))
+                    {
+                        DirectoryInfo dirInfo = Directory.CreateDirectory(Constants.FOLDER_SETTINGS);
+                    }
+                    strSettingsPath = strTempPath;
+
+                }
+                // Check to see if batch tool settings are already there
+                if (!File.Exists(strSettingsPath + @"\" + Constants.FILE_BATCH_TOOL_SETTINGS))
+                {
+                    string addInDir = GeneralTools.GetAddInDirectory();
+                    File.Copy(addInDir + @"\" + Constants.FILE_BATCH_TOOL_SETTINGS,
+                        strSettingsPath + @"\" + Constants.FILE_BATCH_TOOL_SETTINGS);
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(SetAoi),
+                        "Copied default batch tool settings to BAGIS folder");
+                }
+                // Load batch tool settings from file
+                if (File.Exists(strSettingsPath + @"\" + Constants.FILE_BATCH_TOOL_SETTINGS))
+                {
+                    // read JSON directly from a file
+                    using (FileStream fs = File.OpenRead(strSettingsPath + @"\" + Constants.FILE_BATCH_TOOL_SETTINGS))
+                    {
+                        using (JsonTextReader reader = new JsonTextReader(new StreamReader(fs)))
+                        {
+                            dynamic oSettings = (JObject)JToken.ReadFrom(reader);
+                            if (oSettings != null)
+                            {
+                                Module1.Current.BatchToolSettings = oSettings.BatchSettings;
+                            }
+                            dynamic dynSettings = oSettings.BatchSettings;
+                            string server = dynSettings.EBagisServer;
+                        }
+                    }
+                }
+                else
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(SetAoi),
+                        "Unable to locate batch tool settings in BAGIS folder");
+                }
+
                 string strSurfacesGdb = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Surfaces, false);
                 var fcPath = strSurfacesGdb + "\\" + Constants.FILE_DEM_FILLED;
                 QueuedTask.Run(() =>
@@ -1102,7 +1150,6 @@ namespace bagis_pro
                     MapTools.DeactivateMapButtons();
                     Module1.ActivateState("Aoi_Selected_State");
                     Module1.ActivateState("BtnExcelTables_State");
-
 
                     MessageBox.Show("AOI is set to " + Module1.Current.Aoi.Name + "!", "BAGIS PRO");
                 });

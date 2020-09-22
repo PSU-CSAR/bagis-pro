@@ -113,5 +113,6 @@ namespace bagis_pro
         internal string DisplayedSweMap { get; set; } = "";
         internal string RoadsLayerLegend { get; set; } = "";
         internal string SettingsPath { get; set; } = "";
+        internal dynamic BatchToolSettings { get; set; } = "";
     }
 }

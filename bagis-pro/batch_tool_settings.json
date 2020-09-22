@@ -1,0 +1,20 @@
+{
+  "BatchSettings": {
+    "EBagisServer":"https://test.ebagis.geog.pdx.edu",
+    "SweDisplayUnits": "Inches",
+    "DemUnits": "Meters",
+    "DefaultDemInterval": "1000",
+    "DemDisplayUnits": "Feet",
+    "AoiPrecipFile": "prism.gdb\\Annual",
+    "PrecipZonesCount": "6",
+    "AspectDirectionsCount": "8",
+    "MinElevationZonesCount": "6",
+    "PrecipBufferDistance": "1000",
+    "PrecipBufferUnits": "Meters",
+    "SnotelBufferDistance": "100",
+    "SnotelBufferUnits": "Meters",
+    "RoadsBufferUnits": "Meters",
+    "RoadsAnalysisBufferDistance": "300",
+    "RoadsAnalysisBufferUnits": "Feet"
+  }
+}

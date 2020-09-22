@@ -386,7 +386,7 @@ namespace bagis_pro
             Webservices ws = new Webservices();
             Module1.Current.ModuleLogManager.LogDebug(nameof(GetStationValues),
                 "Contacting webservices server to retrieve pourpoint layer uri");
-            var url = Module1.Current.Settings.m_eBagisServer + Constants.URI_DESKTOP_SETTINGS;
+            var url = Module1.Current.BatchToolSettings.EBagisServer + Constants.URI_DESKTOP_SETTINGS;
             var response = new EsriHttpClient().Get(url);
             var json = await response.Content.ReadAsStringAsync();
             dynamic oSettings = JObject.Parse(json);
@@ -523,7 +523,7 @@ namespace bagis_pro
             Module1.Current.ModuleLogManager.LogDebug(nameof(ClipLayersAsync),
                 "Contacting webservices server to retrieve layer metadata");
             IDictionary<string, dynamic> dictDataSources =
-                await ws.QueryDataSourcesAsync(Module1.Current.Settings.m_eBagisServer);
+                await ws.QueryDataSourcesAsync((string) Module1.Current.BatchToolSettings.EBagisServer);
             string strWsPrefix = dictDataSources[strDataType].uri;
 
             string[] arrLayersToDelete = new string[2];
@@ -1191,12 +1191,13 @@ namespace bagis_pro
             {
                 foreach (var nextInterval in lstIntervals)
                 {
+                    string strDemUnits = Convert.ToString(Module1.Current.BatchToolSettings.DemUnits);
                     if (strDisplayUnits.Equals("Feet"))
                     {
                         nextInterval.LowerBound = LinearUnit.Feet.ConvertTo(nextInterval.LowerBound, LinearUnit.Meters);
                         nextInterval.UpperBound = LinearUnit.Feet.ConvertTo(nextInterval.UpperBound, LinearUnit.Meters);
                     }
-                    else if (Module1.Current.Settings.m_demUnits.Equals("Feet"))
+                    else if (strDemUnits.Equals("Feet"))
                     {
                         nextInterval.LowerBound = LinearUnit.Meters.ConvertTo(nextInterval.LowerBound, LinearUnit.Feet);
                         nextInterval.UpperBound = LinearUnit.Meters.ConvertTo(nextInterval.UpperBound, LinearUnit.Feet);
@@ -1224,9 +1225,9 @@ namespace bagis_pro
             Module1.Current.ModuleLogManager.LogDebug(nameof(ClipSnoLayersAsync),
                 "Contacting webservices server to retrieve layer metadata");
             IDictionary<string, dynamic> dictDataSources =
-                await ws.QueryDataSourcesAsync(Module1.Current.Settings.m_eBagisServer);
+                await ws.QueryDataSourcesAsync((string) Module1.Current.BatchToolSettings.EBagisServer);
 
-            var url = Module1.Current.Settings.m_eBagisServer + Constants.URI_DESKTOP_SETTINGS;
+            var url = (string) Module1.Current.BatchToolSettings.EBagisServer + Constants.URI_DESKTOP_SETTINGS;
             var response = new EsriHttpClient().Get(url);
             var json = await response.Content.ReadAsStringAsync();
             dynamic oSettings = JObject.Parse(json);
@@ -1648,7 +1649,7 @@ namespace bagis_pro
             Module1.Current.ModuleLogManager.LogDebug(nameof(ClipFeatureLayerAsync),
                 "Contacting webservices server to retrieve layer metadata");
             IDictionary<string, dynamic> dictDataSources =
-                await ws.QueryDataSourcesAsync(Module1.Current.Settings.m_eBagisServer);
+                await ws.QueryDataSourcesAsync((string) Module1.Current.BatchToolSettings.EBagisServer);
             string strWsUri = dictDataSources[strDataType].uri;
 
             string[] arrLayersToDelete = new string[2];
@@ -1880,7 +1881,8 @@ namespace bagis_pro
         public static async Task<BA_ReturnCode> CalculateElevPrecipCorr(string strAoiPath, Uri uriPrism, string prismFile )
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
-            IList<BA_Objects.Interval> lstAspectInterval = AnalysisTools.GetAspectClasses(Module1.Current.Settings.m_aspectDirections);
+            int intAspectCount = Convert.ToInt16(Module1.Current.BatchToolSettings.AspectDirectionsCount);
+            IList<BA_Objects.Interval> lstAspectInterval = AnalysisTools.GetAspectClasses(intAspectCount);
 
             // Create the elevation-precipitation layer
             Uri uriSurfaces = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Surfaces));

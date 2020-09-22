@@ -313,28 +313,28 @@ namespace bagis_pro
         public void ResetView()
         {
             Prism_Checked = false;
-            PrismBufferDistance = Convert.ToString(Module1.Current.Settings.m_prismBufferDistance);
-            PrismBufferUnits = Convert.ToString(Module1.Current.Settings.m_prismBufferUnits);
+            PrismBufferDistance = (string) Module1.Current.BatchToolSettings.PrecipBufferDistance;
+            PrismBufferUnits = (string) Module1.Current.BatchToolSettings.PrecipBufferUnits;
             ReclipPrism_Checked = false;
             SWE_Checked = false;
-            SWEBufferDistance = Convert.ToString(Module1.Current.Settings.m_prismBufferDistance);
-            SWEBufferUnits = Convert.ToString(Module1.Current.Settings.m_prismBufferUnits);
+            SWEBufferDistance = (string) Module1.Current.BatchToolSettings.PrecipBufferDistance;
+            SWEBufferUnits = (string) Module1.Current.BatchToolSettings.PrecipBufferUnits;
             ReclipSwe_Checked = false;
             SNOTEL_Checked = false;
             SnotelBufferDistance = "";
-            SnotelBufferUnits = Convert.ToString(Module1.Current.Settings.m_snotelBufferUnits);
+            SnotelBufferUnits = (string) Module1.Current.BatchToolSettings.SnotelBufferUnits;
             ReclipSNOTEL_Checked = false;
             SnowCos_Checked = false;
             SnowCosBufferDistance = "";
-            SnowCosBufferUnits = Convert.ToString(Module1.Current.Settings.m_snotelBufferUnits);
+            SnowCosBufferUnits = (string) Module1.Current.BatchToolSettings.SnotelBufferUnits;
             ReclipSnowCos_Checked = false;
             Roads_Checked = false;
             RoadsBufferDistance = "";
-            RoadsBufferUnits = Convert.ToString(Module1.Current.Settings.m_roadsBufferUnits);
+            RoadsBufferUnits = (string) Module1.Current.BatchToolSettings.RoadsBufferUnits;
             ReclipRoads_Checked = false;
             PublicLands_Checked = false;
             PublicLandsBufferDistance = "";
-            PublicLandsBufferUnits = Convert.ToString(Module1.Current.Settings.m_roadsBufferUnits);
+            PublicLandsBufferUnits = (string) Module1.Current.BatchToolSettings.RoadsBufferUnits;
             ReclipPublicLands_Checked = false;
         }
 

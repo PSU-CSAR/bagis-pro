@@ -217,12 +217,12 @@ namespace bagis_pro
                 if (calculatePrism)
                 {
                     string strLayer = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Prism, true) +
-                                      System.IO.Path.GetFileName(Module1.Current.Settings.m_precipFile);
+                                      System.IO.Path.GetFileName((string) Module1.Current.BatchToolSettings.AoiPrecipFile);
                     string strZonesRaster = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) +
                         Constants.FILE_PRECIP_ZONE;
                     string strMaskPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_PRISM_VECTOR;
                     IList<BA_Objects.Interval> lstInterval = await AnalysisTools.GetPrismClassesAsync(Module1.Current.Aoi.FilePath,
-                        strLayer, Module1.Current.Settings.m_precipZonesCount);
+                        strLayer, (int) Module1.Current.BatchToolSettings.PrecipZonesCount);
                     success = await AnalysisTools.CalculateZonesAsync(Module1.Current.Aoi.FilePath, strLayer,
                         lstInterval, strZonesRaster, strMaskPath, "PRISM");
                     if (success == BA_ReturnCode.Success)
@@ -238,7 +238,7 @@ namespace bagis_pro
                     string strZonesRaster = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) +
                         Constants.FILE_ASPECT_ZONE;
                     string strMaskPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_VECTOR;
-                    IList<BA_Objects.Interval> lstInterval = AnalysisTools.GetAspectClasses(Module1.Current.Settings.m_aspectDirections);
+                    IList<BA_Objects.Interval> lstInterval = AnalysisTools.GetAspectClasses(Convert.ToInt16(Module1.Current.BatchToolSettings.AspectDirectionsCount));
                     success = await AnalysisTools.CalculateZonesAsync(Module1.Current.Aoi.FilePath, strLayer,
                         lstInterval, strZonesRaster, strMaskPath, "ASPECT");
                     if (success == BA_ReturnCode.Success)
@@ -285,14 +285,16 @@ namespace bagis_pro
 
                     double aoiElevMin = demElevMinMeters;
                     double aoiElevMax = demElevMaxMeters;
-                    if (! Module1.Current.Settings.m_demUnits.Equals(Module1.Current.Settings.m_demDisplayUnits))
+                    string strDemUnits = (string)Module1.Current.BatchToolSettings.DemUnits;
+                    string strDemDisplayUnits = (string)Module1.Current.BatchToolSettings.DemDisplayUnits;
+                    if (!strDemUnits.Equals(strDemDisplayUnits))
                     {
-                        if (Module1.Current.Settings.m_demDisplayUnits.Equals("Feet"))
+                        if (strDemDisplayUnits.Equals("Feet"))
                         {
                             aoiElevMin = Math.Round(LinearUnit.Meters.ConvertTo(demElevMinMeters, LinearUnit.Feet), 2);
                             aoiElevMax = Math.Round(LinearUnit.Meters.ConvertTo(demElevMaxMeters, LinearUnit.Feet), 2);
                         }
-                        else if (Module1.Current.Settings.m_demUnits.Equals("Feet"))
+                        else if (strDemUnits.Equals("Feet"))
                         {
                             aoiElevMin = Math.Round(LinearUnit.Feet.ConvertTo(demElevMinMeters, LinearUnit.Meters), 2);
                             aoiElevMax = Math.Round(LinearUnit.Feet.ConvertTo(demElevMaxMeters, LinearUnit.Meters), 2);
@@ -305,14 +307,14 @@ namespace bagis_pro
                     foreach (var testInterval in arrTestIntervals)
                     {
                         double dblZoneCount = range / testInterval;
-                        if (dblZoneCount >= Module1.Current.Settings.m_minElevZones)
+                        if (dblZoneCount >= (int) Module1.Current.BatchToolSettings.MinElevationZonesCount)
                         {
                             bestInterval = testInterval;
                             break;
                         }
                     }
                     IList<BA_Objects.Interval> lstInterval = AnalysisTools.GetElevationClasses(aoiElevMin, aoiElevMax,
-                        bestInterval, Module1.Current.Settings.m_demUnits, Module1.Current.Settings.m_demDisplayUnits);
+                        bestInterval, strDemUnits, strDemDisplayUnits);
                     string strLayer = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Surfaces, true) +
                         Constants.FILE_DEM_FILLED;
                     string strZonesRaster = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) +
@@ -359,8 +361,8 @@ namespace bagis_pro
                             "Unable to buffer roads because fs_roads layer does not exist. Process stopped!!");
                         return;
                     }
-                    string strDistance = Module1.Current.Settings.m_roadsAnalysisBufferDistance + " " +
-                        Module1.Current.Settings.m_roadsAnalysisBufferUnits;
+                    string strDistance = Module1.Current.BatchToolSettings.RoadsAnalysisBufferDistance + " " +
+                        Module1.Current.BatchToolSettings.RoadsAnalysisBufferUnits;
                     string strOutputPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) +
                         Constants.FILE_ROADS_ZONE;
                     success = await GeoprocessingTools.BufferLinesAsync(uri.AbsolutePath + "\\" + Constants.FILE_ROADS, strOutputPath, strDistance,
@@ -369,8 +371,8 @@ namespace bagis_pro
                     if (success == BA_ReturnCode.Success)
                     {
                         // Save buffer distance and units in metadata
-                        string strBufferDistance = Module1.Current.Settings.m_roadsAnalysisBufferDistance;
-                        string strBufferUnits = Module1.Current.Settings.m_roadsAnalysisBufferUnits;
+                        string strBufferDistance = (string) Module1.Current.BatchToolSettings.RoadsAnalysisBufferDistance;
+                        string strBufferUnits = (string) Module1.Current.BatchToolSettings.RoadsAnalysisBufferUnits;
                         // We need to add a new tag at "/metadata/dataIdInfo/searchKeys/keyword"
                         StringBuilder sb = new StringBuilder();
                         sb.Append(Constants.META_TAG_PREFIX);
@@ -461,11 +463,11 @@ namespace bagis_pro
                 if (elevPrecipCorr == true)
                 {
                     string strLayer = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Prism, true) +
-                  System.IO.Path.GetFileName(Module1.Current.Settings.m_precipFile);
+                        Path.GetFileName((string)Module1.Current.BatchToolSettings.AoiPrecipFile);
 
                     Uri uriPrism = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Prism));
                     success = await AnalysisTools.CalculateElevPrecipCorr(Module1.Current.Aoi.FilePath, uriPrism, 
-                        System.IO.Path.GetFileName(Module1.Current.Settings.m_precipFile));
+                        Path.GetFileName((string)Module1.Current.BatchToolSettings.AoiPrecipFile));
 
 
                     if (success == BA_ReturnCode.Success)

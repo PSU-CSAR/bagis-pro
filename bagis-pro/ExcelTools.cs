@@ -28,6 +28,8 @@ namespace bagis_pro
         public static async Task<BA_ReturnCode> CreateElevationTableAsync(Worksheet pworksheet, double aoiDemMin)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            string strDemDisplayUnits = (string)Module1.Current.BatchToolSettings.DemDisplayUnits;
+            string strDemUnits = (string)Module1.Current.BatchToolSettings.DemUnits;
 
             await QueuedTask.Run(() =>
             {
@@ -159,11 +161,11 @@ namespace bagis_pro
                 pworksheet.Cells[1, 11] = "%_AREA_ELV";
                 pworksheet.Cells[1, 12] = "LABEL";
 
-                //============================================
-                // Populate Elevation and Percent Area Rows
-                //============================================
-                if (success == BA_ReturnCode.Success)
-                {
+                    //============================================
+                    // Populate Elevation and Percent Area Rows
+                    //============================================
+                    if (success == BA_ReturnCode.Success)
+                    {
                         using (Table statisticsTable = geodatabase.OpenDataset<Table>(strTable))
                         {
                             long rasterValueCount = statisticsTable.GetCount();
@@ -191,15 +193,15 @@ namespace bagis_pro
                                         percentArea = percentArea + (count / sumOfCount * 100);
                                         // Populate Excel Table
                                         double dblUpperBound = lstInterval[i].UpperBound;
-                                        if (!Module1.Current.Settings.m_demDisplayUnits.Equals(Module1.Current.Settings.m_demUnits))
+                                        if (!strDemDisplayUnits.Equals(strDemUnits))
                                         {
-                                            if (Module1.Current.Settings.m_demDisplayUnits.Equals("Meters") &&
-                                                Module1.Current.Settings.m_demUnits.Equals("Feet"))
+                                            if (strDemDisplayUnits.Equals("Meters") &&
+                                                strDemUnits.Equals("Feet"))
                                             {
                                                 dblUpperBound = LinearUnit.Feet.ConvertTo(dblUpperBound, LinearUnit.Meters);
                                             }
-                                            else if (Module1.Current.Settings.m_demDisplayUnits.Equals("Feet") &&
-                                                     Module1.Current.Settings.m_demUnits.Equals("Meters"))
+                                            else if (strDemDisplayUnits.Equals("Feet") &&
+                                                     strDemUnits.Equals("Meters"))
                                             {
                                                 dblUpperBound = LinearUnit.Meters.ConvertTo(dblUpperBound, LinearUnit.Feet);
                                             }
@@ -226,7 +228,7 @@ namespace bagis_pro
 
             //aoiDemMin is always in meters
             //Make First Elevation Interval the Min of AOI DEM
-            if (Module1.Current.Settings.m_demDisplayUnits.Equals("Feet"))
+            if (strDemDisplayUnits.Equals("Feet"))
             {
                 aoiDemMin = LinearUnit.Meters.ConvertTo(aoiDemMin, LinearUnit.Feet);
             }
@@ -330,6 +332,8 @@ namespace bagis_pro
 
                     double percentArea = 0;
                     int i = 0;
+                    string strDemDisplayUnits = (string)Module1.Current.BatchToolSettings.DemDisplayUnits;
+                    string strDemUnits = (string)Module1.Current.BatchToolSettings.DemUnits;
                     using (RowCursor rowCursor = statisticsTable.Search(new QueryFilter(), false))
                     {
                         while (rowCursor.MoveNext())
@@ -340,15 +344,15 @@ namespace bagis_pro
                                 percentArea = percentArea + (count / sumOfCount * 100);
                                 // Populate Excel Table
                                 double dblUpperBound = lstInterval[i].UpperBound;
-                                if (!Module1.Current.Settings.m_demDisplayUnits.Equals(Module1.Current.Settings.m_demUnits))
+                                if (!strDemDisplayUnits.Equals(strDemUnits))
                                 {
-                                    if (Module1.Current.Settings.m_demDisplayUnits.Equals("Meters") &&
-                                        Module1.Current.Settings.m_demUnits.Equals("Feet"))
+                                    if (strDemDisplayUnits.Equals("Meters") &&
+                                        strDemUnits.Equals("Feet"))
                                     {
                                         dblUpperBound = LinearUnit.Feet.ConvertTo(dblUpperBound, LinearUnit.Meters);
                                     }
-                                    else if (Module1.Current.Settings.m_demDisplayUnits.Equals("Feet") &&
-                                             Module1.Current.Settings.m_demUnits.Equals("Meters"))
+                                    else if (strDemDisplayUnits.Equals("Feet") &&
+                                             strDemUnits.Equals("Meters"))
                                     {
                                         dblUpperBound = LinearUnit.Meters.ConvertTo(dblUpperBound, LinearUnit.Feet);
                                     }
@@ -380,6 +384,8 @@ namespace bagis_pro
             double aoiDemMin)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            string strDemDisplayUnits = (string)Module1.Current.BatchToolSettings.DemDisplayUnits;
+            string strDemUnits = (string)Module1.Current.BatchToolSettings.DemUnits;
             double MaxPRISMValue = 0.0F;
             Uri uriElevZones = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false));
             IList<BA_Objects.Interval> lstInterval = await GeodatabaseTools.ReadReclassRasterAttribute(uriElevZones, Constants.FILE_ELEV_ZONE);
@@ -463,15 +469,15 @@ namespace bagis_pro
                                 percentArea = percentArea + (count / sumOfCount * 100);
                                 // Populate Excel Table
                                 double dblUpperBound = lstInterval[i].UpperBound;
-                                if (!Module1.Current.Settings.m_demDisplayUnits.Equals(Module1.Current.Settings.m_demUnits))
+                                if (!strDemDisplayUnits.Equals(strDemUnits))
                                 {
-                                    if (Module1.Current.Settings.m_demDisplayUnits.Equals("Meters") &&
-                                        Module1.Current.Settings.m_demUnits.Equals("Feet"))
+                                    if (strDemDisplayUnits.Equals("Meters") &&
+                                        strDemUnits.Equals("Feet"))
                                     {
                                         dblUpperBound = LinearUnit.Feet.ConvertTo(dblUpperBound, LinearUnit.Meters);
                                     }
-                                    else if (Module1.Current.Settings.m_demDisplayUnits.Equals("Feet") &&
-                                             Module1.Current.Settings.m_demUnits.Equals("Meters"))
+                                    else if (strDemDisplayUnits.Equals("Feet") &&
+                                             strDemUnits.Equals("Meters"))
                                     {
                                         dblUpperBound = LinearUnit.Meters.ConvertTo(dblUpperBound, LinearUnit.Feet);
                                     }
@@ -502,7 +508,7 @@ namespace bagis_pro
                     }
                     // Make First PRISM Interval the Min of AOI DEM
                     // aoiDemMin is always in meters
-                    if (Module1.Current.Settings.m_demDisplayUnits.Equals("Feet"))
+                    if (strDemDisplayUnits.Equals("Feet"))
                     {
                         aoiDemMin = LinearUnit.Meters.ConvertTo(aoiDemMin, LinearUnit.Feet);
                     }
@@ -587,6 +593,8 @@ namespace bagis_pro
                                                         double Y_Unit, double MaxPRISMValue)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            string strDemDisplayUnits = (string)Module1.Current.BatchToolSettings.DemDisplayUnits;
+            string strDemUnits = (string)Module1.Current.BatchToolSettings.DemUnits;
 
             long nrecords = ExcelTools.CountRecords(pElvWorksheet, 2);
             long ElevReturn = nrecords + 2;
@@ -602,7 +610,7 @@ namespace bagis_pro
             Chart myChart = myShape.Chart;
 
             // Determine Z Mapping Unit and Create Value Axis Title
-            string AxisTitleUnit = " (" + Module1.Current.Settings.m_demDisplayUnits + ")";
+            string AxisTitleUnit = " (" + strDemDisplayUnits + ")";
 
             // Set SNOTEL Ranges
             string vSNOTELValueRange = "";
@@ -1157,9 +1165,11 @@ namespace bagis_pro
             int idxPrecipExcelCol = 1;
             int idxElevExcelCol = 2;
             int idxAspectExcelCol = 3;
+            string strDemDisplayUnits = (string)Module1.Current.BatchToolSettings.DemDisplayUnits;
+            string strDemUnits = (string)Module1.Current.BatchToolSettings.DemUnits;
 
             pworksheet.Cells[1, idxPrecipExcelCol] = "Precipitation (" + Constants.UNITS_INCHES + ")";
-            pworksheet.Cells[1, idxElevExcelCol] = "Elevation (" + Module1.Current.Settings.m_demDisplayUnits + ")";
+            pworksheet.Cells[1, idxElevExcelCol] = "Elevation (" + strDemDisplayUnits + ")";
             pworksheet.Cells[1, idxAspectExcelCol] = "ASPECT";
 
             Uri analysisUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false));
@@ -1190,13 +1200,13 @@ namespace bagis_pro
                                 if (precip < minPrecipValue)
                                     minPrecipValue = precip;
                                 double elevation = Convert.ToDouble(pRow[idxElevTableCol]);
-                                if (Module1.Current.Settings.m_demDisplayUnits.Equals("Meters") &&
-                                    Module1.Current.Settings.m_demUnits.Equals("Feet"))
+                                if (strDemDisplayUnits.Equals("Meters") &&
+                                    strDemUnits.Equals("Feet"))
                                 {
                                     elevation = LinearUnit.Feet.ConvertTo(elevation, LinearUnit.Meters);
                                 }
-                                else if (Module1.Current.Settings.m_demDisplayUnits.Equals("Feet") &&
-                                         Module1.Current.Settings.m_demUnits.Equals("Meters"))
+                                else if (strDemDisplayUnits.Equals("Feet") &&
+                                         strDemUnits.Equals("Meters"))
                                 {
                                     elevation = LinearUnit.Meters.ConvertTo(elevation, LinearUnit.Feet);
                                 }
@@ -1286,7 +1296,9 @@ namespace bagis_pro
                                         }
                                     }
                             }
-                            if (bAddRow == true)
+                                string strDemDisplayUnits = (string)Module1.Current.BatchToolSettings.DemDisplayUnits;
+                                string strDemUnits = (string)Module1.Current.BatchToolSettings.DemUnits;
+                                if (bAddRow == true)
                                 {
                                     pworksheet.Cells[idxRow, idxPrecipExcelCol] = Convert.ToDouble(pRow[idxPrecipTableCol]);
                                     string aspect = Convert.ToString(pRow[idxAspectTableCol]);
@@ -1296,13 +1308,13 @@ namespace bagis_pro
                                     }
                                     pworksheet.Cells[idxRow, idxAspectExcelCol] = aspect;
                                     double elevation = Convert.ToDouble(pRow[idxElevTableCol]);
-                                    if (Module1.Current.Settings.m_demDisplayUnits.Equals("Meters") &&
-                                        Module1.Current.Settings.m_demUnits.Equals("Feet"))
+                                    if (strDemDisplayUnits.Equals("Meters") &&
+                                        strDemUnits.Equals("Feet"))
                                     {
                                         elevation = LinearUnit.Feet.ConvertTo(elevation, LinearUnit.Meters);
                                     }
-                                    else if (Module1.Current.Settings.m_demDisplayUnits.Equals("Feet") &&
-                                             Module1.Current.Settings.m_demUnits.Equals("Meters"))
+                                    else if (strDemDisplayUnits.Equals("Feet") &&
+                                             strDemUnits.Equals("Meters"))
                                     {
                                         elevation = LinearUnit.Meters.ConvertTo(elevation, LinearUnit.Feet);
                                     }
@@ -1439,7 +1451,7 @@ namespace bagis_pro
             Axis categoryAxis = (Axis)myChart.Axes(Microsoft.Office.Interop.Excel.XlAxisType.xlCategory,
                 Microsoft.Office.Interop.Excel.XlAxisGroup.xlPrimary);
             categoryAxis.HasTitle = true;
-            categoryAxis.AxisTitle.Text = "Elevation (" + Module1.Current.Settings.m_demDisplayUnits + ")";
+            categoryAxis.AxisTitle.Text = "Elevation (" + Module1.Current.BatchToolSettings.DemDisplayUnits + ")";
             categoryAxis.AxisTitle.Orientation = 0;
             categoryAxis.AxisTitle.Font.Bold = true;
             // minValue was already converted to display units by the calling function

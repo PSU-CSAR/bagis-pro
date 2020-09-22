@@ -1201,8 +1201,9 @@ namespace bagis_pro
                         lstLayers.Add(Constants.MAPS_SNOW_COURSE);
                         lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE);
                     }
+                    string strDemDisplayUnits = (string)Module1.Current.BatchToolSettings.DemDisplayUnits;
                     mapDefinition = new BA_Objects.MapDefinition("ELEVATION DISTRIBUTION",
-                        "Elevation Units = " + Module1.Current.Settings.m_demDisplayUnits, Constants.FILE_EXPORT_MAP_ELEV_PDF);
+                        "Elevation Units = " + strDemDisplayUnits, Constants.FILE_EXPORT_MAP_ELEV_PDF);
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;
@@ -1259,7 +1260,7 @@ namespace bagis_pro
                         lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE);
                     }
                     mapDefinition = new BA_Objects.MapDefinition(Constants.MAP_TITLES_SNODAS_SWE[3],
-                        "Depth Units = " + Module1.Current.Settings.m_sweDisplayUnits, Constants.FILE_EXPORT_MAPS_SWE[3]);
+                        "Depth Units = " + Module1.Current.BatchToolSettings.SweDisplayUnits, Constants.FILE_EXPORT_MAPS_SWE[3]);
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;
@@ -1540,9 +1541,10 @@ namespace bagis_pro
                     MessageBox.Show("Unable to read units from layer. Reading from local config file!!", "BAGIS-PRO");
                     layerUnits = oDataSource.units;
                 }
-                if ( layerUnits != null && !Module1.Current.Settings.m_sweDisplayUnits.Equals(layerUnits))
+                string strSweDisplayUnits = Module1.Current.BatchToolSettings.SweDisplayUnits;
+                if ( layerUnits != null && !strSweDisplayUnits.Equals(layerUnits))
                 {
-                    switch (Module1.Current.Settings.m_sweDisplayUnits)
+                    switch (strSweDisplayUnits)
                     {
                         case Constants.UNITS_INCHES:
                             dblLabelMin = LinearUnit.Millimeters.ConvertTo(dblStretchMin, LinearUnit.Inches);
