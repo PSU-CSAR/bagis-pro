@@ -30,7 +30,6 @@
           <toolbar refID="BAGIS_V4_Toolbar1" /> -->
           <tool refID="bagis_pro_Basin_SetDEMExtenttTool" size="large" />
           <button refID="bagis_pro_Maps_Tables_Button1" size="large" />
-          <button refID="bagis_pro_DocBatchPdfTool_ShowButton" size="large" />
         </group>
         <group id="bagis_pro_Groups_Basin" appearsOnAddInTab="false">
           <menu refID="bagis_pro_Menus_MnuBasin" size="middle" />
@@ -48,7 +47,7 @@
           <button refID="bagis_pro_Buttons_BtnExcelTables" size="middle" />
         </group>
         <group id="bagis_pro_Groups_Tools" appearsOnAddInTab="false" caption="Tools">
-          <button refID="bagis_pro_Buttons_BtnBatchPdfTool" size="middle" />
+          <button refID="bagis_pro_DockBatchPdfExport_ShowButton" size="middle" />
         </group>
       </groups>
       <toolbars>
@@ -209,11 +208,11 @@
         <button id="bagis_pro_DockAnalysisLayers_ShowButton" caption="Generate Analysis Layers" className="DockAnalysisLayers_ShowButton" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/CalculateGeometry16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/CalculateGeometry32.png" condition="Aoi_Selected_Condition">
           <tooltip heading="Generate Layers">Generate Layers<disabledText /></tooltip>
         </button>
-        <button id="bagis_pro_Buttons_BtnBatchPdfTool" caption="Batch PDF Export" className="bagis_pro.Buttons.BtnBatchPdfTool" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/JobExport16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/JobExport32.png">
-          <tooltip heading="Tooltip Heading">Batch PDF Export<disabledText /></tooltip>
+        <button id="bagis_pro_DockBatchPdfTool_ShowButton" caption="Batch PDF Export" className="DockBatchPdfTool_ShowButton" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/JobExport16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/JobExport16.png">
+          <tooltip heading="Batch PDF Export">Show Dockpane<disabledText /></tooltip>
         </button>
-        <button id="bagis_pro_DocBatchPdfTool_ShowButton" caption="Show DocBatchPdfTool" className="DocBatchPdfTool_ShowButton" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericButtonPurple16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericButtonPurple32.png">
-          <tooltip heading="Show Dockpane">Show Dockpane<disabledText /></tooltip>
+        <button id="bagis_pro_DockBatchPdfExport_ShowButton" caption="Batch PDF Export" className="DockBatchPdfExport_ShowButton" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/JobExport16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/JobExport16.png">
+          <tooltip heading="Batch PDF Export">Show Dockpane<disabledText /></tooltip>
         </button>
       </controls>
       <menus>
@@ -244,8 +243,11 @@
         <dockPane id="bagis_pro_DockAnalysisLayers" caption="Calculate Analysis Layers" className="DockAnalysisLayersViewModel" dock="group" dockWith="esri_core_catalogDockPane">
           <content className="DockAnalysisLayersView" />
         </dockPane>
-        <dockPane id="bagis_pro_DocBatchPdfTool" caption="DocBatchPdfTool" className="DocBatchPdfToolViewModel" dock="group" dockWith="esri_core_contentsDockPane">
-          <content className="DocBatchPdfToolView" />
+        <dockPane id="bagis_pro_DockBatchPdfTool" caption="PDF Map Package Batch Tool" className="DockBatchPdfToolViewModel" dock="group" dockWith="esri_core_catalogDockPane">
+          <content className="PDF Map Package Batch Tool" />
+        </dockPane>
+        <dockPane id="bagis_pro_DockBatchPdfExport" caption="DockBatchPdfExport" className="DockBatchPdfExportViewModel" dock="group" dockWith="esri_core_contentsDockPane">
+          <content className="DockBatchPdfExportView" />
         </dockPane>
       </dockPanes>
     </insertModule>

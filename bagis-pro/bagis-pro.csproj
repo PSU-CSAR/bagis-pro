@@ -160,15 +160,14 @@
     <Compile Include="BA_Objects\ExportTitlePage.cs" />
     <Compile Include="BA_Objects\MapDefinition.cs" />
     <Compile Include="BA_Objects\Site.cs" />
-    <Compile Include="Buttons\BtnBatchPdfTool.cs" />
     <Compile Include="Buttons\BtnExportToPdf.cs" />
     <Compile Include="Buttons\CboCurrentAoi.cs" />
     <Compile Include="Buttons\MapButtonPalette.cs" />
     <Compile Include="Constants.cs" />
-    <Compile Include="DocBatchPdfTool.xaml.cs">
-      <DependentUpon>DocBatchPdfTool.xaml</DependentUpon>
+    <Compile Include="DockBatchPdfExport.xaml.cs">
+      <DependentUpon>DockBatchPdfExport.xaml</DependentUpon>
     </Compile>
-    <Compile Include="DocBatchPdfToolViewModel.cs" />
+    <Compile Include="DockBatchPdfExportViewModel.cs" />
     <Compile Include="DockAnalysisLayers.xaml.cs">
       <DependentUpon>DockAnalysisLayers.xaml</DependentUpon>
     </Compile>
@@ -290,7 +289,7 @@
     </COMReference>
   </ItemGroup>
   <ItemGroup>
-    <Page Include="DocBatchPdfTool.xaml">
+    <Page Include="DockBatchPdfExport.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
