@@ -17,9 +17,8 @@
     </UserControl.Resources>
     <Grid x:Name="Batch_Pdf_Tool">
         <Grid.RowDefinitions>
-            <RowDefinition Height="25"/>
-            <RowDefinition Height="25"/>
-            <RowDefinition Height="25"/>
+            <RowDefinition Height="90"/>
+            <RowDefinition Height="30"/>
             <RowDefinition Height="25"/>
             <RowDefinition Height="25"/>
             <RowDefinition Height="25"/>
@@ -30,14 +29,22 @@
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto"/>
             <ColumnDefinition Width="Auto"/>
-            <ColumnDefinition Width="Auto"/>
-            <ColumnDefinition Width="Auto"/>
         </Grid.ColumnDefinitions>
-        <DockPanel Grid.Row="0" Grid.Column="0" LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
-            <Label x:Name="lblAoiFolder" Content="{Binding AoiFolder}" HorizontalAlignment="Left"  VerticalAlignment="Center" Width="150"/>
+        <DockPanel Grid.Row="0" Grid.Column="0" LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Grid.ColumnSpan="3">
+            <TextBlock
+                Name="tbMultiLine"
+                TextWrapping="WrapWithOverflow" MaxWidth="300" Margin="5, 5, 5, 5">
+                Select a basin or folder containing multiple AOIs. BAGIS-PRO will generate the PDF map package in the
+                maps_publish folder for each AOI present in the selected folder. BAGIS-PRO will recognize and process sub-aois
+                under an AOI folder.
+            </TextBlock>
         </DockPanel>
-        <DockPanel Grid.Row="0" Grid.Column="1">
-            <Button x:Name="button" Content="Folder" HorizontalAlignment="Left"  VerticalAlignment="Center" Width="50" Command="{Binding CmdSelectAoi}"/>
+        <DockPanel Grid.Row="1" Grid.Column="0" LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
+            <TextBox x:Name="txtAoiFolder" Text="{Binding AoiFolder}" HorizontalAlignment="Left"  VerticalAlignment="Center" Width="200" IsReadOnly="True" Margin="5,0,0,0" />
         </DockPanel>
+        <DockPanel Grid.Row="1" Grid.Column="1">
+            <Button x:Name="button" Content="Select" HorizontalAlignment="Left"  VerticalAlignment="Center" Width="50" Command="{Binding CmdSelectAoi}" Margin="10, 0, 5, 0"/>
+        </DockPanel>
+
     </Grid>
 </UserControl>

@@ -208,9 +208,6 @@
         <button id="bagis_pro_DockAnalysisLayers_ShowButton" caption="Generate Analysis Layers" className="DockAnalysisLayers_ShowButton" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/CalculateGeometry16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/CalculateGeometry32.png" condition="Aoi_Selected_Condition">
           <tooltip heading="Generate Layers">Generate Layers<disabledText /></tooltip>
         </button>
-        <button id="bagis_pro_DockBatchPdfTool_ShowButton" caption="Batch PDF Export" className="DockBatchPdfTool_ShowButton" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/JobExport16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/JobExport16.png">
-          <tooltip heading="Batch PDF Export">Show Dockpane<disabledText /></tooltip>
-        </button>
         <button id="bagis_pro_DockBatchPdfExport_ShowButton" caption="Batch PDF Export" className="DockBatchPdfExport_ShowButton" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/JobExport16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/JobExport16.png">
           <tooltip heading="Batch PDF Export">Show Dockpane<disabledText /></tooltip>
         </button>
@@ -237,16 +234,16 @@
         </menu>
       </menus>
       <dockPanes>
-        <dockPane id="bagis_pro_DockpaneLayers" caption="Manage Layers" className="DockpaneLayersViewModel" dock="group" dockWith="esri_core_catalogDockPane">
+        <dockPane id="bagis_pro_DockpaneLayers" caption="Clip Layers" className="DockpaneLayersViewModel" dock="group" dockWith="esri_core_catalogDockPane">
           <content className="DockpaneLayersView" />
         </dockPane>
-        <dockPane id="bagis_pro_DockAnalysisLayers" caption="Calculate Analysis Layers" className="DockAnalysisLayersViewModel" dock="group" dockWith="esri_core_catalogDockPane">
+        <dockPane id="bagis_pro_DockAnalysisLayers" caption="Generate Analysis Layers" className="DockAnalysisLayersViewModel" dock="group" dockWith="esri_core_catalogDockPane">
           <content className="DockAnalysisLayersView" />
         </dockPane>
         <dockPane id="bagis_pro_DockBatchPdfTool" caption="PDF Map Package Batch Tool" className="DockBatchPdfToolViewModel" dock="group" dockWith="esri_core_catalogDockPane">
           <content className="PDF Map Package Batch Tool" />
         </dockPane>
-        <dockPane id="bagis_pro_DockBatchPdfExport" caption="DockBatchPdfExport" className="DockBatchPdfExportViewModel" dock="group" dockWith="esri_core_contentsDockPane">
+        <dockPane id="bagis_pro_DockBatchPdfExport" caption="Batch PDF Export" className="DockBatchPdfExportViewModel" dock="group" dockWith="esri_core_contentsDockPane">
           <content className="DockBatchPdfExportView" />
         </dockPane>
       </dockPanes>
