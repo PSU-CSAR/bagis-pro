@@ -22,6 +22,7 @@ using System.Collections.Specialized;
 using System.Net.Http;
 using Newtonsoft.Json;
 using System.Diagnostics;
+using System.IO;
 
 namespace bagis_pro
 {
@@ -196,6 +197,22 @@ namespace bagis_pro
                 }
             }
             return dictDataSources;
+        }
+
+        public async Task<BA_ReturnCode> DownloadBatchSettingsAsync(string webserviceUrl, string strSaveToPath)
+        {
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            webserviceUrl = webserviceUrl + @"/api/rest/desktop/settings/bagis-pro/";
+            EsriHttpResponseMessage response = new EsriHttpClient().Get(webserviceUrl);
+            JObject jsonVal = JObject.Parse(await response.Content.ReadAsStringAsync()) as JObject;
+            dynamic oSettings = (JObject) jsonVal["BatchSettings"];
+            using (System.IO.StreamWriter file = File.CreateText(strSaveToPath))
+            using (JsonTextWriter writer = new JsonTextWriter(file))
+            {
+                oSettings.WriteTo(writer);
+            }
+            success = BA_ReturnCode.Success;
+            return success;
         }
     }
 }

@@ -1,0 +1,106 @@
+bagis:
+  terrain: BAGIS_Reference_Maps.lyr
+  dem10: http://bagis.geog.pdx.edu/arcgis/services/BAGIS_GISLayers/DEM_westus_bc_30m/ImageServer
+  dem30: http://bagis.geog.pdx.edu/arcgis/services/BAGIS_GISLayers/DEM_westus_bc_30m/ImageServer
+  preferredDem: dem30
+  demElevUnit: Meters
+  gaugeStation: https://services.arcgis.com/SXbDpmb7xQkk44JV/arcgis/rest/services/stations_USGS_ACTIVE/FeatureServer/0
+  gaugeStationName: name
+  gaugeStationArea: basinarea
+  gaugeStationUnits: Square Mile
+  snotel: https://services.arcgis.com/SXbDpmb7xQkk44JV/arcgis/rest/services/stations_SNTL_ACTIVE/FeatureServer/0
+  snotelElev: elevation
+  snotelName: name
+  snowCourse: https://services.arcgis.com/SXbDpmb7xQkk44JV/arcgis/rest/services/stations_SNOW_ACTIVE/FeatureServer/0
+  snowCourseElev: elevation
+  snowCourseName: name
+  prism: http://bagis.geog.pdx.edu/arcgis/services/BAGIS_PRISM_1981_2010
+
+bagis-pro:
+  dataSources:
+    - layerType: Snotel SWE
+      description: SWE Data Source - Averaged daily SNOw Data Assimilation System (SNODAS) Snow Water Equivalent (SWE) from 2004 to 2019 data
+      uri: http://bagis.geog.pdx.edu/arcgis/services/DAILY_SWE_NORMALS/
+      units: Millimeters
+    - layerType: Precipitation
+      description: 30-year (1981-2010) monthly/quarterly/annual average precipitation data created by the PRISM Climate Group
+      uri: http://bagis.geog.pdx.edu/arcgis/services/BAGIS_PRISM_1981_2010/
+      units: Inches
+    - layerType: SNOTEL
+      description: Active SNOTEL sites
+      uri: https://services.arcgis.com/SXbDpmb7xQkk44JV/arcgis/rest/services/stations_SNTL_ACTIVE/FeatureServer/0
+    - layerType: Snow Course
+      description: Active Snow Course stations
+      uri: https://services.arcgis.com/SXbDpmb7xQkk44JV/arcgis/rest/services/stations_SNOW_ACTIVE/FeatureServer/0
+    - layerType: Roads
+      description: Sample USFS roads for BAGIS-PRO development
+      uri: https://services.arcgis.com/SXbDpmb7xQkk44JV/arcgis/rest/services/Sample_Forest_Service_Roads/FeatureServer/0
+    - layerType: Public Land
+      description: Federal land GIS layer, used as an input for SNOTEL site selection model in BAGIS
+      uri: https://services.arcgis.com/SXbDpmb7xQkk44JV/arcgis/rest/services/BAGIS_Public_Land/FeatureServer/0
+  BatchSettings:
+     EBagisServer: https://test.ebagis.geog.pdx.edu
+     SweDisplayUnits: Inches
+     DemUnits: Meters
+     DefaultDemInterval: 1000
+     DemDisplayUnits: Feet
+     AoiPrecipFile: prism.gdb\Annual
+     PrecipZonesCount: 6
+     AspectDirectionsCount: 8
+     MinElevationZonesCount: 6
+     PrecipBufferDistance: 1000
+     PrecipBufferUnits: Meters
+     SnotelBufferDistance: 100
+     SnotelBufferUnits: Meters
+     RoadsBufferUnits: Meters
+     RoadsAnalysisBufferDistance: 300
+     RoadsAnalysisBufferUnits: Feet
+
+bagis-p:
+  datasources:
+    - id: 4
+      name: JH_Coef_Aug_Tmax
+      source: http://bagis.geog.pdx.edu/arcgis/services/BAGIS_Databin/PRISM_1981_2010_tmax_august/ImageServer
+      description: August Max Temperature for JH_Coef estimation
+      jhCoeff: JH_Coef_Aug_Tmax
+    - id: 5
+      name: JH_Coef_Aug_Tmin
+      source: http://bagis.geog.pdx.edu/arcgis/services/BAGIS_Databin/PRISM_1981_2010_tmin_august/ImageServer 
+      description: August Min Temperature for JH_Coef estimation
+      jhCoeff: JH_Coef_Aug_Tmin
+    - id: 6
+      name: JH_Coef_Jul_Tmin
+      source: http://bagis.geog.pdx.edu/arcgis/services/BAGIS_Databin/PRISM_1981_2010_tmin_july/ImageServer 
+      description: July Min Temperature for JH_Coef estimation
+      jhCoeff: JH_Coef_Jul_Tmin
+    - id: 7
+      name: JH_Coef_Jul_Tmax
+      source: http://bagis.geog.pdx.edu/arcgis/services/BAGIS_Databin/PRISM_1981_2010_tmax_july/ImageServer 
+      description: July Max Temperature for JH_Coef estimation
+      jhCoeff: JH_Coef_Jul_Tmax
+    - id: 8
+      name: Landfire_CC
+      source: http://bagis.geog.pdx.edu/arcgis/services/BAGIS_Databin/LF_us_130cc/ImageServer 
+      description: Landfire_CC, cover density for tree type. This cover density layer is used only for the estimation of rad_trncf parameter.
+    - id: 9
+      name: Landfire_EVC_CC
+      source: http://bagis.geog.pdx.edu/arcgis/services/BAGIS_Databin/LF_us_130evc_cc/ImageServer 
+      description: Cover Density from Landfire EVC layer. This layer includes cover density for all vegetation types (trees, grass, shrub)
+    - id: 10
+      name: Landfire_EVT
+      source: http://bagis.geog.pdx.edu/arcgis/services/BAGIS_Databin/LF_us_140evt/ImageServer 
+      description: Landfire Existing Vegetation 
+    - id: 11
+      name: NLCD_Impervious
+      source: http://bagis.geog.pdx.edu/arcgis/services/BAGIS_Databin/NLCD_imp_2011/ImageServer 
+      description: NLCD % Impervious
+    - id: 12
+      name: Soil
+      source: http://bagis.geog.pdx.edu/arcgis/services/BAGIS_Databin/STATSGO_BAGIS_muid/ImageServer 
+      description: Soil
+    - id: 13
+      name: Soil_Texture
+      source: http://bagis.geog.pdx.edu/arcgis/services/BAGIS_Databin/STATSGO_BAGIS_texture/ImageServer 
+      description: Soil_Texture
+
+bagis-h: []

@@ -24,7 +24,34 @@ namespace bagis_pro
     {
         private const string _dockPaneID = "bagis_pro_DockBatchPdfExport";
 
-        protected DockBatchPdfExportViewModel() { }
+        protected DockBatchPdfExportViewModel()
+        {
+            // Set path to settings file if we need to
+            if (String.IsNullOrEmpty(this.SettingsFile))
+            {
+                // Find batch tool settings file
+                string strSettingsPath = GeneralTools.GetBagisSettingsPath();
+                if (!string.IsNullOrEmpty(strSettingsPath))
+                {
+                    string strFullPath = strSettingsPath + @"\" + Constants.FOLDER_SETTINGS
+                        + @"\" + Constants.FILE_BATCH_TOOL_SETTINGS;
+                    if (!System.IO.File.Exists(strFullPath))
+                    {
+                        Webservices ws = new Webservices();
+                        var success = Task.Run(() => ws.DownloadBatchSettingsAsync(Module1.Current.DefaultEbagisServer,
+                            strFullPath));
+                        if ((BA_ReturnCode) success.Result == BA_ReturnCode.Success)
+                        {
+                            this.SettingsFile = strFullPath;
+                        }
+                    }
+                    else
+                    {
+                        this.SettingsFile = strFullPath;
+                    }
+                }
+            }
+        }
 
         /// <summary>
         /// Show the DockPane.
@@ -43,6 +70,8 @@ namespace bagis_pro
         /// </summary>
         private string _heading = "Batch PDF Export";
         private string _aoiFolder;
+        private string _settingsFile;
+        private bool _archiveChecked = false;
         public string Heading
         {
             get { return _heading; }
@@ -61,9 +90,25 @@ namespace bagis_pro
             }
         }
 
+        public string SettingsFile
+        {
+            get { return _settingsFile; }
+            set
+            {
+                SetProperty(ref _settingsFile, value, () => SettingsFile);
+            }
+        }
 
+        public bool ArchiveChecked
+        {
+            get { return _archiveChecked; }
+            set
+            {
+                SetProperty(ref _archiveChecked, value, () => ArchiveChecked);
+            }
+        }
 
-        public ICommand CmdSelectAoi
+        public ICommand CmdAoiFolder
         {
             get
             {
@@ -73,7 +118,6 @@ namespace bagis_pro
                     OpenItemDialog aNewFilter = new OpenItemDialog
                     {
                         Title = "Select a basin, aoi, or folder",
-                        InitialLocation = @"C:\Data",
                         MultiSelect = false,
                         Filter = ItemFilters.folders
                     };
@@ -91,6 +135,18 @@ namespace bagis_pro
                 });
             }
         }
+
+        public ICommand CmdRun
+        {
+            get
+            {
+                return new RelayCommand(() =>
+                {
+ 
+                });
+            }
+        }
+
     }
 
     /// <summary>
@@ -100,6 +156,8 @@ namespace bagis_pro
     {
         protected override void OnClick()
         {
+            var layersPane = (DockBatchPdfExportViewModel) FrameworkApplication.DockPaneManager.Find("bagis_pro_DockBatchPdfExport");
+
             DockBatchPdfExportViewModel.Show();
         }
     }

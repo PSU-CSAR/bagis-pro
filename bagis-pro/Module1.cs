@@ -113,6 +113,7 @@ namespace bagis_pro
         internal string DisplayedSweMap { get; set; } = "";
         internal string RoadsLayerLegend { get; set; } = "";
         internal string SettingsPath { get; set; } = "";
+        internal string DefaultEbagisServer { get; } = "https://test.ebagis.geog.pdx.edu";
         internal dynamic BatchToolSettings { get; set; } = "";
     }
 }
