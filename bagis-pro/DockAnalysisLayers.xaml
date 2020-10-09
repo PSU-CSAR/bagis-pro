@@ -25,7 +25,7 @@
             <RowDefinition Height="25"/>
             <RowDefinition Height="25"/>
             <RowDefinition Height="25"/>
-            <RowDefinition Height="25"/>
+            <RowDefinition Height="30"/>
             <RowDefinition Height="25"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="25"/>
@@ -89,9 +89,13 @@
             <CheckBox x:Name="chkPublicLands" Content="" HorizontalAlignment="Center"  Height="14" VerticalAlignment="Center"
                       IsChecked="{Binding PublicLand_Checked}"/>
         </DockPanel>
-        <Label   Grid.Row="8" Grid.Column="0" Content="Alpine Area Below Tree Line" HorizontalAlignment="Left" VerticalAlignment="Center"  Padding="5,0,20,0"/>
-        <CheckBox x:Name="chkBelowTreeLine" Grid.Row="8" Grid.Column="1" Content="" HorizontalAlignment="Center"  Height="14" VerticalAlignment="Center"
-                      IsChecked="{Binding PublicLand_Checked}"/>
+        <DockPanel Grid.Row="8" Grid.Column="0"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
+            <Label Content="Alpine Area Below Tree Line" HorizontalAlignment="Left" VerticalAlignment="Center"  Padding="5,0,20,0"/>
+        </DockPanel>
+        <DockPanel Grid.Row="8" Grid.Column="1"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
+            <CheckBox x:Name="chkBelowTreeLine" Grid.Row="8" Grid.Column="1" Content="" HorizontalAlignment="Center"  Height="14" VerticalAlignment="Center"
+                      IsChecked="{Binding BelowTreeLine_Checked}"/>
+        </DockPanel>
         <DockPanel Grid.Row="9" Grid.Column="0"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
             <Label  Content="Elevation-Precipitation Correlation" HorizontalAlignment="Left" VerticalAlignment="Center"  Padding="5,0,20,0"/>
         </DockPanel>

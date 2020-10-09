@@ -429,6 +429,7 @@ namespace bagis_pro
                 if (excludeBelowTreeline)
                 {
 
+                    success = await AnalysisTools.ExcludeAlpineAboveTreeLineAsync(Module1.Current.Aoi.FilePath);
                     if (success == BA_ReturnCode.Success)
                     {
                         layersPane.BelowTreeLine_Checked = false;

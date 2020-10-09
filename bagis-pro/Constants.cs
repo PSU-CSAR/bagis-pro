@@ -63,6 +63,7 @@ namespace bagis_pro
         public const string FILE_ROADS = "fs_roads";
         public const string FILE_PUBLIC_LAND = "public_lands";
         public const string FILE_VEGETATION_EVT = "LF_us_140evt";
+        public const string FILE_VEG_BELOW_TREELINE = "veg_below_tree_line";
         public const string FILE_PREC_MEAN_ELEV = "precmeanelev";
         public const string FILE_ASP_ZONE_PREC = "aspzoneprec";
         public const string FILE_ASP_ZONE_PREC_TBL = "precmeanelev_tbl";
@@ -135,6 +136,8 @@ namespace bagis_pro
         public const string FIELD_COUNT = "COUNT";
         public const string FIELD_RASTERVALU = "RASTERVALU";   //Field generated when using BA_ExtractValuesToPoints to populate BA_SELEV from DEM
         public const string FIELD_PUBLIC = "Public_";   //Indicates public land on the Public Lands layer
+        public const string FIELD_ALPINE_ABV_TREELINE = "ALPINE_ABV_TREELINE";   //Indicates alpine vegetation types that are above the treeline
+        public const string FIELD_GRID_CODE = "gridcode";   //Value after raster is converted to polygon
 
         public const string DATA_TYPE_SWE = "Snotel SWE";
         public const string DATA_TYPE_PRECIPITATION = "Precipitation";

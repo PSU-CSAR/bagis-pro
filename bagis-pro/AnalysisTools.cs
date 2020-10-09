@@ -1831,30 +1831,31 @@ namespace bagis_pro
                 // Create feature layer so we can use definition query to select public lands
                 var slectionLayer = LayerFactory.Instance.CreateFeatureLayer(uriFull, MapView.Active.Map, 0, "Selection Layer");
                 slectionLayer.SetDefinitionQuery(Constants.FIELD_PUBLIC + " = 1");
-                string copyOutputPath = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Analysis, true) + "tmpCopy";
-                // Copy selected features to a new, temporary feature class
-                var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath);
-                var parameters = Geoprocessing.MakeValueArray(slectionLayer, copyOutputPath);
-                var gpResult = Geoprocessing.ExecuteToolAsync("CopyFeatures_management", parameters, environments,
-                                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                if (gpResult.Result.IsFailed)
-                {
-                    Module1.Current.ModuleLogManager.LogError(nameof(GetPublicLandsAsync),
-                    "Unable to copy selected features. Error code: " + gpResult.Result.ErrorCode);
-                    MessageBox.Show("Unable to copy selected features. Extraction cancelled!!", "BAGIS-PRO");
-                    return;
-                }
-                else
-                {
-                    // Remove temporary layer
-                    MapView.Active.Map.RemoveLayer(slectionLayer);
-                    Module1.Current.ModuleLogManager.LogDebug(nameof(GetPublicLandsAsync),
-                    "Copied selected features to a temporary layer");
-                }
+                //string copyOutputPath = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Analysis, true) + "tmpCopy";
+                //// Copy selected features to a new, temporary feature class
+                //var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath);
+                //var parameters = Geoprocessing.MakeValueArray(slectionLayer, copyOutputPath);
+                //var gpResult = Geoprocessing.ExecuteToolAsync("CopyFeatures_management", parameters, environments,
+                //                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                //if (gpResult.Result.IsFailed)
+                //{
+                //    Module1.Current.ModuleLogManager.LogError(nameof(GetPublicLandsAsync),
+                //    "Unable to copy selected features. Error code: " + gpResult.Result.ErrorCode);
+                //    MessageBox.Show("Unable to copy selected features. Extraction cancelled!!", "BAGIS-PRO");
+                //    return;
+                //}
+                //else
+                //{
+                //    // Remove temporary layer
+                //    MapView.Active.Map.RemoveLayer(slectionLayer);
+                //    Module1.Current.ModuleLogManager.LogDebug(nameof(GetPublicLandsAsync),
+                //    "Copied selected features to a temporary layer");
+                //}
                 // Merge features into a single feature for display and analysis
-                parameters = Geoprocessing.MakeValueArray(copyOutputPath, GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Analysis, true) + Constants.FILE_PUBLIC_LAND_ZONE,
+                var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath);
+                var parameters = Geoprocessing.MakeValueArray(slectionLayer, GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Analysis, true) + Constants.FILE_PUBLIC_LAND_ZONE,
                     Constants.FIELD_PUBLIC, "", "MULTI_PART", "DISSOLVE_LINES");
-                gpResult = Geoprocessing.ExecuteToolAsync("Dissolve_management", parameters, environments,
+                var gpResult = Geoprocessing.ExecuteToolAsync("Dissolve_management", parameters, environments,
                     CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
                 if (gpResult.Result.IsFailed)
                 {
@@ -1866,12 +1867,77 @@ namespace bagis_pro
                 else
                 {
                      Module1.Current.ModuleLogManager.LogDebug(nameof(GetPublicLandsAsync),
-                    "Dissolved public lands layer");
-                    parameters = Geoprocessing.MakeValueArray(copyOutputPath);
-                    gpResult = Geoprocessing.ExecuteToolAsync("Delete_management", parameters, environments,
-                        CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                    Module1.Current.ModuleLogManager.LogDebug(nameof(GetPublicLandsAsync),
-                        "Deleted temporary public lands layer");
+                        "Dissolved public lands layer");
+                }
+            });
+            success = BA_ReturnCode.Success;
+            return success;
+        }
+
+        public static async Task<BA_ReturnCode> ExcludeAlpineAboveTreeLineAsync(string strAoiPath)
+        {
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            Uri uriLayers = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers));
+            bool bExists = await GeodatabaseTools.RasterDatasetExistsAsync(uriLayers, Constants.FILE_VEGETATION_EVT);
+            if (!bExists)
+            {
+                MessageBox.Show("The vegetation layer is missing. Clip the vegetation layer before creating the alpine area below tree line analysis layer!!", "BAGIS-PRO");
+                Module1.Current.ModuleLogManager.LogDebug(nameof(GetPublicLandsAsync),
+                    "Unable to exclude alpine below tree line because vegetation layer does not exist. Process stopped!!");
+                return success;
+            }
+            string strInputRaster = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers, true) + Constants.FILE_VEGETATION_EVT;
+            Uri uriFull = new Uri(strInputRaster);
+            await QueuedTask.Run(() =>
+            {
+                // Convert vegetation raster to vector using ALPINE_ABV_TREELINE since that's the only value we care about
+                var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath);
+                string strAnalysisGdb = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Analysis);
+                string strTempVector = "temp_veg";
+                var parameters = Geoprocessing.MakeValueArray(strInputRaster, strAnalysisGdb + "\\" + strTempVector,
+                    "SIMPLIFY", Constants.FIELD_ALPINE_ABV_TREELINE);
+                var gpResult = Geoprocessing.ExecuteToolAsync("RasterToPolygon_conversion", parameters, environments,
+                                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                if (gpResult.Result.IsFailed)
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(ExcludeAlpineAboveTreeLineAsync),
+                    "Unable to convert vegetation raster to polygon. Error code: " + gpResult.Result.ErrorCode);
+                    MessageBox.Show("Unable to convert vegetation raster to polygon. Exclusion cancelled!!", "BAGIS-PRO");
+                    return;
+                }
+
+                // Create feature layer so we can use definition query to select public lands
+                var uriTemp = new Uri(strAnalysisGdb + "\\" + strTempVector);
+                var slectionLayer = LayerFactory.Instance.CreateFeatureLayer(uriTemp, MapView.Active.Map, 0, "Selection Layer");
+                slectionLayer.SetDefinitionQuery(Constants.FIELD_GRID_CODE + " <> 1");
+                string dissolveOutputPath = strAnalysisGdb + "\\" + Constants.FILE_VEG_BELOW_TREELINE;
+                // Copy selected features to a new, temporary feature class
+                environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath);
+                parameters = Geoprocessing.MakeValueArray(slectionLayer, dissolveOutputPath, Constants.FIELD_GRID_CODE);
+                gpResult = Geoprocessing.ExecuteToolAsync("Dissolve_management", parameters, environments,
+                                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+
+                if (gpResult.Result.IsFailed)
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(ExcludeAlpineAboveTreeLineAsync),
+                   "Unable to dissolve selected features. Error code: " + gpResult.Result.ErrorCode);
+                }
+                // Remove temporary layer
+                MapView.Active.Map.RemoveLayer(slectionLayer);
+                parameters = Geoprocessing.MakeValueArray(uriTemp.LocalPath);
+                gpResult = Geoprocessing.ExecuteToolAsync("Delete_management", parameters, environments,
+                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                if (gpResult.Result.IsFailed)
+                {
+                    MessageBox.Show("Unable to delete temporary vegetation layer. Exclusion cancelled!!", "BAGIS-PRO");
+                    Module1.Current.ModuleLogManager.LogError(nameof(ExcludeAlpineAboveTreeLineAsync),
+                        "Failed to delete temporary vegetation layer");
+                    return;
+                }
+                else
+                {
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(ExcludeAlpineAboveTreeLineAsync),
+                        "Deleted temporary vegetation layer");
                 }
             });
             success = BA_ReturnCode.Success;
