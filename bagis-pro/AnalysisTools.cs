@@ -1653,7 +1653,7 @@ namespace bagis_pro
             string strWsUri = dictDataSources[strDataType].uri;
 
             string[] arrLayersToDelete = new string[2];
-            string strClipGdb = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Prism, false);
+            string strClipGdb = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, false);
             string strClipFile = Constants.FILE_AOI_BUFFERED_VECTOR;
 
             if (!String.IsNullOrEmpty(strWsUri))
@@ -2131,6 +2131,206 @@ namespace bagis_pro
                 return BA_ReturnCode.UnknownError;
             }
             return BA_ReturnCode.Success;
+        }
+
+        public static async Task<BA_ReturnCode> ClipRasterLayerAsync(string strAoiPath, string strOutputRaster,
+            string strDataType, string strBufferDistance, string strBufferUnits)
+        {
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
+
+            Webservices ws = new Webservices();
+            Module1.Current.ModuleLogManager.LogDebug(nameof(ClipLayersAsync),
+                "Contacting webservices server to retrieve layer metadata");
+            IDictionary<string, dynamic> dictDataSources =
+                await ws.QueryDataSourcesAsync((string)Module1.Current.BatchToolSettings.EBagisServer);
+            string strWsUri = dictDataSources[strDataType].uri;
+            string[] arrLayersToDelete = new string[2];
+            string strClipGdb = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, false);
+            string strClipFile = Constants.FILE_AOI_BUFFERED_VECTOR;
+            IReadOnlyList<string> parameters = null;
+            Task<IGPResult> gpResult = null;
+
+            if (!String.IsNullOrEmpty(strWsUri))
+            {
+                await QueuedTask.Run(async () =>
+                {
+                    string strTempBuffer = "tmpBuffer";
+                    // a buffer distance was requested
+                    string strTempBuffer2 = "";
+                    if (!String.IsNullOrEmpty(strBufferDistance))
+                    {
+                        string strAoiBoundaryPath = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, true) +
+                            Constants.FILE_AOI_VECTOR;
+                        string strOutputFeatures = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, true) +
+                            strTempBuffer;
+                        string strDistance = strBufferDistance + " " + strBufferUnits;
+                        parameters = Geoprocessing.MakeValueArray(strAoiBoundaryPath, strOutputFeatures, strDistance, "",
+                                                                          "", "ALL");
+                        gpResult = Geoprocessing.ExecuteToolAsync("Buffer_analysis", parameters, null,
+                                             CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                        if (gpResult.Result.IsFailed)
+                        {
+                            Module1.Current.ModuleLogManager.LogError(nameof(ClipRasterLayerAsync),
+                               "Unable to buffer aoi_v. Error code: " + gpResult.Result.ErrorCode);
+                            MessageBox.Show("Unable to buffer aoi_v. Clipping cancelled!!", "BAGIS-PRO");
+                            return;
+                        }
+
+                        strClipFile = strTempBuffer;
+                        arrLayersToDelete[0] = strTempBuffer;
+                    }
+
+                    // Check to make sure the buffer file only has one feature; No dangles
+                    int featureCount = 0;
+                    strClipGdb = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, false);
+                    using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(strClipGdb))))
+                    using (Table table = geodatabase.OpenDataset<Table>(strClipFile))
+                    {
+                        featureCount = table.GetCount();
+                    }
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(ClipRasterLayerAsync),
+                        "Number of features in clip file: " + featureCount);
+
+                    // If > 1 feature, buffer the clip file again
+                    if (featureCount > 1)
+                    {
+                        strTempBuffer2 = "tempBuffer2";
+                        parameters = Geoprocessing.MakeValueArray(strClipGdb + "\\" + strClipFile,
+                            strClipGdb + "\\" + strTempBuffer2, "0.5 Meters", "", "", "ALL");
+                        gpResult = Geoprocessing.ExecuteToolAsync("Buffer_analysis", parameters, null,
+                                             CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                        if (gpResult.Result.IsFailed)
+                        {
+                            Module1.Current.ModuleLogManager.LogError(nameof(ClipRasterLayerAsync),
+                               "Unable to buffer " + strClipFile + ". Error code: " + gpResult.Result.ErrorCode);
+                            MessageBox.Show("Unable to buffer aoi_v. Clipping cancelled!!", "BAGIS-PRO");
+                            return;
+                        }
+                        strClipFile = strTempBuffer2;
+                        arrLayersToDelete[1] = strTempBuffer;
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(ClipRasterLayerAsync),
+                            "Run buffer tool again because clip file has > 2 features");
+                    }
+
+                    // Query the extent for the clip
+                    string strClipEnvelope = "";
+                    using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(strClipGdb))))
+                    using (Table table = geodatabase.OpenDataset<Table>(strClipFile))
+                    {
+                        QueryFilter queryFilter = new QueryFilter();
+                        using (RowCursor cursor = table.Search(queryFilter, false))
+                        {
+                            while (cursor.MoveNext())
+                            {
+                                using (Feature feature = (Feature)cursor.Current)
+                                {
+                                    Geometry aoiGeo = feature.GetShape();
+                                    strClipEnvelope = aoiGeo.Extent.XMin + " " + aoiGeo.Extent.YMin + " " + aoiGeo.Extent.XMax + " " + aoiGeo.Extent.YMax;
+                                }
+                            }
+                        }
+                    }
+                    if (String.IsNullOrEmpty(strClipEnvelope))
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(ClipRasterLayerAsync),
+                            "Unable obtain clipping envelope from " + strClipGdb + "\\" + strClipFile);
+                        MessageBox.Show("Unable obtain clipping envelope from " + strClipGdb + "\\" + strClipFile + " Clipping cancelled!!", "BAGIS-PRO");
+                        return;
+                    }
+
+                    Uri imageServiceUri = new Uri(strWsUri);
+                    string strTemplateDataset = strClipGdb + "\\" + strClipFile;
+                    var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath, snapRaster: BA_Objects.Aoi.SnapRasterPath(strAoiPath));
+                    parameters = Geoprocessing.MakeValueArray(imageServiceUri.AbsoluteUri, strClipEnvelope, strOutputRaster, strTemplateDataset,
+                                        "", "ClippingGeometry");
+                    var finalResult = await Geoprocessing.ExecuteToolAsync("Clip_management", parameters, environments,
+                                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                    if (finalResult.IsFailed)
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(ClipRasterLayerAsync),
+                           "Unable to clip " + strClipFile + ". Error code: " + finalResult.ErrorCode);
+                        MessageBox.Show("Unable to clip. Clipping cancelled!!", "BAGIS-PRO");
+                        return;
+                    }
+                    else
+                    {
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(ClipRasterLayerAsync),
+                            "Clipped " + strOutputRaster + " layer");
+                    }
+
+                    if (!String.IsNullOrEmpty(strBufferDistance))
+                    {
+                        //Update the metadata if there is a custom buffer
+                        //We need to add a new tag at "/metadata/dataIdInfo/searchKeys/keyword"
+                        StringBuilder sb = new StringBuilder();
+                        sb.Append(Constants.META_TAG_PREFIX);
+                        // Z Units
+                        string strUnits = dictDataSources[strDataType].units;
+                        sb.Append(Constants.META_TAG_ZUNIT_CATEGORY + Constants.META_TAG_CATEGORY_DEPTH + "; ");
+                        sb.Append(Constants.META_TAG_ZUNIT_VALUE + strUnits + "; ");
+                        // Buffer Distance
+                        sb.Append(Constants.META_TAG_BUFFER_DISTANCE + strBufferDistance + "; ");
+                        // X Units
+                        sb.Append(Constants.META_TAG_XUNIT_VALUE + strBufferUnits + "; ");
+                        sb.Append(Constants.META_TAG_SUFFIX);
+
+                        //Update the metadata
+                        var fc = ItemFactory.Instance.Create(strOutputRaster,
+                            ItemFactory.ItemType.PathItem);
+                        if (fc != null)
+                        {
+                            string strXml = string.Empty;
+                            strXml = fc.GetXml();
+                            System.Xml.XmlDocument xmlDocument = GeneralTools.UpdateMetadata(strXml, Constants.META_TAG_XPATH, sb.ToString(),
+                                Constants.META_TAG_PREFIX.Length);
+
+                            fc.SetXml(xmlDocument.OuterXml);
+                        }
+                    }
+
+                    // Delete temporary layers
+                    for (int j = 0; j < arrLayersToDelete.Length; j++)
+                    {
+                        if (!string.IsNullOrEmpty(arrLayersToDelete[j]))
+                        {
+                            parameters = Geoprocessing.MakeValueArray(strClipGdb + "\\" + arrLayersToDelete[j]);
+                            gpResult = Geoprocessing.ExecuteToolAsync("Delete_management", parameters, null,
+                                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                            if (gpResult.Result.IsFailed)
+                            {
+                                Module1.Current.ModuleLogManager.LogError(nameof(ClipRasterLayerAsync),
+                                    "Unable to delete " + strClipGdb + "\\" + arrLayersToDelete[j] + ". Error code: " + gpResult.Result.ErrorCode);
+                                MessageBox.Show("Unable to delete " + strClipGdb + "\\" + arrLayersToDelete[j] + ".", "BAGIS-PRO");
+                            }
+                            else
+                            {
+                                Module1.Current.ModuleLogManager.LogDebug(nameof(ClipRasterLayerAsync),
+                                    "Successfully deleted temp file: " + strClipGdb + "\\" + arrLayersToDelete[j]);
+                            }
+                        }
+                    }
+
+                    // Update layer metadata
+                    IDictionary<string, BA_Objects.DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
+                    BA_Objects.DataSource updateDataSource = new BA_Objects.DataSource(dictDataSources[strDataType])
+                    {
+                        DateClipped = DateTime.Now,
+                    };
+                    if (dictLocalDataSources.ContainsKey(strDataType))
+                    {
+                        dictLocalDataSources[strDataType] = updateDataSource;
+                    }
+                    else
+                    {
+                        dictLocalDataSources.Add(strDataType, updateDataSource);
+                    }
+                    success = GeneralTools.SaveDataSourcesToFile(dictLocalDataSources);
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(ClipRasterLayerAsync),
+                        "Updated settings metadata for " + strDataType);
+                });
+            }
+
+            return success;
         }
 
     }

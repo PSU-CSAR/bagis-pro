@@ -38,6 +38,10 @@ bagis-pro:
     - layerType: Public Land
       description: Federal land GIS layer, used as an input for SNOTEL site selection model in BAGIS
       uri: https://services.arcgis.com/SXbDpmb7xQkk44JV/arcgis/rest/services/BAGIS_Public_Land/FeatureServer/0
+    - layerType: Vegetation Type
+      description: 30-meter Landfire Existing Vegetation Type with additional attributes of intcp_snow, intcp_srain, intcp_wrain, and root_depth
+      uri: http://bagis.geog.pdx.edu/arcgis/rest/services/BAGIS_Databin/LF_us_140evt/ImageServer 
+
   BatchSettings:
      EBagisServer: https://test.ebagis.geog.pdx.edu
      SweDisplayUnits: Inches
@@ -55,6 +59,7 @@ bagis-pro:
      RoadsBufferUnits: Meters
      RoadsAnalysisBufferDistance: 300
      RoadsAnalysisBufferUnits: Feet
+     VegetationBufferUnits: Meters
 
 bagis-p:
   datasources:

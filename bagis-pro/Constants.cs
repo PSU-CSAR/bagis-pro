@@ -62,6 +62,7 @@ namespace bagis_pro
         public const string FILE_ASPECT = "aspect";
         public const string FILE_ROADS = "fs_roads";
         public const string FILE_PUBLIC_LAND = "public_lands";
+        public const string FILE_VEGETATION_EVT = "LF_us_140evt";
         public const string FILE_PREC_MEAN_ELEV = "precmeanelev";
         public const string FILE_ASP_ZONE_PREC = "aspzoneprec";
         public const string FILE_ASP_ZONE_PREC_TBL = "precmeanelev_tbl";
@@ -141,6 +142,7 @@ namespace bagis_pro
         public const string DATA_TYPE_SNOW_COURSE = "Snow Course";
         public const string DATA_TYPE_ROADS = "Roads";
         public const string DATA_TYPE_PUBLIC_LAND = "Public Land";
+        public const string DATA_TYPE_VEGETATION = "Vegetation Type";
         public const string SITE_TYPE_SNOW_COURSE = "scos";
         public const string SITE_TYPE_SNOTEL = "stel";
         public const string SITE_TYPE_PSEUDO = "psite";

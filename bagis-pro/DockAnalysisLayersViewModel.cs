@@ -65,6 +65,7 @@ namespace bagis_pro
         private bool _ElevationZones_Checked = false;
         private bool _Roads_Checked = false;
         private bool _PublicLand_Checked = false;
+        private bool _BelowTreeLine_Checked = false;
         private bool _ElevPrecipCorr_Checked = false;
         public string Heading
         {
@@ -138,6 +139,15 @@ namespace bagis_pro
             }
         }
 
+        public bool BelowTreeLine_Checked
+        {
+            get { return _BelowTreeLine_Checked; }
+            set
+            {
+                SetProperty(ref _BelowTreeLine_Checked, value, () => BelowTreeLine_Checked);
+            }
+        }
+
         public bool ElevPrecipCorr_Checked
         {
             get { return _ElevPrecipCorr_Checked; }
@@ -156,6 +166,7 @@ namespace bagis_pro
             ElevationZones_Checked = false;
             Roads_Checked = false;
             PublicLand_Checked = false;
+            BelowTreeLine_Checked = false;
             ElevPrecipCorr_Checked = false;
         }
 
@@ -167,14 +178,15 @@ namespace bagis_pro
                 {
                     // Create from template
                     await GenerateLayersAsync(RepresentedArea_Checked, PrismZones_Checked, AspectZones_Checked,
-                        SlopeZones_Checked, ElevationZones_Checked, Roads_Checked, PublicLand_Checked, ElevPrecipCorr_Checked);
+                        SlopeZones_Checked, ElevationZones_Checked, Roads_Checked, PublicLand_Checked, BelowTreeLine_Checked,
+                        ElevPrecipCorr_Checked);
                 });
             }
         }
 
         private async Task GenerateLayersAsync(bool calculateRepresented, bool calculatePrism, bool calculateAspect,
             bool calculateSlope, bool calculateElevation, bool bufferRoads, bool extractPublicLand,
-            bool elevPrecipCorr)
+            bool excludeBelowTreeline, bool elevPrecipCorr)
         {
             try
             {
@@ -186,7 +198,7 @@ namespace bagis_pro
 
                 if (calculateRepresented == false && calculatePrism == false && calculateAspect == false
                     && calculateSlope == false && calculateElevation == false && bufferRoads == false
-                    && extractPublicLand == false && elevPrecipCorr == false)
+                    && extractPublicLand == false && excludeBelowTreeline == false && elevPrecipCorr == false)
                 {
                     MessageBox.Show("No layers selected to generate !!", "BAGIS-PRO");
                     return;
@@ -411,6 +423,15 @@ namespace bagis_pro
                     if (success == BA_ReturnCode.Success)
                     {
                         layersPane.PublicLand_Checked = false;
+                    }
+                }
+
+                if (excludeBelowTreeline)
+                {
+
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        layersPane.BelowTreeLine_Checked = false;
                     }
                 }
 

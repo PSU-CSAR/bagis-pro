@@ -23,6 +23,7 @@
             <RowDefinition Height="25"/>
             <RowDefinition Height="25"/>
             <RowDefinition Height="25"/>
+            <RowDefinition Height="30"/>
             <RowDefinition Height="25"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="25"/>
@@ -121,6 +122,12 @@
             <CheckBox x:Name="chkReclipPublicLands" Content="" HorizontalAlignment="Center"  Height="14" VerticalAlignment="Center" IsEnabled="True"
                       IsChecked="{Binding ReclipPublicLands_Checked}"/>
         </DockPanel>
-        <Button x:Name="button" Content="Clip Layers" Grid.Column="3"  Grid.Row="7" VerticalAlignment="Center" Width="75" Command="{Binding CmdClipLayers}" Margin="0,0,5,0"/>
+        <CheckBox x:Name="chkVegetation" Grid.Column="0"  Grid.Row="7" Content="Vegetation" HorizontalAlignment="Left"  Height="14" VerticalAlignment="Center" IsEnabled="False"
+                      Margin="5,0,0,0" IsChecked="{Binding Vegetation_Checked}"/>
+        <TextBox x:Name="txtVegetation" Grid.Column="1"  Grid.Row="7" HorizontalAlignment="Right" TextWrapping="NoWrap"  Width="70" Text="{Binding VegetationBufferDistance}" Height="20" TextAlignment="Right" Margin="5,0,0,0" IsEnabled="True"/>
+        <Label x:Name="lblVegetation" Grid.Column="2"  Grid.Row="7" Content="{Binding VegetationBufferUnits}" HorizontalAlignment="Left"  VerticalAlignment="Center" />
+        <CheckBox x:Name="chkReclipVegetation" Grid.Column="3"  Grid.Row="7" Content="" HorizontalAlignment="Center"  Height="14" VerticalAlignment="Center" IsEnabled="True"
+                      IsChecked="{Binding ReclipVegetation_Checked}"/>
+        <Button x:Name="button" Content="Clip Layers" Grid.Column="3"  Grid.Row="8" VerticalAlignment="Center" Width="75" Command="{Binding CmdClipLayers}" Margin="0,0,5,0"/>
     </Grid>
 </UserControl>
