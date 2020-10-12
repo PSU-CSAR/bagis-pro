@@ -27,6 +27,7 @@ namespace bagis_pro
         public const string MAPS_SNOW_COURSE_REPRESENTED = "Snow Course Sites Represented Area";
         public const string MAPS_ALL_SITES_REPRESENTED = "All Sites Represented Area";
         public const string MAPS_PUBLIC_LAND = "Public, Non-Wilderness Land";
+        public const string MAPS_BELOW_TREELINE = "Area Below Treeline";
         public const string MAPS_SITES_LOCATION = "Meet All Criteria";
 
         public const string MAPS_LEGEND = "Legend";
@@ -51,6 +52,7 @@ namespace bagis_pro
         public const string FILE_SCOS_ZONE = "scoszone";
         public const string FILE_ROADS_ZONE = "roadszone";
         public const string FILE_PUBLIC_LAND_ZONE = "publiclandszone";
+        public const string FILE_BELOW_TREELINE_ZONE = "belowtreelinezone";
         public const string FILE_SITES_LOCATION_ZONE = "sitesloczone";
         //public const string FILE_SNOTEL_REPRESENTED = "npactual";
         public const string FILE_SNOTEL_REPRESENTED = "snotel_rep";
@@ -63,7 +65,6 @@ namespace bagis_pro
         public const string FILE_ROADS = "fs_roads";
         public const string FILE_PUBLIC_LAND = "public_lands";
         public const string FILE_VEGETATION_EVT = "LF_us_140evt";
-        public const string FILE_VEG_BELOW_TREELINE = "veg_below_tree_line";
         public const string FILE_PREC_MEAN_ELEV = "precmeanelev";
         public const string FILE_ASP_ZONE_PREC = "aspzoneprec";
         public const string FILE_ASP_ZONE_PREC_TBL = "precmeanelev_tbl";
@@ -84,6 +85,7 @@ namespace bagis_pro
                                                                               "map_snodas_swe_december.pdf"};
         public const string FILE_EXPORT_MAP_ROADS_PDF = "map_roads.pdf";
         public const string FILE_EXPORT_MAP_PUBLIC_LAND_PDF = "map_public_land.pdf";
+        public const string FILE_EXPORT_MAP_BELOW_TREELINE_PDF = "map_below_treeline.pdf";
         public const string FILE_EXPORT_MAP_SITES_LOCATION_PDF = "map_sites_location.pdf";
         public const string FILE_EXPORT_CHART_AREA_ELEV_PRECIP_SITE_PDF = "chart_area_elev_precip_site.pdf";
         public const string FILE_EXPORT_CHART_SLOPE_PDF = "chart_slope.pdf";
@@ -176,6 +178,7 @@ namespace bagis_pro
                                                                 "MapButtonPalette_BtnSweJun_State",
                                                                 "MapButtonPalette_BtnSweDec_State",
                                                                 "MapButtonPalette_BtnRoads_State",
+                                                                "MapButtonPalette_BtnBelowTreeline_State",
                                                                 "MapButtonPalette_BtnPublicLand_State",
                                                                 "MapButtonPalette_BtnSitesLocationZone_State"};
 

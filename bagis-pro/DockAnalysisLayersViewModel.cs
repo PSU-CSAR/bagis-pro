@@ -65,7 +65,7 @@ namespace bagis_pro
         private bool _ElevationZones_Checked = false;
         private bool _Roads_Checked = false;
         private bool _PublicLand_Checked = false;
-        private bool _BelowTreeLine_Checked = false;
+        private bool _BelowTreeline_Checked = false;
         private bool _ElevPrecipCorr_Checked = false;
         public string Heading
         {
@@ -139,12 +139,12 @@ namespace bagis_pro
             }
         }
 
-        public bool BelowTreeLine_Checked
+        public bool BelowTreeline_Checked
         {
-            get { return _BelowTreeLine_Checked; }
+            get { return _BelowTreeline_Checked; }
             set
             {
-                SetProperty(ref _BelowTreeLine_Checked, value, () => BelowTreeLine_Checked);
+                SetProperty(ref _BelowTreeline_Checked, value, () => BelowTreeline_Checked);
             }
         }
 
@@ -166,7 +166,7 @@ namespace bagis_pro
             ElevationZones_Checked = false;
             Roads_Checked = false;
             PublicLand_Checked = false;
-            BelowTreeLine_Checked = false;
+            BelowTreeline_Checked = false;
             ElevPrecipCorr_Checked = false;
         }
 
@@ -178,7 +178,7 @@ namespace bagis_pro
                 {
                     // Create from template
                     await GenerateLayersAsync(RepresentedArea_Checked, PrismZones_Checked, AspectZones_Checked,
-                        SlopeZones_Checked, ElevationZones_Checked, Roads_Checked, PublicLand_Checked, BelowTreeLine_Checked,
+                        SlopeZones_Checked, ElevationZones_Checked, Roads_Checked, PublicLand_Checked, BelowTreeline_Checked,
                         ElevPrecipCorr_Checked);
                 });
             }
@@ -186,7 +186,7 @@ namespace bagis_pro
 
         private async Task GenerateLayersAsync(bool calculateRepresented, bool calculatePrism, bool calculateAspect,
             bool calculateSlope, bool calculateElevation, bool bufferRoads, bool extractPublicLand,
-            bool excludeBelowTreeline, bool elevPrecipCorr)
+            bool extractBelowTreeline, bool elevPrecipCorr)
         {
             try
             {
@@ -198,7 +198,7 @@ namespace bagis_pro
 
                 if (calculateRepresented == false && calculatePrism == false && calculateAspect == false
                     && calculateSlope == false && calculateElevation == false && bufferRoads == false
-                    && extractPublicLand == false && excludeBelowTreeline == false && elevPrecipCorr == false)
+                    && extractPublicLand == false && extractBelowTreeline == false && elevPrecipCorr == false)
                 {
                     MessageBox.Show("No layers selected to generate !!", "BAGIS-PRO");
                     return;
@@ -362,6 +362,7 @@ namespace bagis_pro
                     }
                 }
 
+                bool bSkipPotentialSites = false;
                 if (bufferRoads)
                 {
                     Uri uri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers));
@@ -414,6 +415,10 @@ namespace bagis_pro
                     {
                         layersPane.Roads_Checked = false;
                     }
+                    else
+                    {
+                        bSkipPotentialSites = true;     // may skip combined potential sites because this layer couldn't be generated    
+                    }
                 }
 
                 if (extractPublicLand)
@@ -424,61 +429,72 @@ namespace bagis_pro
                     {
                         layersPane.PublicLand_Checked = false;
                     }
+                    else
+                    {
+                        bSkipPotentialSites = true;     // may skip combined potential sites because this layer couldn't be generated    
+                    }
                 }
 
-                if (excludeBelowTreeline)
+                if (extractBelowTreeline)
                 {
 
-                    success = await AnalysisTools.ExcludeAlpineAboveTreeLineAsync(Module1.Current.Aoi.FilePath);
+                    success = await AnalysisTools.ExtractBelowTreelineAsync(Module1.Current.Aoi.FilePath);
                     if (success == BA_ReturnCode.Success)
                     {
-                        layersPane.BelowTreeLine_Checked = false;
-                    }
-                }
-
-                if (bufferRoads || extractPublicLand)
-                {
-                    // if either of the underlying layers changed, we need to recalculate the
-                    // potential sites layer
-                    Uri uriLayersGdb = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis));
-                    string[] arrSiteFileNames = {Constants.FILE_PUBLIC_LAND_ZONE, Constants.FILE_ROADS_ZONE};
-                    IList<string> lstIntersectLayers = new List<string>();
-                    string strOutputPath = uriLayersGdb.LocalPath + "\\" + Constants.FILE_SITES_LOCATION_ZONE;
-                    foreach (var fileName in arrSiteFileNames)
-                    {
-                        bool bExists = await GeodatabaseTools.FeatureClassExistsAsync(uriLayersGdb, fileName);
-                        if (bExists)
-                        {
-                            lstIntersectLayers.Add(uriLayersGdb.LocalPath + "\\" + fileName);
-                        }
-                    }
-                    if (lstIntersectLayers.Count > 1)   // Make sure we have > 1 layers to intersect
-                    {
-                        string[] arrIntersectLayers = lstIntersectLayers.ToArray();
-                        success = await GeoprocessingTools.IntersectUnrankedAsync(Module1.Current.Aoi.FilePath, arrIntersectLayers, strOutputPath,
-                            "ONLY_FID");
-                        if (success != BA_ReturnCode.Success)
-                        {
-                            MessageBox.Show("An error occurred while generating the site location layers map!!", "BAGIS-PRO");
-                            Module1.Current.ModuleLogManager.LogError(nameof(GenerateLayersAsync),
-                                "No site location layers exist to intersect. sitesloczone cannot be created!");
-                        }
-                    }
-                    else if (lstIntersectLayers.Count == 1)
-                    {
-                        success = await GeoprocessingTools.CopyFeaturesAsync(Module1.Current.Aoi.FilePath,lstIntersectLayers[0], 
-                            strOutputPath);
-                        if (success == BA_ReturnCode.Success)
-                        {
-                            Module1.Current.ModuleLogManager.LogDebug(nameof(GenerateLayersAsync),
-                                "Only one site location layer found. sitesloczone created by copying that layer");
-                        }
+                        layersPane.BelowTreeline_Checked = false;
                     }
                     else
                     {
-                        MessageBox.Show("No site location layers exist to merge!!", "BAGIS-PRO");
-                        Module1.Current.ModuleLogManager.LogError(nameof(GenerateLayersAsync),
-                            "An error occured while using the Intersect tool to generate sitesloczone !");
+                        bSkipPotentialSites = true;     // may skip combined potential sites because this layer couldn't be generated    
+                    }
+                }
+
+                if (bSkipPotentialSites)
+                {
+                    if (bufferRoads || extractPublicLand || extractBelowTreeline)
+                    {
+                        // if either of the underlying layers changed, we need to recalculate the
+                        // potential sites layer
+                        Uri uriLayersGdb = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis));
+                        string[] arrSiteFileNames = { Constants.FILE_PUBLIC_LAND_ZONE, Constants.FILE_ROADS_ZONE, Constants.FILE_BELOW_TREELINE_ZONE };
+                        IList<string> lstIntersectLayers = new List<string>();
+                        string strOutputPath = uriLayersGdb.LocalPath + "\\" + Constants.FILE_SITES_LOCATION_ZONE;
+                        foreach (var fileName in arrSiteFileNames)
+                        {
+                            bool bExists = await GeodatabaseTools.FeatureClassExistsAsync(uriLayersGdb, fileName);
+                            if (bExists)
+                            {
+                                lstIntersectLayers.Add(uriLayersGdb.LocalPath + "\\" + fileName);
+                            }
+                        }
+                        if (lstIntersectLayers.Count > 1)   // Make sure we have > 1 layers to intersect
+                        {
+                            string[] arrIntersectLayers = lstIntersectLayers.ToArray();
+                            success = await GeoprocessingTools.IntersectUnrankedAsync(Module1.Current.Aoi.FilePath, arrIntersectLayers, strOutputPath,
+                                "ONLY_FID");
+                            if (success != BA_ReturnCode.Success)
+                            {
+                                MessageBox.Show("An error occurred while generating the site location layers map!!", "BAGIS-PRO");
+                                Module1.Current.ModuleLogManager.LogError(nameof(GenerateLayersAsync),
+                                    "No site location layers exist to intersect. sitesloczone cannot be created!");
+                            }
+                        }
+                        else if (lstIntersectLayers.Count == 1)
+                        {
+                            success = await GeoprocessingTools.CopyFeaturesAsync(Module1.Current.Aoi.FilePath, lstIntersectLayers[0],
+                                strOutputPath);
+                            if (success == BA_ReturnCode.Success)
+                            {
+                                Module1.Current.ModuleLogManager.LogDebug(nameof(GenerateLayersAsync),
+                                    "Only one site location layer found. sitesloczone created by copying that layer");
+                            }
+                        }
+                        else
+                        {
+                            MessageBox.Show("No site location layers exist to merge!!", "BAGIS-PRO");
+                            Module1.Current.ModuleLogManager.LogError(nameof(GenerateLayersAsync),
+                                "An error occured while using the Intersect tool to generate sitesloczone !");
+                        }
                     }
                 }
 

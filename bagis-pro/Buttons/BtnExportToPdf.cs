@@ -44,7 +44,8 @@ namespace bagis_pro.Buttons
                     Constants.FILE_EXPORT_MAP_SLOPE_PDF, Constants.FILE_EXPORT_CHART_AREA_ELEV_PRECIP_SITE_PDF,
                     Constants.FILE_EXPORT_CHART_SLOPE_PDF, Constants.FILE_EXPORT_CHART_ASPECT_PDF, Constants.FILE_EXPORT_CHART_ELEV_PRECIP_CORR_PDF,
                     Constants.FILE_EXPORT_MAP_ROADS_PDF,
-                    Constants.FILE_EXPORT_MAP_PUBLIC_LAND_PDF, Constants.FILE_EXPORT_MAP_SITES_LOCATION_PDF};
+                    Constants.FILE_EXPORT_MAP_PUBLIC_LAND_PDF, Constants.FILE_EXPORT_MAP_BELOW_TREELINE_PDF,
+                    Constants.FILE_EXPORT_MAP_SITES_LOCATION_PDF};
 
                 // Delete any old PDF files
                 foreach (var item in lstFilesToAppend)

@@ -172,6 +172,21 @@ namespace bagis_pro.Buttons
         }
     }
 
+    internal class MapButtonPalette_BtnBelowTreeline : Button
+    {
+        protected override async void OnClick()
+        {
+            try
+            {
+                await ToggleMapDisplay.ToggleAsync(BagisMapType.BELOW_TREELINE);
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show("Unable to display area below treeline map!!" + e.Message, "BAGIS-PRO");
+            }
+        }
+    }
+
     internal class MapButtonPalette_BtnSitesLocationZone : Button
     {
         protected override async void OnClick()

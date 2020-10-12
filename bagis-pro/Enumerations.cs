@@ -35,6 +35,7 @@ namespace bagis_pro
         PRISM,
         ROADS,
         PUBLIC_LAND,
+        BELOW_TREELINE,
         SITES_LOCATION
     }
 

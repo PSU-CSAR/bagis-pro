@@ -135,6 +135,14 @@ namespace bagis_pro
                     if (success.Equals(BA_ReturnCode.Success))
                         Module1.ActivateState("MapButtonPalette_BtnPublicLand_State");
 
+                    //add Below Treeline Layer
+                    strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
+                        Constants.FILE_BELOW_TREELINE_ZONE;
+                    uri = new Uri(strPath);
+                    success = await MapTools.AddPolygonLayerAsync(uri, fillColor, false, Constants.MAPS_BELOW_TREELINE);
+                    if (success.Equals(BA_ReturnCode.Success))
+                        Module1.ActivateState("MapButtonPalette_BtnBelowTreeline_State");
+
                     //add Potential Site Locations Layer
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
                         Constants.FILE_SITES_LOCATION_ZONE;
@@ -1350,6 +1358,16 @@ namespace bagis_pro
                     lstLegendLayers = new List<string> { Constants.MAPS_PUBLIC_LAND };
                     mapDefinition = new BA_Objects.MapDefinition("PUBLIC, NON-WILDERNESS LAND",
                         " ", Constants.FILE_EXPORT_MAP_PUBLIC_LAND_PDF);
+                    mapDefinition.LayerList = lstLayers;
+                    mapDefinition.LegendLayerList = lstLegendLayers;
+                    break;
+                case BagisMapType.BELOW_TREELINE:
+                    lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
+                                                   Constants.MAPS_HILLSHADE, Constants.MAPS_ELEV_ZONE,
+                                                   Constants.MAPS_BELOW_TREELINE};
+                    lstLegendLayers = new List<string> { Constants.MAPS_BELOW_TREELINE };
+                    mapDefinition = new BA_Objects.MapDefinition("AREA BELOW TREELINE",
+                        " ", Constants.FILE_EXPORT_MAP_BELOW_TREELINE_PDF);
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;

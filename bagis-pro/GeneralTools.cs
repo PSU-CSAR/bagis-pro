@@ -195,7 +195,8 @@ namespace bagis_pro
                 //Printing data sources
                 IDictionary<string, BA_Objects.DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
                 string[] keys = { Constants.DATA_TYPE_SWE, Constants.DATA_TYPE_PRECIPITATION, Constants.DATA_TYPE_SNOTEL,
-                                  Constants.DATA_TYPE_SNOW_COURSE, Constants.DATA_TYPE_ROADS, Constants.DATA_TYPE_PUBLIC_LAND };
+                                  Constants.DATA_TYPE_SNOW_COURSE, Constants.DATA_TYPE_ROADS, Constants.DATA_TYPE_PUBLIC_LAND,
+                                  Constants.DATA_TYPE_VEGETATION};
                 IList < BA_Objects.DataSource > lstDataSources = new List<BA_Objects.DataSource>();
                 foreach (string strKey in keys)
                 {
