@@ -529,7 +529,7 @@ namespace bagis_pro
                     Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Created Snotel Represented Precip Table");
 
                 }
-                if (intMinPrecip != 999)
+                if (intMinPrecip != 999 && intMinPrecip != -1)
                 {
                     success = ExcelTools.CreateRepresentPrecipChart(pPrecipDemElevWorksheet, pPrecipSiteWorksheet, pPrecipChartWorksheet, intMinPrecip, Y_Min);
                     Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Created Represented Precip Chart");
