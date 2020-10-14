@@ -43,7 +43,7 @@ bagis-pro:
       uri: http://bagis.geog.pdx.edu/arcgis/rest/services/BAGIS_Databin/LF_us_140evt/ImageServer 
 
   BatchSettings:
-     EBagisServer: https://test.ebagis.geog.pdx.edu
+     EBagisServer: https://ebagis.geog.pdx.edu
      SweDisplayUnits: Inches
      DemUnits: Meters
      DefaultDemInterval: 1000
@@ -60,6 +60,8 @@ bagis-pro:
      RoadsAnalysisBufferDistance: 300
      RoadsAnalysisBufferUnits: Feet
      VegetationBufferUnits: Meters
+     Publisher: nwcc_nrcs
+     Version: 1.0
 
 bagis-p:
   datasources:

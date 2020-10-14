@@ -35,20 +35,8 @@ namespace bagis_pro.Buttons
                     System.IO.Directory.CreateDirectory(outputDirectory);
                 }
 
-                // This is the order the files will be assembled
-                IList<string> lstFilesToAppend = new List<string> { Constants.FILE_TITLE_PAGE_PDF,  Constants.FILE_EXPORT_MAP_ELEV_PDF,
-                    Constants.FILE_EXPORT_MAP_SNOTEL_PDF, Constants.FILE_EXPORT_MAP_SCOS_PDF, Constants.FILE_EXPORT_MAP_SNOTEL_AND_SCOS_PDF,
-                    Constants.FILE_EXPORT_MAP_PRECIPITATION_PDF, Constants.FILE_EXPORT_MAPS_SWE[0], Constants.FILE_EXPORT_MAPS_SWE[1],
-                    Constants.FILE_EXPORT_MAPS_SWE[2], Constants.FILE_EXPORT_MAPS_SWE[3], Constants.FILE_EXPORT_MAPS_SWE[4],
-                    Constants.FILE_EXPORT_MAPS_SWE[5], Constants.FILE_EXPORT_MAPS_SWE[6], Constants.FILE_EXPORT_MAP_ASPECT_PDF,
-                    Constants.FILE_EXPORT_MAP_SLOPE_PDF, Constants.FILE_EXPORT_CHART_AREA_ELEV_PRECIP_SITE_PDF,
-                    Constants.FILE_EXPORT_CHART_SLOPE_PDF, Constants.FILE_EXPORT_CHART_ASPECT_PDF, Constants.FILE_EXPORT_CHART_ELEV_PRECIP_CORR_PDF,
-                    Constants.FILE_EXPORT_MAP_ROADS_PDF,
-                    Constants.FILE_EXPORT_MAP_PUBLIC_LAND_PDF, Constants.FILE_EXPORT_MAP_BELOW_TREELINE_PDF,
-                    Constants.FILE_EXPORT_MAP_SITES_LOCATION_PDF};
-
                 // Delete any old PDF files
-                foreach (var item in lstFilesToAppend)
+                foreach (var item in Constants.FILES_EXPORT_ALL_PDF)
                 {
                     string strPath = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE
                         + "\\" + item;
@@ -71,86 +59,21 @@ namespace bagis_pro.Buttons
                     }
                 }
 
-                // Load the maps if they aren't in the viewer already
-                BA_ReturnCode success = BA_ReturnCode.Success;
-                if (! FrameworkApplication.State.Contains(Constants.STATES_MAP_BUTTONS[0]))
-                {
-                    success = await MapTools.DisplayMaps(Module1.Current.Aoi.FilePath);
-                }
-
+                BA_ReturnCode success = await MapTools.PublishMapsAsync(); // export the maps to pdf
                 if (success != BA_ReturnCode.Success)
                 {
-                    MessageBox.Show("Unable to load maps. The map package cannot be exported!!", "BAGIS-PRO");
-                    return;
+                    MessageBox.Show("An error occurred while generating the maps!!", "BAGIS-PRO");
                 }
-
-                foreach (string strButtonState in Constants.STATES_MAP_BUTTONS)
-                {
-                    if (FrameworkApplication.State.Contains(strButtonState))
-                    {
-                        int foundS1 = strButtonState.IndexOf("_State");
-                        string strMapButton = strButtonState.Remove(foundS1);
-                        ICommand cmd = FrameworkApplication.GetPlugInWrapper(strMapButton) as ICommand;
-                        Module1.Current.ModuleLogManager.LogDebug(nameof(BtnExportToPdf), 
-                            "About to toggle map button " + strMapButton);
-
-                        if ((cmd != null))
-                        {
-                            do
-                            {
-                                await Task.Delay(TimeSpan.FromSeconds(0.4));  // build in delay until the command can execute
-                            }
-                            while (!cmd.CanExecute(null));
-                            cmd.Execute(null);
-                        }
- 
-                        do
-                        {
-                            await Task.Delay(TimeSpan.FromSeconds(0.4));  // build in delay so maps can load
-                        }
-                        while (Module1.Current.MapFinishedLoading == false);
-
-                        BA_ReturnCode success2 = await GeneralTools.ExportMapToPdfAsync();    // export each map to pdf
-                    }
-                    else
-                    {
-                        Module1.Current.ModuleLogManager.LogDebug(nameof(BtnExportToPdf),
-                            strButtonState + " not enabled for this AOI ");
-                    }
-                }
-
                 success = await GeneralTools.GenerateTablesAsync(false);   // export the tables to pdf
-                if (!success.Equals(BA_ReturnCode.Success))
+                if (success != BA_ReturnCode.Success)
                 {
                     MessageBox.Show("An error occurred while generating the Excel tables!!", "BAGIS-PRO");
                 }
-                await GeneralTools.GenerateMapsTitlePage();
-
-                // Initialize output document
-                PdfDocument outputDocument = new PdfDocument();
-                //Iterate through files
-                foreach (string strFileName in lstFilesToAppend)
-                {
-                    string fullPath = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\" +
-                                      strFileName;
-                    if (System.IO.File.Exists(fullPath))
-                    {
-                        PdfDocument inputDocument = PdfReader.Open(fullPath, PdfDocumentOpenMode.Import);
-                        // Iterate pages
-                        int count = inputDocument.PageCount;
-                        for (int idx = 0;  idx < count; idx++)
-                        {
-                            // Get the page from the external document...
-                            PdfPage page = inputDocument.Pages[idx];
-                            outputDocument.AddPage(page);
-                        }
-                    }
-                }
-
-                // Save final document
+                await GeneralTools.GenerateMapsTitlePageAsync("", "");
                 string outputPath = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\" +
-                                      Constants.FILE_EXPORT_MAPS_ALL_PDF;
-                outputDocument.Save(outputPath);
+                      Constants.FILE_EXPORT_MAPS_ALL_PDF;
+                GeneralTools.PublishFullPdfDocument(outputPath);    // Put it all together into a single pdf document
+
                 MessageBox.Show("Map package exported to " + outputPath + "!!", "BAGIS-PRO");
             }
             catch (Exception e)

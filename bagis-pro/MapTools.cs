@@ -116,7 +116,7 @@ namespace bagis_pro
                         Constants.FILE_ROADS_ZONE;
                     // Get buffer units out of the metadata so we can set the layer name
                     string strBagisTag = await GeneralTools.GetBagisTagAsync(strPath, Constants.META_TAG_XPATH);
-                    if (! String.IsNullOrEmpty(strBagisTag))
+                    if (!String.IsNullOrEmpty(strBagisTag))
                     {
                         string strBufferDistance = GeneralTools.GetValueForKey(strBagisTag, Constants.META_TAG_BUFFER_DISTANCE, ';');
                         string strBufferUnits = GeneralTools.GetValueForKey(strBagisTag, Constants.META_TAG_XUNIT_VALUE, ';');
@@ -250,26 +250,26 @@ namespace bagis_pro
 
         public static async Task<Layout> GetDefaultLayoutAsync(string layoutName)
         {
-           return await QueuedTask.Run(() =>
-           {
-               Layout layout = null;
-               Project proj = Project.Current;
+            return await QueuedTask.Run(() =>
+            {
+                Layout layout = null;
+                Project proj = Project.Current;
 
                //Finding the first project item with name matches with mapName
                LayoutProjectItem lytItem =
-                  proj.GetItems<LayoutProjectItem>()
-                      .FirstOrDefault(m => m.Name.Equals(layoutName, StringComparison.CurrentCultureIgnoreCase));
-               if (lytItem != null)
-               {
-                   layout = lytItem.GetLayout();
-               }
-               else
-               {
-                   layout = LayoutFactory.Instance.CreateLayout(8.5, 11, LinearUnit.Inches);
-                   layout.SetName(layoutName);
-               }
-               return layout;
-           });
+                   proj.GetItems<LayoutProjectItem>()
+                       .FirstOrDefault(m => m.Name.Equals(layoutName, StringComparison.CurrentCultureIgnoreCase));
+                if (lytItem != null)
+                {
+                    layout = lytItem.GetLayout();
+                }
+                else
+                {
+                    layout = LayoutFactory.Instance.CreateLayout(8.5, 11, LinearUnit.Inches);
+                    layout.SetName(layoutName);
+                }
+                return layout;
+            });
         }
 
         public static async Task SetDefaultMapFrameDimensionAsync(string mapFrameName, Layout oLayout, Map oMap, double xMin,
@@ -569,7 +569,7 @@ namespace bagis_pro
             arrLayerNames[13] = Constants.MAPS_PUBLIC_LAND;
             arrLayerNames[14] = Constants.MAPS_SITES_LOCATION;
             int idxLayerNames = 15;
-            for (int i=0; i < Constants.LAYER_NAMES_SNODAS_SWE.Length; i++)
+            for (int i = 0; i < Constants.LAYER_NAMES_SNODAS_SWE.Length; i++)
             {
                 arrLayerNames[idxLayerNames] = Constants.LAYER_NAMES_SNODAS_SWE[i];
                 idxLayerNames++;
@@ -1407,7 +1407,7 @@ namespace bagis_pro
             Module1.DeactivateState("BtnMapLoad_State");
         }
 
-        public static async Task<BA_ReturnCode> LoadSweMapAsync(string strRaster, string strNewLayerName, 
+        public static async Task<BA_ReturnCode> LoadSweMapAsync(string strRaster, string strNewLayerName,
                                                                 string strTitle, string strFileMapExport)
         {
             RasterDataset rDataset = null;
@@ -1423,7 +1423,7 @@ namespace bagis_pro
                 //Get the default map layout
                 LayoutProjectItem lytItem =
                    proj.GetItems<LayoutProjectItem>()
-                       .FirstOrDefault(m => m.Name.Equals(Constants.MAPS_DEFAULT_LAYOUT_NAME, 
+                       .FirstOrDefault(m => m.Name.Equals(Constants.MAPS_DEFAULT_LAYOUT_NAME,
                        StringComparison.CurrentCultureIgnoreCase));
                 if (lytItem != null)
                 {
@@ -1458,7 +1458,7 @@ namespace bagis_pro
                 oLayer = map.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(Module1.Current.DisplayedSweMap, StringComparison.CurrentCultureIgnoreCase));
             });
 
-            RasterLayer rasterLayer = (RasterLayer) oLayer;
+            RasterLayer rasterLayer = (RasterLayer)oLayer;
             // Create a new Stretch Colorizer Definition using the default constructor.
             StretchColorizerDefinition stretchColorizerDef_default = new StretchColorizerDefinition();
             // Create a new Stretch colorizer using the colorizer definition created above.
@@ -1525,7 +1525,7 @@ namespace bagis_pro
             if (success == BA_ReturnCode.Success)
             {
                 Module1.Current.DisplayedMap = strFileMapExport;
-                Module1.Current.DisplayedSweMap = strNewLayerName; 
+                Module1.Current.DisplayedSweMap = strNewLayerName;
             }
             return success;
         }
@@ -1550,7 +1550,7 @@ namespace bagis_pro
                 double dblLabelMax = dblStretchMax;
                 string layerUnits = "";
                 string strBagisTag = await GeneralTools.GetBagisTagAsync(strPath, Constants.META_TAG_XPATH);
-                if (! string.IsNullOrEmpty(strBagisTag))
+                if (!string.IsNullOrEmpty(strBagisTag))
                 {
                     layerUnits = GeneralTools.GetValueForKey(strBagisTag, Constants.META_TAG_ZUNIT_VALUE, ';');
                 }
@@ -1560,7 +1560,7 @@ namespace bagis_pro
                     layerUnits = oDataSource.units;
                 }
                 string strSweDisplayUnits = Module1.Current.BatchToolSettings.SweDisplayUnits;
-                if ( layerUnits != null && !strSweDisplayUnits.Equals(layerUnits))
+                if (layerUnits != null && !strSweDisplayUnits.Equals(layerUnits))
                 {
                     switch (strSweDisplayUnits)
                     {
@@ -1630,11 +1630,62 @@ namespace bagis_pro
                         idx++;
                     }
                 }
-                
+
             }
             Module1.Current.DisplayedSweMap = Constants.LAYER_NAMES_SNODAS_SWE[idxDefaultMonth];
             return success;
         }
 
+        public static async Task<BA_ReturnCode> PublishMapsAsync()
+        {
+            // Load the maps if they aren't in the viewer already
+            BA_ReturnCode success = BA_ReturnCode.Success;
+            if (!FrameworkApplication.State.Contains(Constants.STATES_MAP_BUTTONS[0]))
+            {
+                success = await MapTools.DisplayMaps(Module1.Current.Aoi.FilePath);
+            }
+
+            if (success != BA_ReturnCode.Success)
+            {
+                MessageBox.Show("Unable to load maps. The map package cannot be exported!!", "BAGIS-PRO");
+                return BA_ReturnCode.UnknownError;
+            }
+
+            foreach (string strButtonState in Constants.STATES_MAP_BUTTONS)
+            {
+                if (FrameworkApplication.State.Contains(strButtonState))
+                {
+                    int foundS1 = strButtonState.IndexOf("_State");
+                    string strMapButton = strButtonState.Remove(foundS1);
+                    ICommand cmd = FrameworkApplication.GetPlugInWrapper(strMapButton) as ICommand;
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(PublishMapsAsync),
+                        "About to toggle map button " + strMapButton);
+
+                    if ((cmd != null))
+                    {
+                        do
+                        {
+                            await Task.Delay(TimeSpan.FromSeconds(0.4));  // build in delay until the command can execute
+                        }
+                        while (!cmd.CanExecute(null));
+                        cmd.Execute(null);
+                    }
+
+                    do
+                    {
+                        await Task.Delay(TimeSpan.FromSeconds(0.4));  // build in delay so maps can load
+                    }
+                    while (Module1.Current.MapFinishedLoading == false);
+
+                    BA_ReturnCode success2 = await GeneralTools.ExportMapToPdfAsync();    // export each map to pdf
+                }
+                else
+                {
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(PublishMapsAsync),
+                        strButtonState + " not enabled for this AOI ");
+                }
+            }
+            return success;
+        }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -16,7 +17,8 @@ using ArcGIS.Desktop.Framework.Contracts;
 using ArcGIS.Desktop.Framework.Dialogs;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
 using ArcGIS.Desktop.Mapping;
-
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace bagis_pro
 {
@@ -49,6 +51,20 @@ namespace bagis_pro
                     {
                         this.SettingsFile = strFullPath;
                     }
+
+                    // read JSON directly from a file
+                    using (FileStream fs = File.OpenRead(this.SettingsFile))
+                    {
+                        using (JsonTextReader reader = new JsonTextReader(new StreamReader(fs)))
+                        {
+                            dynamic oBatchSettings = (JObject)JToken.ReadFrom(reader);
+                            if (oBatchSettings != null)
+                            {
+                                Module1.Current.BatchToolSettings = oBatchSettings;
+                            }
+                            Publisher = (string) oBatchSettings.Publisher;
+                        }
+                    }
                 }
             }
         }
@@ -71,7 +87,10 @@ namespace bagis_pro
         private string _heading = "Batch PDF Export";
         private string _aoiFolder;
         private string _settingsFile;
+        private string _publisher;
+        private string _comments;
         private bool _archiveChecked = false;
+        private bool _cmdRunEnabled = false;
         public string Heading
         {
             get { return _heading; }
@@ -99,12 +118,39 @@ namespace bagis_pro
             }
         }
 
+        public string Publisher
+        {
+            get { return _publisher; }
+            set
+            {
+                SetProperty(ref _publisher, value, () => Publisher);
+            }
+        }
+
+        public string Comments
+        {
+            get { return _comments; }
+            set
+            {
+                SetProperty(ref _comments, value, () => Comments);
+            }
+        }
+
         public bool ArchiveChecked
         {
             get { return _archiveChecked; }
             set
             {
                 SetProperty(ref _archiveChecked, value, () => ArchiveChecked);
+            }
+        }
+
+        public bool CmdRunEnabled
+        {
+            get { return _cmdRunEnabled; }
+            set
+            {
+                SetProperty(ref _cmdRunEnabled, value, () => CmdRunEnabled);
             }
         }
 
@@ -132,6 +178,14 @@ namespace bagis_pro
                             AoiFolder = item.Path;
                         }
                     }
+                    if (String.IsNullOrEmpty(AoiFolder))
+                    {
+                        CmdRunEnabled = false;
+                    }
+                    else
+                    {
+                        CmdRunEnabled = true;
+                    }
                 });
             }
         }
@@ -140,13 +194,25 @@ namespace bagis_pro
         {
             get
             {
-                return new RelayCommand(() =>
+                return new RelayCommand(async () =>
                 {
- 
+                    FolderType fType = await GeodatabaseTools.GetAoiFolderTypeAsync(AoiFolder);
+                    if (fType != FolderType.AOI)
+                    {
+                        MessageBox.Show("This folder is not an AOI!");
+                        return;
+                    }
+
+                    string strPublisher = (string)Module1.Current.BatchToolSettings.Publisher;
+                    if (!Publisher.Trim().Equals(strPublisher))
+                    {
+                        Module1.Current.BatchToolSettings.Publisher = Publisher;
+                        String json = JsonConvert.SerializeObject(Module1.Current.BatchToolSettings, Formatting.Indented);
+                        File.WriteAllText(SettingsFile, json);
+                    }
                 });
             }
         }
-
     }
 
     /// <summary>

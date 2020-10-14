@@ -19,6 +19,8 @@ using ArcGIS.Core.Data.Raster;
 using ArcGIS.Desktop.Framework;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using PdfSharp.Pdf;
+using PdfSharp.Pdf.IO;
 
 namespace bagis_pro
 {
@@ -96,7 +98,7 @@ namespace bagis_pro
 
         }
 
-        public static async Task GenerateMapsTitlePage()
+        public static async Task GenerateMapsTitlePageAsync(string strPublisher, string strComments)
         {
             try
             {
@@ -108,7 +110,7 @@ namespace bagis_pro
                 {
                     strStationId = "XXXXXXXX:XX:USGS";
                 }
-                
+
                 // Query for the drainage area
                 Uri gdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi));
                 string strAreaSqKm = await GeodatabaseTools.QueryTableForSingleValueAsync(gdbUri, Constants.FILE_POURPOINT,
@@ -197,7 +199,7 @@ namespace bagis_pro
                 string[] keys = { Constants.DATA_TYPE_SWE, Constants.DATA_TYPE_PRECIPITATION, Constants.DATA_TYPE_SNOTEL,
                                   Constants.DATA_TYPE_SNOW_COURSE, Constants.DATA_TYPE_ROADS, Constants.DATA_TYPE_PUBLIC_LAND,
                                   Constants.DATA_TYPE_VEGETATION};
-                IList < BA_Objects.DataSource > lstDataSources = new List<BA_Objects.DataSource>();
+                IList<BA_Objects.DataSource> lstDataSources = new List<BA_Objects.DataSource>();
                 foreach (string strKey in keys)
                 {
                     if (dictLocalDataSources.ContainsKey(strKey))
@@ -211,8 +213,8 @@ namespace bagis_pro
                 BA_Objects.ExportTitlePage tPage = new BA_Objects.ExportTitlePage
                 {
                     aoi_name = Module1.Current.Aoi.Name,
-                    comments = "This is a test",
-                    publisher = "Lesley Bross",
+                    comments = strComments,
+                    publisher = strPublisher,
                     local_path = Module1.Current.Aoi.FilePath,
                     streamgage_station = strStationId,
                     streamgage_station_name = strStationName,
@@ -264,12 +266,12 @@ namespace bagis_pro
                         PdfSharp.PageSize.Letter);
                     titlePageDoc.Save(publishFolder + "\\" + Constants.FILE_TITLE_PAGE_PDF);
                 }
-                Module1.Current.ModuleLogManager.LogDebug(nameof(GenerateMapsTitlePage),
+                Module1.Current.ModuleLogManager.LogDebug(nameof(GenerateMapsTitlePageAsync),
                     "Title page created!!");
             }
             catch (Exception e)
             {
-                Module1.Current.ModuleLogManager.LogError(nameof(GenerateMapsTitlePage),
+                Module1.Current.ModuleLogManager.LogError(nameof(GenerateMapsTitlePageAsync),
                     "Exception: " + e.Message);
                 MessageBox.Show("An error occurred while trying to parse the XML!! " + e.Message, "BAGIS PRO");
             }
@@ -409,14 +411,14 @@ namespace bagis_pro
 
                 // Query min/max from dem
                 string sMask = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_RASTER;
-            IList<double> lstResult = await GeoprocessingTools.GetDemStatsAsync(Module1.Current.Aoi.FilePath, sMask, 0.005);
-            double elevMinMeters = -1;
-            double elevMaxMeters = -1;
-            if (lstResult.Count == 2)   // We expect the min and max values in that order
-            {
-                elevMinMeters = lstResult[0];
-                elevMaxMeters = lstResult[1];
-            }
+                IList<double> lstResult = await GeoprocessingTools.GetDemStatsAsync(Module1.Current.Aoi.FilePath, sMask, 0.005);
+                double elevMinMeters = -1;
+                double elevMaxMeters = -1;
+                if (lstResult.Count == 2)   // We expect the min and max values in that order
+                {
+                    elevMinMeters = lstResult[0];
+                    elevMaxMeters = lstResult[1];
+                }
                 Module1.Current.ModuleLogManager.LogDebug(nameof(GenerateTablesAsync), "Queried min/max from DEM. Min is " + elevMinMeters);
 
                 success = await ExcelTools.CreateElevationTableAsync(pAreaElvWorksheet, elevMinMeters);
@@ -455,13 +457,13 @@ namespace bagis_pro
                 }
 
                 string strPrecipPath = Module1.Current.Aoi.FilePath + Module1.Current.BatchToolSettings.AoiPrecipFile;
-                 double MaxPRISMValue = await ExcelTools.CreatePrecipitationTableAsync(pPRISMWorkSheet,
-                    strPrecipPath, elevMinMeters);
+                double MaxPRISMValue = await ExcelTools.CreatePrecipitationTableAsync(pPRISMWorkSheet,
+                   strPrecipPath, elevMinMeters);
 
-            // copy DEM area and %_area to the PRISM table
-            success = ExcelTools.CopyCells(pAreaElvWorksheet, 3, pPRISMWorkSheet, 12);
-            success = ExcelTools.CopyCells(pAreaElvWorksheet, 10, pPRISMWorkSheet, 13);
-            success = ExcelTools.EstimatePrecipitationVolume(pPRISMWorkSheet, 12, 7, 14, 15);
+                // copy DEM area and %_area to the PRISM table
+                success = ExcelTools.CopyCells(pAreaElvWorksheet, 3, pPRISMWorkSheet, 12);
+                success = ExcelTools.CopyCells(pAreaElvWorksheet, 10, pPRISMWorkSheet, 13);
+                success = ExcelTools.EstimatePrecipitationVolume(pPRISMWorkSheet, 12, 7, 14, 15);
                 // Try to get elevation interval from analysis.xml settings file
                 BA_Objects.Analysis oAnalysis = new BA_Objects.Analysis();
                 string strSettingsFile = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAPS + "\\" +
@@ -479,17 +481,17 @@ namespace bagis_pro
                 {
                     Y_Unit = oAnalysis.ElevationZonesInterval;
                 }
-            double Y_Max = -99.0F;
-            double minValue = elevMinMeters;
-            double maxValue = elevMaxMeters;
+                double Y_Max = -99.0F;
+                double minValue = elevMinMeters;
+                double maxValue = elevMaxMeters;
                 int leftPosition = Constants.EXCEL_CHART_WIDTH + (Constants.EXCEL_CHART_SPACING * 10);
                 //aoiDemMin is always in meters
-                string strDemDisplayUnits = (string) Module1.Current.BatchToolSettings.DemDisplayUnits;
-            if (strDemDisplayUnits.Equals("Feet"))
-            {
-                minValue = ArcGIS.Core.Geometry.LinearUnit.Meters.ConvertTo(elevMinMeters, ArcGIS.Core.Geometry.LinearUnit.Feet);
-                maxValue = ArcGIS.Core.Geometry.LinearUnit.Meters.ConvertTo(elevMaxMeters, ArcGIS.Core.Geometry.LinearUnit.Feet);
-            }
+                string strDemDisplayUnits = (string)Module1.Current.BatchToolSettings.DemDisplayUnits;
+                if (strDemDisplayUnits.Equals("Feet"))
+                {
+                    minValue = ArcGIS.Core.Geometry.LinearUnit.Meters.ConvertTo(elevMinMeters, ArcGIS.Core.Geometry.LinearUnit.Feet);
+                    maxValue = ArcGIS.Core.Geometry.LinearUnit.Meters.ConvertTo(elevMaxMeters, ArcGIS.Core.Geometry.LinearUnit.Feet);
+                }
 
                 double Y_Min = ExcelTools.ConfigureYAxis(minValue, maxValue, Y_Unit, ref Y_Max);
                 success = ExcelTools.CreateCombinedChart(pPRISMWorkSheet, pAreaElvWorksheet, pChartsWorksheet, pSNOTELWorksheet,
@@ -500,7 +502,7 @@ namespace bagis_pro
                 Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Created Slope Table");
                 if (success == BA_ReturnCode.Success)
                 {
-                    success = ExcelTools.CreateSlopeChart(pSlopeWorksheet, pChartsWorksheet, 
+                    success = ExcelTools.CreateSlopeChart(pSlopeWorksheet, pChartsWorksheet,
                         Constants.EXCEL_CHART_SPACING, leftPosition);
                     Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Created Slope Chart");
                 }
@@ -510,7 +512,7 @@ namespace bagis_pro
                 int topPosition = Constants.EXCEL_CHART_HEIGHT + (Constants.EXCEL_CHART_SPACING * 25);
                 if (success == BA_ReturnCode.Success)
                 {
-                    success = ExcelTools.CreateAspectChart(pAspectWorksheet, pChartsWorksheet, 
+                    success = ExcelTools.CreateAspectChart(pAspectWorksheet, pChartsWorksheet,
                         topPosition, Constants.EXCEL_CHART_SPACING);
                     Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Created Aspect Chart");
                 }
@@ -524,7 +526,7 @@ namespace bagis_pro
                 }
                 if (intMinPrecip != 999 && bPrecStelLayerExists)
                 {
-                    success = await ExcelTools.CreateSnotelPrecipTableAsync(pPrecipSiteWorksheet, 
+                    success = await ExcelTools.CreateSnotelPrecipTableAsync(pPrecipSiteWorksheet,
                             new List<BA_Objects.Site>());
                     Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Created Snotel Represented Precip Table");
 
@@ -537,45 +539,45 @@ namespace bagis_pro
 
                 //Publish Charts Tab
                 if (bInteractive == false)
-            {
-                // Combined chart
-                string sOutputFolder = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\";
-                string pathToSave = sOutputFolder + Constants.FILE_EXPORT_CHART_AREA_ELEV_PRECIP_SITE_PDF;
-
-                XlPaperSize oPaperSize = XlPaperSize.xlPaperLetter;
-                try
                 {
-                    oPaperSize = pChartsWorksheet.PageSetup.PaperSize;
-                }
-                catch (Exception e)
-                {
-                    Module1.Current.ModuleLogManager.LogError(nameof(GenerateTablesAsync),
-                        "Exception: " + e.Message);
-                    MessageBox.Show("An error occurred while querying Excel's paper size! Please test printing from Excel and try again", "BAGIS-PRO");
-                    return BA_ReturnCode.UnknownError;
-                }
+                    // Combined chart
+                    string sOutputFolder = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\";
+                    string pathToSave = sOutputFolder + Constants.FILE_EXPORT_CHART_AREA_ELEV_PRECIP_SITE_PDF;
 
-                XlPaperSize oReqPaperSize = XlPaperSize.xlPaperLetter;
-                pChartsWorksheet.PageSetup.Zoom = false;
-                pChartsWorksheet.PageSetup.PaperSize = oReqPaperSize;
-                pChartsWorksheet.PageSetup.FitToPagesTall = 1;
-                pChartsWorksheet.PageSetup.FitToPagesWide = 1;
-                pChartsWorksheet.PageSetup.PrintArea = "$A$1:$M$29";
-                pChartsWorksheet.PageSetup.CenterHeader = "&C&\"Arial,Bold\"&16 " + Module1.Current.Aoi.Name;
-                pChartsWorksheet.ExportAsFixedFormat(XlFixedFormatType.xlTypePDF, pathToSave);
-                Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Published combined chart to PDF");
+                    XlPaperSize oPaperSize = XlPaperSize.xlPaperLetter;
+                    try
+                    {
+                        oPaperSize = pChartsWorksheet.PageSetup.PaperSize;
+                    }
+                    catch (Exception e)
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(GenerateTablesAsync),
+                            "Exception: " + e.Message);
+                        MessageBox.Show("An error occurred while querying Excel's paper size! Please test printing from Excel and try again", "BAGIS-PRO");
+                        return BA_ReturnCode.UnknownError;
+                    }
 
-                // slope chart
-                pathToSave = sOutputFolder + "\\" + Constants.FILE_EXPORT_CHART_SLOPE_PDF;
-                pChartsWorksheet.PageSetup.PrintArea = "$N$1:$AA$29";
-                pChartsWorksheet.ExportAsFixedFormat(XlFixedFormatType.xlTypePDF, pathToSave);
-                Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Published slope chart to PDF");
+                    XlPaperSize oReqPaperSize = XlPaperSize.xlPaperLetter;
+                    pChartsWorksheet.PageSetup.Zoom = false;
+                    pChartsWorksheet.PageSetup.PaperSize = oReqPaperSize;
+                    pChartsWorksheet.PageSetup.FitToPagesTall = 1;
+                    pChartsWorksheet.PageSetup.FitToPagesWide = 1;
+                    pChartsWorksheet.PageSetup.PrintArea = "$A$1:$M$29";
+                    pChartsWorksheet.PageSetup.CenterHeader = "&C&\"Arial,Bold\"&16 " + Module1.Current.Aoi.Name;
+                    pChartsWorksheet.ExportAsFixedFormat(XlFixedFormatType.xlTypePDF, pathToSave);
+                    Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Published combined chart to PDF");
 
-                // aspect chart
-                pathToSave = sOutputFolder + "\\" + Constants.FILE_EXPORT_CHART_ASPECT_PDF;
-                pChartsWorksheet.PageSetup.PrintArea = "$A$32:$M$61";
-                pChartsWorksheet.ExportAsFixedFormat(XlFixedFormatType.xlTypePDF, pathToSave);
-                Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Published aspect chart to PDF");
+                    // slope chart
+                    pathToSave = sOutputFolder + "\\" + Constants.FILE_EXPORT_CHART_SLOPE_PDF;
+                    pChartsWorksheet.PageSetup.PrintArea = "$N$1:$AA$29";
+                    pChartsWorksheet.ExportAsFixedFormat(XlFixedFormatType.xlTypePDF, pathToSave);
+                    Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Published slope chart to PDF");
+
+                    // aspect chart
+                    pathToSave = sOutputFolder + "\\" + Constants.FILE_EXPORT_CHART_ASPECT_PDF;
+                    pChartsWorksheet.PageSetup.PrintArea = "$A$32:$M$61";
+                    pChartsWorksheet.ExportAsFixedFormat(XlFixedFormatType.xlTypePDF, pathToSave);
+                    Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Published aspect chart to PDF");
 
                     // Elev-Precip Chart Tab
                     if (bPrecMeanElevTableExists)
@@ -635,7 +637,7 @@ namespace bagis_pro
                     //Select the nodes from the fully qualified XPath
                     XmlNodeList propertyNodes = myXml.SelectNodes(propertyPath);
                     //Place each innerText into a list to return
-                    foreach(XmlNode pNode in propertyNodes)
+                    foreach (XmlNode pNode in propertyNodes)
                     {
                         if (pNode.InnerText.IndexOf(Constants.META_TAG_PREFIX) > -1)
                         {
@@ -660,7 +662,7 @@ namespace bagis_pro
                     //Example: ZUnitCategory|Depth
                     strValue = pValue.Substring(pValue.IndexOf("|") + 1);
                     //Strip trailing ";" if exists
-                    if (strValue.Substring(strValue.Length - 1)== ";")
+                    if (strValue.Substring(strValue.Length - 1) == ";")
                     {
                         strValue = strValue.Remove(strValue.Length - 1, 1);
                     }
@@ -684,63 +686,6 @@ namespace bagis_pro
                 {
                     //use the metadata; Create a .NET XmlDocument and load the schema
                     XmlDocument myXml = new XmlDocument();
-                    myXml.LoadXml(strXml);
-                    //Check to see if the parent node exists
-                    char sep = '/';
-                    int lastSep = propertyPath.LastIndexOf(sep);
-                    string parentNodePath = propertyPath.Substring(0, lastSep);
-                    XmlNodeList parentNodeList = myXml.SelectNodes(parentNodePath);
-                    if (parentNodeList.Count < 1)
-                    {
-                        AddMetadataNode(ref myXml, parentNodePath, sep);
-                        parentNodeList = myXml.SelectNodes(parentNodePath);
-                    }
-                    // Assume we want the first one
-                    XmlNode parentNode = parentNodeList[0];
-                    string childNodeName = propertyPath.Substring(lastSep + 1);
-                    XmlNodeList propertyNodeList = parentNode.ChildNodes;
-                    string matchPrefix = innerText.Substring(0, matchLength);
-                    bool foundIt = false;
-                    foreach(XmlNode pNode in propertyNodeList)
-                    {
-                        //Is the node the same node name we need to update?
-                        if (pNode.Name == childNodeName)
-                        {
-                            //Is the first part of the innerText the same as what we want to update? 
-                            if (pNode.InnerText.Length > matchLength &&
-                                pNode.InnerText.Substring(0, matchLength) == matchPrefix)
-                            {
-                                //If so, update the innerText
-                                pNode.InnerText = innerText;
-                                foundIt = true;
-                            }
-                        }
-                    }
-                    //If it didn't exist, we need to create a new node
-                    if (foundIt == false)
-                    {
-                        // Create the child node
-                        XmlNode childNode = myXml.CreateNode(XmlNodeType.Element, childNodeName, null);
-                        childNode.InnerText = innerText;
-                        // Attach the child to the parent
-                        parentNode.AppendChild(childNode);
-                    }
-
-                    await QueuedTask.Run(() => fc.SetXml(myXml.OuterXml));
-
-                }
-            }
-            success = BA_ReturnCode.Success;
-            return success;
-        }
-
-        public static XmlDocument UpdateMetadata(string strXml, string propertyPath,
-                                                   string innerText, int matchLength)
-        {
-            XmlDocument myXml = new XmlDocument();
-            if (!string.IsNullOrEmpty(strXml))
-                {
-                    //use the metadata; Create a .NET XmlDocument and load the schema
                     myXml.LoadXml(strXml);
                     //Check to see if the parent node exists
                     char sep = '/';
@@ -783,7 +728,64 @@ namespace bagis_pro
                         parentNode.AppendChild(childNode);
                     }
 
-                    //await QueuedTask.Run(() => fc.SetXml(myXml.OuterXml));
+                    await QueuedTask.Run(() => fc.SetXml(myXml.OuterXml));
+
+                }
+            }
+            success = BA_ReturnCode.Success;
+            return success;
+        }
+
+        public static XmlDocument UpdateMetadata(string strXml, string propertyPath,
+                                                   string innerText, int matchLength)
+        {
+            XmlDocument myXml = new XmlDocument();
+            if (!string.IsNullOrEmpty(strXml))
+            {
+                //use the metadata; Create a .NET XmlDocument and load the schema
+                myXml.LoadXml(strXml);
+                //Check to see if the parent node exists
+                char sep = '/';
+                int lastSep = propertyPath.LastIndexOf(sep);
+                string parentNodePath = propertyPath.Substring(0, lastSep);
+                XmlNodeList parentNodeList = myXml.SelectNodes(parentNodePath);
+                if (parentNodeList.Count < 1)
+                {
+                    AddMetadataNode(ref myXml, parentNodePath, sep);
+                    parentNodeList = myXml.SelectNodes(parentNodePath);
+                }
+                // Assume we want the first one
+                XmlNode parentNode = parentNodeList[0];
+                string childNodeName = propertyPath.Substring(lastSep + 1);
+                XmlNodeList propertyNodeList = parentNode.ChildNodes;
+                string matchPrefix = innerText.Substring(0, matchLength);
+                bool foundIt = false;
+                foreach (XmlNode pNode in propertyNodeList)
+                {
+                    //Is the node the same node name we need to update?
+                    if (pNode.Name == childNodeName)
+                    {
+                        //Is the first part of the innerText the same as what we want to update? 
+                        if (pNode.InnerText.Length > matchLength &&
+                            pNode.InnerText.Substring(0, matchLength) == matchPrefix)
+                        {
+                            //If so, update the innerText
+                            pNode.InnerText = innerText;
+                            foundIt = true;
+                        }
+                    }
+                }
+                //If it didn't exist, we need to create a new node
+                if (foundIt == false)
+                {
+                    // Create the child node
+                    XmlNode childNode = myXml.CreateNode(XmlNodeType.Element, childNodeName, null);
+                    childNode.InnerText = innerText;
+                    // Attach the child to the parent
+                    parentNode.AppendChild(childNode);
+                }
+
+                //await QueuedTask.Run(() => fc.SetXml(myXml.OuterXml));
             }
             return myXml;
         }
@@ -806,9 +808,9 @@ namespace bagis_pro
             return success;
         }
 
-    //This function adds a node to an xml document; The node is identified by its XPath
-    //The separator is usually a "/"
-    //An example XPath is: /metadata/dataIdInfo/searchKeys/keyword
+        //This function adds a node to an xml document; The node is identified by its XPath
+        //The separator is usually a "/"
+        //An example XPath is: /metadata/dataIdInfo/searchKeys/keyword
         public static BA_ReturnCode AddMetadataNode(ref XmlDocument pXmlDoc, string nodePath, char sep)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
@@ -846,7 +848,7 @@ namespace bagis_pro
             // Initialize AOI object
             BA_Objects.Aoi oAoi = new BA_Objects.Aoi(Path.GetFileName(strAoiPath), strAoiPath);
             // Set reference to dockpane to update layers
-            var layersPane = (DockpaneLayersViewModel) FrameworkApplication.DockPaneManager.Find("bagis_pro_DockpaneLayers");
+            var layersPane = (DockpaneLayersViewModel)FrameworkApplication.DockPaneManager.Find("bagis_pro_DockpaneLayers");
             try
             {
                 // Load batch tool settings; Make sure we have the central BAGIS folder
@@ -939,7 +941,7 @@ namespace bagis_pro
                         strXml = fc.GetXml();
                         //check metadata was returned
                         string strBagisTag = GetBagisTag(strXml);
-                        if (! string.IsNullOrEmpty(strBagisTag))
+                        if (!string.IsNullOrEmpty(strBagisTag))
                         {
                             oAoi.ElevationUnits = GetValueForKey(strBagisTag, Constants.META_TAG_ZUNIT_VALUE, ';');
                         }
@@ -968,17 +970,17 @@ namespace bagis_pro
                         if (Directory.Exists(strFolderPath))
                         {
                             using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(gdbUri)))
+                            {
+                                IReadOnlyList<RasterDatasetDefinition> definitions = geodatabase.GetDefinitions<RasterDatasetDefinition>();
+                                foreach (RasterDatasetDefinition def in definitions)
                                 {
-                                    IReadOnlyList<RasterDatasetDefinition> definitions = geodatabase.GetDefinitions<RasterDatasetDefinition>();
-                                    foreach (RasterDatasetDefinition def in definitions)
+                                    if (def.GetName().Equals(PrismFile.Annual.ToString()))
                                     {
-                                        if (def.GetName().Equals(PrismFile.Annual.ToString()))
-                                        {
-                                            bExists = true;
-                                            break;
-                                        }
+                                        bExists = true;
+                                        break;
                                     }
                                 }
+                            }
                         }
                     }
                     layersPane.Prism_Checked = bExists;
@@ -1016,14 +1018,14 @@ namespace bagis_pro
                                         "Unable to locate PRISM units on annual layer. Using default");
                                 }
                             }
-                        }                       
+                        }
                     }
 
                     // Update data status for files in layers.gdb
                     string[] arrCheckLayers = new string[] { Constants.FILE_SNODAS_SWE_APRIL, Constants.FILE_SNOTEL,
                                                              Constants.FILE_SNOW_COURSE, Constants.FILE_ROADS,
                                                              Constants.FILE_PUBLIC_LAND, Constants.FILE_VEGETATION_EVT};
-                    bool[] arrLayerExists = new bool[] { false, false, false, false, false, false};
+                    bool[] arrLayerExists = new bool[] { false, false, false, false, false, false };
                     gdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers, false));
                     bExists = false;
                     if (gdbUri.IsFile)
@@ -1037,7 +1039,7 @@ namespace bagis_pro
                                 IReadOnlyList<FeatureClassDefinition> featureDefinitions = geodatabase.GetDefinitions<FeatureClassDefinition>();
                                 int j = 0;
                                 foreach (var layerName in arrCheckLayers)
-                                {                                   
+                                {
                                     foreach (RasterDatasetDefinition def in definitions)
                                     {
                                         if (def.GetName().Equals(layerName))
@@ -1167,7 +1169,7 @@ namespace bagis_pro
                     }
 
                     // Store current AOI in Module1
-                    Module1.Current.Aoi = oAoi;           
+                    Module1.Current.Aoi = oAoi;
                     Module1.Current.CboCurrentAoi.SetAoiName(oAoi.Name);
                     MapTools.DeactivateMapButtons();
                     Module1.ActivateState("Aoi_Selected_State");
@@ -1175,7 +1177,7 @@ namespace bagis_pro
 
                     MessageBox.Show("AOI is set to " + Module1.Current.Aoi.Name + "!", "BAGIS PRO");
                 });
-               
+
             }
             catch (Exception e)
             {
@@ -1228,7 +1230,7 @@ namespace bagis_pro
             }
             else
             {
-                scalefactor = Convert.ToInt32(Math.Pow(10,(intvstring.Length - position)));
+                scalefactor = Convert.ToInt32(Math.Pow(10, (intvstring.Length - position)));
                 inc_value = 1 / (Math.Pow(10, (intvstring.Length - position)));
             }
             //adjust value based on the scalefactor
@@ -1319,6 +1321,34 @@ namespace bagis_pro
             Module1.Current.ModuleLogManager.LogDebug(nameof(GetBagisSettingsPath),
                 "Settings path set to " + settingsPath);
             return settingsPath;
+        }
+
+        public static BA_ReturnCode PublishFullPdfDocument(string outputPath)
+        {
+            // Initialize output document
+            PdfDocument outputDocument = new PdfDocument();
+            //Iterate through files
+            foreach (string strFileName in Constants.FILES_EXPORT_ALL_PDF)
+            {
+                string fullPath = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\" +
+                                  strFileName;
+                if (System.IO.File.Exists(fullPath))
+                {
+                    PdfDocument inputDocument = PdfReader.Open(fullPath, PdfDocumentOpenMode.Import);
+                    // Iterate pages
+                    int count = inputDocument.PageCount;
+                    for (int idx = 0; idx < count; idx++)
+                    {
+                        // Get the page from the external document...
+                        PdfPage page = inputDocument.Pages[idx];
+                        outputDocument.AddPage(page);
+                    }
+                }
+            }
+
+            // Save final document
+            outputDocument.Save(outputPath);
+            return BA_ReturnCode.Success;
         }
     }
 

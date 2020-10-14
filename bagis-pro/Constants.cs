@@ -92,6 +92,16 @@ namespace bagis_pro
         public const string FILE_EXPORT_CHART_ASPECT_PDF = "chart_aspect.pdf";
         public const string FILE_EXPORT_CHART_ELEV_PRECIP_CORR_PDF = "chart_elev_precip_correlation.pdf";
         public const string FILE_EXPORT_MAPS_ALL_PDF = "all_maps_charts.pdf";
+        // List of files in the PDF map package and the order in which they will be assembled
+        public static string[] FILES_EXPORT_ALL_PDF = new string[] { FILE_TITLE_PAGE_PDF, FILE_EXPORT_MAP_ELEV_PDF,
+            FILE_EXPORT_MAP_SNOTEL_PDF, FILE_EXPORT_MAP_SCOS_PDF, FILE_EXPORT_MAP_SNOTEL_AND_SCOS_PDF,
+            FILE_EXPORT_MAP_PRECIPITATION_PDF, FILE_EXPORT_MAPS_SWE[0], FILE_EXPORT_MAPS_SWE[1],
+            FILE_EXPORT_MAPS_SWE[2], FILE_EXPORT_MAPS_SWE[3], FILE_EXPORT_MAPS_SWE[4],
+            FILE_EXPORT_MAPS_SWE[5], FILE_EXPORT_MAPS_SWE[6], FILE_EXPORT_MAP_ASPECT_PDF,
+            FILE_EXPORT_MAP_SLOPE_PDF, FILE_EXPORT_CHART_AREA_ELEV_PRECIP_SITE_PDF,
+            FILE_EXPORT_CHART_SLOPE_PDF, FILE_EXPORT_CHART_ASPECT_PDF, FILE_EXPORT_CHART_ELEV_PRECIP_CORR_PDF,
+            FILE_EXPORT_MAP_ROADS_PDF, FILE_EXPORT_MAP_PUBLIC_LAND_PDF, FILE_EXPORT_MAP_BELOW_TREELINE_PDF,
+            FILE_EXPORT_MAP_SITES_LOCATION_PDF};
         public const string FILE_TITLE_PAGE_XSL = "title_page.xsl";
         public const string FILE_TITLE_PAGE_XML = "title_page.xml";
         public const string FILE_TITLE_PAGE_HTML = "title_page.html";
