@@ -419,21 +419,35 @@ namespace bagis_pro
             //=============================================
             // Create Field Titles
             //=============================================
+            string strNumberFormat = "#######0.00";     // Format to be applied to float values
             pworksheet.Cells[1, 1] = "VALUE";
             pworksheet.Cells[1, 2] = "COUNT";
             pworksheet.Cells[1, 3] = "AREA";
             pworksheet.Cells[1, 4] = "MIN";
+            pworksheet.Columns[4].NumberFormat = strNumberFormat;
             pworksheet.Cells[1, 5] = "MAX";
+            pworksheet.Columns[5].NumberFormat = strNumberFormat;
             pworksheet.Cells[1, 6] = "RANGE";
+            pworksheet.Columns[6].NumberFormat = strNumberFormat;
             pworksheet.Cells[1, 7] = "MEAN";
+            pworksheet.Columns[7].NumberFormat = strNumberFormat;
             pworksheet.Cells[1, 8] = "STD";
+            pworksheet.Columns[8].NumberFormat = strNumberFormat;
             pworksheet.Cells[1, 9] = "SUM";
+            pworksheet.Columns[9].NumberFormat = strNumberFormat;
             pworksheet.Cells[1, 10] = "%_AREA";
+            pworksheet.Columns[10].NumberFormat = strNumberFormat;
             pworksheet.Cells[1, 11] = "Label";
             pworksheet.Cells[1, 12] = "AREA_DEM";
             pworksheet.Cells[1, 13] = "%_AREA_DEM";
+            pworksheet.Columns[13].NumberFormat = strNumberFormat;
             pworksheet.Cells[1, 14] = "VOL_ACRE_FT";
+            pworksheet.Columns[14].NumberFormat = strNumberFormat;
             pworksheet.Cells[1, 15] = "%_VOL";
+            pworksheet.Columns[15].NumberFormat = strNumberFormat;
+            pworksheet.Cells[1, 16] = "%_VOL_CUMU";
+            pworksheet.Columns[16].NumberFormat = strNumberFormat;
+            pworksheet.Columns.AutoFit();   // re-size every column to best fit
 
             //============================================
             // Populate Elevation and Percent Area Rows
@@ -579,11 +593,20 @@ namespace bagis_pro
             }
 
             // calculate % volume
+            decimal currentLetterNumber = (PercentCol - 1) % 26;
+            char currentLetter = (char)(currentLetterNumber + 65);
+            string percentString = Convert.ToString(currentLetter);
+            currentLetterNumber++;
+            currentLetter = (char)(currentLetterNumber + 65);
+            string cumuString = Convert.ToString(currentLetter);
             for (i = 1; i <= intCount; i++)
             {
                 Range pctRange = pPRSIMWS.Cells[i + 2, PercentCol];
                 Range volumeRange = pPRSIMWS.Cells[i + 2, VolumeCol];
                 pctRange.Value = volumeRange.Value * 100 / total_vol;
+                string strFormula = "=" + percentString + (i+2) + "+" + cumuString + (i+1);
+                Range cumuRange = pPRSIMWS.Cells[i + 2, PercentCol + 1];
+                cumuRange.Formula = strFormula;
             }
             return BA_ReturnCode.Success;
         }
@@ -785,18 +808,21 @@ namespace bagis_pro
             axis.MajorUnit = Y_Unit;
 
             // Top Axis
-            axis = (Axis)myChart.Axes(Microsoft.Office.Interop.Excel.XlAxisType.xlCategory,
+            Axis topAxis = (Axis) myChart.Axes(Microsoft.Office.Interop.Excel.XlAxisType.xlCategory,
                 Microsoft.Office.Interop.Excel.XlAxisGroup.xlSecondary);
-            axis.HasTitle = true;
-            axis.AxisTitle.Characters.Text = "Precipitation Distribution (% contribution by elevation zone)";
-            axis.AxisTitle.Font.Bold = true;
-            axis.AxisTitle.Orientation = "0";
-            axis.MaximumScale = MaxPRISMValue;
-            axis.MinimumScale = 0.0F; ;
+            topAxis.HasTitle = true;
+            topAxis.AxisTitle.Characters.Text = "Precipitation Distribution (% contribution by elevation zone)";
+            topAxis.AxisTitle.Font.Bold = true;
+            topAxis.AxisTitle.Orientation = "0";
+            topAxis.MaximumScale = MaxPRISMValue;
+            topAxis.MinimumScale = 0;
+            myChart.HasAxis[Microsoft.Office.Interop.Excel.XlAxisType.xlCategory, Microsoft.Office.Interop.Excel.XlAxisGroup.xlSecondary] = true;
+            // TickLables can only be modified after HasAxis is set to true
+            topAxis.TickLabels.NumberFormatLinked = false;
+            topAxis.TickLabels.NumberFormat = "0";
 
             // Insert Axes
             myChart.HasAxis[Microsoft.Office.Interop.Excel.XlAxisType.xlCategory, Microsoft.Office.Interop.Excel.XlAxisGroup.xlPrimary] = true;
-            myChart.HasAxis[Microsoft.Office.Interop.Excel.XlAxisType.xlCategory, Microsoft.Office.Interop.Excel.XlAxisGroup.xlSecondary] = true;
             myChart.HasAxis[Microsoft.Office.Interop.Excel.XlAxisType.xlValue, Microsoft.Office.Interop.Excel.XlAxisGroup.xlPrimary] = true;
             myChart.HasAxis[Microsoft.Office.Interop.Excel.XlAxisType.xlValue, Microsoft.Office.Interop.Excel.XlAxisGroup.xlSecondary] = true;
 
