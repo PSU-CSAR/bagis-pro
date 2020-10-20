@@ -383,6 +383,9 @@ namespace bagis_pro
                 Worksheet pPrecipChartWorksheet = null;
                 bool bPrecMeanElevTableExists = await GeodatabaseTools.TableExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false)), Constants.FILE_ASP_ZONE_PREC_TBL);
                 bool bPrecStelLayerExists = await GeodatabaseTools.FeatureClassExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false)), Constants.FILE_PREC_STEL);
+                //@ToDo: Renable these when done with precip chart
+                bPrecMeanElevTableExists = false;
+                bPrecStelLayerExists = false;
                 if (bPrecMeanElevTableExists)
                 {
                     // Create Elevation Precipitation Worksheet
@@ -456,14 +459,14 @@ namespace bagis_pro
                     Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Created Snow Course sites Table");
                 }
 
-                string strPrecipPath = Module1.Current.Aoi.FilePath + Module1.Current.BatchToolSettings.AoiPrecipFile;
+                string strPrecipPath = Module1.Current.Aoi.FilePath + "\\" + Module1.Current.BatchToolSettings.AoiPrecipFile;
                 double MaxPRISMValue = await ExcelTools.CreatePrecipitationTableAsync(pPRISMWorkSheet,
                    strPrecipPath, elevMinMeters);
 
                 // copy DEM area and %_area to the PRISM table
                 success = ExcelTools.CopyCells(pAreaElvWorksheet, 3, pPRISMWorkSheet, 12);
                 success = ExcelTools.CopyCells(pAreaElvWorksheet, 10, pPRISMWorkSheet, 13);
-                success = ExcelTools.EstimatePrecipitationVolume(pPRISMWorkSheet, 12, 7, 14, 15);
+                int rowCountPrism = ExcelTools.EstimatePrecipitationVolume(pPRISMWorkSheet, 12, 7, 14, 15);
                 // Try to get elevation interval from analysis.xml settings file
                 BA_Objects.Analysis oAnalysis = new BA_Objects.Analysis();
                 string strSettingsFile = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAPS + "\\" +
@@ -578,6 +581,23 @@ namespace bagis_pro
                     pChartsWorksheet.PageSetup.PrintArea = "$A$32:$M$61";
                     pChartsWorksheet.ExportAsFixedFormat(XlFixedFormatType.xlTypePDF, pathToSave);
                     Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Published aspect chart to PDF");
+
+                    //Cumulative precip table
+                    pathToSave = sOutputFolder + "\\" + Constants.FILE_EXPORT_TABLE_PRECIP_REPRESENT_PDF;
+                    int lastRow = rowCountPrism + 2;
+                    pPRISMWorkSheet.PageSetup.PrintArea = "$A$1:$P$" + lastRow;
+                    pPRISMWorkSheet.PageSetup.Orientation = XlPageOrientation.xlLandscape;
+                    pPRISMWorkSheet.PageSetup.Zoom = false;     // Required to print on one page
+                    pPRISMWorkSheet.PageSetup.PrintGridlines = true;
+                    pPRISMWorkSheet.PageSetup.CenterHeader = "&C&\"Arial,Bold\"&16 " + Module1.Current.Aoi.Name;
+                    pPRISMWorkSheet.PageSetup.LeftHeader = ((char)13).ToString() + "&\"Arial,Bold\"&12 " +
+                        "Precipitation Representation Table";
+                    pPRISMWorkSheet.PageSetup.TopMargin = 0.8 * 72;   // Convert inches to points
+                    pPRISMWorkSheet.get_Range("B:C").EntireColumn.Hidden = true;
+                    pPRISMWorkSheet.PageSetup.FitToPagesTall = 1;
+                    pPRISMWorkSheet.PageSetup.FitToPagesWide = 1;
+                    pPRISMWorkSheet.ExportAsFixedFormat(XlFixedFormatType.xlTypePDF, pathToSave);
+                    Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Published represented precip table to PDF");
 
                     // Elev-Precip Chart Tab
                     if (bPrecMeanElevTableExists)

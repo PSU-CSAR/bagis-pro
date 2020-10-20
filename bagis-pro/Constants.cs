@@ -90,6 +90,7 @@ namespace bagis_pro
         public const string FILE_EXPORT_CHART_AREA_ELEV_PRECIP_SITE_PDF = "chart_area_elev_precip_site.pdf";
         public const string FILE_EXPORT_CHART_SLOPE_PDF = "chart_slope.pdf";
         public const string FILE_EXPORT_CHART_ASPECT_PDF = "chart_aspect.pdf";
+        public const string FILE_EXPORT_TABLE_PRECIP_REPRESENT_PDF = "precip_represent.pdf";
         public const string FILE_EXPORT_CHART_ELEV_PRECIP_CORR_PDF = "chart_elev_precip_correlation.pdf";
         public const string FILE_EXPORT_MAPS_ALL_PDF = "all_maps_charts.pdf";
         // List of files in the PDF map package and the order in which they will be assembled

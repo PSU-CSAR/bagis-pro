@@ -409,7 +409,9 @@ namespace bagis_pro
             });
             if (gpResult.IsFailed)
             {
-                success = BA_ReturnCode.UnknownError;
+                Module1.Current.ModuleLogManager.LogError(nameof(CreatePrecipitationTableAsync), "An error occurred while creating " +
+                    "the Precipitation zonal statistics table. Exception: " + gpResult.ErrorCode);
+                return -1;
             }
             else
             {
@@ -447,7 +449,6 @@ namespace bagis_pro
             pworksheet.Columns[15].NumberFormat = strNumberFormat;
             pworksheet.Cells[1, 16] = "%_VOL_CUMU";
             pworksheet.Columns[16].NumberFormat = strNumberFormat;
-            pworksheet.Columns.AutoFit();   // re-size every column to best fit
 
             //============================================
             // Populate Elevation and Percent Area Rows
@@ -496,7 +497,7 @@ namespace bagis_pro
                                         dblUpperBound = LinearUnit.Meters.ConvertTo(dblUpperBound, LinearUnit.Feet);
                                     }
                                 }
-                                pworksheet.Cells[i + 3, 1] = dblUpperBound;     //@ToDo: Not sure about this?
+                                pworksheet.Cells[i + 3, 1] = dblUpperBound;    //@ToDo: Not sure about this?
                                 pworksheet.Cells[i + 3, 2] = row[Constants.FIELD_COUNT];
                                 pworksheet.Cells[i + 3, 3] = Math.Round(Convert.ToDouble(row["AREA"]), 0);
                                 pworksheet.Cells[i + 3, 4] = row["MIN"];
@@ -526,7 +527,7 @@ namespace bagis_pro
                     {
                         aoiDemMin = LinearUnit.Meters.ConvertTo(aoiDemMin, LinearUnit.Feet);
                     }
-                    pworksheet.Cells[2, 1] = aoiDemMin; //Value
+                    pworksheet.Cells[2, 1] = String.Format("{0:0.##}", aoiDemMin); //Value
                     pworksheet.Cells[2, 10] = 0;         // PERCENT_AREA_ELEVATION
 
                     // ===============================================
@@ -565,7 +566,7 @@ namespace bagis_pro
             return BA_ReturnCode.Success;
         }
 
-        public static BA_ReturnCode EstimatePrecipitationVolume(Worksheet pPRSIMWS, int AreaCol, int PrecipCol, 
+        public static int EstimatePrecipitationVolume(Worksheet pPRSIMWS, int AreaCol, int PrecipCol, 
                                                                 int VolumeCol, int PercentCol)
         {
             double conversionfactor;
@@ -585,6 +586,7 @@ namespace bagis_pro
                 Range areaRange = pPRSIMWS.Cells[row_index, AreaCol];
                 Range precipRange = pPRSIMWS.Cells[row_index, PrecipCol];
                 Range volumeRange = pPRSIMWS.Cells[row_index, VolumeCol];
+                //VOL_ACRE_FT
                 volumeRange.Value = System.Convert.ToDouble(areaRange.Value) * Convert.ToDouble(precipRange.Value) * conversionfactor;
                 total_vol = total_vol + System.Convert.ToDouble(volumeRange.Value);
                 row_index = row_index + 1;
@@ -608,7 +610,8 @@ namespace bagis_pro
                 Range cumuRange = pPRSIMWS.Cells[i + 2, PercentCol + 1];
                 cumuRange.Formula = strFormula;
             }
-            return BA_ReturnCode.Success;
+            pPRSIMWS.Columns.AutoFit();   // re-size every column to best fit after data is written
+            return intCount;
         }
 
         public static BA_ReturnCode CreateCombinedChart(Worksheet pPRISMWorkSheet, Worksheet pElvWorksheet, Worksheet pChartsWorksheet,
