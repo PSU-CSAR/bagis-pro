@@ -383,9 +383,6 @@ namespace bagis_pro
                 Worksheet pPrecipChartWorksheet = null;
                 bool bPrecMeanElevTableExists = await GeodatabaseTools.TableExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false)), Constants.FILE_ASP_ZONE_PREC_TBL);
                 bool bPrecStelLayerExists = await GeodatabaseTools.FeatureClassExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false)), Constants.FILE_PREC_STEL);
-                //@ToDo: Renable these when done with precip chart
-                bPrecMeanElevTableExists = false;
-                bPrecStelLayerExists = false;
                 if (bPrecMeanElevTableExists)
                 {
                     // Create Elevation Precipitation Worksheet
@@ -498,7 +495,8 @@ namespace bagis_pro
 
                 double Y_Min = ExcelTools.ConfigureYAxis(minValue, maxValue, Y_Unit, ref Y_Max);
                 success = ExcelTools.CreateCombinedChart(pPRISMWorkSheet, pAreaElvWorksheet, pChartsWorksheet, pSNOTELWorksheet,
-                    pSnowCourseWorksheet, Constants.EXCEL_CHART_SPACING, Y_Max, Y_Min, Y_Unit, MaxPRISMValue);
+                    pSnowCourseWorksheet, Constants.EXCEL_CHART_SPACING, Constants.EXCEL_CHART_SPACING, Y_Max, Y_Min, Y_Unit, 
+                    MaxPRISMValue, false);
                 Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Created Combined Chart");
 
                 success = await ExcelTools.CreateSlopeTableAsync(pSlopeWorksheet);
@@ -518,6 +516,12 @@ namespace bagis_pro
                     success = ExcelTools.CreateAspectChart(pAspectWorksheet, pChartsWorksheet,
                         topPosition, Constants.EXCEL_CHART_SPACING);
                     Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Created Aspect Chart");
+                }
+
+                if (success == BA_ReturnCode.Success)
+                {
+                    success = ExcelTools.CreateCombinedChart(pPRISMWorkSheet, pAreaElvWorksheet, pChartsWorksheet, pSNOTELWorksheet,
+                        pSnowCourseWorksheet, topPosition, leftPosition, Y_Max, Y_Min, Y_Unit, MaxPRISMValue, true);
                 }
 
                 //Elevation-Precipitation Correlation Chart
@@ -599,6 +603,12 @@ namespace bagis_pro
                     pPRISMWorkSheet.PageSetup.FitToPagesWide = 1;   // Required to print on one page
                     pPRISMWorkSheet.ExportAsFixedFormat(XlFixedFormatType.xlTypePDF, pathToSave);
                     Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Published represented precip table to PDF");
+
+                    // cumulative precipitation chart
+                    pathToSave = sOutputFolder + Constants.FILE_EXPORT_CHART_PRECIP_REPRESENT_PDF;
+                    pChartsWorksheet.PageSetup.PrintArea = "$N$32:$AA$61";
+                    pChartsWorksheet.ExportAsFixedFormat(XlFixedFormatType.xlTypePDF, pathToSave);
+                    Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Published represented precip chart to PDF");
 
                     // Elev-Precip Chart Tab
                     if (bPrecMeanElevTableExists)

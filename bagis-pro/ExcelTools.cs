@@ -615,8 +615,9 @@ namespace bagis_pro
         }
 
         public static BA_ReturnCode CreateCombinedChart(Worksheet pPRISMWorkSheet, Worksheet pElvWorksheet, Worksheet pChartsWorksheet,
-                                                        Worksheet pSNOTELWorksheet, Worksheet pSnowCourseWorkSheet, int topPosition, double Y_Max, double Y_Min,
-                                                        double Y_Unit, double MaxPRISMValue)
+                                                        Worksheet pSNOTELWorksheet, Worksheet pSnowCourseWorkSheet, int topPosition, 
+                                                        int leftPosition, double Y_Max, double Y_Min,
+                                                        double Y_Unit, double MaxPRISMValue, bool bCumulativeVolume)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
             string strDemDisplayUnits = (string)Module1.Current.BatchToolSettings.DemDisplayUnits;
@@ -672,8 +673,15 @@ namespace bagis_pro
             string vPRISMValueRange = "";
             PRISMRange = "J3:J" + PRISMReturn;
             xPRISMValueRange = "A3:A" + PRISMReturn;
-            vPRISMValueRange = "O3:O" + PRISMReturn;
-
+            if (bCumulativeVolume == false)
+            {
+                vPRISMValueRange = "O3:O" + PRISMReturn;
+            }
+            else
+            {
+                vPRISMValueRange = "P3:P" + PRISMReturn;
+            }
+            
             // Set Elevation Ranges
             string sElevRange = "";
             string sElevValueRange = "";
@@ -694,7 +702,7 @@ namespace bagis_pro
             myChart.SetElement(MsoChartElementType.msoElementChartTitleAboveChart);
             myChart.SetElement(MsoChartElementType.msoElementLegendBottom);
             //Set Chart Position
-            myChart.Parent.Left = Constants.EXCEL_CHART_SPACING;
+            myChart.Parent.Left = leftPosition;
             myChart.Parent.Width = Constants.EXCEL_CHART_WIDTH;
             myChart.Parent.Height = Constants.EXCEL_CHART_HEIGHT;
             myChart.Parent.Top = topPosition;
@@ -814,10 +822,25 @@ namespace bagis_pro
             Axis topAxis = (Axis) myChart.Axes(Microsoft.Office.Interop.Excel.XlAxisType.xlCategory,
                 Microsoft.Office.Interop.Excel.XlAxisGroup.xlSecondary);
             topAxis.HasTitle = true;
-            topAxis.AxisTitle.Characters.Text = "Precipitation Distribution (% contribution by elevation zone)";
+            if (bCumulativeVolume == false)
+            {
+                topAxis.AxisTitle.Characters.Text = "Precipitation Distribution (% contribution by elevation zone)";
+            }
+            else
+            {
+                topAxis.AxisTitle.Characters.Text = "Cumulative precipitation Distribution (% contribution by elevation zone)";
+            }
+            
             topAxis.AxisTitle.Font.Bold = true;
             topAxis.AxisTitle.Orientation = "0";
-            topAxis.MaximumScale = MaxPRISMValue;
+            if (bCumulativeVolume == false)
+            {
+                topAxis.MaximumScale = MaxPRISMValue;
+            }
+            else
+            {
+                topAxis.MaximumScale = 100;
+            }          
             topAxis.MinimumScale = 0;
             myChart.HasAxis[Microsoft.Office.Interop.Excel.XlAxisType.xlCategory, Microsoft.Office.Interop.Excel.XlAxisGroup.xlSecondary] = true;
             // TickLables can only be modified after HasAxis is set to true

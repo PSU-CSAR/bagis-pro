@@ -59,13 +59,12 @@ namespace bagis_pro.Buttons
                     }
                 }
 
-                //@ToDo: Renable after adding new table and chart
-                //BA_ReturnCode success = await MapTools.PublishMapsAsync(); // export the maps to pdf
-                //if (success != BA_ReturnCode.Success)
-                //{
-                //    MessageBox.Show("An error occurred while generating the maps!!", "BAGIS-PRO");
-                //}
-                BA_ReturnCode success = await GeneralTools.GenerateTablesAsync(false);   // export the tables to pdf
+                BA_ReturnCode success = await MapTools.PublishMapsAsync(); // export the maps to pdf
+                if (success != BA_ReturnCode.Success)
+                {
+                    MessageBox.Show("An error occurred while generating the maps!!", "BAGIS-PRO");
+                }
+                success = await GeneralTools.GenerateTablesAsync(false);   // export the tables to pdf
                 if (success != BA_ReturnCode.Success)
                 {
                     MessageBox.Show("An error occurred while generating the Excel tables!!", "BAGIS-PRO");
