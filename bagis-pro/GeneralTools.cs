@@ -588,14 +588,15 @@ namespace bagis_pro
                     pPRISMWorkSheet.PageSetup.PrintArea = "$A$1:$P$" + lastRow;
                     pPRISMWorkSheet.PageSetup.Orientation = XlPageOrientation.xlLandscape;
                     pPRISMWorkSheet.PageSetup.Zoom = false;     // Required to print on one page
+                    pPRISMWorkSheet.PageSetup.PaperSize = oReqPaperSize;    // Required to print on one page
                     pPRISMWorkSheet.PageSetup.PrintGridlines = true;
                     pPRISMWorkSheet.PageSetup.CenterHeader = "&C&\"Arial,Bold\"&16 " + Module1.Current.Aoi.Name;
                     pPRISMWorkSheet.PageSetup.LeftHeader = ((char)13).ToString() + "&\"Arial,Bold\"&12 " +
                         "Precipitation Representation Table";
                     pPRISMWorkSheet.PageSetup.TopMargin = 0.8 * 72;   // Convert inches to points
                     pPRISMWorkSheet.get_Range("B:C").EntireColumn.Hidden = true;
-                    pPRISMWorkSheet.PageSetup.FitToPagesTall = 1;
-                    pPRISMWorkSheet.PageSetup.FitToPagesWide = 1;
+                    pPRISMWorkSheet.PageSetup.FitToPagesTall = 1;   // Required to print on one page
+                    pPRISMWorkSheet.PageSetup.FitToPagesWide = 1;   // Required to print on one page
                     pPRISMWorkSheet.ExportAsFixedFormat(XlFixedFormatType.xlTypePDF, pathToSave);
                     Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Published represented precip table to PDF");
 
