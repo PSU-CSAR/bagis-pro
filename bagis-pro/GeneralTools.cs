@@ -484,7 +484,7 @@ namespace bagis_pro
                 double Y_Max = -99.0F;
                 double minValue = elevMinMeters;
                 double maxValue = elevMaxMeters;
-                int leftPosition = Constants.EXCEL_CHART_WIDTH + (Constants.EXCEL_CHART_SPACING * 10);
+                int leftPosition = Constants.EXCEL_CHART_WIDTH + (Constants.EXCEL_CHART_SPACING * 15);
                 //aoiDemMin is always in meters
                 string strDemDisplayUnits = (string)Module1.Current.BatchToolSettings.DemDisplayUnits;
                 if (strDemDisplayUnits.Equals("Feet"))
@@ -576,7 +576,7 @@ namespace bagis_pro
 
                     // slope chart
                     pathToSave = sOutputFolder + "\\" + Constants.FILE_EXPORT_CHART_SLOPE_PDF;
-                    pChartsWorksheet.PageSetup.PrintArea = "$N$1:$AA$29";
+                    pChartsWorksheet.PageSetup.PrintArea = "$O$1:$AA$29";
                     pChartsWorksheet.ExportAsFixedFormat(XlFixedFormatType.xlTypePDF, pathToSave);
                     Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Published slope chart to PDF");
 
@@ -606,7 +606,7 @@ namespace bagis_pro
 
                     // cumulative precipitation chart
                     pathToSave = sOutputFolder + Constants.FILE_EXPORT_CHART_PRECIP_REPRESENT_PDF;
-                    pChartsWorksheet.PageSetup.PrintArea = "$N$32:$AA$61";
+                    pChartsWorksheet.PageSetup.PrintArea = "$O$32:$AA$61";
                     pChartsWorksheet.ExportAsFixedFormat(XlFixedFormatType.xlTypePDF, pathToSave);
                     Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Published represented precip chart to PDF");
 
