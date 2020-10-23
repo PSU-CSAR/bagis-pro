@@ -964,6 +964,16 @@ namespace bagis_pro
                         return;
                     }
 
+                    // Make sure that maps and maps_publish folders exist
+                    string[] arrDirectories = { strAoiPath + "\\" + Constants.FOLDER_MAPS, strAoiPath + "\\" + Constants.FOLDER_MAP_PACKAGE };
+                    foreach (var directory in arrDirectories)
+                    {
+                        if (!Directory.Exists(directory))
+                        {
+                            Directory.CreateDirectory(directory);
+                        }
+                    }
+
                     // Check for default units
                     var fc = ItemFactory.Instance.Create(fcPath, ItemFactory.ItemType.PathItem);
                     if (fc != null)
@@ -990,6 +1000,7 @@ namespace bagis_pro
                     // Set logger to AOI directory
                     string logFolderName = strAoiPath + "\\" + Constants.FOLDER_LOGS;
                     Module1.Current.ModuleLogManager.UpdateLogFileLocation(logFolderName);
+
 
                     // Update PRISM data status
                     layersPane.ResetView();

@@ -427,25 +427,20 @@ namespace bagis_pro
                 // Check for PRISM units
                 string strPrismPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Prism, true) 
                     + PrismFile.Annual.ToString();
-                var fc = ItemFactory.Instance.Create(strPrismPath, ItemFactory.ItemType.PathItem);
                 string pBufferDistance = "";
                 string pBufferUnits = "";
-
-                await QueuedTask.Run(() =>
+                string strBagisTag = await GeneralTools.GetBagisTagAsync(strPrismPath, Constants.META_TAG_XPATH);
+                if (!string.IsNullOrEmpty(strBagisTag))
                 {
-                    if (fc != null)
-                    {
-                        string strXml = string.Empty;
-                        strXml = fc.GetXml();
-                        //check metadata was returned
-                        string strBagisTag = GeneralTools.GetBagisTag(strXml);
-                        if (!string.IsNullOrEmpty(strBagisTag))
-                        {
-                            pBufferDistance = GeneralTools.GetValueForKey(strBagisTag, Constants.META_TAG_BUFFER_DISTANCE, ';');
-                            pBufferUnits = GeneralTools.GetValueForKey(strBagisTag, Constants.META_TAG_XUNIT_VALUE, ';');
-                        }
-                    }   
-                });
+                    pBufferDistance = GeneralTools.GetValueForKey(strBagisTag, Constants.META_TAG_BUFFER_DISTANCE, ';');
+                    pBufferUnits = GeneralTools.GetValueForKey(strBagisTag, Constants.META_TAG_XUNIT_VALUE, ';');
+                }
+                // Apply default buffer if left null
+                if (string.IsNullOrEmpty(PrismBufferDistance))
+                {
+                    PrismBufferDistance = (string)Module1.Current.BatchToolSettings.PrecipBufferDistance;
+                    PrismBufferUnits = (string)Module1.Current.BatchToolSettings.PrecipBufferUnits;
+                }
 
                 if (clipPrism)
                 {

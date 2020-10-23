@@ -11,6 +11,7 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -527,90 +528,114 @@ namespace bagis_pro
             string strWsPrefix = dictDataSources[strDataType].uri;
 
             string[] arrLayersToDelete = new string[2];
-            string strClipGdb = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Prism, false);
+            string strClipGdb = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, false);
             string strClipFile = Constants.FILE_AOI_PRISM_VECTOR;
 
             if (!String.IsNullOrEmpty(strWsPrefix))
             {
                 await QueuedTask.Run(async () =>
                 {
+                    try
+                    {
+
                     // if the buffer is different from PRISM, we need to create a new buffer file
                     string strTempBuffer = "tmpBuffer";
                     string strTempBuffer2 = "";
                     if (!strBufferDistance.Trim().Equals(prismBufferDistance.Trim()) ||
                         !strBufferUnits.Trim().Equals(prismBufferUnits.Trim()))
                     {
-                        string strAoiBoundaryPath = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, true) +
-                            Constants.FILE_AOI_VECTOR;
-                        string strOutputFeatures = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, true) +
-                            strTempBuffer;
-                        string strDistance = strBufferDistance + " " + strBufferUnits;
-                        var parameters = Geoprocessing.MakeValueArray(strAoiBoundaryPath, strOutputFeatures, strDistance, "",
-                                                                          "", "ALL");
-                        var gpResult = Geoprocessing.ExecuteToolAsync("Buffer_analysis", parameters, null,
-                                             CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                        if (gpResult.Result.IsFailed)
-                        {
-                            Module1.Current.ModuleLogManager.LogError(nameof(ClipLayersAsync),
-                               "Unable to buffer aoi_v. Error code: " + gpResult.Result.ErrorCode);
-                            MessageBox.Show("Unable to buffer aoi_v. Clipping cancelled!!", "BAGIS-PRO");
-                            return;
-                        }
-
-                        strClipFile = strTempBuffer;
-                        arrLayersToDelete[0] = strTempBuffer;
-                        if (strDataType.Equals(Constants.DATA_TYPE_PRECIPITATION))
+                        // Allow for possibility of unbuffered PRISM layer
+                        if (Convert.ToInt16(strBufferDistance) == 0)
                         {
                             // Copy the updated buffered file into the aoi.gdb
-                            parameters = Geoprocessing.MakeValueArray(strOutputFeatures, GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, true) +
+                            var parameters = Geoprocessing.MakeValueArray(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, true) +
+                                Constants.FILE_AOI_BUFFERED_VECTOR, GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, true) +
                                 Constants.FILE_AOI_PRISM_VECTOR);
-                            gpResult = Geoprocessing.ExecuteToolAsync("CopyFeatures", parameters, null,
+                            var gpResult = Geoprocessing.ExecuteToolAsync("CopyFeatures", parameters, null,
                                 CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
                             if (gpResult.Result.IsFailed)
                             {
                                 Module1.Current.ModuleLogManager.LogError(nameof(ClipLayersAsync),
-                                   "Unable to update p_aoi_v. Error code: " + gpResult.Result.ErrorCode);
-                                MessageBox.Show("Unable to update p_aoi_v. Clipping cancelled!!", "BAGIS-PRO");
+                                   "Unable to copy aoib_v to p_aoi_v. Error code: " + gpResult.Result.ErrorCode);
+                                MessageBox.Show("Unable to copy aoib_v to p_aoi_v. Clipping cancelled!!", "BAGIS-PRO");
                                 return;
                             }
-                            else
+                            strClipFile = Constants.FILE_AOI_PRISM_VECTOR;
+                        }
+                        else
+                        {
+                            string strAoiBoundaryPath = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, true) +
+                                Constants.FILE_AOI_VECTOR;
+                            string strOutputFeatures = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, true) +
+                                strTempBuffer;
+                            string strDistance = strBufferDistance + " " + strBufferUnits;
+                            var parameters = Geoprocessing.MakeValueArray(strAoiBoundaryPath, strOutputFeatures, strDistance, "",
+                                                                              "", "ALL");
+                            var gpResult = Geoprocessing.ExecuteToolAsync("Buffer_analysis", parameters, null,
+                                                 CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                            if (gpResult.Result.IsFailed)
                             {
-                                Module1.Current.ModuleLogManager.LogDebug(nameof(ClipLayersAsync),
-                                    "Saved updated p_aoi_v to aoi.gdb");
+                                Module1.Current.ModuleLogManager.LogError(nameof(ClipLayersAsync),
+                                   "Unable to buffer aoi_v. Error code: " + gpResult.Result.ErrorCode);
+                                MessageBox.Show("Unable to buffer aoi_v. Clipping cancelled!!", "BAGIS-PRO");
+                                return;
+                            }
+
+                            strClipFile = strTempBuffer;
+                            arrLayersToDelete[0] = strTempBuffer;
+                            if (strDataType.Equals(Constants.DATA_TYPE_PRECIPITATION))
+                            {
+                                // Copy the updated buffered file into the aoi.gdb
+                                parameters = Geoprocessing.MakeValueArray(strOutputFeatures, GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, true) +
+                                    Constants.FILE_AOI_PRISM_VECTOR);
+                                gpResult = Geoprocessing.ExecuteToolAsync("CopyFeatures", parameters, null,
+                                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                                if (gpResult.Result.IsFailed)
+                                {
+                                    Module1.Current.ModuleLogManager.LogError(nameof(ClipLayersAsync),
+                                       "Unable to update p_aoi_v. Error code: " + gpResult.Result.ErrorCode);
+                                    MessageBox.Show("Unable to update p_aoi_v. Clipping cancelled!!", "BAGIS-PRO");
+                                    return;
+                                }
+                                else
+                                {
+                                    Module1.Current.ModuleLogManager.LogDebug(nameof(ClipLayersAsync),
+                                        "Saved updated p_aoi_v to aoi.gdb");
+                                }
                             }
                         }
-                    }
 
-                    // Check to make sure the buffer file only has one feature; No dangles
-                    int featureCount = 0;
-                    strClipGdb = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, false);
-                    using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(strClipGdb))))
-                    using (Table table = geodatabase.OpenDataset<Table>(strClipFile))
-                    {
-                        featureCount = table.GetCount();
-                    }
-                    Module1.Current.ModuleLogManager.LogDebug(nameof(ClipLayersAsync),
-                        "Number of features in clip file: " + featureCount);
-
-                    // If > 1 feature, buffer the clip file again
-                    if (featureCount > 1)
-                    {
-                        strTempBuffer2 = "tempBuffer2";
-                        var parameters = Geoprocessing.MakeValueArray(strClipGdb + "\\" + strClipFile,
-                            strClipGdb + "\\" + strTempBuffer2, "0.5 Meters", "", "", "ALL");
-                        var gpResult = Geoprocessing.ExecuteToolAsync("Buffer_analysis", parameters, null,
-                                             CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                        if (gpResult.Result.IsFailed)
+                        // Check to make sure the buffer file only has one feature; No dangles
+                        int featureCount = 0;
+                        strClipGdb = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, false);
+                        using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(strClipGdb))))
+                        using (Table table = geodatabase.OpenDataset<Table>(strClipFile))
                         {
-                            Module1.Current.ModuleLogManager.LogError(nameof(ClipLayersAsync),
-                               "Unable to buffer " + strClipFile + ". Error code: " + gpResult.Result.ErrorCode);
-                            MessageBox.Show("Unable to buffer aoi_v. Clipping cancelled!!", "BAGIS-PRO");
-                            return;
+                            featureCount = table.GetCount();
                         }
-                        strClipFile = strTempBuffer2;
-                        arrLayersToDelete[1] = strTempBuffer;
                         Module1.Current.ModuleLogManager.LogDebug(nameof(ClipLayersAsync),
-                            "Run buffer tool again because clip file has > 2 features");
+                            "Number of features in clip file: " + featureCount);
+
+                        // If > 1 feature, buffer the clip file again
+                        if (featureCount > 1)
+                        {
+                            strTempBuffer2 = "tempBuffer2";
+                            var parameters = Geoprocessing.MakeValueArray(strClipGdb + "\\" + strClipFile,
+                                strClipGdb + "\\" + strTempBuffer2, "0.5 Meters", "", "", "ALL");
+                            var gpResult = Geoprocessing.ExecuteToolAsync("Buffer_analysis", parameters, null,
+                                                 CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                            if (gpResult.Result.IsFailed)
+                            {
+                                Module1.Current.ModuleLogManager.LogError(nameof(ClipLayersAsync),
+                                   "Unable to buffer " + strClipFile + ". Error code: " + gpResult.Result.ErrorCode);
+                                MessageBox.Show("Unable to buffer aoi_v. Clipping cancelled!!", "BAGIS-PRO");
+                                return;
+                            }
+                            strClipFile = strTempBuffer2;
+                            arrLayersToDelete[1] = strTempBuffer;
+                            Module1.Current.ModuleLogManager.LogDebug(nameof(ClipLayersAsync),
+                                "Run buffer tool again because clip file has > 2 features");
+                        }
                     }
 
                     // Query the extent for the clip
@@ -758,6 +783,12 @@ namespace bagis_pro
                     success = GeneralTools.SaveDataSourcesToFile(dictLocalDataSources);
                     Module1.Current.ModuleLogManager.LogDebug(nameof(ClipLayersAsync),
                         "Updated settings metadata for " + strDataType);
+
+                    }
+                    catch (Exception e)
+                    {
+                        MessageBox.Show(e.StackTrace);
+                    }
                 });
             }
             success = BA_ReturnCode.Success;
@@ -855,26 +886,29 @@ namespace bagis_pro
                                     rowCursor.MoveNext();
                                     using (Row row = (Row)rowCursor.Current)
                                     {
-                                        // In order to update the the attribute table has to be called before any changes are made to the row
-                                        context.Invalidate(row);
-                                        int idxRow = definition.FindField(Constants.FIELD_NAME);
-                                        if (idxRow > 0)
+                                        if (row != null)
                                         {
-                                            row[idxRow] = interval.Name;
+                                            // In order to update the the attribute table has to be called before any changes are made to the row
+                                            context.Invalidate(row);
+                                            int idxRow = definition.FindField(Constants.FIELD_NAME);
+                                            if (idxRow > 0)
+                                            {
+                                                row[idxRow] = interval.Name;
+                                            }
+                                            idxRow = definition.FindField(Constants.FIELD_UBOUND);
+                                            if (idxRow > 0)
+                                            {
+                                                row[idxRow] = interval.UpperBound;
+                                            }
+                                            idxRow = definition.FindField(Constants.FIELD_LBOUND);
+                                            if (idxRow > 0)
+                                            {
+                                                row[idxRow] = interval.LowerBound;
+                                            }
+                                            row.Store();
+                                            // Has to be called after the store too
+                                            context.Invalidate(row);
                                         }
-                                        idxRow = definition.FindField(Constants.FIELD_UBOUND);
-                                        if (idxRow > 0)
-                                        {
-                                            row[idxRow] = interval.UpperBound;
-                                        }
-                                        idxRow = definition.FindField(Constants.FIELD_LBOUND);
-                                        if (idxRow > 0)
-                                        {
-                                            row[idxRow] = interval.LowerBound;
-                                        }
-                                        row.Store();
-                                        // Has to be called after the store too
-                                        context.Invalidate(row);
                                     }
                                 }
                             }
@@ -2397,6 +2431,93 @@ namespace bagis_pro
                 });
             }
 
+            return success;
+        }
+
+        public static async Task<BA_ReturnCode> CalculateElevationZonesAsync()
+        {
+            Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateElevationZonesAsync),
+                "Get min and max elevation from DEM");
+            IList<double> lstResult = await GeoprocessingTools.GetDemStatsAsync(Module1.Current.Aoi.FilePath, "", 0.005);
+            double demElevMinMeters = -1;
+            double demElevMaxMeters = -1;
+            if (lstResult.Count == 2)   // We expect the min and max values in that order
+            {
+                demElevMinMeters = lstResult[0];
+                demElevMaxMeters = lstResult[1];
+            }
+            else
+            {
+                MessageBox.Show("Unable to read DEM. Elevation zones cannot be generated!!", "BAGIS-PRO");
+                Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateElevationZonesAsync),
+                    "Unable to read min/max elevation from DEM");
+                return BA_ReturnCode.UnknownError;
+            }
+
+            double aoiElevMin = demElevMinMeters;
+            double aoiElevMax = demElevMaxMeters;
+            string strDemUnits = (string)Module1.Current.BatchToolSettings.DemUnits;
+            string strDemDisplayUnits = (string)Module1.Current.BatchToolSettings.DemDisplayUnits;
+            if (!strDemUnits.Equals(strDemDisplayUnits))
+            {
+                if (strDemDisplayUnits.Equals("Feet"))
+                {
+                    aoiElevMin = Math.Round(LinearUnit.Meters.ConvertTo(demElevMinMeters, LinearUnit.Feet), 2);
+                    aoiElevMax = Math.Round(LinearUnit.Meters.ConvertTo(demElevMaxMeters, LinearUnit.Feet), 2);
+                }
+                else if (strDemUnits.Equals("Feet"))
+                {
+                    aoiElevMin = Math.Round(LinearUnit.Feet.ConvertTo(demElevMinMeters, LinearUnit.Meters), 2);
+                    aoiElevMax = Math.Round(LinearUnit.Feet.ConvertTo(demElevMaxMeters, LinearUnit.Meters), 2);
+                }
+            }
+
+            short[] arrTestIntervals = new short[] { 5000, 2500, 1000, 500, 250, 200, 100, 50 };
+            short bestInterval = 50;
+            var range = aoiElevMax - aoiElevMin;
+            foreach (var testInterval in arrTestIntervals)
+            {
+                double dblZoneCount = range / testInterval;
+                if (dblZoneCount >= (int)Module1.Current.BatchToolSettings.MinElevationZonesCount)
+                {
+                    bestInterval = testInterval;
+                    break;
+                }
+            }
+            IList<BA_Objects.Interval> lstInterval = AnalysisTools.GetElevationClasses(aoiElevMin, aoiElevMax,
+                bestInterval, strDemUnits, strDemDisplayUnits);
+            string strLayer = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Surfaces, true) +
+                Constants.FILE_DEM_FILLED;
+            string strZonesRaster = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) +
+                Constants.FILE_ELEV_ZONE;
+            string strMaskPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_VECTOR;
+            BA_ReturnCode success = await AnalysisTools.CalculateZonesAsync(Module1.Current.Aoi.FilePath, strLayer,
+                lstInterval, strZonesRaster, strMaskPath, "ELEVATION");
+            if (success == BA_ReturnCode.Success)
+            {
+                // Record the bestInterval to be used later by the charts functionality
+                // Open the current Analysis.xml from disk, if it exists
+                BA_Objects.Analysis oAnalysis = new BA_Objects.Analysis();
+                string strSettingsFile = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAPS + "\\" +
+                    Constants.FILE_SETTINGS;
+                if (File.Exists(strSettingsFile))
+                {
+                    using (var file = new StreamReader(strSettingsFile))
+                    {
+                        var reader = new System.Xml.Serialization.XmlSerializer(typeof(BA_Objects.Analysis));
+                        oAnalysis = (BA_Objects.Analysis)reader.Deserialize(file);
+                    }
+                }
+                // Set the elevation interval on the analysis object and save
+                oAnalysis.ElevationZonesInterval = bestInterval;
+                using (var file_stream = File.Create(strSettingsFile))
+                {
+                    var serializer = new System.Xml.Serialization.XmlSerializer(typeof(BA_Objects.Analysis));
+                    serializer.Serialize(file_stream, oAnalysis);
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateElevationZonesAsync),
+                        "Set elevation interval in analysis.xml file");
+                }
+            }
             return success;
         }
 

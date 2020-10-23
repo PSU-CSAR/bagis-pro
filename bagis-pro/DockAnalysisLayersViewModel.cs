@@ -277,87 +277,9 @@ namespace bagis_pro
 
                 if (calculateElevation)
                 {
-                    Module1.Current.ModuleLogManager.LogDebug(nameof(GenerateLayersAsync),
-                        "GetDemStatsAsync");
-                    IList<double> lstResult = await GeoprocessingTools.GetDemStatsAsync(Module1.Current.Aoi.FilePath, "", 0.005);
-                    double demElevMinMeters = -1;
-                    double demElevMaxMeters = -1;
-                    if (lstResult.Count == 2)   // We expect the min and max values in that order
-                    {
-                        demElevMinMeters = lstResult[0];
-                        demElevMaxMeters = lstResult[1];
-                    }
-                    else
-                    {
-                        MessageBox.Show("Unable to read DEM. Elevation zones cannot be generated!!", "BAGIS-PRO");
-                        Module1.Current.ModuleLogManager.LogDebug(nameof(GenerateLayersAsync),
-                            "Unable to read min/max elevation from DEM");
-                        return;
-                    }
-
-                    double aoiElevMin = demElevMinMeters;
-                    double aoiElevMax = demElevMaxMeters;
-                    string strDemUnits = (string)Module1.Current.BatchToolSettings.DemUnits;
-                    string strDemDisplayUnits = (string)Module1.Current.BatchToolSettings.DemDisplayUnits;
-                    if (!strDemUnits.Equals(strDemDisplayUnits))
-                    {
-                        if (strDemDisplayUnits.Equals("Feet"))
-                        {
-                            aoiElevMin = Math.Round(LinearUnit.Meters.ConvertTo(demElevMinMeters, LinearUnit.Feet), 2);
-                            aoiElevMax = Math.Round(LinearUnit.Meters.ConvertTo(demElevMaxMeters, LinearUnit.Feet), 2);
-                        }
-                        else if (strDemUnits.Equals("Feet"))
-                        {
-                            aoiElevMin = Math.Round(LinearUnit.Feet.ConvertTo(demElevMinMeters, LinearUnit.Meters), 2);
-                            aoiElevMax = Math.Round(LinearUnit.Feet.ConvertTo(demElevMaxMeters, LinearUnit.Meters), 2);
-                        }
-                    }
-
-                    short[] arrTestIntervals = new short[] { 5000, 2500, 1000, 500, 250, 200, 100, 50 };
-                    short bestInterval = 50;
-                    var range = aoiElevMax - aoiElevMin;
-                    foreach (var testInterval in arrTestIntervals)
-                    {
-                        double dblZoneCount = range / testInterval;
-                        if (dblZoneCount >= (int) Module1.Current.BatchToolSettings.MinElevationZonesCount)
-                        {
-                            bestInterval = testInterval;
-                            break;
-                        }
-                    }
-                    IList<BA_Objects.Interval> lstInterval = AnalysisTools.GetElevationClasses(aoiElevMin, aoiElevMax,
-                        bestInterval, strDemUnits, strDemDisplayUnits);
-                    string strLayer = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Surfaces, true) +
-                        Constants.FILE_DEM_FILLED;
-                    string strZonesRaster = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) +
-                        Constants.FILE_ELEV_ZONE;
-                    string strMaskPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_VECTOR;
-                    success = await AnalysisTools.CalculateZonesAsync(Module1.Current.Aoi.FilePath, strLayer,
-                        lstInterval, strZonesRaster, strMaskPath, "ELEVATION");
+                    success = await AnalysisTools.CalculateElevationZonesAsync();
                     if (success == BA_ReturnCode.Success)
                     {
-                        // Record the bestInterval to be used later by the charts functionality
-                        // Open the current Analysis.xml from disk, if it exists
-                        BA_Objects.Analysis oAnalysis = new BA_Objects.Analysis();
-                        string strSettingsFile = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAPS + "\\" +
-                            Constants.FILE_SETTINGS;
-                        if (File.Exists(strSettingsFile))
-                        {
-                            using (var file = new StreamReader(strSettingsFile))
-                            {
-                                var reader = new System.Xml.Serialization.XmlSerializer(typeof(BA_Objects.Analysis));
-                                oAnalysis = (BA_Objects.Analysis)reader.Deserialize(file);
-                            }
-                        }
-                        // Set the elevation interval on the analysis object and save
-                        oAnalysis.ElevationZonesInterval = bestInterval;
-                        using (var file_stream = File.Create(strSettingsFile))
-                        {
-                            var serializer = new System.Xml.Serialization.XmlSerializer(typeof(BA_Objects.Analysis));
-                            serializer.Serialize(file_stream, oAnalysis);
-                            Module1.Current.ModuleLogManager.LogDebug(nameof(GenerateLayersAsync),
-                                "Set elevation interval in analysis.xml file");
-                        }
                         layersPane.ElevationZones_Checked = false;
                     }
                 }

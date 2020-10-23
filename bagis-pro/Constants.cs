@@ -72,6 +72,7 @@ namespace bagis_pro
         public const string FILE_PREC_STEL = "prec_stel";
         public const string FILE_SETTINGS = "analysis.xml";
         public const string FILE_BATCH_TOOL_SETTINGS = "batch_tool_settings.json";
+        public const string FILE_BATCH_LOG = "batch_tool_log.txt";
         public const string FILE_EXPORT_MAP_ELEV_PDF = "map_elevation.pdf";
         public const string FILE_EXPORT_MAP_SNOTEL_PDF = "map_elevation_snotel.pdf";
         public const string FILE_EXPORT_MAP_SCOS_PDF = "map_elevation_sc.pdf";

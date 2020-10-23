@@ -196,6 +196,17 @@ namespace bagis_pro
             {
                 return new RelayCommand(async () =>
                 {
+                    // Make sure the maps_publish folder exists under the selected folder
+                    string strLogFile = AoiFolder + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\" + Constants.FILE_BATCH_LOG;
+                    if (!Directory.Exists(Path.GetDirectoryName(strLogFile)))
+                    {
+                        Directory.CreateDirectory(Path.GetDirectoryName(strLogFile));
+                    }
+                    // Create initial log entry
+                    string strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Starting batch tool to publish in " +
+                        Path.GetDirectoryName(strLogFile) + "\r\n";
+                    File.WriteAllText(strLogFile, strLogEntry);
+                    // @ToDo: Make sure the folder is an AOI. This will change when we implement iteration
                     FolderType fType = await GeodatabaseTools.GetAoiFolderTypeAsync(AoiFolder);
                     if (fType != FolderType.AOI)
                     {
@@ -203,12 +214,94 @@ namespace bagis_pro
                         return;
                     }
 
+                    // Save off the publisher name if it is different than previous
                     string strPublisher = (string)Module1.Current.BatchToolSettings.Publisher;
                     if (!Publisher.Trim().Equals(strPublisher))
                     {
                         Module1.Current.BatchToolSettings.Publisher = Publisher;
                         String json = JsonConvert.SerializeObject(Module1.Current.BatchToolSettings, Formatting.Indented);
                         File.WriteAllText(SettingsFile, json);
+                    }
+
+                    // Make directory for required folders if they don't exist
+                    // Make sure that maps and maps_publish folders exist
+                    string[] arrDirectories = { AoiFolder + "\\" + Constants.FOLDER_MAPS, AoiFolder + "\\" + Constants.FOLDER_MAP_PACKAGE,
+                                                AoiFolder + "\\" + Constants.FOLDER_LOGS};
+                    foreach (var directory in arrDirectories)
+                    {
+                        if (!Directory.Exists(directory))
+                        {
+                            Directory.CreateDirectory(directory);
+                        }
+                    }
+
+                    // Set logger to AOI directory
+                    string logFolderName = AoiFolder + "\\" + Constants.FOLDER_LOGS;
+                    Module1.Current.ModuleLogManager.UpdateLogFileLocation(logFolderName);
+
+                    // Set current AOI
+                    BA_Objects.Aoi oAoi = new BA_Objects.Aoi(Path.GetFileName(AoiFolder), AoiFolder);
+                    Module1.Current.Aoi = oAoi;
+
+                    // Elevation zones
+                    BA_ReturnCode success = await AnalysisTools.CalculateElevationZonesAsync();
+
+                    // Slope zones
+                    string strLayer = GeodatabaseTools.GetGeodatabasePath(AoiFolder, GeodatabaseNames.Surfaces, true) +
+                        Constants.FILE_SLOPE;
+                    string strZonesRaster = GeodatabaseTools.GetGeodatabasePath(AoiFolder, GeodatabaseNames.Analysis, true) +
+                        Constants.FILE_SLOPE_ZONE;
+                    string strMaskPath = GeodatabaseTools.GetGeodatabasePath(AoiFolder, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_VECTOR;
+                    IList<BA_Objects.Interval> lstInterval = AnalysisTools.GetSlopeClasses();
+                    success = await AnalysisTools.CalculateZonesAsync(AoiFolder, strLayer,
+                        lstInterval, strZonesRaster, strMaskPath, "SLOPE");
+
+                    // Aspect zones
+                    strLayer = GeodatabaseTools.GetGeodatabasePath(AoiFolder, GeodatabaseNames.Surfaces, true) +
+                        Constants.FILE_ASPECT;
+                    strZonesRaster = GeodatabaseTools.GetGeodatabasePath(AoiFolder, GeodatabaseNames.Analysis, true) +
+                        Constants.FILE_ASPECT_ZONE;
+                    strMaskPath = GeodatabaseTools.GetGeodatabasePath(AoiFolder, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_VECTOR;
+                    lstInterval = AnalysisTools.GetAspectClasses(Convert.ToInt16(Module1.Current.BatchToolSettings.AspectDirectionsCount));
+                    success = await AnalysisTools.CalculateZonesAsync(AoiFolder, strLayer,
+                        lstInterval, strZonesRaster, strMaskPath, "ASPECT");
+
+                    // Check for PRISM units
+                    string strPrismPath = GeodatabaseTools.GetGeodatabasePath(AoiFolder, GeodatabaseNames.Prism, true)
+                        + PrismFile.Annual.ToString();
+                    string pBufferDistance = "";
+                    string pBufferUnits = "";
+                    string strBagisTag = await GeneralTools.GetBagisTagAsync(strPrismPath, Constants.META_TAG_XPATH);
+                    if (!string.IsNullOrEmpty(strBagisTag))
+                    {
+                        pBufferDistance = GeneralTools.GetValueForKey(strBagisTag, Constants.META_TAG_BUFFER_DISTANCE, ';');
+                        pBufferUnits = GeneralTools.GetValueForKey(strBagisTag, Constants.META_TAG_XUNIT_VALUE, ';');
+                    }
+                    // Clip PRISM
+                    string strDefaultBufferDistance = (string)Module1.Current.BatchToolSettings.PrecipBufferDistance;
+                    string strDefaultBufferUnits = (string)Module1.Current.BatchToolSettings.PrecipBufferUnits;
+                    success = await AnalysisTools.ClipLayersAsync(AoiFolder, Constants.DATA_TYPE_PRECIPITATION,
+                        pBufferDistance, pBufferUnits, strDefaultBufferDistance, strDefaultBufferUnits);
+
+                    // PRISM Zones
+                    strLayer = GeodatabaseTools.GetGeodatabasePath(AoiFolder, GeodatabaseNames.Prism, true) +
+                        Path.GetFileName((string) Module1.Current.BatchToolSettings.AoiPrecipFile);
+                    strZonesRaster = GeodatabaseTools.GetGeodatabasePath(AoiFolder, GeodatabaseNames.Analysis, true) +
+                        Constants.FILE_PRECIP_ZONE;
+                    strMaskPath = GeodatabaseTools.GetGeodatabasePath(AoiFolder, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_PRISM_VECTOR;
+                    lstInterval = await AnalysisTools.GetPrismClassesAsync(Module1.Current.Aoi.FilePath,
+                        strLayer, (int) Module1.Current.BatchToolSettings.PrecipZonesCount);
+                    success = await AnalysisTools.CalculateZonesAsync(Module1.Current.Aoi.FilePath, strLayer,
+                        lstInterval, strZonesRaster, strMaskPath, "PRISM");
+
+
+
+
+                    // Concluding log entry
+                    strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Batch tool finished!! \r\n";
+                    using (StreamWriter sw = File.AppendText(strLogFile))
+                    {
+                        sw.WriteLine(strLogEntry);
                     }
                 });
             }
