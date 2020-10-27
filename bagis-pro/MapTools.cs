@@ -180,7 +180,7 @@ namespace bagis_pro
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Surfaces, true) +
                         Constants.FILE_HILLSHADE;
                     uri = new Uri(strPath);
-                    await MapTools.DisplayRasterAsync(uri, Constants.MAPS_HILLSHADE, 0);
+                    await MapTools.DisplayRasterStretchSymbolAsync(uri, Constants.MAPS_HILLSHADE, "ArcGIS Colors", "Black to White", 0);
 
                     // add elev zones layer
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
@@ -587,7 +587,8 @@ namespace bagis_pro
             });
         }
 
-        public static async Task DisplayRasterAsync(Uri rasterUri, string displayName, int transparency)
+        public static async Task DisplayRasterStretchSymbolAsync(Uri rasterUri, string displayName, string styleCategory,
+            string styleName, int transparency)
         {
             // parse the uri for the folder and file
             string strFileName = null;
@@ -597,36 +598,42 @@ namespace bagis_pro
                 strFileName = System.IO.Path.GetFileName(rasterUri.LocalPath);
                 strFolderPath = System.IO.Path.GetDirectoryName(rasterUri.LocalPath);
             }
-            await QueuedTask.Run(() =>
+            if (await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(strFolderPath), strFileName))
             {
-                RasterDataset rDataset = null;
-                // Opens a file geodatabase. This will open the geodatabase if the folder exists and contains a valid geodatabase.
-                using (Geodatabase geodatabase =
-                    new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(strFolderPath))))
+                await QueuedTask.Run(() =>
                 {
-                    // Use the geodatabase.
-                    try
+                    // Find the color ramp
+                    StyleProjectItem style =
+                        Project.Current.GetItems<StyleProjectItem>().FirstOrDefault(s => s.Name == styleCategory);
+                    if (style == null) return;
+                    var colorRampList = style.SearchColorRamps(styleName);
+                    CIMColorRamp cimColorRamp = null;
+                    foreach (var colorRamp in colorRampList)
                     {
-                        rDataset = geodatabase.OpenDataset<RasterDataset>(strFileName);
+                        if (colorRamp.Name.Equals(styleName))
+                        {
+                            cimColorRamp = colorRamp.ColorRamp;
+                            break;
+                        }
                     }
-                    catch (Exception e)
+                    if (cimColorRamp == null)
                     {
-                        Module1.Current.ModuleLogManager.LogError(nameof(DisplayRasterAsync),
-                            "Unable to open raster " + strFileName);
-                        Module1.Current.ModuleLogManager.LogError(nameof(DisplayRasterAsync),
-                            "Exception: " + e.Message);
                         return;
                     }
-                }
-                // Create a new colorizer definition using default constructor.
-                StretchColorizerDefinition stretchColorizerDef = new StretchColorizerDefinition();
-                RasterLayer rasterLayer = (RasterLayer)LayerFactory.Instance.CreateLayer(rasterUri, MapView.Active.Map);
-                if (rasterLayer != null)
-                {
+
+                    // Create a new Stretch Colorizer Definition supplying the color ramp
+                    StretchColorizerDefinition stretchColorizerDef = new StretchColorizerDefinition(0, RasterStretchType.DefaultFromSource, 1.0, cimColorRamp);
+                    int idxLayer = MapView.Active.Map.Layers.Count();
+                    RasterLayer rasterLayer = (RasterLayer)LayerFactory.Instance.CreateRasterLayer(rasterUri, MapView.Active.Map, idxLayer,
+                        displayName, stretchColorizerDef);
                     rasterLayer.SetTransparency(transparency);
-                    rasterLayer.SetName(displayName);
-                }
-            });
+                });
+            }
+            else
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(DisplayRasterStretchSymbolAsync),
+                    rasterUri.LocalPath + " could not be found. Raster not displayed!!" );
+            }
         }
 
         public static async Task<BA_ReturnCode> DisplayRasterWithSymbolAsync(Uri rasterUri, string displayName, string styleCategory, string styleName,

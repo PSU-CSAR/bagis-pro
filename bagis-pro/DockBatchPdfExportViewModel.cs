@@ -251,7 +251,7 @@ namespace bagis_pro
                         Constants.FILE_SLOPE;
                     string strZonesRaster = GeodatabaseTools.GetGeodatabasePath(AoiFolder, GeodatabaseNames.Analysis, true) +
                         Constants.FILE_SLOPE_ZONE;
-                    string strMaskPath = GeodatabaseTools.GetGeodatabasePath(AoiFolder, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_VECTOR;
+                    string strMaskPath = GeodatabaseTools.GetGeodatabasePath(AoiFolder, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_BUFFERED_VECTOR;
                     IList<BA_Objects.Interval> lstInterval = AnalysisTools.GetSlopeClasses();
                     success = await AnalysisTools.CalculateZonesAsync(AoiFolder, strLayer,
                         lstInterval, strZonesRaster, strMaskPath, "SLOPE");
@@ -261,7 +261,7 @@ namespace bagis_pro
                         Constants.FILE_ASPECT;
                     strZonesRaster = GeodatabaseTools.GetGeodatabasePath(AoiFolder, GeodatabaseNames.Analysis, true) +
                         Constants.FILE_ASPECT_ZONE;
-                    strMaskPath = GeodatabaseTools.GetGeodatabasePath(AoiFolder, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_VECTOR;
+                    strMaskPath = GeodatabaseTools.GetGeodatabasePath(AoiFolder, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_BUFFERED_VECTOR;
                     lstInterval = AnalysisTools.GetAspectClasses(Convert.ToInt16(Module1.Current.BatchToolSettings.AspectDirectionsCount));
                     success = await AnalysisTools.CalculateZonesAsync(AoiFolder, strLayer,
                         lstInterval, strZonesRaster, strMaskPath, "ASPECT");
@@ -280,8 +280,9 @@ namespace bagis_pro
                     // Clip PRISM
                     string strDefaultBufferDistance = (string)Module1.Current.BatchToolSettings.PrecipBufferDistance;
                     string strDefaultBufferUnits = (string)Module1.Current.BatchToolSettings.PrecipBufferUnits;
-                    success = await AnalysisTools.ClipLayersAsync(AoiFolder, Constants.DATA_TYPE_PRECIPITATION,
-                        pBufferDistance, pBufferUnits, strDefaultBufferDistance, strDefaultBufferUnits);
+                    //@ToDo: re-enable
+                    //success = await AnalysisTools.ClipLayersAsync(AoiFolder, Constants.DATA_TYPE_PRECIPITATION,
+                    //    pBufferDistance, pBufferUnits, strDefaultBufferDistance, strDefaultBufferUnits);
 
                     // PRISM Zones
                     strLayer = GeodatabaseTools.GetGeodatabasePath(AoiFolder, GeodatabaseNames.Prism, true) +
@@ -293,6 +294,10 @@ namespace bagis_pro
                         strLayer, (int) Module1.Current.BatchToolSettings.PrecipZonesCount);
                     success = await AnalysisTools.CalculateZonesAsync(Module1.Current.Aoi.FilePath, strLayer,
                         lstInterval, strZonesRaster, strMaskPath, "PRISM");
+
+                    // Clip SWE
+                    success = await AnalysisTools.ClipSweLayersAsync(pBufferDistance, pBufferUnits,
+                        strDefaultBufferDistance, strDefaultBufferUnits);
 
 
 

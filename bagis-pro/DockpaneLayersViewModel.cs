@@ -454,66 +454,13 @@ namespace bagis_pro
                 }
                 if (clipSwe)
                 {
-                    success = await AnalysisTools.ClipLayersAsync(Module1.Current.Aoi.FilePath, Constants.DATA_TYPE_SWE,
-                        pBufferDistance, pBufferUnits, SWEBufferDistance, SWEBufferUnits);
-                    // Calculate and record overall min and max for symbology
-                    if (success == BA_ReturnCode.Success)
-                    {
-                        double dblOverallMin = 9999;
-                        double dblOverallMax = -9999;
-                        string strLayersGdb = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, true);
-                        foreach (var fName in Constants.FILES_SNODAS_SWE)
-                        {
-                            string strOutputPath = strLayersGdb + fName;
-                            double dblMin = -1;
-                            var parameters = Geoprocessing.MakeValueArray(strOutputPath, "MINIMUM");
-                            var environments = Geoprocessing.MakeEnvironmentArray(workspace: Module1.Current.Aoi.FilePath);
-                            IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("GetRasterProperties_management", parameters, environments,
-                                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                            bool isDouble = Double.TryParse(Convert.ToString(gpResult.ReturnValue), out dblMin);
-                            if (isDouble && dblMin < dblOverallMin)
-                            {
-                                dblOverallMin = dblMin;
-                                Module1.Current.ModuleLogManager.LogDebug(nameof(ClipLayersAsync),
-                                    "Updated overall SWE minimum to " + dblOverallMin);
-                            }
-                            double dblMax = -1;
-                            parameters = Geoprocessing.MakeValueArray(strOutputPath, "MAXIMUM");
-                            gpResult = await Geoprocessing.ExecuteToolAsync("GetRasterProperties_management", parameters, environments,
-                                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                            isDouble = Double.TryParse(Convert.ToString(gpResult.ReturnValue), out dblMax);
-                            if (isDouble && dblMax > dblOverallMax)
-                            {
-                                dblOverallMax = dblMax;
-                                Module1.Current.ModuleLogManager.LogDebug(nameof(ClipLayersAsync),
-                                    "Updated overall SWE maximum to " + dblOverallMax);
-                            }
-                        }
-                        // Save overall min and max in metadata
-                        IDictionary<string, BA_Objects.DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
-                        if (dictLocalDataSources.ContainsKey(Constants.DATA_TYPE_SWE))
-                        {
-                            BA_Objects.DataSource dataSource = dictLocalDataSources[Constants.DATA_TYPE_SWE];
-                            dataSource.minValue = dblOverallMin;
-                            dataSource.maxValue = dblOverallMax;
-                            success = GeneralTools.SaveDataSourcesToFile(dictLocalDataSources);
-                            Module1.Current.ModuleLogManager.LogDebug(nameof(ClipLayersAsync),
-                                "Updated settings overall min and max metadata for SWE");
-                        }
-                        else
-                        {
-                            MessageBox.Show("An error occurred while trying to update the SWE layer metadata!!");
-                            Module1.Current.ModuleLogManager.LogError(nameof(ClipLayersAsync),
-                                "Unable to locate SWE metadata entry to update");
-                        }
-                        success = GeneralTools.SaveDataSourcesToFile(dictLocalDataSources);
-
+                    success = await AnalysisTools.ClipSweLayersAsync(pBufferDistance, pBufferUnits, 
+                        SWEBufferDistance, SWEBufferUnits);
                         if (success == BA_ReturnCode.Success)
                         {
                             layersPane.ReclipSwe_Checked = false;
                             layersPane.SWE_Checked = true;
                         }
-                    }
                 }
 
                 if (clipSnotel || clipSnowCos)
