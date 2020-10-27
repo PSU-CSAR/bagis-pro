@@ -296,8 +296,27 @@ namespace bagis_pro
                         lstInterval, strZonesRaster, strMaskPath, "PRISM");
 
                     // Clip SWE
-                    success = await AnalysisTools.ClipSweLayersAsync(pBufferDistance, pBufferUnits,
-                        strDefaultBufferDistance, strDefaultBufferUnits);
+                    //@ToDo: re-enable
+                    //success = await AnalysisTools.ClipSweLayersAsync(pBufferDistance, pBufferUnits,
+                    //    strDefaultBufferDistance, strDefaultBufferUnits);
+
+                    // Clip Snotel and Snow Course
+                    double dblDistance = -1;
+                    bool isDouble = Double.TryParse((string)Module1.Current.BatchToolSettings.SnotelBufferDistance, out dblDistance);
+                    if (! isDouble)
+                    {
+                        dblDistance = 0;
+                    }
+                    string snoBufferDistance = dblDistance + " " + (string) Module1.Current.BatchToolSettings.SnotelBufferUnits;
+                    success = await AnalysisTools.ClipSnoLayersAsync(Module1.Current.Aoi.FilePath, true, snoBufferDistance,
+                        true, snoBufferDistance);
+
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        double siteBufferDistanceMiles = (double)Module1.Current.BatchToolSettings.SiteBufferDistMiles;
+                        double siteElevRangeFeet = (double)Module1.Current.BatchToolSettings.SiteElevRangeFeet;
+                        success = await AnalysisTools.GenerateSiteLayersAsync(siteBufferDistanceMiles, siteElevRangeFeet);
+                    }
 
 
 

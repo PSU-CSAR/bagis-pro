@@ -218,7 +218,9 @@ namespace bagis_pro
 
                 if (calculateRepresented)
                 {
-                    success = await AnalysisTools.GenerateSiteLayersAsync();
+                    double siteBufferDistanceMiles = (double)Module1.Current.BatchToolSettings.SiteBufferDistMiles;
+                    double siteElevRangeFeet = (double)Module1.Current.BatchToolSettings.SiteElevRangeFeet;
+                    success = await AnalysisTools.GenerateSiteLayersAsync(siteBufferDistanceMiles, siteElevRangeFeet);
                     if (success == BA_ReturnCode.Success)
                     {
                         layersPane.RepresentedArea_Checked = false;

@@ -21,7 +21,7 @@ namespace bagis_pro
     public class AnalysisTools
     {
 
-        public static async Task<BA_ReturnCode> GenerateSiteLayersAsync()
+        public static async Task<BA_ReturnCode> GenerateSiteLayersAsync(double siteBufferDistanceMiles, double siteElevRangeFeet)
         {
             BA_Objects.Aoi currentAoi = Module1.Current.Aoi;
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
@@ -69,8 +69,8 @@ namespace bagis_pro
                 IList<BA_Objects.Site> lstSites = null;
                 if (bHasSnotel)
                 {
-                    lstSites = await AnalysisTools.AssembleSitesListAsync(Constants.FILE_SNOTEL, SiteType.Snotel.ToString());
-                    success = await AnalysisTools.CalculateRepresentedArea(demElevMinMeters, demElevMaxMeters, lstSites, Constants.FILE_SNOTEL_REPRESENTED);
+                    lstSites = await AnalysisTools.AssembleSitesListAsync(Constants.FILE_SNOTEL, SiteType.Snotel.ToString(), siteBufferDistanceMiles);
+                    success = await AnalysisTools.CalculateRepresentedArea(demElevMinMeters, demElevMaxMeters, lstSites, siteElevRangeFeet, Constants.FILE_SNOTEL_REPRESENTED);
                     if (success != BA_ReturnCode.Success)
                         bHasSnotel = false;
                 }
@@ -78,10 +78,39 @@ namespace bagis_pro
                 // snow course sites
                 if (bHasSnowCourse)
                 {
-                    lstSites = await AnalysisTools.AssembleSitesListAsync(Constants.FILE_SNOW_COURSE, SiteType.SnowCourse.ToString());
-                    success = await AnalysisTools.CalculateRepresentedArea(demElevMinMeters, demElevMaxMeters, lstSites, Constants.FILE_SCOS_REPRESENTED);
+                    lstSites = await AnalysisTools.AssembleSitesListAsync(Constants.FILE_SNOW_COURSE, SiteType.SnowCourse.ToString(), siteBufferDistanceMiles);
+                    success = await AnalysisTools.CalculateRepresentedArea(demElevMinMeters, demElevMaxMeters, lstSites, siteElevRangeFeet, Constants.FILE_SCOS_REPRESENTED);
                     if (success != BA_ReturnCode.Success)
                         bHasSnowCourse = false;
+                }
+
+                // record buffer distances and units in metadata
+                string settingsPath = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAPS + "\\" +
+                    Constants.FILE_SETTINGS;
+                BA_Objects.Analysis oAnalysis = new BA_Objects.Analysis();
+                if (File.Exists(settingsPath))
+                {
+                    using (var file = new StreamReader(settingsPath))
+                    {
+                        var reader = new System.Xml.Serialization.XmlSerializer(typeof(BA_Objects.Analysis));
+                        oAnalysis = (BA_Objects.Analysis)reader.Deserialize(file);
+                    }
+                }
+                if (oAnalysis != null)
+                {
+                    oAnalysis.UpperRange = siteElevRangeFeet;
+                    oAnalysis.UpperRangeText = Convert.ToString(siteElevRangeFeet);
+                    oAnalysis.LowerRange = siteElevRangeFeet;
+                    oAnalysis.LowerRangeText = Convert.ToString(siteElevRangeFeet);
+                    oAnalysis.ElevUnitsText = "Feet";
+                    oAnalysis.BufferDistance = siteBufferDistanceMiles;
+                    oAnalysis.BufferUnitsText = "Miles";
+                }
+                // Save settings file
+                using (var file_stream = File.Create(settingsPath))
+                {
+                    var serializer = new System.Xml.Serialization.XmlSerializer(typeof(BA_Objects.Analysis));
+                    serializer.Serialize(file_stream, oAnalysis);
                 }
 
                 // combine site layers
@@ -108,7 +137,8 @@ namespace bagis_pro
 
         }
 
-        public static async Task<IList<BA_Objects.Site>> AssembleSitesListAsync(string sitesFileName, string sType)
+        public static async Task<IList<BA_Objects.Site>> AssembleSitesListAsync(string sitesFileName, string sType,
+            double siteBufferDistanceMiles)
         {
             //2. Buffer point from feature class and query site information
             Uri layersUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, false));
@@ -128,7 +158,7 @@ namespace bagis_pro
                             Feature nextFeature = (Feature)cursor.Current;
                             BA_Objects.Site aSite = new BA_Objects.Site();
                             var pointGeometry = nextFeature.GetShape();
-                            double bufferMeters = LinearUnit.Miles.ConvertTo(Module1.Current.Aoi.SiteBufferDistMiles, LinearUnit.Meters);
+                            double bufferMeters = LinearUnit.Miles.ConvertTo(siteBufferDistanceMiles, LinearUnit.Meters);
                             aSite.Buffer = GeometryEngine.Instance.Buffer(pointGeometry, bufferMeters);
 
                             int idx = nextFeature.FindField(Constants.FIELD_SITE_ELEV);
@@ -161,7 +191,7 @@ namespace bagis_pro
 
         public static async Task<BA_ReturnCode> CalculateRepresentedArea(double demElevMinMeters,
                                                                          double demElevMaxMeters, IList<BA_Objects.Site> lstSites,
-                                                                         string strOutputFile)
+                                                                         double siteElevRangeFeet, string strOutputFile)
         {
             IGPResult gpResult = null;
             StringBuilder sb = new StringBuilder();
@@ -199,7 +229,7 @@ namespace bagis_pro
                 string strBufferedFeatures = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) + "tmpBuffer";
 
                 // 5.Build list of reclass items
-                double minElevMeters = aSite.ElevMeters - LinearUnit.Feet.ConvertToMeters(Module1.Current.Aoi.SiteElevRangeFeet);
+                double minElevMeters = aSite.ElevMeters - LinearUnit.Feet.ConvertToMeters(siteElevRangeFeet);
                 IList<string> reclassList = new List<string>();
                 // non-represented below min elev
                 if (minElevMeters > demElevMinMeters)
@@ -212,7 +242,7 @@ namespace bagis_pro
                     minElevMeters = demElevMinMeters;
                 }
                 bool hasNonRepresentedAbove = true;
-                double maxElevMeters = aSite.ElevMeters + LinearUnit.Feet.ConvertToMeters(Module1.Current.Aoi.SiteElevRangeFeet);
+                double maxElevMeters = aSite.ElevMeters + LinearUnit.Feet.ConvertToMeters(siteElevRangeFeet);
                 if (maxElevMeters > demElevMaxMeters)
                 {
                     maxElevMeters = demElevMaxMeters;

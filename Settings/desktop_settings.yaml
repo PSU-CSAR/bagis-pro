@@ -61,6 +61,8 @@ bagis-pro:
      RoadsAnalysisBufferUnits: Feet
      VegetationBufferUnits: Meters
      Publisher: nwcc_nrcs
+     SiteElevRangeFeet: 500
+     SiteBufferDistMiles: 5.642
      Version: 1.0
 
 bagis-p:

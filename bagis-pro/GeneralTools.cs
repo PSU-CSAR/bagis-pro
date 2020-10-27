@@ -156,6 +156,30 @@ namespace bagis_pro
                     scosInBuffer = totalScosSites - scosInBasin;
                 }
 
+                // Retrieve Represented Area Parameters
+                string settingsPath = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAPS + "\\" +
+                    Constants.FILE_SETTINGS;
+                double siteElevRange = 0;
+                string siteElevRangeUnits = "";
+                double siteBufferDistance = 0;
+                string siteBufferDistanceUnits = "";
+                if (File.Exists(settingsPath))
+                {
+                    BA_Objects.Analysis oAnalysis = null;
+                    using (var file = new StreamReader(settingsPath))
+                    {
+                        var reader = new System.Xml.Serialization.XmlSerializer(typeof(BA_Objects.Analysis));
+                        oAnalysis = (BA_Objects.Analysis)reader.Deserialize(file);
+                    }
+                    if (oAnalysis != null)
+                    {
+                        siteElevRange = oAnalysis.UpperRange;
+                        siteElevRangeUnits = oAnalysis.ElevUnitsText;
+                        siteBufferDistance = oAnalysis.BufferDistance;
+                        siteBufferDistanceUnits = oAnalysis.BufferUnitsText;
+                    }
+                }
+
                 // Calculating percent represented area
                 gdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, false));
                 double pctSnotelRepresented = 0;
@@ -227,8 +251,10 @@ namespace bagis_pro
                     has_scos_sites = hasScosSites,
                     scos_sites_in_basin = scosInBasin,
                     scos_sites_in_buffer = scosInBuffer,
-                    site_elev_range_ft = Module1.Current.Aoi.SiteElevRangeFeet,
-                    site_buffer_dist_mi = Module1.Current.Aoi.SiteBufferDistMiles,
+                    site_elev_range = siteElevRange,
+                    site_elev_range_units = siteElevRangeUnits,
+                    site_buffer_dist = siteBufferDistance,
+                    site_buffer_dist_units = siteBufferDistanceUnits,
                     represented_snotel_percent = pctSnotelRepresented,
                     represented_snow_course_percent = pctSnowCourseRepresented,
                     represented_all_sites_percent = pctAllSitesRepresented,
