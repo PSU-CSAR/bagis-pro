@@ -1892,31 +1892,11 @@ namespace bagis_pro
             Uri uriFull = new Uri(strInputFc);
             await QueuedTask.Run(() =>
            {
-                // Create feature layer so we can use definition query to select public lands
-                var slectionLayer = LayerFactory.Instance.CreateFeatureLayer(uriFull, MapView.Active.Map, 0, "Selection Layer");
+               // Create feature layer so we can use definition query to select public lands
+               var slectionLayer = LayerFactory.Instance.CreateFeatureLayer(uriFull, MapView.Active.Map, 0, "Selection Layer");
                slectionLayer.SetDefinitionQuery(Constants.FIELD_PUBLIC + " = 1");
-                //string copyOutputPath = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Analysis, true) + "tmpCopy";
-                //// Copy selected features to a new, temporary feature class
-                //var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath);
-                //var parameters = Geoprocessing.MakeValueArray(slectionLayer, copyOutputPath);
-                //var gpResult = Geoprocessing.ExecuteToolAsync("CopyFeatures_management", parameters, environments,
-                //                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                //if (gpResult.Result.IsFailed)
-                //{
-                //    Module1.Current.ModuleLogManager.LogError(nameof(GetPublicLandsAsync),
-                //    "Unable to copy selected features. Error code: " + gpResult.Result.ErrorCode);
-                //    MessageBox.Show("Unable to copy selected features. Extraction cancelled!!", "BAGIS-PRO");
-                //    return;
-                //}
-                //else
-                //{
-                //    // Remove temporary layer
-                //    MapView.Active.Map.RemoveLayer(slectionLayer);
-                //    Module1.Current.ModuleLogManager.LogDebug(nameof(GetPublicLandsAsync),
-                //    "Copied selected features to a temporary layer");
-                //}
-                // Merge features into a single feature for display and analysis
-                var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath);
+               // Merge features into a single feature for display and analysis
+               var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath);
                var parameters = Geoprocessing.MakeValueArray(slectionLayer, GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Analysis, true) + Constants.FILE_PUBLIC_LAND_ZONE,
                    Constants.FIELD_PUBLIC, "", "MULTI_PART", "DISSOLVE_LINES");
                var gpResult = Geoprocessing.ExecuteToolAsync("Dissolve_management", parameters, environments,
@@ -1930,6 +1910,8 @@ namespace bagis_pro
                }
                else
                {
+                   // Remove temporary layer
+                   MapView.Active.Map.RemoveLayer(slectionLayer);
                    Module1.Current.ModuleLogManager.LogDebug(nameof(GetPublicLandsAsync),
                        "Dissolved public lands layer");
                }
@@ -2619,6 +2601,114 @@ namespace bagis_pro
             }
             return success;
         }
-    }
 
+        public static async Task<BA_ReturnCode> GenerateProximityRoadsLayerAsync(Uri uri, string strDistance)
+        {
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            try
+            {
+                string strOutputPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) +
+                    Constants.FILE_ROADS_ZONE;
+                success = await GeoprocessingTools.BufferLinesAsync(uri.AbsolutePath + "\\" + Constants.FILE_ROADS, strOutputPath, strDistance,
+                    "", "", "");
+
+                if (success == BA_ReturnCode.Success)
+                {
+                    // Save buffer distance and units in metadata
+                    string strBufferDistance = (string)Module1.Current.BatchToolSettings.RoadsAnalysisBufferDistance;
+                    string strBufferUnits = (string)Module1.Current.BatchToolSettings.RoadsAnalysisBufferUnits;
+                    // We need to add a new tag at "/metadata/dataIdInfo/searchKeys/keyword"
+                    StringBuilder sb = new StringBuilder();
+                    sb.Append(Constants.META_TAG_PREFIX);
+                    // Buffer Distance
+                    sb.Append(Constants.META_TAG_BUFFER_DISTANCE + strBufferDistance + "; ");
+                    // X Units
+                    sb.Append(Constants.META_TAG_XUNIT_VALUE + strBufferUnits + "; ");
+                    sb.Append(Constants.META_TAG_SUFFIX);
+
+                    //Update the metadata
+                    var fc = ItemFactory.Instance.Create(strOutputPath,
+                        ItemFactory.ItemType.PathItem);
+                    if (fc != null)
+                    {
+                        await QueuedTask.Run(() =>
+                        {
+                            string strXml = string.Empty;
+                            strXml = fc.GetXml();
+                            System.Xml.XmlDocument xmlDocument = GeneralTools.UpdateMetadata(strXml, Constants.META_TAG_XPATH, sb.ToString(),
+                                Constants.META_TAG_PREFIX.Length);
+
+                            fc.SetXml(xmlDocument.OuterXml);
+                        });
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(GenerateProximityRoadsLayerAsync),
+                    "Exception: " + e.StackTrace);
+            }
+            return success;
+        }
+
+        public static async Task<BA_ReturnCode> CalculatePotentialSitesAreaAsync(string aoiFolderPath)
+        {
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            try
+            {
+                Uri uriLayersGdb = new Uri(GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Analysis));
+                string[] arrSiteFileNames = { Constants.FILE_PUBLIC_LAND_ZONE, Constants.FILE_ROADS_ZONE, Constants.FILE_BELOW_TREELINE_ZONE };
+                IList<string> lstIntersectLayers = new List<string>();
+                string strOutputPath = uriLayersGdb.LocalPath + "\\" + Constants.FILE_SITES_LOCATION_ZONE;
+                foreach (var fileName in arrSiteFileNames)
+                {
+                    bool bExists = await GeodatabaseTools.FeatureClassExistsAsync(uriLayersGdb, fileName);
+                    if (bExists)
+                    {
+                        lstIntersectLayers.Add(uriLayersGdb.LocalPath + "\\" + fileName);
+                    }
+                }
+                if (lstIntersectLayers.Count > 1)   // Make sure we have > 1 layers to intersect
+                {
+                    string[] arrIntersectLayers = lstIntersectLayers.ToArray();
+                    success = await GeoprocessingTools.IntersectUnrankedAsync(aoiFolderPath, arrIntersectLayers, strOutputPath,
+                        "ONLY_FID");
+                    if (success != BA_ReturnCode.Success)
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(CalculatePotentialSitesAreaAsync),
+                            "No site location layers exist to intersect. sitesloczone cannot be created!");
+                    }
+                }
+                else if (lstIntersectLayers.Count == 1)
+                {
+                    success = await GeoprocessingTools.CopyFeaturesAsync(aoiFolderPath, lstIntersectLayers[0],
+                        strOutputPath);
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(CalculatePotentialSitesAreaAsync),
+                            "Only one site location layer found. sitesloczone created by copying that layer");
+                    }
+                }
+                else
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(aoiFolderPath),
+                        "An error occured while using the Intersect tool to generate sitesloczone !");
+                }
+            }
+            catch (Exception e)
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(CalculatePotentialSitesAreaAsync),
+                    "Exception: " + e.StackTrace);
+            }
+            return success;
+        }
+
+        public static async Task<BA_ReturnCode> CalculateSitesZonesAsync(string aoiFolderPath)
+        {
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
+
+
+            return success;
+        }
     }
+}

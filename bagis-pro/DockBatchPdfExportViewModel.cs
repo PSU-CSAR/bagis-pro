@@ -308,17 +308,124 @@ namespace bagis_pro
                         dblDistance = 0;
                     }
                     string snoBufferDistance = dblDistance + " " + (string) Module1.Current.BatchToolSettings.SnotelBufferUnits;
-                    success = await AnalysisTools.ClipSnoLayersAsync(Module1.Current.Aoi.FilePath, true, snoBufferDistance,
-                        true, snoBufferDistance);
+                    //@ToDo: Renable when ready
+                    //success = await AnalysisTools.ClipSnoLayersAsync(Module1.Current.Aoi.FilePath, true, snoBufferDistance,
+                    //    true, snoBufferDistance);
 
+                    //if (success == BA_ReturnCode.Success)
+                    //{
+                    //    double siteBufferDistanceMiles = (double)Module1.Current.BatchToolSettings.SiteBufferDistMiles;
+                    //    double siteElevRangeFeet = (double)Module1.Current.BatchToolSettings.SiteElevRangeFeet;
+                    //    success = await AnalysisTools.GenerateSiteLayersAsync(siteBufferDistanceMiles, siteElevRangeFeet);
+                    //}
+
+                    // Clip Roads
+                    string snoBufferUnits = (string)Module1.Current.BatchToolSettings.SnotelBufferUnits;
+                    string strOutputFc = GeodatabaseTools.GetGeodatabasePath(AoiFolder, GeodatabaseNames.Layers, true)
+                        + Constants.FILE_ROADS;
+                    success = await AnalysisTools.ClipFeatureLayerAsync(AoiFolder, strOutputFc, Constants.DATA_TYPE_ROADS,
+                        Convert.ToString(dblDistance), snoBufferUnits);
                     if (success == BA_ReturnCode.Success)
                     {
-                        double siteBufferDistanceMiles = (double)Module1.Current.BatchToolSettings.SiteBufferDistMiles;
-                        double siteElevRangeFeet = (double)Module1.Current.BatchToolSettings.SiteElevRangeFeet;
-                        success = await AnalysisTools.GenerateSiteLayersAsync(siteBufferDistanceMiles, siteElevRangeFeet);
+                        // Buffer clipped roads for analysis
+                        Uri uri = new Uri(GeodatabaseTools.GetGeodatabasePath(AoiFolder, GeodatabaseNames.Layers));
+                        bool bExists = await GeodatabaseTools.FeatureClassExistsAsync(uri, Constants.FILE_ROADS);
+                        if (!bExists)
+                        {
+                            Module1.Current.ModuleLogManager.LogDebug(nameof(CmdRun),
+                                "Unable to buffer roads because fs_roads layer does not exist. Process stopped!!");
+                        }
+                        else
+                        {
+                            string strDistance = Module1.Current.BatchToolSettings.RoadsAnalysisBufferDistance + " " +
+                                Module1.Current.BatchToolSettings.RoadsAnalysisBufferUnits;
+                            success = await AnalysisTools.GenerateProximityRoadsLayerAsync(uri, strDistance);
+                        }
                     }
 
+                    // Clip public lands
+                    strOutputFc = GeodatabaseTools.GetGeodatabasePath(AoiFolder, GeodatabaseNames.Layers, true)
+                        + Constants.FILE_PUBLIC_LAND;
+                    success = await AnalysisTools.ClipFeatureLayerAsync(AoiFolder, strOutputFc, Constants.DATA_TYPE_PUBLIC_LAND,
+                        Convert.ToString(dblDistance), snoBufferUnits);
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        // Create public lands layer for potential site analysis
+                        success = await AnalysisTools.GetPublicLandsAsync(AoiFolder);
+                    }
 
+                    // Clip Vegetation layer
+                    string strOutputRaster = GeodatabaseTools.GetGeodatabasePath(AoiFolder, GeodatabaseNames.Layers, true)
+                        + Constants.FILE_VEGETATION_EVT;
+                    success = await AnalysisTools.ClipRasterLayerAsync(AoiFolder, strOutputRaster, Constants.DATA_TYPE_VEGETATION,
+                        Convert.ToString(dblDistance), snoBufferUnits);
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        // Create area below treeline layer for potential site analysis
+                        success = await AnalysisTools.ExtractBelowTreelineAsync(AoiFolder);
+                    }
+
+                    // Generate Potential Sites layer
+                    success = await AnalysisTools.CalculatePotentialSitesAreaAsync(AoiFolder);
+
+                    // Generate Elevation Precipitation Correlation layer
+                    strLayer = GeodatabaseTools.GetGeodatabasePath(AoiFolder, GeodatabaseNames.Prism, true) +
+                        Path.GetFileName((string)Module1.Current.BatchToolSettings.AoiPrecipFile);
+                    Uri uriPrism = new Uri(GeodatabaseTools.GetGeodatabasePath(AoiFolder, GeodatabaseNames.Prism));
+                    success = await AnalysisTools.CalculateElevPrecipCorr(AoiFolder, uriPrism,
+                        Path.GetFileName((string)Module1.Current.BatchToolSettings.AoiPrecipFile));
+
+
+                    // Generate complete PDF document
+                    //@ToDo: Re-enable when ready
+                    //try
+                    //{
+                    //    // Delete any old PDF files
+                    //    foreach (var item in Constants.FILES_EXPORT_ALL_PDF)
+                    //    {
+                    //        string strPath = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE
+                    //            + "\\" + item;
+                    //        if (System.IO.File.Exists(strPath))
+                    //        {
+                    //            try
+                    //            {
+                    //                System.IO.File.Delete(strPath);
+                    //            }
+                    //            catch (Exception)
+                    //            {
+                    //                System.Windows.MessageBoxResult res =
+                    //                    MessageBox.Show("Unable to delete file before creating new pdf. Do you want to close the file and try again?",
+                    //                    "BAGIS-PRO", System.Windows.MessageBoxButton.YesNo);
+                    //                if (res == System.Windows.MessageBoxResult.Yes)
+                    //                {
+                    //                    return;
+                    //                }
+                    //            }
+                    //        }
+                    //    }
+
+                    //    success = await MapTools.PublishMapsAsync(); // export the maps to pdf
+                    //    if (success != BA_ReturnCode.Success)
+                    //    {
+                    //        MessageBox.Show("An error occurred while generating the maps!!", "BAGIS-PRO");
+                    //    }
+                    //    //@ToDo: Renable when charts are working
+                    //    //success = await GeneralTools.GenerateTablesAsync(false);   // export the tables to pdf
+                    //    //if (success != BA_ReturnCode.Success)
+                    //    //{
+                    //    //    MessageBox.Show("An error occurred while generating the Excel tables!!", "BAGIS-PRO");
+                    //    //}
+                    //    await GeneralTools.GenerateMapsTitlePageAsync("", "");
+                    //    string outputPath = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\" +
+                    //          Constants.FILE_EXPORT_MAPS_ALL_PDF;
+                    //    GeneralTools.PublishFullPdfDocument(outputPath);    // Put it all together into a single pdf document
+
+                    //    MessageBox.Show("Map package exported to " + outputPath + "!!", "BAGIS-PRO");
+                    //}
+                    //catch (Exception e)
+                    //{
+                    //    MessageBox.Show("An error occurred while trying to export the maps!! " + e.Message, "BAGIS PRO");
+                    //}
 
 
                     // Concluding log entry

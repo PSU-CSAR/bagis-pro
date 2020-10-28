@@ -63,6 +63,7 @@ namespace bagis_pro
         private bool _AspectZones_Checked = false;
         private bool _SlopeZones_Checked = false;
         private bool _ElevationZones_Checked = false;
+        private bool _SitesZones_Checked = false;
         private bool _Roads_Checked = false;
         private bool _PublicLand_Checked = false;
         private bool _BelowTreeline_Checked = false;
@@ -121,6 +122,15 @@ namespace bagis_pro
             }
         }
 
+        public bool SitesZones_Checked
+        {
+            get { return _SitesZones_Checked; }
+            set
+            {
+                SetProperty(ref _SitesZones_Checked, value, () => SitesZones_Checked);
+            }
+        }
+
         public bool Roads_Checked
         {
             get { return _Roads_Checked; }
@@ -164,6 +174,7 @@ namespace bagis_pro
             AspectZones_Checked = false;
             SlopeZones_Checked = false;
             ElevationZones_Checked = false;
+            SitesZones_Checked = false;
             Roads_Checked = false;
             PublicLand_Checked = false;
             BelowTreeline_Checked = false;
@@ -179,14 +190,14 @@ namespace bagis_pro
                     // Create from template
                     await GenerateLayersAsync(RepresentedArea_Checked, PrismZones_Checked, AspectZones_Checked,
                         SlopeZones_Checked, ElevationZones_Checked, Roads_Checked, PublicLand_Checked, BelowTreeline_Checked,
-                        ElevPrecipCorr_Checked);
+                        ElevPrecipCorr_Checked, SitesZones_Checked);
                 });
             }
         }
 
         private async Task GenerateLayersAsync(bool calculateRepresented, bool calculatePrism, bool calculateAspect,
             bool calculateSlope, bool calculateElevation, bool bufferRoads, bool extractPublicLand,
-            bool extractBelowTreeline, bool elevPrecipCorr)
+            bool extractBelowTreeline, bool elevPrecipCorr, bool calculateSitesZones)
         {
             try
             {
@@ -198,7 +209,8 @@ namespace bagis_pro
 
                 if (calculateRepresented == false && calculatePrism == false && calculateAspect == false
                     && calculateSlope == false && calculateElevation == false && bufferRoads == false
-                    && extractPublicLand == false && extractBelowTreeline == false && elevPrecipCorr == false)
+                    && extractPublicLand == false && extractBelowTreeline == false && elevPrecipCorr == false
+                    && calculateSitesZones == false)
                 {
                     MessageBox.Show("No layers selected to generate !!", "BAGIS-PRO");
                     return;
@@ -286,6 +298,15 @@ namespace bagis_pro
                     }
                 }
 
+                if (calculateSitesZones)
+                {
+
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        layersPane.SitesZones_Checked = false;
+                    }
+                }
+
                 bool bSkipPotentialSites = false;
                 if (bufferRoads)
                 {
@@ -298,43 +319,11 @@ namespace bagis_pro
                             "Unable to buffer roads because fs_roads layer does not exist. Process stopped!!");
                         return;
                     }
+
+                    // This could come from the UI eventually
                     string strDistance = Module1.Current.BatchToolSettings.RoadsAnalysisBufferDistance + " " +
                         Module1.Current.BatchToolSettings.RoadsAnalysisBufferUnits;
-                    string strOutputPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) +
-                        Constants.FILE_ROADS_ZONE;
-                    success = await GeoprocessingTools.BufferLinesAsync(uri.AbsolutePath + "\\" + Constants.FILE_ROADS, strOutputPath, strDistance,
-                        "", "", "");
-
-                    if (success == BA_ReturnCode.Success)
-                    {
-                        // Save buffer distance and units in metadata
-                        string strBufferDistance = (string) Module1.Current.BatchToolSettings.RoadsAnalysisBufferDistance;
-                        string strBufferUnits = (string) Module1.Current.BatchToolSettings.RoadsAnalysisBufferUnits;
-                        // We need to add a new tag at "/metadata/dataIdInfo/searchKeys/keyword"
-                        StringBuilder sb = new StringBuilder();
-                        sb.Append(Constants.META_TAG_PREFIX);
-                        // Buffer Distance
-                        sb.Append(Constants.META_TAG_BUFFER_DISTANCE + strBufferDistance + "; ");
-                        // X Units
-                        sb.Append(Constants.META_TAG_XUNIT_VALUE + strBufferUnits + "; ");
-                        sb.Append(Constants.META_TAG_SUFFIX);
-
-                        //Update the metadata
-                        var fc = ItemFactory.Instance.Create(strOutputPath,
-                            ItemFactory.ItemType.PathItem);
-                        if (fc != null)
-                        {
-                            await QueuedTask.Run(() =>
-                            {
-                                string strXml = string.Empty;
-                                strXml = fc.GetXml();
-                                System.Xml.XmlDocument xmlDocument = GeneralTools.UpdateMetadata(strXml, Constants.META_TAG_XPATH, sb.ToString(),
-                                    Constants.META_TAG_PREFIX.Length);
-
-                                fc.SetXml(xmlDocument.OuterXml);
-                            });
-                        }
-                    }
+                    success = await AnalysisTools.GenerateProximityRoadsLayerAsync(uri, strDistance);
                     if (success == BA_ReturnCode.Success)
                     {
                         layersPane.Roads_Checked = false;
@@ -373,51 +362,16 @@ namespace bagis_pro
                     }
                 }
 
-                if (bSkipPotentialSites)
+                if (! bSkipPotentialSites)
                 {
                     if (bufferRoads || extractPublicLand || extractBelowTreeline)
                     {
                         // if either of the underlying layers changed, we need to recalculate the
                         // potential sites layer
-                        Uri uriLayersGdb = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis));
-                        string[] arrSiteFileNames = { Constants.FILE_PUBLIC_LAND_ZONE, Constants.FILE_ROADS_ZONE, Constants.FILE_BELOW_TREELINE_ZONE };
-                        IList<string> lstIntersectLayers = new List<string>();
-                        string strOutputPath = uriLayersGdb.LocalPath + "\\" + Constants.FILE_SITES_LOCATION_ZONE;
-                        foreach (var fileName in arrSiteFileNames)
+                        success = await AnalysisTools.CalculatePotentialSitesAreaAsync(Module1.Current.Aoi.FilePath);
+                        if (success != BA_ReturnCode.Success)
                         {
-                            bool bExists = await GeodatabaseTools.FeatureClassExistsAsync(uriLayersGdb, fileName);
-                            if (bExists)
-                            {
-                                lstIntersectLayers.Add(uriLayersGdb.LocalPath + "\\" + fileName);
-                            }
-                        }
-                        if (lstIntersectLayers.Count > 1)   // Make sure we have > 1 layers to intersect
-                        {
-                            string[] arrIntersectLayers = lstIntersectLayers.ToArray();
-                            success = await GeoprocessingTools.IntersectUnrankedAsync(Module1.Current.Aoi.FilePath, arrIntersectLayers, strOutputPath,
-                                "ONLY_FID");
-                            if (success != BA_ReturnCode.Success)
-                            {
-                                MessageBox.Show("An error occurred while generating the site location layers map!!", "BAGIS-PRO");
-                                Module1.Current.ModuleLogManager.LogError(nameof(GenerateLayersAsync),
-                                    "No site location layers exist to intersect. sitesloczone cannot be created!");
-                            }
-                        }
-                        else if (lstIntersectLayers.Count == 1)
-                        {
-                            success = await GeoprocessingTools.CopyFeaturesAsync(Module1.Current.Aoi.FilePath, lstIntersectLayers[0],
-                                strOutputPath);
-                            if (success == BA_ReturnCode.Success)
-                            {
-                                Module1.Current.ModuleLogManager.LogDebug(nameof(GenerateLayersAsync),
-                                    "Only one site location layer found. sitesloczone created by copying that layer");
-                            }
-                        }
-                        else
-                        {
-                            MessageBox.Show("No site location layers exist to merge!!", "BAGIS-PRO");
-                            Module1.Current.ModuleLogManager.LogError(nameof(GenerateLayersAsync),
-                                "An error occured while using the Intersect tool to generate sitesloczone !");
+                            MessageBox.Show("An error occurred while generating the potential sites layer!!", "BAGIS-PRO");
                         }
                     }
                 }

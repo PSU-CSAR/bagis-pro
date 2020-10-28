@@ -174,9 +174,9 @@ namespace bagis_pro
                     if (oAnalysis != null)
                     {
                         siteElevRange = oAnalysis.UpperRange;
-                        siteElevRangeUnits = oAnalysis.ElevUnitsText;
+                        siteElevRangeUnits = oAnalysis.ElevUnitsText.ToLower();
                         siteBufferDistance = oAnalysis.BufferDistance;
-                        siteBufferDistanceUnits = oAnalysis.BufferUnitsText;
+                        siteBufferDistanceUnits = oAnalysis.BufferUnitsText.ToLower();
                     }
                 }
 

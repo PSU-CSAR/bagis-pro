@@ -27,6 +27,7 @@
             <RowDefinition Height="25"/>
             <RowDefinition Height="25"/>
             <RowDefinition Height="25"/>
+            <RowDefinition Height="25"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="25"/>
         </Grid.RowDefinitions>
@@ -48,58 +49,65 @@
                       IsChecked="{Binding ElevationZones_Checked}"/>
         </DockPanel>
         <DockPanel Grid.Row="2" Grid.Column="0"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
-            <Label  Content="Sites Represented Area" HorizontalAlignment="Left" VerticalAlignment="Center"  Padding="5,0,20,0"/>
+            <Label  Content="Sites Zones" HorizontalAlignment="Left" VerticalAlignment="Center"  Padding="5,0,20,0"/>
         </DockPanel>
         <DockPanel Grid.Row="2" Grid.Column="1"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
+            <CheckBox x:Name="chkSitesZones" Content="" HorizontalAlignment="Center"  Height="14" VerticalAlignment="Center"
+                      IsChecked="{Binding SitesZones_Checked}"/>
+        </DockPanel>
+        <DockPanel Grid.Row="3" Grid.Column="0"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
+            <Label  Content="Sites Represented Area" HorizontalAlignment="Left" VerticalAlignment="Center"  Padding="5,0,20,0"/>
+        </DockPanel>
+        <DockPanel Grid.Row="3" Grid.Column="1"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
             <CheckBox x:Name="chkRepresentedArea" Content="" HorizontalAlignment="Center"  Height="14" VerticalAlignment="Center"
                       IsChecked="{Binding RepresentedArea_Checked}"/>
         </DockPanel>
-        <DockPanel Grid.Row="3" Grid.Column="0"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
+        <DockPanel Grid.Row="4" Grid.Column="0"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
             <Label  Content="PRISM Precipitation Zones" HorizontalAlignment="Left" VerticalAlignment="Center"  Padding="5,0,20,0"/>
         </DockPanel>
-        <DockPanel Grid.Row="3" Grid.Column="1"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
+        <DockPanel Grid.Row="4" Grid.Column="1"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
             <CheckBox x:Name="chkPrismZones" Content="" HorizontalAlignment="Center"  Height="14" VerticalAlignment="Center"
                       IsChecked="{Binding PrismZones_Checked}"/>
         </DockPanel>
-        <DockPanel Grid.Row="4" Grid.Column="0"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
+        <DockPanel Grid.Row="5" Grid.Column="0"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
             <Label  Content="Aspect Zones" HorizontalAlignment="Left" VerticalAlignment="Center"  Padding="5,0,20,0"/>
         </DockPanel>
-        <DockPanel Grid.Row="4" Grid.Column="1"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
+        <DockPanel Grid.Row="5" Grid.Column="1"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
             <CheckBox x:Name="chkAspectZones" Content="" HorizontalAlignment="Center"  Height="14" VerticalAlignment="Center"
                       IsChecked="{Binding AspectZones_Checked}"/>
         </DockPanel>
-        <DockPanel Grid.Row="5" Grid.Column="0"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
+        <DockPanel Grid.Row="6" Grid.Column="0"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
             <Label  Content="Slope Zones" HorizontalAlignment="Left" VerticalAlignment="Center"  Padding="5,0,20,0"/>
         </DockPanel>
-        <DockPanel Grid.Row="5" Grid.Column="1"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
+        <DockPanel Grid.Row="6" Grid.Column="1"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
             <CheckBox x:Name="chkSlopeZones" Content="" HorizontalAlignment="Center"  Height="14" VerticalAlignment="Center"
                       IsChecked="{Binding SlopeZones_Checked}"/>
         </DockPanel>
-        <DockPanel Grid.Row="6" Grid.Column="0"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
+        <DockPanel Grid.Row="7" Grid.Column="0"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
             <Label  Content="USFS Roads Proximity" HorizontalAlignment="Left" VerticalAlignment="Center"  Padding="5,0,20,0"/>
         </DockPanel>
-        <DockPanel Grid.Row="6" Grid.Column="1"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
+        <DockPanel Grid.Row="7" Grid.Column="1"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
             <CheckBox x:Name="chkRoads" Content="" HorizontalAlignment="Center"  Height="14" VerticalAlignment="Center"
                       IsChecked="{Binding Roads_Checked}"/>
         </DockPanel>
-        <DockPanel Grid.Row="7" Grid.Column="0"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
+        <DockPanel Grid.Row="8" Grid.Column="0"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
             <Label  Content="Public Land" HorizontalAlignment="Left" VerticalAlignment="Center"  Padding="5,0,20,0"/>
         </DockPanel>
-        <DockPanel Grid.Row="7" Grid.Column="1"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
+        <DockPanel Grid.Row="8" Grid.Column="1"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
             <CheckBox x:Name="chkPublicLands" Content="" HorizontalAlignment="Center"  Height="14" VerticalAlignment="Center"
                       IsChecked="{Binding PublicLand_Checked}"/>
         </DockPanel>
-        <DockPanel Grid.Row="8" Grid.Column="0"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
+        <DockPanel Grid.Row="9" Grid.Column="0"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
             <Label Content="Area Below Treeline" HorizontalAlignment="Left" VerticalAlignment="Center"  Padding="5,0,20,0"/>
         </DockPanel>
-        <DockPanel Grid.Row="8" Grid.Column="1"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
+        <DockPanel Grid.Row="9" Grid.Column="1"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
             <CheckBox x:Name="chkBelowTreeline" Grid.Row="8" Grid.Column="1" Content="" HorizontalAlignment="Center"  Height="14" VerticalAlignment="Center"
                       IsChecked="{Binding BelowTreeline_Checked}"/>
         </DockPanel>
-        <DockPanel Grid.Row="9" Grid.Column="0"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
+        <DockPanel Grid.Row="10" Grid.Column="0"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
             <Label  Content="Elevation-Precipitation Correlation" HorizontalAlignment="Left" VerticalAlignment="Center"  Padding="5,0,20,0"/>
         </DockPanel>
-        <DockPanel Grid.Row="9" Grid.Column="1"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
+        <DockPanel Grid.Row="10" Grid.Column="1"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
             <CheckBox x:Name="chkElevPrecipCorr" Content="" HorizontalAlignment="Center"  Height="14" VerticalAlignment="Center"
                       IsChecked="{Binding ElevPrecipCorr_Checked}"/>
         </DockPanel>

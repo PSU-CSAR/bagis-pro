@@ -127,8 +127,8 @@
                 </tr>
                   <tr>
                     <td class="style3">
-                      Site representation definition: within <xsl:value-of select="site_buffer_dist"/> <xsl:value-of select="site_buffer_dist_units"/>  planar radius, 
-                      with <xsl:value-of select="site_elev_range"/> <xsl:value-of select="site_elev_range_units"/>  above and below site elevation.
+                      Site representation definition: within <xsl:value-of select="site_buffer_dist"/>&#160;<xsl:value-of select="site_buffer_dist_units"/> planar radius, 
+                      with <xsl:value-of select="site_elev_range"/>&#160;<xsl:value-of select="site_elev_range_units"/> above and below site elevation.
                     </td>
                   </tr>
                 <tr>

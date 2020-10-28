@@ -836,6 +836,34 @@ namespace bagis_pro
             }
             return bExists;
         }
+
+        public static async Task<IList<BA_Objects.Interval>> GetUniqueSortedValuesAsync(Uri gdbUri, string featClassName, 
+            string valueFieldName, string nameFieldName)
+        {
+            IList<BA_Objects.Interval> lstInterval = new List<BA_Objects.Interval>();
+            if (gdbUri.IsFile)
+            {
+                string strFolderPath = System.IO.Path.GetDirectoryName(gdbUri.LocalPath);
+                if (System.IO.Directory.Exists(strFolderPath))
+                {
+                    await QueuedTask.Run(() =>
+                    {
+
+                        using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(gdbUri)))
+                        using (FeatureClass featureClass = geodatabase.OpenDataset<FeatureClass>(featClassName))
+                        {
+                            FeatureClassDefinition def = featureClass.GetDefinition();
+                            int idxElev = def.FindField(valueFieldName);
+                            int idxName = def.FindField(nameFieldName);
+
+                        }
+                    });
+                }
+            }
+            return lstInterval;
+        }
+
+
     }
 
     
