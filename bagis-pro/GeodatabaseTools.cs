@@ -838,7 +838,7 @@ namespace bagis_pro
         }
 
         public static async Task<IList<BA_Objects.Interval>> GetUniqueSortedValuesAsync(Uri gdbUri, string featClassName, 
-            string valueFieldName, string nameFieldName)
+            string valueFieldName, string nameFieldName, double upperBound, double lowerBound)
         {
             IList<BA_Objects.Interval> lstInterval = new List<BA_Objects.Interval>();
             if (gdbUri.IsFile)
@@ -848,6 +848,8 @@ namespace bagis_pro
                 {
                     await QueuedTask.Run(() =>
                     {
+                        //get Dictionary of unique elevations from the vector att
+                        IDictionary<String, String> dictElev = new Dictionary<String, String>();
 
                         using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(gdbUri)))
                         using (FeatureClass featureClass = geodatabase.OpenDataset<FeatureClass>(featClassName))
@@ -855,7 +857,90 @@ namespace bagis_pro
                             FeatureClassDefinition def = featureClass.GetDefinition();
                             int idxElev = def.FindField(valueFieldName);
                             int idxName = def.FindField(nameFieldName);
+                            if (idxElev < 0 || idxName < 0)
+                            {
+                                Module1.Current.ModuleLogManager.LogError(nameof(GetUniqueSortedValuesAsync),
+                                    "A required field was missing from " + featClassName + ". Process failed!");
+                                return;
+                            }
+                            using (RowCursor rowCursor = featureClass.Search(new QueryFilter(), false))
+                            {
+                                while (rowCursor.MoveNext())
+                                {
+                                    using (Feature feature = (Feature)rowCursor.Current)
+                                    {
+                                        string strElev = Convert.ToString(feature[idxElev]);
+                                        string strName = "";
+                                        if (feature[idxName] == null)
+                                        {
+                                            strName = "Name missing";
+                                        }
+                                        else
+                                        {
+                                            strName = Convert.ToString(feature[idxName]);
+                                            if (String.IsNullOrEmpty(strName))
+                                            {
+                                                strName = "Name missing";
+                                            }
+                                        }
+                                        if (dictElev.ContainsKey(strElev))
+                                        {
+                                            strName = dictElev[strElev] + ", " + strName;
+                                            dictElev[strElev] = strName;
+                                        }
+                                        else
+                                        {
+                                            dictElev.Add(strElev, strName);
+                                        }
+                                    }
 
+                                }
+
+                            }
+                        }
+                            List<double> lstValidValues = new List<double>();
+                            int nuniquevalue = dictElev.Keys.Count;
+                            double value = -1.0F;
+                            bool bSuccess = false;
+                            foreach (var strElev in dictElev.Keys)
+                            {
+                                bSuccess = Double.TryParse(strElev, out value);
+                                if ((int) (value - 0.5) < (int) upperBound && (int) value + 0.5 > (int) lowerBound)
+                                {
+                                    lstValidValues.Add(value);
+                                }
+                                else if (value > upperBound || value < lowerBound)  //invalid data in the attribute field, out of bound
+                                {
+                                    Module1.Current.ModuleLogManager.LogError(nameof(GetUniqueSortedValuesAsync),
+                                        "WARNING!! A monitoring site is ignored in the analysis! The site's elevation (" + 
+                                        value + ") is outside the DEM range (" + lowerBound + ", " + upperBound + ")!");
+                                    return;
+                                }
+                            }
+                        //add upper and lower bnds to the dictionary
+                        if (!dictElev.ContainsKey(Convert.ToString(upperBound)))
+                        {
+                            dictElev.Add(Convert.ToString(upperBound), "Not represented");
+                            lstValidValues.Add(upperBound);
+                        }
+                        if (!dictElev.ContainsKey(Convert.ToString(lowerBound)))
+                        {
+                            dictElev.Add(Convert.ToString(lowerBound), "Min Value");
+                            lstValidValues.Add(lowerBound);
+                        }
+
+                    // Sort the list
+                    lstValidValues.Sort();
+                    // Add lower bound to interval list
+                    for (int i = 0; i<lstValidValues.Count -1; i++)
+                        {
+                            BA_Objects.Interval interval = new BA_Objects.Interval();
+                            interval.Value = i+1;
+                            interval.LowerBound = lstValidValues[i];
+                            double nextItem = lstValidValues[i + 1];
+                            interval.UpperBound = nextItem;
+                            interval.Name = dictElev[Convert.ToString(nextItem)]; // use the upperbnd name to represent the interval
+                            lstInterval.Add(interval);
                         }
                     });
                 }

@@ -111,6 +111,6 @@
             <CheckBox x:Name="chkElevPrecipCorr" Content="" HorizontalAlignment="Center"  Height="14" VerticalAlignment="Center"
                       IsChecked="{Binding ElevPrecipCorr_Checked}"/>
         </DockPanel>
-        <Button x:Name="button" Content="Generate Layers" Grid.Column="2"  Grid.Row="10" VerticalAlignment="Center" Width="90" Command="{Binding CmdGenerateLayers}" Margin="5,0,0,0" HorizontalAlignment="Right" HorizontalContentAlignment="Right"/>
+        <Button x:Name="button" Content="Generate Layers" Grid.Column="2"  Grid.Row="11" VerticalAlignment="Center" Width="90" Command="{Binding CmdGenerateLayers}" Margin="5,0,0,0" HorizontalAlignment="Right" HorizontalContentAlignment="Right"/>
     </Grid>
 </UserControl>

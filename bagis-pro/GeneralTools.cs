@@ -459,6 +459,7 @@ namespace bagis_pro
                 }
 
                 Module1.Current.Aoi.HasSnotel = true;
+                Uri uriAnalysis = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false));
                 int intSites = await GeodatabaseTools.CountFeaturesAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, false)), Constants.FILE_SNOTEL);
                 if (intSites < 1)
                 {
@@ -466,8 +467,16 @@ namespace bagis_pro
                 }
                 if (Module1.Current.Aoi.HasSnotel)
                 {
-                    success = await ExcelTools.CreateSitesTableAsync(pSNOTELWorksheet, pAreaElvWorksheet, Constants.FILE_SNOTEL_ZONE);
-                    Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Created Snotel sites Table");
+                    if (await GeodatabaseTools.RasterDatasetExistsAsync(uriAnalysis, Constants.FILE_SNOTEL_ZONE))
+                    {
+                        success = await ExcelTools.CreateSitesTableAsync(pSNOTELWorksheet, pAreaElvWorksheet, Constants.FILE_SNOTEL_ZONE);
+                        Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Created Snotel sites Table");
+                    }
+                    else
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(GenerateTablesAsync), Constants.FILE_SNOTEL_ZONE + " is missing. " +
+                            "Snotel sites table could not be created!");
+                    }
                 }
 
                 Module1.Current.Aoi.HasSnowCourse = true;
@@ -478,18 +487,37 @@ namespace bagis_pro
                 }
                 if (Module1.Current.Aoi.HasSnowCourse)
                 {
-                    success = await ExcelTools.CreateSitesTableAsync(pSnowCourseWorksheet, pAreaElvWorksheet, Constants.FILE_SCOS_ZONE);
-                    Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Created Snow Course sites Table");
+                    if (await GeodatabaseTools.RasterDatasetExistsAsync(uriAnalysis, Constants.FILE_SCOS_ZONE))
+                    {
+                        success = await ExcelTools.CreateSitesTableAsync(pSnowCourseWorksheet, pAreaElvWorksheet, Constants.FILE_SCOS_ZONE);
+                        Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Created Snow Course sites Table");
+                    }
+                    else
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(GenerateTablesAsync), Constants.FILE_SNOTEL_ZONE + " is missing. " +
+                            " Snow Course sites table could not be created!");
+                    }
                 }
 
                 string strPrecipPath = Module1.Current.Aoi.FilePath + "\\" + Module1.Current.BatchToolSettings.AoiPrecipFile;
-                double MaxPRISMValue = await ExcelTools.CreatePrecipitationTableAsync(pPRISMWorkSheet,
+                success = await ExcelTools.CreatePrecipitationTableAsync(pPRISMWorkSheet,
                    strPrecipPath, elevMinMeters);
 
-                // copy DEM area and %_area to the PRISM table
-                success = ExcelTools.CopyCells(pAreaElvWorksheet, 3, pPRISMWorkSheet, 12);
-                success = ExcelTools.CopyCells(pAreaElvWorksheet, 10, pPRISMWorkSheet, 13);
-                int rowCountPrism = ExcelTools.EstimatePrecipitationVolume(pPRISMWorkSheet, 12, 7, 14, 15);
+                double MaxPct = -1;
+                int lastRow = -1;
+                if (success == BA_ReturnCode.Success)
+                {
+                    // copy DEM area and %_area to the PRISM table
+                    success = ExcelTools.CopyCells(pAreaElvWorksheet, 3, pPRISMWorkSheet, 12);
+                    success = ExcelTools.CopyCells(pAreaElvWorksheet, 10, pPRISMWorkSheet, 13);
+                    int rowCountPrism = ExcelTools.EstimatePrecipitationVolume(pPRISMWorkSheet, 12, 7, 14, 15);
+                    lastRow = rowCountPrism + 2;
+                    // get %_VOL for top PRISM axis
+                    WorksheetFunction wsf = objExcel.WorksheetFunction;
+                    Microsoft.Office.Interop.Excel.Range rng = pPRISMWorkSheet.Range["O3:O" + lastRow];
+                    MaxPct = wsf.Max(rng);
+                }
+
                 // Try to get elevation interval from analysis.xml settings file
                 BA_Objects.Analysis oAnalysis = new BA_Objects.Analysis();
                 string strSettingsFile = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAPS + "\\" +
@@ -521,8 +549,8 @@ namespace bagis_pro
 
                 double Y_Min = ExcelTools.ConfigureYAxis(minValue, maxValue, Y_Unit, ref Y_Max);
                 success = ExcelTools.CreateCombinedChart(pPRISMWorkSheet, pAreaElvWorksheet, pChartsWorksheet, pSNOTELWorksheet,
-                    pSnowCourseWorksheet, Constants.EXCEL_CHART_SPACING, Constants.EXCEL_CHART_SPACING, Y_Max, Y_Min, Y_Unit, 
-                    MaxPRISMValue, false);
+                    pSnowCourseWorksheet, Constants.EXCEL_CHART_SPACING, Constants.EXCEL_CHART_SPACING, Y_Max, Y_Min, Y_Unit,
+                    Math.Ceiling(MaxPct), false);
                 Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Created Combined Chart");
 
                 success = await ExcelTools.CreateSlopeTableAsync(pSlopeWorksheet);
@@ -547,7 +575,7 @@ namespace bagis_pro
                 if (success == BA_ReturnCode.Success)
                 {
                     success = ExcelTools.CreateCombinedChart(pPRISMWorkSheet, pAreaElvWorksheet, pChartsWorksheet, pSNOTELWorksheet,
-                        pSnowCourseWorksheet, topPosition, leftPosition, Y_Max, Y_Min, Y_Unit, MaxPRISMValue, true);
+                        pSnowCourseWorksheet, topPosition, leftPosition, Y_Max, Y_Min, Y_Unit, Math.Ceiling(MaxPct), true);
                 }
 
                 //Elevation-Precipitation Correlation Chart
@@ -613,8 +641,7 @@ namespace bagis_pro
                     Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Published aspect chart to PDF");
 
                     //Cumulative precip table
-                    pathToSave = sOutputFolder + "\\" + Constants.FILE_EXPORT_TABLE_PRECIP_REPRESENT_PDF;
-                    int lastRow = rowCountPrism + 2;
+                    pathToSave = sOutputFolder + "\\" + Constants.FILE_EXPORT_TABLE_PRECIP_REPRESENT_PDF;                  
                     pPRISMWorkSheet.PageSetup.PrintArea = "$A$1:$P$" + lastRow;
                     pPRISMWorkSheet.PageSetup.Orientation = XlPageOrientation.xlLandscape;
                     pPRISMWorkSheet.PageSetup.Zoom = false;     // Required to print on one page

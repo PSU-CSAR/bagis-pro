@@ -380,13 +380,12 @@ namespace bagis_pro
             return success;
         }
 
-        public static async Task<double> CreatePrecipitationTableAsync(Worksheet pworksheet, string precipPath,
+        public static async Task<BA_ReturnCode> CreatePrecipitationTableAsync(Worksheet pworksheet, string precipPath,
             double aoiDemMin)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
             string strDemDisplayUnits = (string)Module1.Current.BatchToolSettings.DemDisplayUnits;
             string strDemUnits = (string)Module1.Current.BatchToolSettings.DemUnits;
-            double MaxPRISMValue = 0.0F;
             Uri uriElevZones = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false));
             IList<BA_Objects.Interval> lstInterval = await GeodatabaseTools.ReadReclassRasterAttribute(uriElevZones, Constants.FILE_ELEV_ZONE);
 
@@ -411,7 +410,7 @@ namespace bagis_pro
             {
                 Module1.Current.ModuleLogManager.LogError(nameof(CreatePrecipitationTableAsync), "An error occurred while creating " +
                     "the Precipitation zonal statistics table. Exception: " + gpResult.ErrorCode);
-                return -1;
+                return BA_ReturnCode.OtherError;
             }
             else
             {
@@ -472,7 +471,6 @@ namespace bagis_pro
                     }
 
                     double percentArea = 0.0F;
-                    double TempMaxPRISMValue = 0.0F;
                     int i = 0;
                     using (RowCursor rowCursor = statisticsTable.Search(new QueryFilter(), false))
                     {
@@ -508,15 +506,6 @@ namespace bagis_pro
                                 pworksheet.Cells[i + 3, 9] = row["SUM"];
                                 pworksheet.Cells[i + 3, 10] = count / sumOfCount * 100;         //PERCENT_AREA
                                 pworksheet.Cells[i + 3, 11] = lstInterval[i].Name;              //label
-
-                                // Determine Max PRISM Value (for Charting Purposes)
-                                TempMaxPRISMValue = (Convert.ToDouble(row[Constants.FIELD_COUNT]) / sumOfCount) * 100;
-                                /// find the largest % value
-                                if (TempMaxPRISMValue > MaxPRISMValue)
-                                {
-                                    MaxPRISMValue = TempMaxPRISMValue;
-                                }
-
                                 i++;
                             }
                         }
@@ -529,25 +518,10 @@ namespace bagis_pro
                     }
                     pworksheet.Cells[2, 1] = String.Format("{0:0.##}", aoiDemMin); //Value
                     pworksheet.Cells[2, 10] = 0;         // PERCENT_AREA_ELEVATION
-
-                    // ===============================================
-                    // Set MaxPRISMValue to an Even Whole Number
-                    // ===============================================
-                    MaxPRISMValue = Math.Round(MaxPRISMValue * 1.05 + 0.5); // this number is to set the x axis of the chart
-                    if (MaxPRISMValue%2 > 0)
-                    {
-                        MaxPRISMValue = MaxPRISMValue + 1;
-                    }
- 
-
                 }
             });
 
-             if (success != BA_ReturnCode.Success)
-            {
-                MaxPRISMValue = -1;
-            }
-            return MaxPRISMValue;
+            return success;
         }
 
         public static BA_ReturnCode CopyCells(Worksheet pSourceWS, int SourceCol, 
@@ -617,7 +591,7 @@ namespace bagis_pro
         public static BA_ReturnCode CreateCombinedChart(Worksheet pPRISMWorkSheet, Worksheet pElvWorksheet, Worksheet pChartsWorksheet,
                                                         Worksheet pSNOTELWorksheet, Worksheet pSnowCourseWorkSheet, int topPosition, 
                                                         int leftPosition, double Y_Max, double Y_Min,
-                                                        double Y_Unit, double MaxPRISMValue, bool bCumulativeVolume)
+                                                        double Y_Unit, double maxPrismValue, bool bCumulativeVolume)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
             string strDemDisplayUnits = (string)Module1.Current.BatchToolSettings.DemDisplayUnits;
@@ -833,9 +807,10 @@ namespace bagis_pro
             
             topAxis.AxisTitle.Font.Bold = true;
             topAxis.AxisTitle.Orientation = "0";
+
             if (bCumulativeVolume == false)
             {
-                topAxis.MaximumScale = MaxPRISMValue;
+                topAxis.MaximumScale = maxPrismValue;
             }
             else
             {

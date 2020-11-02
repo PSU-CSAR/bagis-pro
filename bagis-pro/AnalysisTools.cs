@@ -2703,10 +2703,52 @@ namespace bagis_pro
             return success;
         }
 
-        public static async Task<BA_ReturnCode> CalculateSitesZonesAsync(string aoiFolderPath)
+        public static async Task<BA_ReturnCode> CalculateSitesZonesAsync(string aoiFolderPath, bool hasSnotel, bool hasSnowCourse)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
-
+            try
+            {
+                Uri uri = new Uri(GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Layers));
+                Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateSitesZonesAsync), "Get min and max elevation from DEM");
+                IList<double> lstResult = await GeoprocessingTools.GetDemStatsAsync(aoiFolderPath, "", 0.005);
+                double demElevMinMeters = -1;
+                double demElevMaxMeters = -1;
+                if (lstResult.Count == 2)   // We expect the min and max values in that order
+                {
+                    demElevMinMeters = lstResult[0];
+                    demElevMaxMeters = lstResult[1];
+                }
+                // We assume that the DEM and site elevations are both in meters
+                IList<BA_Objects.Interval> lstInterval = null;
+                string strLayer = null;
+                string strZonesRaster = null;
+                string strMaskPath = GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_BUFFERED_VECTOR;
+                if (hasSnotel)
+                {
+                    lstInterval = await GeodatabaseTools.GetUniqueSortedValuesAsync(uri, Constants.FILE_SNOTEL,
+                        Constants.FIELD_SITE_ELEV, Constants.FIELD_SITE_NAME, demElevMaxMeters, demElevMinMeters);
+                    strLayer = GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Surfaces, true) +
+                        Constants.FILE_DEM_FILLED;
+                    strZonesRaster = GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Analysis, true) +
+                        Constants.FILE_SNOTEL_ZONE;
+                    success = await AnalysisTools.CalculateZonesAsync(aoiFolderPath, strLayer,
+                        lstInterval, strZonesRaster, strMaskPath, "SNOTEL");
+                }
+                if (hasSnowCourse)
+                {
+                    lstInterval = await GeodatabaseTools.GetUniqueSortedValuesAsync(uri, Constants.FILE_SNOW_COURSE,
+                        Constants.FIELD_SITE_ELEV, Constants.FIELD_SITE_NAME, demElevMaxMeters, demElevMinMeters);
+                    strZonesRaster = GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Analysis, true) +
+                        Constants.FILE_SNOW_COURSE;
+                    success = await AnalysisTools.CalculateZonesAsync(aoiFolderPath, strLayer,
+                        lstInterval, strZonesRaster, strMaskPath, "SNOW COURSE");
+                }
+            }
+            catch (Exception e)
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(CalculateSitesZonesAsync),
+                    "Exception: " + e.StackTrace);
+            }
 
             return success;
         }

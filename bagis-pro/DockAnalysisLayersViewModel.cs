@@ -300,6 +300,17 @@ namespace bagis_pro
 
                 if (calculateSitesZones)
                 {
+                    Uri uri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers));
+                    bool hasSnotel = await GeodatabaseTools.FeatureClassExistsAsync(uri, Constants.FILE_SNOTEL);
+                    bool hasSnowCourse = await GeodatabaseTools.FeatureClassExistsAsync(uri, Constants.FILE_SNOW_COURSE);
+                    if (hasSnotel || hasSnowCourse)
+                    {
+                        success = await AnalysisTools.CalculateSitesZonesAsync(Module1.Current.Aoi.FilePath, hasSnowCourse, hasSnowCourse);
+                    }
+                    else
+                    {
+                        MessageBox.Show("No sites found to create sites zone layers!!", "BAGIS-PRO");
+                    }
 
                     if (success == BA_ReturnCode.Success)
                     {
