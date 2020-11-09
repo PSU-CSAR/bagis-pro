@@ -21,7 +21,7 @@ namespace bagis_pro
 {
     public class MapTools
     {
-        public static async Task<BA_ReturnCode> DisplayMaps(string strAoiPath)
+        public static async Task<BA_ReturnCode> DisplayMaps(string strAoiPath, bool bInteractive)
         {
             BA_Objects.Aoi oAoi = Module1.Current.Aoi;
             if (String.IsNullOrEmpty(oAoi.Name))
@@ -41,7 +41,7 @@ namespace bagis_pro
             Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
             if (oMap != null)
             {
-                if (oMap.Layers.Count() > 0)
+                if (bInteractive == true && oMap.Layers.Count() > 0)
                 {
                     string strMessage = "Adding the maps to the display will overwrite the current arrangement of data layers. " +
                            "This action cannot be undone." + System.Environment.NewLine + "Do you wish to continue ?";
@@ -58,7 +58,7 @@ namespace bagis_pro
                     bool bFoundIt = false;
                     //A layout view may exist but it may not be active
                     //Iterate through each pane in the application and check to see if the layout is already open and if so, activate it
-                    foreach (var pane in ProApp.Panes)
+                    foreach (var pane in FrameworkApplication.Panes)
                     {
                         if (!(pane is ILayoutPane layoutPane))  //if not a layout view, continue to the next pane    
                             continue;
@@ -70,7 +70,8 @@ namespace bagis_pro
                     }
                     if (!bFoundIt)
                     {
-                        ILayoutPane iNewLayoutPane = await ProApp.Panes.CreateLayoutPaneAsync(layout); //GUI thread
+                        ILayoutPane iNewLayoutPane = await FrameworkApplication.Panes.CreateLayoutPaneAsync(layout); //GUI thread
+                        (iNewLayoutPane as Pane).Activate();
                     }
                     await MapTools.SetDefaultMapFrameDimensionAsync(Constants.MAPS_DEFAULT_MAP_FRAME_NAME, layout, oMap,
                         1.0, 2.0, 7.5, 9.0);
@@ -359,6 +360,7 @@ namespace bagis_pro
                     }
                 };
 
+                var test = MapView.Active.Map;
                 FeatureLayer fLayer = LayerFactory.Instance.CreateLayer<FeatureLayer>(flyrCreatnParam, MapView.Active.Map);
             });
         }
@@ -1494,6 +1496,14 @@ namespace bagis_pro
                     textBox.SetGraphic(graphic);
                     success = BA_ReturnCode.Success;
                 }
+
+                textBox = layout.FindElement(Constants.MAPS_TEXTBOX1) as GraphicElement;
+                if (textBox != null)
+                {
+                    CIMTextGraphic graphic = (CIMTextGraphic)textBox.Graphic;
+                    graphic.Text = "Depth Units = " + Module1.Current.BatchToolSettings.SweDisplayUnits;
+                    textBox.SetGraphic(graphic);
+                 }
             });
 
             // toggle layers according to map definition
@@ -1643,18 +1653,23 @@ namespace bagis_pro
             return success;
         }
 
-        public static async Task<BA_ReturnCode> PublishMapsAsync()
+        public static async Task<BA_ReturnCode> PublishMapsAsync(bool bInteractive)
         {
             // Load the maps if they aren't in the viewer already
             BA_ReturnCode success = BA_ReturnCode.Success;
             if (!FrameworkApplication.State.Contains(Constants.STATES_MAP_BUTTONS[0]))
             {
-                success = await MapTools.DisplayMaps(Module1.Current.Aoi.FilePath);
+                success = await MapTools.DisplayMaps(Module1.Current.Aoi.FilePath, bInteractive);
             }
 
-            if (success != BA_ReturnCode.Success)
+            if (bInteractive == true && success != BA_ReturnCode.Success)
             {
                 MessageBox.Show("Unable to load maps. The map package cannot be exported!!", "BAGIS-PRO");
+                return BA_ReturnCode.UnknownError;
+            }
+            else if (bInteractive == true && success != BA_ReturnCode.Success)
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(PublishMapsAsync), "Unable to load maps. The map package cannot be exported!!");
                 return BA_ReturnCode.UnknownError;
             }
 

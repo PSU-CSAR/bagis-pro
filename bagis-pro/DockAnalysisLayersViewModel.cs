@@ -393,7 +393,7 @@ namespace bagis_pro
                         Path.GetFileName((string)Module1.Current.BatchToolSettings.AoiPrecipFile);
 
                     Uri uriPrism = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Prism));
-                    success = await AnalysisTools.CalculateElevPrecipCorr(Module1.Current.Aoi.FilePath, uriPrism, 
+                    success = await AnalysisTools.CalculateElevPrecipCorrAsync(Module1.Current.Aoi.FilePath, uriPrism, 
                         Path.GetFileName((string)Module1.Current.BatchToolSettings.AoiPrecipFile));
 
 

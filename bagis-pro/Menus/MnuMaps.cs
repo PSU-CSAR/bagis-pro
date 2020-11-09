@@ -51,7 +51,7 @@ namespace bagis_pro.Menus
             string tempAoiPath = "C:\\Docs\\animas_AOI_prms";
             try
             {
-                await MapTools.DisplayMaps(tempAoiPath);
+                await MapTools.DisplayMaps(tempAoiPath, true);
                 Module1.Current.DisplayedMap = Constants.FILE_EXPORT_MAP_ELEV_PDF;
                 Module1.ActivateState("BtnMapLoad_State");          
             }

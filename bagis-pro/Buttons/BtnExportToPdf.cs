@@ -59,7 +59,7 @@ namespace bagis_pro.Buttons
                     }
                 }
 
-                BA_ReturnCode success = await MapTools.PublishMapsAsync(); // export the maps to pdf
+                BA_ReturnCode success = await MapTools.PublishMapsAsync(true); // export the maps to pdf
                 if (success != BA_ReturnCode.Success)
                 {
                     MessageBox.Show("An error occurred while generating the maps!!", "BAGIS-PRO");
