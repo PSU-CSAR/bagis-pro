@@ -461,15 +461,32 @@ namespace bagis_pro
             }
         }
 
+        /// <summary>
+        /// Command to browse for item and thumbnail
+        /// </summary>
+        private RelayCommand _runCommand;
+        public ICommand RunCommand
+        {
+            get
+            {
+                if (_runCommand == null)
+                    _runCommand = new RelayCommand(RunImplAsync, () => true);
+                return _runCommand;
+            }
+        }
+
+        private async void RunImplAsync(object param)
+        {
+            BA_ReturnCode success = await MapTools.PublishMapsAsync(false); // export the maps to pdf
+        }
+
         public ICommand CmdRun2
         {
             get
             {
-                return new RelayCommand(async () =>
-                {
-                    BA_ReturnCode success = await MapTools.PublishMapsAsync(false); // export the maps to pdf
-
-                });
+                if (_runCommand == null)
+                    _runCommand = new RelayCommand(RunImplAsync, () => true);
+                return _runCommand;
             }
         }
     }

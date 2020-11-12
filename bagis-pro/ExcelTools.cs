@@ -125,8 +125,8 @@ namespace bagis_pro
                 string strInValueRaster = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Surfaces, true) + Constants.FILE_DEM_FILLED;
                 string strOutTable = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) + strTable;
                 var parameters = Geoprocessing.MakeValueArray(strInZoneData, Constants.FIELD_VALUE, strInValueRaster, strOutTable);
-                var gpResult = Geoprocessing.ExecuteToolAsync("ZonalStatisticsAsTable", parameters, environments,
-                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                var gpResult = Geoprocessing.ExecuteToolAsync("ZonalStatisticsAsTable_sa", parameters, environments,
+                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
                 if (gpResult.Result.IsFailed)
                 {
                     Module1.Current.ModuleLogManager.LogError(nameof(CreateElevationTableAsync),
@@ -281,7 +281,7 @@ namespace bagis_pro
                 string strInValueRaster = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Surfaces, true) + Constants.FILE_DEM_FILLED;
                 string strOutTable = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) + strTable;
                 var parameters = Geoprocessing.MakeValueArray(strInZoneData, Constants.FIELD_VALUE, strInValueRaster, strOutTable);
-                return Geoprocessing.ExecuteToolAsync("ZonalStatisticsAsTable", parameters, environments,
+                return Geoprocessing.ExecuteToolAsync("ZonalStatisticsAsTable_sa", parameters, environments,
                             CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
             });
             if (gpResult.IsFailed)
@@ -403,7 +403,7 @@ namespace bagis_pro
                 string strInZoneData = uriElevZones.LocalPath + "\\" + Constants.FILE_ELEV_ZONE;
                 string strOutTable = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) + strTable;
                 var parameters = Geoprocessing.MakeValueArray(strInZoneData, Constants.FIELD_VALUE, precipPath, strOutTable);
-                return Geoprocessing.ExecuteToolAsync("ZonalStatisticsAsTable", parameters, environments,
+                return Geoprocessing.ExecuteToolAsync("ZonalStatisticsAsTable_sa", parameters, environments,
                             CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
             });
             if (gpResult.IsFailed)
@@ -888,7 +888,7 @@ namespace bagis_pro
                 string strInValueRaster = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Surfaces, true) + Constants.FILE_SLOPE;
                 string strOutTable = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) + strTable;
                 var parameters = Geoprocessing.MakeValueArray(strInZoneData, Constants.FIELD_VALUE, strInValueRaster, strOutTable);
-                return Geoprocessing.ExecuteToolAsync("ZonalStatisticsAsTable", parameters, environments,
+                return Geoprocessing.ExecuteToolAsync("ZonalStatisticsAsTable_sa", parameters, environments,
                             CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
             });
             if (gpResult.IsFailed)
@@ -1047,7 +1047,7 @@ namespace bagis_pro
                 string strInValueRaster = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Surfaces, true) + Constants.FILE_ASPECT;
                 string strOutTable = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) + strTable;
                 var parameters = Geoprocessing.MakeValueArray(strInZoneData, Constants.FIELD_VALUE, strInValueRaster, strOutTable);
-                return Geoprocessing.ExecuteToolAsync("ZonalStatisticsAsTable", parameters, environments,
+                return Geoprocessing.ExecuteToolAsync("ZonalStatisticsAsTable_sa", parameters, environments,
                             CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
             });
             if (gpResult.IsFailed)

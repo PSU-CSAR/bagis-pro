@@ -52,7 +52,7 @@ namespace bagis_pro
                     }
                 }
 
-                Layout layout = await MapTools.GetDefaultLayoutAsync(Constants.MAPS_DEFAULT_LAYOUT_NAME);
+                Layout layout = await GetDefaultLayoutAsync(Constants.MAPS_DEFAULT_LAYOUT_NAME);
                 if (layout != null)
                 {
                     bool bFoundIt = false;
@@ -1111,7 +1111,7 @@ namespace bagis_pro
                         GraphicElement textBox = layout.FindElement(Constants.MAPS_TITLE) as GraphicElement;
                         if (textBox != null)
                         {
-                            CIMTextGraphic graphic = (CIMTextGraphic)textBox.Graphic;
+                            CIMTextGraphic graphic = (CIMTextGraphic)textBox.GetGraphic();
                             graphic.Text = titleText;
                             textBox.SetGraphic(graphic);
 
@@ -1122,7 +1122,7 @@ namespace bagis_pro
                         GraphicElement textBox = layout.FindElement(Constants.MAPS_SUBTITLE) as GraphicElement;
                         if (textBox != null)
                         {
-                            CIMTextGraphic graphic = (CIMTextGraphic)textBox.Graphic;
+                            CIMTextGraphic graphic = (CIMTextGraphic)textBox.GetGraphic();
                             graphic.Text = mapDefinition.SubTitle;
                             textBox.SetGraphic(graphic);
                         }
@@ -1132,7 +1132,7 @@ namespace bagis_pro
                         GraphicElement textBox = layout.FindElement(Constants.MAPS_TEXTBOX1) as GraphicElement;
                         if (textBox != null)
                         {
-                            CIMTextGraphic graphic = (CIMTextGraphic)textBox.Graphic;
+                            CIMTextGraphic graphic = (CIMTextGraphic)textBox.GetGraphic();
                             graphic.Text = mapDefinition.UnitsText;
                             textBox.SetGraphic(graphic);
                         }
@@ -1484,14 +1484,14 @@ namespace bagis_pro
                 GraphicElement textBox = layout.FindElement(Constants.MAPS_TITLE) as GraphicElement;
                 if (textBox != null)
                 {
-                    CIMTextGraphic graphic = (CIMTextGraphic)textBox.Graphic;
+                    CIMTextGraphic graphic = (CIMTextGraphic)textBox.GetGraphic();
                     graphic.Text = Module1.Current.Aoi.Name.ToUpper();
                     textBox.SetGraphic(graphic);
                 }
                 textBox = layout.FindElement(Constants.MAPS_SUBTITLE) as GraphicElement;
                 if (textBox != null)
                 {
-                    CIMTextGraphic graphic = (CIMTextGraphic)textBox.Graphic;
+                    CIMTextGraphic graphic = (CIMTextGraphic)textBox.GetGraphic();
                     graphic.Text = strTitle;
                     textBox.SetGraphic(graphic);
                     success = BA_ReturnCode.Success;
@@ -1500,7 +1500,7 @@ namespace bagis_pro
                 textBox = layout.FindElement(Constants.MAPS_TEXTBOX1) as GraphicElement;
                 if (textBox != null)
                 {
-                    CIMTextGraphic graphic = (CIMTextGraphic)textBox.Graphic;
+                    CIMTextGraphic graphic = (CIMTextGraphic)textBox.GetGraphic();
                     graphic.Text = "Depth Units = " + Module1.Current.BatchToolSettings.SweDisplayUnits;
                     textBox.SetGraphic(graphic);
                  }
