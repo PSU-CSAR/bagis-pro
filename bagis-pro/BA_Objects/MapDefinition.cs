@@ -11,20 +11,20 @@ namespace bagis_pro.BA_Objects
     {
         private IList<string> m_layerList;
         private IList<string> m_legendLayerList;
-        private readonly string m_subTitle;
+        private readonly string m_Title;
         private readonly string m_unitsText;
         private readonly string m_pdfFileName;
 
-        public MapDefinition(string subTitle, string unitsText, string pdfFileName)
+        public MapDefinition(string title, string unitsText, string pdfFileName)
         {
-            m_subTitle = subTitle;
+            m_Title = title;
             m_unitsText = unitsText;
             m_pdfFileName = pdfFileName;
         }
 
-        public string SubTitle
+        public string Title
         {
-            get { return m_subTitle; }
+            get { return m_Title; }
         }
 
         public string UnitsText

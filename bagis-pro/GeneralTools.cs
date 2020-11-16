@@ -129,11 +129,6 @@ namespace bagis_pro
                     elevMaxMeters = lstResult[1];
                 }
 
-                //Test querying metadata; Layer metadata methods not currently available in Pro
-                //string snowCourseSitesPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, true) +  Constants.FILE_SNOW_COURSE;
-                //Item featureClassItem = ItemFactory.Instance.Create(snowCourseSitesPath);
-                //IMetadata fcMetadataItem = featureClassItem as IMetadata;
-
                 // Counting Snotel Sites in AOI boundary
                 gdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, false));
                 Uri sitesGdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, false));

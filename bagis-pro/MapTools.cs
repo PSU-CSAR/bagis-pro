@@ -533,6 +533,7 @@ namespace bagis_pro
                 {
                     // Use the geodatabase.
                     FeatureClassDefinition fcDefinition = geodatabase.GetDefinition<FeatureClassDefinition>(strFileName);
+                    var extent = fcDefinition.GetExtent();
                     zoomEnv = fcDefinition.GetExtent().Expand(bufferFactor, bufferFactor, true);
                 }
             });
@@ -954,10 +955,10 @@ namespace bagis_pro
                     layout.DeleteElements(item => !item.Name.Contains(Constants.MAPS_DEFAULT_MAP_FRAME_NAME));
                 });
                 // Map Title
-                await MapTools.DisplayTextBoxAsync(layout, Constants.MAPS_TITLE, 4.0, 10.5, ColorFactory.Instance.BlackRGB, 24, "Times New Roman",
+                await MapTools.DisplayTextBoxAsync(layout, Constants.MAPS_TITLE, 4.0, 10.5, ColorFactory.Instance.BlackRGB, 20, "Times New Roman",
                     "Bold", "Title");
                 // Map SubTitle
-                await MapTools.DisplayTextBoxAsync(layout, Constants.MAPS_SUBTITLE, 4.0, 10.1, ColorFactory.Instance.BlackRGB, 14, "Times New Roman",
+                await MapTools.DisplayTextBoxAsync(layout, Constants.MAPS_SUBTITLE, 4.0, 10.1, ColorFactory.Instance.BlackRGB, 20, "Times New Roman",
                     "Regular", "SubTitle");
                 // (optional) textbox
                 await MapTools.DisplayTextBoxAsync(layout, Constants.MAPS_TEXTBOX1, 5.0, 1.0, ColorFactory.Instance.BlackRGB, 12, "Times New Roman",
@@ -1080,7 +1081,7 @@ namespace bagis_pro
             });
         }
 
-        public static async Task UpdateMapElementsAsync(string titleText, BA_Objects.MapDefinition mapDefinition)
+        public static async Task UpdateMapElementsAsync(string subTitleText, BA_Objects.MapDefinition mapDefinition)
         {
             await QueuedTask.Run(() =>
             {
@@ -1104,26 +1105,26 @@ namespace bagis_pro
                     return;
                 }
 
-                if (!String.IsNullOrEmpty(titleText))
+                if (!String.IsNullOrEmpty(mapDefinition.Title))
                 {
-                    if (titleText != null)
+                    if (mapDefinition.Title != null)
                     {
                         GraphicElement textBox = layout.FindElement(Constants.MAPS_TITLE) as GraphicElement;
                         if (textBox != null)
                         {
                             CIMTextGraphic graphic = (CIMTextGraphic)textBox.GetGraphic();
-                            graphic.Text = titleText;
+                            graphic.Text = mapDefinition.Title;
                             textBox.SetGraphic(graphic);
 
                         }
                     }
-                    if (mapDefinition.SubTitle != null)
+                    if (subTitleText != null)
                     {
                         GraphicElement textBox = layout.FindElement(Constants.MAPS_SUBTITLE) as GraphicElement;
                         if (textBox != null)
                         {
                             CIMTextGraphic graphic = (CIMTextGraphic)textBox.GetGraphic();
-                            graphic.Text = mapDefinition.SubTitle;
+                            graphic.Text = subTitleText;
                             textBox.SetGraphic(graphic);
                         }
                     }
@@ -1417,7 +1418,8 @@ namespace bagis_pro
         }
 
         public static async Task<BA_ReturnCode> LoadSweMapAsync(string strRaster, string strNewLayerName,
-                                                                string strTitle, string strFileMapExport)
+                                                                string strTitle, 
+                                                                string strFileMapExport)
         {
             RasterDataset rDataset = null;
             Layer oLayer = null;
@@ -1485,14 +1487,14 @@ namespace bagis_pro
                 if (textBox != null)
                 {
                     CIMTextGraphic graphic = (CIMTextGraphic)textBox.GetGraphic();
-                    graphic.Text = Module1.Current.Aoi.Name.ToUpper();
+                    graphic.Text = strTitle;
                     textBox.SetGraphic(graphic);
                 }
                 textBox = layout.FindElement(Constants.MAPS_SUBTITLE) as GraphicElement;
                 if (textBox != null)
                 {
                     CIMTextGraphic graphic = (CIMTextGraphic)textBox.GetGraphic();
-                    graphic.Text = strTitle;
+                    graphic.Text = Module1.Current.Aoi.Name.ToUpper();
                     textBox.SetGraphic(graphic);
                     success = BA_ReturnCode.Success;
                 }

@@ -145,6 +145,37 @@ namespace bagis_pro.BA_Objects
     public class AreaStatistics
     {
         public double S1RepArea;
-        //@ToDo: Add other properties to this class if we migrate it to BAGIS-PRO
+        public string S1AoiPctRep;
+        public string S1RepAreaSqMi;
+        public string S1RepAreaAcres;
+        public string S1RepAreaSqKm;
+        public string S1RepAreaHect;
+        public double S1NonRepArea;
+        public string S1AoiPctNonRep;
+        public string S1NonRepAreaSqMi;
+        public string S1NonRepAreaAcres;
+        public string S1NonRepAreaSqKm;
+        public string S1NonRepAreaHect;
+        public double S2RepArea;
+        public string S2AoiPctRep;
+        public string S2RepAreaSqMi;
+        public string S2RepAreaAcres;
+        public string S2RepAreaSqKm;
+        public string S2RepAreaHect;
+        public double S2NonRepArea;
+        public string S2AoiPctNonRep;
+        public string S2NonRepAreaSqMi;
+        public string S2NonRepAreaAcres;
+        public string S2NonRepAreaSqKm;
+        public string S2NonRepAreaHect;
+        public double MapNotRep;
+        public double MapRepS1Only;
+        public double MapRepS2Only;
+        public double MapRepBothScen;
+        public string MapAoiPctNotRep;
+        public string MapAoiPctRepS1Only;
+        public string MapAoiPctRepS2Only;
+        public string MapAoiPctRepBothScen;
+        //@ToDo: Sync the properties of this class with BAGIS v3 before deployment
     }
 }
