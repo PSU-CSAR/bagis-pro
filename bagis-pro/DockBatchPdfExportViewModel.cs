@@ -439,7 +439,7 @@ namespace bagis_pro
                         {
                             MessageBox.Show("An error occurred while generating the Excel tables!!", "BAGIS-PRO");
                         }
-                        await GeneralTools.GenerateMapsTitlePageAsync("", "");
+                        await GeneralTools.GenerateMapsTitlePageAsync(strPublisher, "");
                         string outputPath = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\" +
                               Constants.FILE_EXPORT_MAPS_ALL_PDF;
                         GeneralTools.PublishFullPdfDocument(outputPath);    // Put it all together into a single pdf document
