@@ -12,6 +12,7 @@ using ArcGIS.Desktop.Framework;
 using ArcGIS.Desktop.Framework.Contracts;
 using ArcGIS.Desktop.Framework.Dialogs;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
+using ArcGIS.Desktop.Layouts;
 using MessageBox = ArcGIS.Desktop.Framework.Dialogs.MessageBox;
 
 namespace bagis_pro.Menus
@@ -51,7 +52,46 @@ namespace bagis_pro.Menus
             string tempAoiPath = "C:\\Docs\\animas_AOI_prms";
             try
             {
-                await MapTools.DisplayMaps(tempAoiPath, true);
+                Layout layout = await MapTools.GetDefaultLayoutAsync(Constants.MAPS_DEFAULT_LAYOUT_NAME);
+
+                BA_ReturnCode success = await MapTools.DisplayMaps(tempAoiPath, layout, true);
+
+                if (success == BA_ReturnCode.Success && layout != null)
+                {
+                    bool bFoundIt = false;
+                    //A layout view may exist but it may not be active
+                    //Iterate through each pane in the application and check to see if the layout is already open and if so, activate it
+                    foreach (var pane in FrameworkApplication.Panes)
+                    {
+                        if (!(pane is ILayoutPane layoutPane))  //if not a layout view, continue to the next pane    
+                            continue;
+                        if (layoutPane.LayoutView.Layout == layout) //if there is a match, activate the view  
+                        {
+                            (layoutPane as Pane).Activate();
+                            bFoundIt = true;
+                        }
+                    }
+                    if (!bFoundIt)
+                    {
+                        ILayoutPane iNewLayoutPane = await FrameworkApplication.Panes.CreateLayoutPaneAsync(layout); //GUI thread
+                    }
+                }
+
+                // Legend
+                success = await MapTools.DisplayLegendAsync(layout, "ArcGIS Colors", "1.5 Point");
+
+                // update map elements for default map (elevation)
+                if (FrameworkApplication.State.Contains("MapButtonPalette_BtnElevation_State"))
+                {
+                    BA_Objects.MapDefinition defaultMap = MapTools.LoadMapDefinition(BagisMapType.ELEVATION);
+                    await MapTools.UpdateMapElementsAsync(Module1.Current.Aoi.Name.ToUpper(), defaultMap);
+                    success = await MapTools.UpdateLegendAsync(layout, defaultMap.LegendLayerList);
+                }
+                else
+                {
+                    MessageBox.Show("The default Elevation Zones map could not be loaded. Use " +
+                                    "the Display Maps buttons to display other maps!!", "BAGIS-PRO");
+                }
                 Module1.Current.DisplayedMap = Constants.FILE_EXPORT_MAP_ELEV_PDF;
                 Module1.ActivateState("BtnMapLoad_State");          
             }

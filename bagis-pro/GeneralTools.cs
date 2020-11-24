@@ -489,7 +489,7 @@ namespace bagis_pro
                     }
                     else
                     {
-                        Module1.Current.ModuleLogManager.LogError(nameof(GenerateTablesAsync), Constants.FILE_SNOTEL_ZONE + " is missing. " +
+                        Module1.Current.ModuleLogManager.LogError(nameof(GenerateTablesAsync), Constants.FILE_SCOS_ZONE + " is missing. " +
                             " Snow Course sites table could not be created!");
                     }
                 }

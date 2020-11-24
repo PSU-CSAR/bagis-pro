@@ -59,7 +59,46 @@ namespace bagis_pro.Buttons
                     }
                 }
 
-                BA_ReturnCode success = await MapTools.PublishMapsAsync(true); // export the maps to pdf
+                Layout oLayout = await MapTools.GetDefaultLayoutAsync(Constants.MAPS_DEFAULT_LAYOUT_NAME);
+
+                // Load the maps if they aren't in the viewer already
+                BA_ReturnCode success = BA_ReturnCode.Success;
+                if (!FrameworkApplication.State.Contains(Constants.STATES_MAP_BUTTONS[0]))
+                {
+                    success = await MapTools.DisplayMaps(Module1.Current.Aoi.FilePath, oLayout, true);
+                }
+
+                if (success != BA_ReturnCode.Success)
+                {
+                    MessageBox.Show("Unable to load maps. The map package cannot be exported!!", "BAGIS-PRO");
+                    return;
+                }
+
+                if (oLayout != null)
+                {
+                    bool bFoundIt = false;
+                    //A layout view may exist but it may not be active
+                    //Iterate through each pane in the application and check to see if the layout is already open and if so, activate it
+                    foreach (var pane in FrameworkApplication.Panes)
+                    {
+                        if (!(pane is ILayoutPane layoutPane))  //if not a layout view, continue to the next pane    
+                            continue;
+                        if (layoutPane.LayoutView.Layout == oLayout) //if there is a match, activate the view  
+                        {
+                            (layoutPane as Pane).Activate();
+                            bFoundIt = true;
+                        }
+                    }
+                    if (!bFoundIt)
+                    {
+                        ILayoutPane iNewLayoutPane = await FrameworkApplication.Panes.CreateLayoutPaneAsync(oLayout); //GUI thread
+                        (iNewLayoutPane as Pane).Activate();
+                    }
+                }
+                // Legend
+                success = await MapTools.DisplayLegendAsync(oLayout, "ArcGIS Colors", "1.5 Point");
+
+                success = await MapTools.PublishMapsAsync(); // export the maps to pdf
                 if (success != BA_ReturnCode.Success)
                 {
                     MessageBox.Show("An error occurred while generating the maps!!", "BAGIS-PRO");

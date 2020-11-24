@@ -84,7 +84,7 @@
                      Foreground="Blue" Background="Transparent"/>
         </DockPanel>
         <DockPanel Grid.Row="9" Grid.Column="1" LastChildFill="true" KeyboardNavigation.TabNavigation="Local">
-            <Button x:Name="btnRun" Content="Run" HorizontalAlignment="Left"  VerticalAlignment="Center" Width="50" IsEnabled="{Binding CmdRunEnabled}" Command="{Binding CmdRun2}" Margin="10, 0, 5, 0"/>
+            <Button x:Name="btnRun" Content="Run" HorizontalAlignment="Left"  VerticalAlignment="Center" Width="50" IsEnabled="{Binding CmdRunEnabled}" Command="{Binding CmdRun}" Margin="10, 0, 5, 0"/>
         </DockPanel>
     </Grid>
 </UserControl>
