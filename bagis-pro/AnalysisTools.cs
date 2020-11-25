@@ -1241,6 +1241,7 @@ namespace bagis_pro
                 dblInterval = Math.Round(dblInterval, 1);
             });
             int zones = GeneralTools.CreateRangeArray(dblMin, dblMax, dblInterval, out lstIntervals);
+            Module1.Current.PrismZonesInterval = dblInterval;
             return lstIntervals;
         }
 

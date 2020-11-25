@@ -643,8 +643,13 @@ namespace bagis_pro
                     pPRISMWorkSheet.PageSetup.PaperSize = oReqPaperSize;    // Required to print on one page
                     pPRISMWorkSheet.PageSetup.PrintGridlines = true;
                     pPRISMWorkSheet.PageSetup.CenterHeader = "&C&\"Arial,Bold\"&16 " + Module1.Current.Aoi.Name;
+                    string strTitle = "Precipitation Representation Table";
+                    if (!String.IsNullOrEmpty(oAnalysis.PrecipZonesBegin))
+                    {
+                        strTitle = "Precipitation (" + LookupTables.PrismText[oAnalysis.PrecipZonesBegin] + ") Representation Table";
+                    }
                     pPRISMWorkSheet.PageSetup.LeftHeader = ((char)13).ToString() + "&\"Arial,Bold\"&12 " +
-                        "Precipitation Representation Table";
+                        strTitle;
                     pPRISMWorkSheet.PageSetup.TopMargin = 0.8 * 72;   // Convert inches to points
                     pPRISMWorkSheet.get_Range("B:C").EntireColumn.Hidden = true;
                     pPRISMWorkSheet.PageSetup.FitToPagesTall = 1;   // Required to print on one page
@@ -659,7 +664,7 @@ namespace bagis_pro
                     Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Published represented precip chart to PDF");
 
                     // Elev-Precip Chart Tab
-                    if (bPrecMeanElevTableExists)
+                    if (bPrecMeanElevTableExists && intMinPrecip != 999)
                     {
                         oPaperSize = pPrecipChartWorksheet.PageSetup.PaperSize;
                         pPrecipChartWorksheet.PageSetup.Orientation = XlPageOrientation.xlLandscape;

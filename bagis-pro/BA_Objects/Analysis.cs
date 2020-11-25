@@ -34,6 +34,9 @@ namespace bagis_pro.BA_Objects
         public AreaStatistics AreaStatistics;
         public List<DataSource> DataSources;
         public short ElevationZonesInterval;
+        public double PrecipZonesInterval;
+        public string PrecipZonesBegin;
+        public string PrecipZonesEnd;
 
         public string DateCreatedText
         {

@@ -181,6 +181,7 @@
     <Compile Include="GeneralTools.cs" />
     <Compile Include="GeodatabaseTools.cs" />
     <Compile Include="GeoprocessingTools.cs" />
+    <Compile Include="LookupTables.cs" />
     <Compile Include="MapTools.cs" />
     <Compile Include="Enumerations.cs" />
     <Compile Include="Menus\MnuBasin.cs" />

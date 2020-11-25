@@ -1212,7 +1212,13 @@ namespace bagis_pro
                     int idxElevTableCol = definition.FindField(elevFieldName);
                     int idxAspectTableCol = definition.FindField(Constants.FIELD_ASPECT);
 
-                    if (idxPrecipTableCol > -1 && idxElevTableCol > -1 && idxAspectTableCol > -1)
+                    if(idxPrecipTableCol < 0)
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(CreateRepresentPrecipTableAsync), 
+                            "The " + prismFieldName + " field could not be found in " + Constants.FILE_ASP_ZONE_PREC_TBL +
+                            ". The most likely cause is that this table was created in ArcMap. Try creating the table in Pro"); 
+                    }
+                    else if (idxElevTableCol > -1 && idxAspectTableCol > -1)
                     {
                         QueryFilter pQFilter = new QueryFilter();
                         pQFilter.WhereClause = prismFieldName + " is not null and " + elevFieldName + " is not null";

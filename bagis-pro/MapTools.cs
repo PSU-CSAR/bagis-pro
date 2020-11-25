@@ -60,25 +60,6 @@ namespace bagis_pro
                 }
                 else
                 {
-                    //bool bFoundIt = false;
-                    ////A layout view may exist but it may not be active
-                    ////Iterate through each pane in the application and check to see if the layout is already open and if so, activate it
-                    //foreach (var pane in FrameworkApplication.Panes)
-                    //{
-                    //    if (!(pane is ILayoutPane layoutPane))  //if not a layout view, continue to the next pane    
-                    //        continue;
-                    //    if (layoutPane.LayoutView.Layout == layout) //if there is a match, activate the view  
-                    //    {
-                    //        bFoundIt = true;
-                    //    }
-                    //}
-                    //if (!bFoundIt)
-                    //{
-                    //    MessageBox.Show("The Basin Analysis layout pane could not be located. Maps will not display!", "BAGIS-PRO");
-                    //    Module1.Current.ModuleLogManager.LogError(nameof(DisplayMaps), "The Basin Analysis layout pane could not be located. Maps not displayed!");
-                    //    return BA_ReturnCode.UnknownError;
-                    //}
-
                     BA_ReturnCode success = await MapTools.SetDefaultMapFrameDimensionAsync(Constants.MAPS_DEFAULT_MAP_FRAME_NAME, layout, oMap,
                         1.0, 2.0, 7.5, 9.0);
 
@@ -99,7 +80,6 @@ namespace bagis_pro
                     success = await MapTools.AddPolygonLayerAsync(uri, fillColor, false, Constants.MAPS_SNOTEL_REPRESENTED);
                     if (success.Equals(BA_ReturnCode.Success))
                         Module1.ActivateState("MapButtonPalette_BtnSnotel_State");
-
 
                     //add Snow Course Represented Area Layer
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
@@ -219,7 +199,7 @@ namespace bagis_pro
                     // add SNOTEL SWE layer
                     success = await DisplaySWEMapAsync(3);
 
-                    // add Precipitation layer
+                    // add Precipitation zones layer
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
                         Constants.FILE_PRECIP_ZONE;
                     uri = new Uri(strPath);
@@ -1295,6 +1275,18 @@ namespace bagis_pro
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;
                 case BagisMapType.PRISM:
+                    // If we end up using this for more than PRISM, put it above the case statement so it can be shared
+                    string settingsPath = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAPS + "\\" +
+                        Constants.FILE_SETTINGS;
+                    BA_Objects.Analysis oAnalysis = null;
+                    if (System.IO.File.Exists(settingsPath))
+                    {
+                        using (var file = new System.IO.StreamReader(settingsPath))
+                        {
+                            var reader = new System.Xml.Serialization.XmlSerializer(typeof(BA_Objects.Analysis));
+                            oAnalysis = (BA_Objects.Analysis)reader.Deserialize(file);
+                        }
+                    }
                     lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_PRISM_ZONE};
                     lstLegendLayers = new List<string> { Constants.MAPS_PRISM_ZONE };
@@ -1308,7 +1300,13 @@ namespace bagis_pro
                         lstLayers.Add(Constants.MAPS_SNOW_COURSE);
                         lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE);
                     }
-                    mapDefinition = new BA_Objects.MapDefinition("PRECIPITATION DISTRIBUTION",
+                    string strTitle = "PRECIPITATION DISTRIBUTION";
+                    if (!String.IsNullOrEmpty(oAnalysis.PrecipZonesBegin))
+                    {
+                        string strPrefix = LookupTables.PrismText[oAnalysis.PrecipZonesBegin].ToUpper();
+                        strTitle = strPrefix + " " + strTitle;
+                    }
+                    mapDefinition = new BA_Objects.MapDefinition(strTitle,
                         "Precipitation Units = Inches", Constants.FILE_EXPORT_MAP_PRECIPITATION_PDF);
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
