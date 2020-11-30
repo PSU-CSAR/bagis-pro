@@ -37,6 +37,16 @@ namespace bagis_pro.BA_Objects
         public double PrecipZonesInterval;
         public string PrecipZonesBegin;
         public string PrecipZonesEnd;
+        public double PrecipZonesMin;
+        public double PrecipZonesMax;
+        public double PrecipZonesIntervalCount;
+        public List<string> PrecipZonesIntervals;
+        public string DemDisplayUnits;
+        public List<string> ElevZonesIntervals;
+        public List<double> ElevZonesPctArea;
+        public List<int> ElevZonesSnotelCount;
+        public List<int> ElevZonesSnowCourseCount;
+        public int ElevZonesCount;
 
         public string DateCreatedText
         {

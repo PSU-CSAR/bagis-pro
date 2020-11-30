@@ -1270,6 +1270,8 @@ namespace bagis_pro
                     Module1.ActivateState("Aoi_Selected_State");
                     Module1.ActivateState("BtnExcelTables_State");
 
+                    BA_ReturnCode success = GeneralTools.ReadBagisMapParameters(oAoi.FilePath);
+
                     MessageBox.Show("AOI is set to " + Module1.Current.Aoi.Name + "!", "BAGIS PRO");
                 });
 
@@ -1444,6 +1446,135 @@ namespace bagis_pro
             // Save final document
             outputDocument.Save(outputPath);
             return BA_ReturnCode.Success;
+        }
+
+        public static BA_ReturnCode ReadBagisMapParameters(string aoiFilePath)
+        {
+            BA_ReturnCode success = BA_ReturnCode.ReadError;
+            // Create the analysis object
+            BA_Objects.Analysis oAnalysis = new BA_Objects.Analysis();
+            string strSettingsFile = aoiFilePath + "\\" + Constants.FOLDER_MAPS + "\\" +
+                Constants.FILE_SETTINGS;
+            if (File.Exists(strSettingsFile))
+            {
+                using (var file = new StreamReader(strSettingsFile))
+                {
+                    var reader = new System.Xml.Serialization.XmlSerializer(typeof(BA_Objects.Analysis));
+                    oAnalysis = (BA_Objects.Analysis)reader.Deserialize(file);
+                }
+            }
+            string strFilePath = aoiFilePath + "\\" + Constants.FOLDER_MAPS + "\\" + Constants.FILE_BAGIS_MAP_PARAMETERS;
+            using (StreamReader sr = new StreamReader(strFilePath))
+            {
+                string line;
+                // Read and display lines from the file until the end of
+                // the file is reached.
+                while ((line = sr.ReadLine()) != null)
+                {
+                    string strNextLine = sr.ReadLine().Trim(); // map display unit text
+                    bool bValue = Convert.ToBoolean(strNextLine);
+                    if (bValue == true)
+                    {
+                        oAnalysis.DemDisplayUnits = "Meters";
+                    }
+                    else
+                    {
+                        oAnalysis.DemDisplayUnits = "Feet";
+                    }
+                    strNextLine = sr.ReadLine().Trim(); // selected elevation interval
+                    int idxSelected = Convert.ToInt16(strNextLine);
+                    oAnalysis.ElevationZonesInterval = Constants.VALUES_ELEV_INTERVALS[idxSelected];
+                    int elevZonesCount = Convert.ToInt16(sr.ReadLine().Trim());
+                    oAnalysis.ElevZonesCount = elevZonesCount;
+                    List<string> lstElevIntervals = new List<string>();
+                    List<double> lstElevZonesPctArea = new List<double>();
+                    List<int> lstElevZonesSnotelCount = new List<int>();
+                    List<int> lstElevZonesSnowCourseCount = new List<int>();
+                    for (int i = 0; i < elevZonesCount; i++)    // elevation interval list
+                    {
+                        strNextLine = sr.ReadLine().Trim();
+                        string[] pieces = strNextLine.Split(',');
+                        if (pieces.Length == 4)
+                        {
+                            lstElevIntervals.Add(pieces[0].Trim());
+                            var pctArea = double.Parse(pieces[1].Trim(new char[] { '%', ' ' }));    // strip out formatting
+                            lstElevZonesPctArea.Add(pctArea);
+                            lstElevZonesSnotelCount.Add(Convert.ToInt16(pieces[2].Trim()));
+                            lstElevZonesSnowCourseCount.Add(Convert.ToInt16(pieces[3].Trim()));
+                        }
+                    }
+                    oAnalysis.ElevZonesIntervals = lstElevIntervals;
+                    oAnalysis.ElevZonesPctArea = lstElevZonesPctArea;
+                    oAnalysis.ElevZonesSnotelCount = lstElevZonesSnotelCount;
+                    oAnalysis.ElevZonesSnowCourseCount = lstElevZonesSnowCourseCount;
+
+                    // PRISM configuration
+                    idxSelected = Convert.ToInt16(sr.ReadLine().Trim());
+                    int intPrecipZonesBegin = Convert.ToInt16(sr.ReadLine().Trim());
+                    int intPrecipZonesEnd = Convert.ToInt16(sr.ReadLine().Trim());
+                    switch (idxSelected)
+                    {
+                        case 0:
+                            oAnalysis.PrecipZonesBegin = PrismFile.Annual.ToString();
+                            oAnalysis.PrecipZonesEnd = PrismFile.Annual.ToString();
+                            break;
+                        case 1:
+                            oAnalysis.PrecipZonesBegin = PrismFile.Q1.ToString();
+                            oAnalysis.PrecipZonesEnd = PrismFile.Q1.ToString();
+                            break;
+                        case 2:
+                            oAnalysis.PrecipZonesBegin = PrismFile.Q2.ToString();
+                            oAnalysis.PrecipZonesEnd = PrismFile.Q2.ToString();
+                            break;
+                        case 3:
+                            oAnalysis.PrecipZonesBegin = PrismFile.Q3.ToString();
+                            oAnalysis.PrecipZonesEnd = PrismFile.Q3.ToString();
+                            break;
+                        case 4:
+                            oAnalysis.PrecipZonesBegin = PrismFile.Q4.ToString();
+                            oAnalysis.PrecipZonesEnd = PrismFile.Q4.ToString();
+                            break;
+                        default:
+                            PrismFile begin = (PrismFile)intPrecipZonesBegin;
+                            PrismFile end = (PrismFile)intPrecipZonesEnd;
+                            oAnalysis.PrecipZonesBegin = begin.ToString();
+                            oAnalysis.PrecipZonesEnd = end.ToString();
+                            break;
+                    }
+                    strNextLine = sr.ReadLine().Trim();
+                    oAnalysis.PrecipZonesMin = Convert.ToDouble(strNextLine);
+                    strNextLine = sr.ReadLine().Trim();
+                    oAnalysis.PrecipZonesMax = Convert.ToDouble(strNextLine);
+                    strNextLine = sr.ReadLine().Trim(); // Don't save this. It is the range which is the difference of min and max
+                    strNextLine = sr.ReadLine().Trim();
+                    oAnalysis.PrecipZonesInterval = Convert.ToDouble(strNextLine);
+                    strNextLine = sr.ReadLine().Trim();
+                    oAnalysis.PrecipZonesIntervalCount = Convert.ToInt16(strNextLine);
+                    int listCount = Convert.ToInt16(sr.ReadLine().Trim());
+                    List<string> lstPrismIntervals = new List<string>();
+                    if (listCount > 0)
+                    {
+                        for (int i = 0; i < listCount; i++)    // elevation interval list
+                        {
+                            strNextLine = sr.ReadLine().Trim();
+                            lstPrismIntervals.Add(strNextLine);
+                        }
+                    }
+                    oAnalysis.PrecipZonesIntervals = lstPrismIntervals;
+                    break;
+                }                
+            }
+
+            string strTempFile = aoiFilePath + "\\" + Constants.FOLDER_MAPS + "\\analysis_2.xml";
+            using (var file_stream = File.Create(strTempFile))
+            {
+                var serializer = new System.Xml.Serialization.XmlSerializer(typeof(BA_Objects.Analysis));
+                serializer.Serialize(file_stream, oAnalysis);
+                Module1.Current.ModuleLogManager.LogDebug(nameof(ReadBagisMapParameters),
+                    "Saved map parameters to analysis.xml file");
+            }
+
+            return success;
         }
     }
 

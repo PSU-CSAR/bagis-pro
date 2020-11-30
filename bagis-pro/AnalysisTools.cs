@@ -2514,7 +2514,8 @@ namespace bagis_pro
                 }
             }
 
-            short[] arrTestIntervals = new short[] { 5000, 2500, 1000, 500, 250, 200, 100, 50 };
+            short[] arrTestIntervals = Constants.VALUES_ELEV_INTERVALS;
+            Array.Reverse(arrTestIntervals);
             short bestInterval = 50;
             var range = aoiElevMax - aoiElevMin;
             foreach (var testInterval in arrTestIntervals)
@@ -2780,6 +2781,51 @@ namespace bagis_pro
                     "Exception: " + e.StackTrace);
             }
 
+            return success;
+        }
+
+        public static async Task<BA_ReturnCode> CalculatePrecipitationZonesAsync()
+        {
+            string strLayer = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Prism, true) +
+                  System.IO.Path.GetFileName((string)Module1.Current.BatchToolSettings.AoiPrecipFile);
+            string strZonesRaster = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) +
+                Constants.FILE_PRECIP_ZONE;
+            string strMaskPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_PRISM_VECTOR;
+            int prismZonesCount = (int)Module1.Current.BatchToolSettings.PrecipZonesCount;
+            IList<BA_Objects.Interval> lstInterval = await AnalysisTools.GetPrismClassesAsync(Module1.Current.Aoi.FilePath,
+                strLayer, prismZonesCount);
+            BA_ReturnCode success = await AnalysisTools.CalculateZonesAsync(Module1.Current.Aoi.FilePath, strLayer,
+                lstInterval, strZonesRaster, strMaskPath, "PRISM");
+            if (success == BA_ReturnCode.Success)
+            {
+                // Record the prism zones information to be used later when presenting maps/charts
+                // Open the current Analysis.xml from disk, if it exists
+                BA_Objects.Analysis oAnalysis = new BA_Objects.Analysis();
+                string strSettingsFile = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAPS + "\\" +
+                    Constants.FILE_SETTINGS;
+                if (File.Exists(strSettingsFile))
+                {
+                    using (var file = new StreamReader(strSettingsFile))
+                    {
+                        var reader = new System.Xml.Serialization.XmlSerializer(typeof(BA_Objects.Analysis));
+                        oAnalysis = (BA_Objects.Analysis)reader.Deserialize(file);
+                    }
+                }
+                // Set the prism zones information on the analysis object and save
+                oAnalysis.PrecipZonesIntervalCount = prismZonesCount;
+                oAnalysis.PrecipZonesInterval = Module1.Current.PrismZonesInterval;
+                Module1.Current.PrismZonesInterval = 999;
+                string strPrecipFile = Path.GetFileName((string)Module1.Current.BatchToolSettings.AoiPrecipFile);
+                oAnalysis.PrecipZonesBegin = strPrecipFile;
+                oAnalysis.PrecipZonesEnd = strPrecipFile;
+                using (var file_stream = File.Create(strSettingsFile))
+                {
+                    var serializer = new System.Xml.Serialization.XmlSerializer(typeof(BA_Objects.Analysis));
+                    serializer.Serialize(file_stream, oAnalysis);
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(CalculatePrecipitationZonesAsync),
+                        "Set precipitation zone parameters in analysis.xml file");
+                }
+            }
             return success;
         }
     }

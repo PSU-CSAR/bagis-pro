@@ -306,15 +306,7 @@ namespace bagis_pro
                 pBufferDistance, pBufferUnits, strDefaultBufferDistance, strDefaultBufferUnits);
 
             // PRISM Zones
-            strLayer = GeodatabaseTools.GetGeodatabasePath(AoiFolder, GeodatabaseNames.Prism, true) +
-                Path.GetFileName((string)Module1.Current.BatchToolSettings.AoiPrecipFile);
-            strZonesRaster = GeodatabaseTools.GetGeodatabasePath(AoiFolder, GeodatabaseNames.Analysis, true) +
-                Constants.FILE_PRECIP_ZONE;
-            strMaskPath = GeodatabaseTools.GetGeodatabasePath(AoiFolder, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_PRISM_VECTOR;
-            lstInterval = await AnalysisTools.GetPrismClassesAsync(Module1.Current.Aoi.FilePath,
-                strLayer, (int)Module1.Current.BatchToolSettings.PrecipZonesCount);
-            success = await AnalysisTools.CalculateZonesAsync(Module1.Current.Aoi.FilePath, strLayer,
-                lstInterval, strZonesRaster, strMaskPath, "PRISM");
+            success = await AnalysisTools.CalculatePrecipitationZonesAsync();
 
             // Clip SWE
             //@ToDo: re-enable

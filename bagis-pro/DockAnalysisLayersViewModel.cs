@@ -242,44 +242,7 @@ namespace bagis_pro
 
                 if (calculatePrism)
                 {
-                    string strLayer = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Prism, true) +
-                                      System.IO.Path.GetFileName((string) Module1.Current.BatchToolSettings.AoiPrecipFile);
-                    string strZonesRaster = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) +
-                        Constants.FILE_PRECIP_ZONE;
-                    string strMaskPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_PRISM_VECTOR;
-                    IList<BA_Objects.Interval> lstInterval = await AnalysisTools.GetPrismClassesAsync(Module1.Current.Aoi.FilePath,
-                        strLayer, (int) Module1.Current.BatchToolSettings.PrecipZonesCount);
-                    success = await AnalysisTools.CalculateZonesAsync(Module1.Current.Aoi.FilePath, strLayer,
-                        lstInterval, strZonesRaster, strMaskPath, "PRISM");
-                    if (success == BA_ReturnCode.Success)
-                    {
-                        // Record the prism zones information to be used later when presenting maps/charts
-                        // Open the current Analysis.xml from disk, if it exists
-                        BA_Objects.Analysis oAnalysis = new BA_Objects.Analysis();
-                        string strSettingsFile = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAPS + "\\" +
-                            Constants.FILE_SETTINGS;
-                        if (File.Exists(strSettingsFile))
-                        {
-                            using (var file = new StreamReader(strSettingsFile))
-                            {
-                                var reader = new System.Xml.Serialization.XmlSerializer(typeof(BA_Objects.Analysis));
-                                oAnalysis = (BA_Objects.Analysis)reader.Deserialize(file);
-                            }
-                        }
-                        // Set the prism zones information on the analysis object and save
-                        oAnalysis.PrecipZonesInterval = Module1.Current.PrismZonesInterval;
-                        Module1.Current.PrismZonesInterval = 999;
-                        string strPrecipFile = Path.GetFileName((string)Module1.Current.BatchToolSettings.AoiPrecipFile);
-                        oAnalysis.PrecipZonesBegin = strPrecipFile;
-                        oAnalysis.PrecipZonesEnd = strPrecipFile;
-                        using (var file_stream = File.Create(strSettingsFile))
-                        {
-                            var serializer = new System.Xml.Serialization.XmlSerializer(typeof(BA_Objects.Analysis));
-                            serializer.Serialize(file_stream, oAnalysis);
-                            Module1.Current.ModuleLogManager.LogDebug(nameof(GenerateLayersAsync),
-                                "Set prism zone parameters in analysis.xml file");
-                        }
-                    }
+                    success = await AnalysisTools.CalculatePrecipitationZonesAsync();
                     if (success == BA_ReturnCode.Success)
                     {
                         layersPane.PrismZones_Checked = false;

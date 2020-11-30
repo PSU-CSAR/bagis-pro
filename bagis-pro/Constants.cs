@@ -122,6 +122,7 @@ namespace bagis_pro
         public static readonly string[] MAP_TITLES_SNODAS_SWE = new string[] { "SNODAS SWE JAN 1ST", "SNODAS SWE FEB 1ST", "SNODAS SWE MAR 1ST",
                                                                                "SNODAS SWE APR 1ST", "SNODAS SWE MAY 1ST", "SNODAS SWE JUN 1ST",
                                                                                "SNODAS SWE DEC 1ST"};
+        public const string FILE_BAGIS_MAP_PARAMETERS = "map_parameters.txt";
         public const string URI_IMAGE_SERVER = "/ImageServer";
         public const string URI_DESKTOP_SETTINGS = "/api/rest/desktop/settings/";
 
@@ -169,6 +170,7 @@ namespace bagis_pro
         public const int VALUE_NO_DATA_9999 = -9999;
         public const string VALUE_NO_DATA = "NoData";
         public const string VALUE_UNKNOWN = "Unknown";
+        public static readonly short[] VALUES_ELEV_INTERVALS = new short[] { 50, 100, 200, 250, 500, 1000, 2500, 5000};
 
         public const string UNITS_INCHES = "Inches";
         public const string UNITS_MILLIMETERS = "Millimeters";
