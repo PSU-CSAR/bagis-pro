@@ -2828,5 +2828,44 @@ namespace bagis_pro
             }
             return success;
         }
+
+        public static async Task<BA_ReturnCode> CalculateAspectZonesAsync()
+        {
+            string strLayer = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Surfaces, true) +
+                Constants.FILE_ASPECT;
+            string strZonesRaster = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) +
+                Constants.FILE_ASPECT_ZONE;
+            string strMaskPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_BUFFERED_VECTOR;
+            int aspectDirectionsCount = Convert.ToInt16(Module1.Current.BatchToolSettings.AspectDirectionsCount);
+            IList<BA_Objects.Interval> lstInterval = AnalysisTools.GetAspectClasses(aspectDirectionsCount);
+            BA_ReturnCode success = await AnalysisTools.CalculateZonesAsync(Module1.Current.Aoi.FilePath, strLayer,
+                lstInterval, strZonesRaster, strMaskPath, "ASPECT");
+            if (success == BA_ReturnCode.Success)
+            {
+                // Record the aspect directions information
+                // Open the current Analysis.xml from disk, if it exists
+                BA_Objects.Analysis oAnalysis = new BA_Objects.Analysis();
+                string strSettingsFile = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAPS + "\\" +
+                    Constants.FILE_SETTINGS;
+                if (File.Exists(strSettingsFile))
+                {
+                    using (var file = new StreamReader(strSettingsFile))
+                    {
+                        var reader = new System.Xml.Serialization.XmlSerializer(typeof(BA_Objects.Analysis));
+                        oAnalysis = (BA_Objects.Analysis)reader.Deserialize(file);
+                    }
+                }
+                // Set the prism zones information on the analysis object and save
+                oAnalysis.AspectDirectionsCount = aspectDirectionsCount;
+                using (var file_stream = File.Create(strSettingsFile))
+                {
+                    var serializer = new System.Xml.Serialization.XmlSerializer(typeof(BA_Objects.Analysis));
+                    serializer.Serialize(file_stream, oAnalysis);
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateAspectZonesAsync),
+                        "Set aspect directions count in analysis.xml file");
+                }
+            }
+            return success;
+        }
     }
 }

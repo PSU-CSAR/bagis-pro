@@ -278,14 +278,7 @@ namespace bagis_pro
                 lstInterval, strZonesRaster, strMaskPath, "SLOPE");
 
             // Aspect zones
-            strLayer = GeodatabaseTools.GetGeodatabasePath(AoiFolder, GeodatabaseNames.Surfaces, true) +
-                Constants.FILE_ASPECT;
-            strZonesRaster = GeodatabaseTools.GetGeodatabasePath(AoiFolder, GeodatabaseNames.Analysis, true) +
-                Constants.FILE_ASPECT_ZONE;
-            strMaskPath = GeodatabaseTools.GetGeodatabasePath(AoiFolder, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_BUFFERED_VECTOR;
-            lstInterval = AnalysisTools.GetAspectClasses(Convert.ToInt16(Module1.Current.BatchToolSettings.AspectDirectionsCount));
-            success = await AnalysisTools.CalculateZonesAsync(AoiFolder, strLayer,
-                lstInterval, strZonesRaster, strMaskPath, "ASPECT");
+            success = await AnalysisTools.CalculateAspectZonesAsync();
 
             // Check for PRISM units
             string strPrismPath = GeodatabaseTools.GetGeodatabasePath(AoiFolder, GeodatabaseNames.Prism, true)

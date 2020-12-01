@@ -1270,8 +1270,6 @@ namespace bagis_pro
                     Module1.ActivateState("Aoi_Selected_State");
                     Module1.ActivateState("BtnExcelTables_State");
 
-                    BA_ReturnCode success = GeneralTools.ReadBagisMapParameters(oAoi.FilePath);
-
                     MessageBox.Show("AOI is set to " + Module1.Current.Aoi.Name + "!", "BAGIS PRO");
                 });
 
@@ -1486,27 +1484,31 @@ namespace bagis_pro
                     oAnalysis.ElevationZonesInterval = Constants.VALUES_ELEV_INTERVALS[idxSelected];
                     int elevZonesCount = Convert.ToInt16(sr.ReadLine().Trim());
                     oAnalysis.ElevZonesCount = elevZonesCount;
-                    List<string> lstElevIntervals = new List<string>();
-                    List<double> lstElevZonesPctArea = new List<double>();
-                    List<int> lstElevZonesSnotelCount = new List<int>();
-                    List<int> lstElevZonesSnowCourseCount = new List<int>();
-                    for (int i = 0; i < elevZonesCount; i++)    // elevation interval list
+                    if (elevZonesCount > 0)
                     {
-                        strNextLine = sr.ReadLine().Trim();
-                        string[] pieces = strNextLine.Split(',');
-                        if (pieces.Length == 4)
+
+                        List<string> lstElevIntervals = new List<string>();
+                        List<double> lstElevZonesPctArea = new List<double>();
+                        List<int> lstElevZonesSnotelCount = new List<int>();
+                        List<int> lstElevZonesSnowCourseCount = new List<int>();
+                        for (int i = 0; i < elevZonesCount; i++)    // elevation interval list
                         {
-                            lstElevIntervals.Add(pieces[0].Trim());
-                            var pctArea = double.Parse(pieces[1].Trim(new char[] { '%', ' ' }));    // strip out formatting
-                            lstElevZonesPctArea.Add(pctArea);
-                            lstElevZonesSnotelCount.Add(Convert.ToInt16(pieces[2].Trim()));
-                            lstElevZonesSnowCourseCount.Add(Convert.ToInt16(pieces[3].Trim()));
+                            strNextLine = sr.ReadLine().Trim();
+                            string[] pieces = strNextLine.Split(',');
+                            if (pieces.Length == 4)
+                            {
+                                lstElevIntervals.Add(pieces[0].Trim());
+                                var pctArea = double.Parse(pieces[1].Trim(new char[] { '%', ' ' }));    // strip out formatting
+                                lstElevZonesPctArea.Add(pctArea);
+                                lstElevZonesSnotelCount.Add(Convert.ToInt16(pieces[2].Trim()));
+                                lstElevZonesSnowCourseCount.Add(Convert.ToInt16(pieces[3].Trim()));
+                            }
                         }
+                        oAnalysis.ElevZonesIntervals = lstElevIntervals;
+                        oAnalysis.ElevZonesPctArea = lstElevZonesPctArea;
+                        oAnalysis.ElevZonesSnotelCount = lstElevZonesSnotelCount;
+                        oAnalysis.ElevZonesSnowCourseCount = lstElevZonesSnowCourseCount;
                     }
-                    oAnalysis.ElevZonesIntervals = lstElevIntervals;
-                    oAnalysis.ElevZonesPctArea = lstElevZonesPctArea;
-                    oAnalysis.ElevZonesSnotelCount = lstElevZonesSnotelCount;
-                    oAnalysis.ElevZonesSnowCourseCount = lstElevZonesSnowCourseCount;
 
                     // PRISM configuration
                     idxSelected = Convert.ToInt16(sr.ReadLine().Trim());
@@ -1561,10 +1563,33 @@ namespace bagis_pro
                         }
                     }
                     oAnalysis.PrecipZonesIntervals = lstPrismIntervals;
-                    break;
-                }                
+                    oAnalysis.ElevSubdivisionCount = Convert.ToInt16(sr.ReadLine().Trim()); // this is the actual number of subdivisions rather than the cboBox index
+                    strNextLine = sr.ReadLine().Trim(); // subrange analysis enabled
+                    oAnalysis.SubrangeEnabled = Convert.ToBoolean(strNextLine);
+                    strNextLine = sr.ReadLine().Trim();
+                    oAnalysis.SubrangeElevMin = Convert.ToDouble(strNextLine);
+                    strNextLine = sr.ReadLine().Trim();
+                    oAnalysis.SubrangeElevMax = Convert.ToDouble(strNextLine);
+                    if (sr.Peek() > -1) // check if additional parameters were added after BAGIS Ver 1. Aspect was added in version 2
+                    {
+                        strNextLine = sr.ReadLine().Trim(); // skip the REVISION text
+                        strNextLine = sr.ReadLine().Trim();
+                        string[] pieces = strNextLine.Split(' ');
+                        if (pieces.Length == 2)
+                        {
+                            oAnalysis.AspectDirectionsCount = Convert.ToInt16(pieces[1]);
+                        }                        
+                    }
+                    if (sr.Peek() > -1) // This line indicated if we were partway through an analysis and need to set generate to true
+                                        // Skipping translation for now. Example: 'ENABLE_GENERATE False'
+                    {
+                        strNextLine = sr.ReadLine().Trim();
+                    }
+                }
+                oAnalysis.DateBagisSettingsConverted = DateTime.Now;
             }
 
+            //@ToDo: Change this to overwrite the analysis.xml file when we are ready
             string strTempFile = aoiFilePath + "\\" + Constants.FOLDER_MAPS + "\\analysis_2.xml";
             using (var file_stream = File.Create(strTempFile))
             {

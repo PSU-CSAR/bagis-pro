@@ -47,7 +47,12 @@ namespace bagis_pro.BA_Objects
         public List<int> ElevZonesSnotelCount;
         public List<int> ElevZonesSnowCourseCount;
         public int ElevZonesCount;
-
+        public int ElevSubdivisionCount;
+        public bool SubrangeEnabled;
+        public double SubrangeElevMin;
+        public double SubrangeElevMax;
+        public int AspectDirectionsCount;
+        public DateTime DateBagisSettingsConverted;
         public string DateCreatedText
         {
             get

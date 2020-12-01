@@ -251,14 +251,7 @@ namespace bagis_pro
 
                 if (calculateAspect)
                 {
-                    string strLayer = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Surfaces, true) +
-                        Constants.FILE_ASPECT;
-                    string strZonesRaster = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) +
-                        Constants.FILE_ASPECT_ZONE;
-                    string strMaskPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_BUFFERED_VECTOR;
-                    IList<BA_Objects.Interval> lstInterval = AnalysisTools.GetAspectClasses(Convert.ToInt16(Module1.Current.BatchToolSettings.AspectDirectionsCount));
-                    success = await AnalysisTools.CalculateZonesAsync(Module1.Current.Aoi.FilePath, strLayer,
-                        lstInterval, strZonesRaster, strMaskPath, "ASPECT");
+                    success = await AnalysisTools.CalculateAspectZonesAsync();
                     if (success == BA_ReturnCode.Success)
                     {
                         layersPane.AspectZones_Checked = false;
