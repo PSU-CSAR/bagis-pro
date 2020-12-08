@@ -89,4 +89,12 @@ namespace bagis_pro
         Prism_Precipitation_q4,
         Prism_Precipitation_annual
     }
+
+    public enum AoiBatchState
+    {
+        Waiting,
+        Started,
+        Failed,
+        Completed
+    }
 }

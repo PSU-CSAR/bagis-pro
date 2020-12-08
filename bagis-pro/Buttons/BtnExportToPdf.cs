@@ -109,7 +109,7 @@ namespace bagis_pro.Buttons
                     MessageBox.Show("An error occurred while generating the Excel tables!!", "BAGIS-PRO");
                 }
                 string strPublisher = (string)Module1.Current.BatchToolSettings.Publisher;
-                await GeneralTools.GenerateMapsTitlePageAsync(strPublisher, "");
+                success = await GeneralTools.GenerateMapsTitlePageAsync(strPublisher, "");
                 string outputPath = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\" +
                       Constants.FILE_EXPORT_MAPS_ALL_PDF;
                 GeneralTools.PublishFullPdfDocument(outputPath);    // Put it all together into a single pdf document
@@ -130,6 +130,14 @@ namespace bagis_pro.Buttons
             try
             {
                 Module1.DeactivateState("BtnExcelTables_State");
+                var cmdShowHistory = FrameworkApplication.GetPlugInWrapper("esri_geoprocessing_showToolHistory") as ICommand;
+                if (cmdShowHistory != null)
+                {
+                    if (cmdShowHistory.CanExecute(null))
+                    {
+                        cmdShowHistory.Execute(null);
+                    }
+                }
                 BA_ReturnCode success = await GeneralTools.GenerateTablesAsync(true);
                 Module1.ActivateState("BtnExcelTables_State");
                 if (!success.Equals(BA_ReturnCode.Success))

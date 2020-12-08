@@ -6,7 +6,7 @@
              xmlns:ui="clr-namespace:bagis_pro"
              xmlns:extensions="clr-namespace:ArcGIS.Desktop.Extensions;assembly=ArcGIS.Desktop.Extensions"
              mc:Ignorable="d" 
-             d:DesignHeight="400" d:DesignWidth="310"
+             d:DesignHeight="500" d:DesignWidth="310"
              d:DataContext="{Binding Path=ui.DockBatchPdfExportViewModel}">
     <UserControl.Resources>
         <ResourceDictionary>
@@ -24,15 +24,16 @@
             <RowDefinition Height="30"/>
             <RowDefinition Height="60"/>
             <RowDefinition Height="30"/>
-            <RowDefinition Height="25"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="25"/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto"/>
             <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="Auto"/>
         </Grid.ColumnDefinitions>
-        <DockPanel Grid.Row="0" Grid.Column="0" LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Grid.ColumnSpan="2">
+        <DockPanel Grid.Row="0" Grid.Column="0" LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Grid.ColumnSpan="4" Margin="0,0,-0.6,0.4">
             <TextBlock
                 Name="tbMultiLine"
                 TextWrapping="WrapWithOverflow" MaxWidth="300" Margin="5, 5, 5, 5">
@@ -40,22 +41,22 @@
                 maps_publish folder for each AOI present in the selected folder.
             </TextBlock>
         </DockPanel>
-        <DockPanel Grid.Row="1" Grid.Column="0" LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
+        <DockPanel Grid.Row="1" Grid.Column="0" LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30" Grid.ColumnSpan="3" Margin="0,0.6,18.8,30.2" Grid.RowSpan="2">
             <TextBox x:Name="txtAoiFolder" Text="{Binding AoiFolder}" HorizontalAlignment="Left"  VerticalAlignment="Center" Width="200" IsReadOnly="True" Margin="5,0,0,0" />
         </DockPanel>
-        <DockPanel Grid.Row="1" Grid.Column="1">
+        <DockPanel Grid.Column="3" Margin="0.2,70,-0.6,30.2" Grid.RowSpan="3">
             <Button x:Name="btnAoiFolder" Content="Select" HorizontalAlignment="Left"  VerticalAlignment="Center" Width="50" Command="{Binding CmdAoiFolder}" Margin="10, 0, 5, 0"/>
         </DockPanel>
-        <CheckBox x:Name="chkArchive" Content="Copy PDF map packages to a single folder" HorizontalAlignment="Left" Margin="5,5,5,5" 
-                  Grid.Row="2" Grid.ColumnSpan="2" IsEnabled="false" VerticalAlignment="Center" />
+        <CheckBox x:Name="chkArchive" Content="Copy PDF map packages to a single folder" HorizontalAlignment="Left" Margin="5,7.2,0,7.2" 
+                  Grid.Row="2" Grid.ColumnSpan="4" IsEnabled="false" VerticalAlignment="Center" />
         <!-- @ToDo: Add binding when we enable this feature:  Checked="{Binding ArchiveChecked}"-->
         <TextBlock
                 Name="tbArchive"
-                TextWrapping="WrapWithOverflow" MaxWidth="300" Margin="5, 5, 5, 5"
-                Grid.Row="3" Grid.ColumnSpan="2">
+                TextWrapping="WrapWithOverflow" MaxWidth="300" Margin="5,4.8,4.4,5.2"
+                Grid.Row="3" Grid.ColumnSpan="4">
                 Copies of PDF documents for all AOIs will be saved in the maps_publish subfolder in the selected basin folder
         </TextBlock>
-        <DockPanel Grid.Row="4" Grid.Column="0" LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Grid.ColumnSpan="2">
+        <DockPanel Grid.Row="3" Grid.Column="0" LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Grid.ColumnSpan="4" Margin="0,39.8,-0.6,59.6" Grid.RowSpan="3">
             <TextBlock
                 Name="tbPublisher"
                 TextWrapping="WrapWithOverflow" MaxWidth="300" VerticalAlignment="Center" Margin="5, 5, 0, 5">
@@ -64,7 +65,7 @@
             <TextBox x:Name="txtPublisher" Text="{Binding Publisher}" HorizontalAlignment="Left"  
                      VerticalAlignment="Center" Width="237" Margin="5,4,0,4.8" />
         </DockPanel>
-        <DockPanel Grid.Row="5" Grid.Column="0" LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Grid.ColumnSpan="2">
+        <DockPanel Grid.Row="5" Grid.Column="0" LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Grid.ColumnSpan="4" Margin="0,0.4,-0.6,30" Grid.RowSpan="2">
             <TextBlock
                 Name="tbComments"
                 TextWrapping="WrapWithOverflow" MaxWidth="300" VerticalAlignment="Center" Margin="5, 5, 0, 5">
@@ -73,7 +74,7 @@
             <TextBox x:Name="txtComments" Text="{Binding Comments}" HorizontalAlignment="Left"  
                      VerticalAlignment="Center" Width="229" Height="50" Margin="5,5,0,5" />
         </DockPanel>
-        <DockPanel Grid.Row="6" Grid.Column="0" LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Grid.ColumnSpan="2">
+        <DockPanel Grid.Row="6" Grid.Column="0" LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Grid.ColumnSpan="4" Margin="0,0.4,-0.6,0">
             <TextBlock
                 Name="tbSettings"
                 TextWrapping="WrapWithOverflow" MaxWidth="300" VerticalAlignment="Center" Margin="5, 5, 0, 5">
@@ -83,7 +84,41 @@
                      VerticalAlignment="Center" Width="224" IsReadOnly="True" Margin="5,4,0,4.8"
                      Foreground="Blue" Background="Transparent"/>
         </DockPanel>
-        <DockPanel Grid.Row="9" Grid.Column="1" LastChildFill="true" KeyboardNavigation.TabNavigation="Local">
+        <StackPanel Grid.Row="7" Orientation="Vertical" Margin="10,10,9.8,9.8" Grid.ColumnSpan="4">
+            <!--<TextBlock Text="Select AGOL operation:"></TextBlock>
+            <ListBox ScrollViewer.VerticalScrollBarVisibility="Auto"
+                    ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                    MinHeight="50" MaxHeight="200"
+                    ItemsSource="{Binding AoiList}" DisplayMemberPath="Key">
+            </ListBox>
+            <ListBox x:Name="listBox" ItemsSource="{Binding Names}"
+                    ScrollViewer.VerticalScrollBarVisibility="Auto"
+                    ScrollViewer.HorizontalScrollBarVisibility="Disabled"/> -->
+            <ListView ItemsSource="{Binding Names}">
+                <ListView.View>
+                    <GridView AllowsColumnReorder="true"
+              ColumnHeaderToolTip="Aoi">
+
+                        <GridViewColumn DisplayMemberBinding=
+                          "{Binding Path=Name}" 
+                      Header="Aoi" Width="200"/>
+
+                        <GridViewColumn DisplayMemberBinding=
+                          "{Binding Path=AoiBatchStateText}" 
+                      Width="75">
+                            <GridViewColumnHeader>Status
+                            </GridViewColumnHeader>
+                        </GridViewColumn>
+
+                        <GridViewColumn DisplayMemberBinding=
+                          "{Binding Path=FilePath}" 
+                      Header="Employee No." Width="0" />
+                    </GridView>
+
+                </ListView.View>
+            </ListView>
+        </StackPanel>
+        <DockPanel Grid.Row="8" Grid.Column="3" LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Margin="0.2,0.2,-0.6,0.2">
             <Button x:Name="btnRun" Content="Run" HorizontalAlignment="Left"  VerticalAlignment="Center" Width="50" IsEnabled="{Binding CmdRunEnabled}" Command="{Binding CmdRun}" Margin="10, 0, 5, 0"/>
         </DockPanel>
     </Grid>

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -31,6 +32,7 @@ namespace bagis_pro
         {
             // Set path to settings file if we need to
             if (String.IsNullOrEmpty(this.SettingsFile))
+
             {
                 // Find batch tool settings file
                 string strSettingsPath = GeneralTools.GetBagisSettingsPath();
@@ -68,6 +70,7 @@ namespace bagis_pro
                     }
                 }
             }
+            Names = new ObservableCollection<BA_Objects.Aoi>();
         }
 
         /// <summary>
@@ -92,6 +95,8 @@ namespace bagis_pro
         private string _comments;
         private bool _archiveChecked = false;
         private bool _cmdRunEnabled = false;
+        private ObservableCollection<string> _aoiList = new ObservableCollection<string>();
+        private string _strLogFile;
         public string Heading
         {
             get { return _heading; }
@@ -155,11 +160,22 @@ namespace bagis_pro
             }
         }
 
+        public ObservableCollection<string> AoiList
+        {
+            get { return _aoiList; }
+            set
+            {
+                SetProperty(ref _aoiList, value, () => AoiList);
+            }
+        }
+
+        public ObservableCollection<BA_Objects.Aoi> Names { get; set; }
+
         public ICommand CmdAoiFolder
         {
             get
             {
-                return new RelayCommand(() =>
+                return new RelayCommand(async () =>
                 {
                     //Display the filter in an Open Item dialog
                     OpenItemDialog aNewFilter = new OpenItemDialog
@@ -179,13 +195,26 @@ namespace bagis_pro
                             AoiFolder = item.Path;
                         }
                     }
-                    if (String.IsNullOrEmpty(AoiFolder))
+
+                    _strLogFile = AoiFolder + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\" + Constants.FILE_BATCH_LOG;
+                    // Make sure the maps_publish folder exists under the selected folder
+                    if (!Directory.Exists(Path.GetDirectoryName(_strLogFile)))
                     {
-                        CmdRunEnabled = false;
+                        Directory.CreateDirectory(Path.GetDirectoryName(_strLogFile));
+                    }
+                    Names.Clear();
+                    IList<BA_Objects.Aoi> lstAois = await GeneralTools.GetAoiFoldersAsync(AoiFolder, _strLogFile);
+                    foreach (var pAoi in lstAois)
+                    {
+                        Names.Add(pAoi);
+                    }
+                    if (Names.Count > 0)
+                    {
+                        CmdRunEnabled = true;
                     }
                     else
                     {
-                        CmdRunEnabled = true;
+                        CmdRunEnabled = false;
                     }
                 });
             }
@@ -217,24 +246,10 @@ namespace bagis_pro
 
         private async void RunImplAsync(object param)
         {
-            // Make sure the maps_publish folder exists under the selected folder
-            string strLogFile = AoiFolder + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\" + Constants.FILE_BATCH_LOG;
-            if (!Directory.Exists(Path.GetDirectoryName(strLogFile)))
-            {
-                Directory.CreateDirectory(Path.GetDirectoryName(strLogFile));
-            }
             // Create initial log entry
             string strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Starting batch tool to publish in " +
-                Path.GetDirectoryName(strLogFile) + "\r\n";
-            File.WriteAllText(strLogFile, strLogEntry);
-            // @ToDo: Make sure the folder is an AOI. This will change when we implement iteration
-            FolderType fType = await GeodatabaseTools.GetAoiFolderTypeAsync(AoiFolder);
-            if (fType != FolderType.AOI)
-            {
-                MessageBox.Show("This folder is not an AOI!");
-                return;
-            }
-
+                Path.GetDirectoryName(_strLogFile) + "\r\n";
+            File.WriteAllText(_strLogFile, strLogEntry);
             // Save off the publisher name if it is different than previous
             string strPublisher = (string)Module1.Current.BatchToolSettings.Publisher;
             if (!Publisher.Trim().Equals(strPublisher))
@@ -246,9 +261,11 @@ namespace bagis_pro
 
             // Make directory for required folders if they don't exist
             // Make sure that maps and maps_publish folders exist
-            string[] arrDirectories = { AoiFolder + "\\" + Constants.FOLDER_MAPS, AoiFolder + "\\" + Constants.FOLDER_MAP_PACKAGE,
+            AoiFolder = Names[0].FilePath;
+            Names[0].AoiBatchStateText = AoiBatchState.Started.ToString();  // update gui
+            string[] arrFolders = { AoiFolder + "\\" + Constants.FOLDER_MAPS, AoiFolder + "\\" + Constants.FOLDER_MAP_PACKAGE,
                                                 AoiFolder + "\\" + Constants.FOLDER_LOGS};
-            foreach (var directory in arrDirectories)
+            foreach (var directory in arrFolders)
             {
                 if (!Directory.Exists(directory))
                 {
@@ -263,6 +280,16 @@ namespace bagis_pro
             // Set current AOI
             BA_Objects.Aoi oAoi = new BA_Objects.Aoi(Path.GetFileName(AoiFolder), AoiFolder);
             Module1.Current.Aoi = oAoi;
+
+            // Bring GP History tool forward
+            var cmdShowHistory = FrameworkApplication.GetPlugInWrapper("esri_geoprocessing_showToolHistory") as ICommand;
+            if (cmdShowHistory != null)
+            {
+                if (cmdShowHistory.CanExecute(null))
+                {
+                    cmdShowHistory.Execute(null);
+                }
+            }
 
             // Elevation zones
             BA_ReturnCode success = await AnalysisTools.CalculateElevationZonesAsync();
@@ -482,7 +509,11 @@ namespace bagis_pro
                 {
                     MessageBox.Show("An error occurred while generating the Excel tables!!", "BAGIS-PRO");
                 }
-                await GeneralTools.GenerateMapsTitlePageAsync(strPublisher, Comments.Trim());
+                success = await GeneralTools.GenerateMapsTitlePageAsync(strPublisher, Comments);
+                if (success != BA_ReturnCode.Success)
+                {
+                    MessageBox.Show("An error occurred while generating the Title page!!", "BAGIS-PRO");
+                }
                 string outputPath = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\" +
                       Constants.FILE_EXPORT_MAPS_ALL_PDF;
                 GeneralTools.PublishFullPdfDocument(outputPath);    // Put it all together into a single pdf document
@@ -490,13 +521,16 @@ namespace bagis_pro
             catch (Exception e)
             {
                 MessageBox.Show("An error occurred while trying to export the maps!! " + e.Message, "BAGIS PRO");
+                Module1.Current.ModuleLogManager.LogError(nameof(RunImplAsync),
+                    e.StackTrace);
+
             }
 
             MessageBox.Show("Done!");
 
             // Concluding log entry
             strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Batch tool finished!! \r\n";
-            using (StreamWriter sw = File.AppendText(strLogFile))
+            using (StreamWriter sw = File.AppendText(_strLogFile))
             {
                 sw.WriteLine(strLogEntry);
             }

@@ -98,7 +98,7 @@ namespace bagis_pro
 
         }
 
-        public static async Task GenerateMapsTitlePageAsync(string strPublisher, string strComments)
+        public static async Task<BA_ReturnCode> GenerateMapsTitlePageAsync(string strPublisher, string strComments)
         {
             try
             {
@@ -228,6 +228,10 @@ namespace bagis_pro
                     }
                 }
 
+                if (! string.IsNullOrEmpty(strComments))
+                {
+                    strComments = strComments.Trim();   // strip white space from comments
+                }
                 // Serialize the title page object
                 BA_Objects.ExportTitlePage tPage = new BA_Objects.ExportTitlePage
                 {
@@ -289,12 +293,14 @@ namespace bagis_pro
                 }
                 Module1.Current.ModuleLogManager.LogDebug(nameof(GenerateMapsTitlePageAsync),
                     "Title page created!!");
+                return BA_ReturnCode.Success;
             }
             catch (Exception e)
             {
                 Module1.Current.ModuleLogManager.LogError(nameof(GenerateMapsTitlePageAsync),
                     "Exception: " + e.Message);
                 MessageBox.Show("An error occurred while trying to parse the XML!! " + e.Message, "BAGIS PRO");
+                return BA_ReturnCode.UnknownError;
             }
         }
 
@@ -697,9 +703,15 @@ namespace bagis_pro
                 }
                 else
                 {
-                    bkWorkBook.Close(false);
-                    objExcel.Quit();
-                    objExcel = null;
+                    if (bkWorkBook != null)
+                    {
+                        bkWorkBook.Close(false);
+                    }
+                    if (objExcel != null)
+                    {
+                        objExcel.Quit();
+                        objExcel = null;
+                    }
                 }
             }
         }
@@ -1601,6 +1613,33 @@ namespace bagis_pro
 
             return success;
         }
+
+        public static async Task<IList<BA_Objects.Aoi>> GetAoiFoldersAsync (string parentFolder, string strLogFile)
+        {
+            IList<BA_Objects.Aoi> lstAoiPaths = new List<BA_Objects.Aoi>();
+
+            try
+            {
+                string[] folders = Directory.GetDirectories(parentFolder, "*", SearchOption.AllDirectories);
+                foreach (var item in folders)
+                {
+                    FolderType fType = await GeodatabaseTools.GetAoiFolderTypeAsync(item);
+                    if (fType == FolderType.AOI)
+                    {
+                        BA_Objects.Aoi aoi = new BA_Objects.Aoi(Path.GetFileName(item), item);
+                        lstAoiPaths.Add(aoi);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                string strLogEntry = "An error occurred while interrogating the subdirectories " +  e.StackTrace + "\r\n";
+                File.WriteAllText(strLogFile, strLogEntry);
+            }
+            return lstAoiPaths;
+        }
+
+
     }
 
 

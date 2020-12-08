@@ -1,21 +1,23 @@
 ﻿using ArcGIS.Core.Geometry;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace bagis_pro.BA_Objects
 {
-    class Aoi
+    public class Aoi : INotifyPropertyChanged
     {
         string m_strName;
         string m_strFilePath;
         double m_dblMinElev = Constants.VALUE_NO_DATA_9999;
         double m_dblMaxElev = Constants.VALUE_NO_DATA_9999;
         LinearUnit m_elevationUnits;
-        bool m_bHasSnotel;
-        bool m_bHasSnowCourse;
+        public bool HasSnowCourse;
+        public bool HasSnotel;
+        string m_aoiBatchState;
 
         public Aoi()
         {
@@ -29,8 +31,7 @@ namespace bagis_pro.BA_Objects
             m_dblMinElev = Constants.VALUE_NO_DATA_9999;
             m_dblMaxElev = Constants.VALUE_NO_DATA_9999;
             m_elevationUnits = LinearUnit.Meters;
-            m_bHasSnotel = false;
-            m_bHasSnowCourse = false;
+            m_aoiBatchState = AoiBatchState.Waiting.ToString();
         }
 
         public string Name
@@ -39,6 +40,7 @@ namespace bagis_pro.BA_Objects
             set
             {
                 m_strName = value;
+                NotifyPropertyChanged();
             }
         }
 
@@ -90,22 +92,28 @@ namespace bagis_pro.BA_Objects
                     + Constants.FILE_DEM_FILLED; 
         }
 
-        public bool HasSnotel
+        public string AoiBatchStateText
         {
-            get { return m_bHasSnotel; }
+            get { return m_aoiBatchState; }
             set
             {
-                m_bHasSnotel = value;
+                m_aoiBatchState = value;
+                NotifyPropertyChanged();
             }
         }
 
-        public bool HasSnowCourse
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        // This method is called by the Set accessor of each property.
+        // The CallerMemberName attribute that is applied to the optional propertyName
+        // parameter causes the property name of the caller to be substituted as an argument.
+        private void NotifyPropertyChanged([System.Runtime.CompilerServices.CallerMemberName] String propertyName = "")
         {
-            get { return m_bHasSnowCourse; }
-            set
+            if (PropertyChanged != null)
             {
-               m_bHasSnowCourse = value;
+                PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
             }
         }
+
     }
 }
