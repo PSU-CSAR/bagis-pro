@@ -95,6 +95,7 @@ namespace bagis_pro
         Waiting,
         Started,
         Failed,
-        Completed
+        Completed,
+        Errors
     }
 }

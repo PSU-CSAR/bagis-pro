@@ -66,7 +66,7 @@ namespace bagis_pro
                     //remove existing layers from map frame
                     await MapTools.RemoveLayersfromMapFrame();
 
-                    //add aoi boundary to map and zoom to layer
+                    //add aoi boundary to map
                     string strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi, true) +
                                      Constants.FILE_AOI_VECTOR;
                     Uri aoiUri = new Uri(strPath);
@@ -215,7 +215,7 @@ namespace bagis_pro
 
                     //zoom to aoi boundary layer
                     double bufferFactor = 1.1;
-                    bool bZoomed = await MapTools.ZoomToExtentAsync(aoiUri, bufferFactor);
+                    success = await MapTools.ZoomToExtentAsync(aoiUri, bufferFactor);
                     return success;
                 }
             }
@@ -290,7 +290,7 @@ namespace bagis_pro
                 else
                 {
                     map = MapFactory.Instance.CreateMap(mapName, basemap: Basemap.None);
-                    await ProApp.Panes.CreateMapPaneAsync(map);
+                    await FrameworkApplication.Panes.CreateMapPaneAsync(map);
                 }
                 return map;
             });
@@ -487,12 +487,12 @@ namespace bagis_pro
             return success;
         }
 
-        public static async Task<bool> ZoomToExtentAsync(Uri aoiUri, double bufferFactor = 1)
+        public static async Task<BA_ReturnCode> ZoomToExtentAsync(Uri aoiUri, double bufferFactor = 1)
         {
             //Get the active map view.
             var mapView = MapView.Active;
             if (mapView == null)
-                return false;
+                return BA_ReturnCode.UnknownError;
             string strFileName = null;
             string strFolderPath = null;
             if (aoiUri.IsFile)
@@ -501,8 +501,7 @@ namespace bagis_pro
                 strFolderPath = System.IO.Path.GetDirectoryName(aoiUri.LocalPath);
             }
 
-            Envelope zoomEnv = null;
-            await QueuedTask.Run(() =>
+            Envelope zoomEnv = await QueuedTask.Run<Envelope>(() =>
             {
                 // Opens a file geodatabase. This will open the geodatabase if the folder exists and contains a valid geodatabase.
                 using (
@@ -512,12 +511,33 @@ namespace bagis_pro
                     // Use the geodatabase.
                     FeatureClassDefinition fcDefinition = geodatabase.GetDefinition<FeatureClassDefinition>(strFileName);
                     var extent = fcDefinition.GetExtent();
-                    zoomEnv = fcDefinition.GetExtent().Expand(bufferFactor, bufferFactor, true);
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(ZoomToExtentAsync), "extent XMin=" + extent.XMin);
+                    var expandedExtent = extent.Expand(bufferFactor, bufferFactor, true);
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(ZoomToExtentAsync), "expandedExtent XMin=" + expandedExtent.XMin);
+                    return expandedExtent;
                 }
             });
 
             //Zoom the view to a given extent.
-            return await mapView.ZoomToAsync(zoomEnv, null);
+            bool bSuccess = false;
+            Module1.Current.ModuleLogManager.LogDebug(nameof(ZoomToExtentAsync), "zoomEnv XMin=" + zoomEnv.XMin);
+            await FrameworkApplication.Current.Dispatcher.Invoke(async () =>
+            {
+                // Do something on the GUI thread
+                bSuccess = await MapView.Active.ZoomToAsync(zoomEnv, null);
+            });
+
+
+            Module1.Current.ModuleLogManager.LogDebug(nameof(ZoomToExtentAsync), "Return value from ZoomToAsync=" + bSuccess);
+            if (bSuccess)
+            {
+                return BA_ReturnCode.Success;
+            }
+            else
+            {
+                return BA_ReturnCode.UnknownError;
+            }
+             
         }
 
         public static async Task RemoveLayer(Map map, string layerName)

@@ -18,6 +18,7 @@ namespace bagis_pro.BA_Objects
         public bool HasSnowCourse;
         public bool HasSnotel;
         string m_aoiBatchState;
+        bool m_aoiBatchIsSelected;
 
         public Aoi()
         {
@@ -32,6 +33,7 @@ namespace bagis_pro.BA_Objects
             m_dblMaxElev = Constants.VALUE_NO_DATA_9999;
             m_elevationUnits = LinearUnit.Meters;
             m_aoiBatchState = AoiBatchState.Waiting.ToString();
+            m_aoiBatchIsSelected = true;
         }
 
         public string Name
@@ -40,7 +42,6 @@ namespace bagis_pro.BA_Objects
             set
             {
                 m_strName = value;
-                NotifyPropertyChanged();
             }
         }
 
@@ -97,8 +98,24 @@ namespace bagis_pro.BA_Objects
             get { return m_aoiBatchState; }
             set
             {
-                m_aoiBatchState = value;
-                NotifyPropertyChanged();
+                if (value != this.m_aoiBatchState)
+                {
+                    m_aoiBatchState = value;
+                    NotifyPropertyChanged();
+                }
+            }
+        }
+
+        public bool AoiBatchIsSelected
+        {
+            get { return m_aoiBatchIsSelected; }
+            set
+            {
+                if (value != this.m_aoiBatchIsSelected)
+                {
+                    this.m_aoiBatchIsSelected = value;
+                    NotifyPropertyChanged();
+                }
             }
         }
 

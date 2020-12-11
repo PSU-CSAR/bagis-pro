@@ -1634,7 +1634,7 @@ namespace bagis_pro
             catch (Exception e)
             {
                 string strLogEntry = "An error occurred while interrogating the subdirectories " +  e.StackTrace + "\r\n";
-                File.WriteAllText(strLogFile, strLogEntry);
+                File.WriteAllText(strLogFile, strLogEntry);     // overwrite any existing files
             }
             return lstAoiPaths;
         }
