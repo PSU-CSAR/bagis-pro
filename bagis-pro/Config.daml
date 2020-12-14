@@ -48,6 +48,7 @@
         </group>
         <group id="bagis_pro_Groups_Tools" appearsOnAddInTab="false" caption="Tools">
           <button refID="bagis_pro_DockBatchPdfExport_ShowButton" size="middle" />
+          <button refID="bagis_pro_DockMigrateToFGDB_ShowButton" size="middle" />
         </group>
       </groups>
       <toolbars>
@@ -196,8 +197,7 @@
         </button>
         <button id="MapButtonPalette_BtnBelowTreeline" caption="Area Below Treeline" className="bagis_pro.Buttons.MapButtonPalette_BtnBelowTreeline" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnBelowTreeline_Condition">
           <tooltip heading="Display Map">
-            ToolTip<disabledText />
-          </tooltip>
+            ToolTip<disabledText /></tooltip>
         </button>
         <button id="MapButtonPalette_BtnSitesLocationZone" caption="Potential Site Locations" className="bagis_pro.Buttons.MapButtonPalette_BtnSitesLocationZone" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSitesLocationZone_Condition">
           <tooltip heading="Display Map">
@@ -215,7 +215,10 @@
           <tooltip heading="Manage Layers">Manage Layers<disabledText /></tooltip>
         </button>
         <button id="bagis_pro_DockBatchPdfExport_ShowButton" caption="Batch PDF Export" className="DockBatchPdfExport_ShowButton" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/JobExport16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/JobExport16.png">
-          <tooltip heading="Batch PDF Export">Show Dockpane<disabledText /></tooltip>
+          <tooltip heading="Batch PDF Export">Batch PDF Export<disabledText /></tooltip>
+        </button>
+        <button id="bagis_pro_DockMigrateToFGDB_ShowButton" caption="Migrate to FGDB" className="DockMigrateToFGDB_ShowButton" loadOnClick="true" smallImage="Images\Weasel.png" largeImage="Images\Weasel.png">
+          <tooltip heading="Migrate to FGDB">Migrate to FGDB<disabledText /></tooltip>
         </button>
       </controls>
       <menus>
@@ -251,6 +254,9 @@
         </dockPane>
         <dockPane id="bagis_pro_DockBatchPdfExport" caption="Batch PDF Export" className="DockBatchPdfExportViewModel" dock="group" dockWith="esri_core_contentsDockPane">
           <content className="DockBatchPdfExportView" />
+        </dockPane>
+        <dockPane id="bagis_pro_DockMigrateToFGDB" caption="Migrate to File Geodatabase" className="DockMigrateToFGDBViewModel" dock="group" dockWith="esri_core_contentsDockPane">
+          <content className="DockMigrateToFGDBView" />
         </dockPane>
       </dockPanes>
     </insertModule>

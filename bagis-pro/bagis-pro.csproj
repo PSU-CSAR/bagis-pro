@@ -173,6 +173,10 @@
       <DependentUpon>DockAnalysisLayers.xaml</DependentUpon>
     </Compile>
     <Compile Include="DockAnalysisLayersViewModel.cs" />
+    <Compile Include="DockMigrateToFGDB.xaml.cs">
+      <DependentUpon>DockMigrateToFGDB.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="DockMigrateToFGDBViewModel.cs" />
     <Compile Include="DockpaneLayers.xaml.cs">
       <DependentUpon>DockpaneLayers.xaml</DependentUpon>
     </Compile>
@@ -240,6 +244,7 @@
     <AddInContent Include="Images\GenericButtonPurple32.png" />
     <AddInContent Include="DarkImages\GenericButtonPurple16.png" />
     <AddInContent Include="DarkImages\GenericButtonPurple32.png" />
+    <AddInContent Include="Images\Weasel.png" />
     <Content Include="NLog.config">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
@@ -294,6 +299,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="DockAnalysisLayers.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="DockMigrateToFGDB.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

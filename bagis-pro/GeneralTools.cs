@@ -228,7 +228,7 @@ namespace bagis_pro
                     }
                 }
 
-                if (! string.IsNullOrEmpty(strComments))
+                if (!string.IsNullOrEmpty(strComments))
                 {
                     strComments = strComments.Trim();   // strip white space from comments
                 }
@@ -642,7 +642,7 @@ namespace bagis_pro
                     Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Published aspect chart to PDF");
 
                     //Cumulative precip table
-                    pathToSave = sOutputFolder + "\\" + Constants.FILE_EXPORT_TABLE_PRECIP_REPRESENT_PDF;                  
+                    pathToSave = sOutputFolder + "\\" + Constants.FILE_EXPORT_TABLE_PRECIP_REPRESENT_PDF;
                     pPRISMWorkSheet.PageSetup.PrintArea = "$A$1:$P$" + lastRow;
                     pPRISMWorkSheet.PageSetup.Orientation = XlPageOrientation.xlLandscape;
                     pPRISMWorkSheet.PageSetup.Zoom = false;     // Required to print on one page
@@ -1590,7 +1590,7 @@ namespace bagis_pro
                         if (pieces.Length == 2)
                         {
                             oAnalysis.AspectDirectionsCount = Convert.ToInt16(pieces[1]);
-                        }                        
+                        }
                     }
                     if (sr.Peek() > -1) // This line indicated if we were partway through an analysis and need to set generate to true
                                         // Skipping translation for now. Example: 'ENABLE_GENERATE False'
@@ -1614,7 +1614,7 @@ namespace bagis_pro
             return success;
         }
 
-        public static async Task<IList<BA_Objects.Aoi>> GetAoiFoldersAsync (string parentFolder, string strLogFile)
+        public static async Task<IList<BA_Objects.Aoi>> GetAoiFoldersAsync(string parentFolder, string strLogFile)
         {
             IList<BA_Objects.Aoi> lstAoiPaths = new List<BA_Objects.Aoi>();
 
@@ -1633,15 +1633,92 @@ namespace bagis_pro
             }
             catch (Exception e)
             {
-                string strLogEntry = "An error occurred while interrogating the subdirectories " +  e.StackTrace + "\r\n";
+                string strLogEntry = "An error occurred while interrogating the subdirectories " + e.StackTrace + "\r\n";
                 File.WriteAllText(strLogFile, strLogEntry);     // overwrite any existing files
             }
             return lstAoiPaths;
         }
 
+        // Takes a list of paths we want to check and returns the datasets that exist
+        public static async Task<IList<string>> RasterDatasetsExistAsync(IList<string> lstDatasetPaths)
+        {
+            IList<string> layerListExists = new List<string>();
+            await QueuedTask.Run(() =>
+            {
+                foreach (var nextPath in lstDatasetPaths)
+                {
+                    string strFolder = Path.GetDirectoryName(nextPath);
+                    string strFile = Path.GetFileName(nextPath);
+                    if (!Directory.Exists(strFolder))
+                    {
+                        // Do nothing, the folder doesn't exist
+                    }
+                    else
+                    {
+                        // Create a FileSystemConnectionPath using the folder path.
+                        FileSystemConnectionPath connectionPath =
+                          new FileSystemConnectionPath(new System.Uri(strFolder), FileSystemDatastoreType.Raster);
+                        // Create a new FileSystemDatastore using the FileSystemConnectionPath.
+                        FileSystemDatastore dataStore = new FileSystemDatastore(connectionPath);
+                        try
+                        {
+                            // Open the raster dataset.
+                            RasterDataset fileRasterDataset = dataStore.OpenDataset<RasterDataset>(strFile);
+                            if (fileRasterDataset != null)
+                            {
+                                layerListExists.Add(nextPath);
+                            }
+                        }
+                        catch (Exception)
+                        {
+                            // munch; We tried to open the dataset and it didn't exist
+                        }
+                    }
+                }
+            });
+            return layerListExists;
+        }
+
+        // Takes a list of paths we want to check and returns the datasets that exist
+        public static async Task<IList<string>> ShapefilesExistAsync(IList<string> lstDatasetPaths)
+        {
+            IList<string> layerListExists = new List<string>();
+            await QueuedTask.Run(() =>
+            {
+                foreach (var nextPath in lstDatasetPaths)
+                {
+                    string strFolder = Path.GetDirectoryName(nextPath);
+                    string strFile = Path.GetFileName(nextPath);
+                    if (!Directory.Exists(strFolder))
+                    {
+                        // Do nothing, the folder doesn't exist
+                    }
+                    else
+                    {
+                        // Create a FileSystemConnectionPath using the folder path.
+                        FileSystemConnectionPath connectionPath =
+                          new FileSystemConnectionPath(new System.Uri(strFolder), FileSystemDatastoreType.Shapefile);
+                        // Create a new FileSystemDatastore using the FileSystemConnectionPath.
+                        FileSystemDatastore dataStore = new FileSystemDatastore(connectionPath);
+                        try
+                        {
+                            // Open the raster dataset.
+                            FeatureClass fClass = dataStore.OpenDataset<FeatureClass>(strFile);
+                            if (fClass != null)
+                            {
+                                layerListExists.Add(nextPath);
+                            }
+                        }
+                        catch (Exception)
+                        {
+                            // munch; We tried to open the dataset and it didn't exist
+                        }
+                    }
+                }
+            });
+            return layerListExists;
+        }
 
     }
 
-
-
-    }
+}
