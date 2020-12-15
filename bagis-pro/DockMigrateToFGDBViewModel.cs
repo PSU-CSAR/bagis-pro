@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -29,7 +30,9 @@ namespace bagis_pro
         protected DockMigrateToFGDBViewModel()
         {
             Names = new ObservableCollection<BA_Objects.Aoi>();
+            Names.CollectionChanged += NamesCollectionChanged;
         }
+
 
         /// <summary>
         /// Show the DockPane.
@@ -48,7 +51,7 @@ namespace bagis_pro
         /// </summary>
         private string _heading = "Migrate to File Geodatabase";
         private string _aoiFolder = "";
-        private bool _cmdRunEnabled = false;
+        private bool _canRun = false;   // Flag that indicates if things are in a state that the process can successfully run; Enables the button on the form
         public string Heading
         {
             get { return _heading; }
@@ -65,16 +68,41 @@ namespace bagis_pro
                 SetProperty(ref _aoiFolder, value, () => AoiFolder);
             }
         }
-        public bool CmdRunEnabled
-        {
-            get { return _cmdRunEnabled; }
-            set
-            {
-                SetProperty(ref _cmdRunEnabled, value, () => CmdRunEnabled);
-            }
-        }
 
         public ObservableCollection<BA_Objects.Aoi> Names { get; set; }
+
+        public void NamesCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            // Allows us to respond when properties of items in the collection change; ie: including the AOI in the list to migrate
+            if (e.OldItems != null)
+                foreach (BA_Objects.Aoi oldItem in e.OldItems)
+                    oldItem.PropertyChanged -= NamesCollection_PropertyChanged;
+
+            if (e.NewItems != null)
+                foreach (BA_Objects.Aoi newItem in e.NewItems)
+                    newItem.PropertyChanged += NamesCollection_PropertyChanged;
+        }
+
+        private void NamesCollection_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs args)
+        {
+            //This will get called when an item in the collection is changed to manage the run button
+            int validAoiCount = 0;
+            foreach (var item in Names)
+            {
+                if (item.AoiBatchIsSelected == true)
+                {
+                    validAoiCount++;
+                }
+            }
+            if (validAoiCount > 0)
+            {
+                _canRun = true;
+            }
+            else
+            {
+                _canRun = false;
+            }
+        }
 
         public ICommand CmdAoiFolder
         {
@@ -126,14 +154,14 @@ namespace bagis_pro
                             {
                                 IList<string> reqRasterList = GetListOfReqWeaselRasters(item);
                                 IList<string> existsLayersList = await GeneralTools.RasterDatasetsExistAsync(reqRasterList);
-                                IList<string> missingLayersList = new List<string>();
+                                IList<string> missingReqLayersList = new List<string>();
                                 if (existsLayersList.Count < reqRasterList.Count)
                                 {
                                     foreach (var aLayer in reqRasterList)
                                     {
                                         if (!existsLayersList.Contains(aLayer))
                                         {
-                                            missingLayersList.Add(aLayer);
+                                            missingReqLayersList.Add(aLayer);
                                         }
                                     }
                                 }
@@ -151,7 +179,7 @@ namespace bagis_pro
                                     existsLayersList = await GeneralTools.RasterDatasetsExistAsync(lstTest);
                                     if (existsLayersList.Count == 0)
                                     {
-                                        missingLayersList.Add(item + @"\aoibagis");
+                                        missingReqLayersList.Add(item + @"\aoibagis");
                                     }
                                 }
                                 IList<string> reqVectorList = GetListOfReqWeaselVectors(item);
@@ -162,18 +190,18 @@ namespace bagis_pro
                                     {
                                         if (!existsLayersList.Contains(aLayer))
                                         {
-                                            missingLayersList.Add(aLayer);
+                                            missingReqLayersList.Add(aLayer);
                                         }
                                     }
                                 }
 
-                                if (missingLayersList.Count > 0)
+                                if (missingReqLayersList.Count > 0)
                                 {
                                     StringBuilder sb = new StringBuilder();
-                                    sb.Append(AoiFolder + " cannot be exported to File Geodatabase format. ");
+                                    sb.Append(item + " cannot be exported to File Geodatabase format. ");
                                     sb.Append("The data layers listed below are missing. These files ");
                                     sb.Append("must be present before attempting the conversion:\r\n");
-                                    foreach (var missing in missingLayersList)
+                                    foreach (var missing in missingReqLayersList)
                                     {
                                         sb.Append(missing + "\r\n");
                                     }
@@ -181,7 +209,53 @@ namespace bagis_pro
                                 }
                                 else
                                 {
+                                    IList<string> missingOptLayersList = new List<string>();
+                                    IList<string> optRasterList = GetListOptWeaselRasters(item);
+                                    IList<string> existsOptLayersList = await GeneralTools.RasterDatasetsExistAsync(optRasterList);
+                                    if (existsOptLayersList.Count < optRasterList.Count)
+                                    {
+                                        foreach (var aLayer in optRasterList)
+                                        {
+                                            if (!existsOptLayersList.Contains(aLayer))
+                                            {
+                                                missingOptLayersList.Add(aLayer);
+                                            }
+                                        }
+                                    }
+                                    lstTest.Clear();
+                                    lstTest.Add(item + @"\unsnappedpp.shp");
+                                    existsOptLayersList = await GeneralTools.ShapefilesExistAsync(lstTest);
+                                    if (existsLayersList.Count == 0)
+                                    {
+                                        missingOptLayersList.Add(item + @"\unsnappedpp.shp");
+                                    }
+                                    if (missingOptLayersList.Count > 0)
+                                    {
+                                        StringBuilder sb = new StringBuilder();
+                                        sb.Append("The following files normally present in a Weasel AOI are ");
+                                        sb.Append("missing from " + item + " and will not be converted: \r\n");
+                                        foreach (var missing in missingOptLayersList)
+                                        {
+                                            sb.Append(missing + "\r\n");
+                                        }
+                                        Module1.Current.ModuleLogManager.LogError(nameof(CmdAoiFolder), sb.ToString());
+                                    }
+
                                     BA_Objects.Aoi aoi = new BA_Objects.Aoi(Path.GetFileName(item), item);
+                                    IList<string> lstExistingGdb = CheckForBagisGdb(item);
+                                    if (lstExistingGdb.Count > 0)
+                                    {
+                                        StringBuilder sb = new StringBuilder();
+                                        sb.Append("At least one geodatabase already exists in aoi " + aoi.Name);
+                                        sb.Append(". \r\n");
+                                        sb.Append("Do you wish to overwrite them? All existing data will be lost!\r\n");
+                                        System.Windows.MessageBoxResult res = MessageBox.Show(sb.ToString(), "BAGIS-PRO",
+                                            System.Windows.MessageBoxButton.YesNo);
+                                        if (res != System.Windows.MessageBoxResult.Yes)
+                                        {
+                                            aoi.AoiBatchIsSelected = false;
+                                        }
+                                    }
                                     Names.Add(aoi);
                                 }
                             }
@@ -192,18 +266,22 @@ namespace bagis_pro
                         string strLogEntry = "An error occurred while interrogating the subdirectories " + e.StackTrace + "\r\n";
                         Module1.Current.ModuleLogManager.LogError(nameof(CmdAoiFolder), strLogEntry);
                     }
-
-                    if (Names.Count > 0)
-                    {
-                        CmdRunEnabled = true;
-                    }
-                    else
-                    {
-                        CmdRunEnabled = false;
-                    }
                 });
             }
         }
+
+
+        private RelayCommand _runCommand;
+        public ICommand CmdRun
+        {
+            get
+            {
+                if (_runCommand == null)
+                    _runCommand = new RelayCommand(RunImplAsync, () => _canRun);
+                return _runCommand;
+            }
+        }
+
 
         IList<string> GetListOfReqWeaselRasters(string aoiPath)
         {
@@ -251,7 +329,49 @@ namespace bagis_pro
             lstVectors.Add(layerPath);
             return lstVectors;
         }
-    }
+
+        IList<string> GetListOptWeaselRasters(string aoiPath)
+        {
+            IList<string> lstRasters = new List<string>();
+            string layerPath = aoiPath + @"\output\surfaces\dem\grid";
+            lstRasters.Add(layerPath);
+            layerPath = aoiPath + @"\output\surfaces\dem\filled\hillshade\grid";
+            lstRasters.Add(layerPath);
+            return lstRasters;
+        }
+
+        IList<string> CheckForBagisGdb(string aoiPath)
+        {
+            IList<string> lstBagisGdb = new List<string>();
+            if (Directory.Exists(aoiPath + "\\" + GeodatabaseNames.Analysis.Value))
+            {
+                lstBagisGdb.Add(aoiPath + "\\" + GeodatabaseNames.Analysis.Value);
+            }
+            if (Directory.Exists(aoiPath + "\\" + GeodatabaseNames.Aoi.Value))
+            {
+                lstBagisGdb.Add(aoiPath + "\\" + GeodatabaseNames.Aoi.Value);
+            }
+            if (Directory.Exists(aoiPath + "\\" + GeodatabaseNames.Layers.Value))
+            {
+                lstBagisGdb.Add(aoiPath + "\\" + GeodatabaseNames.Layers.Value);
+            }
+            if (Directory.Exists(aoiPath + "\\" + GeodatabaseNames.Prism.Value))
+            {
+                lstBagisGdb.Add(aoiPath + "\\" + GeodatabaseNames.Prism.Value);
+            }
+            if (Directory.Exists(aoiPath + "\\" + GeodatabaseNames.Surfaces.Value))
+            {
+                lstBagisGdb.Add(aoiPath + "\\" + GeodatabaseNames.Surfaces.Value);
+            }
+            return lstBagisGdb;
+        }
+
+        private async void RunImplAsync(object param)
+        {
+            MessageBox.Show("Running");
+        }
+
+}
 
     /// <summary>
     /// Button implementation to show the DockPane.
