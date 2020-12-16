@@ -21,6 +21,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using PdfSharp.Pdf;
 using PdfSharp.Pdf.IO;
+using ArcGIS.Desktop.Catalog;
 
 namespace bagis_pro
 {
@@ -1640,7 +1641,7 @@ namespace bagis_pro
         }
 
         // Takes a list of paths we want to check and returns the datasets that exist
-        public static async Task<IList<string>> RasterDatasetsExistAsync(IList<string> lstDatasetPaths)
+        public static async Task<IList<string>> RasterDatasetsExistAsync(ICollection<string> lstDatasetPaths)
         {
             IList<string> layerListExists = new List<string>();
             await QueuedTask.Run(() =>
@@ -1680,7 +1681,7 @@ namespace bagis_pro
         }
 
         // Takes a list of paths we want to check and returns the datasets that exist
-        public static async Task<IList<string>> ShapefilesExistAsync(IList<string> lstDatasetPaths)
+        public static async Task<IList<string>> ShapefilesExistAsync(ICollection<string> lstDatasetPaths)
         {
             IList<string> layerListExists = new List<string>();
             await QueuedTask.Run(() =>
@@ -1718,6 +1719,29 @@ namespace bagis_pro
             });
             return layerListExists;
         }
+
+        public static async Task<IList<string>> GetLayersInFolderAsync(string strFolderPath)
+        {
+            IList<string> layerNames = new List<string>();
+            // Add a folder to the Project
+            var folderToAdd = ItemFactory.Instance.Create(strFolderPath);
+            await QueuedTask.Run(() => Project.Current.AddItem(folderToAdd as IProjectItem));
+
+            // find the folder project item
+            FolderConnectionProjectItem folder = Project.Current.GetItems<FolderConnectionProjectItem>().
+                FirstOrDefault(f => f.Path.Equals(strFolderPath, StringComparison.CurrentCultureIgnoreCase));
+            if (folder == null) return layerNames;
+
+            // do the search
+            IEnumerable<Item> folderFiles = null;
+            await QueuedTask.Run(() => folderFiles = folder.GetItems().Where(f => f.Type == "Shapefile"));
+            foreach (Item item in folderFiles)
+            {
+                layerNames.Add(item.ToString());
+            }
+            return layerNames;
+        }
+
 
     }
 

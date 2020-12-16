@@ -27,6 +27,8 @@ namespace bagis_pro
         public static GeodatabaseNames Layers { get { return new GeodatabaseNames("layers.gdb"); } }
         public static GeodatabaseNames Surfaces { get { return new GeodatabaseNames("surfaces.gdb"); } }
         public static GeodatabaseNames Analysis { get { return new GeodatabaseNames("analysis.gdb"); } }
+
+        public static string[] AllNames = { Aoi.Value, Prism.Value, Layers.Value, Surfaces.Value, Analysis.Value };
     }
 
     public class GeodatabaseTools
@@ -948,7 +950,31 @@ namespace bagis_pro
             return lstInterval;
         }
 
+        public static async Task<BA_ReturnCode> CreateGeodatabaseFoldersAsync(string strAoiPath)
+        {
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            await QueuedTask.Run(() =>
+            {
+                var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath);
+                foreach (var item in GeodatabaseNames.AllNames)
+                {
+                    var parameters = Geoprocessing.MakeValueArray(item);
+                    var gpResult = Geoprocessing.ExecuteToolAsync("CreateFileGDB_management", parameters, environments,
+                                                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
 
+                    if (gpResult.Result.IsFailed)
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(CreateGeodatabaseFoldersAsync),
+                            "Unable to create file geodatabase. Error code: " + gpResult.Result.ErrorCode);
+                    }
+                    else
+                    {
+                        success = BA_ReturnCode.Success;
+                    }
+                }
+            });
+            return success;
+        }
     }
 
     

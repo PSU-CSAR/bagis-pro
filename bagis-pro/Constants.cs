@@ -44,6 +44,7 @@ namespace bagis_pro
         public const string FILE_SNOW_COURSE = "snowcourse_sites";
         public const string FILE_HILLSHADE = "hillshade";
         public const string FILE_DEM_FILLED = "dem_filled";
+        public const string FILE_DEM = "dem";
         public const string FILE_ELEV_ZONE = "elevzone";
         public const string FILE_SLOPE_ZONE = "slpzone";
         public const string FILE_ASPECT_ZONE = "aspzone";
@@ -110,6 +111,10 @@ namespace bagis_pro
         public const string FILE_TITLE_PAGE_XML = "title_page.xml";
         public const string FILE_TITLE_PAGE_HTML = "title_page.html";
         public const string FILE_TITLE_PAGE_PDF = "title_page.pdf";
+        public const string FILE_FLOW_ACCUMULATION = "flow_accumulation";
+        public const string FILE_FLOW_DIRECTION = "flow_direction";
+        public const string FILE_AOI_BUFFERED_RASTER = "aoib";
+        public const string FILE_AOI_PRISM_RASTER = "p_aoi";
         public static readonly string[] URIS_SNODAS_SWE = new string[] { "daily_swe_normal_jan_01", "daily_swe_normal_feb_01", "daily_swe_normal_mar_01",
                                                                          "daily_swe_normal_apr_01", "daily_swe_normal_may_01", "daily_swe_normal_jun_01",
                                                                          "daily_swe_normal_dec_01"};
