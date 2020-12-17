@@ -1720,7 +1720,7 @@ namespace bagis_pro
             return layerListExists;
         }
 
-        public static async Task<IList<string>> GetLayersInFolderAsync(string strFolderPath)
+        public static async Task<IList<string>> GetLayersInFolderAsync(string strFolderPath, string strSearchString)
         {
             IList<string> layerNames = new List<string>();
             // Add a folder to the Project
@@ -1734,10 +1734,10 @@ namespace bagis_pro
 
             // do the search
             IEnumerable<Item> folderFiles = null;
-            await QueuedTask.Run(() => folderFiles = folder.GetItems().Where(f => f.Type == "Shapefile"));
+            await QueuedTask.Run(() => folderFiles = folder.GetItems().Where(f => f.Type == strSearchString));
             foreach (Item item in folderFiles)
             {
-                layerNames.Add(item.ToString());
+                layerNames.Add(item.Name);
             }
             return layerNames;
         }

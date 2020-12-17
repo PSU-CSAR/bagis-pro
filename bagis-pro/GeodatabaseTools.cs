@@ -65,6 +65,33 @@ namespace bagis_pro
             return FolderType.FOLDER;
         }
 
+        public static async Task<FolderType> GetWeaselAoiFolderTypeAsync(string folderPath)
+        {
+            if (folderPath.IndexOf(".gdb") > -1)
+            {
+                // The calls below will fail if the folder is a geodatabase folder
+                return FolderType.FOLDER;
+            }
+            IList<string> lstAoiLayers = new List<string>
+            {
+                folderPath + @"\aoi",
+                folderPath + @"\aoibagis"
+            };
+            IList<string> lstExistingLayers = await GeneralTools.RasterDatasetsExistAsync(lstAoiLayers);
+            if (lstExistingLayers.Count > 0)
+            {
+                return FolderType.AOI;
+            }
+            lstAoiLayers.Clear();
+            lstAoiLayers.Add(folderPath + @"\aoi_v.shp");
+            lstExistingLayers = await GeneralTools.ShapefilesExistAsync(lstAoiLayers);
+            if (lstExistingLayers.Count > 0)
+            {
+                return FolderType.BASIN;
+            }
+            return FolderType.FOLDER;
+        }
+
         public static async Task<string> QueryTableForSingleValueAsync(Uri fileUri, string featureClassName, string fieldName, QueryFilter queryFilter)
         {
             // parse the uri for the folder and file
