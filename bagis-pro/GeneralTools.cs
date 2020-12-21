@@ -1739,6 +1739,7 @@ namespace bagis_pro
             {
                 layerNames.Add(item.Name);
             }
+            await QueuedTask.Run(() => Project.Current.RemoveItem(folderToAdd as IProjectItem));
             return layerNames;
         }
 

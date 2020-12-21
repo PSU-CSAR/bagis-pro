@@ -985,7 +985,7 @@ namespace bagis_pro
                 var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath);
                 foreach (var item in GeodatabaseNames.AllNames)
                 {
-                    var parameters = Geoprocessing.MakeValueArray(item);
+                    var parameters = Geoprocessing.MakeValueArray(strAoiPath, item);
                     var gpResult = Geoprocessing.ExecuteToolAsync("CreateFileGDB_management", parameters, environments,
                                                     CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
 

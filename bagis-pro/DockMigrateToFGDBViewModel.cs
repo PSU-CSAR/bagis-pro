@@ -86,6 +86,11 @@ namespace bagis_pro
 
         private void NamesCollection_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs args)
         {
+            ManageRunButton();
+        }
+
+        void ManageRunButton()
+        {
             //This will get called when an item in the collection is changed to manage the run button
             int validAoiCount = 0;
             foreach (var item in Names)
@@ -264,6 +269,7 @@ namespace bagis_pro
                                         }
                                     }
                                     Names.Add(aoi);
+                                    ManageRunButton();
                                 }
                             }
                         }
@@ -386,11 +392,34 @@ namespace bagis_pro
 
         private async void RunImplAsync(object param)
         {
+            // Bring GP History tool forward
+            var cmdShowHistory = FrameworkApplication.GetPlugInWrapper("esri_geoprocessing_showToolHistory") as ICommand;
+            if (cmdShowHistory != null)
+            {
+                if (cmdShowHistory.CanExecute(null))
+                {
+                    cmdShowHistory.Execute(null);
+                }
+            }
             foreach (var oAoi in Names)
             {
                 if (oAoi.AoiBatchIsSelected)
                 {
                     IList<string> lstExistingGdb = CheckForBagisGdb(oAoi.FilePath);
+
+                    // Make directory for log if it doesn't exist
+                    if (!Directory.Exists(oAoi.FilePath + "\\" + Constants.FOLDER_LOGS))
+                    {
+                        DirectoryInfo info = Directory.CreateDirectory(oAoi.FilePath + "\\" + Constants.FOLDER_LOGS);
+                        if (info == null)
+                        {
+                            MessageBox.Show("Unable to create logs directory in Aoi folder!!", "BAGIS-PRO");
+                        }
+                    }
+                    // Set logger to AOI directory
+                    string logFolderName = oAoi.FilePath + "\\" + Constants.FOLDER_LOGS;
+                    Module1.Current.ModuleLogManager.UpdateLogFileLocation(logFolderName);
+
                     // Delete old geodatabases if they exist
                     foreach (var geodatabasePath in lstExistingGdb)
                     {
@@ -422,11 +451,33 @@ namespace bagis_pro
 
                     // Assemble a dictionary with rasters we want to copy
                     IDictionary<string, string> rastersToCopy = GetDictOfReqRasters(oAoi.FilePath);
+                    // Accomodate two possible names for raster aoi boundary layer (aoibagis or aoi)
+                    string aoiGdb = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi, true);
+                    IList<string> lstTest = new List<string>
+                    {
+                        oAoi.FilePath + @"\aoibagis"
+                    };
+                    IList<string> existingLayers = await GeneralTools.RasterDatasetsExistAsync(lstTest);
+                    if (existingLayers.Count == 0)
+                    {
+                        lstTest.Clear();
+                        string strLayer = oAoi.FilePath + @"\aoi";
+                        lstTest.Add(strLayer);
+                        existingLayers = await GeneralTools.RasterDatasetsExistAsync(lstTest);
+                        if (existingLayers.Count > 0)
+                        {
+                            rastersToCopy[strLayer] = aoiGdb + Constants.FILE_AOI_RASTER;
+                        }
+                    }
+                    else
+                    {
+                        rastersToCopy[oAoi.FilePath + @"\aoibagis"] = aoiGdb + Constants.FILE_AOI_RASTER;
+                    }
                     // Check to see if optional layers are present
-                    FolderType fType = await GeodatabaseTools.GetAoiFolderTypeAsync(oAoi.FilePath);
+                    FolderType fType = await GeodatabaseTools.GetWeaselAoiFolderTypeAsync(oAoi.FilePath);
                     IDictionary<string, string> optRasterDict = GetDictOptWeaselRasters(oAoi.FilePath, fType);
-                    IList<string> existingRasters = await GeneralTools.RasterDatasetsExistAsync(optRasterDict.Keys);
-                    foreach (var layerPath in existingRasters)
+                    existingLayers = await GeneralTools.RasterDatasetsExistAsync(optRasterDict.Keys);
+                    foreach (var layerPath in existingLayers)
                     {
                         string gdbPath = optRasterDict[layerPath];
                         rastersToCopy[layerPath] = gdbPath;
@@ -466,7 +517,95 @@ namespace bagis_pro
                         }
                     }
                     Module1.Current.ModuleLogManager.LogDebug(nameof(RunImplAsync),
-                        "Raster copy completed with " + errorCount + "errors.");
+                        "Raster copy completed with " + errorCount + " errors.");
+
+                    // Assemble a dictionary with vectors we want to copy
+                    IDictionary<string, string> vectorsToCopy = GetDictOfReqWeaselVectors(oAoi.FilePath);
+                    // Check for an optional vector
+                    lstTest.Clear();
+                    lstTest.Add(oAoi.FilePath + @"\unsnappedpp.shp");
+                    existingLayers = await GeneralTools.ShapefilesExistAsync(lstTest);
+                    if (existingLayers.Count > 0)
+                    {
+                        vectorsToCopy[oAoi.FilePath + @"\unsnappedpp.shp"] = aoiGdb + Constants.FILE_UNSNAPPED_POURPOINT;
+                    }
+
+                    // Vector layers with non-deterministic names in analysis and layers folders
+                    strWeaselFolder = oAoi.FilePath + @"\layers";
+                    strGdbPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers, true);
+                    IList<string> lstVectors = await GeneralTools.GetLayersInFolderAsync(strWeaselFolder, "Shapefile");
+                    foreach (var item in lstVectors)
+                    {
+                        string noExtension = Path.GetFileNameWithoutExtension(item);
+                        vectorsToCopy[strWeaselFolder + "\\" + item] = strGdbPath + noExtension;
+                    }
+                    strWeaselFolder = oAoi.FilePath + @"\analysis";
+                    strGdbPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true);
+                    lstVectors = await GeneralTools.GetLayersInFolderAsync(strWeaselFolder, "Shapefile");
+                    foreach (var item in lstVectors)
+                    {
+                        string noExtension = Path.GetFileNameWithoutExtension(item);
+                        vectorsToCopy[strWeaselFolder + "\\" + item] = strGdbPath + noExtension;
+                    }
+
+                    // Use Geoprocessor to copy the files
+                    errorCount = 0;
+                    foreach (var entry in vectorsToCopy)
+                    {
+                        string strKey = entry.Key;
+                    }
+                    string strTempFile = Path.GetFileName("tmpVector");
+                    string strDirectory = "";
+                    foreach (var entry in vectorsToCopy)
+                    {
+                        IGPResult gpResult = await QueuedTask.Run(() =>
+                        {
+                            var environments = Geoprocessing.MakeEnvironmentArray(workspace: oAoi.FilePath);
+                            strDirectory = Path.GetDirectoryName(entry.Value);
+                            var parameters = Geoprocessing.MakeValueArray(entry.Key, strDirectory, strTempFile);
+                            return Geoprocessing.ExecuteToolAsync("FeatureClassToFeatureClass_conversion", parameters, null,
+                                        CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                        });
+                        if (gpResult.IsFailed)
+                        {
+                            Module1.Current.ModuleLogManager.LogError(nameof(RunImplAsync),
+                                "Failed to convert vector " + entry.Key + "!");
+                            errorCount++;
+                        }
+                        else
+                        {
+                            //There is a bug with using converted shapefiles in Pro; We will make a copy of the converted 
+                            //file and then ultimately delete the final temp file
+                            gpResult = await QueuedTask.Run(() =>
+                            {
+                                var environments = Geoprocessing.MakeEnvironmentArray(workspace: oAoi.FilePath);
+                                strDirectory = Path.GetDirectoryName(entry.Value);
+                                var parameters = Geoprocessing.MakeValueArray(strDirectory + "\\" + strTempFile, entry.Value);
+                                return Geoprocessing.ExecuteToolAsync("CopyFeatures_management", parameters, null,
+                                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                            });
+                            if (gpResult.IsFailed)
+                            {
+                                Module1.Current.ModuleLogManager.LogError(nameof(RunImplAsync),
+                                    "Failed to copy feature class " + entry.Key + "!");
+                                errorCount++;
+                            }
+                        }
+                    }
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(RunImplAsync),
+                        "Vector copy completed with " + errorCount + " errors.");
+                    // Delete temp files
+                    success = await GeoprocessingTools.DeleteDatasetAsync(strDirectory + "\\" + strTempFile);
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(RunImplAsync),
+                            "Deleted temporary vector file " + strDirectory + "\\" + strTempFile);
+                    }
+                    else
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(RunImplAsync),
+                            "Unable to delete temporary vector file " + strDirectory + "\\" + strTempFile);
+                    }
                 }
             }
 

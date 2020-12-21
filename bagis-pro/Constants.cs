@@ -61,6 +61,7 @@ namespace bagis_pro
         public const string FILE_SCOS_REPRESENTED = "scos_rep";
         public const string FILE_SITES_REPRESENTED = "sites_rep";
         public const string FILE_POURPOINT = "pourpoint";
+        public const string FILE_UNSNAPPED_POURPOINT = "unsnappedpp";
         public const string FILE_SLOPE = "slope";
         public const string FILE_ASPECT = "aspect";
         public const string FILE_ROADS = "fs_roads";
