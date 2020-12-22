@@ -574,14 +574,14 @@ namespace bagis_pro
                         }
                         else
                         {
-                            //There is a bug with using converted shapefiles in Pro; We will make a copy of the converted 
-                            //file and then ultimately delete the final temp file
+                            //There is a bug with using converted shapefiles in Pro; We need to rename the converted file 
+                            //so that functions related to extent work
                             gpResult = await QueuedTask.Run(() =>
                             {
                                 var environments = Geoprocessing.MakeEnvironmentArray(workspace: oAoi.FilePath);
                                 strDirectory = Path.GetDirectoryName(entry.Value);
                                 var parameters = Geoprocessing.MakeValueArray(strDirectory + "\\" + strTempFile, entry.Value);
-                                return Geoprocessing.ExecuteToolAsync("CopyFeatures_management", parameters, null,
+                                return Geoprocessing.ExecuteToolAsync("Rename_management", parameters, null,
                                             CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
                             });
                             if (gpResult.IsFailed)
@@ -594,18 +594,6 @@ namespace bagis_pro
                     }
                     Module1.Current.ModuleLogManager.LogDebug(nameof(RunImplAsync),
                         "Vector copy completed with " + errorCount + " errors.");
-                    // Delete temp files
-                    success = await GeoprocessingTools.DeleteDatasetAsync(strDirectory + "\\" + strTempFile);
-                    if (success == BA_ReturnCode.Success)
-                    {
-                        Module1.Current.ModuleLogManager.LogDebug(nameof(RunImplAsync),
-                            "Deleted temporary vector file " + strDirectory + "\\" + strTempFile);
-                    }
-                    else
-                    {
-                        Module1.Current.ModuleLogManager.LogError(nameof(RunImplAsync),
-                            "Unable to delete temporary vector file " + strDirectory + "\\" + strTempFile);
-                    }
                 }
             }
 

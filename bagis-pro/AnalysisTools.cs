@@ -2476,11 +2476,11 @@ namespace bagis_pro
             return success;
         }
 
-        public static async Task<BA_ReturnCode> CalculateElevationZonesAsync()
+        public static async Task<BA_ReturnCode> CalculateElevationZonesAsync(string aoiFilePath)
         {
             Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateElevationZonesAsync),
                 "Get min and max elevation from DEM");
-            IList<double> lstResult = await GeoprocessingTools.GetDemStatsAsync(Module1.Current.Aoi.FilePath, "", 0.005);
+            IList<double> lstResult = await GeoprocessingTools.GetDemStatsAsync(aoiFilePath, "", 0.005);
             double demElevMinMeters = -1;
             double demElevMaxMeters = -1;
             if (lstResult.Count == 2)   // We expect the min and max values in that order
@@ -2491,13 +2491,15 @@ namespace bagis_pro
             else
             {
                 MessageBox.Show("Unable to read DEM. Elevation zones cannot be generated!!", "BAGIS-PRO");
-                Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateElevationZonesAsync),
+                Module1.Current.ModuleLogManager.LogError(nameof(CalculateElevationZonesAsync),
                     "Unable to read min/max elevation from DEM");
                 return BA_ReturnCode.UnknownError;
             }
 
             double aoiElevMin = demElevMinMeters;
             double aoiElevMax = demElevMaxMeters;
+            Module1.Current.ModuleLogManager.LogInfo(nameof(CalculateElevationZonesAsync),
+                "Elevations before conversion: min: " + aoiElevMin + " max: " + aoiElevMax);
             string strDemUnits = (string)Module1.Current.BatchToolSettings.DemUnits;
             string strDemDisplayUnits = (string)Module1.Current.BatchToolSettings.DemDisplayUnits;
             if (!strDemUnits.Equals(strDemDisplayUnits))
@@ -2513,28 +2515,38 @@ namespace bagis_pro
                     aoiElevMax = Math.Round(LinearUnit.Feet.ConvertTo(demElevMaxMeters, LinearUnit.Meters), 2);
                 }
             }
+            Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateElevationZonesAsync),
+                "Elevations after conversion: min: " + aoiElevMin + " max: " + aoiElevMax);
 
-            short[] arrTestIntervals = Constants.VALUES_ELEV_INTERVALS;
-            Array.Reverse(arrTestIntervals);
+            List<short> lstTestIntervals = Constants.VALUES_ELEV_INTERVALS.ToList();
+            lstTestIntervals.Sort((a, b) => b.CompareTo(a)); // descending sort
             short bestInterval = 50;
             var range = aoiElevMax - aoiElevMin;
-            foreach (var testInterval in arrTestIntervals)
+            Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateElevationZonesAsync),
+                "Elevation range: " + range);
+            foreach (var testInterval in lstTestIntervals)
             {
                 double dblZoneCount = range / testInterval;
-                if (dblZoneCount >= (int)Module1.Current.BatchToolSettings.MinElevationZonesCount)
+                Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateElevationZonesAsync),
+                    "Test interval: " + testInterval + " Zone count: " + dblZoneCount);
+                if (dblZoneCount >= (int) Module1.Current.BatchToolSettings.MinElevationZonesCount)
                 {
                     bestInterval = testInterval;
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateElevationZonesAsync),
+                        "Setting best interval");
                     break;
                 }
             }
+            Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateElevationZonesAsync),
+                "Best interval: " + bestInterval);
             IList<BA_Objects.Interval> lstInterval = AnalysisTools.GetElevationClasses(aoiElevMin, aoiElevMax,
                 bestInterval, strDemUnits, strDemDisplayUnits);
-            string strLayer = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Surfaces, true) +
+            string strLayer = GeodatabaseTools.GetGeodatabasePath(aoiFilePath, GeodatabaseNames.Surfaces, true) +
                 Constants.FILE_DEM_FILLED;
-            string strZonesRaster = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) +
+            string strZonesRaster = GeodatabaseTools.GetGeodatabasePath(aoiFilePath, GeodatabaseNames.Analysis, true) +
                 Constants.FILE_ELEV_ZONE;
-            string strMaskPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_BUFFERED_VECTOR;
-            BA_ReturnCode success = await AnalysisTools.CalculateZonesAsync(Module1.Current.Aoi.FilePath, strLayer,
+            string strMaskPath = GeodatabaseTools.GetGeodatabasePath(aoiFilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_BUFFERED_VECTOR;
+            BA_ReturnCode success = await AnalysisTools.CalculateZonesAsync(aoiFilePath, strLayer,
                 lstInterval, strZonesRaster, strMaskPath, "ELEVATION");
             if (success == BA_ReturnCode.Success)
             {
@@ -2756,6 +2768,7 @@ namespace bagis_pro
                 string strMaskPath = GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_BUFFERED_VECTOR;
                 if (hasSnotel)
                 {
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateSitesZonesAsync), "Begin create Snotel zone");
                     lstInterval = await GeodatabaseTools.GetUniqueSortedValuesAsync(uri, Constants.FILE_SNOTEL,
                         Constants.FIELD_SITE_ELEV, Constants.FIELD_SITE_NAME, demElevMaxMeters, demElevMinMeters);
                     strLayer = GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Surfaces, true) +
@@ -2764,15 +2777,24 @@ namespace bagis_pro
                         Constants.FILE_SNOTEL_ZONE;
                     success = await AnalysisTools.CalculateZonesAsync(aoiFolderPath, strLayer,
                         lstInterval, strZonesRaster, strMaskPath, "SNOTEL");
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateSitesZonesAsync), "Snotel zones created");
+                    }
                 }
                 if (hasSnowCourse)
                 {
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateSitesZonesAsync), "Begin create Snow Course zone");
                     lstInterval = await GeodatabaseTools.GetUniqueSortedValuesAsync(uri, Constants.FILE_SNOW_COURSE,
                         Constants.FIELD_SITE_ELEV, Constants.FIELD_SITE_NAME, demElevMaxMeters, demElevMinMeters);
                     strZonesRaster = GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Analysis, true) +
-                        Constants.FILE_SNOW_COURSE;
+                        Constants.FILE_SCOS_ZONE;
                     success = await AnalysisTools.CalculateZonesAsync(aoiFolderPath, strLayer,
                         lstInterval, strZonesRaster, strMaskPath, "SNOW COURSE");
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateSitesZonesAsync), "Snow course zones created");
+                    }
                 }
             }
             catch (Exception e)

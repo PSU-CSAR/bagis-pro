@@ -302,7 +302,7 @@ namespace bagis_pro
                     }
 
                     // Elevation zones
-                    BA_ReturnCode success = await AnalysisTools.CalculateElevationZonesAsync();
+                    BA_ReturnCode success = await AnalysisTools.CalculateElevationZonesAsync(Module1.Current.Aoi.FilePath);
                     if (success != BA_ReturnCode.Success)
                     {
                         errorCount++;

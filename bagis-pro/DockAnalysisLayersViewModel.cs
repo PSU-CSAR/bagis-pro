@@ -276,7 +276,7 @@ namespace bagis_pro
 
                 if (calculateElevation)
                 {
-                    success = await AnalysisTools.CalculateElevationZonesAsync();
+                    success = await AnalysisTools.CalculateElevationZonesAsync(Module1.Current.Aoi.FilePath);
                     if (success == BA_ReturnCode.Success)
                     {
                         layersPane.ElevationZones_Checked = false;

@@ -553,7 +553,7 @@ namespace bagis_pro
 
         public static async Task RemoveLayersfromMapFrame()
         {
-            string[] arrLayerNames = new string[22];
+            string[] arrLayerNames = new string[23];
             arrLayerNames[0] = Constants.MAPS_AOI_BOUNDARY;
             arrLayerNames[1] = Constants.MAPS_STREAMS;
             arrLayerNames[2] = Constants.MAPS_SNOTEL;
@@ -568,8 +568,9 @@ namespace bagis_pro
             arrLayerNames[11] = Constants.MAPS_PRISM_ZONE;
             arrLayerNames[12] = Module1.Current.RoadsLayerLegend;
             arrLayerNames[13] = Constants.MAPS_PUBLIC_LAND;
-            arrLayerNames[14] = Constants.MAPS_SITES_LOCATION;
-            int idxLayerNames = 15;
+            arrLayerNames[14] = Constants.MAPS_BELOW_TREELINE;
+            arrLayerNames[15] = Constants.MAPS_SITES_LOCATION;
+            int idxLayerNames = 16;
             for (int i = 0; i < Constants.LAYER_NAMES_SNODAS_SWE.Length; i++)
             {
                 arrLayerNames[idxLayerNames] = Constants.LAYER_NAMES_SNODAS_SWE[i];
