@@ -144,6 +144,8 @@ namespace bagis_pro
 
                     // Set logger to parent folder directory
                     Module1.Current.ModuleLogManager.UpdateLogFileLocation(strLogFolder);
+                    string strLogEntry = "BEGIN populating conversion tool select list\r\n";
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(CmdAoiFolder), strLogEntry);
 
                     Names.Clear();
                     try
@@ -154,13 +156,24 @@ namespace bagis_pro
                         folders[folders.Length-1] = AoiFolder;
                         foreach (var item in folders)
                         {
-                            FolderType fType = await GeodatabaseTools.GetWeaselAoiFolderTypeAsync(item);
+                            FolderType fType = FolderType.FOLDER;
+                            if (item.Contains(" "))
+                            {
+                                strLogEntry = item + " contains a space and cannot be an AOI\r\n";
+                                Module1.Current.ModuleLogManager.LogDebug(nameof(CmdAoiFolder), strLogEntry);
+                            }
+                            else
+                            {
+                                fType = await GeodatabaseTools.GetWeaselAoiFolderTypeAsync(item);
+                            }
                             if (fType != FolderType.AOI)
                             {
                                 // Currently we only support conversion for AOI but BASIN may be implemented in the future
                             }
                             else
                             {
+                                strLogEntry = "Checking layers in " + item + "\r\n";
+                                Module1.Current.ModuleLogManager.LogDebug(nameof(CmdAoiFolder), strLogEntry);
                                 IDictionary<string, string> reqRasterDict = GetDictOfReqRasters(item, fType);
                                 IList<string> existsLayersList = await GeneralTools.RasterDatasetsExistAsync(reqRasterDict.Keys);
                                 IList<string> missingReqLayersList = new List<string>();
@@ -227,6 +240,8 @@ namespace bagis_pro
                                 }
                                 else
                                 {
+                                    strLogEntry = "Required layers are there. Checking optional layers \r\n";
+                                    Module1.Current.ModuleLogManager.LogDebug(nameof(CmdAoiFolder), strLogEntry);
                                     IList<string> missingOptLayersList = new List<string>();
                                     IDictionary<string, string> optRasterDict = GetDictOptWeaselRasters(item, fType);
                                     IList<string> existsOptLayersList = await GeneralTools.RasterDatasetsExistAsync(optRasterDict.Keys);
@@ -275,6 +290,8 @@ namespace bagis_pro
                                         }
                                     }
                                     Names.Add(aoi);
+                                    strLogEntry = item + " added to select list \r\n";
+                                    Module1.Current.ModuleLogManager.LogDebug(nameof(CmdAoiFolder), strLogEntry);
                                     ManageRunButton();
                                 }
                             }
@@ -282,9 +299,12 @@ namespace bagis_pro
                     }
                     catch (Exception e)
                     {
-                        string strLogEntry = "An error occurred while interrogating the subdirectories " + e.StackTrace + "\r\n";
+                        strLogEntry = "An error occurred while interrogating the subdirectories " + e.StackTrace + "\r\n";
                         Module1.Current.ModuleLogManager.LogError(nameof(CmdAoiFolder), strLogEntry);
                     }
+                    strLogEntry = "END populating conversion tool select list\r\n";
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(CmdAoiFolder), strLogEntry);
+
                 });
             }
         }
