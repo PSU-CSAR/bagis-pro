@@ -149,16 +149,19 @@ namespace bagis_pro
                     try
                     {
                         string[] folders = Directory.GetDirectories(AoiFolder, "*", SearchOption.AllDirectories);
+                        // Add parent folder
+                        Array.Resize(ref folders, folders.Length + 1);
+                        folders[folders.Length-1] = AoiFolder;
                         foreach (var item in folders)
                         {
                             FolderType fType = await GeodatabaseTools.GetWeaselAoiFolderTypeAsync(item);
-                            if (fType == FolderType.FOLDER)
+                            if (fType != FolderType.AOI)
                             {
-                                // Do nothing; skip
+                                // Currently we only support conversion for AOI but BASIN may be implemented in the future
                             }
                             else
                             {
-                                IDictionary<string, string> reqRasterDict = GetDictOfReqRasters(item);
+                                IDictionary<string, string> reqRasterDict = GetDictOfReqRasters(item, fType);
                                 IList<string> existsLayersList = await GeneralTools.RasterDatasetsExistAsync(reqRasterDict.Keys);
                                 IList<string> missingReqLayersList = new List<string>();
                                 if (existsLayersList.Count < reqRasterDict.Keys.Count)
@@ -172,29 +175,32 @@ namespace bagis_pro
                                     }
                                 }
                                 // Accomodate two possible names for raster aoi boundary layer (aoibagis or aoi)
-                                string aoiGdb = GeodatabaseTools.GetGeodatabasePath(item, GeodatabaseNames.Aoi, true);
                                 IList<string> lstTest = new List<string>
                                 {
                                     item + @"\aoibagis"
                                 };
-                                existsLayersList = await GeneralTools.RasterDatasetsExistAsync(lstTest);
-                                if (existsLayersList.Count == 0)
+                                string aoiGdb = GeodatabaseTools.GetGeodatabasePath(item, GeodatabaseNames.Aoi, true);
+                                if (fType == FolderType.AOI)
                                 {
-                                    lstTest.Clear();
-                                    string strLayer = item + @"\aoi";
-                                    lstTest.Add(strLayer);
                                     existsLayersList = await GeneralTools.RasterDatasetsExistAsync(lstTest);
-                                    reqRasterDict[strLayer] = aoiGdb + Constants.FILE_AOI_RASTER;
                                     if (existsLayersList.Count == 0)
                                     {
-                                        missingReqLayersList.Add(item + @"\aoibagis");
+                                        lstTest.Clear();
+                                        string strLayer = item + @"\aoi";
+                                        lstTest.Add(strLayer);
+                                        existsLayersList = await GeneralTools.RasterDatasetsExistAsync(lstTest);
+                                        reqRasterDict[strLayer] = aoiGdb + Constants.FILE_AOI_RASTER;
+                                        if (existsLayersList.Count == 0)
+                                        {
+                                            missingReqLayersList.Add(item + @"\aoibagis");
+                                        }
+                                    }
+                                    else
+                                    {
+                                        reqRasterDict[item + @"\aoibagis"] = aoiGdb + Constants.FILE_AOI_RASTER;
                                     }
                                 }
-                                else
-                                {
-                                    reqRasterDict[item + @"\aoibagis"] = aoiGdb + Constants.FILE_AOI_RASTER;
-                                }
-                                IDictionary<string, string> reqVectorDict = GetDictOfReqWeaselVectors(item);
+                                IDictionary<string, string> reqVectorDict = GetDictOfReqWeaselVectors(item, fType);
                                 existsLayersList = await GeneralTools.ShapefilesExistAsync(reqVectorDict.Keys);
                                 if (reqVectorDict.Keys.Count > existsLayersList.Count)
                                 {
@@ -296,7 +302,7 @@ namespace bagis_pro
         }
 
         // Maps the weasel files to their fgdb locations; key is weasel path and value is fgdb path
-        IDictionary<string, string> GetDictOfReqRasters(string aoiPath)
+        IDictionary<string, string> GetDictOfReqRasters(string aoiPath, FolderType fType)
         {
             IDictionary<string, string> dictRasters = new Dictionary<string, string>();
             // surfaces layers
@@ -318,32 +324,38 @@ namespace bagis_pro
             dictRasters[weaselPath] = gdbPath;
 
             // A couple of aoi layers
-            string aoiGdb = GeodatabaseTools.GetGeodatabasePath(aoiPath, GeodatabaseNames.Aoi, true);
-            weaselPath = aoiPath + @"\aoib";
-            gdbPath = aoiGdb + Constants.FILE_AOI_BUFFERED_RASTER;
-            dictRasters[weaselPath] = gdbPath;
-            weaselPath = aoiPath + @"\p_aoi";
-            gdbPath = aoiGdb + Constants.FILE_AOI_PRISM_RASTER;
-            dictRasters[weaselPath] = gdbPath;
+            if (fType == FolderType.AOI)
+            {
+                string aoiGdb = GeodatabaseTools.GetGeodatabasePath(aoiPath, GeodatabaseNames.Aoi, true);
+                weaselPath = aoiPath + @"\aoib";
+                gdbPath = aoiGdb + Constants.FILE_AOI_BUFFERED_RASTER;
+                dictRasters[weaselPath] = gdbPath;
+                weaselPath = aoiPath + @"\p_aoi";
+                gdbPath = aoiGdb + Constants.FILE_AOI_PRISM_RASTER;
+                dictRasters[weaselPath] = gdbPath;
+            }
             return dictRasters;
         }
 
-        IDictionary<string, string> GetDictOfReqWeaselVectors(string aoiPath)
+        IDictionary<string, string> GetDictOfReqWeaselVectors(string aoiPath, FolderType fType)
         {
             IDictionary<string, string> dictVectors = new Dictionary<string, string>();
             string aoiGdb = GeodatabaseTools.GetGeodatabasePath(aoiPath, GeodatabaseNames.Aoi, true);
             string layerPath = aoiPath + @"\aoi_v.shp";
             string gdbPath = aoiGdb + Constants.FILE_AOI_VECTOR;
             dictVectors[layerPath] = gdbPath;
-            layerPath = aoiPath + @"\aoib_v.shp";
-            gdbPath = aoiGdb + Constants.FILE_AOI_BUFFERED_VECTOR;
-            dictVectors[layerPath] = gdbPath;
-            layerPath = aoiPath + @"\p_aoi_v.shp";
-            gdbPath = aoiGdb + Constants.FILE_AOI_PRISM_VECTOR;
-            dictVectors[layerPath] = gdbPath;
-            layerPath = aoiPath + @"\pourpoint.shp";
-            gdbPath = aoiGdb + Constants.FILE_POURPOINT;
-            dictVectors[layerPath] = gdbPath;
+            if (fType == FolderType.AOI)
+            {
+                layerPath = aoiPath + @"\aoib_v.shp";
+                gdbPath = aoiGdb + Constants.FILE_AOI_BUFFERED_VECTOR;
+                dictVectors[layerPath] = gdbPath;
+                layerPath = aoiPath + @"\p_aoi_v.shp";
+                gdbPath = aoiGdb + Constants.FILE_AOI_PRISM_VECTOR;
+                dictVectors[layerPath] = gdbPath;
+                layerPath = aoiPath + @"\pourpoint.shp";
+                gdbPath = aoiGdb + Constants.FILE_POURPOINT;
+                dictVectors[layerPath] = gdbPath;
+            }
             return dictVectors;
         }
 
@@ -390,6 +402,19 @@ namespace bagis_pro
             return lstBagisGdb;
         }
 
+        IList<string> CheckForBasinGdb(string aoiPath)
+        {
+            IList<string> lstBasinGdb = new List<string>();
+            foreach (var strName in GeodatabaseNames.BasinNames)
+            {
+                if (Directory.Exists(aoiPath + "\\" + strName))
+                {
+                    lstBasinGdb.Add(aoiPath + "\\" + strName);
+                }
+            }
+            return lstBasinGdb;
+        }
+
         private async void RunImplAsync(object param)
         {
             // Bring GP History tool forward
@@ -405,7 +430,17 @@ namespace bagis_pro
             {
                 if (oAoi.AoiBatchIsSelected)
                 {
-                    IList<string> lstExistingGdb = CheckForBagisGdb(oAoi.FilePath);
+                    // Currently only support AOI conversion but BASIN may be added in future
+                    FolderType fType = await GeodatabaseTools.GetWeaselAoiFolderTypeAsync(oAoi.FilePath);
+                    IList<string> lstExistingGdb = null;
+                    if (fType == FolderType.AOI)
+                    {
+                        lstExistingGdb = CheckForBagisGdb(oAoi.FilePath);
+                    }
+                    else
+                    {
+                        lstExistingGdb = CheckForBasinGdb(oAoi.FilePath);
+                    }
 
                     // Make directory for log if it doesn't exist
                     if (!Directory.Exists(oAoi.FilePath + "\\" + Constants.FOLDER_LOGS))
@@ -438,7 +473,7 @@ namespace bagis_pro
                     }
 
                     // Create new geodatabases
-                    BA_ReturnCode success = await GeodatabaseTools.CreateGeodatabaseFoldersAsync(oAoi.FilePath);
+                    BA_ReturnCode success = await GeodatabaseTools.CreateGeodatabaseFoldersAsync(oAoi.FilePath, fType);
                     if (success == BA_ReturnCode.Success)
                     {
                         Module1.Current.ModuleLogManager.LogInfo(nameof(RunImplAsync),
@@ -450,31 +485,34 @@ namespace bagis_pro
                     }
 
                     // Assemble a dictionary with rasters we want to copy
-                    IDictionary<string, string> rastersToCopy = GetDictOfReqRasters(oAoi.FilePath);
+                    IDictionary<string, string> rastersToCopy = GetDictOfReqRasters(oAoi.FilePath, fType);
                     // Accomodate two possible names for raster aoi boundary layer (aoibagis or aoi)
-                    string aoiGdb = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi, true);
                     IList<string> lstTest = new List<string>
                     {
                         oAoi.FilePath + @"\aoibagis"
                     };
-                    IList<string> existingLayers = await GeneralTools.RasterDatasetsExistAsync(lstTest);
-                    if (existingLayers.Count == 0)
+                    string aoiGdb = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi, true);
+                    IList<string> existingLayers = null;
+                    if (fType == FolderType.AOI)
                     {
-                        lstTest.Clear();
-                        string strLayer = oAoi.FilePath + @"\aoi";
-                        lstTest.Add(strLayer);
                         existingLayers = await GeneralTools.RasterDatasetsExistAsync(lstTest);
-                        if (existingLayers.Count > 0)
+                        if (existingLayers.Count == 0)
                         {
-                            rastersToCopy[strLayer] = aoiGdb + Constants.FILE_AOI_RASTER;
+                            lstTest.Clear();
+                            string strLayer = oAoi.FilePath + @"\aoi";
+                            lstTest.Add(strLayer);
+                            existingLayers = await GeneralTools.RasterDatasetsExistAsync(lstTest);
+                            if (existingLayers.Count > 0)
+                            {
+                                rastersToCopy[strLayer] = aoiGdb + Constants.FILE_AOI_RASTER;
+                            }
+                        }
+                        else
+                        {
+                            rastersToCopy[oAoi.FilePath + @"\aoibagis"] = aoiGdb + Constants.FILE_AOI_RASTER;
                         }
                     }
-                    else
-                    {
-                        rastersToCopy[oAoi.FilePath + @"\aoibagis"] = aoiGdb + Constants.FILE_AOI_RASTER;
-                    }
                     // Check to see if optional layers are present
-                    FolderType fType = await GeodatabaseTools.GetWeaselAoiFolderTypeAsync(oAoi.FilePath);
                     IDictionary<string, string> optRasterDict = GetDictOptWeaselRasters(oAoi.FilePath, fType);
                     existingLayers = await GeneralTools.RasterDatasetsExistAsync(optRasterDict.Keys);
                     foreach (var layerPath in existingLayers)
@@ -520,7 +558,7 @@ namespace bagis_pro
                         "Raster copy completed with " + errorCount + " errors.");
 
                     // Assemble a dictionary with vectors we want to copy
-                    IDictionary<string, string> vectorsToCopy = GetDictOfReqWeaselVectors(oAoi.FilePath);
+                    IDictionary<string, string> vectorsToCopy = GetDictOfReqWeaselVectors(oAoi.FilePath, fType);
                     // Check for an optional vector
                     lstTest.Clear();
                     lstTest.Add(oAoi.FilePath + @"\unsnappedpp.shp");

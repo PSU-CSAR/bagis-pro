@@ -1621,10 +1621,19 @@ namespace bagis_pro
 
             try
             {
+                // Check the parent directory
+                FolderType fType = await GeodatabaseTools.GetAoiFolderTypeAsync(parentFolder);
+                if (fType == FolderType.AOI)
+                {
+                    BA_Objects.Aoi aoi = new BA_Objects.Aoi(Path.GetFileName(parentFolder), parentFolder);
+                    lstAoiPaths.Add(aoi);
+                }
+
+                // Check all the child directories
                 string[] folders = Directory.GetDirectories(parentFolder, "*", SearchOption.AllDirectories);
                 foreach (var item in folders)
                 {
-                    FolderType fType = await GeodatabaseTools.GetAoiFolderTypeAsync(item);
+                    fType = await GeodatabaseTools.GetAoiFolderTypeAsync(item);
                     if (fType == FolderType.AOI)
                     {
                         BA_Objects.Aoi aoi = new BA_Objects.Aoi(Path.GetFileName(item), item);

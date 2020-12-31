@@ -29,6 +29,7 @@ namespace bagis_pro
         public static GeodatabaseNames Analysis { get { return new GeodatabaseNames("analysis.gdb"); } }
 
         public static string[] AllNames = { Aoi.Value, Prism.Value, Layers.Value, Surfaces.Value, Analysis.Value };
+        public static string[] BasinNames = { Aoi.Value, Surfaces.Value };
     }
 
     public class GeodatabaseTools
@@ -977,26 +978,33 @@ namespace bagis_pro
             return lstInterval;
         }
 
-        public static async Task<BA_ReturnCode> CreateGeodatabaseFoldersAsync(string strAoiPath)
+        public static async Task<BA_ReturnCode> CreateGeodatabaseFoldersAsync(string strAoiPath, FolderType fType)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
             await QueuedTask.Run(() =>
             {
                 var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath);
-                foreach (var item in GeodatabaseNames.AllNames)
+                string[] arrGeodatabaseNames = GeodatabaseNames.AllNames;
+                if (fType == FolderType.BASIN)
                 {
-                    var parameters = Geoprocessing.MakeValueArray(strAoiPath, item);
-                    var gpResult = Geoprocessing.ExecuteToolAsync("CreateFileGDB_management", parameters, environments,
-                                                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                    arrGeodatabaseNames = GeodatabaseNames.BasinNames;
+                }
+                {
+                    foreach (var item in arrGeodatabaseNames)
+                    {
+                        var parameters = Geoprocessing.MakeValueArray(strAoiPath, item);
+                        var gpResult = Geoprocessing.ExecuteToolAsync("CreateFileGDB_management", parameters, environments,
+                                                        CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
 
-                    if (gpResult.Result.IsFailed)
-                    {
-                        Module1.Current.ModuleLogManager.LogError(nameof(CreateGeodatabaseFoldersAsync),
-                            "Unable to create file geodatabase. Error code: " + gpResult.Result.ErrorCode);
-                    }
-                    else
-                    {
-                        success = BA_ReturnCode.Success;
+                        if (gpResult.Result.IsFailed)
+                        {
+                            Module1.Current.ModuleLogManager.LogError(nameof(CreateGeodatabaseFoldersAsync),
+                                "Unable to create file geodatabase. Error code: " + gpResult.Result.ErrorCode);
+                        }
+                        else
+                        {
+                            success = BA_ReturnCode.Success;
+                        }
                     }
                 }
             });
