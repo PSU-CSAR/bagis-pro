@@ -117,7 +117,7 @@ namespace bagis_pro
                 //===========================
                 //Zonal Statistics
                 //===========================
-                string strTable = "tblZones";
+                string strTable = "tblExcelZones";
                 string sMask = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_RASTER;
                 var environments = Geoprocessing.MakeEnvironmentArray(workspace: Module1.Current.Aoi.FilePath, 
                     snapRaster: BA_Objects.Aoi.SnapRasterPath(Module1.Current.Aoi.FilePath), mask: sMask);
@@ -269,7 +269,7 @@ namespace bagis_pro
             //===========================
             //Zonal Statistics
             //===========================
-            string strTable = "tblZones";
+            string strTable = "tblExcelZones";
             IGPResult gpResult = await QueuedTask.Run(() =>
             {
                 //string sMask = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_VECTOR;
@@ -392,7 +392,6 @@ namespace bagis_pro
             //===========================
             //Zonal Statistics
             //===========================
-            string strTable = "tblZones";
             // We assume elevation zones is the smaller cell size. Could not find api to set cell size to minimum of layers
             double dblCellSize = await GeodatabaseTools.GetCellSizeAsync(uriElevZones, Constants.FILE_ELEV_ZONE);
             IGPResult gpResult = await QueuedTask.Run(() =>
@@ -401,7 +400,7 @@ namespace bagis_pro
                 var environments = Geoprocessing.MakeEnvironmentArray(workspace: Module1.Current.Aoi.FilePath, snapRaster: BA_Objects.Aoi.SnapRasterPath(Module1.Current.Aoi.FilePath),
                     mask: sMask, cellSize: dblCellSize);
                 string strInZoneData = uriElevZones.LocalPath + "\\" + Constants.FILE_ELEV_ZONE;
-                string strOutTable = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) + strTable;
+                string strOutTable = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) + Constants.FILE_ELEV_ZONES_TBL;
                 var parameters = Geoprocessing.MakeValueArray(strInZoneData, Constants.FIELD_VALUE, precipPath, strOutTable);
                 return Geoprocessing.ExecuteToolAsync("ZonalStatisticsAsTable_sa", parameters, environments,
                             CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
@@ -448,6 +447,9 @@ namespace bagis_pro
             pworksheet.Columns[15].NumberFormat = strNumberFormat;
             pworksheet.Cells[1, 16] = "%_VOL_CUMU";
             pworksheet.Columns[16].NumberFormat = strNumberFormat;
+            pworksheet.Cells[1, 17] = "ODDS_RATIO";
+            pworksheet.Columns[17].NumberFormat = strNumberFormat;
+
 
             //============================================
             // Populate Elevation and Percent Area Rows
@@ -455,7 +457,7 @@ namespace bagis_pro
             Uri analysisUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false));
             await QueuedTask.Run(() => {
                 using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(analysisUri)))
-                using (Table statisticsTable = geodatabase.OpenDataset<Table>(strTable))
+                using (Table statisticsTable = geodatabase.OpenDataset<Table>(Constants.FILE_ELEV_ZONES_TBL))
                 {
                     long rasterValueCount = statisticsTable.GetCount();
                     long sumOfCount = 0;
@@ -575,14 +577,21 @@ namespace bagis_pro
             currentLetterNumber++;
             currentLetter = (char)(currentLetterNumber + 65);
             string cumuString = Convert.ToString(currentLetter);
+            currentLetterNumber = (AreaCol) % 26;
+            currentLetter = (char)(currentLetterNumber + 65);
+            string oddsString = Convert.ToString(currentLetter);
             for (i = 1; i <= intCount; i++)
             {
                 Range pctRange = pPRSIMWS.Cells[i + 2, PercentCol];
                 Range volumeRange = pPRSIMWS.Cells[i + 2, VolumeCol];
                 pctRange.Value = volumeRange.Value * 100 / total_vol;
                 string strFormula = "=" + percentString + (i+2) + "+" + cumuString + (i+1);
-                Range cumuRange = pPRSIMWS.Cells[i + 2, PercentCol + 1];
+                Range cumuRange = pPRSIMWS.Cells[i + 2, PercentCol + 1];    // %_VOL_CUMU
                 cumuRange.Formula = strFormula;
+                Range oddsRange = pPRSIMWS.Cells[i + 2, PercentCol + 2];    // ODDS_RATIO
+
+                string strOddsFormula = "=" + percentString + (i + 2) + "/" + oddsString + (i + 2);
+                oddsRange.Formula = strOddsFormula;
             }
             pPRSIMWS.Columns.AutoFit();   // re-size every column to best fit after data is written
             return intCount;
@@ -878,7 +887,7 @@ namespace bagis_pro
             //===========================
             //Zonal Statistics
             //===========================
-            string strTable = "tblZones";
+            string strTable = "tblExcelZones";
             IGPResult gpResult = await QueuedTask.Run(() =>
             {
                 string sMask = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_RASTER;
@@ -1037,7 +1046,7 @@ namespace bagis_pro
             //===========================
             //Zonal Statistics
             //===========================
-            string strTable = "tblZones";
+            string strTable = "tblExcelZones";
             IGPResult gpResult = await QueuedTask.Run(() =>
             {
                 string sMask = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_RASTER;

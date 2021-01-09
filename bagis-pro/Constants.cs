@@ -72,6 +72,7 @@ namespace bagis_pro
         public const string FILE_ASP_ZONE_PREC_TBL = "precmeanelev_tbl";
         public const string FILE_MERGED_SITES = "merged_sites";
         public const string FILE_PREC_STEL = "prec_stel";
+        public const string FILE_ELEV_ZONES_TBL = "tblZones";
         public const string FILE_SETTINGS = "analysis.xml";
         public const string FILE_BATCH_TOOL_SETTINGS = "batch_tool_settings.json";
         public const string FILE_BATCH_LOG = "batch_tool_log.txt";
