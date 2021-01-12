@@ -518,6 +518,13 @@ namespace bagis_pro
                     WorksheetFunction wsf = objExcel.WorksheetFunction;
                     Microsoft.Office.Interop.Excel.Range rng = pPRISMWorkSheet.Range["O3:O" + lastRow];
                     MaxPct = wsf.Max(rng);
+
+                    // Update table with Critical Precipitation Zone information
+                    Uri uriElevZones = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false));
+                    IList<BA_Objects.Interval> lstIntervals = await GeodatabaseTools.ReadReclassRasterAttribute(uriElevZones, Constants.FILE_ELEV_ZONE);
+                    double dblMinOddsRatio = (double) Module1.Current.BatchToolSettings.CriticalPrecipMinOddsRatio;                   
+                    double dblMaxPctArea = (double)Module1.Current.BatchToolSettings.CriticalPrecipMaxPctArea;
+                    ExcelTools.GetCriticalPrecipitationZones(pPRISMWorkSheet, lstIntervals, dblMinOddsRatio, dblMaxPctArea);
                 }
 
                 // Try to get elevation interval from analysis.xml settings file
@@ -644,7 +651,7 @@ namespace bagis_pro
 
                     //Cumulative precip table
                     pathToSave = sOutputFolder + "\\" + Constants.FILE_EXPORT_TABLE_PRECIP_REPRESENT_PDF;
-                    pPRISMWorkSheet.PageSetup.PrintArea = "$A$1:$P$" + lastRow;
+                    pPRISMWorkSheet.PageSetup.PrintArea = "$A$1:$Q$" + lastRow;
                     pPRISMWorkSheet.PageSetup.Orientation = XlPageOrientation.xlLandscape;
                     pPRISMWorkSheet.PageSetup.Zoom = false;     // Required to print on one page
                     pPRISMWorkSheet.PageSetup.PaperSize = oReqPaperSize;    // Required to print on one page

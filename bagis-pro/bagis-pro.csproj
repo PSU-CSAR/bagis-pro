@@ -248,7 +248,6 @@
     <Content Include="NLog.config">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <None Include="batch_tool_settings.json" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>

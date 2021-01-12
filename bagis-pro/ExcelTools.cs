@@ -1404,7 +1404,7 @@ namespace bagis_pro
 
             // Set series for precip/elevation values
             long nrecords = ExcelTools.CountRecords(pPrecipElvWorksheet, 1);
-            string precipValueRange = "A2:A" + (nrecords + 1) ;
+            string precipValueRange = "A2:A" + (nrecords + 1);
             string xDemValueRange = "B2:B" + (nrecords + 1);
 
             // precip/elevation values scatterplot for each cell
@@ -1497,7 +1497,7 @@ namespace bagis_pro
             categoryAxis.AxisTitle.Orientation = 0;
             categoryAxis.AxisTitle.Font.Bold = true;
             // minValue was already converted to display units by the calling function
-            categoryAxis.MinimumScale = (int) minValue;
+            categoryAxis.MinimumScale = (int)minValue;
             categoryAxis.TickLabels.Font.Size = 10;
             categoryAxis.MajorTickMark = Microsoft.Office.Interop.Excel.XlTickMark.xlTickMarkOutside;
             categoryAxis.Border.LineStyle = XlLineStyle.xlContinuous;
@@ -1521,6 +1521,75 @@ namespace bagis_pro
                                                TextFrame.Characters().Text = textBoxSettings.Message;
             return BA_ReturnCode.Success;
 
+        }
+
+        public static IList<string> GetCriticalPrecipitationZones(Worksheet pPRSIMWS, IList<BA_Objects.Interval> lstIntervals,
+            double dblMinOddsRatio, double dblMaxPctArea)
+        {
+            IList<string> lstCriticalZones = new List<string>();
+            Dictionary<string, double> dictPctAreaDem = new Dictionary<string, double>();
+            IList<string> lstMinAreaZones = new List<string>();
+            IList<string> lstOddsRatio = new List<string>();
+            int intZones = lstIntervals.Count;
+            double minArea = 100 / (2.0F * intZones);
+            int currentRow = 3;
+            Range pRange = pPRSIMWS.Cells[currentRow, 1];
+            int intCount = 0;
+            int idxPctAreaDem = 13;
+            int idxOddsRatio = 17;
+            int idxValue = 1;
+            while (!string.IsNullOrEmpty(pRange.Text.ToString()))
+            {
+                string strZone = Convert.ToString(lstIntervals[currentRow - 3].Value);
+                Range pctAreaRange = pPRSIMWS.Cells[currentRow, idxPctAreaDem];
+                double demPctArea = Convert.ToDouble(pctAreaRange.Value);
+                dictPctAreaDem.Add(strZone, demPctArea);
+                // Meets minimum area pct criterium
+                if (demPctArea > minArea)
+                {
+                    lstMinAreaZones.Add(strZone);
+                    pctAreaRange.Interior.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.Orange);
+                }
+                Range oddsRatioRange = pPRSIMWS.Cells[currentRow, idxOddsRatio];
+                // Meets odds range criterium
+                if (Convert.ToDouble(oddsRatioRange.Value) >= dblMinOddsRatio)
+                {
+                    lstOddsRatio.Add(strZone);
+                    oddsRatioRange.Interior.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.LightBlue);
+                }
+                currentRow++;
+                pRange = pPRSIMWS.Cells[currentRow, 1];
+                intCount++;
+            }
+            // Intersect minimum area pct and odds range criteria
+            var lstIntersect = lstMinAreaZones.Select(i => i).Intersect(lstOddsRatio);
+            var sortedDict = from entry in dictPctAreaDem orderby entry.Value descending select entry;
+            double runningTotal = 0.0F;
+            foreach (var kvPair in sortedDict)
+            {
+                // Check to make sure first 2 criteria have been met
+                if (lstIntersect.Contains(kvPair.Key))
+                {
+                    runningTotal = runningTotal + kvPair.Value;
+                    lstCriticalZones.Add(kvPair.Key);
+                    if (runningTotal > dblMaxPctArea)
+                    {
+                        break;
+                    }
+                }
+            }
+            // Add style to critical precipitation zone elevations
+            currentRow = 3;
+            for (int i = 0; i < intCount; i++)
+            {
+                if (lstCriticalZones.Contains(Convert.ToString(i)))
+                {
+                    Range valueRange = pPRSIMWS.Cells[currentRow, idxValue];
+                    valueRange.Interior.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.Red);
+                }
+                currentRow++;
+            }
+            return lstCriticalZones;
         }
 
         }
