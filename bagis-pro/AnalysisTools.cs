@@ -2003,6 +2003,50 @@ namespace bagis_pro
             return success;
         }
 
+        public static async Task<BA_ReturnCode> ExtractCriticalPrecipitationZonesAsync(string strAoiPath, IList<string> lstCriticalZoneValues)
+        {
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            Uri uriAnalysisGdb = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Analysis));
+            // Make sure the elevation zones vector exists
+            if (! await GeodatabaseTools.FeatureClassExistsAsync(uriAnalysisGdb, Constants.FILE_ELEV_ZONES_VECTOR))
+            {
+                MessageBox.Show("The elevation zones vector is missing. Generate the elevation zones layer and try again!!", "BAGIS-PRO");
+                Module1.Current.ModuleLogManager.LogDebug(nameof(GetPublicLandsAsync),
+                    "Unable to extract critical precipitation zones because elevation zones vector does not exist. Process stopped!!");
+                return success;
+            }
+            await QueuedTask.Run(() =>
+            {
+                // Create feature layer so we can use definition query to select public lands
+                var uriTemp = new Uri(uriAnalysisGdb.LocalPath + "\\" + Constants.FILE_ELEV_ZONES_VECTOR);
+                var slectionLayer = LayerFactory.Instance.CreateFeatureLayer(uriTemp, MapView.Active.Map, 0, "Selection Layer");
+                string strZones = "";
+                foreach (var sZone in lstCriticalZoneValues)
+                {
+                    strZones = strZones + sZone + ", ";
+                }
+                // Trim off trailing characters
+                strZones = strZones.Substring(0, strZones.Length - 2);
+                slectionLayer.SetDefinitionQuery(Constants.FIELD_GRID_CODE + " IN (" + strZones + ")");
+                string dissolveOutputPath = uriAnalysisGdb.LocalPath + "\\" + Constants.FILE_CRITICAL_PRECIP_ZONE;
+                // Copy selected features to a new, temporary feature class
+                var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath);
+                var parameters = Geoprocessing.MakeValueArray(slectionLayer, dissolveOutputPath, Constants.FIELD_GRID_CODE);
+                var gpResult = Geoprocessing.ExecuteToolAsync("Dissolve_management", parameters, environments,
+                                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+
+                if (gpResult.Result.IsFailed)
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(ExtractCriticalPrecipitationZonesAsync),
+                   "Unable to dissolve selected features. Error code: " + gpResult.Result.ErrorCode);
+                }
+                // Remove temporary layer
+                MapView.Active.Map.RemoveLayer(slectionLayer);
+            });
+            success = BA_ReturnCode.Success;
+            return success;
+        }
+
         public static async Task<BA_ReturnCode> CalculateElevPrecipCorrAsync(string strAoiPath, Uri uriPrism, string prismFile)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
@@ -2572,6 +2616,25 @@ namespace bagis_pro
                     Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateElevationZonesAsync),
                         "Set elevation interval in analysis.xml file");
                 }
+            }
+            // Make a vector version of the elevation zones
+            var environments = Geoprocessing.MakeEnvironmentArray(workspace: aoiFilePath);
+            string strAnalysisGdb = GeodatabaseTools.GetGeodatabasePath(aoiFilePath, GeodatabaseNames.Analysis);
+            var parameters = Geoprocessing.MakeValueArray(strZonesRaster, strAnalysisGdb + "\\" + Constants.FILE_ELEV_ZONES_VECTOR,
+                "NO_SIMPLIFY", Constants.FIELD_VALUE);
+            var gpResult = Geoprocessing.ExecuteToolAsync("RasterToPolygon_conversion", parameters, environments,
+                                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+            if (gpResult.Result.IsFailed)
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(ExtractBelowTreelineAsync),
+                "Unable to convert elevation zones raster to polygon. Error code: " + gpResult.Result.ErrorCode);
+                MessageBox.Show("Unable to convert elevation zones raster to polygon. Process cancelled!!", "BAGIS-PRO");
+                success = BA_ReturnCode.UnknownError;
+            }
+            if (success == BA_ReturnCode.Success)
+            {
+                success = await GeodatabaseTools.UpdateReclassFeatureAttributesAsync(new Uri(strAnalysisGdb), Constants.FILE_ELEV_ZONES_VECTOR, 
+                    lstInterval);
             }
             return success;
         }

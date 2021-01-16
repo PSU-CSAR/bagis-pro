@@ -524,7 +524,18 @@ namespace bagis_pro
                     IList<BA_Objects.Interval> lstIntervals = await GeodatabaseTools.ReadReclassRasterAttribute(uriElevZones, Constants.FILE_ELEV_ZONE);
                     double dblMinOddsRatio = (double) Module1.Current.BatchToolSettings.CriticalPrecipMinOddsRatio;                   
                     double dblMaxPctArea = (double)Module1.Current.BatchToolSettings.CriticalPrecipMaxPctArea;
-                    ExcelTools.GetCriticalPrecipitationZones(pPRISMWorkSheet, lstIntervals, dblMinOddsRatio, dblMaxPctArea);
+                    IList<string> lstCriticalZoneValues = ExcelTools.CreateCriticalPrecipitationZones(pPRISMWorkSheet, lstIntervals, dblMinOddsRatio, dblMaxPctArea);
+
+                    // Extract Critical Precipitation Zone layer
+                    if (lstCriticalZoneValues.Count > 0)
+                    {
+                        success = await AnalysisTools.ExtractCriticalPrecipitationZonesAsync(Module1.Current.Aoi.FilePath, lstCriticalZoneValues);
+                    }
+                    else
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(GenerateTablesAsync), "No critical precipitation zones were identified. " +
+                            "Critical precipitation zone layer not created!!");
+                    }
                 }
 
                 // Try to get elevation interval from analysis.xml settings file

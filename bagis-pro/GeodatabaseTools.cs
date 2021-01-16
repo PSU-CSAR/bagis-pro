@@ -514,6 +514,109 @@ namespace bagis_pro
             }
         }
 
+        public static async Task<BA_ReturnCode> UpdateReclassFeatureAttributesAsync(Uri uriFeatureClass, string strFeatureClassName, 
+            IList<BA_Objects.Interval> lstIntervals)
+        {
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            // Add fields to be updated to feature class, if missing
+            string[] arrReclassFields = { Constants.FIELD_NAME, Constants.FIELD_LBOUND, Constants.FIELD_UBOUND};
+            string[] arrReclassFieldTypes = { "TEXT", "DOUBLE", "DOUBLE"};
+            string strFeatureClassPath = uriFeatureClass.LocalPath + "\\" + strFeatureClassName;
+            for (int i = 0; i < arrReclassFields.Length; i++)
+            {
+                if (await AttributeExistsAsync(uriFeatureClass, strFeatureClassName, arrReclassFields[i]) == false)
+                {
+                    success = await GeoprocessingTools.AddFieldAsync(strFeatureClassPath, arrReclassFields[i], arrReclassFieldTypes[i]);
+                }
+            }
+            if (success != BA_ReturnCode.Success)
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(UpdateReclassFeatureAttributesAsync),
+                     "Unable to add fields to " + strFeatureClassPath);
+                ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("Unable to add fields to " + strFeatureClassPath + "!!", "BAGIS-PRO");
+                return success;
+            }
+
+            // Populate the fields
+            bool modificationResult = false;
+            string errorMsg = "";
+            await QueuedTask.Run(() =>
+            {
+                using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(uriFeatureClass)))
+                {
+                    if (!String.IsNullOrEmpty(strFeatureClassPath))
+                    {
+                        QueryFilter queryFilter = new QueryFilter();
+                        using (Table table = geodatabase.OpenDataset<Table>(strFeatureClassName))
+                        {
+                            foreach (var oInterval in lstIntervals)
+                            {
+                                queryFilter.WhereClause = Constants.FIELD_GRID_CODE + " = " + oInterval.Value;
+                                EditOperation editOperation = new EditOperation();
+                                editOperation.Callback(context =>
+                                {
+                                    using (RowCursor aCursor = table.Search(queryFilter, false))
+                                    {
+                                        while (aCursor.MoveNext())
+                                        {
+                                            using (Feature feature = (Feature)aCursor.Current)
+                                            {
+                                                // name
+                                                int idxTarget = feature.FindField(arrReclassFields[0]);
+                                                if (idxTarget > -1)
+                                                {
+                                                    feature[idxTarget] = oInterval.Name;
+                                                }
+                                                // lower bound
+                                                idxTarget = feature.FindField(arrReclassFields[1]);
+                                                if (idxTarget > -1)
+                                                {
+                                                    feature[idxTarget] = oInterval.LowerBound;
+                                                }
+                                                // upper bound
+                                                idxTarget = feature.FindField(arrReclassFields[2]);
+                                                if (idxTarget > -1)
+                                                {
+                                                    feature[idxTarget] = oInterval.UpperBound;
+                                                }
+                                                feature.Store();
+                                                // Has to be called after the store too
+                                                context.Invalidate(feature);
+                                            }
+                                        }
+                                    }
+                                }, table);
+                                try
+                                {
+                                    modificationResult = editOperation.Execute();
+                                    if (!modificationResult) errorMsg = editOperation.ErrorMessage;
+                                    // increment feature counter
+                                }
+                                catch (GeodatabaseException exObj)
+                                {
+                                    errorMsg = exObj.Message;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            if (String.IsNullOrEmpty(errorMsg))
+            {
+                await Project.Current.SaveEditsAsync();
+            }
+            else
+            {
+                if (Project.Current.HasEdits)
+                    await Project.Current.DiscardEditsAsync();
+                Module1.Current.ModuleLogManager.LogError(nameof(UpdateReclassFeatureAttributesAsync),
+                    "Exception: " + errorMsg);
+                return BA_ReturnCode.UnknownError;
+            }
+            return success;
+        }
+
         public static async Task<string[]> QueryAoiEnvelopeAsync(Uri clipFileGdbUri, string clipName)
         {
             string[] arrRetValues = new string[2];

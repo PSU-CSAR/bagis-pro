@@ -78,6 +78,7 @@
           <button refID="MapButtonPalette_BtnPublicLand" />
           <button refID="MapButtonPalette_BtnBelowTreeline" />
           <button refID="MapButtonPalette_BtnSitesLocationZone" />
+          <button refID="MapButtonPalette_BtnCriticalPrecipZone" />
         </buttonPalette>
       </palettes>
       <controls>
@@ -202,6 +203,11 @@
         <button id="MapButtonPalette_BtnSitesLocationZone" caption="Potential Site Locations" className="bagis_pro.Buttons.MapButtonPalette_BtnSitesLocationZone" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSitesLocationZone_Condition">
           <tooltip heading="Display Map">
             ToolTip<disabledText /></tooltip>
+        </button>
+        <button id="MapButtonPalette_BtnCriticalPrecipZone" caption="Critical Precipitation Zones" className="bagis_pro.Buttons.MapButtonPalette_BtnCriticalPrecipZone" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnCriticalPrecipZone_Condition">
+          <tooltip heading="Display Map">
+            ToolTip<disabledText />
+          </tooltip>
         </button>
         <comboBox id="bagis_pro_Buttons_CboCurrentAoi" className="bagis_pro.Buttons.CboCurrentAoi" itemWidth="180" isEditable="false" isReadOnly="true" resizable="true">
           <tooltip heading="Tooltip Heading">Selected AOI<disabledText /></tooltip>
@@ -339,6 +345,9 @@
     </insertCondition>
     <insertCondition id="MapButtonPalette_BtnSitesLocationZone_Condition" caption="Map Disabled">
       <state id="MapButtonPalette_BtnSitesLocationZone_State" />
+    </insertCondition>
+    <insertCondition id="MapButtonPalette_BtnCriticalPrecipZone_Condition" caption="Map Disabled">
+      <state id="MapButtonPalette_BtnCriticalPrecipZone_State" />
     </insertCondition>
   </conditions>
 </ArcGIS>

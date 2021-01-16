@@ -1523,7 +1523,7 @@ namespace bagis_pro
 
         }
 
-        public static IList<string> GetCriticalPrecipitationZones(Worksheet pPRSIMWS, IList<BA_Objects.Interval> lstIntervals,
+        public static IList<string> CreateCriticalPrecipitationZones(Worksheet pPRSIMWS, IList<BA_Objects.Interval> lstIntervals,
             double dblMinOddsRatio, double dblMaxPctArea)
         {
             IList<string> lstCriticalZones = new List<string>();

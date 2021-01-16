@@ -138,6 +138,13 @@ namespace bagis_pro
                     if (success.Equals(BA_ReturnCode.Success))
                         Module1.ActivateState("MapButtonPalette_BtnSitesLocationZone_State");
 
+                    //add Critical Precipitation Zones Layer
+                    strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
+                        Constants.FILE_CRITICAL_PRECIP_ZONE;
+                    uri = new Uri(strPath);
+                    success = await MapTools.AddPolygonLayerAsync(uri, fillColor, false, Constants.MAPS_CRITICAL_PRECIPITATION_ZONES);
+                    if (success.Equals(BA_ReturnCode.Success))
+                        Module1.ActivateState("MapButtonPalette_BtnCriticalPrecipZone_State");
 
                     // add aoi streams layer
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers, true) +
@@ -553,7 +560,7 @@ namespace bagis_pro
 
         public static async Task RemoveLayersfromMapFrame()
         {
-            string[] arrLayerNames = new string[23];
+            string[] arrLayerNames = new string[24];
             arrLayerNames[0] = Constants.MAPS_AOI_BOUNDARY;
             arrLayerNames[1] = Constants.MAPS_STREAMS;
             arrLayerNames[2] = Constants.MAPS_SNOTEL;
@@ -570,7 +577,8 @@ namespace bagis_pro
             arrLayerNames[13] = Constants.MAPS_PUBLIC_LAND;
             arrLayerNames[14] = Constants.MAPS_BELOW_TREELINE;
             arrLayerNames[15] = Constants.MAPS_SITES_LOCATION;
-            int idxLayerNames = 16;
+            arrLayerNames[16] = Constants.MAPS_CRITICAL_PRECIPITATION_ZONES;
+            int idxLayerNames = 17;
             for (int i = 0; i < Constants.LAYER_NAMES_SNODAS_SWE.Length; i++)
             {
                 arrLayerNames[idxLayerNames] = Constants.LAYER_NAMES_SNODAS_SWE[i];
@@ -1432,8 +1440,16 @@ namespace bagis_pro
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;
-
-
+                case BagisMapType.CRITICAL_PRECIP:
+                    lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
+                                                   Constants.MAPS_HILLSHADE, Constants.MAPS_ELEV_ZONE,
+                                                   Constants.MAPS_CRITICAL_PRECIPITATION_ZONES};
+                    lstLegendLayers = new List<string> { Constants.MAPS_CRITICAL_PRECIPITATION_ZONES, Constants.MAPS_ELEV_ZONE };
+                    mapDefinition = new BA_Objects.MapDefinition("CRITICAL PRECIPITATION ZONES",
+                        " ", Constants.FILE_EXPORT_MAP_CRITICAL_PRECIPITATION_ZONES_PDF);
+                    mapDefinition.LayerList = lstLayers;
+                    mapDefinition.LegendLayerList = lstLegendLayers;
+                    break;
             }
             return mapDefinition;
         }

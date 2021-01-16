@@ -29,6 +29,7 @@ namespace bagis_pro
         public const string MAPS_PUBLIC_LAND = "Public, Non-Wilderness Land";
         public const string MAPS_BELOW_TREELINE = "Area Below Treeline";
         public const string MAPS_SITES_LOCATION = "Meet All Criteria";
+        public const string MAPS_CRITICAL_PRECIPITATION_ZONES = "Critical Precipitation";
 
         public const string MAPS_LEGEND = "Legend";
         public const string MAPS_TITLE = "Title";
@@ -73,6 +74,8 @@ namespace bagis_pro
         public const string FILE_MERGED_SITES = "merged_sites";
         public const string FILE_PREC_STEL = "prec_stel";
         public const string FILE_ELEV_ZONES_TBL = "tblZones";
+        public const string FILE_ELEV_ZONES_VECTOR = "elevzone_v";
+        public const string FILE_CRITICAL_PRECIP_ZONE = "criticalprecipzone";
         public const string FILE_SETTINGS = "analysis.xml";
         public const string FILE_BATCH_TOOL_SETTINGS = "batch_tool_settings.json";
         public const string FILE_BATCH_LOG = "batch_tool_log.txt";
@@ -91,6 +94,7 @@ namespace bagis_pro
         public const string FILE_EXPORT_MAP_PUBLIC_LAND_PDF = "map_public_land.pdf";
         public const string FILE_EXPORT_MAP_BELOW_TREELINE_PDF = "map_below_treeline.pdf";
         public const string FILE_EXPORT_MAP_SITES_LOCATION_PDF = "map_sites_location.pdf";
+        public const string FILE_EXPORT_MAP_CRITICAL_PRECIPITATION_ZONES_PDF = "map_critical_precip_zones.pdf";
         public const string FILE_EXPORT_CHART_AREA_ELEV_PRECIP_SITE_PDF = "chart_area_elev_precip_site.pdf";
         public const string FILE_EXPORT_CHART_SLOPE_PDF = "chart_slope.pdf";
         public const string FILE_EXPORT_CHART_ASPECT_PDF = "chart_aspect.pdf";

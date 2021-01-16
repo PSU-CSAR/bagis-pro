@@ -203,6 +203,21 @@ namespace bagis_pro.Buttons
         }
     }
 
+    internal class MapButtonPalette_BtnCriticalPrecipZone : Button
+    {
+        protected override async void OnClick()
+        {
+            try
+            {
+                await ToggleMapDisplay.ToggleAsync(BagisMapType.CRITICAL_PRECIP);
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show("Unable to display critical precipitation zone map!!" + e.Message, "BAGIS-PRO");
+            }
+        }
+    }
+
     internal class MapButtonPalette_BtnSweJan : Button
     {
         protected override async void OnClick()

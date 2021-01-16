@@ -36,7 +36,8 @@ namespace bagis_pro
         ROADS,
         PUBLIC_LAND,
         BELOW_TREELINE,
-        SITES_LOCATION
+        SITES_LOCATION,
+        CRITICAL_PRECIP
     }
 
     public enum SiteType
