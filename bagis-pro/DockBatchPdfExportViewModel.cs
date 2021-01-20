@@ -214,6 +214,9 @@ namespace bagis_pro
                     }
                     else
                     {
+                        MessageBox.Show("No valid AOIs were found in the selected folder!", "BAGIS-PRO");
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(CmdAoiFolder),
+                            "No valid AOIs were found in the selected folder!");
                         CmdRunEnabled = false;
                     }
                 });
@@ -593,6 +596,41 @@ namespace bagis_pro
                         {
                             MessageBox.Show("An error occurred while generating the Excel tables!!", "BAGIS-PRO");
                             errorCount++;
+                        }
+                        else
+                        {
+                            // Generate the crtical precip map; It has to follow the tables
+                            Uri uriAnalysis = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis));
+                            if (await GeodatabaseTools.FeatureClassExistsAsync(uriAnalysis, Constants.FILE_CRITICAL_PRECIP_ZONE))
+                            {
+                                CIMColor fillColor = CIMColor.CreateRGBColor(255, 0, 0, 50);    //Red with 30% transparency
+                                string strLayerPath = uriAnalysis.LocalPath + "\\" + Constants.FILE_CRITICAL_PRECIP_ZONE;
+                                success = await MapTools.AddPolygonLayerAsync(new Uri(strLayerPath), fillColor, false, Constants.MAPS_CRITICAL_PRECIPITATION_ZONES);
+                                string strButtonState = "MapButtonPalette_BtnCriticalPrecipZone_State";
+                                if (success.Equals(BA_ReturnCode.Success))
+                                    Module1.ActivateState(strButtonState);
+                                int foundS1 = strButtonState.IndexOf("_State");
+                                string strMapButton = strButtonState.Remove(foundS1);
+                                ICommand cmd = FrameworkApplication.GetPlugInWrapper(strMapButton) as ICommand;
+                                Module1.Current.ModuleLogManager.LogDebug(nameof(RunImplAsync),
+                                    "About to toggle map button " + strMapButton);
+                                if ((cmd != null))
+                                {
+                                    do
+                                    {
+                                        await Task.Delay(TimeSpan.FromSeconds(0.4));  // build in delay until the command can execute
+                                    }
+                                    while (!cmd.CanExecute(null));
+                                    cmd.Execute(null);
+                                }
+
+                                do
+                                {
+                                    await Task.Delay(TimeSpan.FromSeconds(0.4));  // build in delay so maps can load
+                                }
+                                while (Module1.Current.MapFinishedLoading == false);
+                                success = await GeneralTools.ExportMapToPdfAsync();    // export map to pdf
+                            }
                         }
                         success = await GeneralTools.GenerateMapsTitlePageAsync(strPublisher, Comments);
                         if (success != BA_ReturnCode.Success)

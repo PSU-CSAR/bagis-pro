@@ -134,6 +134,14 @@ namespace bagis_pro
                             AoiFolder = item.Path;
                         }
                     }
+                    string strLogEntry = "";
+                    if (AoiFolder.Contains(" "))
+                    {
+                        strLogEntry = AoiFolder + " path contains a space and cannot be selected\r\n";
+                        MessageBox.Show(AoiFolder + " path contains a space and cannot be selected!", "BAGIS-PRO");
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(CmdAoiFolder), strLogEntry);
+                        return;
+                    }
 
                     string strLogFolder = AoiFolder + "\\" + Constants.FOLDER_MAP_PACKAGE;
                     // Make sure the maps_publish folder exists under the selected folder
@@ -144,7 +152,7 @@ namespace bagis_pro
 
                     // Set logger to parent folder directory
                     Module1.Current.ModuleLogManager.UpdateLogFileLocation(strLogFolder);
-                    string strLogEntry = "BEGIN populating conversion tool select list\r\n";
+                    strLogEntry = "BEGIN populating conversion tool select list\r\n";
                     Module1.Current.ModuleLogManager.LogDebug(nameof(CmdAoiFolder), strLogEntry);
 
                     Names.Clear();
@@ -295,6 +303,12 @@ namespace bagis_pro
                                     ManageRunButton();
                                 }
                             }
+                        }
+                        if (Names.Count == 0)
+                        {
+                            MessageBox.Show("No valid AOIs were found in the selected folder!", "BAGIS-PRO");
+                            Module1.Current.ModuleLogManager.LogDebug(nameof(CmdAoiFolder), 
+                                "No AOIs containing the required files to be converted were found in the selected folder!");
                         }
                     }
                     catch (Exception e)

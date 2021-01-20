@@ -1073,17 +1073,38 @@ namespace bagis_pro
                     if (elem is CIMLegend)
                     {
                         var legend = elem as CIMLegend;
-                        foreach (var legendItem in legend.Items)
+                        CIMLegendItem[] arrTempItems = new CIMLegendItem[legend.Items.Length];
+                        int idx = 0;
+                        //  Add items that we want to display to temporary array
+                        foreach (var strName in lstLegendLayer)
                         {
-                            if (lstLegendLayer.Contains(legendItem.Name))
+                            foreach (var legendItem in legend.Items)
                             {
-                                legendItem.IsVisible = true;
-                            }
-                            else
-                            {
-                                legendItem.IsVisible = false;
+                                // Find the item in the existing array
+                                if (legendItem.Name == strName)
+                                {
+                                    // Set the visibility
+                                    legendItem.IsVisible = true;
+                                    // Add the item to the temporary array
+                                    arrTempItems[idx] = legendItem;
+                                    // Increment the index
+                                    idx++;
+                                }
                             }
                         }
+                        // Add the remaining items with visibility set to false in their original order
+                        foreach (var legendItem in legend.Items)
+                        {
+                            if (!lstLegendLayer.Contains(legendItem.Name))
+                            {
+                                legendItem.IsVisible = false;
+                                arrTempItems[idx] = legendItem;
+                                // Increment the index
+                                idx++;
+                            }
+                        }
+                        // Set the legend items
+                        legend.Items = arrTempItems;
                     }
                 }
                 //Apply the changes back to the layout
@@ -1229,7 +1250,7 @@ namespace bagis_pro
                 case BagisMapType.ELEVATION:
                     lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_ELEV_ZONE};
-                    lstLegendLayers = new List<string> { Constants.MAPS_ELEV_ZONE };
+                    lstLegendLayers = new List<string>();
                     if (Module1.Current.Aoi.HasSnotel == true)
                     {
                         lstLayers.Add(Constants.MAPS_SNOTEL);
@@ -1240,6 +1261,8 @@ namespace bagis_pro
                         lstLayers.Add(Constants.MAPS_SNOW_COURSE);
                         lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE);
                     }
+                    lstLegendLayers.Add(Constants.MAPS_ELEV_ZONE);
+
                     string strDemDisplayUnits = (string)Module1.Current.BatchToolSettings.DemDisplayUnits;
                     mapDefinition = new BA_Objects.MapDefinition("ELEVATION DISTRIBUTION",
                         "Elevation Units = " + strDemDisplayUnits, Constants.FILE_EXPORT_MAP_ELEV_PDF);
@@ -1249,7 +1272,7 @@ namespace bagis_pro
                 case BagisMapType.SLOPE:
                     lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_SLOPE_ZONE};
-                    lstLegendLayers = new List<string> { Constants.MAPS_SLOPE_ZONE };
+                    lstLegendLayers = new List<string>();
                     if (Module1.Current.Aoi.HasSnotel == true)
                     {
                         lstLayers.Add(Constants.MAPS_SNOTEL);
@@ -1260,6 +1283,7 @@ namespace bagis_pro
                         lstLayers.Add(Constants.MAPS_SNOW_COURSE);
                         lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE);
                     }
+                    lstLegendLayers.Add(Constants.MAPS_SLOPE_ZONE);
                     mapDefinition = new BA_Objects.MapDefinition("SLOPE DISTRIBUTION",
                         " ", Constants.FILE_EXPORT_MAP_SLOPE_PDF);
                     mapDefinition.LayerList = lstLayers;
@@ -1268,7 +1292,7 @@ namespace bagis_pro
                 case BagisMapType.ASPECT:
                     lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_ASPECT_ZONE};
-                    lstLegendLayers = new List<string> { Constants.MAPS_ASPECT_ZONE };
+                    lstLegendLayers = new List<string>();
                     if (Module1.Current.Aoi.HasSnotel == true)
                     {
                         lstLayers.Add(Constants.MAPS_SNOTEL);
@@ -1279,6 +1303,7 @@ namespace bagis_pro
                         lstLayers.Add(Constants.MAPS_SNOW_COURSE);
                         lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE);
                     }
+                    lstLegendLayers.Add(Constants.MAPS_ASPECT_ZONE);
                     mapDefinition = new BA_Objects.MapDefinition("ASPECT DISTRIBUTION",
                         " ", Constants.FILE_EXPORT_MAP_ASPECT_PDF);
                     mapDefinition.LayerList = lstLayers;
@@ -1287,7 +1312,7 @@ namespace bagis_pro
                 case BagisMapType.SNODAS_SWE:
                     lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.LAYER_NAMES_SNODAS_SWE[3]};
-                    lstLegendLayers = new List<string> { Constants.LAYER_NAMES_SNODAS_SWE[3] };
+                    lstLegendLayers = new List<string>();
                     if (Module1.Current.Aoi.HasSnotel == true)
                     {
                         lstLayers.Add(Constants.MAPS_SNOTEL);
@@ -1298,6 +1323,7 @@ namespace bagis_pro
                         lstLayers.Add(Constants.MAPS_SNOW_COURSE);
                         lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE);
                     }
+                    lstLegendLayers.Add(Constants.LAYER_NAMES_SNODAS_SWE[3]);
                     mapDefinition = new BA_Objects.MapDefinition(Constants.MAP_TITLES_SNODAS_SWE[3],
                         "Depth Units = " + Module1.Current.BatchToolSettings.SweDisplayUnits, Constants.FILE_EXPORT_MAPS_SWE[3]);
                     mapDefinition.LayerList = lstLayers;
@@ -1318,7 +1344,7 @@ namespace bagis_pro
                     }
                     lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_PRISM_ZONE};
-                    lstLegendLayers = new List<string> { Constants.MAPS_PRISM_ZONE };
+                    lstLegendLayers = new List<string>();
                     if (Module1.Current.Aoi.HasSnotel == true)
                     {
                         lstLayers.Add(Constants.MAPS_SNOTEL);
@@ -1329,6 +1355,7 @@ namespace bagis_pro
                         lstLayers.Add(Constants.MAPS_SNOW_COURSE);
                         lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE);
                     }
+                    lstLegendLayers.Add(Constants.MAPS_PRISM_ZONE);
                     string strTitle = "PRECIPITATION DISTRIBUTION";
                     if (!String.IsNullOrEmpty(oAnalysis.PrecipZonesBegin))
                     {
@@ -1344,12 +1371,13 @@ namespace bagis_pro
                     lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_ELEV_ZONE,
                                                    Constants.MAPS_SNOTEL_REPRESENTED};
-                    lstLegendLayers = new List<string> { Constants.MAPS_SNOTEL_REPRESENTED };
+                    lstLegendLayers = new List<string>();
                     if (Module1.Current.Aoi.HasSnotel == true)
                     {
                         lstLayers.Add(Constants.MAPS_SNOTEL);
                         lstLegendLayers.Add(Constants.MAPS_SNOTEL);
                     }
+                    lstLegendLayers.Add(Constants.MAPS_SNOTEL_REPRESENTED);
                     mapDefinition = new BA_Objects.MapDefinition("SNOTEL SITES REPRESENTATION",
                         " ", Constants.FILE_EXPORT_MAP_SNOTEL_PDF);
                     mapDefinition.LayerList = lstLayers;
@@ -1359,12 +1387,13 @@ namespace bagis_pro
                     lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_ELEV_ZONE,
                                                    Constants.MAPS_SNOW_COURSE_REPRESENTED};
-                    lstLegendLayers = new List<string> { Constants.MAPS_SNOW_COURSE_REPRESENTED };
+                    lstLegendLayers = new List<string>();
                     if (Module1.Current.Aoi.HasSnowCourse == true)
                     {
                         lstLayers.Add(Constants.MAPS_SNOW_COURSE);
                         lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE);
                     }
+                    lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE_REPRESENTED);
                     mapDefinition = new BA_Objects.MapDefinition("SNOW COURSE SITES REPRESENTATION",
                         " ", Constants.FILE_EXPORT_MAP_SCOS_PDF);
                     mapDefinition.LayerList = lstLayers;
@@ -1374,7 +1403,7 @@ namespace bagis_pro
                     lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_ELEV_ZONE,
                                                    Constants.MAPS_ALL_SITES_REPRESENTED};
-                    lstLegendLayers = new List<string> { Constants.MAPS_ALL_SITES_REPRESENTED };
+                    lstLegendLayers = new List<string>();
                     if (Module1.Current.Aoi.HasSnowCourse == true)
                     {
                         lstLayers.Add(Constants.MAPS_SNOW_COURSE);
@@ -1385,6 +1414,7 @@ namespace bagis_pro
                         lstLayers.Add(Constants.MAPS_SNOTEL);
                         lstLegendLayers.Add(Constants.MAPS_SNOTEL);
                     }
+                    lstLegendLayers.Add(Constants.MAPS_ALL_SITES_REPRESENTED);
                     mapDefinition = new BA_Objects.MapDefinition("SNOTEL AND SNOW COURSE SITES REPRESENTATION",
                         " ", Constants.FILE_EXPORT_MAP_SNOTEL_AND_SCOS_PDF);
                     mapDefinition.LayerList = lstLayers;
@@ -1424,7 +1454,7 @@ namespace bagis_pro
                     lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_ELEV_ZONE,
                                                    Constants.MAPS_SITES_LOCATION};
-                    lstLegendLayers = new List<string> { Constants.MAPS_SITES_LOCATION };
+                    lstLegendLayers = new List<string>();
                     if (Module1.Current.Aoi.HasSnowCourse == true)
                     {
                         lstLayers.Add(Constants.MAPS_SNOW_COURSE);
@@ -1435,6 +1465,7 @@ namespace bagis_pro
                         lstLayers.Add(Constants.MAPS_SNOTEL);
                         lstLegendLayers.Add(Constants.MAPS_SNOTEL);
                     }
+                    lstLegendLayers.Add(Constants.MAPS_SITES_LOCATION);
                     mapDefinition = new BA_Objects.MapDefinition("POTENTIAL SITE LOCATIONS",
                         " ", Constants.FILE_EXPORT_MAP_SITES_LOCATION_PDF);
                     mapDefinition.LayerList = lstLayers;
@@ -1444,7 +1475,7 @@ namespace bagis_pro
                     lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_ELEV_ZONE,
                                                    Constants.MAPS_CRITICAL_PRECIPITATION_ZONES};
-                    lstLegendLayers = new List<string> { Constants.MAPS_CRITICAL_PRECIPITATION_ZONES, Constants.MAPS_ELEV_ZONE };
+                    lstLegendLayers = new List<string> { Constants.MAPS_CRITICAL_PRECIPITATION_ZONES, Constants.MAPS_ELEV_ZONE};
                     mapDefinition = new BA_Objects.MapDefinition("CRITICAL PRECIPITATION ZONES",
                         " ", Constants.FILE_EXPORT_MAP_CRITICAL_PRECIPITATION_ZONES_PDF);
                     mapDefinition.LayerList = lstLayers;
@@ -1559,7 +1590,7 @@ namespace bagis_pro
             var allLayers = MapView.Active.Map.Layers.ToList();
             IList<string> lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
                                                          Constants.MAPS_HILLSHADE, strNewLayerName};
-            IList<string> lstLegend = new List<string> { strNewLayerName };
+            IList<string> lstLegend = new List<string>();
 
             if (Module1.Current.Aoi.HasSnotel == true)
             {
@@ -1571,6 +1602,7 @@ namespace bagis_pro
                 lstLayers.Add(Constants.MAPS_SNOW_COURSE);
                 lstLegend.Add(Constants.MAPS_SNOW_COURSE);
             }
+            lstLegend.Add(strNewLayerName);
             await QueuedTask.Run(() =>
             {
                 foreach (var layer in allLayers)
