@@ -93,7 +93,8 @@ namespace bagis_pro.Menus
                                     "the Display Maps buttons to display other maps!!", "BAGIS-PRO");
                 }
                 Module1.Current.DisplayedMap = Constants.FILE_EXPORT_MAP_ELEV_PDF;
-                Module1.ActivateState("BtnMapLoad_State");          
+                Module1.ActivateState("BtnMapLoad_State");
+                MessageBox.Show("The maps are loaded. Use the Toggle Maps buttons to view the maps.", "BAGIS-PRO");
             }
             catch (Exception e)
             {
