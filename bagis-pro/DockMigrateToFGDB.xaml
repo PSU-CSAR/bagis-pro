@@ -31,7 +31,7 @@
             <TextBlock
                 Name="tbMultiLine"
                 TextWrapping="WrapWithOverflow" MaxWidth="300" Margin="2, 0, 2, 0" HorizontalAlignment="Left">
-                Select a basin or folder containing at least Weasel AOI. BAGIS-PRO will convert the layer files
+                Select a basin or folder containing at least one Weasel AOI. BAGIS-PRO will convert the layer files
                 into File Geodatabase format that can be used by BAGIS-PRO and BAGIS V3.
             </TextBlock>
         </DockPanel>

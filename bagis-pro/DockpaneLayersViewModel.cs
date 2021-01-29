@@ -57,7 +57,6 @@ namespace bagis_pro
         /// <summary>
         /// Text shown near the top of the DockPane.
         /// </summary>
-        private string _heading = "Manage Layers";
         private bool _SWE_Checked = false;
         private string _SWEBufferDistance = "";
         private string _SWEBufferUnits = "";
@@ -87,15 +86,6 @@ namespace bagis_pro
         private string _vegetationBufferUnits = "";
         private bool _reclipVegetation_Checked = false;
 
-
-        public string Heading
-      {
-        get { return _heading; }
-        set
-        {
-          SetProperty(ref _heading, value, () => Heading);
-        }
-      }
 
         public bool ReclipSwe_Checked
         {

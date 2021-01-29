@@ -57,7 +57,7 @@ namespace bagis_pro
         /// <summary>
         /// Text shown near the top of the DockPane.
         /// </summary>
-        private string _heading = "Calculate Analysis Layers";
+        private string _heading = "Generate Analysis Layers";
         private bool _RepresentedArea_Checked = false;
         private bool _PrismZones_Checked = false;
         private bool _AspectZones_Checked = false;
