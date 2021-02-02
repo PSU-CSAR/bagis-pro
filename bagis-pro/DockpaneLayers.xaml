@@ -42,7 +42,7 @@
             <Label x:Name="lblPrismBuffer" Content="Buffer Distance" HorizontalAlignment="Right" VerticalAlignment="Top" RenderTransformOrigin="0.418,-0.102"/>
         </DockPanel>
         <DockPanel Grid.Row="0" Grid.Column="3"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
-            <Label x:Name="lblClip" Content="Clip" HorizontalAlignment="Left" VerticalAlignment="Top" RenderTransformOrigin="0.418,-0.102" AllowDrop="True"/>
+            <Label x:Name="lblClip" Content="Clip" HorizontalAlignment="Center" VerticalAlignment="Top" RenderTransformOrigin="0.418,-0.102" AllowDrop="True"/>
         </DockPanel>
         <DockPanel Grid.Row="1" Grid.Column="0"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
             <CheckBox x:Name="chkPrism" Content="PRISM" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,0,0,0" IsChecked="{Binding Prism_Checked}" IsEnabled="false"/>

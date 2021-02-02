@@ -173,6 +173,10 @@
       <DependentUpon>DockAnalysisLayers.xaml</DependentUpon>
     </Compile>
     <Compile Include="DockAnalysisLayersViewModel.cs" />
+    <Compile Include="DockMapPackage.xaml.cs">
+      <DependentUpon>DockMapPackage.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="DockMapPackageViewModel.cs" />
     <Compile Include="DockMigrateToFGDB.xaml.cs">
       <DependentUpon>DockMigrateToFGDB.xaml</DependentUpon>
     </Compile>
@@ -298,6 +302,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="DockAnalysisLayers.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="DockMapPackage.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

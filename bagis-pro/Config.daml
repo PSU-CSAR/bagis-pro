@@ -45,6 +45,7 @@
           <buttonPalette refID="bagis_pro_Buttons_MapButtonPalette" size="middle" />
           <button refID="bagis_pro_Buttons_BtnExportToPdf" size="middle" />
           <button refID="bagis_pro_Buttons_BtnExcelTables" size="middle" />
+          <button refID="bagis_pro_DockMapPackage_ShowButton" size="middle" />
         </group>
         <group id="bagis_pro_Groups_Tools" appearsOnAddInTab="false" caption="Tools">
           <button refID="bagis_pro_DockBatchPdfExport_ShowButton" size="middle" />
@@ -206,8 +207,7 @@
         </button>
         <button id="MapButtonPalette_BtnCriticalPrecipZone" caption="Critical Precipitation Zones" className="bagis_pro.Buttons.MapButtonPalette_BtnCriticalPrecipZone" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnCriticalPrecipZone_Condition">
           <tooltip heading="Display Map">
-            ToolTip<disabledText />
-          </tooltip>
+            ToolTip<disabledText /></tooltip>
         </button>
         <comboBox id="bagis_pro_Buttons_CboCurrentAoi" className="bagis_pro.Buttons.CboCurrentAoi" itemWidth="180" isEditable="false" isReadOnly="true" resizable="true">
           <tooltip heading="Tooltip Heading">Selected AOI<disabledText /></tooltip>
@@ -225,6 +225,9 @@
         </button>
         <button id="bagis_pro_DockMigrateToFGDB_ShowButton" caption="Migrate to FGDB" className="DockMigrateToFGDB_ShowButton" loadOnClick="true" smallImage="Images\Weasel.png" largeImage="Images\Weasel.png">
           <tooltip heading="Migrate to FGDB">Migrate to FGDB<disabledText /></tooltip>
+        </button>
+        <button id="bagis_pro_DockMapPackage_ShowButton" caption="Configure Map Package" className="DockMapPackage_ShowButton" loadOnClick="true" condition="DockMapPackage_ShowButton_Condition" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/Picture16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/Picture32.png">
+          <tooltip heading="Configure Map Package">Configure Map Package<disabledText /></tooltip>
         </button>
       </controls>
       <menus>
@@ -264,6 +267,9 @@
         <dockPane id="bagis_pro_DockMigrateToFGDB" caption="Migrate to File Geodatabase" className="DockMigrateToFGDBViewModel" dock="group" dockWith="esri_core_contentsDockPane">
           <content className="DockMigrateToFGDBView" />
         </dockPane>
+        <dockPane id="bagis_pro_DockMapPackage" caption="Map Settings" className="DockMapPackageViewModel" dock="group" dockWith="esri_core_contentsDockPane">
+          <content className="DockMapPackageView" />
+        </dockPane>
       </dockPanes>
     </insertModule>
     <insertModule id="bagis_pro_Webservices" className="Webservices" autoLoad="true" caption="Webservices" />
@@ -287,6 +293,9 @@
       </and>
     </insertCondition>
     <insertCondition id="BtnLoadMaps_Condition" caption="Load Maps">
+      <state id="Aoi_Selected_State" />
+    </insertCondition>
+    <insertCondition id="DockMapPackage_ShowButton_Condition" caption="Map Settings">
       <state id="Aoi_Selected_State" />
     </insertCondition>
     <insertCondition id="MapButtonPalette_BtnElevation_Condition" caption="Map Disabled">
