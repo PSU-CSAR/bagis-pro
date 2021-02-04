@@ -154,6 +154,7 @@
     <Compile Include="AnalysisTools.cs" />
     <Compile Include="Basin\SetDEMExtentTool.cs" />
     <Compile Include="BA_Objects\Analysis.cs" />
+    <Compile Include="BA_Objects\AnalysisLayer.cs" />
     <Compile Include="BA_Objects\DataSource.cs" />
     <Compile Include="BA_Objects\Interval.cs" />
     <Compile Include="BA_Objects\LoggerManager.cs" />
