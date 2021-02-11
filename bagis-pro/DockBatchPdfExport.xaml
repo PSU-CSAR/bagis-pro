@@ -24,6 +24,7 @@
             <RowDefinition Height="30"/>
             <RowDefinition Height="80"/>
             <RowDefinition Height="30"/>
+            <RowDefinition Height="30"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="25"/>
         </Grid.RowDefinitions>
@@ -48,9 +49,8 @@
         </DockPanel>
         <DockPanel Grid.Row="2" Grid.Column="0" VerticalAlignment="Center">
             <CheckBox x:Name="chkArchive" Content="Copy PDF map packages to a single folder" HorizontalAlignment="Left" Margin="5,0,2,0" 
-                  IsEnabled="false"  />
+                  IsEnabled="True" IsChecked="{Binding ArchiveChecked}"  />
         </DockPanel>
-        <!-- @ToDo: Add binding when we enable this feature:  Checked="{Binding ArchiveChecked}"-->
         <DockPanel Grid.Row="3" Grid.ColumnSpan="3" HorizontalAlignment="Left">
             <TextBlock
                 Name="tbArchive"
@@ -86,7 +86,10 @@
                      VerticalAlignment="Center" Width="225" IsReadOnly="True" Margin="5,4,0,4.8"
                      Foreground="Blue" Background="Transparent"/>
         </DockPanel>
-        <StackPanel Grid.Row="7" Orientation="Vertical" Margin="5,2,0,2" HorizontalAlignment="Left" Grid.ColumnSpan="3">
+        <DockPanel Grid.Row="7" Grid.ColumnSpan="3" LastChildFill="false" KeyboardNavigation.TabNavigation="Local" >
+            <Button x:Name="btnLog" Content="View Log" HorizontalAlignment="Left" VerticalAlignment="Center" Width="75" IsEnabled="{Binding CmdLogEnabled}" Command="{Binding CmdLog}" Margin="5, 0, 0, 0"/>
+        </DockPanel>
+        <StackPanel Grid.Row="8" Orientation="Vertical" Margin="5,2,0,2" HorizontalAlignment="Left" Grid.ColumnSpan="3">
 
             <ListView ItemsSource="{Binding Names}" Width="300">
                 <ListView.View>
@@ -120,8 +123,8 @@
                 </ListView.View>
             </ListView>
         </StackPanel>
-        <DockPanel Grid.Row="7" Grid.Column="3" LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Margin="0,163.8,-0.4,0" >
-            <Button x:Name="btnRun" Content="Run" HorizontalAlignment="Left"  VerticalAlignment="Center" Width="50" IsEnabled="{Binding CmdRunEnabled}" Command="{Binding CmdRun}" Margin="10, 0, 5, 0"/>
+        <DockPanel Grid.Row="9" Grid.Column="3" LastChildFill="false" KeyboardNavigation.TabNavigation="Local" >
+            <Button x:Name="btnRun" Content="Run" HorizontalAlignment="Left" VerticalAlignment="Center" Width="50" IsEnabled="{Binding CmdRunEnabled}" Command="{Binding CmdRun}" Margin="5, 0, 0, 0"/>
         </DockPanel>
     </Grid>
 </UserControl>

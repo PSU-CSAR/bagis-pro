@@ -71,6 +71,7 @@ namespace bagis_pro
                 }
             }
             Names = new ObservableCollection<BA_Objects.Aoi>();
+            ArchiveChecked = false;
         }
 
         /// <summary>
@@ -95,6 +96,7 @@ namespace bagis_pro
         private string _comments;
         private bool _archiveChecked = false;
         private bool _cmdRunEnabled = false;
+        private bool _cmdLogEnabled = false;
         private ObservableCollection<string> _aoiList = new ObservableCollection<string>();
         private string _strLogFile;
         public string Heading
@@ -160,6 +162,15 @@ namespace bagis_pro
             }
         }
 
+        public bool CmdLogEnabled
+        {
+            get { return _cmdLogEnabled; }
+            set
+            {
+                SetProperty(ref _cmdLogEnabled, value, () => CmdLogEnabled);
+            }
+        }
+
         public ObservableCollection<string> AoiList
         {
             get { return _aoiList; }
@@ -202,6 +213,10 @@ namespace bagis_pro
                     {
                         Directory.CreateDirectory(Path.GetDirectoryName(_strLogFile));
                     }
+
+                    // Enable the view log button if log exists
+                    CmdLogEnabled = File.Exists(_strLogFile);
+
                     Names.Clear();
                     IList<BA_Objects.Aoi> lstAois = await GeneralTools.GetAoiFoldersAsync(AoiFolder, _strLogFile);
                     foreach (var pAoi in lstAois)
@@ -233,6 +248,26 @@ namespace bagis_pro
             }
         }
 
+        public ICommand CmdLog
+        {
+            get
+            {
+                return new RelayCommand(() =>
+                {
+                    if (File.Exists(_strLogFile))
+                    {
+                        System.Diagnostics.Process.Start(_strLogFile);
+                    }
+                    else
+                    {
+                        MessageBox.Show("Could not find log file!", "BAGIS-PRO");
+                        CmdLogEnabled = false;
+                    }
+                    
+                });
+            }
+        }
+
         /// <summary>
         /// Command to browse for item and thumbnail
         /// </summary>
@@ -253,6 +288,27 @@ namespace bagis_pro
             string strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Starting batch tool to publish in " +
                 Path.GetDirectoryName(_strLogFile) + "\r\n";
             File.WriteAllText(_strLogFile, strLogEntry);    // overwrite file if it exists
+
+            // Check for existing map package files and warn user
+            if (ArchiveChecked)
+            {
+                string[] filePaths = Directory.GetFiles(AoiFolder + "\\" + Constants.FOLDER_MAP_PACKAGE, "*.pdf",
+                             SearchOption.TopDirectoryOnly);
+                if (filePaths.Length > 0)
+                {
+                    System.Windows.MessageBoxResult res = ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("BAGIS-PRO found at least one .pdf document in the " +
+                        "maps\\publish folder. These document(s) may be overwritten during the batch process. Uncheck " +
+                        "the 'Copy PDF map packages' checkbox to stop copying documents to the maps\\publish folder. " +
+                        "The map packages will still be created in each AOI. Do you wish to continue and overwrite " +
+                        "the documents ?", "BAGIS-PRO",
+                        System.Windows.MessageBoxButton.YesNo);
+                    if (res != System.Windows.MessageBoxResult.Yes)
+                    {
+                        return;
+                    }
+                }
+            }
+
             // Save off the publisher name if it is different than previous
             string strPublisher = (string)Module1.Current.BatchToolSettings.Publisher;
             if (!Publisher.Trim().Equals(strPublisher))
@@ -644,6 +700,16 @@ namespace bagis_pro
                         if (success != BA_ReturnCode.Success)
                         {
                             errorCount++;
+                        }
+                        else if (ArchiveChecked)
+                        {
+                            // Copy final output to a central location
+                            if (File.Exists(outputPath))
+                            {
+                                string copyFolder = Path.GetDirectoryName(_strLogFile);
+                                string copyFile = Module1.Current.Aoi.Name + "_" + Constants.FILE_EXPORT_MAPS_ALL_PDF;
+                                File.Copy(outputPath, copyFolder + "\\" + copyFile, true);
+                            }
                         }
                         // Create closing log entry for AOI
                         if (errorCount == 0)
