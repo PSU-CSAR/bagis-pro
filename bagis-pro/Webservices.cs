@@ -63,12 +63,12 @@ namespace bagis_pro
             {
                 MessageBox.Show("Log onto portal before clicking this button!!");
             }
-            //string strToken = myPortal.GetToken();
+            string strToken = myPortal.GetToken();
 
-            //var owner = myPortal.GetSignOnUsername();
-            var owner = "owner";
-            var token = await Task.Run(() => GetToken(owner));
-            string strToken = Convert.ToString(token);
+            var owner = myPortal.GetSignOnUsername();
+            //var owner = "owner";
+            //var token = await Task.Run(() => GetToken(owner));
+            //string strToken = Convert.ToString(token);
 
             //var url = $"{myPortal.PortalUri.AbsoluteUri}arcgis/sharing/rest/content/users/{owner}";
             var url = $"https://www.arcgis.com/sharing/rest/portals/self?f=json&token=" + strToken;
@@ -79,36 +79,50 @@ namespace bagis_pro
             var uploadUrl = "https://" + Convert.ToString(portalSelf.urlKey) +
                             ".maps.arcgis.com/sharing/rest/content/users/" + owner + "/addItem";
 
-            byte[] fileBytes = System.IO.File.ReadAllBytes("C:\\Docs\\animas_AOI_prms\\test\\title_page.pdf");
+            //byte[] fileBytes = File.ReadAllBytes("C:\\Docs\\animas_AOI_prms\\maps_publish\\title_page.pdf");
+            //convert filestream to byte array
+            byte[] fileBytes;
+            using (var fileStream = File.OpenRead("C:\\Docs\\animas_AOI_prms\\maps_publish\\title_page.pdf"))
+            {
+                var binaryReader = new BinaryReader(fileStream);
+                fileBytes = binaryReader.ReadBytes((int)fileStream.Length);
+            }
+            var fileBinaryContent = new ByteArrayContent(fileBytes);
 
             string strTitle = "Testing 1 2 3";
+
+            using (FileStream stream =
+                new FileStream("C:\\Docs\\animas_AOI_prms\\maps_publish\\title_page.pdf", FileMode.Open))
             using (var formData = new MultipartFormDataContent())
             {
                 // Add the HttpContent objects to the form data
 
                 // <input type="text" name="f" />
-                formData.Add(new StringContent("f"), "json");
-                formData.Add(new StringContent("token"), strToken);
-                formData.Add(new StringContent("async"), "True");
-                formData.Add(new StringContent("type"), "PDF");
-                formData.Add(new StringContent("title"), strTitle);
-                formData.Add(new StringContent("tags"), "eBagis");
-                formData.Add(new StringContent("description"), "upload from BAGIS");
-                // <input type="file" name="PDF Test" />
-                //formData.Add(bytesContent, "PDF Test", "PDF Test");
-                formData.Add(new ByteArrayContent(fileBytes, 0, fileBytes.Count()), "PDF Test", "title_page.pdf");
+                formData.Add(new StringContent("json"), "f");
+                formData.Add(new StringContent(strToken), "token");
+                formData.Add(new StringContent("true"), "async");
+                formData.Add(new StringContent("PDF"), "type");
+                formData.Add(new StringContent(strTitle), "title");
+                formData.Add(new StringContent("eBagis"), "tags");
+                formData.Add(new StringContent("upload from BAGIS"), "description");
+                var multipartContent = new MultipartFormDataContent
+                {
+                    { fileBinaryContent, "file" }
+                };
+                formData.Add(multipartContent);
 
                 // Invoke the request to the server
-
                 // equivalent to pressing the submit button on
-                // a form with attributes (action="{url}" method="post")
-                response = await new EsriHttpClient().PostAsync(url, formData);
+                // a form with attributes (action="{url}" method="post")            
+                response = await new EsriHttpClient().PostAsync(uploadUrl, formData);
                 json = await response.Content.ReadAsStringAsync();
+
+
             }
 
         }
 
-        private async Task<string> GetToken(string userName)
+            private async Task<string> GetToken(string userName)
         {
             string password = "password";
             string url = "https://nrcs.maps.arcgis.com/sharing/rest/generateToken";
