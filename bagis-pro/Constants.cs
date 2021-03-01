@@ -26,10 +26,11 @@ namespace bagis_pro
         public const string MAPS_SNOTEL_REPRESENTED = "SNOTEL Sites Represented Area";
         public const string MAPS_SNOW_COURSE_REPRESENTED = "Snow Course Sites Represented Area";
         public const string MAPS_ALL_SITES_REPRESENTED = "All Sites Represented Area";
-        public const string MAPS_PUBLIC_LAND = "Public, Non-Wilderness Land";
+        public const string MAPS_PUBLIC_LAND_ZONES = "Public, Non-Wilderness Land";
         public const string MAPS_BELOW_TREELINE = "Area Below Treeline";
         public const string MAPS_SITES_LOCATION = "Meet All Criteria";
         public const string MAPS_CRITICAL_PRECIPITATION_ZONES = "Critical Precipitation";
+        public const string MAPS_LAND_OWNERSHIP = "Land Ownership";
 
         public const string MAPS_LEGEND = "Legend";
         public const string MAPS_TITLE = "Title";
@@ -91,10 +92,11 @@ namespace bagis_pro
                                                                               "map_snodas_swe_april.pdf", "map_snodas_swe_may.pdf", "map_snodas_swe_june.pdf",
                                                                               "map_snodas_swe_december.pdf"};
         public const string FILE_EXPORT_MAP_ROADS_PDF = "map_roads.pdf";
-        public const string FILE_EXPORT_MAP_PUBLIC_LAND_PDF = "map_public_land.pdf";
+        public const string FILE_EXPORT_MAP_PUBLIC_LAND_ZONES_PDF = "map_public_land_zones.pdf";
         public const string FILE_EXPORT_MAP_BELOW_TREELINE_PDF = "map_below_treeline.pdf";
         public const string FILE_EXPORT_MAP_SITES_LOCATION_PDF = "map_sites_location.pdf";
         public const string FILE_EXPORT_MAP_CRITICAL_PRECIPITATION_ZONES_PDF = "map_critical_precip_zones.pdf";
+        public const string FILE_EXPORT_MAP_LAND_OWNERSHIP_PDF = "map_land_ownership.pdf";
         public const string FILE_EXPORT_CHART_AREA_ELEV_PRECIP_SITE_PDF = "chart_area_elev_precip_site.pdf";
         public const string FILE_EXPORT_CHART_SLOPE_PDF = "chart_slope.pdf";
         public const string FILE_EXPORT_CHART_ASPECT_PDF = "chart_aspect.pdf";
@@ -111,8 +113,8 @@ namespace bagis_pro
             FILE_EXPORT_MAP_SLOPE_PDF, FILE_EXPORT_CHART_AREA_ELEV_PRECIP_SITE_PDF,
             FILE_EXPORT_CHART_PRECIP_REPRESENT_PDF, FILE_EXPORT_TABLE_PRECIP_REPRESENT_PDF,
             FILE_EXPORT_MAP_CRITICAL_PRECIPITATION_ZONES_PDF, FILE_EXPORT_CHART_SLOPE_PDF, FILE_EXPORT_CHART_ASPECT_PDF,
-            FILE_EXPORT_CHART_ELEV_PRECIP_CORR_PDF, FILE_EXPORT_MAP_ROADS_PDF, FILE_EXPORT_MAP_PUBLIC_LAND_PDF,
-            FILE_EXPORT_MAP_BELOW_TREELINE_PDF, FILE_EXPORT_MAP_SITES_LOCATION_PDF};
+            FILE_EXPORT_CHART_ELEV_PRECIP_CORR_PDF, FILE_EXPORT_MAP_ROADS_PDF, FILE_EXPORT_MAP_PUBLIC_LAND_ZONES_PDF,
+            FILE_EXPORT_MAP_BELOW_TREELINE_PDF, FILE_EXPORT_MAP_SITES_LOCATION_PDF, FILE_EXPORT_MAP_LAND_OWNERSHIP_PDF};
         public const string FILE_TITLE_PAGE_XSL = "title_page.xsl";
         public const string FILE_TITLE_PAGE_XML = "title_page.xml";
         public const string FILE_TITLE_PAGE_HTML = "title_page.html";
@@ -206,8 +208,9 @@ namespace bagis_pro
                                                                 "MapButtonPalette_BtnSweDec_State",
                                                                 "MapButtonPalette_BtnRoads_State",
                                                                 "MapButtonPalette_BtnBelowTreeline_State",
-                                                                "MapButtonPalette_BtnPublicLand_State",
-                                                                "MapButtonPalette_BtnSitesLocationZone_State"};
+                                                                "MapButtonPalette_BtnPublicLandZones_State",
+                                                                "MapButtonPalette_BtnSitesLocationZone_State",
+                                                                "MapButtonPalette_BtnLandOwnership_State"};
 
         public static string META_TAG_XPATH = @"/metadata/dataIdInfo/searchKeys/keyword";
         public static string META_TAG_PREFIX = "BAGIS Tag < Please do not modify: ";

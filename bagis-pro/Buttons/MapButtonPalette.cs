@@ -158,17 +158,32 @@ namespace bagis_pro.Buttons
         }
     }
 
-    internal class MapButtonPalette_BtnPublicLand : Button
+    internal class MapButtonPalette_BtnPublicLandZones : Button
     {
         protected override async void OnClick()
         {
             try
             {
-                await ToggleMapDisplay.ToggleAsync(BagisMapType.PUBLIC_LAND);
+                await ToggleMapDisplay.ToggleAsync(BagisMapType.PUBLIC_LAND_ZONES);
             }
             catch (Exception e)
             {
-                MessageBox.Show("Unable to display public land map!!" + e.Message, "BAGIS-PRO");
+                MessageBox.Show("Unable to display public land zones map!!" + e.Message, "BAGIS-PRO");
+            }
+        }
+    }
+
+    internal class MapButtonPalette_BtnLandOwnership : Button
+    {
+        protected override async void OnClick()
+        {
+            try
+            {
+                await ToggleMapDisplay.ToggleAsync(BagisMapType.LAND_OWNERSHIP);
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show("Unable to display land ownership map!!" + e.Message, "BAGIS-PRO");
             }
         }
     }
@@ -388,7 +403,7 @@ namespace bagis_pro.Buttons
             }
             catch (Exception e)
             {
-                MessageBox.Show("Unable to display SNODAS SWE map!!" + e.Message, "BAGIS-PRO");
+                MessageBox.Show("Unable to display PRISM map!!" + e.Message, "BAGIS-PRO");
             }
         }
     }

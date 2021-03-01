@@ -34,10 +34,11 @@ namespace bagis_pro
         SNODAS_SWE,
         PRISM,
         ROADS,
-        PUBLIC_LAND,
+        PUBLIC_LAND_ZONES,
         BELOW_TREELINE,
         SITES_LOCATION,
-        CRITICAL_PRECIP
+        CRITICAL_PRECIP,
+        LAND_OWNERSHIP
     }
 
     public enum SiteType

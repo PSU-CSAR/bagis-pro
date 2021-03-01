@@ -50,6 +50,7 @@
         <group id="bagis_pro_Groups_Tools" appearsOnAddInTab="false" caption="Tools">
           <button refID="bagis_pro_DockBatchPdfExport_ShowButton" size="middle" />
           <button refID="bagis_pro_DockMigrateToFGDB_ShowButton" size="middle" />
+          <button refID="bagis_pro_Menus_MnuBasinAnalyst_AOIShapefile" size="middle"/>
         </group>
       </groups>
       <toolbars>
@@ -76,10 +77,11 @@
           <button refID="MapButtonPalette_BtnSweJun" />
           <button refID="MapButtonPalette_BtnSweDec" />
           <button refID="MapButtonPalette_BtnRoads" />
-          <button refID="MapButtonPalette_BtnPublicLand" />
+          <button refID="MapButtonPalette_BtnPublicLandZones" />
           <button refID="MapButtonPalette_BtnBelowTreeline" />
           <button refID="MapButtonPalette_BtnSitesLocationZone" />
           <button refID="MapButtonPalette_BtnCriticalPrecipZone" />
+          <button refID="MapButtonPalette_BtnLandOwnership" />
         </buttonPalette>
       </palettes>
       <controls>
@@ -97,9 +99,8 @@
         <button id="bagis_pro_Menus_MnuBasinAnalyst_AoiUtilities" caption="AOI Utilities" className="bagis_pro.Menus.MnuBasinAnalyst_AoiUtilities" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GeoprocessingEnvironmentSettings16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GeoprocessingEnvironmentSettings32.png">
           <tooltip heading="AOI Utilities">AOI Utilities<disabledText /></tooltip>
         </button>
-        <button id="bagis_pro_Menus_MnuBasinAnalyst_AOIShapefile" caption="Create AOI from a shapefile" className="bagis_pro.Menus.MnuBasinAnalyst_AOIShapefile" loadOnClick="true">
-          <tooltip heading="Create AOI from a shapefile">
-            Creating an AOI using an existing shapefile<disabledText /></tooltip>
+        <button id="bagis_pro_Menus_MnuBasinAnalyst_AOIShapefile" caption="Test PDF Upload" className="bagis_pro.Menus.MnuBasinAnalyst_AOIShapefile" loadOnClick="true" condition="BtnExportToPdf_Condition">
+          <tooltip heading="Test PDF Upload">Test PDF Upload<disabledText /></tooltip>
         </button>
         <button id="bagis_pro_Menus_MnuBasinAnalyst_Options" caption="Options" className="bagis_pro.Menus.MnuBasinAnalyst_Options" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericOptions16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericOptions32.png">
           <tooltip heading="Options">
@@ -193,7 +194,7 @@
           <tooltip heading="Display Map">
             ToolTip<disabledText /></tooltip>
         </button>
-        <button id="MapButtonPalette_BtnPublicLand" caption="Public Non_Wilderness Land" className="bagis_pro.Buttons.MapButtonPalette_BtnPublicLand" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnPublicLand_Condition">
+        <button id="MapButtonPalette_BtnPublicLandZones" caption="Public Non_Wilderness Land" className="bagis_pro.Buttons.MapButtonPalette_BtnPublicLandZones" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnPublicLandZones_Condition">
           <tooltip heading="Display Map">
             ToolTip<disabledText /></tooltip>
         </button>
@@ -208,6 +209,11 @@
         <button id="MapButtonPalette_BtnCriticalPrecipZone" caption="Critical Precipitation Zones" className="bagis_pro.Buttons.MapButtonPalette_BtnCriticalPrecipZone" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnCriticalPrecipZone_Condition">
           <tooltip heading="Display Map">
             ToolTip<disabledText /></tooltip>
+        </button>
+        <button id="MapButtonPalette_BtnLandOwnership" caption="Land Ownership" className="bagis_pro.Buttons.MapButtonPalette_BtnLandOwnership" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnLandOwnership_Condition">
+          <tooltip heading="Display Map">
+            ToolTip<disabledText />
+          </tooltip>
         </button>
         <comboBox id="bagis_pro_Buttons_CboCurrentAoi" className="bagis_pro.Buttons.CboCurrentAoi" itemWidth="180" isEditable="false" isReadOnly="true" resizable="true">
           <tooltip heading="Tooltip Heading">Selected AOI<disabledText /></tooltip>
@@ -346,8 +352,8 @@
     <insertCondition id="MapButtonPalette_BtnRoads_Condition" caption="Map Disabled">
       <state id="MapButtonPalette_BtnRoads_State" />
     </insertCondition>
-    <insertCondition id="MapButtonPalette_BtnPublicLand_Condition" caption="Map Disabled">
-      <state id="MapButtonPalette_BtnPublicLand_State" />
+    <insertCondition id="MapButtonPalette_BtnPublicLandZones_Condition" caption="Map Disabled">
+      <state id="MapButtonPalette_BtnPublicLandZones_State" />
     </insertCondition>
     <insertCondition id="MapButtonPalette_BtnBelowTreeline_Condition" caption="Map Disabled">
       <state id="MapButtonPalette_BtnBelowTreeline_State" />
@@ -357,6 +363,9 @@
     </insertCondition>
     <insertCondition id="MapButtonPalette_BtnCriticalPrecipZone_Condition" caption="Map Disabled">
       <state id="MapButtonPalette_BtnCriticalPrecipZone_State" />
+    </insertCondition>
+    <insertCondition id="MapButtonPalette_BtnLandOwnership_Condition" caption="Map Disabled">
+      <state id="MapButtonPalette_BtnLandOwnership_State" />
     </insertCondition>
   </conditions>
 </ArcGIS>

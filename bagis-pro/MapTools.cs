@@ -66,8 +66,17 @@ namespace bagis_pro
                     //remove existing layers from map frame
                     await MapTools.RemoveLayersfromMapFrame();
 
+                    //add Land Ownership Layer
+                    string strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers, true) +
+                        Constants.FILE_PUBLIC_LAND;
+                    Uri uri = new Uri(strPath);
+                    success = await MapTools.AddPolygonLayerUniqueValuesAsync(uri, "ArcGIS Colors", "Basic Random",
+                        new string[] { "AGBUR" }, false, false, 30.0F, Constants.MAPS_LAND_OWNERSHIP);
+                    if (success.Equals(BA_ReturnCode.Success))
+                        Module1.ActivateState("MapButtonPalette_BtnLandOwnership_State");
+
                     //add aoi boundary to map
-                    string strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi, true) +
+                    strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi, true) +
                                      Constants.FILE_AOI_VECTOR;
                     Uri aoiUri = new Uri(strPath);
                     success = await MapTools.AddAoiBoundaryToMapAsync(aoiUri, Constants.MAPS_AOI_BOUNDARY);
@@ -75,7 +84,7 @@ namespace bagis_pro
                     //add Snotel Represented Area Layer
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
                         Constants.FILE_SNOTEL_REPRESENTED;
-                    Uri uri = new Uri(strPath);
+                    uri = new Uri(strPath);
                     CIMColor fillColor = CIMColor.CreateRGBColor(255, 0, 0, 50);    //Red with 30% transparency
                     success = await MapTools.AddPolygonLayerAsync(uri, fillColor, false, Constants.MAPS_SNOTEL_REPRESENTED);
                     if (success.Equals(BA_ReturnCode.Success))
@@ -118,9 +127,9 @@ namespace bagis_pro
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
                         Constants.FILE_PUBLIC_LAND_ZONE;
                     uri = new Uri(strPath);
-                    success = await MapTools.AddPolygonLayerAsync(uri, fillColor, false, Constants.MAPS_PUBLIC_LAND);
+                    success = await MapTools.AddPolygonLayerAsync(uri, fillColor, false, Constants.MAPS_PUBLIC_LAND_ZONES);
                     if (success.Equals(BA_ReturnCode.Success))
-                        Module1.ActivateState("MapButtonPalette_BtnPublicLand_State");
+                        Module1.ActivateState("MapButtonPalette_BtnPublicLandZones_State");
 
                     //add Below Treeline Layer
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
@@ -395,6 +404,77 @@ namespace bagis_pro
             return success;
         }
 
+        public static async Task<BA_ReturnCode> AddPolygonLayerUniqueValuesAsync(Uri uri, string styleCategory, string styleName,
+                                                                                 string[] arrDisplayFields, bool isVisible, 
+                                                                                 bool bAllOtherValues, double dblTransparency, string displayName = "")
+        {
+            // parse the uri for the folder and file
+            string strFileName = null;
+            string strFolderPath = null;
+            if (uri.IsFile)
+            {
+                strFileName = System.IO.Path.GetFileName(uri.LocalPath);
+                strFolderPath = System.IO.Path.GetDirectoryName(uri.LocalPath);
+            }
+
+            Uri tempUri = new Uri(strFolderPath);
+            bool polygonLayerExists = await GeodatabaseTools.FeatureClassExistsAsync(tempUri, strFileName);
+            if (!polygonLayerExists)
+            {
+                return BA_ReturnCode.ReadError;
+            }
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            await QueuedTask.Run(() =>
+            {
+                // Find the color ramp
+                StyleProjectItem style =
+                    Project.Current.GetItems<StyleProjectItem>().FirstOrDefault(s => s.Name == styleCategory);
+                if (style == null) return;
+                var colorRampList = style.SearchColorRamps(styleName);
+                CIMColorRamp cimColorRamp = null;
+                if (colorRampList.Count > 0)
+                {
+                    cimColorRamp = colorRampList[0].ColorRamp;
+                }
+                else
+                {
+                    return;
+                }
+
+                //construct unique value renderer definition 
+                var oSymbolReference = SymbolFactory.Instance.ConstructPolygonSymbol(ColorFactory.Instance.RedRGB, SimpleFillStyle.Solid, null).MakeSymbolReference();
+                UniqueValueRendererDefinition uvr = new
+                   UniqueValueRendererDefinition()
+                {
+                    ValueFields = arrDisplayFields, //multiple fields in the array if needed.
+                    ColorRamp = cimColorRamp, //Specify color ramp
+                    SymbolTemplate = oSymbolReference,
+                    UseDefaultSymbol = bAllOtherValues
+                };
+
+                //Define some of the Feature Layer's parameters
+                var flyrCreatnParam = new FeatureLayerCreationParams(uri)
+                {
+                    Name = displayName,
+                    IsVisible = isVisible,
+                };
+                FeatureLayer fLayer = LayerFactory.Instance.CreateLayer<FeatureLayer>(flyrCreatnParam, MapView.Active.Map);
+                if (dblTransparency > 0)
+                {
+                    fLayer.SetTransparency(dblTransparency);
+                }
+
+                //Creates a "Renderer"
+                var cimRenderer = fLayer.CreateRenderer(uvr);
+                
+                //Sets the renderer to the feature layer
+                fLayer.SetRenderer(cimRenderer);
+                
+                success = BA_ReturnCode.Success;
+            });
+            return success;
+        }
+
         public static async Task AddLineLayerAsync(Uri aoiUri, string displayName, CIMColor lineColor)
         {
             // parse the uri for the folder and file
@@ -547,20 +627,9 @@ namespace bagis_pro
              
         }
 
-        public static async Task RemoveLayer(Map map, string layerName)
-        {
-            await QueuedTask.Run(() =>
-            {
-                Layer oLayer =
-                    map.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(layerName, StringComparison.CurrentCultureIgnoreCase));
-                if (oLayer != null)
-                    map.RemoveLayer(oLayer);
-            });
-        }
-
         public static async Task RemoveLayersfromMapFrame()
         {
-            string[] arrLayerNames = new string[24];
+            string[] arrLayerNames = new string[25];
             arrLayerNames[0] = Constants.MAPS_AOI_BOUNDARY;
             arrLayerNames[1] = Constants.MAPS_STREAMS;
             arrLayerNames[2] = Constants.MAPS_SNOTEL;
@@ -574,11 +643,12 @@ namespace bagis_pro
             arrLayerNames[10] = Constants.MAPS_ALL_SITES_REPRESENTED;
             arrLayerNames[11] = Constants.MAPS_PRISM_ZONE;
             arrLayerNames[12] = Module1.Current.RoadsLayerLegend;
-            arrLayerNames[13] = Constants.MAPS_PUBLIC_LAND;
+            arrLayerNames[13] = Constants.MAPS_PUBLIC_LAND_ZONES;
             arrLayerNames[14] = Constants.MAPS_BELOW_TREELINE;
             arrLayerNames[15] = Constants.MAPS_SITES_LOCATION;
             arrLayerNames[16] = Constants.MAPS_CRITICAL_PRECIPITATION_ZONES;
-            int idxLayerNames = 17;
+            arrLayerNames[17] = Constants.MAPS_LAND_OWNERSHIP;
+            int idxLayerNames = 18;
             for (int i = 0; i < Constants.LAYER_NAMES_SNODAS_SWE.Length; i++)
             {
                 arrLayerNames[idxLayerNames] = Constants.LAYER_NAMES_SNODAS_SWE[i];
@@ -1430,13 +1500,13 @@ namespace bagis_pro
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;
-                case BagisMapType.PUBLIC_LAND:
+                case BagisMapType.PUBLIC_LAND_ZONES:
                     lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_ELEV_ZONE,
-                                                   Constants.MAPS_PUBLIC_LAND};
-                    lstLegendLayers = new List<string> { Constants.MAPS_PUBLIC_LAND };
+                                                   Constants.MAPS_PUBLIC_LAND_ZONES};
+                    lstLegendLayers = new List<string> { Constants.MAPS_PUBLIC_LAND_ZONES };
                     mapDefinition = new BA_Objects.MapDefinition("PUBLIC, NON-WILDERNESS LAND",
-                        " ", Constants.FILE_EXPORT_MAP_PUBLIC_LAND_PDF);
+                        " ", Constants.FILE_EXPORT_MAP_PUBLIC_LAND_ZONES_PDF);
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;
@@ -1481,6 +1551,16 @@ namespace bagis_pro
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;
+                case BagisMapType.LAND_OWNERSHIP:
+                    lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
+                                                   Constants.MAPS_HILLSHADE, Constants.MAPS_LAND_OWNERSHIP };
+                    lstLegendLayers = new List<string> { Constants.MAPS_LAND_OWNERSHIP };
+                    mapDefinition = new BA_Objects.MapDefinition("LAND OWNERSHIP",
+                        " ", Constants.FILE_EXPORT_MAP_LAND_OWNERSHIP_PDF);
+                    mapDefinition.LayerList = lstLayers;
+                    mapDefinition.LegendLayerList = lstLegendLayers;
+                    break;
+
             }
             return mapDefinition;
         }
