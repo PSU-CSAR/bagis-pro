@@ -26,7 +26,7 @@ namespace bagis_pro
         public const string MAPS_SNOTEL_REPRESENTED = "SNOTEL Sites Represented Area";
         public const string MAPS_SNOW_COURSE_REPRESENTED = "Snow Course Sites Represented Area";
         public const string MAPS_ALL_SITES_REPRESENTED = "All Sites Represented Area";
-        public const string MAPS_PUBLIC_LAND_ZONES = "Public, Non-Wilderness Land";
+        public const string MAPS_FEDERAL_PUBLIC_LAND_ZONES = "Federal Non-Wilderness Land";
         public const string MAPS_BELOW_TREELINE = "Area Below Treeline";
         public const string MAPS_SITES_LOCATION = "Meet All Criteria";
         public const string MAPS_CRITICAL_PRECIPITATION_ZONES = "Critical Precipitation";
@@ -77,6 +77,7 @@ namespace bagis_pro
         public const string FILE_ELEV_ZONES_TBL = "tblZones";
         public const string FILE_ELEV_ZONES_VECTOR = "elevzone_v";
         public const string FILE_CRITICAL_PRECIP_ZONE = "criticalprecipzone";
+        public const string FILE_FED_LAND_OWNERSHIP = "fed_land_ownership";
         public const string FILE_SETTINGS = "analysis.xml";
         public const string FILE_BATCH_TOOL_SETTINGS = "batch_tool_settings.json";
         public const string FILE_BATCH_LOG = "batch_tool_log.txt";

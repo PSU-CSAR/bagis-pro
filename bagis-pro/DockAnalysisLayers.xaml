@@ -91,7 +91,7 @@
                       IsChecked="{Binding Roads_Checked}"/>
         </DockPanel>
         <DockPanel Grid.Row="8" Grid.Column="0"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
-            <Label  Content="Public Land" HorizontalAlignment="Left" VerticalAlignment="Center"  Padding="5,0,20,0"/>
+            <Label  Content="Federal Non-Wilderness Land" HorizontalAlignment="Left" VerticalAlignment="Center"  Padding="5,0,20,0"/>
         </DockPanel>
         <DockPanel Grid.Row="8" Grid.Column="1"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
             <CheckBox x:Name="chkPublicLands" Content="" HorizontalAlignment="Center"  Height="14" VerticalAlignment="Center"

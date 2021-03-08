@@ -127,7 +127,7 @@ namespace bagis_pro
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
                         Constants.FILE_PUBLIC_LAND_ZONE;
                     uri = new Uri(strPath);
-                    success = await MapTools.AddPolygonLayerAsync(uri, fillColor, false, Constants.MAPS_PUBLIC_LAND_ZONES);
+                    success = await MapTools.AddPolygonLayerAsync(uri, fillColor, false, Constants.MAPS_FEDERAL_PUBLIC_LAND_ZONES);
                     if (success.Equals(BA_ReturnCode.Success))
                         Module1.ActivateState("MapButtonPalette_BtnPublicLandZones_State");
 
@@ -643,7 +643,7 @@ namespace bagis_pro
             arrLayerNames[10] = Constants.MAPS_ALL_SITES_REPRESENTED;
             arrLayerNames[11] = Constants.MAPS_PRISM_ZONE;
             arrLayerNames[12] = Module1.Current.RoadsLayerLegend;
-            arrLayerNames[13] = Constants.MAPS_PUBLIC_LAND_ZONES;
+            arrLayerNames[13] = Constants.MAPS_FEDERAL_PUBLIC_LAND_ZONES;
             arrLayerNames[14] = Constants.MAPS_BELOW_TREELINE;
             arrLayerNames[15] = Constants.MAPS_SITES_LOCATION;
             arrLayerNames[16] = Constants.MAPS_CRITICAL_PRECIPITATION_ZONES;
@@ -1503,8 +1503,8 @@ namespace bagis_pro
                 case BagisMapType.PUBLIC_LAND_ZONES:
                     lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_ELEV_ZONE,
-                                                   Constants.MAPS_PUBLIC_LAND_ZONES};
-                    lstLegendLayers = new List<string> { Constants.MAPS_PUBLIC_LAND_ZONES };
+                                                   Constants.MAPS_FEDERAL_PUBLIC_LAND_ZONES};
+                    lstLegendLayers = new List<string> { Constants.MAPS_FEDERAL_PUBLIC_LAND_ZONES };
                     mapDefinition = new BA_Objects.MapDefinition("PUBLIC, NON-WILDERNESS LAND",
                         " ", Constants.FILE_EXPORT_MAP_PUBLIC_LAND_ZONES_PDF);
                     mapDefinition.LayerList = lstLayers;

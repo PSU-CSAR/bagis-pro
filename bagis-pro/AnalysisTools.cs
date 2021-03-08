@@ -1918,17 +1918,36 @@ namespace bagis_pro
                    Module1.Current.ModuleLogManager.LogError(nameof(GetPublicLandsAsync),
                    "Unable to dissolve public lands temp feature class. Error code: " + gpResult.Result.ErrorCode);
                    MessageBox.Show("Unable to dissolve public lands features!!", "BAGIS-PRO");
-                   return;
+                   success = BA_ReturnCode.UnknownError;
                }
                else
                {
-                   // Remove temporary layer
-                   MapView.Active.Map.RemoveLayer(slectionLayer);
-                   Module1.Current.ModuleLogManager.LogDebug(nameof(GetPublicLandsAsync),
-                       "Dissolved public lands layer");
+                   success = BA_ReturnCode.Success;
                }
+               if (success == BA_ReturnCode.Success)
+               {
+                   // Save selection layer to a feature class that we can use for the federal lands ownership map
+                   parameters = Geoprocessing.MakeValueArray(slectionLayer, 
+                       GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Analysis, true) + Constants.FILE_FED_LAND_OWNERSHIP);
+                   gpResult = Geoprocessing.ExecuteToolAsync("CopyFeatures_management", parameters, environments,
+                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                   if (gpResult.Result.IsFailed)
+                   {
+                       Module1.Current.ModuleLogManager.LogError(nameof(GetPublicLandsAsync),
+                       "Unable to save federal ownership layer. Error code: " + gpResult.Result.ErrorCode);
+                       MessageBox.Show("Unable to save federal ownership layer!!", "BAGIS-PRO");
+                       success = BA_ReturnCode.UnknownError;
+                   }
+                   else
+                   {
+                       success = BA_ReturnCode.Success;
+                   }
+               }
+               // Remove temporary layer
+               MapView.Active.Map.RemoveLayer(slectionLayer);
+               Module1.Current.ModuleLogManager.LogDebug(nameof(GetPublicLandsAsync),
+                   "Dissolved public lands layer");
            });
-            success = BA_ReturnCode.Success;
             return success;
         }
 
