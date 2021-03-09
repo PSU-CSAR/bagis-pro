@@ -1926,16 +1926,16 @@ namespace bagis_pro
                }
                if (success == BA_ReturnCode.Success)
                {
-                   // Save selection layer to a feature class that we can use for the federal lands ownership map
+                   // Save selection layer to a feature class that we can use for the public lands ownership map
                    parameters = Geoprocessing.MakeValueArray(slectionLayer, 
-                       GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Analysis, true) + Constants.FILE_FED_LAND_OWNERSHIP);
+                       GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Analysis, true) + Constants.FILE_PUBLIC_LAND_OWNERSHIP);
                    gpResult = Geoprocessing.ExecuteToolAsync("CopyFeatures_management", parameters, environments,
                     CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
                    if (gpResult.Result.IsFailed)
                    {
                        Module1.Current.ModuleLogManager.LogError(nameof(GetPublicLandsAsync),
-                       "Unable to save federal ownership layer. Error code: " + gpResult.Result.ErrorCode);
-                       MessageBox.Show("Unable to save federal ownership layer!!", "BAGIS-PRO");
+                       "Unable to save public lands ownership layer. Error code: " + gpResult.Result.ErrorCode);
+                       MessageBox.Show("Unable to save public lands layer!!", "BAGIS-PRO");
                        success = BA_ReturnCode.UnknownError;
                    }
                    else

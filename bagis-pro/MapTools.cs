@@ -67,13 +67,13 @@ namespace bagis_pro
                     await MapTools.RemoveLayersfromMapFrame();
 
                     //add Land Ownership Layer
-                    string strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers, true) +
-                        Constants.FILE_PUBLIC_LAND;
+                    string strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
+                        Constants.FILE_PUBLIC_LAND_OWNERSHIP;
                     Uri uri = new Uri(strPath);
                     success = await MapTools.AddPolygonLayerUniqueValuesAsync(uri, "ArcGIS Colors", "Basic Random",
-                        new string[] { "AGBUR" }, false, false, 30.0F, Constants.MAPS_LAND_OWNERSHIP);
+                        new string[] { "AGBUR" }, false, false, 30.0F, Constants.MAPS_PUBLIC_LAND_OWNERSHIP);
                     if (success.Equals(BA_ReturnCode.Success))
-                        Module1.ActivateState("MapButtonPalette_BtnLandOwnership_State");
+                        Module1.ActivateState("MapButtonPalette_BtnPublicLandOwnership_State");
 
                     //add aoi boundary to map
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi, true) +
@@ -647,7 +647,7 @@ namespace bagis_pro
             arrLayerNames[14] = Constants.MAPS_BELOW_TREELINE;
             arrLayerNames[15] = Constants.MAPS_SITES_LOCATION;
             arrLayerNames[16] = Constants.MAPS_CRITICAL_PRECIPITATION_ZONES;
-            arrLayerNames[17] = Constants.MAPS_LAND_OWNERSHIP;
+            arrLayerNames[17] = Constants.MAPS_PUBLIC_LAND_OWNERSHIP;
             int idxLayerNames = 18;
             for (int i = 0; i < Constants.LAYER_NAMES_SNODAS_SWE.Length; i++)
             {
@@ -1505,7 +1505,7 @@ namespace bagis_pro
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_ELEV_ZONE,
                                                    Constants.MAPS_FEDERAL_PUBLIC_LAND_ZONES};
                     lstLegendLayers = new List<string> { Constants.MAPS_FEDERAL_PUBLIC_LAND_ZONES };
-                    mapDefinition = new BA_Objects.MapDefinition("PUBLIC, NON-WILDERNESS LAND",
+                    mapDefinition = new BA_Objects.MapDefinition("FEDERAL NON-WILDERNESS LAND",
                         " ", Constants.FILE_EXPORT_MAP_PUBLIC_LAND_ZONES_PDF);
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
@@ -1551,12 +1551,12 @@ namespace bagis_pro
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;
-                case BagisMapType.LAND_OWNERSHIP:
+                case BagisMapType.PUBLIC_LAND_OWNERSHIP:
                     lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
-                                                   Constants.MAPS_HILLSHADE, Constants.MAPS_LAND_OWNERSHIP };
-                    lstLegendLayers = new List<string> { Constants.MAPS_LAND_OWNERSHIP };
-                    mapDefinition = new BA_Objects.MapDefinition("LAND OWNERSHIP",
-                        " ", Constants.FILE_EXPORT_MAP_LAND_OWNERSHIP_PDF);
+                                                   Constants.MAPS_HILLSHADE, Constants.MAPS_PUBLIC_LAND_OWNERSHIP };
+                    lstLegendLayers = new List<string> { Constants.MAPS_PUBLIC_LAND_OWNERSHIP };
+                    mapDefinition = new BA_Objects.MapDefinition("PUBLIC LAND OWNERSHIP",
+                        " ", Constants.FILE_EXPORT_MAP_PUBLIC_LAND_OWNERSHIP_PDF);
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;

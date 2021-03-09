@@ -173,13 +173,13 @@ namespace bagis_pro.Buttons
         }
     }
 
-    internal class MapButtonPalette_BtnLandOwnership : Button
+    internal class MapButtonPalette_BtnPublicLandOwnership : Button
     {
         protected override async void OnClick()
         {
             try
             {
-                await ToggleMapDisplay.ToggleAsync(BagisMapType.LAND_OWNERSHIP);
+                await ToggleMapDisplay.ToggleAsync(BagisMapType.PUBLIC_LAND_OWNERSHIP);
             }
             catch (Exception e)
             {
