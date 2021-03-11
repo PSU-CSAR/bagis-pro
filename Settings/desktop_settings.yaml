@@ -63,8 +63,8 @@ bagis-pro:
      Publisher: nwcc_nrcs
      SiteElevRangeFeet: 500
      SiteBufferDistMiles: 5.642
-     CriticalPrecipMinOddsRatio: 1.0F
-     CriticalPrecipMaxPctArea: 33.3
+     CriticalPrecipMinMeanVolInches: 20.0
+     CriticalPrecipTotalMaxVolPct: 66.6
      Version: 1.0
 
 bagis-p:

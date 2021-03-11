@@ -522,9 +522,9 @@ namespace bagis_pro
                     // Update table with Critical Precipitation Zone information
                     Uri uriElevZones = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false));
                     IList<BA_Objects.Interval> lstIntervals = await GeodatabaseTools.ReadReclassRasterAttribute(uriElevZones, Constants.FILE_ELEV_ZONE);
-                    double dblMinOddsRatio = (double) Module1.Current.BatchToolSettings.CriticalPrecipMinOddsRatio;                   
-                    double dblMaxPctArea = (double)Module1.Current.BatchToolSettings.CriticalPrecipMaxPctArea;
-                    IList<string> lstCriticalZoneValues = ExcelTools.CreateCriticalPrecipitationZones(pPRISMWorkSheet, lstIntervals, dblMinOddsRatio, dblMaxPctArea);
+                    double dblMinVolume = (double) Module1.Current.BatchToolSettings.CriticalPrecipMinMeanVolInches;                   
+                    double dblMaxPctVolume = (double)Module1.Current.BatchToolSettings.CriticalPrecipTotalMaxVolPct;
+                    IList<string> lstCriticalZoneValues = ExcelTools.CreateCriticalPrecipitationZones(pPRISMWorkSheet, lstIntervals, dblMinVolume, dblMaxPctVolume);
 
                     // Extract Critical Precipitation Zone layer
                     if (lstCriticalZoneValues.Count > 0)
@@ -662,7 +662,7 @@ namespace bagis_pro
 
                     //Cumulative precip table
                     pathToSave = sOutputFolder + "\\" + Constants.FILE_EXPORT_TABLE_PRECIP_REPRESENT_PDF;
-                    pPRISMWorkSheet.PageSetup.PrintArea = "$A$1:$Q$" + lastRow;
+                    pPRISMWorkSheet.PageSetup.PrintArea = "$A$1:$P$" + lastRow;
                     pPRISMWorkSheet.PageSetup.Orientation = XlPageOrientation.xlLandscape;
                     pPRISMWorkSheet.PageSetup.Zoom = false;     // Required to print on one page
                     pPRISMWorkSheet.PageSetup.PaperSize = oReqPaperSize;    // Required to print on one page

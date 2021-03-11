@@ -447,9 +447,6 @@ namespace bagis_pro
             pworksheet.Columns[15].NumberFormat = strNumberFormat;
             pworksheet.Cells[1, 16] = "%_VOL_CUMU";
             pworksheet.Columns[16].NumberFormat = strNumberFormat;
-            pworksheet.Cells[1, 17] = "ODDS_RATIO";
-            pworksheet.Columns[17].NumberFormat = strNumberFormat;
-
 
             //============================================
             // Populate Elevation and Percent Area Rows
@@ -588,10 +585,11 @@ namespace bagis_pro
                 string strFormula = "=" + percentString + (i+2) + "+" + cumuString + (i+1);
                 Range cumuRange = pPRSIMWS.Cells[i + 2, PercentCol + 1];    // %_VOL_CUMU
                 cumuRange.Formula = strFormula;
-                Range oddsRange = pPRSIMWS.Cells[i + 2, PercentCol + 2];    // ODDS_RATIO
+                // ODDS_RATIO is obsolete 11-MAR-2021
+                //Range oddsRange = pPRSIMWS.Cells[i + 2, PercentCol + 2];    // ODDS_RATIO
 
-                string strOddsFormula = "=" + percentString + (i + 2) + "/" + oddsString + (i + 2);
-                oddsRange.Formula = strOddsFormula;
+                //string strOddsFormula = "=" + percentString + (i + 2) + "/" + oddsString + (i + 2);
+                //oddsRange.Formula = strOddsFormula;
             }
             pPRSIMWS.Columns.AutoFit();   // re-size every column to best fit after data is written
             return intCount;
@@ -1524,46 +1522,46 @@ namespace bagis_pro
         }
 
         public static IList<string> CreateCriticalPrecipitationZones(Worksheet pPRSIMWS, IList<BA_Objects.Interval> lstIntervals,
-            double dblMinOddsRatio, double dblMaxPctArea)
+            double dblMinVolume, double dblMaxPctVolume)
         {
             IList<string> lstCriticalZones = new List<string>();
-            Dictionary<string, double> dictPctAreaDem = new Dictionary<string, double>();
-            IList<string> lstMinAreaZones = new List<string>();
-            IList<string> lstOddsRatio = new List<string>();
+            Dictionary<string, double> dictPctVolume = new Dictionary<string, double>();
+            IList<string> lstMinVolumeZones = new List<string>();
+            IList<string> lstMeanVolume = new List<string>();
             int intZones = lstIntervals.Count;
-            double minArea = 100 / (2.0F * intZones);
+            double minVolume = 100 / (2.0F * intZones);
             int currentRow = 3;
             Range pRange = pPRSIMWS.Cells[currentRow, 1];
             int intCount = 0;
-            int idxPctAreaDem = 13;
-            int idxOddsRatio = 17;
+            int idxPctVolume = 15;
             int idxValue = 1;
+            int idxMeanVolume = 7;
             while (!string.IsNullOrEmpty(pRange.Text.ToString()))
             {
                 string strZone = Convert.ToString(lstIntervals[currentRow - 3].Value);
-                Range pctAreaRange = pPRSIMWS.Cells[currentRow, idxPctAreaDem];
-                double demPctArea = Convert.ToDouble(pctAreaRange.Value);
-                dictPctAreaDem.Add(strZone, demPctArea);
+                Range pctVolumeRange = pPRSIMWS.Cells[currentRow, idxPctVolume];
+                double pctVolume = Convert.ToDouble(pctVolumeRange.Value);
+                dictPctVolume.Add(strZone, pctVolume);
                 // Meets minimum area pct criterium
-                if (demPctArea > minArea)
+                if (pctVolume > minVolume)
                 {
-                    lstMinAreaZones.Add(strZone);
-                    pctAreaRange.Interior.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.Orange);
+                    lstMinVolumeZones.Add(strZone);
+                    pctVolumeRange.Interior.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.Orange);
                 }
-                Range oddsRatioRange = pPRSIMWS.Cells[currentRow, idxOddsRatio];
-                // Meets odds range criterium
-                if (Convert.ToDouble(oddsRatioRange.Value) >= dblMinOddsRatio)
+                Range meanVolumeRange = pPRSIMWS.Cells[currentRow, idxMeanVolume];
+                // Meets mean volume criterium
+                if (Convert.ToDouble(meanVolumeRange.Value) >= dblMinVolume)
                 {
-                    lstOddsRatio.Add(strZone);
-                    oddsRatioRange.Interior.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.LightBlue);
+                    lstMeanVolume.Add(strZone);
+                    meanVolumeRange.Interior.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.LightBlue);
                 }
                 currentRow++;
                 pRange = pPRSIMWS.Cells[currentRow, 1];
                 intCount++;
             }
             // Intersect minimum area pct and odds range criteria
-            var lstIntersect = lstMinAreaZones.Select(i => i).Intersect(lstOddsRatio);
-            var sortedDict = from entry in dictPctAreaDem orderby entry.Value descending select entry;
+            var lstIntersect = lstMinVolumeZones.Select(i => i).Intersect(lstMeanVolume);
+            var sortedDict = from entry in dictPctVolume orderby entry.Value descending select entry;
             double runningTotal = 0.0F;
             foreach (var kvPair in sortedDict)
             {
@@ -1572,7 +1570,7 @@ namespace bagis_pro
                 {
                     runningTotal = runningTotal + kvPair.Value;
                     lstCriticalZones.Add(kvPair.Key);
-                    if (runningTotal > dblMaxPctArea)
+                    if (runningTotal > dblMaxPctVolume)
                     {
                         break;
                     }
