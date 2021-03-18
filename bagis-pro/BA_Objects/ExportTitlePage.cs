@@ -33,6 +33,7 @@ namespace bagis_pro.BA_Objects
         public double represented_snotel_percent;
         public double represented_snow_course_percent;
         public double represented_all_sites_percent;
+        public double annual_runoff_ratio;
         public DataSource[] data_sources;
 
         public string DateCreatedText

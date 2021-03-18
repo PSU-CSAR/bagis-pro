@@ -228,5 +228,64 @@ namespace bagis_pro
             success = BA_ReturnCode.Success;
             return success;
         }
+
+        public async Task<BA_ReturnCode> GetPortalFile(string portalOrganization, string itemId, string downLoadPath)
+        {
+            try
+            {
+                var myPortal = ArcGISPortalManager.Current.GetActivePortal();
+                if (!myPortal.IsSignedOn())
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(GetPortalFile),
+                        "ArcGIS Pro is not logged onto a portal. The requested file cannot be downloaded! ArcGIS Pro will " +
+                        "use a previous version of the file if it exists");
+                    return BA_ReturnCode.UnknownError;
+                }
+                else
+                {
+                    var portalInfo = await myPortal.GetPortalInfoAsync();
+                    if (!portalOrganization.Equals(portalInfo.OrganizationName))
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(GetPortalFile),
+                            "ArcGIS Pro is not logged onto the " + portalOrganization + " portal. " +
+                            "The requested file cannot be downloaded! ArcGIS Pro will " +
+                            "use a previous version of the file if it exists");
+                        return BA_ReturnCode.UnknownError;
+                    }
+                }
+
+                //assume we query for some content
+                var query = PortalQueryParameters.CreateForItemsWithId(itemId);
+                var results = await myPortal.SearchForContentAsync(query);
+
+                var portalItem = results.Results.First();   //first item
+
+                bool success = false;
+                if (portalItem != null)
+                {
+                    //download the item
+                    success = await portalItem.GetItemDataAsync(downLoadPath);
+                }
+                if (success == true)
+                {
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(GetPortalFile),
+                        "The requested file cannot was successfully downloaded from the Portal");
+                    return BA_ReturnCode.Success;
+                }
+                else
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(GetPortalFile),
+                        "The requested file cannot be downloaded from the Portal! ArcGIS Pro will " +
+                        "use a previous version of the file if it exists");
+                        return BA_ReturnCode.UnknownError;
+                }
+            }
+            catch (Exception e)
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(GetPortalFile),
+                    "Exception: " + e.Message);
+                return BA_ReturnCode.UnknownError;
+            }
+        }
     }
 }

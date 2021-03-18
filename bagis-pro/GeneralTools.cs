@@ -103,14 +103,24 @@ namespace bagis_pro
         {
             try
             {
+                // Download the runoff csv file from the NRCS Portal                
+                string documentId = (string) Module1.Current.BatchToolSettings.AnnualRunoffItemId;
+
+                Webservices ws = new Webservices();
+                var success = await ws.GetPortalFile(Constants.PORTAL_ORGANIZATION, documentId, Module1.Current.SettingsPath + "\\" + Constants.FOLDER_SETTINGS +
+                    "\\" + Constants.FILE_ANNUAL_RUNOFF_CSV);
+
                 // Query for the station triplet and name
                 string[] arrValues = await AnalysisTools.GetStationValues();
-                string strStationId = arrValues[0];
+                string strStationTriplet = arrValues[0];
                 string strStationName = arrValues[1];
-                if (String.IsNullOrEmpty(strStationId))
+                if (String.IsNullOrEmpty(strStationTriplet))
                 {
-                    strStationId = "XXXXXXXX:XX:USGS";
+                    strStationTriplet = "XXXXXXXX:XX:USGS";
                 }
+
+                // Query for the annual runoff value
+                double dblRunoffRatio = QueryAnnualRunoffValue(strStationTriplet);
 
                 // Query for the drainage area
                 Uri gdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi));
@@ -233,6 +243,7 @@ namespace bagis_pro
                 {
                     strComments = strComments.Trim();   // strip white space from comments
                 }
+
                 // Serialize the title page object
                 BA_Objects.ExportTitlePage tPage = new BA_Objects.ExportTitlePage
                 {
@@ -240,7 +251,7 @@ namespace bagis_pro
                     comments = strComments,
                     publisher = strPublisher,
                     local_path = Module1.Current.Aoi.FilePath,
-                    streamgage_station = strStationId,
+                    streamgage_station = strStationTriplet,
                     streamgage_station_name = strStationName,
                     drainage_area_sqkm = areaSqKm,
                     elevation_min_meters = elevMinMeters,
@@ -258,6 +269,7 @@ namespace bagis_pro
                     represented_snotel_percent = pctSnotelRepresented,
                     represented_snow_course_percent = pctSnowCourseRepresented,
                     represented_all_sites_percent = pctAllSitesRepresented,
+                    annual_runoff_ratio = dblRunoffRatio,
                     date_created = DateTime.Now
                 };
                 if (lstDataSources.Count > 0)
@@ -1768,6 +1780,92 @@ namespace bagis_pro
             }
             await QueuedTask.Run(() => Project.Current.RemoveItem(folderToAdd as IProjectItem));
             return layerNames;
+        }
+
+        private static double QueryAnnualRunoffValue (string stationTriplet)
+        {
+            double returnValue = -1.0F;
+            string strCsvPath = Module1.Current.SettingsPath + "\\" + Constants.FOLDER_SETTINGS +
+                    "\\" + Constants.FILE_ANNUAL_RUNOFF_CSV;
+            if (!File.Exists(strCsvPath))
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(QueryAnnualRunoffValue),
+                    "The file containing annual runoff could not be found. Runoff will not be calculated!");
+                return returnValue;
+            }
+
+            string connString = "Provider=Microsoft.ACE.OLEDB.12.0;Data Source=" + Path.GetDirectoryName(strCsvPath) 
+                + ";Extended Properties='Text;HDR=YES;FMT=Delimited;'";
+            int idxId = -1;
+            int idxValue = -1;
+            try
+            {
+                using (System.Data.OleDb.OleDbConnection objConn = new System.Data.OleDb.OleDbConnection(connString))
+                {
+                    objConn.Open();
+                    using (var da = new System.Data.OleDb.OleDbDataAdapter("Select * from " + Constants.FILE_ANNUAL_RUNOFF_CSV, objConn))
+                    {
+                        System.Data.DataTable dt = new System.Data.DataTable();
+                        da.Fill(dt);
+                        var oHeaderRow = dt.Rows[0];
+                        if (oHeaderRow != null)
+                        {
+                            int i = 0;
+                            foreach (var item in dt.Columns)
+                            {
+                                string header = Convert.ToString(item);
+                                if (header.ToUpper().Trim().Equals(Constants.FIELD_RUNOFF_STATION_TRIPLET.ToUpper().Trim()))
+                                {
+                                    idxId = i;
+                                }
+                                else if (header.ToUpper().Trim().Equals(Constants.FIELD_RUNOFF_AVERAGE.ToUpper().Trim()))
+                                {
+                                    idxValue = i;
+                                }
+                                if (idxId > 0 && idxValue > 0)
+                                {
+                                    break;
+                                }
+                                i++;
+                            }
+                        }
+                        for (int i = 0; i < dt.Rows.Count; i++)
+                        {
+                            var oRow = dt.Rows[i];
+                            if (oRow[idxId] != DBNull.Value)
+                            {
+                                string strId = Convert.ToString(oRow[idxId]);
+                                if (strId.Trim().Equals(stationTriplet.Trim()))
+                                {
+                                    if (oRow[idxValue] != DBNull.Value)
+                                    {
+                                        returnValue = Convert.ToDouble(oRow[idxValue]);
+                                        break;
+                                    }
+                                    else
+                                    {
+                                        // This is how we handle nulls
+                                        returnValue = 0;
+                                        break;
+                                    }
+                                }
+                            }
+                            
+                        }
+                }
+            }
+                Module1.Current.ModuleLogManager.LogDebug(nameof(QueryAnnualRunoffValue),
+                    "Found Runoff value of " + returnValue);
+            }
+            catch (Exception e)
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(QueryAnnualRunoffValue),
+                    "Exception: " + e.Message);
+                Module1.Current.ModuleLogManager.LogError(nameof(QueryAnnualRunoffValue),
+                    "Stacktrace: " + e.StackTrace);
+                returnValue = -1.0F;
+            }
+            return returnValue;
         }
 
 

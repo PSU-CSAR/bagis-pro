@@ -124,6 +124,7 @@ namespace bagis_pro
         public const string FILE_FLOW_DIRECTION = "flow_direction";
         public const string FILE_AOI_BUFFERED_RASTER = "aoib";
         public const string FILE_AOI_PRISM_RASTER = "p_aoi";
+        public const string FILE_ANNUAL_RUNOFF_CSV = "annual_runoff_averages.csv";
         public static readonly string[] URIS_SNODAS_SWE = new string[] { "daily_swe_normal_jan_01", "daily_swe_normal_feb_01", "daily_swe_normal_mar_01",
                                                                          "daily_swe_normal_apr_01", "daily_swe_normal_may_01", "daily_swe_normal_jun_01",
                                                                          "daily_swe_normal_dec_01"};
@@ -169,6 +170,8 @@ namespace bagis_pro
         public const string FIELD_PUBLIC = "Public_";   //Indicates public land on the Public Lands layer
         public const string FIELD_ALPINE_ABV_TREELINE = "ALPINE_ABV_TREELINE";   //Indicates alpine vegetation types that are above the treeline
         public const string FIELD_GRID_CODE = "gridcode";   //Value after raster is converted to polygon
+        public const string FIELD_RUNOFF_AVERAGE = "Average_kac_ft";
+        public const string FIELD_RUNOFF_STATION_TRIPLET = "stationtriplet";
 
         public const string DATA_TYPE_SWE = "Snotel SWE";
         public const string DATA_TYPE_PRECIPITATION = "Precipitation";
@@ -228,6 +231,8 @@ namespace bagis_pro
         public static int EXCEL_CHART_DESCR_HEIGHT = 70;
         public static int EXCEL_LARGE_CHART_WIDTH = 800;
         public static int EXCEL_LARGE_CHART_HEIGHT = 500;
+
+        public static string PORTAL_ORGANIZATION = "Natural Resources Conservation Service";
 
     }
 

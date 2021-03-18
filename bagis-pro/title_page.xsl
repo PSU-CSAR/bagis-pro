@@ -100,6 +100,11 @@
                     Delineated drainage area: <xsl:value-of select="drainage_area_sqmi"/> square miles
                   </td>
                 </tr>
+                  <tr>
+                    <td class="style3">
+                      Annual runoff ratio: <xsl:value-of select="annual_runoff_ratio"/>
+                    </td>
+                  </tr>
                 <tr>
                   <td class="style3">
                     Elevation range: <xsl:value-of select="elevation_min_feet"/> to <xsl:value-of select="elevation_max_feet"/> feet

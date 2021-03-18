@@ -65,6 +65,7 @@ bagis-pro:
      SiteBufferDistMiles: 5.642
      CriticalPrecipMinMeanVolInches: 20.0
      CriticalPrecipTotalMaxVolPct: 66.6
+     AnnualRunoffItemId: f641bbacceff4c1bb3f9661bd8f9de8d
      Version: 1.0
 
 bagis-p:
