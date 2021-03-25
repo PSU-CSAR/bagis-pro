@@ -105,6 +105,8 @@ namespace bagis_pro
             {
                 // Download the runoff csv file from the NRCS Portal                
                 string documentId = (string) Module1.Current.BatchToolSettings.AnnualRunoffItemId;
+                string annualRunoffDataDescr = (string)Module1.Current.BatchToolSettings.AnnualRunoffDataDescr;
+                string annualRunoffDataYear = (string)Module1.Current.BatchToolSettings.AnnualRunoffDataYear;
 
                 Webservices ws = new Webservices();
                 var success = await ws.GetPortalFile(Constants.PORTAL_ORGANIZATION, documentId, Module1.Current.SettingsPath + "\\" + Constants.FOLDER_SETTINGS +
@@ -121,6 +123,11 @@ namespace bagis_pro
 
                 // Query for the annual runoff value
                 double dblRunoffRatio = QueryAnnualRunoffValue(strStationTriplet);
+                string strRunoffRatio = "No stream flow data";  // This is what we print if we couldn't get the runoff numbers
+                if (dblRunoffRatio >= 0)
+                {
+                    strRunoffRatio = Convert.ToString(dblRunoffRatio);
+                }
 
                 // Query for the drainage area
                 Uri gdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi));
@@ -269,7 +276,9 @@ namespace bagis_pro
                     represented_snotel_percent = pctSnotelRepresented,
                     represented_snow_course_percent = pctSnowCourseRepresented,
                     represented_all_sites_percent = pctAllSitesRepresented,
-                    annual_runoff_ratio = dblRunoffRatio,
+                    annual_runoff_ratio = strRunoffRatio,
+                    annual_runoff_data_descr = annualRunoffDataDescr,
+                    annual_runoff_data_year = annualRunoffDataYear,
                     date_created = DateTime.Now
                 };
                 if (lstDataSources.Count > 0)
@@ -1845,7 +1854,8 @@ namespace bagis_pro
                                     else
                                     {
                                         // This is how we handle nulls
-                                        returnValue = 0;
+                                        // For now we return the same thing if the record is missing or null
+                                        // returnValue = 0;
                                         break;
                                     }
                                 }

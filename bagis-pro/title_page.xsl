@@ -172,6 +172,13 @@
                       </td>
                     </tr>
                 </xsl:for-each>
+                <tr>
+                  <td class="style4">
+                    <xsl:value-of select="annual_runoff_data_descr" />
+                    <br/>
+                    Data provided by NWCC based on AWDB data in <xsl:value-of select="annual_runoff_data_year" />
+                  </td>
+                </tr>
               </table>
             </div>
                    
