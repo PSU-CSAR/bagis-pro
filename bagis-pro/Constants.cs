@@ -89,9 +89,9 @@ namespace bagis_pro
         public const string FILE_EXPORT_MAP_ASPECT_PDF = "map_aspect.pdf";
         public const string FILE_EXPORT_MAP_SLOPE_PDF = "map_slope.pdf";
         public const string FILE_EXPORT_MAP_ELEVATION_SNOTEL_PDF = "map_elevation_snotel.pdf";
-        public static readonly string[] FILE_EXPORT_MAPS_SWE = new string[] { "map_snodas_swe_january.pdf", "map_snodas_swe_february.pdf", "map_snodas_swe_march.pdf", 
-                                                                              "map_snodas_swe_april.pdf", "map_snodas_swe_may.pdf", "map_snodas_swe_june.pdf",
-                                                                              "map_snodas_swe_december.pdf"};
+        public static readonly string[] FILE_EXPORT_MAPS_SWE = new string[] { "map_snodas_swe_november.pdf", "map_snodas_swe_december.pdf", "map_snodas_swe_january.pdf",
+                                                                              "map_snodas_swe_february.pdf", "map_snodas_swe_march.pdf", "map_snodas_swe_april.pdf",
+                                                                              "map_snodas_swe_may.pdf", "map_snodas_swe_june.pdf", "map_snodas_swe_july.pdf"};
         public const string FILE_EXPORT_MAP_ROADS_PDF = "map_roads.pdf";
         public const string FILE_EXPORT_MAP_PUBLIC_LAND_ZONES_PDF = "map_public_land_zones.pdf";
         public const string FILE_EXPORT_MAP_BELOW_TREELINE_PDF = "map_below_treeline.pdf";
@@ -110,7 +110,8 @@ namespace bagis_pro
             FILE_EXPORT_MAP_SNOTEL_PDF, FILE_EXPORT_MAP_SCOS_PDF, FILE_EXPORT_MAP_SNOTEL_AND_SCOS_PDF,
             FILE_EXPORT_MAP_PRECIPITATION_PDF, FILE_EXPORT_MAPS_SWE[0], FILE_EXPORT_MAPS_SWE[1],
             FILE_EXPORT_MAPS_SWE[2], FILE_EXPORT_MAPS_SWE[3], FILE_EXPORT_MAPS_SWE[4],
-            FILE_EXPORT_MAPS_SWE[5], FILE_EXPORT_MAPS_SWE[6], FILE_EXPORT_MAP_ASPECT_PDF,
+            FILE_EXPORT_MAPS_SWE[5], FILE_EXPORT_MAPS_SWE[6], FILE_EXPORT_MAPS_SWE[7],
+            FILE_EXPORT_MAPS_SWE[8], FILE_EXPORT_MAP_ASPECT_PDF,
             FILE_EXPORT_MAP_SLOPE_PDF, FILE_EXPORT_CHART_AREA_ELEV_PRECIP_SITE_PDF,
             FILE_EXPORT_CHART_PRECIP_REPRESENT_PDF, FILE_EXPORT_TABLE_PRECIP_REPRESENT_PDF,
             FILE_EXPORT_MAP_CRITICAL_PRECIPITATION_ZONES_PDF, FILE_EXPORT_CHART_SLOPE_PDF, FILE_EXPORT_CHART_ASPECT_PDF,
@@ -125,18 +126,26 @@ namespace bagis_pro
         public const string FILE_AOI_BUFFERED_RASTER = "aoib";
         public const string FILE_AOI_PRISM_RASTER = "p_aoi";
         public const string FILE_ANNUAL_RUNOFF_CSV = "annual_runoff_averages.csv";
-        public static readonly string[] URIS_SNODAS_SWE = new string[] { "daily_swe_normal_jan_01", "daily_swe_normal_feb_01", "daily_swe_normal_mar_01",
-                                                                         "daily_swe_normal_apr_01", "daily_swe_normal_may_01", "daily_swe_normal_jun_01",
-                                                                         "daily_swe_normal_dec_01"};
+        public static readonly string[] URIS_SNODAS_SWE = new string[] { "daily_swe_normal_nov_01", "daily_swe_normal_dec_01", "daily_swe_normal_jan_01",
+                                                                         "daily_swe_normal_feb_01", "daily_swe_normal_mar_01", "daily_swe_normal_apr_01",
+                                                                         "daily_swe_normal_may_01", "daily_swe_normal_jun_01", "daily_swe_normal_jul_01"};
         public const string FILE_SNODAS_SWE_APRIL = "swe_apr_01";
-        public static readonly string[] FILES_SNODAS_SWE = new string[] { "swe_jan_01", "swe_feb_01", "swe_mar_01",
-                                                                          FILE_SNODAS_SWE_APRIL, "swe_may_01", "swe_jun_01",
-                                                                          "swe_dec_01"};
-        public static readonly string[] LAYER_NAMES_SNODAS_SWE = new string[] { "January 1 SWE", "February 1 SWE", "March 1 SWE", "April 1 SWE",
-                                                                                "May 1 SWE", "June 1 SWE", "December 1 SWE" };
-        public static readonly string[] MAP_TITLES_SNODAS_SWE = new string[] { "SNODAS SWE JAN 1ST", "SNODAS SWE FEB 1ST", "SNODAS SWE MAR 1ST",
-                                                                               "SNODAS SWE APR 1ST", "SNODAS SWE MAY 1ST", "SNODAS SWE JUN 1ST",
-                                                                               "SNODAS SWE DEC 1ST"};
+        public static readonly string[] FILES_SNODAS_SWE = new string[] { "swe_nov_01", "swe_dec_01", "swe_jan_01", "swe_feb_01", "swe_mar_01",
+                                                                          FILE_SNODAS_SWE_APRIL, "swe_may_01", "swe_jun_01", "swe_jul_01"};
+        public static readonly string[] LAYER_NAMES_SNODAS_SWE = new string[] { "November 1 SWE", "December 1 SWE", "January 1 SWE", "February 1 SWE",
+                                                                                "March 1 SWE", "April 1 SWE", "May 1 SWE", "June 1 SWE",
+                                                                                "July 1 SWE"};
+        public static readonly string[] MAP_TITLES_SNODAS_SWE = new string[] { "SNODAS SWE NOV 1ST", "SNODAS SWE DEC 1ST", "SNODAS SWE JAN 1ST", "SNODAS SWE FEB 1ST",
+                                                                               "SNODAS SWE MAR 1ST", "SNODAS SWE APR 1ST", "SNODAS SWE MAY 1ST",
+                                                                               "SNODAS SWE JUN 1ST", "SNODAS SWE JUL 1ST" };
+        public static readonly string[] FILES_SWE_DELTA = new string[] { "swe_dec_minus_nov", "swe_jan_minus_dec", "swe_feb_minus_jan",
+                                                                         "swe_mar_minus_feb", "swe_apr_minus_mar", "swe_may_minus_apr",
+                                                                         "swe_jun_minus_may", "swe_jul_minus_jun"};
+        public static readonly string[] LAYER_NAMES_SWE_DELTA = new string[] { "Dec - Nov SWE", "Jan - Dec SWE", "Feb - Jan SWE", "Mar - Feb SWE",
+                                                                               "Apr - Mar SWE", "May - Apr SWE", "Jun - May SWE", "Jul - Jun SWE" };
+        public static readonly string[] MAP_TITLES_SWE_DELTA = new string[] { "DEC 01 - NOV 01 SWE CHANGE", "JAN 01 - DEC 01 SWE CHANGE", "FEB 01 - JAN 01 SWE CHANGE",
+                                                                              "MAR 01 - FEB 01 SWE CHANGE", "APR 01 - MAR 01 SWE CHANGE", "MAY 01 - APR 01 SWE CHANGE",
+                                                                              "JUN 01 - MAY 01 SWE CHANGE", "JUL 01 - JUN 01 SWE CHANGE"};
         public const string FILE_BAGIS_MAP_PARAMETERS = "map_parameters.txt";
         public const string URI_IMAGE_SERVER = "/ImageServer";
         public const string URI_DESKTOP_SETTINGS = "/api/rest/desktop/settings/";

@@ -2971,5 +2971,35 @@ namespace bagis_pro
             }
             return success;
         }
+
+        public static async Task<BA_ReturnCode> CalculateSWEDeltaAsync(string strAoiPath)
+        {
+            int idx1 = 2;   // January
+            int idx2 = 1;   // December
+            string strLayer1 = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, true) +
+                Constants.FILES_SNODAS_SWE[idx1];
+            string strLayer2 = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, true) +
+                Constants.FILES_SNODAS_SWE[idx2];
+            string strOutputRaster = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) +
+                Constants.FILES_SWE_DELTA[idx2];
+            IGPResult gpResult = await QueuedTask.Run(() =>
+            {
+                var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath);
+                var parameters = Geoprocessing.MakeValueArray(strLayer1, strLayer2, strOutputRaster);
+                return Geoprocessing.ExecuteToolAsync("Minus_sa", parameters, environments,
+                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+            });
+            if (gpResult.IsFailed)
+            {
+                Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateSWEDeltaAsync),
+                    "Unable to execute minus tool for " + strOutputRaster + ". Error code: " + gpResult.ErrorCode);
+            }
+            else
+            {
+                Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateSWEDeltaAsync),
+                    "Successfully wrote minus tool output to " + strOutputRaster);
+            }
+            return BA_ReturnCode.Success;
+        }
     }
 }

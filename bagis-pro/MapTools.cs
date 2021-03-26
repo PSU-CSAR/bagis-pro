@@ -213,7 +213,7 @@ namespace bagis_pro
                         Module1.ActivateState("MapButtonPalette_BtnAspect_State");
 
                     // add SNOTEL SWE layer
-                    success = await DisplaySWEMapAsync(3);
+                    success = await DisplaySWEMapAsync(5);
 
                     // add Precipitation zones layer
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
@@ -629,7 +629,7 @@ namespace bagis_pro
 
         public static async Task RemoveLayersfromMapFrame()
         {
-            string[] arrLayerNames = new string[25];
+            string[] arrLayerNames = new string[27];
             arrLayerNames[0] = Constants.MAPS_AOI_BOUNDARY;
             arrLayerNames[1] = Constants.MAPS_STREAMS;
             arrLayerNames[2] = Constants.MAPS_SNOTEL;
@@ -1381,7 +1381,7 @@ namespace bagis_pro
                     break;
                 case BagisMapType.SNODAS_SWE:
                     lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
-                                                   Constants.MAPS_HILLSHADE, Constants.LAYER_NAMES_SNODAS_SWE[3]};
+                                                   Constants.MAPS_HILLSHADE, Constants.LAYER_NAMES_SNODAS_SWE[5]};
                     lstLegendLayers = new List<string>();
                     if (Module1.Current.Aoi.HasSnotel == true)
                     {
@@ -1393,9 +1393,9 @@ namespace bagis_pro
                         lstLayers.Add(Constants.MAPS_SNOW_COURSE);
                         lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE);
                     }
-                    lstLegendLayers.Add(Constants.LAYER_NAMES_SNODAS_SWE[3]);
-                    mapDefinition = new BA_Objects.MapDefinition(Constants.MAP_TITLES_SNODAS_SWE[3],
-                        "Depth Units = " + Module1.Current.BatchToolSettings.SweDisplayUnits, Constants.FILE_EXPORT_MAPS_SWE[3]);
+                    lstLegendLayers.Add(Constants.LAYER_NAMES_SNODAS_SWE[5]);
+                    mapDefinition = new BA_Objects.MapDefinition(Constants.MAP_TITLES_SNODAS_SWE[5],
+                        "Depth Units = " + Module1.Current.BatchToolSettings.SweDisplayUnits, Constants.FILE_EXPORT_MAPS_SWE[5]);
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;
@@ -1782,26 +1782,32 @@ namespace bagis_pro
                         {
                             switch (idx)
                             {
-                                case 0:     //January
+                                case 0:     //@ToDo: November; This map and button don't exist yet
+                                    Module1.ActivateState("MapButtonPalette_BtnSweNov_State");
+                                    break;
+                                case 1:     //December
+                                    Module1.ActivateState("MapButtonPalette_BtnSweDec_State");
+                                    break;
+                                case 2:     //January
                                     Module1.ActivateState("MapButtonPalette_BtnSweJan_State");
                                     break;
-                                case 1:     //February
+                                case 3:     //February
                                     Module1.ActivateState("MapButtonPalette_BtnSweFeb_State");
                                     break;
-                                case 2:     //March
+                                case 4:     //March
                                     Module1.ActivateState("MapButtonPalette_BtnSweMar_State");
                                     break;
-                                case 3:     //April
+                                case 5:     //April
                                     Module1.ActivateState("MapButtonPalette_BtnSweApr_State");
                                     break;
-                                case 4:     //May
+                                case 6:     //May
                                     Module1.ActivateState("MapButtonPalette_BtnSweMay_State");
                                     break;
-                                case 5:     //June
+                                case 7:     //June
                                     Module1.ActivateState("MapButtonPalette_BtnSweJun_State");
                                     break;
-                                case 6:     //December
-                                    Module1.ActivateState("MapButtonPalette_BtnSweDec_State");
+                                case 8:     //@ToDo: July; This map and button don't exist yet
+                                    Module1.ActivateState("MapButtonPalette_BtnSweJul_State");
                                     break;
                             }
                         }

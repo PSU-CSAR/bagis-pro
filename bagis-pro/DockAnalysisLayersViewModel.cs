@@ -68,6 +68,7 @@ namespace bagis_pro
         private bool _PublicLand_Checked = false;
         private bool _BelowTreeline_Checked = false;
         private bool _ElevPrecipCorr_Checked = false;
+        private bool _SWE_Delta_Checked = false;
         public string Heading
         {
             get { return _heading; }
@@ -167,6 +168,15 @@ namespace bagis_pro
             }
         }
 
+        public bool SWE_Delta_Checked
+        {
+            get { return _SWE_Delta_Checked; }
+            set
+            {
+                SetProperty(ref _SWE_Delta_Checked, value, () => SWE_Delta_Checked);
+            }
+        }
+
         public void ResetView()
         {
             RepresentedArea_Checked = false;
@@ -179,6 +189,7 @@ namespace bagis_pro
             PublicLand_Checked = false;
             BelowTreeline_Checked = false;
             ElevPrecipCorr_Checked = false;
+            SWE_Delta_Checked = false;
         }
 
         public ICommand CmdGenerateLayers
@@ -190,14 +201,14 @@ namespace bagis_pro
                     // Create from template
                     await GenerateLayersAsync(RepresentedArea_Checked, PrismZones_Checked, AspectZones_Checked,
                         SlopeZones_Checked, ElevationZones_Checked, Roads_Checked, PublicLand_Checked, BelowTreeline_Checked,
-                        ElevPrecipCorr_Checked, SitesZones_Checked);
+                        ElevPrecipCorr_Checked, SitesZones_Checked, SWE_Delta_Checked);
                 });
             }
         }
 
         private async Task GenerateLayersAsync(bool calculateRepresented, bool calculatePrism, bool calculateAspect,
             bool calculateSlope, bool calculateElevation, bool bufferRoads, bool extractPublicLand,
-            bool extractBelowTreeline, bool elevPrecipCorr, bool calculateSitesZones)
+            bool extractBelowTreeline, bool elevPrecipCorr, bool calculateSitesZones, bool calculateSweDelta)
         {
             try
             {
@@ -210,7 +221,7 @@ namespace bagis_pro
                 if (calculateRepresented == false && calculatePrism == false && calculateAspect == false
                     && calculateSlope == false && calculateElevation == false && bufferRoads == false
                     && extractPublicLand == false && extractBelowTreeline == false && elevPrecipCorr == false
-                    && calculateSitesZones == false)
+                    && calculateSitesZones == false && calculateSweDelta == false)
                 {
                     MessageBox.Show("No layers selected to generate !!", "BAGIS-PRO");
                     return;
@@ -386,6 +397,11 @@ namespace bagis_pro
                     {
                         layersPane.ElevPrecipCorr_Checked = false;
                     }
+                }
+
+                if (calculateSweDelta == true)
+                {
+                    success = await AnalysisTools.CalculateSWEDeltaAsync(Module1.Current.Aoi.FilePath);
                 }
 
                 if (success == BA_ReturnCode.Success)
