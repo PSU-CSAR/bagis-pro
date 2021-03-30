@@ -560,6 +560,7 @@ namespace bagis_pro
             string[] arrLayersToDelete = new string[2];
             string strClipGdb = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, false);
             string strClipFile = Constants.FILE_AOI_PRISM_VECTOR;
+            int intError = 0;
 
             if (!String.IsNullOrEmpty(strWsPrefix))
             {
@@ -587,7 +588,6 @@ namespace bagis_pro
                                 {
                                     Module1.Current.ModuleLogManager.LogError(nameof(ClipLayersAsync),
                                        "Unable to copy aoib_v to p_aoi_v. Error code: " + gpResult.Result.ErrorCode);
-                                    MessageBox.Show("Unable to copy aoib_v to p_aoi_v. Clipping cancelled!!", "BAGIS-PRO");
                                     return;
                                 }
                                 strClipFile = Constants.FILE_AOI_PRISM_VECTOR;
@@ -607,7 +607,6 @@ namespace bagis_pro
                                 {
                                     Module1.Current.ModuleLogManager.LogError(nameof(ClipLayersAsync),
                                        "Unable to buffer aoi_v. Error code: " + gpResult.Result.ErrorCode);
-                                    MessageBox.Show("Unable to buffer aoi_v. Clipping cancelled!!", "BAGIS-PRO");
                                     return;
                                 }
 
@@ -622,8 +621,6 @@ namespace bagis_pro
                                         CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
                                     if (gpResult.Result.IsFailed)
                                     {
-                                        Module1.Current.ModuleLogManager.LogError(nameof(ClipLayersAsync),
-                                           "Unable to update p_aoi_v. Error code: " + gpResult.Result.ErrorCode);
                                         MessageBox.Show("Unable to update p_aoi_v. Clipping cancelled!!", "BAGIS-PRO");
                                         return;
                                     }
@@ -658,7 +655,6 @@ namespace bagis_pro
                                 {
                                     Module1.Current.ModuleLogManager.LogError(nameof(ClipLayersAsync),
                                        "Unable to buffer " + strClipFile + ". Error code: " + gpResult.Result.ErrorCode);
-                                    MessageBox.Show("Unable to buffer aoi_v. Clipping cancelled!!", "BAGIS-PRO");
                                     return;
                                 }
                                 strClipFile = strTempBuffer2;
@@ -690,7 +686,6 @@ namespace bagis_pro
                         {
                             Module1.Current.ModuleLogManager.LogError(nameof(ClipLayersAsync),
                                 "Unable obtain clipping envelope from " + strClipGdb + "\\" + strClipFile);
-                            MessageBox.Show("Unable obtain clipping envelope from " + strClipGdb + "\\" + strClipFile + " Clipping cancelled!!", "BAGIS-PRO");
                             return;
                         }
 
@@ -734,45 +729,46 @@ namespace bagis_pro
                             if (gpResult.IsFailed)
                             {
                                 Module1.Current.ModuleLogManager.LogError(nameof(ClipLayersAsync),
-                                   "Unable to clip " + strClipFile + ". Error code: " + gpResult.ErrorCode);
-                                Module1.Current.ModuleLogManager.LogError(nameof(ClipLayersAsync),
-                                    "GP Messages: " + gpResult.Messages);
-                                MessageBox.Show("Unable to clip. Clipping cancelled!!", "BAGIS-PRO");
-                                return;
+                                   "Unable to clip " + imageServiceUri.AbsoluteUri + " to " + strOutputRaster);
+                                foreach (var objMessage in gpResult.Messages)
+                                {
+                                    IGPMessage msg = (IGPMessage)objMessage;
+                                    Module1.Current.ModuleLogManager.LogError(nameof(ClipLayersAsync),
+                                        msg.Text);
+                                }
+                                intError++;     // increment error counter
                             }
                             else
                             {
                                 Module1.Current.ModuleLogManager.LogDebug(nameof(ClipLayersAsync),
                                     "Clipped " + arrClippedFileNames[i] + " layer");
+                                //We need to add a new tag at "/metadata/dataIdInfo/searchKeys/keyword"
+                                StringBuilder sb = new StringBuilder();
+                                sb.Append(Constants.META_TAG_PREFIX);
+                                // Z Units
+                                string strUnits = dictDataSources[strDataType].units;
+                                sb.Append(Constants.META_TAG_ZUNIT_CATEGORY + Constants.META_TAG_CATEGORY_DEPTH + "; ");
+                                sb.Append(Constants.META_TAG_ZUNIT_VALUE + strUnits + "; ");
+                                // Buffer Distance
+                                sb.Append(Constants.META_TAG_BUFFER_DISTANCE + strBufferDistance + "; ");
+                                // X Units
+                                sb.Append(Constants.META_TAG_XUNIT_VALUE + strBufferUnits + "; ");
+                                sb.Append(Constants.META_TAG_SUFFIX);
+
+                                //Update the metadata
+                                var fc = ItemFactory.Instance.Create(strOutputRaster,
+                                    ItemFactory.ItemType.PathItem);
+                                if (fc != null)
+                                {
+                                    string strXml = string.Empty;
+                                    strXml = fc.GetXml();
+                                    System.Xml.XmlDocument xmlDocument = GeneralTools.UpdateMetadata(strXml, Constants.META_TAG_XPATH, sb.ToString(),
+                                        Constants.META_TAG_PREFIX.Length);
+
+                                    fc.SetXml(xmlDocument.OuterXml);
+                                }
                             }
                             i++;
-
-                            //We need to add a new tag at "/metadata/dataIdInfo/searchKeys/keyword"
-                            StringBuilder sb = new StringBuilder();
-                            sb.Append(Constants.META_TAG_PREFIX);
-                            // Z Units
-                            string strUnits = dictDataSources[strDataType].units;
-                            sb.Append(Constants.META_TAG_ZUNIT_CATEGORY + Constants.META_TAG_CATEGORY_DEPTH + "; ");
-                            sb.Append(Constants.META_TAG_ZUNIT_VALUE + strUnits + "; ");
-                            // Buffer Distance
-                            sb.Append(Constants.META_TAG_BUFFER_DISTANCE + strBufferDistance + "; ");
-                            // X Units
-                            sb.Append(Constants.META_TAG_XUNIT_VALUE + strBufferUnits + "; ");
-                            sb.Append(Constants.META_TAG_SUFFIX);
-
-                            //Update the metadata
-                            var fc = ItemFactory.Instance.Create(strOutputRaster,
-                                ItemFactory.ItemType.PathItem);
-                            if (fc != null)
-                            {
-                                string strXml = string.Empty;
-                                strXml = fc.GetXml();
-                                System.Xml.XmlDocument xmlDocument = GeneralTools.UpdateMetadata(strXml, Constants.META_TAG_XPATH, sb.ToString(),
-                                    Constants.META_TAG_PREFIX.Length);
-
-                                fc.SetXml(xmlDocument.OuterXml);
-                            }
-
                         }
 
                         // Delete temporary layers
@@ -787,7 +783,6 @@ namespace bagis_pro
                                 {
                                     Module1.Current.ModuleLogManager.LogError(nameof(ClipLayersAsync),
                                         "Unable to delete " + strClipGdb + "\\" + arrLayersToDelete[j] + ". Error code: " + gpResult.Result.ErrorCode);
-                                    MessageBox.Show("Unable to delete " + strClipGdb + "\\" + arrLayersToDelete[j] + ".", "BAGIS-PRO");
                                 }
                                 else
                                 {
@@ -799,7 +794,6 @@ namespace bagis_pro
 
                         // Update layer metadata
                         IDictionary<string, BA_Objects.DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
-
                         BA_Objects.DataSource updateDataSource = new BA_Objects.DataSource(dictDataSources[strDataType])
                         {
                             DateClipped = DateTime.Now,
@@ -819,9 +813,16 @@ namespace bagis_pro
                     }
                     catch (Exception e)
                     {
-                        MessageBox.Show(e.StackTrace);
+                        intError++;
+                        Module1.Current.ModuleLogManager.LogError(nameof(ClipLayersAsync),
+                            "Exception: " + e.StackTrace);
                     }
                 });
+            }
+            if (intError > 0)
+            {
+                Module1.Current.ModuleLogManager.LogDebug(nameof(ClipLayersAsync),
+                    "At least one error occurred while clipping " + strDataType + " layers!");
             }
             success = BA_ReturnCode.Success;
             return success;
@@ -2675,48 +2676,54 @@ namespace bagis_pro
                     foreach (var fName in Constants.FILES_SNODAS_SWE)
                     {
                         string strOutputPath = strLayersGdb + fName;
-                        double dblMin = -1;
-                        var parameters = Geoprocessing.MakeValueArray(strOutputPath, "MINIMUM");
-                        var environments = Geoprocessing.MakeEnvironmentArray(workspace: Module1.Current.Aoi.FilePath);
-                        IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("GetRasterProperties_management", parameters, environments,
-                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                        bool isDouble = Double.TryParse(Convert.ToString(gpResult.ReturnValue), out dblMin);
-                        if (isDouble && dblMin < dblOverallMin)
+                        bool bExists = await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers)), fName);
+                        if (bExists)
                         {
-                            dblOverallMin = dblMin;
-                            Module1.Current.ModuleLogManager.LogDebug(nameof(ClipSweLayersAsync),
-                                "Updated overall SWE minimum to " + dblOverallMin);
-                        }
-                        double dblMax = -1;
-                        parameters = Geoprocessing.MakeValueArray(strOutputPath, "MAXIMUM");
-                        gpResult = await Geoprocessing.ExecuteToolAsync("GetRasterProperties_management", parameters, environments,
-                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                        isDouble = Double.TryParse(Convert.ToString(gpResult.ReturnValue), out dblMax);
-                        if (isDouble && dblMax > dblOverallMax)
-                        {
-                            dblOverallMax = dblMax;
-                            Module1.Current.ModuleLogManager.LogDebug(nameof(ClipSweLayersAsync),
-                                "Updated overall SWE maximum to " + dblOverallMax);
+                            double dblMin = -1;
+                            var parameters = Geoprocessing.MakeValueArray(strOutputPath, "MINIMUM");
+                            var environments = Geoprocessing.MakeEnvironmentArray(workspace: Module1.Current.Aoi.FilePath);
+                            IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("GetRasterProperties_management", parameters, environments,
+                                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                            bool isDouble = Double.TryParse(Convert.ToString(gpResult.ReturnValue), out dblMin);
+                            if (isDouble && dblMin < dblOverallMin)
+                            {
+                                dblOverallMin = dblMin;
+                                Module1.Current.ModuleLogManager.LogDebug(nameof(ClipSweLayersAsync),
+                                    "Updated overall SWE minimum to " + dblOverallMin);
+                            }
+                            double dblMax = -1;
+                            parameters = Geoprocessing.MakeValueArray(strOutputPath, "MAXIMUM");
+                            gpResult = await Geoprocessing.ExecuteToolAsync("GetRasterProperties_management", parameters, environments,
+                                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                            isDouble = Double.TryParse(Convert.ToString(gpResult.ReturnValue), out dblMax);
+                            if (isDouble && dblMax > dblOverallMax)
+                            {
+                                dblOverallMax = dblMax;
+                                Module1.Current.ModuleLogManager.LogDebug(nameof(ClipSweLayersAsync),
+                                    "Updated overall SWE maximum to " + dblOverallMax);
+                            }
                         }
                     }
                     // Save overall min and max in metadata
-                    IDictionary<string, BA_Objects.DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
-                    if (dictLocalDataSources.ContainsKey(Constants.DATA_TYPE_SWE))
+                    if (dblOverallMin != 9999)
                     {
-                        BA_Objects.DataSource dataSource = dictLocalDataSources[Constants.DATA_TYPE_SWE];
-                        dataSource.minValue = dblOverallMin;
-                        dataSource.maxValue = dblOverallMax;
+                        IDictionary<string, BA_Objects.DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
+                        if (dictLocalDataSources.ContainsKey(Constants.DATA_TYPE_SWE))
+                        {
+                            BA_Objects.DataSource dataSource = dictLocalDataSources[Constants.DATA_TYPE_SWE];
+                            dataSource.minValue = dblOverallMin;
+                            dataSource.maxValue = dblOverallMax;
+                            success = GeneralTools.SaveDataSourcesToFile(dictLocalDataSources);
+                            Module1.Current.ModuleLogManager.LogDebug(nameof(ClipSweLayersAsync),
+                                "Updated settings overall min and max metadata for SWE");
+                        }
+                        else
+                        {
+                            Module1.Current.ModuleLogManager.LogError(nameof(ClipSweLayersAsync),
+                                "Unable to locate SWE metadata entry to update");
+                        }
                         success = GeneralTools.SaveDataSourcesToFile(dictLocalDataSources);
-                        Module1.Current.ModuleLogManager.LogDebug(nameof(ClipSweLayersAsync),
-                            "Updated settings overall min and max metadata for SWE");
                     }
-                    else
-                    {
-                        MessageBox.Show("An error occurred while trying to update the SWE layer metadata!!");
-                        Module1.Current.ModuleLogManager.LogError(nameof(ClipSweLayersAsync),
-                            "Unable to locate SWE metadata entry to update");
-                    }
-                    success = GeneralTools.SaveDataSourcesToFile(dictLocalDataSources);
                 }
             }
             catch (Exception e)
@@ -2974,32 +2981,104 @@ namespace bagis_pro
 
         public static async Task<BA_ReturnCode> CalculateSWEDeltaAsync(string strAoiPath)
         {
-            int idx1 = 2;   // January
-            int idx2 = 1;   // December
-            string strLayer1 = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, true) +
-                Constants.FILES_SNODAS_SWE[idx1];
-            string strLayer2 = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, true) +
-                Constants.FILES_SNODAS_SWE[idx2];
-            string strOutputRaster = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) +
-                Constants.FILES_SWE_DELTA[idx2];
-            IGPResult gpResult = await QueuedTask.Run(() =>
+            //@ToDo: Change the starting and ending index when we have November and July
+            for (int idx = 1; idx < Constants.FILES_SWE_DELTA.Length -1; idx++)
             {
-                var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath);
-                var parameters = Geoprocessing.MakeValueArray(strLayer1, strLayer2, strOutputRaster);
-                return Geoprocessing.ExecuteToolAsync("Minus_sa", parameters, environments,
-                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-            });
-            if (gpResult.IsFailed)
-            {
-                Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateSWEDeltaAsync),
-                    "Unable to execute minus tool for " + strOutputRaster + ". Error code: " + gpResult.ErrorCode);
+                string strLayer1 = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, true) +
+                    Constants.FILES_SNODAS_SWE[idx + 1];
+                string strLayer2 = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, true) +
+                    Constants.FILES_SNODAS_SWE[idx];
+                string strOutputRaster = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) +
+                    Constants.FILES_SWE_DELTA[idx];
+                IGPResult gpResult = await QueuedTask.Run(() =>
+                {
+                    var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath);
+                    var parameters = Geoprocessing.MakeValueArray(strLayer1, strLayer2, strOutputRaster);
+                    return Geoprocessing.ExecuteToolAsync("Minus_sa", parameters, environments,
+                                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                });
+                if (gpResult.IsFailed)
+                {
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateSWEDeltaAsync),
+                        "Unable to execute minus tool for " + strOutputRaster + "!");
+                    foreach (var objMessage in gpResult.Messages)
+                    {
+                        IGPMessage msg = (IGPMessage)objMessage;
+                        Module1.Current.ModuleLogManager.LogError(nameof(CalculateSWEDeltaAsync),
+                            msg.Text);
+                    }
+                }
+                else
+                {
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateSWEDeltaAsync),
+                        "Successfully wrote minus tool output to " + strOutputRaster);
+                }
             }
-            else
+
+            // Calculate and record overall min and max for symbology
+            double dblOverallMin = 9999;
+            double dblOverallMax = -9999;
+            string strAnalysisGdb = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true);
+            foreach (var fName in Constants.FILES_SWE_DELTA)
             {
-                Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateSWEDeltaAsync),
-                    "Successfully wrote minus tool output to " + strOutputRaster);
+                string strOutputPath = strAnalysisGdb + fName;
+                bool bExists = await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis)), fName);
+                if (bExists)
+                {
+                    double dblMin = -1;
+                    var parameters = Geoprocessing.MakeValueArray(strOutputPath, "MINIMUM");
+                    var environments = Geoprocessing.MakeEnvironmentArray(workspace: Module1.Current.Aoi.FilePath);
+                    IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("GetRasterProperties_management", parameters, environments,
+                        CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                    bool isDouble = Double.TryParse(Convert.ToString(gpResult.ReturnValue), out dblMin);
+                    if (isDouble && dblMin < dblOverallMin)
+                    {
+                        dblOverallMin = dblMin;
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateSWEDeltaAsync),
+                            "Updated overall SWE delta minimum to " + dblOverallMin);
+                    }
+                    double dblMax = -1;
+                    parameters = Geoprocessing.MakeValueArray(strOutputPath, "MAXIMUM");
+                    gpResult = await Geoprocessing.ExecuteToolAsync("GetRasterProperties_management", parameters, environments,
+                        CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                    isDouble = Double.TryParse(Convert.ToString(gpResult.ReturnValue), out dblMax);
+                    if (isDouble && dblMax > dblOverallMax)
+                    {
+                        dblOverallMax = dblMax;
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(ClipSweLayersAsync),
+                            "Updated overall SWE delta maximum to " + dblOverallMax);
+                    }
+                }
             }
-            return BA_ReturnCode.Success;
+            // Save overall min and max in metadata
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            if (dblOverallMin != 9999)
+            {
+                IDictionary<string, BA_Objects.DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
+                BA_Objects.DataSource dataSource = new BA_Objects.DataSource();
+                if (dictLocalDataSources.ContainsKey(Constants.DATA_TYPE_SWE_DELTA))
+                {
+                    dataSource = dictLocalDataSources[Constants.DATA_TYPE_SWE_DELTA];
+                }
+                else
+                {
+                    dataSource.layerType = Constants.DATA_TYPE_SWE_DELTA;
+                }
+                dataSource.minValue = Math.Round(dblOverallMin - 0.5, 2, MidpointRounding.AwayFromZero);
+                dataSource.maxValue = Math.Round(dblOverallMax + 0.5, 2, MidpointRounding.AwayFromZero);
+                if (dictLocalDataSources.ContainsKey(Constants.DATA_TYPE_SWE_DELTA))
+                {
+                    dictLocalDataSources[Constants.DATA_TYPE_SWE_DELTA] = dataSource;
+                }
+                else
+                {
+                    dictLocalDataSources.Add(Constants.DATA_TYPE_SWE_DELTA, dataSource);
+                }
+                success = GeneralTools.SaveDataSourcesToFile(dictLocalDataSources);
+                Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateSWEDeltaAsync),
+                        "Updated settings overall min and max metadata for SWE Delta");
+            }
+            return success;
         }
     }
 }

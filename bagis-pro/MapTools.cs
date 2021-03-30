@@ -21,6 +21,11 @@ namespace bagis_pro
 {
     public class MapTools
     {
+        private static int IDX_STRETCH_MIN = 0;
+        private static int IDX_STRETCH_MAX = 1;
+        private static int IDX_LABEL_MIN = 2;
+        private static int IDX_LABEL_MAX = 3;
+        private static double ERROR_MIN = 9999;
         public static async Task<BA_ReturnCode> DisplayMaps(string strAoiPath, Layout layout, bool bInteractive)
         {
             BA_Objects.Aoi oAoi = Module1.Current.Aoi;
@@ -213,7 +218,11 @@ namespace bagis_pro
                         Module1.ActivateState("MapButtonPalette_BtnAspect_State");
 
                     // add SNOTEL SWE layer
-                    success = await DisplaySWEMapAsync(5);
+                    int idxDefaultMonth = 5;    // April
+                    success = await DisplaySWEMapAsync(idxDefaultMonth);
+
+                    // add SWE delta layer
+                    success = await DisplaySWEDeltaMapAsync(1, 5);
 
                     // add Precipitation zones layer
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
@@ -1576,14 +1585,17 @@ namespace bagis_pro
         }
 
         public static async Task<BA_ReturnCode> LoadSweMapAsync(string strRaster, string strNewLayerName,
-                                                                string strTitle, 
-                                                                string strFileMapExport)
+                                                                string strTitle, string strFileMapExport, bool bIsDelta)
         {
             RasterDataset rDataset = null;
             Layer oLayer = null;
             Map map = MapView.Active.Map;
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
             Uri uriSweGdb = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers));
+            if (bIsDelta)
+            {
+                uriSweGdb = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis));
+            }
             Layout layout = null;
             await QueuedTask.Run(() =>
             {
@@ -1627,13 +1639,6 @@ namespace bagis_pro
                 oLayer = map.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(Module1.Current.DisplayedSweMap, StringComparison.CurrentCultureIgnoreCase));
             });
 
-            RasterLayer rasterLayer = (RasterLayer)oLayer;
-            // Create a new Stretch Colorizer Definition using the default constructor.
-            StretchColorizerDefinition stretchColorizerDef_default = new StretchColorizerDefinition();
-            // Create a new Stretch colorizer using the colorizer definition created above.
-            CIMRasterStretchColorizer newStretchColorizer_default =
-              await rasterLayer.CreateColorizerAsync(stretchColorizerDef_default) as CIMRasterStretchColorizer;
-
             await QueuedTask.Run(() =>
             {
                 if (oLayer.CanReplaceDataSource(rDataset))
@@ -1670,14 +1675,19 @@ namespace bagis_pro
             var allLayers = MapView.Active.Map.Layers.ToList();
             IList<string> lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
                                                          Constants.MAPS_HILLSHADE, strNewLayerName};
+            if (bIsDelta)
+            {
+                lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
+                                               strNewLayerName};
+            }
             IList<string> lstLegend = new List<string>();
 
-            if (Module1.Current.Aoi.HasSnotel == true)
+            if (Module1.Current.Aoi.HasSnotel == true && bIsDelta == false)
             {
                 lstLayers.Add(Constants.MAPS_SNOTEL);
                 lstLegend.Add(Constants.MAPS_SNOTEL);
             }
-            if (Module1.Current.Aoi.HasSnowCourse == true)
+            if (Module1.Current.Aoi.HasSnowCourse == true && bIsDelta == false)
             {
                 lstLayers.Add(Constants.MAPS_SNOW_COURSE);
                 lstLegend.Add(Constants.MAPS_SNOW_COURSE);
@@ -1708,57 +1718,25 @@ namespace bagis_pro
             return success;
         }
 
+
         public static async Task<BA_ReturnCode> DisplaySWEMapAsync(int idxDefaultMonth)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
-            IDictionary<string, BA_Objects.DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
-            BA_Objects.DataSource oDataSource = null;
-            if (dictLocalDataSources.ContainsKey(Constants.DATA_TYPE_SWE))
+            string strPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, true) +
+                Constants.FILES_SNODAS_SWE[idxDefaultMonth];
+            Uri uri = new Uri(strPath);
+
+            double[] arrReturnValues = await MapTools.SWEUnitsConversionAsync(Constants.DATA_TYPE_SWE, idxDefaultMonth);
+            double dblStretchMin = arrReturnValues[IDX_STRETCH_MIN];
+            if (dblStretchMin != ERROR_MIN)
             {
-                oDataSource = dictLocalDataSources[Constants.DATA_TYPE_SWE];
-            }
-            if (oDataSource != null)
-            {
-                string strPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, true) +
-                    Constants.FILES_SNODAS_SWE[idxDefaultMonth];
-                Uri uri = new Uri(strPath);
-                double dblStretchMin = oDataSource.minValue;
-                double dblStretchMax = oDataSource.maxValue;
-                double dblLabelMin = dblStretchMin;
-                double dblLabelMax = dblStretchMax;
-                string layerUnits = "";
-                string strBagisTag = await GeneralTools.GetBagisTagAsync(strPath, Constants.META_TAG_XPATH);
-                if (!string.IsNullOrEmpty(strBagisTag))
-                {
-                    layerUnits = GeneralTools.GetValueForKey(strBagisTag, Constants.META_TAG_ZUNIT_VALUE, ';');
-                }
-                if (string.IsNullOrEmpty(layerUnits))
-                {
-                    MessageBox.Show("Unable to read units from layer. Reading from local config file!!", "BAGIS-PRO");
-                    layerUnits = oDataSource.units;
-                }
-                string strSweDisplayUnits = Module1.Current.BatchToolSettings.SweDisplayUnits;
-                if (layerUnits != null && !strSweDisplayUnits.Equals(layerUnits))
-                {
-                    switch (strSweDisplayUnits)
-                    {
-                        case Constants.UNITS_INCHES:
-                            dblLabelMin = LinearUnit.Millimeters.ConvertTo(dblStretchMin, LinearUnit.Inches);
-                            dblLabelMax = LinearUnit.Millimeters.ConvertTo(dblStretchMax, LinearUnit.Inches);
-                            break;
-                        case Constants.UNITS_MILLIMETERS:
-                            dblLabelMin = LinearUnit.Inches.ConvertTo(dblStretchMin, LinearUnit.Millimeters);
-                            dblLabelMax = LinearUnit.Inches.ConvertTo(dblStretchMax, LinearUnit.Millimeters);
-                            break;
-                        default:
-                            MessageBox.Show("The display units are invalid!!", "BAGIS-PRO");
-                            return success;
-                    }
-                }
+                double dblStretchMax = arrReturnValues[IDX_STRETCH_MAX];
+                double dblLabelMin = arrReturnValues[IDX_LABEL_MIN];
+                double dblLabelMax = arrReturnValues[IDX_LABEL_MAX];
 
                 success = await MapTools.DisplayStretchRasterWithSymbolAsync(uri, Constants.LAYER_NAMES_SNODAS_SWE[idxDefaultMonth], "ColorBrewer Schemes (RGB)",
-                            "Green-Blue (Continuous)", 30, false, true, dblStretchMin, dblStretchMax, dblLabelMin,
-                            dblLabelMax);
+                    "Green-Blue (Continuous)", 30, false, true, dblStretchMin, dblStretchMax, dblLabelMin,
+                    dblLabelMax);
                 IList<string> lstLayersFiles = new List<string>();
                 if (success == BA_ReturnCode.Success)
                 {
@@ -1814,9 +1792,149 @@ namespace bagis_pro
                         idx++;
                     }
                 }
-
+                Module1.Current.DisplayedSweMap = Constants.LAYER_NAMES_SNODAS_SWE[idxDefaultMonth];
             }
-            Module1.Current.DisplayedSweMap = Constants.LAYER_NAMES_SNODAS_SWE[idxDefaultMonth];
+            return success;
+        }
+
+        private static async Task<double[]> SWEUnitsConversionAsync(string strDataType, int idxDefaultMonth)
+        {
+            double[] arrReturnValues = new double[4];
+            IDictionary<string, BA_Objects.DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
+            BA_Objects.DataSource oValuesDataSource = null;
+            BA_Objects.DataSource oUnitsDataSource = null;
+            if (dictLocalDataSources.ContainsKey(strDataType))
+            {
+               oValuesDataSource = dictLocalDataSources[strDataType];
+            }
+            if (dictLocalDataSources.ContainsKey(Constants.DATA_TYPE_SWE))
+            {
+                oUnitsDataSource = dictLocalDataSources[Constants.DATA_TYPE_SWE];
+            }
+            if (oValuesDataSource != null && oUnitsDataSource != null)
+            {
+                double dblStretchMin = oValuesDataSource.minValue;
+                double dblStretchMax = oValuesDataSource.maxValue;
+                string strPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, true) +
+                    Constants.FILES_SNODAS_SWE[idxDefaultMonth];
+                string strBagisTag = await GeneralTools.GetBagisTagAsync(strPath, Constants.META_TAG_XPATH);
+                string layerUnits = "";
+                if (!string.IsNullOrEmpty(strBagisTag))
+                {
+                    layerUnits = GeneralTools.GetValueForKey(strBagisTag, Constants.META_TAG_ZUNIT_VALUE, ';');
+                }
+                if (string.IsNullOrEmpty(layerUnits))
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(SWEUnitsConversionAsync),
+                        "Unable to read units from layer. Reading from local config file!!");
+                    layerUnits = oUnitsDataSource.units;
+                }
+                string strSweDisplayUnits = Module1.Current.BatchToolSettings.SweDisplayUnits;
+                if (layerUnits != null && !strSweDisplayUnits.Equals(layerUnits))
+                {
+                    double dblLabelMin = dblStretchMin;
+                    double dblLabelMax = dblStretchMax;
+                    switch (strSweDisplayUnits)
+                    {
+                        case Constants.UNITS_INCHES:
+                            dblLabelMin = LinearUnit.Millimeters.ConvertTo(dblStretchMin, LinearUnit.Inches);
+                            dblLabelMax = LinearUnit.Millimeters.ConvertTo(dblStretchMax, LinearUnit.Inches);
+                            break;
+                        case Constants.UNITS_MILLIMETERS:
+                            dblLabelMin = LinearUnit.Inches.ConvertTo(dblStretchMin, LinearUnit.Millimeters);
+                            dblLabelMax = LinearUnit.Inches.ConvertTo(dblStretchMax, LinearUnit.Millimeters);
+                            break;
+                        default:
+
+                            Module1.Current.ModuleLogManager.LogError(nameof(SWEUnitsConversionAsync),
+                                "The display units are invalid!!");
+                            break;
+                    }
+                    arrReturnValues[IDX_STRETCH_MIN] = dblStretchMin;
+                    arrReturnValues[IDX_STRETCH_MAX] = dblStretchMax;
+                    arrReturnValues[IDX_LABEL_MIN] = dblLabelMin;
+                    arrReturnValues[IDX_LABEL_MAX] = dblLabelMax;
+                }
+            }
+            else
+            {
+                arrReturnValues[IDX_STRETCH_MIN] = ERROR_MIN;
+            }
+            return arrReturnValues;
+        }
+
+        public static async Task<BA_ReturnCode> DisplaySWEDeltaMapAsync(int idxDefaultDeltaMonth, int idxDefaultUnitsMonth)
+        {
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            string strPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) +
+                Constants.FILES_SWE_DELTA[idxDefaultDeltaMonth];
+            Uri uri = new Uri(strPath);
+
+            double[] arrReturnValues = await MapTools.SWEUnitsConversionAsync(Constants.DATA_TYPE_SWE_DELTA, idxDefaultUnitsMonth);
+            double dblStretchMin = arrReturnValues[IDX_STRETCH_MIN];
+            if (dblStretchMin != ERROR_MIN)
+            {
+                double dblStretchMax = arrReturnValues[IDX_STRETCH_MAX];
+                double dblLabelMin = arrReturnValues[IDX_LABEL_MIN];
+                double dblLabelMax = arrReturnValues[IDX_LABEL_MAX];
+
+                success = await MapTools.DisplayStretchRasterWithSymbolAsync(uri, Constants.LAYER_NAMES_SWE_DELTA[idxDefaultDeltaMonth], "ColorBrewer Schemes (RGB)",
+                    "Red-Blue (Continuous)", 0, false, true, dblStretchMin, dblStretchMax, dblLabelMin,
+                    dblLabelMax);
+                IList<string> lstLayersFiles = new List<string>();
+                if (success == BA_ReturnCode.Success)
+                {
+                    await QueuedTask.Run(() =>
+                    {
+                        // Opens a file geodatabase. This will open the geodatabase if the folder exists and contains a valid geodatabase.
+                        Uri analysisUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis));
+                        using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(analysisUri)))
+                        {
+                            IReadOnlyList<RasterDatasetDefinition> definitions = geodatabase.GetDefinitions<RasterDatasetDefinition>();
+                            foreach (RasterDatasetDefinition def in definitions)
+                            {
+                                lstLayersFiles.Add(def.GetName());
+                            }
+                        }
+                    });
+                    int idx = 0;
+                    foreach (string strSweName in Constants.FILES_SWE_DELTA)
+                    {
+                        if (lstLayersFiles.Contains(strSweName))
+                        {
+                            switch (idx)
+                            {
+                                case 0:     //@ToDo: Dec - Nov SWE; This map and button don't exist yet
+                                    Module1.ActivateState("");
+                                    break;
+                                case 1:     //Jan - Dec SWE
+                                    Module1.ActivateState("MapButtonPalette_BtnSweDeltaDecToJan_State");
+                                    break;
+                                case 2:     //Feb - Jan SWE
+                                    Module1.ActivateState("MapButtonPalette_BtnSweJan_State");
+                                    break;
+                                case 3:     //Mar - Feb SWE
+                                    Module1.ActivateState("MapButtonPalette_BtnSweFeb_State");
+                                    break;
+                                case 4:     //Apr - Mar SWE
+                                    Module1.ActivateState("MapButtonPalette_BtnSweMar_State");
+                                    break;
+                                case 5:     //May - Apr SWE
+                                    Module1.ActivateState("MapButtonPalette_BtnSweApr_State");
+                                    break;
+                                case 6:     //Jun - May SWE
+                                    Module1.ActivateState("MapButtonPalette_BtnSweMay_State");
+                                    break;
+                                case 7:     //@ToDo: Jul - Jun SWE; July doesn't exist yet
+                                    Module1.ActivateState("");
+                                    break;
+                            }
+                        }
+                        idx++;
+                    }
+                }
+                Module1.Current.DisplayedSweMap = Constants.LAYER_NAMES_SWE_DELTA[idxDefaultDeltaMonth];
+            }
             return success;
         }
 

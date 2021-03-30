@@ -50,7 +50,7 @@
         <group id="bagis_pro_Groups_Tools" appearsOnAddInTab="false" caption="Tools">
           <button refID="bagis_pro_DockBatchPdfExport_ShowButton" size="middle" />
           <button refID="bagis_pro_DockMigrateToFGDB_ShowButton" size="middle" />
-          <button refID="bagis_pro_Menus_MnuBasinAnalyst_AOIShapefile" size="middle"/>
+          <button refID="bagis_pro_Buttons_BtnTest" size="middle" />
         </group>
       </groups>
       <toolbars>
@@ -82,6 +82,7 @@
           <button refID="MapButtonPalette_BtnSitesLocationZone" />
           <button refID="MapButtonPalette_BtnCriticalPrecipZone" />
           <button refID="MapButtonPalette_BtnPublicLandOwnership" />
+          <button refID="MapButtonPalette_BtnSweDeltaDecToJan" />
         </buttonPalette>
       </palettes>
       <controls>
@@ -186,6 +187,11 @@
           <tooltip heading="Display Map">
             ToolTip<disabledText /></tooltip>
         </button>
+        <button id="MapButtonPalette_BtnSweDeltaDecToJan" caption="Jan-Dec SWE Change" className="bagis_pro.Buttons.MapButtonPalette_BtnSweDeltaDecToJan" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSweDeltaDecToJan_Condition">
+          <tooltip heading="Display Map">
+            ToolTip<disabledText />
+          </tooltip>
+        </button>
         <button id="MapButtonPalette_BtnPrism" caption="Precipitation Distribution" className="bagis_pro.Buttons.MapButtonPalette_BtnPrism" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnPrism_Condition">
           <tooltip heading="Display Map">
             ToolTip<disabledText /></tooltip>
@@ -212,8 +218,7 @@
         </button>
         <button id="MapButtonPalette_BtnPublicLandOwnership" caption="Public Land Ownership" className="bagis_pro.Buttons.MapButtonPalette_BtnPublicLandOwnership" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnPublicLandOwnership_Condition">
           <tooltip heading="Display Map">
-            ToolTip<disabledText />
-          </tooltip>
+            ToolTip<disabledText /></tooltip>
         </button>
         <comboBox id="bagis_pro_Buttons_CboCurrentAoi" className="bagis_pro.Buttons.CboCurrentAoi" itemWidth="180" isEditable="false" isReadOnly="true" resizable="true">
           <tooltip heading="Tooltip Heading">Selected AOI<disabledText /></tooltip>
@@ -234,6 +239,9 @@
         </button>
         <button id="bagis_pro_DockMapPackage_ShowButton" caption="Configure Map Package" className="DockMapPackage_ShowButton" loadOnClick="true" condition="DockMapPackage_ShowButton_Condition" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/Picture16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/Picture32.png">
           <tooltip heading="Configure Map Package">Configure Map Package<disabledText /></tooltip>
+        </button>
+        <button id="bagis_pro_Buttons_BtnTest" caption="Test Upload PDF" className="bagis_pro.Buttons.BtnTest" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericButtonBlue16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericButtonBlue32.png">
+          <tooltip heading="Tooltip Heading">Tooltip text<disabledText /></tooltip>
         </button>
       </controls>
       <menus>
@@ -366,6 +374,9 @@
     </insertCondition>
     <insertCondition id="MapButtonPalette_BtnPublicLandOwnership_Condition" caption="Map Disabled">
       <state id="MapButtonPalette_BtnPublicLandOwnership_State" />
+    </insertCondition>
+    <insertCondition id="MapButtonPalette_BtnSweDeltaDecToJan_Condition" caption="Map Disabled">
+      <state id="MapButtonPalette_BtnSweDeltaDecToJan_State" />
     </insertCondition>
   </conditions>
 </ArcGIS>

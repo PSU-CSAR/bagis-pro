@@ -243,7 +243,7 @@ namespace bagis_pro.Buttons
                 int idxJan = 2;
                 await MapTools.LoadSweMapAsync(Constants.FILES_SNODAS_SWE[idxJan],
                     Constants.LAYER_NAMES_SNODAS_SWE[idxJan], Constants.MAP_TITLES_SNODAS_SWE[idxJan],
-                    Constants.FILE_EXPORT_MAPS_SWE[idxJan]);
+                    Constants.FILE_EXPORT_MAPS_SWE[idxJan], false);
                 Module1.Current.MapFinishedLoading = true;
             }
             catch (Exception e)
@@ -265,7 +265,7 @@ namespace bagis_pro.Buttons
                 int idxFeb = 3;
                 await MapTools.LoadSweMapAsync(Constants.FILES_SNODAS_SWE[idxFeb],
                     Constants.LAYER_NAMES_SNODAS_SWE[idxFeb], Constants.MAP_TITLES_SNODAS_SWE[idxFeb],
-                    Constants.FILE_EXPORT_MAPS_SWE[idxFeb]);
+                    Constants.FILE_EXPORT_MAPS_SWE[idxFeb], false);
                 Module1.Current.MapFinishedLoading = true;
             }
             catch (Exception e)
@@ -287,7 +287,7 @@ namespace bagis_pro.Buttons
                 int idxMar = 4;
                 await MapTools.LoadSweMapAsync(Constants.FILES_SNODAS_SWE[idxMar],
                     Constants.LAYER_NAMES_SNODAS_SWE[idxMar], Constants.MAP_TITLES_SNODAS_SWE[idxMar],
-                    Constants.FILE_EXPORT_MAPS_SWE[idxMar]);
+                    Constants.FILE_EXPORT_MAPS_SWE[idxMar], false);
                 Module1.Current.MapFinishedLoading = true;
             }
             catch (Exception e)
@@ -309,7 +309,7 @@ namespace bagis_pro.Buttons
                 int idxApr = 5;
                 await MapTools.LoadSweMapAsync(Constants.FILES_SNODAS_SWE[idxApr],
                     Constants.LAYER_NAMES_SNODAS_SWE[idxApr], Constants.MAP_TITLES_SNODAS_SWE[idxApr],
-                    Constants.FILE_EXPORT_MAPS_SWE[idxApr]);
+                    Constants.FILE_EXPORT_MAPS_SWE[idxApr], false);
                 Module1.Current.MapFinishedLoading = true;
             }
             catch (Exception e)
@@ -332,7 +332,7 @@ namespace bagis_pro.Buttons
                 int idxMay = 6;
                 await MapTools.LoadSweMapAsync(Constants.FILES_SNODAS_SWE[idxMay],
                     Constants.LAYER_NAMES_SNODAS_SWE[idxMay], Constants.MAP_TITLES_SNODAS_SWE[idxMay],
-                    Constants.FILE_EXPORT_MAPS_SWE[idxMay]);
+                    Constants.FILE_EXPORT_MAPS_SWE[idxMay], false);
 
                 Module1.Current.MapFinishedLoading = true;
             }
@@ -355,7 +355,7 @@ namespace bagis_pro.Buttons
                 int idxJun = 7;
                 await MapTools.LoadSweMapAsync(Constants.FILES_SNODAS_SWE[idxJun],
                     Constants.LAYER_NAMES_SNODAS_SWE[idxJun], Constants.MAP_TITLES_SNODAS_SWE[idxJun],
-                    Constants.FILE_EXPORT_MAPS_SWE[idxJun]);
+                    Constants.FILE_EXPORT_MAPS_SWE[idxJun], false);
 
                 Module1.Current.MapFinishedLoading = true;
             }
@@ -378,7 +378,7 @@ namespace bagis_pro.Buttons
                 int idxDec = 1;
                 await MapTools.LoadSweMapAsync(Constants.FILES_SNODAS_SWE[idxDec],
                     Constants.LAYER_NAMES_SNODAS_SWE[idxDec], Constants.MAP_TITLES_SNODAS_SWE[idxDec],
-                    Constants.FILE_EXPORT_MAPS_SWE[idxDec]);
+                    Constants.FILE_EXPORT_MAPS_SWE[idxDec], false);
 
                 Module1.Current.MapFinishedLoading = true;
             }
@@ -386,6 +386,29 @@ namespace bagis_pro.Buttons
             {
                 MessageBox.Show("Unable to display SNODAS SWE map!!" + e.Message, "BAGIS-PRO");
                 Module1.Current.ModuleLogManager.LogError(nameof(MapButtonPalette_BtnSweDec),
+                    "Exception: " + e.Message);
+            }
+        }
+    }
+
+    internal class MapButtonPalette_BtnSweDeltaDecToJan : Button
+    {
+        protected override async void OnClick()
+        {
+            try
+            {
+                Module1.Current.MapFinishedLoading = false;
+                int idxDec = 1;
+                await MapTools.LoadSweMapAsync(Constants.FILES_SWE_DELTA[idxDec],
+                    Constants.LAYER_NAMES_SWE_DELTA[idxDec], Constants.MAP_TITLES_SWE_DELTA[idxDec],
+                    Constants.FILE_EXPORT_MAPS_SWE[idxDec], true);
+
+                Module1.Current.MapFinishedLoading = true;
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show("Unable to display SWE Delta map!!" + e.Message, "BAGIS-PRO");
+                Module1.Current.ModuleLogManager.LogError(nameof(MapButtonPalette_BtnSweDeltaDecToJan),
                     "Exception: " + e.Message);
             }
         }
