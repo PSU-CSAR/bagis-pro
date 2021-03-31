@@ -92,6 +92,9 @@ namespace bagis_pro
         public static readonly string[] FILE_EXPORT_MAPS_SWE = new string[] { "map_snodas_swe_november.pdf", "map_snodas_swe_december.pdf", "map_snodas_swe_january.pdf",
                                                                               "map_snodas_swe_february.pdf", "map_snodas_swe_march.pdf", "map_snodas_swe_april.pdf",
                                                                               "map_snodas_swe_may.pdf", "map_snodas_swe_june.pdf", "map_snodas_swe_july.pdf"};
+        public static readonly string[] FILE_EXPORT_MAPS_SWE_DELTA = new string[] { "map_swe_dec_minus_nov.pdf", "map_swe_jan_minus_dec.pdf", "map_swe_feb_minus_jan.pdf",
+                                                                                    "map_swe_mar_minus_feb.pdf", "map_swe_apr_minus_mar.pdf", "map_swe_may_minus_apr.pdf",
+                                                                                    "map_swe_jun_minus_may.pdf", "map_swe_jul_minus_jun.pdf"};
         public const string FILE_EXPORT_MAP_ROADS_PDF = "map_roads.pdf";
         public const string FILE_EXPORT_MAP_PUBLIC_LAND_ZONES_PDF = "map_public_land_zones.pdf";
         public const string FILE_EXPORT_MAP_BELOW_TREELINE_PDF = "map_below_treeline.pdf";
@@ -116,7 +119,9 @@ namespace bagis_pro
             FILE_EXPORT_CHART_PRECIP_REPRESENT_PDF, FILE_EXPORT_TABLE_PRECIP_REPRESENT_PDF,
             FILE_EXPORT_MAP_CRITICAL_PRECIPITATION_ZONES_PDF, FILE_EXPORT_CHART_SLOPE_PDF, FILE_EXPORT_CHART_ASPECT_PDF,
             FILE_EXPORT_CHART_ELEV_PRECIP_CORR_PDF, FILE_EXPORT_MAP_ROADS_PDF, FILE_EXPORT_MAP_PUBLIC_LAND_ZONES_PDF,
-            FILE_EXPORT_MAP_BELOW_TREELINE_PDF, FILE_EXPORT_MAP_SITES_LOCATION_PDF, FILE_EXPORT_MAP_PUBLIC_LAND_OWNERSHIP_PDF};
+            FILE_EXPORT_MAP_BELOW_TREELINE_PDF, FILE_EXPORT_MAP_SITES_LOCATION_PDF, FILE_EXPORT_MAP_PUBLIC_LAND_OWNERSHIP_PDF,
+            FILE_EXPORT_MAPS_SWE_DELTA[0], FILE_EXPORT_MAPS_SWE_DELTA[1], FILE_EXPORT_MAPS_SWE_DELTA[2],
+            FILE_EXPORT_MAPS_SWE_DELTA[3], FILE_EXPORT_MAPS_SWE_DELTA[4]};
         public const string FILE_TITLE_PAGE_XSL = "title_page.xsl";
         public const string FILE_TITLE_PAGE_XML = "title_page.xml";
         public const string FILE_TITLE_PAGE_HTML = "title_page.html";
@@ -224,7 +229,11 @@ namespace bagis_pro
                                                                 "MapButtonPalette_BtnBelowTreeline_State",
                                                                 "MapButtonPalette_BtnPublicLandZones_State",
                                                                 "MapButtonPalette_BtnSitesLocationZone_State",
-                                                                "MapButtonPalette_BtnPublicLandOwnership_State"};
+                                                                "MapButtonPalette_BtnPublicLandOwnership_State",
+                                                                "MapButtonPalette_BtnSweDeltaDecToJan_State",
+                                                                "MapButtonPalette_BtnSweDeltaJanToFeb_State",
+                                                                "MapButtonPalette_BtnSweDeltaMarToFeb_State",
+                                                                "MapButtonPalette_BtnSweDeltaAprToMar_State"};
 
         public static string META_TAG_XPATH = @"/metadata/dataIdInfo/searchKeys/keyword";
         public static string META_TAG_PREFIX = "BAGIS Tag < Please do not modify: ";

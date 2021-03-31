@@ -638,7 +638,7 @@ namespace bagis_pro
 
         public static async Task RemoveLayersfromMapFrame()
         {
-            string[] arrLayerNames = new string[27];
+            string[] arrLayerNames = new string[35];
             arrLayerNames[0] = Constants.MAPS_AOI_BOUNDARY;
             arrLayerNames[1] = Constants.MAPS_STREAMS;
             arrLayerNames[2] = Constants.MAPS_SNOTEL;
@@ -661,6 +661,11 @@ namespace bagis_pro
             for (int i = 0; i < Constants.LAYER_NAMES_SNODAS_SWE.Length; i++)
             {
                 arrLayerNames[idxLayerNames] = Constants.LAYER_NAMES_SNODAS_SWE[i];
+                idxLayerNames++;
+            }
+            for (int i = 0; i < Constants.LAYER_NAMES_SWE_DELTA.Length; i++)
+            {
+                arrLayerNames[idxLayerNames] = Constants.LAYER_NAMES_SWE_DELTA[i];
                 idxLayerNames++;
             }
             var map = MapView.Active.Map;
@@ -1677,8 +1682,7 @@ namespace bagis_pro
                                                          Constants.MAPS_HILLSHADE, strNewLayerName};
             if (bIsDelta)
             {
-                lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
-                                               strNewLayerName};
+                lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, strNewLayerName};
             }
             IList<string> lstLegend = new List<string>();
 
@@ -1911,13 +1915,13 @@ namespace bagis_pro
                                     Module1.ActivateState("MapButtonPalette_BtnSweDeltaDecToJan_State");
                                     break;
                                 case 2:     //Feb - Jan SWE
-                                    Module1.ActivateState("MapButtonPalette_BtnSweJan_State");
+                                    Module1.ActivateState("MapButtonPalette_BtnSweDeltaJanToFeb_State");
                                     break;
                                 case 3:     //Mar - Feb SWE
-                                    Module1.ActivateState("MapButtonPalette_BtnSweFeb_State");
+                                    Module1.ActivateState("MapButtonPalette_BtnSweDeltaMarToFeb_State");
                                     break;
                                 case 4:     //Apr - Mar SWE
-                                    Module1.ActivateState("MapButtonPalette_BtnSweMar_State");
+                                    Module1.ActivateState("MapButtonPalette_BtnSweDeltaAprToMar_State");
                                     break;
                                 case 5:     //May - Apr SWE
                                     Module1.ActivateState("MapButtonPalette_BtnSweApr_State");
