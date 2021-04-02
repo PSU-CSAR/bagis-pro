@@ -1641,7 +1641,14 @@ namespace bagis_pro
                         return;
                     }
                 }
-                oLayer = map.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(Module1.Current.DisplayedSweMap, StringComparison.CurrentCultureIgnoreCase));
+                if (!bIsDelta)
+                {
+                    oLayer = map.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(Module1.Current.DisplayedSweMap, StringComparison.CurrentCultureIgnoreCase));
+                }
+                else
+                {
+                    oLayer = map.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(Module1.Current.DisplayedSweDeltaMap, StringComparison.CurrentCultureIgnoreCase));
+                }
             });
 
             await QueuedTask.Run(() =>
@@ -1717,7 +1724,15 @@ namespace bagis_pro
             if (success == BA_ReturnCode.Success)
             {
                 Module1.Current.DisplayedMap = strFileMapExport;
-                Module1.Current.DisplayedSweMap = strNewLayerName;
+                if (!bIsDelta)
+                {
+                    Module1.Current.DisplayedSweMap = strNewLayerName;
+                }
+                else
+                {
+                    Module1.Current.DisplayedSweDeltaMap = strNewLayerName;
+                }
+                
             }
             return success;
         }
@@ -1937,7 +1952,7 @@ namespace bagis_pro
                         idx++;
                     }
                 }
-                Module1.Current.DisplayedSweMap = Constants.LAYER_NAMES_SWE_DELTA[idxDefaultDeltaMonth];
+                Module1.Current.DisplayedSweDeltaMap = Constants.LAYER_NAMES_SWE_DELTA[idxDefaultDeltaMonth];
             }
             return success;
         }
