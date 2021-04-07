@@ -121,7 +121,8 @@ namespace bagis_pro
             FILE_EXPORT_CHART_ELEV_PRECIP_CORR_PDF, FILE_EXPORT_MAP_ROADS_PDF, FILE_EXPORT_MAP_PUBLIC_LAND_ZONES_PDF,
             FILE_EXPORT_MAP_BELOW_TREELINE_PDF, FILE_EXPORT_MAP_SITES_LOCATION_PDF, FILE_EXPORT_MAP_PUBLIC_LAND_OWNERSHIP_PDF,
             FILE_EXPORT_MAPS_SWE_DELTA[0], FILE_EXPORT_MAPS_SWE_DELTA[1], FILE_EXPORT_MAPS_SWE_DELTA[2],
-            FILE_EXPORT_MAPS_SWE_DELTA[3], FILE_EXPORT_MAPS_SWE_DELTA[4]};
+            FILE_EXPORT_MAPS_SWE_DELTA[3], FILE_EXPORT_MAPS_SWE_DELTA[4], FILE_EXPORT_MAPS_SWE_DELTA[5],
+            FILE_EXPORT_MAPS_SWE_DELTA[6], FILE_EXPORT_MAPS_SWE_DELTA[7]};
         public const string FILE_TITLE_PAGE_XSL = "title_page.xsl";
         public const string FILE_TITLE_PAGE_XML = "title_page.xml";
         public const string FILE_TITLE_PAGE_HTML = "title_page.html";
@@ -224,16 +225,22 @@ namespace bagis_pro
                                                                 "MapButtonPalette_BtnSweApr_State",
                                                                 "MapButtonPalette_BtnSweMay_State",
                                                                 "MapButtonPalette_BtnSweJun_State",
+                                                                "MapButtonPalette_BtnSweJul_State",
+                                                                "MapButtonPalette_BtnSweNov_State",
                                                                 "MapButtonPalette_BtnSweDec_State",
                                                                 "MapButtonPalette_BtnRoads_State",
                                                                 "MapButtonPalette_BtnBelowTreeline_State",
                                                                 "MapButtonPalette_BtnPublicLandZones_State",
                                                                 "MapButtonPalette_BtnSitesLocationZone_State",
                                                                 "MapButtonPalette_BtnPublicLandOwnership_State",
+                                                                "MapButtonPalette_BtnSweDeltaNovToDec_State",
                                                                 "MapButtonPalette_BtnSweDeltaDecToJan_State",
                                                                 "MapButtonPalette_BtnSweDeltaJanToFeb_State",
-                                                                "MapButtonPalette_BtnSweDeltaMarToFeb_State",
-                                                                "MapButtonPalette_BtnSweDeltaAprToMar_State"};
+                                                                "MapButtonPalette_BtnSweDeltaFebToMar_State",
+                                                                "MapButtonPalette_BtnSweDeltaMarToApr_State",
+                                                                "MapButtonPalette_BtnSweDeltaAprToMay_State",
+                                                                "MapButtonPalette_BtnSweDeltaMayToJun_State",
+                                                                "MapButtonPalette_BtnSweDeltaJunToJul_State"};
 
         public static string META_TAG_XPATH = @"/metadata/dataIdInfo/searchKeys/keyword";
         public static string META_TAG_PREFIX = "BAGIS Tag < Please do not modify: ";

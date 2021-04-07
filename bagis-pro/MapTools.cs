@@ -222,7 +222,7 @@ namespace bagis_pro
                     success = await DisplaySWEMapAsync(idxDefaultMonth);
 
                     // add SWE delta layer
-                    success = await DisplaySWEDeltaMapAsync(1, 5);
+                    success = await DisplaySWEDeltaMapAsync(0, 5);
 
                     // add Precipitation zones layer
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
@@ -1779,7 +1779,7 @@ namespace bagis_pro
                         {
                             switch (idx)
                             {
-                                case 0:     //@ToDo: November; This map and button don't exist yet
+                                case 0:     //November
                                     Module1.ActivateState("MapButtonPalette_BtnSweNov_State");
                                     break;
                                 case 1:     //December
@@ -1803,7 +1803,7 @@ namespace bagis_pro
                                 case 7:     //June
                                     Module1.ActivateState("MapButtonPalette_BtnSweJun_State");
                                     break;
-                                case 8:     //@ToDo: July; This map and button don't exist yet
+                                case 8:     //July
                                     Module1.ActivateState("MapButtonPalette_BtnSweJul_State");
                                     break;
                             }
@@ -1923,8 +1923,8 @@ namespace bagis_pro
                         {
                             switch (idx)
                             {
-                                case 0:     //@ToDo: Dec - Nov SWE; This map and button don't exist yet
-                                    Module1.ActivateState("");
+                                case 0:     //Dec - Nov SWE
+                                    Module1.ActivateState("MapButtonPalette_BtnSweDeltaNovToDec_State");
                                     break;
                                 case 1:     //Jan - Dec SWE
                                     Module1.ActivateState("MapButtonPalette_BtnSweDeltaDecToJan_State");
@@ -1933,19 +1933,19 @@ namespace bagis_pro
                                     Module1.ActivateState("MapButtonPalette_BtnSweDeltaJanToFeb_State");
                                     break;
                                 case 3:     //Mar - Feb SWE
-                                    Module1.ActivateState("MapButtonPalette_BtnSweDeltaMarToFeb_State");
+                                    Module1.ActivateState("MapButtonPalette_BtnSweDeltaFebToMar_State");
                                     break;
                                 case 4:     //Apr - Mar SWE
-                                    Module1.ActivateState("MapButtonPalette_BtnSweDeltaAprToMar_State");
+                                    Module1.ActivateState("MapButtonPalette_BtnSweDeltaMarToApr_State");
                                     break;
                                 case 5:     //May - Apr SWE
-                                    Module1.ActivateState("MapButtonPalette_BtnSweApr_State");
+                                    Module1.ActivateState("MapButtonPalette_BtnSweDeltaAprToMay_State");
                                     break;
                                 case 6:     //Jun - May SWE
-                                    Module1.ActivateState("MapButtonPalette_BtnSweMay_State");
+                                    Module1.ActivateState("MapButtonPalette_BtnSweDeltaMayToJun_State");
                                     break;
-                                case 7:     //@ToDo: Jul - Jun SWE; July doesn't exist yet
-                                    Module1.ActivateState("");
+                                case 7:     //Jul - Jun SWE
+                                    Module1.ActivateState("MapButtonPalette_BtnSweDeltaJunToJul_State");
                                     break;
                             }
                         }

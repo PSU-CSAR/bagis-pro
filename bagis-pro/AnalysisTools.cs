@@ -2981,8 +2981,7 @@ namespace bagis_pro
 
         public static async Task<BA_ReturnCode> CalculateSWEDeltaAsync(string strAoiPath)
         {
-            //@ToDo: Change the starting and ending index when we have November and July
-            for (int idx = 1; idx < Constants.FILES_SWE_DELTA.Length -1; idx++)
+            for (int idx = 0; idx < Constants.FILES_SWE_DELTA.Length; idx++)
             {
                 string strLayer1 = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, true) +
                     Constants.FILES_SNODAS_SWE[idx + 1];

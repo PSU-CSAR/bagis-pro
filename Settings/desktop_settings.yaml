@@ -19,7 +19,7 @@ bagis:
 bagis-pro:
   dataSources:
     - layerType: Snotel SWE
-      description: SWE Data Source - Averaged daily SNOw Data Assimilation System (SNODAS) Snow Water Equivalent (SWE) from 2004 to 2019 data
+      description: SWE Data Source - Averaged daily SNOw Data Assimilation System (SNODAS) Snow Water Equivalent (SWE) from 2004 to current water year data. See https://www.nohrsc.noaa.gov/ for more information
       uri: http://bagis.geog.pdx.edu/arcgis/services/DAILY_SWE_NORMALS/
       units: Millimeters
     - layerType: Precipitation
