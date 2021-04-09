@@ -107,22 +107,27 @@ namespace bagis_pro
         public const string FILE_EXPORT_TABLE_PRECIP_REPRESENT_PDF = "table_precip_representation.pdf";
         public const string FILE_EXPORT_CHART_PRECIP_REPRESENT_PDF = "chart_precip_representation.pdf";
         public const string FILE_EXPORT_CHART_ELEV_PRECIP_CORR_PDF = "chart_elev_precip_correlation.pdf";
-        public const string FILE_EXPORT_MAPS_ALL_PDF = "all_maps_charts.pdf";
-        // List of files in the PDF map package and the order in which they will be assembled
-        public static string[] FILES_EXPORT_ALL_PDF = new string[] { FILE_TITLE_PAGE_PDF, FILE_EXPORT_MAP_ELEV_PDF,
-            FILE_EXPORT_MAP_SNOTEL_PDF, FILE_EXPORT_MAP_SCOS_PDF, FILE_EXPORT_MAP_SNOTEL_AND_SCOS_PDF,
-            FILE_EXPORT_MAP_PRECIPITATION_PDF, FILE_EXPORT_MAPS_SWE[0], FILE_EXPORT_MAPS_SWE[1],
-            FILE_EXPORT_MAPS_SWE[2], FILE_EXPORT_MAPS_SWE[3], FILE_EXPORT_MAPS_SWE[4],
-            FILE_EXPORT_MAPS_SWE[5], FILE_EXPORT_MAPS_SWE[6], FILE_EXPORT_MAPS_SWE[7],
-            FILE_EXPORT_MAPS_SWE[8], FILE_EXPORT_MAP_ASPECT_PDF,
-            FILE_EXPORT_MAP_SLOPE_PDF, FILE_EXPORT_CHART_AREA_ELEV_PRECIP_SITE_PDF,
-            FILE_EXPORT_CHART_PRECIP_REPRESENT_PDF, FILE_EXPORT_TABLE_PRECIP_REPRESENT_PDF,
-            FILE_EXPORT_MAP_CRITICAL_PRECIPITATION_ZONES_PDF, FILE_EXPORT_CHART_SLOPE_PDF, FILE_EXPORT_CHART_ASPECT_PDF,
-            FILE_EXPORT_CHART_ELEV_PRECIP_CORR_PDF, FILE_EXPORT_MAP_ROADS_PDF, FILE_EXPORT_MAP_PUBLIC_LAND_ZONES_PDF,
-            FILE_EXPORT_MAP_BELOW_TREELINE_PDF, FILE_EXPORT_MAP_SITES_LOCATION_PDF, FILE_EXPORT_MAP_PUBLIC_LAND_OWNERSHIP_PDF,
-            FILE_EXPORT_MAPS_SWE_DELTA[0], FILE_EXPORT_MAPS_SWE_DELTA[1], FILE_EXPORT_MAPS_SWE_DELTA[2],
-            FILE_EXPORT_MAPS_SWE_DELTA[3], FILE_EXPORT_MAPS_SWE_DELTA[4], FILE_EXPORT_MAPS_SWE_DELTA[5],
-            FILE_EXPORT_MAPS_SWE_DELTA[6], FILE_EXPORT_MAPS_SWE_DELTA[7]};
+        public const string FILE_EXPORT_WATERSHED_REPORT_PDF = "watershed_report.pdf";
+        public const string FILE_EXPORT_SITE_ANALYSIS_REPORT_PDF = "site_analysis_report.pdf";
+        // List of files in the watershed PDF map package and the order in which they will be assembled
+        public static string[] FILES_EXPORT_WATERSHED_PDF = new string[]
+        { FILE_TITLE_PAGE_PDF, FILE_EXPORT_MAP_ELEV_PDF, FILE_EXPORT_MAP_ASPECT_PDF,
+          FILE_EXPORT_MAP_SLOPE_PDF, FILE_EXPORT_CHART_ASPECT_PDF, FILE_EXPORT_CHART_SLOPE_PDF,
+          FILE_EXPORT_MAP_SNOTEL_PDF, FILE_EXPORT_MAP_SCOS_PDF, FILE_EXPORT_MAP_SNOTEL_AND_SCOS_PDF,
+          FILE_EXPORT_MAP_PRECIPITATION_PDF, FILE_EXPORT_CHART_ELEV_PRECIP_CORR_PDF,
+          FILE_EXPORT_MAPS_SWE[0], FILE_EXPORT_MAPS_SWE[1], FILE_EXPORT_MAPS_SWE[2],
+          FILE_EXPORT_MAPS_SWE[3], FILE_EXPORT_MAPS_SWE[4], FILE_EXPORT_MAPS_SWE[5],
+          FILE_EXPORT_MAPS_SWE[6], FILE_EXPORT_MAPS_SWE[7], FILE_EXPORT_MAPS_SWE[8],
+          FILE_EXPORT_MAPS_SWE_DELTA[0], FILE_EXPORT_MAPS_SWE_DELTA[1], FILE_EXPORT_MAPS_SWE_DELTA[2],
+          FILE_EXPORT_MAPS_SWE_DELTA[3], FILE_EXPORT_MAPS_SWE_DELTA[4], FILE_EXPORT_MAPS_SWE_DELTA[5],
+          FILE_EXPORT_MAPS_SWE_DELTA[6], FILE_EXPORT_MAPS_SWE_DELTA[7], FILE_EXPORT_CHART_AREA_ELEV_PRECIP_SITE_PDF,
+          FILE_EXPORT_CHART_PRECIP_REPRESENT_PDF,
+          FILE_EXPORT_MAP_CRITICAL_PRECIPITATION_ZONES_PDF, FILE_EXPORT_TABLE_PRECIP_REPRESENT_PDF
+        };    
+        // List of files in the site analysis PDF map package and the order in which they will be assembled
+        public static string[] FILES_EXPORT_SITE_ANALYSIS_PDF = new string[] { FILE_TITLE_PAGE_PDF,
+            FILE_EXPORT_MAP_ROADS_PDF, FILE_EXPORT_MAP_PUBLIC_LAND_ZONES_PDF, FILE_EXPORT_MAP_PUBLIC_LAND_OWNERSHIP_PDF,
+            FILE_EXPORT_MAP_BELOW_TREELINE_PDF, FILE_EXPORT_MAP_SITES_LOCATION_PDF};
         public const string FILE_TITLE_PAGE_XSL = "title_page.xsl";
         public const string FILE_TITLE_PAGE_XML = "title_page.xml";
         public const string FILE_TITLE_PAGE_HTML = "title_page.html";
@@ -212,7 +217,7 @@ namespace bagis_pro
 
         // States that control the map display buttons
         // JanSwe always needs to be last so that we can export the other months directly
-        public static string[] STATES_MAP_BUTTONS => new string[] {"MapButtonPalette_BtnElevation_State",
+        public static string[] STATES_WATERSHED_MAP_BUTTONS => new string[] {"MapButtonPalette_BtnElevation_State",
                                                                 "MapButtonPalette_BtnSnotel_State",
                                                                 "MapButtonPalette_BtnSnowCourse_State",
                                                                 "MapButtonPalette_BtnSitesAll_State",
@@ -228,11 +233,6 @@ namespace bagis_pro
                                                                 "MapButtonPalette_BtnSweJul_State",
                                                                 "MapButtonPalette_BtnSweNov_State",
                                                                 "MapButtonPalette_BtnSweDec_State",
-                                                                "MapButtonPalette_BtnRoads_State",
-                                                                "MapButtonPalette_BtnBelowTreeline_State",
-                                                                "MapButtonPalette_BtnPublicLandZones_State",
-                                                                "MapButtonPalette_BtnSitesLocationZone_State",
-                                                                "MapButtonPalette_BtnPublicLandOwnership_State",
                                                                 "MapButtonPalette_BtnSweDeltaNovToDec_State",
                                                                 "MapButtonPalette_BtnSweDeltaDecToJan_State",
                                                                 "MapButtonPalette_BtnSweDeltaJanToFeb_State",
@@ -241,6 +241,12 @@ namespace bagis_pro
                                                                 "MapButtonPalette_BtnSweDeltaAprToMay_State",
                                                                 "MapButtonPalette_BtnSweDeltaMayToJun_State",
                                                                 "MapButtonPalette_BtnSweDeltaJunToJul_State"};
+        public static string[] STATES_SITE_ANALYSIS_MAP_BUTTONS => new string[] {
+                                                                "MapButtonPalette_BtnRoads_State",
+                                                                "MapButtonPalette_BtnBelowTreeline_State",
+                                                                "MapButtonPalette_BtnPublicLandZones_State",
+                                                                "MapButtonPalette_BtnSitesLocationZone_State",
+                                                                "MapButtonPalette_BtnPublicLandOwnership_State"};
 
         public static string META_TAG_XPATH = @"/metadata/dataIdInfo/searchKeys/keyword";
         public static string META_TAG_PREFIX = "BAGIS Tag < Please do not modify: ";

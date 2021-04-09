@@ -95,6 +95,7 @@ namespace bagis_pro
         private string _publisher;
         private string _comments;
         private bool _archiveChecked = false;
+        private ReportType _rType = ReportType.Watershed;
         private bool _cmdRunEnabled = false;
         private bool _cmdLogEnabled = false;
         private ObservableCollection<string> _aoiList = new ObservableCollection<string>();
@@ -150,6 +151,15 @@ namespace bagis_pro
             set
             {
                 SetProperty(ref _archiveChecked, value, () => ArchiveChecked);
+            }
+        }
+
+        public ReportType RTType
+        {
+            get { return _rType; }
+            set
+            {
+                SetProperty(ref _rType, value, () => RTType);
             }
         }
 
@@ -579,7 +589,7 @@ namespace bagis_pro
                     try
                     {
                         // Delete any old PDF files
-                        foreach (var item in Constants.FILES_EXPORT_ALL_PDF)
+                        foreach (var item in Constants.FILES_EXPORT_WATERSHED_PDF)
                         {
                             string strPath = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE
                                 + "\\" + item;
@@ -641,73 +651,87 @@ namespace bagis_pro
                             errorCount++;
                         }
 
-                        success = await MapTools.PublishMapsAsync(); // export the maps to pdf
+                        success = await MapTools.PublishMapsAsync(RTType); // export the maps to pdf
                         if (success != BA_ReturnCode.Success)
                         {
                             MessageBox.Show("An error occurred while generating the maps!!", "BAGIS-PRO");
                             errorCount++;
                         }
-                        success = await GeneralTools.GenerateTablesAsync(false);   // export the tables to pdf
-                        if (success != BA_ReturnCode.Success)
+                        if (RTType.Equals(ReportType.Watershed))
                         {
-                            MessageBox.Show("An error occurred while generating the Excel tables!!", "BAGIS-PRO");
-                            errorCount++;
-                        }
-                        else
-                        {
-                            // Generate the crtical precip map; It has to follow the tables
-                            Uri uriAnalysis = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis));
-                            if (await GeodatabaseTools.FeatureClassExistsAsync(uriAnalysis, Constants.FILE_CRITICAL_PRECIP_ZONE))
+                            success = await GeneralTools.GenerateTablesAsync(false);   // export the tables to pdf
+                            if (success != BA_ReturnCode.Success)
                             {
-                                CIMColor fillColor = CIMColor.CreateRGBColor(255, 0, 0, 50);    //Red with 30% transparency
-                                string strLayerPath = uriAnalysis.LocalPath + "\\" + Constants.FILE_CRITICAL_PRECIP_ZONE;
-                                success = await MapTools.AddPolygonLayerAsync(new Uri(strLayerPath), fillColor, false, Constants.MAPS_CRITICAL_PRECIPITATION_ZONES);
-                                string strButtonState = "MapButtonPalette_BtnCriticalPrecipZone_State";
-                                if (success.Equals(BA_ReturnCode.Success))
-                                    Module1.ActivateState(strButtonState);
-                                int foundS1 = strButtonState.IndexOf("_State");
-                                string strMapButton = strButtonState.Remove(foundS1);
-                                ICommand cmd = FrameworkApplication.GetPlugInWrapper(strMapButton) as ICommand;
-                                Module1.Current.ModuleLogManager.LogDebug(nameof(RunImplAsync),
-                                    "About to toggle map button " + strMapButton);
-                                if ((cmd != null))
+                                MessageBox.Show("An error occurred while generating the Excel tables!!", "BAGIS-PRO");
+                                errorCount++;
+                            }
+                            else
+                            {
+                                // Generate the crtical precip map; It has to follow the tables
+                                Uri uriAnalysis = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis));
+                                if (await GeodatabaseTools.FeatureClassExistsAsync(uriAnalysis, Constants.FILE_CRITICAL_PRECIP_ZONE))
                                 {
+                                    CIMColor fillColor = CIMColor.CreateRGBColor(255, 0, 0, 50);    //Red with 30% transparency
+                                    string strLayerPath = uriAnalysis.LocalPath + "\\" + Constants.FILE_CRITICAL_PRECIP_ZONE;
+                                    success = await MapTools.AddPolygonLayerAsync(new Uri(strLayerPath), fillColor, false, Constants.MAPS_CRITICAL_PRECIPITATION_ZONES);
+                                    string strButtonState = "MapButtonPalette_BtnCriticalPrecipZone_State";
+                                    if (success.Equals(BA_ReturnCode.Success))
+                                        Module1.ActivateState(strButtonState);
+                                    int foundS1 = strButtonState.IndexOf("_State");
+                                    string strMapButton = strButtonState.Remove(foundS1);
+                                    ICommand cmd = FrameworkApplication.GetPlugInWrapper(strMapButton) as ICommand;
+                                    Module1.Current.ModuleLogManager.LogDebug(nameof(RunImplAsync),
+                                        "About to toggle map button " + strMapButton);
+                                    if ((cmd != null))
+                                    {
+                                        do
+                                        {
+                                            await Task.Delay(TimeSpan.FromSeconds(0.4));  // build in delay until the command can execute
+                                        }
+                                        while (!cmd.CanExecute(null));
+                                        cmd.Execute(null);
+                                    }
+
                                     do
                                     {
-                                        await Task.Delay(TimeSpan.FromSeconds(0.4));  // build in delay until the command can execute
+                                        await Task.Delay(TimeSpan.FromSeconds(0.4));  // build in delay so maps can load
                                     }
-                                    while (!cmd.CanExecute(null));
-                                    cmd.Execute(null);
+                                    while (Module1.Current.MapFinishedLoading == false);
+                                    success = await GeneralTools.ExportMapToPdfAsync();    // export map to pdf
                                 }
-
-                                do
-                                {
-                                    await Task.Delay(TimeSpan.FromSeconds(0.4));  // build in delay so maps can load
-                                }
-                                while (Module1.Current.MapFinishedLoading == false);
-                                success = await GeneralTools.ExportMapToPdfAsync();    // export map to pdf
                             }
                         }
-                        success = await GeneralTools.GenerateMapsTitlePageAsync(strPublisher, Comments);
+ 
+                        success = await GeneralTools.GenerateMapsTitlePageAsync(ReportType.Watershed, strPublisher, Comments);
                         if (success != BA_ReturnCode.Success)
                         {
                             MessageBox.Show("An error occurred while generating the Title page!!", "BAGIS-PRO");
                             errorCount++;
                         }
                         string outputPath = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\" +
-                              Constants.FILE_EXPORT_MAPS_ALL_PDF;
-                        success = GeneralTools.PublishFullPdfDocument(outputPath);    // Put it all together into a single pdf document
+                              Constants.FILES_EXPORT_WATERSHED_PDF;
+                        if (RTType.Equals(ReportType.SiteAnalysis))
+                        {
+                            outputPath = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\" +
+                              Constants.FILES_EXPORT_SITE_ANALYSIS_PDF;
+                        }
+                        success = GeneralTools.PublishFullPdfDocument(outputPath, ReportType.Watershed);    // Put it all together into a single pdf document
                         if (success != BA_ReturnCode.Success)
                         {
                             errorCount++;
                         }
                         else if (ArchiveChecked)
                         {
+                            string reportName = Constants.FILE_EXPORT_WATERSHED_REPORT_PDF;
+                            if (RTType.Equals(ReportType.Watershed))
+                            {
+                                reportName = Constants.FILE_EXPORT_SITE_ANALYSIS_REPORT_PDF;
+                            }
                             // Copy final output to a central location
                             if (File.Exists(outputPath))
                             {
                                 string copyFolder = Path.GetDirectoryName(_strLogFile);
-                                string copyFile = Module1.Current.Aoi.Name + "_" + Constants.FILE_EXPORT_MAPS_ALL_PDF;
+                                string copyFile = Module1.Current.Aoi.Name + "_" + reportName;
                                 File.Copy(outputPath, copyFolder + "\\" + copyFile, true);
                             }
                         }

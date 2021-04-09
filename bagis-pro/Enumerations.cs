@@ -100,4 +100,10 @@ namespace bagis_pro
         Completed,
         Errors
     }
+
+    public enum ReportType
+    {
+        Watershed,
+        SiteAnalysis
+    }
 }

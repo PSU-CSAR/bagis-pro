@@ -12,7 +12,7 @@
       <style type="text/css">
         .style1
         {
-        height: 650px;
+        height: 600px;
         }
         .style2
         {
@@ -42,10 +42,12 @@
       </style>
   <head/>
   <body>
-        <div class="style2">
-            AOI: <xsl:value-of select="aoi_name"/>
-        </div>
-
+    <div class="style2">
+      <xsl:value-of select="report_title"/>
+    </div>
+    <div class="style2">
+      AOI: <xsl:value-of select="aoi_name"/>
+    </div>
             <div class ="style1">
                 <table>
                     <tr>
@@ -183,7 +185,7 @@
             </div>
                    
             <div class="footer">
-            Maps and Charts generated using BAGIS V3 – A tool <br />
+            Report generated using BAGIS V3 – A tool <br />
             maintained by the NRCS National Water and Climate Center (NWCC)<br />
             and Center for Spatial Analysis &#38; Research (CSAR), <br />
             Geography, Portland State University <br />

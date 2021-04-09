@@ -27,6 +27,7 @@ namespace bagis_pro.Buttons
     {
         protected async override void OnClick()
         {
+            ReportType rType = ReportType.SiteAnalysis;
             try
             {
                 string outputDirectory = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE;
@@ -36,7 +37,7 @@ namespace bagis_pro.Buttons
                 }
 
                 // Delete any old PDF files
-                foreach (var item in Constants.FILES_EXPORT_ALL_PDF)
+                foreach (var item in Constants.FILES_EXPORT_SITE_ANALYSIS_PDF)
                 {
                     string strPath = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE
                         + "\\" + item;
@@ -63,7 +64,12 @@ namespace bagis_pro.Buttons
 
                 // Load the maps if they aren't in the viewer already
                 BA_ReturnCode success = BA_ReturnCode.Success;
-                if (!FrameworkApplication.State.Contains(Constants.STATES_MAP_BUTTONS[0]))
+                string strTestState = Constants.STATES_WATERSHED_MAP_BUTTONS[0];
+                if (rType.Equals(ReportType.SiteAnalysis))
+                {
+                    strTestState = Constants.STATES_SITE_ANALYSIS_MAP_BUTTONS[0];
+                }
+                if (!FrameworkApplication.State.Contains(strTestState))
                 {
                     success = await MapTools.DisplayMaps(Module1.Current.Aoi.FilePath, oLayout, true);
                 }
@@ -98,57 +104,66 @@ namespace bagis_pro.Buttons
                 // Legend
                 success = await MapTools.DisplayLegendAsync(oLayout, "ArcGIS Colors", "1.5 Point");
 
-                success = await MapTools.PublishMapsAsync(); // export the maps to pdf
+                success = await MapTools.PublishMapsAsync(rType); // export the maps to pdf
                 if (success != BA_ReturnCode.Success)
                 {
                     MessageBox.Show("An error occurred while generating the maps!!", "BAGIS-PRO");
                 }
-                success = await GeneralTools.GenerateTablesAsync(false);   // export the tables to pdf
-                if (success != BA_ReturnCode.Success)
+                // Only run critical precip for watershed report
+                if (rType.Equals(ReportType.Watershed))
                 {
-                    MessageBox.Show("An error occurred while generating the Excel tables!!", "BAGIS-PRO");
-                }
-                else
-                {
-                    // Generate the crtical precip map; It has to follow the tables
-                    Uri uriAnalysis = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis));
-                    if (await GeodatabaseTools.FeatureClassExistsAsync(uriAnalysis, Constants.FILE_CRITICAL_PRECIP_ZONE))
+                    success = await GeneralTools.GenerateTablesAsync(false);   // export the tables to pdf
+                    if (success != BA_ReturnCode.Success)
                     {
-                        CIMColor fillColor = CIMColor.CreateRGBColor(255, 0, 0, 50);    //Red with 30% transparency
-                        string strLayerPath = uriAnalysis.LocalPath + "\\" + Constants.FILE_CRITICAL_PRECIP_ZONE;
-                        success = await MapTools.AddPolygonLayerAsync(new Uri(strLayerPath), fillColor, false, Constants.MAPS_CRITICAL_PRECIPITATION_ZONES);
-                        string strButtonState = "MapButtonPalette_BtnCriticalPrecipZone_State";
-                        if (success.Equals(BA_ReturnCode.Success))
-                            Module1.ActivateState(strButtonState);
-                        int foundS1 = strButtonState.IndexOf("_State");
-                        string strMapButton = strButtonState.Remove(foundS1);
-                        ICommand cmd = FrameworkApplication.GetPlugInWrapper(strMapButton) as ICommand;
-                        Module1.Current.ModuleLogManager.LogDebug(nameof(OnClick),
-                            "About to toggle map button " + strMapButton);
-                        if ((cmd != null))
+                        MessageBox.Show("An error occurred while generating the Excel tables!!", "BAGIS-PRO");
+                    }
+                    else
+                    {
+                        // Generate the crtical precip map; It has to follow the tables
+                        Uri uriAnalysis = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis));
+                        if (await GeodatabaseTools.FeatureClassExistsAsync(uriAnalysis, Constants.FILE_CRITICAL_PRECIP_ZONE))
                         {
+                            CIMColor fillColor = CIMColor.CreateRGBColor(255, 0, 0, 50);    //Red with 30% transparency
+                            string strLayerPath = uriAnalysis.LocalPath + "\\" + Constants.FILE_CRITICAL_PRECIP_ZONE;
+                            success = await MapTools.AddPolygonLayerAsync(new Uri(strLayerPath), fillColor, false, Constants.MAPS_CRITICAL_PRECIPITATION_ZONES);
+                            string strButtonState = "MapButtonPalette_BtnCriticalPrecipZone_State";
+                            if (success.Equals(BA_ReturnCode.Success))
+                                Module1.ActivateState(strButtonState);
+                            int foundS1 = strButtonState.IndexOf("_State");
+                            string strMapButton = strButtonState.Remove(foundS1);
+                            ICommand cmd = FrameworkApplication.GetPlugInWrapper(strMapButton) as ICommand;
+                            Module1.Current.ModuleLogManager.LogDebug(nameof(OnClick),
+                                "About to toggle map button " + strMapButton);
+                            if ((cmd != null))
+                            {
+                                do
+                                {
+                                    await Task.Delay(TimeSpan.FromSeconds(0.4));  // build in delay until the command can execute
+                                }
+                                while (!cmd.CanExecute(null));
+                                cmd.Execute(null);
+                            }
+
                             do
                             {
-                                await Task.Delay(TimeSpan.FromSeconds(0.4));  // build in delay until the command can execute
+                                await Task.Delay(TimeSpan.FromSeconds(0.4));  // build in delay so maps can load
                             }
-                            while (!cmd.CanExecute(null));
-                            cmd.Execute(null);
+                            while (Module1.Current.MapFinishedLoading == false);
+                            success = await GeneralTools.ExportMapToPdfAsync();    // export map to pdf
                         }
-
-                        do
-                        {
-                            await Task.Delay(TimeSpan.FromSeconds(0.4));  // build in delay so maps can load
-                        }
-                        while (Module1.Current.MapFinishedLoading == false);
-                        success = await GeneralTools.ExportMapToPdfAsync();    // export map to pdf
                     }
                 }
 
                 string strPublisher = (string)Module1.Current.BatchToolSettings.Publisher;
-                success = await GeneralTools.GenerateMapsTitlePageAsync(strPublisher, "");
+                success = await GeneralTools.GenerateMapsTitlePageAsync(rType, strPublisher, "");
                 string outputPath = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\" +
-                      Constants.FILE_EXPORT_MAPS_ALL_PDF;
-                GeneralTools.PublishFullPdfDocument(outputPath);    // Put it all together into a single pdf document
+                      Constants.FILE_EXPORT_WATERSHED_REPORT_PDF;
+                if (rType.Equals(ReportType.SiteAnalysis))
+                {
+                    outputPath = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\" +
+                      Constants.FILE_EXPORT_SITE_ANALYSIS_REPORT_PDF;
+                }
+                GeneralTools.PublishFullPdfDocument(outputPath, rType);    // Put it all together into a single pdf document
 
                 MessageBox.Show("Map package exported to " + outputPath + "!!", "BAGIS-PRO");
             }

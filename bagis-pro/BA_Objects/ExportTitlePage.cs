@@ -36,6 +36,7 @@ namespace bagis_pro.BA_Objects
         public string annual_runoff_ratio;
         public string annual_runoff_data_descr;
         public string annual_runoff_data_year;
+        public string report_title;
         public DataSource[] data_sources;
 
         public string DateCreatedText

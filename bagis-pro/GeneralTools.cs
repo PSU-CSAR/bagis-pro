@@ -99,7 +99,8 @@ namespace bagis_pro
 
         }
 
-        public static async Task<BA_ReturnCode> GenerateMapsTitlePageAsync(string strPublisher, string strComments)
+        public static async Task<BA_ReturnCode> GenerateMapsTitlePageAsync(ReportType rType, 
+            string strPublisher, string strComments)
         {
             try
             {
@@ -234,8 +235,16 @@ namespace bagis_pro
                 //Printing data sources
                 IDictionary<string, BA_Objects.DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
                 string[] keys = { Constants.DATA_TYPE_SWE, Constants.DATA_TYPE_PRECIPITATION, Constants.DATA_TYPE_SNOTEL,
-                                  Constants.DATA_TYPE_SNOW_COURSE, Constants.DATA_TYPE_ROADS, Constants.DATA_TYPE_PUBLIC_LAND,
-                                  Constants.DATA_TYPE_VEGETATION};
+                                  Constants.DATA_TYPE_SNOW_COURSE};
+                if (rType.Equals(ReportType.SiteAnalysis))
+                {
+                    Array.Resize(ref keys, 5);
+                    keys[0] = Constants.DATA_TYPE_SNOTEL;
+                    keys[1] = Constants.DATA_TYPE_SNOW_COURSE;
+                    keys[2] = Constants.DATA_TYPE_ROADS;
+                    keys[3] = Constants.DATA_TYPE_PUBLIC_LAND;
+                    keys[4] = Constants.DATA_TYPE_VEGETATION;
+                }
                 IList<BA_Objects.DataSource> lstDataSources = new List<BA_Objects.DataSource>();
                 foreach (string strKey in keys)
                 {
@@ -249,6 +258,11 @@ namespace bagis_pro
                 if (!string.IsNullOrEmpty(strComments))
                 {
                     strComments = strComments.Trim();   // strip white space from comments
+                }
+                string strReportTitle = "Watershed Characteristics Report";
+                if (rType.Equals(ReportType.SiteAnalysis))
+                {
+                    strReportTitle = "Site Analysis Report";
                 }
 
                 // Serialize the title page object
@@ -279,6 +293,7 @@ namespace bagis_pro
                     annual_runoff_ratio = strRunoffRatio,
                     annual_runoff_data_descr = annualRunoffDataDescr,
                     annual_runoff_data_year = annualRunoffDataYear,
+                    report_title = strReportTitle,
                     date_created = DateTime.Now
                 };
                 if (lstDataSources.Count > 0)
@@ -1470,12 +1485,17 @@ namespace bagis_pro
             return settingsPath;
         }
 
-        public static BA_ReturnCode PublishFullPdfDocument(string outputPath)
+        public static BA_ReturnCode PublishFullPdfDocument(string outputPath, ReportType rType)
         {
             // Initialize output document
             PdfDocument outputDocument = new PdfDocument();
             //Iterate through files
-            foreach (string strFileName in Constants.FILES_EXPORT_ALL_PDF)
+            string[] arrAllFiles = Constants.FILES_EXPORT_WATERSHED_PDF;
+            if (rType.Equals(ReportType.SiteAnalysis))
+            {
+                arrAllFiles = Constants.FILES_EXPORT_SITE_ANALYSIS_PDF;
+            }
+            foreach (string strFileName in arrAllFiles)
             {
                 string fullPath = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\" +
                                   strFileName;
