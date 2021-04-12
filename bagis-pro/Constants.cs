@@ -77,7 +77,6 @@ namespace bagis_pro
         public const string FILE_ELEV_ZONES_TBL = "tblZones";
         public const string FILE_ELEV_ZONES_VECTOR = "elevzone_v";
         public const string FILE_CRITICAL_PRECIP_ZONE = "criticalprecipzone";
-        public const string FILE_PUBLIC_LAND_OWNERSHIP = "public_land_ownership";
         public const string FILE_SETTINGS = "analysis.xml";
         public const string FILE_BATCH_TOOL_SETTINGS = "batch_tool_settings.json";
         public const string FILE_BATCH_LOG = "batch_tool_log.txt";
@@ -187,7 +186,7 @@ namespace bagis_pro
         public const string FIELD_UBOUND = "UBOUND";
         public const string FIELD_COUNT = "COUNT";
         public const string FIELD_RASTERVALU = "RASTERVALU";   //Field generated when using BA_ExtractValuesToPoints to populate BA_SELEV from DEM
-        public const string FIELD_PUBLIC = "Public_";   //Indicates public land on the Public Lands layer
+        public const string FIELD_SUITABLE_PUBLIC = "Suitable_Public";   //Indicates non-wilderness federal land on the Public Lands layer
         public const string FIELD_ALPINE_ABV_TREELINE = "ALPINE_ABV_TREELINE";   //Indicates alpine vegetation types that are above the treeline
         public const string FIELD_GRID_CODE = "gridcode";   //Value after raster is converted to polygon
         public const string FIELD_RUNOFF_AVERAGE = "Average_kac_ft";

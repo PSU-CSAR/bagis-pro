@@ -536,7 +536,7 @@ namespace bagis_pro
                     if (success == BA_ReturnCode.Success)
                     {
                         // Create public lands layer for potential site analysis
-                        success = await AnalysisTools.GetPublicLandsAsync(AoiFolder);
+                        success = await AnalysisTools.GetFederalNonWildernessLandsAsync(AoiFolder);
                         if (success != BA_ReturnCode.Success)
                         {
                             errorCount++;

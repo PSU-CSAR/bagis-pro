@@ -254,7 +254,7 @@
           <tooltip heading="Display Map">
             ToolTip<disabledText /></tooltip>
         </button>
-        <button id="MapButtonPalette_BtnPublicLandZones" caption="Public Non_Wilderness Land" className="bagis_pro.Buttons.MapButtonPalette_BtnPublicLandZones" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnPublicLandZones_Condition">
+        <button id="MapButtonPalette_BtnPublicLandZones" caption="Federal Non_Wilderness Land" className="bagis_pro.Buttons.MapButtonPalette_BtnPublicLandZones" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnPublicLandZones_Condition">
           <tooltip heading="Display Map">
             ToolTip<disabledText /></tooltip>
         </button>

@@ -95,8 +95,8 @@
             <Label  Content="Federal Non-Wilderness Land" HorizontalAlignment="Left" VerticalAlignment="Center"  Padding="5,0,20,0"/>
         </DockPanel>
         <DockPanel Grid.Row="8" Grid.Column="1"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
-            <CheckBox x:Name="chkPublicLands" Content="" HorizontalAlignment="Center"  Height="14" VerticalAlignment="Center"
-                      IsChecked="{Binding PublicLand_Checked}"/>
+            <CheckBox x:Name="chkFederalLands" Content="" HorizontalAlignment="Center"  Height="14" VerticalAlignment="Center"
+                      IsChecked="{Binding FederalLand_Checked}"/>
         </DockPanel>
         <DockPanel Grid.Row="9" Grid.Column="0"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
             <Label Content="Area Below Treeline" HorizontalAlignment="Left" VerticalAlignment="Center"  Padding="5,0,20,0"/>

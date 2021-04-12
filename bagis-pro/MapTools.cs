@@ -72,8 +72,8 @@ namespace bagis_pro
                     await MapTools.RemoveLayersfromMapFrame();
 
                     //add Land Ownership Layer
-                    string strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
-                        Constants.FILE_PUBLIC_LAND_OWNERSHIP;
+                    string strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers, true) +
+                        Constants.FILE_PUBLIC_LAND;
                     Uri uri = new Uri(strPath);
                     success = await MapTools.AddPolygonLayerUniqueValuesAsync(uri, "ArcGIS Colors", "Basic Random",
                         new string[] { "AGBUR" }, false, false, 30.0F, Constants.MAPS_PUBLIC_LAND_OWNERSHIP);

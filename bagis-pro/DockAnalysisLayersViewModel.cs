@@ -65,7 +65,7 @@ namespace bagis_pro
         private bool _ElevationZones_Checked = false;
         private bool _SitesZones_Checked = false;
         private bool _Roads_Checked = false;
-        private bool _PublicLand_Checked = false;
+        private bool _FederalLand_Checked = false;
         private bool _BelowTreeline_Checked = false;
         private bool _ElevPrecipCorr_Checked = false;
         private bool _SWE_Delta_Checked = false;
@@ -141,12 +141,12 @@ namespace bagis_pro
             }
         }
 
-        public bool PublicLand_Checked
+        public bool FederalLand_Checked
         {
-            get { return _PublicLand_Checked; }
+            get { return _FederalLand_Checked; }
             set
             {
-                SetProperty(ref _PublicLand_Checked, value, () => PublicLand_Checked);
+                SetProperty(ref _FederalLand_Checked, value, () => FederalLand_Checked);
             }
         }
 
@@ -186,7 +186,7 @@ namespace bagis_pro
             ElevationZones_Checked = false;
             SitesZones_Checked = false;
             Roads_Checked = false;
-            PublicLand_Checked = false;
+            FederalLand_Checked = false;
             BelowTreeline_Checked = false;
             ElevPrecipCorr_Checked = false;
             SWE_Delta_Checked = false;
@@ -200,7 +200,7 @@ namespace bagis_pro
                 {
                     // Create from template
                     await GenerateLayersAsync(RepresentedArea_Checked, PrismZones_Checked, AspectZones_Checked,
-                        SlopeZones_Checked, ElevationZones_Checked, Roads_Checked, PublicLand_Checked, BelowTreeline_Checked,
+                        SlopeZones_Checked, ElevationZones_Checked, Roads_Checked, FederalLand_Checked, BelowTreeline_Checked,
                         ElevPrecipCorr_Checked, SitesZones_Checked, SWE_Delta_Checked);
                 });
             }
@@ -343,11 +343,11 @@ namespace bagis_pro
 
                 if (extractPublicLand)
                 {
-                    success = await AnalysisTools.GetPublicLandsAsync(Module1.Current.Aoi.FilePath);
+                    success = await AnalysisTools.GetFederalNonWildernessLandsAsync(Module1.Current.Aoi.FilePath);
 
                     if (success == BA_ReturnCode.Success)
                     {
-                        layersPane.PublicLand_Checked = false;
+                        layersPane.FederalLand_Checked = false;
                     }
                     else
                     {

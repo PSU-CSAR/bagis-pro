@@ -1889,7 +1889,7 @@ namespace bagis_pro
             return success;
         }
 
-        public static async Task<BA_ReturnCode> GetPublicLandsAsync(string strAoiPath)
+        public static async Task<BA_ReturnCode> GetFederalNonWildernessLandsAsync(string strAoiPath)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
             Uri uriLayers = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers));
@@ -1897,58 +1897,50 @@ namespace bagis_pro
             if (!bExists)
             {
                 MessageBox.Show("The public land layer is missing. Clip the public land layer before creating the public land analysis layer!!", "BAGIS-PRO");
-                Module1.Current.ModuleLogManager.LogDebug(nameof(GetPublicLandsAsync),
+                Module1.Current.ModuleLogManager.LogDebug(nameof(GetFederalNonWildernessLandsAsync),
                     "Unable to extract public lands because public_lands layer does not exist. Process stopped!!");
                 return success;
             }
             string strInputFc = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers, true) + Constants.FILE_PUBLIC_LAND;
             Uri uriFull = new Uri(strInputFc);
-            await QueuedTask.Run(() =>
-           {
-               // Create feature layer so we can use definition query to select public lands
-               var slectionLayer = LayerFactory.Instance.CreateFeatureLayer(uriFull, MapView.Active.Map, 0, "Selection Layer");
-               slectionLayer.SetDefinitionQuery(Constants.FIELD_PUBLIC + " = 1");
-               // Merge features into a single feature for display and analysis
-               var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath);
-               var parameters = Geoprocessing.MakeValueArray(slectionLayer, GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Analysis, true) + Constants.FILE_PUBLIC_LAND_ZONE,
-                   Constants.FIELD_PUBLIC, "", "MULTI_PART", "DISSOLVE_LINES");
-               var gpResult = Geoprocessing.ExecuteToolAsync("Dissolve_management", parameters, environments,
-                   CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-               if (gpResult.Result.IsFailed)
-               {
-                   Module1.Current.ModuleLogManager.LogError(nameof(GetPublicLandsAsync),
-                   "Unable to dissolve public lands temp feature class. Error code: " + gpResult.Result.ErrorCode);
-                   MessageBox.Show("Unable to dissolve public lands features!!", "BAGIS-PRO");
-                   success = BA_ReturnCode.UnknownError;
-               }
-               else
-               {
-                   success = BA_ReturnCode.Success;
-               }
-               if (success == BA_ReturnCode.Success)
-               {
-                   // Save selection layer to a feature class that we can use for the public lands ownership map
-                   parameters = Geoprocessing.MakeValueArray(slectionLayer, 
-                       GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Analysis, true) + Constants.FILE_PUBLIC_LAND_OWNERSHIP);
-                   gpResult = Geoprocessing.ExecuteToolAsync("CopyFeatures_management", parameters, environments,
-                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                   if (gpResult.Result.IsFailed)
-                   {
-                       Module1.Current.ModuleLogManager.LogError(nameof(GetPublicLandsAsync),
-                       "Unable to save public lands ownership layer. Error code: " + gpResult.Result.ErrorCode);
-                       MessageBox.Show("Unable to save public lands layer!!", "BAGIS-PRO");
-                       success = BA_ReturnCode.UnknownError;
-                   }
-                   else
-                   {
-                       success = BA_ReturnCode.Success;
-                   }
-               }
-               // Remove temporary layer
-               MapView.Active.Map.RemoveLayer(slectionLayer);
-               Module1.Current.ModuleLogManager.LogDebug(nameof(GetPublicLandsAsync),
-                   "Dissolved public lands layer");
-           });
+            // Check for attribute before trying to run query
+            bExists = await GeodatabaseTools.AttributeExistsAsync(uriLayers, Constants.FILE_PUBLIC_LAND, Constants.FIELD_SUITABLE_PUBLIC);
+            if (bExists)
+            {
+                await QueuedTask.Run(() =>
+                {
+                    // Create feature layer so we can use definition query to select public lands
+                    var slectionLayer = LayerFactory.Instance.CreateFeatureLayer(uriFull, MapView.Active.Map, 0, "Selection Layer");
+                    slectionLayer.SetDefinitionQuery(Constants.FIELD_SUITABLE_PUBLIC + " = 1");
+                    // Merge features into a single feature for display and analysis
+                    var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath);
+                    var parameters = Geoprocessing.MakeValueArray(slectionLayer, GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Analysis, true) + Constants.FILE_PUBLIC_LAND_ZONE,
+                        Constants.FIELD_SUITABLE_PUBLIC, "", "MULTI_PART", "DISSOLVE_LINES");
+                    var gpResult = Geoprocessing.ExecuteToolAsync("Dissolve_management", parameters, environments,
+                        CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                    if (gpResult.Result.IsFailed)
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(GetFederalNonWildernessLandsAsync),
+                            "Unable to dissolve public lands temp feature class. Error code: " + gpResult.Result.ErrorCode);
+                        success = BA_ReturnCode.UnknownError;
+                    }
+                    else
+                    {
+                        success = BA_ReturnCode.Success;
+                    }
+                    // Remove temporary layer
+                    MapView.Active.Map.RemoveLayer(slectionLayer);
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(GetFederalNonWildernessLandsAsync),
+                        "Dissolved public lands layer");
+                });
+            }
+            else
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(GetFederalNonWildernessLandsAsync),
+                    Constants.FIELD_SUITABLE_PUBLIC + " missing from " + Constants.FILE_PUBLIC_LAND + 
+                    " . Federal non-wilderness lands layer cannot be created!");
+                success = BA_ReturnCode.ReadError;
+            }
             return success;
         }
 
@@ -1960,7 +1952,7 @@ namespace bagis_pro
             if (!bExists)
             {
                 MessageBox.Show("The vegetation layer is missing. Clip the vegetation layer before generating the area below treeline analysis layer!!", "BAGIS-PRO");
-                Module1.Current.ModuleLogManager.LogDebug(nameof(GetPublicLandsAsync),
+                Module1.Current.ModuleLogManager.LogDebug(nameof(GetFederalNonWildernessLandsAsync),
                     "Unable to extract below treeline because vegetation layer does not exist. Process stopped!!");
                 return success;
             }
@@ -2031,7 +2023,7 @@ namespace bagis_pro
             if (! await GeodatabaseTools.FeatureClassExistsAsync(uriAnalysisGdb, Constants.FILE_ELEV_ZONES_VECTOR))
             {
                 MessageBox.Show("The elevation zones vector is missing. Generate the elevation zones layer and try again!!", "BAGIS-PRO");
-                Module1.Current.ModuleLogManager.LogDebug(nameof(GetPublicLandsAsync),
+                Module1.Current.ModuleLogManager.LogDebug(nameof(GetFederalNonWildernessLandsAsync),
                     "Unable to extract critical precipitation zones because elevation zones vector does not exist. Process stopped!!");
                 return success;
             }
