@@ -6,7 +6,7 @@
              xmlns:ui="clr-namespace:bagis_pro"
              xmlns:extensions="clr-namespace:ArcGIS.Desktop.Extensions;assembly=ArcGIS.Desktop.Extensions"
              mc:Ignorable="d" 
-             d:DesignHeight="500" d:DesignWidth="310"
+             d:DesignHeight="500" d:DesignWidth="300"
              d:DataContext="{Binding Path=ui.DockBatchPdfExportViewModel}">
     <UserControl.Resources>
         <ResourceDictionary>
@@ -17,9 +17,10 @@
     </UserControl.Resources>
     <Grid x:Name="Batch_Pdf_Tool">
         <Grid.RowDefinitions>
-            <RowDefinition Height="70"/>
+            <RowDefinition Height="50"/>
             <RowDefinition Height="30"/>
-            <RowDefinition Height="30"/>
+            <RowDefinition Height="25"/>
+            <RowDefinition Height="25"/>
             <RowDefinition Height="40"/>
             <RowDefinition Height="30"/>
             <RowDefinition Height="80"/>
@@ -33,12 +34,12 @@
             <ColumnDefinition Width="Auto"/>
             <ColumnDefinition Width="Auto"/>
         </Grid.ColumnDefinitions>
-        <DockPanel Grid.Row="0" Grid.Column="0" LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Grid.ColumnSpan="3" Margin="0,0,-0.4,0">
+        <DockPanel Grid.Row="0" Grid.Column="0" LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Grid.ColumnSpan="3" >
             <TextBlock
                 Name="tbMultiLine"
-                TextWrapping="WrapWithOverflow" MaxWidth="300" Margin="2, 0, 2, 0" HorizontalAlignment="Left">
-                Select a basin or folder containing at least one AOI. BAGIS-PRO will generate the PDF map package in the
-                maps_publish folder for each AOI present in the selected folder.
+                TextWrapping="WrapWithOverflow" MaxWidth="300" Margin="5,2,0,2" HorizontalAlignment="Left">
+                Select a basin or folder containing at least one AOI. The Watershed Characteristics report will be created in the
+                maps_publish folder for each AOI in that folder.
             </TextBlock>
         </DockPanel>
         <DockPanel Grid.Row="1" Grid.Column="0" LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Grid.ColumnSpan="2" Margin="2,0,2,0">
@@ -48,17 +49,21 @@
             <Button x:Name="btnAoiFolder" Content="Select" HorizontalAlignment="Left"  VerticalAlignment="Center" Width="50" Command="{Binding CmdAoiFolder}" Margin="5, 0, 0, 0"/>
         </DockPanel>
         <DockPanel Grid.Row="2" Grid.Column="0" VerticalAlignment="Center">
-            <CheckBox x:Name="chkArchive" Content="Copy PDF map packages to a single folder" HorizontalAlignment="Left" Margin="5,0,2,0" 
+            <CheckBox x:Name="chkSiteAnalysis" Content="Include Site Analysis report" HorizontalAlignment="Left" Margin="5,0,2,0" 
+                  IsEnabled="True" IsChecked="{Binding SiteAnalysisChecked}"  />
+        </DockPanel>
+        <DockPanel Grid.Row="3" Grid.Column="0" VerticalAlignment="Center">
+            <CheckBox x:Name="chkArchive" Content="Copy reports to a single folder" HorizontalAlignment="Left" Margin="5,0,2,0" 
                   IsEnabled="True" IsChecked="{Binding ArchiveChecked}"  />
         </DockPanel>
-        <DockPanel Grid.Row="3" Grid.ColumnSpan="3" HorizontalAlignment="Left">
+        <DockPanel Grid.Row="4" Grid.ColumnSpan="3" HorizontalAlignment="Left">
             <TextBlock
                 Name="tbArchive"
                 TextWrapping="WrapWithOverflow" MaxWidth="300" Margin="5,2,0,2">
-                Copies of PDF documents for all AOIs will be saved in the maps_publish subfolder in the selected basin folder
+                Copies reports for all AOIs will be saved in the maps_publish subfolder in the selected basin folder
             </TextBlock>
         </DockPanel>
-        <DockPanel Grid.Row="4" Grid.ColumnSpan="3" HorizontalAlignment="Left" Margin="2,2,2,2">
+        <DockPanel Grid.Row="5" Grid.ColumnSpan="3" HorizontalAlignment="Left" Margin="2,2,2,2">
             <TextBlock
                 Name="tbPublisher"
                 TextWrapping="WrapWithOverflow" MaxWidth="100" VerticalAlignment="Center" Margin="2, 2, 5, 2">
@@ -67,7 +72,7 @@
             <TextBox x:Name="txtPublisher" Text="{Binding Publisher}" HorizontalAlignment="Left"  
                      VerticalAlignment="Center" Width="240" Margin="0, 2, 0, 2"/>
         </DockPanel>
-        <DockPanel Grid.Row="5" Grid.Column="0" LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Grid.ColumnSpan="3" Margin="0,2,0,2">
+        <DockPanel Grid.Row="6" Grid.Column="0" LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Grid.ColumnSpan="3" Margin="0,2,0,2">
             <TextBlock
                 Name="tbComments"
                 TextWrapping="WrapWithOverflow" MaxWidth="300" VerticalAlignment="Center" Margin="5, 5, 0, 5">
@@ -76,7 +81,7 @@
             <TextBox x:Name="txtComments" Text="{Binding Comments}" HorizontalAlignment="Left"  
                      VerticalAlignment="Center" Width="230" Height="65" Margin="5,5,5,5" />
         </DockPanel>
-        <DockPanel Grid.Row="6" Grid.Column="0" LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Grid.ColumnSpan="3" Margin="0,0.2,-0.4,0.2">
+        <DockPanel Grid.Row="7" Grid.Column="0" LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Grid.ColumnSpan="3" Margin="0,0.2,-0.4,0.2">
             <TextBlock
                 Name="tbSettings"
                 TextWrapping="WrapWithOverflow" MaxWidth="300" VerticalAlignment="Center" Margin="5, 5, 0, 5">
@@ -86,10 +91,10 @@
                      VerticalAlignment="Center" Width="225" IsReadOnly="True" Margin="5,4,0,4.8"
                      Foreground="Blue" Background="Transparent"/>
         </DockPanel>
-        <DockPanel Grid.Row="7" Grid.ColumnSpan="3" LastChildFill="false" KeyboardNavigation.TabNavigation="Local" >
+        <DockPanel Grid.Row="8" Grid.ColumnSpan="3" LastChildFill="false" KeyboardNavigation.TabNavigation="Local" >
             <Button x:Name="btnLog" Content="View Log" HorizontalAlignment="Left" VerticalAlignment="Center" Width="75" IsEnabled="{Binding CmdLogEnabled}" Command="{Binding CmdLog}" Margin="5, 0, 0, 0"/>
         </DockPanel>
-        <StackPanel Grid.Row="8" Orientation="Vertical" Margin="5,2,0,2" HorizontalAlignment="Left" Grid.ColumnSpan="3">
+        <StackPanel Grid.Row="9" Orientation="Vertical" Margin="5,2,0,2" HorizontalAlignment="Left" Grid.ColumnSpan="3">
 
             <ListView ItemsSource="{Binding Names}" Width="300">
                 <ListView.View>
@@ -123,7 +128,7 @@
                 </ListView.View>
             </ListView>
         </StackPanel>
-        <DockPanel Grid.Row="9" Grid.Column="3" LastChildFill="false" KeyboardNavigation.TabNavigation="Local" >
+        <DockPanel Grid.Row="10" Grid.Column="3" LastChildFill="false" KeyboardNavigation.TabNavigation="Local" >
             <Button x:Name="btnRun" Content="Run" HorizontalAlignment="Left" VerticalAlignment="Center" Width="50" IsEnabled="{Binding CmdRunEnabled}" Command="{Binding CmdRun}" Margin="5, 0, 0, 0"/>
         </DockPanel>
     </Grid>
