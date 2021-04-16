@@ -233,23 +233,31 @@ namespace bagis_pro
         {
             try
             {
-                var myPortal = ArcGISPortalManager.Current.GetActivePortal();
-                if (!myPortal.IsSignedOn())
+                var enumPortal = ArcGISPortalManager.Current.GetPortals();
+                ArcGISPortal myPortal = null;
+                foreach (var oPortal in enumPortal)
+                {
+                    var info = await oPortal.GetPortalInfoAsync();
+                    if (info.OrganizationName.Equals(portalOrganization))
+                    {
+                        myPortal = oPortal;
+                    }
+                }
+                if (myPortal == null)
                 {
                     Module1.Current.ModuleLogManager.LogError(nameof(GetPortalFile),
-                        "ArcGIS Pro is not logged onto a portal. The requested file cannot be downloaded! ArcGIS Pro will " +
+                        "The NRCS Portal is missing from the ArcGIS Pro 'Portals' tab. The requested file cannot be downloaded! ArcGIS Pro will " +
                         "use a previous version of the file if it exists");
                     return BA_ReturnCode.UnknownError;
                 }
-                else
+                if (!myPortal.IsSignedOn())
                 {
-                    var portalInfo = await myPortal.GetPortalInfoAsync();
-                    if (!portalOrganization.Equals(portalInfo.OrganizationName))
+                    var result = await myPortal.SignInAsync();
+                    if (result.success == false)
                     {
                         Module1.Current.ModuleLogManager.LogError(nameof(GetPortalFile),
-                            "ArcGIS Pro is not logged onto the " + portalOrganization + " portal. " +
-                            "The requested file cannot be downloaded! ArcGIS Pro will " +
-                            "use a previous version of the file if it exists");
+                            "Unable to signIn to the NRCS Portal. Can you connect to the portal in the ArcGIS Pro 'Portals' tab? The requested file cannot be downloaded! " +
+                            "ArcGIS Pro will use a previous version of the file if it exists");
                         return BA_ReturnCode.UnknownError;
                     }
                 }
@@ -263,6 +271,16 @@ namespace bagis_pro
                 bool success = false;
                 if (portalItem != null)
                 {
+                    //rename the original, if it exists so that we get the most current copy
+                    if (File.Exists(downLoadPath))
+                    {
+                        string strDirectory = Path.GetDirectoryName(downLoadPath);
+                        string strFile = Path.GetFileNameWithoutExtension(downLoadPath) + "_1" + Path.GetExtension(downLoadPath);
+                        File.Copy(downLoadPath, strDirectory + "\\" + strFile, true);
+                        File.Delete(downLoadPath);
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(GetPortalFile),
+                            "Renamed " + downLoadPath + " so a new copy could be downloaded");
+                    }
                     //download the item
                     success = await portalItem.GetItemDataAsync(downLoadPath);
                 }

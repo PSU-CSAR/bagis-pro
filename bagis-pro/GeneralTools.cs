@@ -22,6 +22,7 @@ using Newtonsoft.Json.Linq;
 using PdfSharp.Pdf;
 using PdfSharp.Pdf.IO;
 using ArcGIS.Desktop.Catalog;
+using Microsoft.VisualBasic.FileIO;
 
 namespace bagis_pro
 {
@@ -1689,7 +1690,7 @@ namespace bagis_pro
                 }
 
                 // Check all the child directories
-                string[] folders = Directory.GetDirectories(parentFolder, "*", SearchOption.AllDirectories);
+                string[] folders = Directory.GetDirectories(parentFolder, "*", System.IO.SearchOption.AllDirectories);
                 foreach (var item in folders)
                 {
                     fType = await GeodatabaseTools.GetAoiFolderTypeAsync(item);
@@ -1823,67 +1824,63 @@ namespace bagis_pro
                 return returnValue;
             }
 
-            string connString = "Provider=Microsoft.ACE.OLEDB.12.0;Data Source=" + Path.GetDirectoryName(strCsvPath) 
-                + ";Extended Properties='Text;HDR=YES;FMT=Delimited;'";
-            int idxId = -1;
-            int idxValue = -1;
             try
             {
-                using (System.Data.OleDb.OleDbConnection objConn = new System.Data.OleDb.OleDbConnection(connString))
+                using (TextFieldParser parser = new TextFieldParser(strCsvPath))
                 {
-                    objConn.Open();
-                    using (var da = new System.Data.OleDb.OleDbDataAdapter("Select * from " + Constants.FILE_ANNUAL_RUNOFF_CSV, objConn))
+                    parser.TextFieldType = Microsoft.VisualBasic.FileIO.FieldType.Delimited;
+                parser.SetDelimiters(",");
+                int idxId = -1;
+                int idxValue = -1;
+                bool headerRow = true;
+                while (!parser.EndOfData)
+                {
+                    //Process header row
+                    string[] fields = parser.ReadFields();
+                    int i = 0;
+                    foreach (string field in fields)
                     {
-                        System.Data.DataTable dt = new System.Data.DataTable();
-                        da.Fill(dt);
-                        var oHeaderRow = dt.Rows[0];
-                        if (oHeaderRow != null)
+                        if (headerRow == true)
                         {
-                            int i = 0;
-                            foreach (var item in dt.Columns)
+                            if (field.ToUpper().Trim().Equals(Constants.FIELD_RUNOFF_STATION_TRIPLET.ToUpper().Trim()))
                             {
-                                string header = Convert.ToString(item);
-                                if (header.ToUpper().Trim().Equals(Constants.FIELD_RUNOFF_STATION_TRIPLET.ToUpper().Trim()))
+                                idxId = i;
+                            }
+                            else if (field.ToUpper().Trim().Equals(Constants.FIELD_RUNOFF_AVERAGE.ToUpper().Trim()))
+                            {
+                                idxValue = i;
+                            }
+                            if (idxId > 0 && idxValue > 0)
+                            {
+                                break;
+                            }
+                            i++;
+                        }
+                        else
+                        {
+                            string strId =fields[idxId];
+                            if (strId.Trim().Equals(stationTriplet.Trim()))
+                            {
+                                if (!string.IsNullOrEmpty(fields[idxValue]))
                                 {
-                                    idxId = i;
-                                }
-                                else if (header.ToUpper().Trim().Equals(Constants.FIELD_RUNOFF_AVERAGE.ToUpper().Trim()))
-                                {
-                                    idxValue = i;
-                                }
-                                if (idxId > 0 && idxValue > 0)
-                                {
+                                    bool isDouble;
+                                    isDouble = Double.TryParse(fields[idxValue], out returnValue);  
                                     break;
                                 }
-                                i++;
-                            }
-                        }
-                        for (int i = 0; i < dt.Rows.Count; i++)
-                        {
-                            var oRow = dt.Rows[i];
-                            if (oRow[idxId] != DBNull.Value)
-                            {
-                                string strId = Convert.ToString(oRow[idxId]);
-                                if (strId.Trim().Equals(stationTriplet.Trim()))
+                                else
                                 {
-                                    if (oRow[idxValue] != DBNull.Value)
-                                    {
-                                        returnValue = Convert.ToDouble(oRow[idxValue]);
-                                        break;
-                                    }
-                                    else
-                                    {
-                                        // This is how we handle nulls
-                                        // For now we return the same thing if the record is missing or null
-                                        // returnValue = 0;
-                                        break;
-                                    }
+                                    // This is how we handle nulls
+                                    // For now we return the same thing if the record is missing or null
+                                    // returnValue = 0;
+                                    break;
                                 }
                             }
-                            
                         }
+                        }
+                        headerRow = false;
+                    }
                 }
-            }
+
                 Module1.Current.ModuleLogManager.LogDebug(nameof(QueryAnnualRunoffValue),
                     "Found Runoff value of " + returnValue);
             }
