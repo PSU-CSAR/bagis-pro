@@ -27,7 +27,7 @@ namespace bagis_pro.Buttons
     {
         protected async override void OnClick()
         {
-            ReportType rType = ReportType.SiteAnalysis;
+            ReportType rType = ReportType.Watershed;
             try
             {
                 string outputDirectory = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE;
@@ -39,8 +39,7 @@ namespace bagis_pro.Buttons
                 // Delete any old PDF files
                 foreach (var item in Constants.FILES_EXPORT_SITE_ANALYSIS_PDF)
                 {
-                    string strPath = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE
-                        + "\\" + item;
+                    string strPath = GeneralTools.GetFullPdfFileName(item);
                     if (System.IO.File.Exists(strPath))
                     {
                         try
@@ -150,18 +149,29 @@ namespace bagis_pro.Buttons
                             }
                             while (Module1.Current.MapFinishedLoading == false);
                             success = await GeneralTools.ExportMapToPdfAsync();    // export map to pdf
+                            if (success==BA_ReturnCode.Success)
+                            {
+                                // append the map and chart together for posting
+                                IList<string> lstToConcat = new List<string>();
+                                lstToConcat.Add(GeneralTools.GetFullPdfFileName(Constants.FILE_EXPORT_MAP_CRITICAL_PRECIPITATION_ZONES_PDF));
+                                lstToConcat.Add(GeneralTools.GetFullPdfFileName(Constants.FILE_EXPORT_TABLE_PRECIP_REPRESENT_PDF));
+                                success = GeneralTools.ConcatenatePagesInPdf(GeneralTools.GetFullPdfFileName(Constants.FILE_EXPORT_CRITICAL_PRECIPITATION_ZONES_PDF),
+                                    lstToConcat);
+                            }
+                            else
+                            {
+                                MessageBox.Show("Unable to generate critical precipitation zones map!!", "BAGIS-PRO");
+                            }
                         }
                     }
                 }
 
                 string strPublisher = (string)Module1.Current.BatchToolSettings.Publisher;
                 success = await GeneralTools.GenerateMapsTitlePageAsync(rType, strPublisher, "");
-                string outputPath = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\" +
-                      Constants.FILE_EXPORT_WATERSHED_REPORT_PDF;
+                string outputPath = GeneralTools.GetFullPdfFileName(Constants.FILE_EXPORT_WATERSHED_REPORT_PDF);
                 if (rType.Equals(ReportType.SiteAnalysis))
                 {
-                    outputPath = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\" +
-                      Constants.FILE_EXPORT_SITE_ANALYSIS_REPORT_PDF;
+                    outputPath = GeneralTools.GetFullPdfFileName(Constants.FILE_EXPORT_SITE_ANALYSIS_REPORT_PDF);
                 }
                 GeneralTools.PublishFullPdfDocument(outputPath, rType);    // Put it all together into a single pdf document
 

@@ -108,6 +108,7 @@ namespace bagis_pro
         public const string FILE_EXPORT_CHART_ELEV_PRECIP_CORR_PDF = "chart_elev_precip_correlation.pdf";
         public const string FILE_EXPORT_WATERSHED_REPORT_PDF = "watershed_report.pdf";
         public const string FILE_EXPORT_SITE_ANALYSIS_REPORT_PDF = "site_analysis_report.pdf";
+        public const string FILE_EXPORT_CRITICAL_PRECIPITATION_ZONES_PDF = "critical_precipitation_zones.pdf";
         // List of files in the watershed PDF map package and the order in which they will be assembled
         public static string[] FILES_EXPORT_WATERSHED_PDF = new string[]
         { FILE_TITLE_PAGE_PDF, FILE_EXPORT_MAP_ELEV_PDF, FILE_EXPORT_MAP_ASPECT_PDF,

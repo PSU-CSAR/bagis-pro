@@ -722,7 +722,21 @@ namespace bagis_pro
                                     }
                                     while (Module1.Current.MapFinishedLoading == false);
                                     success = await GeneralTools.ExportMapToPdfAsync();    // export map to pdf
+                                if (success == BA_ReturnCode.Success)
+                                {
+                                    // append the map and chart together for posting
+                                    IList<string> lstToConcat = new List<string>();
+                                    lstToConcat.Add(GeneralTools.GetFullPdfFileName(Constants.FILE_EXPORT_MAP_CRITICAL_PRECIPITATION_ZONES_PDF));
+                                    lstToConcat.Add(GeneralTools.GetFullPdfFileName(Constants.FILE_EXPORT_TABLE_PRECIP_REPRESENT_PDF));
+                                    success = GeneralTools.ConcatenatePagesInPdf(GeneralTools.GetFullPdfFileName(Constants.FILE_EXPORT_CRITICAL_PRECIPITATION_ZONES_PDF),
+                                        lstToConcat);
                                 }
+                                else
+                                {
+                                     Module1.Current.ModuleLogManager.LogError(nameof(RunImplAsync),
+                                        "Unable to generate critical precipitation zones map!!");
+                                }
+                            }
                         }
  
                         success = await GeneralTools.GenerateMapsTitlePageAsync(ReportType.Watershed, strPublisher, Comments);
@@ -731,8 +745,7 @@ namespace bagis_pro
                             MessageBox.Show("An error occurred while generating the Title page!!", "BAGIS-PRO");
                             errorCount++;
                         }
-                        string outputPath = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\" +
-                              Constants.FILE_EXPORT_WATERSHED_REPORT_PDF;
+                        string outputPath = GeneralTools.GetFullPdfFileName(Constants.FILE_EXPORT_WATERSHED_REPORT_PDF);
                         success = GeneralTools.PublishFullPdfDocument(outputPath, ReportType.Watershed);    // Put it all together into a single pdf document
                         if (success != BA_ReturnCode.Success)
                         {
@@ -741,8 +754,7 @@ namespace bagis_pro
                         if (SiteAnalysisChecked)
                         {
                             success = await GeneralTools.GenerateMapsTitlePageAsync(ReportType.SiteAnalysis, strPublisher, Comments);
-                            outputPath = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\" +
-                              Constants.FILE_EXPORT_SITE_ANALYSIS_REPORT_PDF;
+                            outputPath = GeneralTools.GetFullPdfFileName(Constants.FILE_EXPORT_SITE_ANALYSIS_REPORT_PDF);
                             success = GeneralTools.PublishFullPdfDocument(outputPath, ReportType.SiteAnalysis);    // Put it all together into a single pdf document
                         }
                         if (success != BA_ReturnCode.Success)
@@ -755,16 +767,12 @@ namespace bagis_pro
                             // Copy final watershed analysis report to a central location
                             if (File.Exists(outputPath))
                             {
-                                string copyFolder = Path.GetDirectoryName(_strLogFile);
-                                string copyFile = Module1.Current.Aoi.Name + "_" + reportName;
-                                File.Copy(outputPath, copyFolder + "\\" + copyFile, true);
+                                File.Copy(outputPath, GeneralTools.GetFullPdfFileName(reportName), true);
                             }
                             if (SiteAnalysisChecked)
                             {
                                 reportName = Constants.FILE_EXPORT_SITE_ANALYSIS_REPORT_PDF;
-                                string copyFolder = Path.GetDirectoryName(_strLogFile);
-                                string copyFile = Module1.Current.Aoi.Name + "_" + reportName;
-                                File.Copy(outputPath, copyFolder + "\\" + copyFile, true);
+                                File.Copy(outputPath, GeneralTools.GetFullPdfFileName(reportName), true);
                             }
                         }
                         // Create closing log entry for AOI

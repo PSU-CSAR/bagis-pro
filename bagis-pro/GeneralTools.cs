@@ -47,8 +47,7 @@ namespace bagis_pro
                 //BMP, EMF, EPS, GIF, JPEG, PNG, SVG, TGA, and TFF formats are also available for export
                 PDFFormat PDF = new PDFFormat()
                 {
-                    OutputFileName = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\"
-                    + Module1.Current.DisplayedMap,
+                    OutputFileName = GetFullPdfFileName(Module1.Current.DisplayedMap),
                     Resolution = 300,
                     DoCompressVectorGraphics = true,
                     DoEmbedFonts = true,
@@ -660,7 +659,7 @@ namespace bagis_pro
                 {
                     // Combined chart
                     string sOutputFolder = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\";
-                    string pathToSave = sOutputFolder + Constants.FILE_EXPORT_CHART_AREA_ELEV_PRECIP_SITE_PDF;
+                    string pathToSave = GetFullPdfFileName(Constants.FILE_EXPORT_CHART_AREA_ELEV_PRECIP_SITE_PDF);
 
                     XlPaperSize oPaperSize = XlPaperSize.xlPaperLetter;
                     try
@@ -686,19 +685,19 @@ namespace bagis_pro
                     Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Published combined chart to PDF");
 
                     // slope chart
-                    pathToSave = sOutputFolder + "\\" + Constants.FILE_EXPORT_CHART_SLOPE_PDF;
+                    pathToSave = GetFullPdfFileName(Constants.FILE_EXPORT_CHART_SLOPE_PDF);
                     pChartsWorksheet.PageSetup.PrintArea = "$O$1:$AA$29";
                     pChartsWorksheet.ExportAsFixedFormat(XlFixedFormatType.xlTypePDF, pathToSave);
                     Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Published slope chart to PDF");
 
                     // aspect chart
-                    pathToSave = sOutputFolder + "\\" + Constants.FILE_EXPORT_CHART_ASPECT_PDF;
+                    pathToSave = GetFullPdfFileName(Constants.FILE_EXPORT_CHART_ASPECT_PDF);
                     pChartsWorksheet.PageSetup.PrintArea = "$A$32:$M$61";
                     pChartsWorksheet.ExportAsFixedFormat(XlFixedFormatType.xlTypePDF, pathToSave);
                     Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Published aspect chart to PDF");
 
                     //Cumulative precip table
-                    pathToSave = sOutputFolder + "\\" + Constants.FILE_EXPORT_TABLE_PRECIP_REPRESENT_PDF;
+                    pathToSave = GetFullPdfFileName(Constants.FILE_EXPORT_TABLE_PRECIP_REPRESENT_PDF);
                     pPRISMWorkSheet.PageSetup.PrintArea = "$A$1:$P$" + lastRow;
                     pPRISMWorkSheet.PageSetup.Orientation = XlPageOrientation.xlLandscape;
                     pPRISMWorkSheet.PageSetup.Zoom = false;     // Required to print on one page
@@ -720,7 +719,7 @@ namespace bagis_pro
                     Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Published represented precip table to PDF");
 
                     // cumulative precipitation chart
-                    pathToSave = sOutputFolder + Constants.FILE_EXPORT_CHART_PRECIP_REPRESENT_PDF;
+                    pathToSave = GetFullPdfFileName(Constants.FILE_EXPORT_CHART_PRECIP_REPRESENT_PDF);
                     pChartsWorksheet.PageSetup.PrintArea = "$O$32:$AA$61";
                     pChartsWorksheet.ExportAsFixedFormat(XlFixedFormatType.xlTypePDF, pathToSave);
                     Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Published represented precip chart to PDF");
@@ -735,7 +734,7 @@ namespace bagis_pro
                         pPrecipChartWorksheet.PageSetup.FitToPagesTall = 1;
                         pPrecipChartWorksheet.PageSetup.FitToPagesWide = 1;
                         pPrecipChartWorksheet.PageSetup.CenterHeader = "&C&\"Arial,Bold\"&16 " + Module1.Current.Aoi.Name;
-                        pathToSave = sOutputFolder + "\\" + Constants.FILE_EXPORT_CHART_ELEV_PRECIP_CORR_PDF;
+                        pathToSave = GetFullPdfFileName(Constants.FILE_EXPORT_CHART_ELEV_PRECIP_CORR_PDF);
                         pPrecipChartWorksheet.ExportAsFixedFormat(XlFixedFormatType.xlTypePDF, pathToSave);
                         pPrecipChartWorksheet.PageSetup.PaperSize = oPaperSize;
                         Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Published elevation-precipitation correlation chart to PDF");
@@ -1498,9 +1497,34 @@ namespace bagis_pro
             }
             foreach (string strFileName in arrAllFiles)
             {
-                string fullPath = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\" +
-                                  strFileName;
-                if (System.IO.File.Exists(fullPath))
+                string fullPath = GetFullPdfFileName(strFileName);
+                if (File.Exists(fullPath))
+                {
+                    PdfDocument inputDocument = PdfReader.Open(fullPath, PdfDocumentOpenMode.Import);
+                    // Iterate pages
+                    int count = inputDocument.PageCount;
+                    for (int idx = 0; idx < count; idx++)
+                    {
+                        // Get the page from the external document...
+                        PdfPage page = inputDocument.Pages[idx];
+                        outputDocument.AddPage(page);
+                    }
+                }
+            }
+
+            // Save final document
+            outputDocument.Save(outputPath);
+            return BA_ReturnCode.Success;
+        }
+
+        public static BA_ReturnCode ConcatenatePagesInPdf(string outputPath, IList<string> lstToConcat)
+        {
+            // Initialize output document
+            PdfDocument outputDocument = new PdfDocument();
+            //Iterate through files
+            foreach (string fullPath in lstToConcat)
+            {
+                if (File.Exists(fullPath))
                 {
                     PdfDocument inputDocument = PdfReader.Open(fullPath, PdfDocumentOpenMode.Import);
                     // Iterate pages
@@ -1893,6 +1917,12 @@ namespace bagis_pro
                 returnValue = -1.0F;
             }
             return returnValue;
+        }
+
+        public static string GetFullPdfFileName(string strBaseFileName)
+        {
+            return Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\"
+                    + Module1.Current.Aoi.Name + "_" + strBaseFileName;
         }
 
 
