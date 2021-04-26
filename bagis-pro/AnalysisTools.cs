@@ -1189,10 +1189,9 @@ namespace bagis_pro
         }
 
         public static async Task<IList<BA_Objects.Interval>> GetPrismClassesAsync(string strAoiPath,
-            string strSourceLayer, int intZonesCount)
+            string strSourceLayer, int intZonesCount, string strMessageKey)
         {
             IList<BA_Objects.Interval> lstIntervals = new List<BA_Objects.Interval>();
-            string strMessageKey = "PRISM";
 
             double dblMin = -999;
             double dblMax = 999;
@@ -2896,7 +2895,7 @@ namespace bagis_pro
             string strMaskPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_PRISM_VECTOR;
             int prismZonesCount = (int)Module1.Current.BatchToolSettings.PrecipZonesCount;
             IList<BA_Objects.Interval> lstInterval = await AnalysisTools.GetPrismClassesAsync(Module1.Current.Aoi.FilePath,
-                strLayer, prismZonesCount);
+                strLayer, prismZonesCount, "PRISM");
             BA_ReturnCode success = await AnalysisTools.CalculateZonesAsync(Module1.Current.Aoi.FilePath, strLayer,
                 lstInterval, strZonesRaster, strMaskPath, "PRISM");
             if (success == BA_ReturnCode.Success)

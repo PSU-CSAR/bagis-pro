@@ -68,6 +68,7 @@ bagis-pro:
      AnnualRunoffItemId: f641bbacceff4c1bb3f9661bd8f9de8d
      AnnualRunoffDataDescr: Gauge Station Annual Runoff - 1981-2010 USGS Annual Streamflow Data
      AnnualRunoffDataYear: 2021
+     PrecipContribZones: 10
      Version: 1.0
 
 bagis-p:
