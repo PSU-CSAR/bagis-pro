@@ -3070,5 +3070,45 @@ namespace bagis_pro
             }
             return success;
         }
+
+        public static async Task<BA_ReturnCode> CalculatePrecipitationContributionAsync(string aoiFolderPath)
+        {
+            string flowAccumPath = GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Surfaces, true) + Constants.FILE_FLOW_ACCUMULATION;
+            double dblStd = -1;
+            var parameters = Geoprocessing.MakeValueArray(flowAccumPath, "STD");
+            var environments = Geoprocessing.MakeEnvironmentArray(workspace: aoiFolderPath);
+            IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("GetRasterProperties_management", parameters, environments,
+                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+            if (gpResult.IsFailed)
+            {
+                Module1.Current.ModuleLogManager.LogDebug(nameof(CalculatePrecipitationContributionAsync),
+                    "Unable to calculate standard deviation for flow accumulation!");
+                foreach (var objMessage in gpResult.Messages)
+                {
+                    IGPMessage msg = (IGPMessage)objMessage;
+                    Module1.Current.ModuleLogManager.LogError(nameof(CalculatePrecipitationContributionAsync),
+                        msg.Text);
+                }
+                return BA_ReturnCode.UnknownError;
+            }
+            else
+            {
+                bool bSuccess = Double.TryParse(Convert.ToString(gpResult.ReturnValue), out dblStd);
+            }
+
+            string strLayer = aoiFolderPath + @"\\contrib.gdb\zonal_tool";
+            //string strZonesRaster = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) +
+            //    Constants.FILE_PRECIP_ZONE;
+            //string strMaskPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_PRISM_VECTOR;
+            int prismZonesCount = (int)Module1.Current.BatchToolSettings.PrecipContribZones;
+            IList<BA_Objects.Interval> lstInterval = await AnalysisTools.GetPrismClassesAsync(Module1.Current.Aoi.FilePath,
+                strLayer, prismZonesCount, "PRECIPITATION CONTRIBUTION");
+            string strOutputLayer = aoiFolderPath + @"\\contrib.gdb\zonal_tool_zones";
+            BA_ReturnCode success = await AnalysisTools.CalculateZonesAsync(Module1.Current.Aoi.FilePath, strLayer,
+                lstInterval, strOutputLayer, "", "PRECIPITATION CONTRIBUTION");
+
+
+            return BA_ReturnCode.Success;
+        }
     }
 }

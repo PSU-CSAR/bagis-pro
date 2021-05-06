@@ -46,7 +46,7 @@
       <xsl:value-of select="report_title"/>
     </div>
     <div class="style2">
-      AOI: <xsl:value-of select="aoi_name"/>
+      <xsl:value-of select="aoi_name"/>
     </div>
             <div class ="style1">
                 <table>
@@ -67,7 +67,7 @@
                     </tr>
                     <tr>
                         <td class="style3">
-                            Local file path to AOI: <xsl:value-of select="local_path"/>
+                            Local file path: <xsl:value-of select="local_path"/>
                         </td>
                     </tr>
                     <tr>

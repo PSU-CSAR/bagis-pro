@@ -36,6 +36,11 @@ namespace bagis_pro.Buttons
                     System.IO.Directory.CreateDirectory(outputDirectory);
                 }
 
+                // Query for station information and save it in the aoi object
+                string[] arrValues = await AnalysisTools.GetStationValues();
+                Module1.Current.Aoi.StationTriplet = arrValues[0];
+                Module1.Current.Aoi.StationName = arrValues[1];
+
                 // Delete any old PDF files
                 foreach (var item in Constants.FILES_EXPORT_SITE_ANALYSIS_PDF)
                 {

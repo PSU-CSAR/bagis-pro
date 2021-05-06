@@ -97,7 +97,6 @@ namespace bagis_pro
         private string _comments;
         private bool _archiveChecked = false;
         private bool _siteAnalysisChecked = true;
-        private ReportType _rType = ReportType.Watershed;
         private bool _cmdRunEnabled = false;
         private bool _cmdLogEnabled = false;
         private ObservableCollection<string> _aoiList = new ObservableCollection<string>();
@@ -365,7 +364,12 @@ namespace bagis_pro
                     // Create opening log entry for AOI
                     strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Starting batch PDF export for " +
                         oAoi.Name + "\r\n";
-                    File.AppendAllText(_strLogFile, strLogEntry);       // append    
+                    File.AppendAllText(_strLogFile, strLogEntry);       // append
+
+                    // Query for station information and save it in the aoi object
+                    string[] arrValues = await AnalysisTools.GetStationValues();
+                    Module1.Current.Aoi.StationTriplet = arrValues[0];
+                    Module1.Current.Aoi.StationName = arrValues[1];
 
                     // Bring GP History tool forward
                     var cmdShowHistory = FrameworkApplication.GetPlugInWrapper("esri_geoprocessing_showToolHistory") as ICommand;

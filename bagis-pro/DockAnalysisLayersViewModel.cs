@@ -414,11 +414,19 @@ namespace bagis_pro
                 if (calculateSweDelta == true)
                 {
                     success = await AnalysisTools.CalculateSWEDeltaAsync(Module1.Current.Aoi.FilePath);
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        layersPane.SWE_Delta_Checked = false;
+                    }
                 }
 
                 if (calculatePrecipContrib == true)
                 {
-                    //@ToDo: Let's get started!!
+                    success = await AnalysisTools.CalculatePrecipitationContributionAsync(Module1.Current.Aoi.FilePath);
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        layersPane.Precip_Contrib_Checked = false;
+                    }
                 }
 
                 if (success == BA_ReturnCode.Success)

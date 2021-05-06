@@ -113,17 +113,8 @@ namespace bagis_pro
                 var success = await ws.GetPortalFile(Constants.PORTAL_ORGANIZATION, documentId, Module1.Current.SettingsPath + "\\" + Constants.FOLDER_SETTINGS +
                     "\\" + Constants.FILE_ANNUAL_RUNOFF_CSV);
 
-                // Query for the station triplet and name
-                string[] arrValues = await AnalysisTools.GetStationValues();
-                string strStationTriplet = arrValues[0];
-                string strStationName = arrValues[1];
-                if (String.IsNullOrEmpty(strStationTriplet))
-                {
-                    strStationTriplet = "XXXXXXXX:XX:USGS";
-                }
-
                 // Query for the annual runoff value
-                double dblRunoffRatio = QueryAnnualRunoffValue(strStationTriplet);
+                double dblRunoffRatio = QueryAnnualRunoffValue(Module1.Current.Aoi.StationTriplet);
                 string strRunoffRatio = "No stream flow data";  // This is what we print if we couldn't get the runoff numbers
                 if (dblRunoffRatio >= 0)
                 {
@@ -272,8 +263,8 @@ namespace bagis_pro
                     comments = strComments,
                     publisher = strPublisher,
                     local_path = Module1.Current.Aoi.FilePath,
-                    streamgage_station = strStationTriplet,
-                    streamgage_station_name = strStationName,
+                    streamgage_station = Module1.Current.Aoi.StationTriplet,
+                    streamgage_station_name = Module1.Current.Aoi.StationName,
                     drainage_area_sqkm = areaSqKm,
                     elevation_min_meters = elevMinMeters,
                     elevation_max_meters = elevMaxMeters,
@@ -680,7 +671,7 @@ namespace bagis_pro
                     pChartsWorksheet.PageSetup.FitToPagesTall = 1;
                     pChartsWorksheet.PageSetup.FitToPagesWide = 1;
                     pChartsWorksheet.PageSetup.PrintArea = "$A$1:$M$29";
-                    pChartsWorksheet.PageSetup.CenterHeader = "&C&\"Arial,Bold\"&16 " + Module1.Current.Aoi.Name;
+                    pChartsWorksheet.PageSetup.CenterHeader = "&C&\"Arial,Bold\"&16 " + Module1.Current.Aoi.StationName;
                     pChartsWorksheet.ExportAsFixedFormat(XlFixedFormatType.xlTypePDF, pathToSave);
                     Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Published combined chart to PDF");
 
@@ -703,7 +694,7 @@ namespace bagis_pro
                     pPRISMWorkSheet.PageSetup.Zoom = false;     // Required to print on one page
                     pPRISMWorkSheet.PageSetup.PaperSize = oReqPaperSize;    // Required to print on one page
                     pPRISMWorkSheet.PageSetup.PrintGridlines = true;
-                    pPRISMWorkSheet.PageSetup.CenterHeader = "&C&\"Arial,Bold\"&16 " + Module1.Current.Aoi.Name;
+                    pPRISMWorkSheet.PageSetup.CenterHeader = "&C&\"Arial,Bold\"&16 " + Module1.Current.Aoi.StationName; ;
                     string strTitle = "Precipitation Representation Table";
                     if (!String.IsNullOrEmpty(oAnalysis.PrecipZonesBegin))
                     {
@@ -733,7 +724,7 @@ namespace bagis_pro
                         pPrecipChartWorksheet.PageSetup.PaperSize = oReqPaperSize;
                         pPrecipChartWorksheet.PageSetup.FitToPagesTall = 1;
                         pPrecipChartWorksheet.PageSetup.FitToPagesWide = 1;
-                        pPrecipChartWorksheet.PageSetup.CenterHeader = "&C&\"Arial,Bold\"&16 " + Module1.Current.Aoi.Name;
+                        pPrecipChartWorksheet.PageSetup.CenterHeader = "&C&\"Arial,Bold\"&16 " + Module1.Current.Aoi.StationName;
                         pathToSave = GetFullPdfFileName(Constants.FILE_EXPORT_CHART_ELEV_PRECIP_CORR_PDF);
                         pPrecipChartWorksheet.ExportAsFixedFormat(XlFixedFormatType.xlTypePDF, pathToSave);
                         pPrecipChartWorksheet.PageSetup.PaperSize = oPaperSize;
@@ -1921,8 +1912,16 @@ namespace bagis_pro
 
         public static string GetFullPdfFileName(string strBaseFileName)
         {
-            return Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\"
-                    + Module1.Current.Aoi.Name + "_" + strBaseFileName;
+            if (Constants.FILE_TITLE_PAGE_PDF.Equals(strBaseFileName))
+            {
+                // The title page doesn't have the station name prefix
+                return Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\" + strBaseFileName;
+            }
+            else
+            {
+                return Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\"
+                    + Module1.Current.Aoi.FileStationName + "_" + strBaseFileName;
+            } 
         }
 
 

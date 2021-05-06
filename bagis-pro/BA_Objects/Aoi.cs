@@ -19,6 +19,11 @@ namespace bagis_pro.BA_Objects
         public bool HasSnotel;
         string m_aoiBatchState;
         bool m_aoiBatchIsSelected;
+        string m_stationTriplet = "";
+        string m_stationName = "";
+        string m_fileStationName = "";
+        string m_stationNumber = "";
+        string m_stationState = "";
 
         public Aoi()
         {
@@ -117,6 +122,57 @@ namespace bagis_pro.BA_Objects
                     NotifyPropertyChanged();
                 }
             }
+        }
+
+        public string StationTriplet
+        {
+            get { return m_stationTriplet; }
+            set
+            {
+                if (!string.IsNullOrEmpty(value))
+                {
+                    m_stationTriplet = value;
+                    // Example triplet: 09361500:CO:USGS
+                    string[] strPieces = m_stationTriplet.Split(':');
+                    if (strPieces.Length == 3)
+                    {
+                        m_stationNumber = strPieces[0];
+                        m_stationState = strPieces[2];
+                    }
+                }
+                else
+                {
+                    m_stationTriplet = "XXXXXXXX:XX:USGS";
+                }
+            }
+        }
+
+        public string StationName
+        {
+            get { return m_stationName; }
+            set
+            {
+                m_stationName = value;
+                if (! string.IsNullOrEmpty(m_stationName))
+                {
+                    m_fileStationName = m_stationName.Replace(' ', '_');
+                }                
+            }
+        }
+
+        public string FileStationName
+        {
+            get { return m_fileStationName; }
+        }
+
+        public string StationNumber
+        {
+            get { return m_stationNumber; }
+        }
+
+        public string StationState
+        {
+            get { return m_stationState; }
         }
 
         public event PropertyChangedEventHandler PropertyChanged;

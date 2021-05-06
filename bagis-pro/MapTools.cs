@@ -1673,7 +1673,7 @@ namespace bagis_pro
                 if (textBox != null)
                 {
                     CIMTextGraphic graphic = (CIMTextGraphic)textBox.GetGraphic();
-                    graphic.Text = Module1.Current.Aoi.Name.ToUpper();
+                    graphic.Text = Module1.Current.Aoi.StationName.ToUpper();
                     textBox.SetGraphic(graphic);
                     success = BA_ReturnCode.Success;
                 }

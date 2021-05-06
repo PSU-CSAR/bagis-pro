@@ -208,7 +208,8 @@ namespace bagis_pro
         public const int VALUE_NO_DATA_9999 = -9999;
         public const string VALUE_NO_DATA = "NoData";
         public const string VALUE_UNKNOWN = "Unknown";
-        public static readonly short[] VALUES_ELEV_INTERVALS = new short[] { 50, 100, 200, 250, 500, 1000, 2500, 5000};
+        // BAGIS V3 allowed elevation intervals up to 5000; This tool only allows up to 500
+        public static readonly short[] VALUES_ELEV_INTERVALS = new short[] { 50, 100, 200, 250, 500};
 
         public const string UNITS_INCHES = "Inches";
         public const string UNITS_MILLIMETERS = "Millimeters";
