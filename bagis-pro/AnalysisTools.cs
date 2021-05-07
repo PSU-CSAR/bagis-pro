@@ -3071,18 +3071,60 @@ namespace bagis_pro
             return success;
         }
 
-        public static async Task<BA_ReturnCode> CalculatePrecipitationContributionAsync(string aoiFolderPath)
+        public static async Task<BA_ReturnCode> CalculatePrecipitationContributionAsync(string aoiFolderPath, double dblThreshold)
         {
-            string flowAccumPath = GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Surfaces, true) + Constants.FILE_FLOW_ACCUMULATION;
-            double dblStd = -1;
-            var parameters = Geoprocessing.MakeValueArray(flowAccumPath, "STD");
+            // Create temporary gdb for calculations; We will delete when done
+            string tempGdbPath = aoiFolderPath + "\\contrib.gdb";
+            if (File.Exists(tempGdbPath))
+            {
+                File.Delete(tempGdbPath);
+            }
+            var parameters = Geoprocessing.MakeValueArray(aoiFolderPath, "contrib.gdb");
             var environments = Geoprocessing.MakeEnvironmentArray(workspace: aoiFolderPath);
-            IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("GetRasterProperties_management", parameters, environments,
+            var gpResult = await Geoprocessing.ExecuteToolAsync("CreateFileGDB_management", parameters, environments,
+                                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+
+            if (gpResult.IsFailed)
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(CalculatePrecipitationContributionAsync),
+                    "Unable to create file geodatabase. Error code: " + gpResult.ErrorCode);
+                return BA_ReturnCode.UnknownError;
+            }
+
+            // If negative threshold passed in, we use the standard deviation
+            string flowAccumPath = GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Surfaces, true) + Constants.FILE_FLOW_ACCUMULATION;
+            if (dblThreshold < 0)
+            {
+                parameters = Geoprocessing.MakeValueArray(flowAccumPath, "STD");
+                gpResult = await Geoprocessing.ExecuteToolAsync("GetRasterProperties_management", parameters, environments,
+                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                if (gpResult.IsFailed)
+                {
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(CalculatePrecipitationContributionAsync),
+                        "Unable to calculate standard deviation for flow accumulation!");
+                    foreach (var objMessage in gpResult.Messages)
+                    {
+                        IGPMessage msg = (IGPMessage)objMessage;
+                        Module1.Current.ModuleLogManager.LogError(nameof(CalculatePrecipitationContributionAsync),
+                            msg.Text);
+                    }
+                    return BA_ReturnCode.UnknownError;
+                }
+                else
+                {
+                    bool bSuccess = Double.TryParse(Convert.ToString(gpResult.ReturnValue), out dblThreshold);
+                }
+            }
+            // Run CON tool
+            string strWhere = "VALUE > " + Convert.ToString(dblThreshold);
+            string conOutputPath = tempGdbPath + "\\con_tool";
+            parameters = Geoprocessing.MakeValueArray(flowAccumPath, "1", conOutputPath, "0", strWhere);
+            gpResult = await Geoprocessing.ExecuteToolAsync("Con_sa", parameters, environments,
                 CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
             if (gpResult.IsFailed)
             {
                 Module1.Current.ModuleLogManager.LogDebug(nameof(CalculatePrecipitationContributionAsync),
-                    "Unable to calculate standard deviation for flow accumulation!");
+                    "Unable to run CON tool on flow accumulation!");
                 foreach (var objMessage in gpResult.Messages)
                 {
                     IGPMessage msg = (IGPMessage)objMessage;
@@ -3091,21 +3133,19 @@ namespace bagis_pro
                 }
                 return BA_ReturnCode.UnknownError;
             }
-            else
-            {
-                bool bSuccess = Double.TryParse(Convert.ToString(gpResult.ReturnValue), out dblStd);
-            }
 
-            string strLayer = aoiFolderPath + @"\\contrib.gdb\zonal_tool";
+
+
+            //string strLayer = aoiFolderPath + @"\\contrib.gdb\zonal_tool";
             //string strZonesRaster = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) +
             //    Constants.FILE_PRECIP_ZONE;
             //string strMaskPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_PRISM_VECTOR;
-            int prismZonesCount = (int)Module1.Current.BatchToolSettings.PrecipContribZones;
-            IList<BA_Objects.Interval> lstInterval = await AnalysisTools.GetPrismClassesAsync(Module1.Current.Aoi.FilePath,
-                strLayer, prismZonesCount, "PRECIPITATION CONTRIBUTION");
-            string strOutputLayer = aoiFolderPath + @"\\contrib.gdb\zonal_tool_zones";
-            BA_ReturnCode success = await AnalysisTools.CalculateZonesAsync(Module1.Current.Aoi.FilePath, strLayer,
-                lstInterval, strOutputLayer, "", "PRECIPITATION CONTRIBUTION");
+            //int prismZonesCount = (int)Module1.Current.BatchToolSettings.PrecipContribZones;
+            //IList<BA_Objects.Interval> lstInterval = await AnalysisTools.GetPrismClassesAsync(Module1.Current.Aoi.FilePath,
+            //    strLayer, prismZonesCount, "PRECIPITATION CONTRIBUTION");
+            //string strOutputLayer = aoiFolderPath + @"\\contrib.gdb\zonal_tool_zones";
+            //BA_ReturnCode success = await AnalysisTools.CalculateZonesAsync(Module1.Current.Aoi.FilePath, strLayer,
+            //    lstInterval, strOutputLayer, "", "PRECIPITATION CONTRIBUTION");
 
 
             return BA_ReturnCode.Success;

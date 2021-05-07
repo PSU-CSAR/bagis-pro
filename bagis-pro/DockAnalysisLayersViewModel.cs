@@ -422,7 +422,7 @@ namespace bagis_pro
 
                 if (calculatePrecipContrib == true)
                 {
-                    success = await AnalysisTools.CalculatePrecipitationContributionAsync(Module1.Current.Aoi.FilePath);
+                    success = await AnalysisTools.CalculatePrecipitationContributionAsync(Module1.Current.Aoi.FilePath, -1);
                     if (success == BA_ReturnCode.Success)
                     {
                         layersPane.Precip_Contrib_Checked = false;
