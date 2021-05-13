@@ -3134,21 +3134,218 @@ namespace bagis_pro
                 return BA_ReturnCode.UnknownError;
             }
 
+            // Run STREAM LINK tool
+            string linksOutputPath = tempGdbPath + "\\link_tool";
+            string flowDirectionPath = GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Surfaces, true) + Constants.FILE_FLOW_DIRECTION;
+            parameters = Geoprocessing.MakeValueArray(conOutputPath, flowDirectionPath, linksOutputPath);
+            gpResult = await Geoprocessing.ExecuteToolAsync("StreamLink_sa", parameters, environments,
+                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+            if (gpResult.IsFailed)
+            {
+                Module1.Current.ModuleLogManager.LogDebug(nameof(CalculatePrecipitationContributionAsync),
+                    "Unable to run STREAM LINK tool on CON tool output!");
+                foreach (var objMessage in gpResult.Messages)
+                {
+                    IGPMessage msg = (IGPMessage)objMessage;
+                    Module1.Current.ModuleLogManager.LogError(nameof(CalculatePrecipitationContributionAsync),
+                        msg.Text);
+                }
+                return BA_ReturnCode.UnknownError;
+            }
 
+            // Run THIN tool
+            string thinOutputPath = tempGdbPath + "\\thin_tool";
+            parameters = Geoprocessing.MakeValueArray(linksOutputPath, thinOutputPath);
+            gpResult = await Geoprocessing.ExecuteToolAsync("Thin_sa", parameters, environments,
+                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+            if (gpResult.IsFailed)
+            {
+                Module1.Current.ModuleLogManager.LogDebug(nameof(CalculatePrecipitationContributionAsync),
+                    "Unable to run THIN tool on STREAM LINK tool output!");
+                foreach (var objMessage in gpResult.Messages)
+                {
+                    IGPMessage msg = (IGPMessage)objMessage;
+                    Module1.Current.ModuleLogManager.LogError(nameof(CalculatePrecipitationContributionAsync),
+                        msg.Text);
+                }
+                return BA_ReturnCode.UnknownError;
+            }
 
-            //string strLayer = aoiFolderPath + @"\\contrib.gdb\zonal_tool";
-            //string strZonesRaster = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) +
-            //    Constants.FILE_PRECIP_ZONE;
-            //string strMaskPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_PRISM_VECTOR;
-            //int prismZonesCount = (int)Module1.Current.BatchToolSettings.PrecipContribZones;
-            //IList<BA_Objects.Interval> lstInterval = await AnalysisTools.GetPrismClassesAsync(Module1.Current.Aoi.FilePath,
-            //    strLayer, prismZonesCount, "PRECIPITATION CONTRIBUTION");
-            //string strOutputLayer = aoiFolderPath + @"\\contrib.gdb\zonal_tool_zones";
-            //BA_ReturnCode success = await AnalysisTools.CalculateZonesAsync(Module1.Current.Aoi.FilePath, strLayer,
-            //    lstInterval, strOutputLayer, "", "PRECIPITATION CONTRIBUTION");
+            // Convert output of THIN tool to polyline
+            string streamsOutputPath = GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Layers, true) + Constants.FILE_STREAMS;
+            parameters = Geoprocessing.MakeValueArray(thinOutputPath, streamsOutputPath);
+            gpResult = await Geoprocessing.ExecuteToolAsync("RasterToPolyline", parameters, environments,
+                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+            if (gpResult.IsFailed)
+            {
+                Module1.Current.ModuleLogManager.LogDebug(nameof(CalculatePrecipitationContributionAsync),
+                    "Unable to convert STREAM LINK tool output to polyline!");
+                foreach (var objMessage in gpResult.Messages)
+                {
+                    IGPMessage msg = (IGPMessage)objMessage;
+                    Module1.Current.ModuleLogManager.LogError(nameof(CalculatePrecipitationContributionAsync),
+                        msg.Text);
+                }
+                return BA_ReturnCode.UnknownError;
+            }
 
+            // Generate watersheds
+            string watershedOutputPath = GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Analysis, true) + Constants.FILE_PRECIPITATION_CONTRIBUTION;
+            parameters = Geoprocessing.MakeValueArray(flowDirectionPath, linksOutputPath, watershedOutputPath, Constants.FIELD_VALUE);
+            gpResult = await Geoprocessing.ExecuteToolAsync("Watershed_sa", parameters, environments,
+                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+            if (gpResult.IsFailed)
+            {
+                Module1.Current.ModuleLogManager.LogDebug(nameof(CalculatePrecipitationContributionAsync),
+                    "Unable to run STREAM LINK tool on CON tool output!");
+                foreach (var objMessage in gpResult.Messages)
+                {
+                    IGPMessage msg = (IGPMessage)objMessage;
+                    Module1.Current.ModuleLogManager.LogError(nameof(CalculatePrecipitationContributionAsync),
+                        msg.Text);
+                }
+                return BA_ReturnCode.UnknownError;
+            }
 
-            return BA_ReturnCode.Success;
+            double dblCellSize = await GeodatabaseTools.GetCellSizeAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Analysis)), 
+                Constants.FILE_PRECIPITATION_CONTRIBUTION);
+            if (dblCellSize < 1)
+            {
+                Module1.Current.ModuleLogManager.LogDebug(nameof(CalculatePrecipitationContributionAsync),
+                    "Unable to calculate cell size for WATERSHED tool output!");
+                return BA_ReturnCode.UnknownError;
+            }
+
+            // Zonal statistics as table
+            string annualPrismPath = GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Prism, true) + PrismFile.Annual.ToString();
+            string tablePath = tempGdbPath + "\\zonal_table";
+            environments = Geoprocessing.MakeEnvironmentArray(workspace: aoiFolderPath, cellSize: "MINOF");
+            parameters = Geoprocessing.MakeValueArray(watershedOutputPath, Constants.FIELD_VALUE, annualPrismPath, tablePath, "DATA", "SUM");
+            gpResult = await Geoprocessing.ExecuteToolAsync("ZonalStatisticsAsTable_sa", parameters, environments,
+                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+            if (gpResult.IsFailed)
+            {
+                Module1.Current.ModuleLogManager.LogDebug(nameof(CalculatePrecipitationContributionAsync),
+                    "Unable to run ZONAL STATISTICS tool on WATERSHED tool output!");
+                foreach (var objMessage in gpResult.Messages)
+                {
+                    IGPMessage msg = (IGPMessage)objMessage;
+                    Module1.Current.ModuleLogManager.LogError(nameof(CalculatePrecipitationContributionAsync),
+                        msg.Text);
+                }
+                return BA_ReturnCode.UnknownError;
+            }
+
+            IDictionary<string, string> dictVolAcreFt = new Dictionary<string, string>();
+            await QueuedTask.Run(() => {
+                using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(tempGdbPath))))
+            using (Table table = geodatabase.OpenDataset<Table>("zonal_table"))
+            {
+                QueryFilter queryFilter = new QueryFilter();
+                using (RowCursor cursor = table.Search(queryFilter, false))
+                {
+                    while (cursor.MoveNext())
+                    {
+                        using (Row pRow = (Row)cursor.Current)
+                        {
+                            string strZone = Convert.ToString(pRow[Constants.FIELD_VALUE]);
+                            double dblSum = Convert.ToDouble(pRow[Constants.FIELD_SUM]);
+                            double dblVolAcreFeet = dblSum * dblCellSize * (1 / (4046.8564224 * 12));
+                            if (!dictVolAcreFt.Keys.Contains(strZone))
+                            {
+                                dictVolAcreFt[strZone] = Convert.ToString(Math.Round(dblVolAcreFeet));
+                            }
+                        }
+                    }
+                }
+            }
+            });
+
+            if (dictVolAcreFt.Keys.Count < 1)
+            {
+                Module1.Current.ModuleLogManager.LogDebug(nameof(CalculatePrecipitationContributionAsync),
+                    "Unable to calculate VOL_ACRE_FT in zonal statistics!");
+                return BA_ReturnCode.UnknownError;
+            }
+
+            // Add field to feature class to hold value
+            BA_ReturnCode success = await GeoprocessingTools.AddFieldAsync(watershedOutputPath, Constants.FIELD_VOL_ACRE_FT, "INTEGER");
+            if (success != BA_ReturnCode.Success)
+            {
+                Module1.Current.ModuleLogManager.LogDebug(nameof(CalculatePrecipitationContributionAsync),
+                    "Unable to add field to WATERSHED tool output!");
+                return BA_ReturnCode.UnknownError;
+            }
+
+            EditOperation editOperation = new EditOperation();
+            await QueuedTask.Run(() => {
+                using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Analysis)))))
+                using (RasterDataset rasterDataset = geodatabase.OpenDataset<RasterDataset>(Constants.FILE_PRECIPITATION_CONTRIBUTION))
+                {
+                    RasterBandDefinition bandDefinition = rasterDataset.GetBand(0).GetDefinition();
+                    Raster raster = rasterDataset.CreateDefaultRaster();
+                    Table rasterTable = raster.GetAttributeTable();
+                    TableDefinition definition = rasterTable.GetDefinition();
+                    QueryFilter queryFilter = new QueryFilter();
+                    editOperation.Callback(context =>
+                    {
+                        using (RowCursor rowCursor = rasterTable.Search(queryFilter, false))
+                        {
+                            while (rowCursor.MoveNext())
+                            {
+                                using (Row row = (Row)rowCursor.Current)
+                                {
+                                    if (row != null)
+                                    {
+                                        // In order to update the the attribute table has to be called before any changes are made to the row
+                                        context.Invalidate(row);
+                                        int idxRow = definition.FindField(Constants.FIELD_VALUE);
+                                        int idxVol = definition.FindField(Constants.FIELD_VOL_ACRE_FT);
+                                        if (idxRow > 0 && idxVol > 0)
+                                        {
+                                            string strKey = Convert.ToString(row[idxRow]);
+                                            if (dictVolAcreFt.Keys.Contains(strKey) && dictVolAcreFt[strKey] != null)
+                                            {
+                                                row[Constants.FIELD_VOL_ACRE_FT] = Convert.ToInt32(dictVolAcreFt[strKey]);
+                                            }
+                                        }
+                                        row.Store();
+                                        // Has to be called after the store too
+                                        context.Invalidate(row);
+                                    }
+                                }
+                            }
+                        }
+                    }, rasterTable);
+                }
+                bool bModificationResult = false;
+                string errorMsg = "";
+                try
+                {
+                    bModificationResult = editOperation.Execute();
+                    if (!bModificationResult) errorMsg = editOperation.ErrorMessage;
+                }
+                catch (GeodatabaseException exObj)
+                {
+                    success = BA_ReturnCode.WriteError;
+                    errorMsg = exObj.Message;
+                }
+
+                if (String.IsNullOrEmpty(errorMsg))
+                {
+                    Project.Current.SaveEditsAsync();
+                    success = BA_ReturnCode.Success;
+                }
+                else
+                {
+                    if (Project.Current.HasEdits)
+                        Project.Current.DiscardEditsAsync();
+                    Module1.Current.ModuleLogManager.LogError(nameof(CalculatePrecipitationContributionAsync),
+                        "Exception: " + errorMsg);
+                    success = BA_ReturnCode.UnknownError;
+                }
+            });
+            return success;
         }
     }
 }

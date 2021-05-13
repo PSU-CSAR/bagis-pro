@@ -77,6 +77,7 @@ namespace bagis_pro
         public const string FILE_ELEV_ZONES_TBL = "tblZones";
         public const string FILE_ELEV_ZONES_VECTOR = "elevzone_v";
         public const string FILE_CRITICAL_PRECIP_ZONE = "criticalprecipzone";
+        public const string FILE_PRECIPITATION_CONTRIBUTION = "precipcontribzone";
         public const string FILE_SETTINGS = "analysis.xml";
         public const string FILE_BATCH_TOOL_SETTINGS = "batch_tool_settings.json";
         public const string FILE_BATCH_LOG = "batch_tool_log.txt";
@@ -192,6 +193,8 @@ namespace bagis_pro
         public const string FIELD_GRID_CODE = "gridcode";   //Value after raster is converted to polygon
         public const string FIELD_RUNOFF_AVERAGE = "Average_kac_ft";
         public const string FIELD_RUNOFF_STATION_TRIPLET = "stationtriplet";
+        public const string FIELD_VOL_ACRE_FT = "VOL_ACRE_FT";
+        public const string FIELD_SUM = "SUM";
 
         public const string DATA_TYPE_SWE = "Snotel SWE";
         public const string DATA_TYPE_PRECIPITATION = "Precipitation";
