@@ -233,6 +233,15 @@ namespace bagis_pro
                     if (success == BA_ReturnCode.Success)
                         Module1.ActivateState("MapButtonPalette_BtnPrism_State");
 
+                    // add Precipitation Contribution layer
+                    strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
+                        Constants.FILE_PRECIPITATION_CONTRIBUTION;
+                    uri = new Uri(strPath);
+                    success = await MapTools.DisplayRasterWithClassifyAsync(uri, Constants.MAPS_PRECIPITATION_CONTRIBUTION, "ColorBrewer",
+                               "Yellow-Green-Blue (Continuous)", "VOL_ACRE_FT", 30, 10, ClassificationMethod.EqualInterval, false);
+                    if (success == BA_ReturnCode.Success)
+                        Module1.ActivateState("MapButtonPalette_BtnPrecipContrib_State");
+
                     // create map elements
                     success = await MapTools.AddMapElements(Constants.MAPS_DEFAULT_LAYOUT_NAME);
                     success = await MapTools.DisplayNorthArrowAsync(layout, Constants.MAPS_DEFAULT_MAP_FRAME_NAME);
@@ -638,7 +647,7 @@ namespace bagis_pro
 
         public static async Task RemoveLayersfromMapFrame()
         {
-            string[] arrLayerNames = new string[35];
+            string[] arrLayerNames = new string[36];
             arrLayerNames[0] = Constants.MAPS_AOI_BOUNDARY;
             arrLayerNames[1] = Constants.MAPS_STREAMS;
             arrLayerNames[2] = Constants.MAPS_SNOTEL;
@@ -657,7 +666,8 @@ namespace bagis_pro
             arrLayerNames[15] = Constants.MAPS_SITES_LOCATION;
             arrLayerNames[16] = Constants.MAPS_CRITICAL_PRECIPITATION_ZONES;
             arrLayerNames[17] = Constants.MAPS_PUBLIC_LAND_OWNERSHIP;
-            int idxLayerNames = 18;
+            arrLayerNames[18] = Constants.MAPS_PRECIPITATION_CONTRIBUTION;
+            int idxLayerNames = 19;
             for (int i = 0; i < Constants.LAYER_NAMES_SNODAS_SWE.Length; i++)
             {
                 arrLayerNames[idxLayerNames] = Constants.LAYER_NAMES_SNODAS_SWE[i];
@@ -775,6 +785,57 @@ namespace bagis_pro
                     rasterLayer.SetVisibility(isVisible);
                     // Create and deploy the unique values renderer
                     await MapTools.SetToUniqueValueColorizer(displayName, styleCategory, styleName, fieldName);
+                }
+            });
+            return BA_ReturnCode.Success;
+        }
+
+        public static async Task<BA_ReturnCode> DisplayRasterWithClassifyAsync(Uri rasterUri, string displayName, string styleCategory, 
+            string styleName, string fieldName, int transparency, int numClasses, ClassificationMethod classificationMethod, bool isVisible)
+        {
+            // parse the uri for the folder and file
+            string strFileName = null;
+            string strFolderPath = null;
+            if (rasterUri.IsFile)
+            {
+                strFileName = System.IO.Path.GetFileName(rasterUri.LocalPath);
+                strFolderPath = System.IO.Path.GetDirectoryName(rasterUri.LocalPath);
+            }
+            // Check to see if the raster exists before trying to add it
+            bool bExists = await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(strFolderPath), strFileName);
+            if (!bExists)
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(DisplayRasterWithClassifyAsync),
+                    "Unable to add locate raster!!");
+                return BA_ReturnCode.ReadError;
+            }
+            // Open the requested raster so we know it exists; return if it doesn't
+            await QueuedTask.Run(async () =>
+            {
+                RasterLayer rasterLayer = null;
+                // Create the raster layer on the active map
+                await QueuedTask.Run(() =>
+                {
+                    try
+                    {
+                        rasterLayer = (RasterLayer)LayerFactory.Instance.CreateLayer(rasterUri, MapView.Active.Map);
+                    }
+                    catch (Exception e)
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(DisplayRasterWithClassifyAsync),
+                            e.Message);
+                    }
+                });
+
+                // Set raster layer transparency and name
+                if (rasterLayer != null)
+                {
+                    rasterLayer.SetTransparency(transparency);
+                    rasterLayer.SetName(displayName);
+                    rasterLayer.SetVisibility(isVisible);
+                    // Create and deploy the unique values renderer
+                    await MapTools.SetToClassifyColorizer(displayName, styleCategory, styleName, fieldName, 
+                        numClasses, classificationMethod);
                 }
             });
             return BA_ReturnCode.Success;
@@ -915,6 +976,36 @@ namespace bagis_pro
 
             // Creates a new UV colorizer using the colorizer definition created above.
             CIMRasterUniqueValueColorizer newColorizer = await rasterLayer.CreateColorizerAsync(UVColorizerDef) as CIMRasterUniqueValueColorizer;
+
+            // Sets the newly created colorizer on the layer.
+            await QueuedTask.Run(() =>
+            {
+                rasterLayer.SetColorizer(MapTools.RecalculateColorizer(newColorizer));
+            });
+        }
+
+        public static async Task SetToClassifyColorizer(string layerName, string styleCategory,
+            string styleName, string fieldName, int numberofClasses, ClassificationMethod classificationMethod)
+        {
+            // Get the layer we want to symbolize from the map
+            Layer oLayer =
+                MapView.Active.Map.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(layerName, StringComparison.CurrentCultureIgnoreCase));
+            if (oLayer == null)
+                return;
+            RasterLayer rasterLayer = (RasterLayer)oLayer;
+
+            StyleProjectItem style =
+                Project.Current.GetItems<StyleProjectItem>().FirstOrDefault(s => s.Name == styleCategory);
+            if (style == null) return;
+            var colorRampList = await QueuedTask.Run(() => style.SearchColorRamps(styleName));
+            if (colorRampList == null || colorRampList.Count == 0) return;
+            CIMColorRamp cimColorRamp = colorRampList[0].ColorRamp;
+
+            // Creates a new Classify Colorizer Definition using defined parameters.
+            ClassifyColorizerDefinition classifyColorizerDef = new ClassifyColorizerDefinition(fieldName, numberofClasses, classificationMethod, cimColorRamp);
+
+            // Creates a new Classify colorizer using the colorizer definition created above.
+            CIMRasterClassifyColorizer newColorizer = await rasterLayer.CreateColorizerAsync(classifyColorizerDef) as CIMRasterClassifyColorizer;
 
             // Sets the newly created colorizer on the layer.
             await QueuedTask.Run(() =>
@@ -1555,16 +1646,26 @@ namespace bagis_pro
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;
+                case BagisMapType.PRECIPITATION_CONTRIBUTION:
+                    lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
+                                                   Constants.MAPS_HILLSHADE, Constants.MAPS_PRECIPITATION_CONTRIBUTION };
+                    lstLegendLayers = new List<string> { Constants.MAPS_PRECIPITATION_CONTRIBUTION};
+                    mapDefinition = new BA_Objects.MapDefinition("ANNUAL PRECIPITATION CONTRIBUTION",
+                        " ", Constants.FILE_EXPORT_MAP_PRECIPITATION_CONTRIBUTION_PDF);
+                    mapDefinition.LayerList = lstLayers;
+                    mapDefinition.LegendLayerList = lstLegendLayers;
+                    break;
                 case BagisMapType.CRITICAL_PRECIP:
                     lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_ELEV_ZONE,
                                                    Constants.MAPS_CRITICAL_PRECIPITATION_ZONES};
-                    lstLegendLayers = new List<string> { Constants.MAPS_CRITICAL_PRECIPITATION_ZONES, Constants.MAPS_ELEV_ZONE};
+                    lstLegendLayers = new List<string> { Constants.MAPS_CRITICAL_PRECIPITATION_ZONES, Constants.MAPS_ELEV_ZONE };
                     mapDefinition = new BA_Objects.MapDefinition("CRITICAL PRECIPITATION ZONES",
                         " ", Constants.FILE_EXPORT_MAP_CRITICAL_PRECIPITATION_ZONES_PDF);
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;
+
                 case BagisMapType.PUBLIC_LAND_OWNERSHIP:
                     lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_PUBLIC_LAND_OWNERSHIP };

@@ -638,4 +638,21 @@ namespace bagis_pro.Buttons
         }
     }
 
+    internal class MapButtonPalette_BtnPrecipContrib : Button
+    {
+        protected override async void OnClick()
+        {
+            try
+            {
+                Module1.Current.MapFinishedLoading = false;
+                await ToggleMapDisplay.ToggleAsync(BagisMapType.PRECIPITATION_CONTRIBUTION);
+                Module1.Current.MapFinishedLoading = true;
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show("Unable to display Precipitation Contribution map!!" + e.Message, "BAGIS-PRO");
+            }
+        }
+    }
+
 }

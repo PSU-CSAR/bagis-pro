@@ -31,6 +31,7 @@ namespace bagis_pro
         public const string MAPS_SITES_LOCATION = "Meet All Criteria";
         public const string MAPS_CRITICAL_PRECIPITATION_ZONES = "Critical Precipitation";
         public const string MAPS_PUBLIC_LAND_OWNERSHIP = "Public Land Ownership";
+        public const string MAPS_PRECIPITATION_CONTRIBUTION = "Precipitation Contribution";
 
         public const string MAPS_LEGEND = "Legend";
         public const string MAPS_TITLE = "Title";
@@ -110,12 +111,13 @@ namespace bagis_pro
         public const string FILE_EXPORT_WATERSHED_REPORT_PDF = "watershed_report.pdf";
         public const string FILE_EXPORT_SITE_ANALYSIS_REPORT_PDF = "site_analysis_report.pdf";
         public const string FILE_EXPORT_CRITICAL_PRECIPITATION_ZONES_PDF = "critical_precipitation_zones.pdf";
+        public const string FILE_EXPORT_MAP_PRECIPITATION_CONTRIBUTION_PDF = "map_precipitation_contrib.pdf";
         // List of files in the watershed PDF map package and the order in which they will be assembled
         public static string[] FILES_EXPORT_WATERSHED_PDF = new string[]
         { FILE_TITLE_PAGE_PDF, FILE_EXPORT_MAP_ELEV_PDF, FILE_EXPORT_MAP_ASPECT_PDF,
           FILE_EXPORT_MAP_SLOPE_PDF, FILE_EXPORT_CHART_ASPECT_PDF, FILE_EXPORT_CHART_SLOPE_PDF,
           FILE_EXPORT_MAP_SNOTEL_PDF, FILE_EXPORT_MAP_SCOS_PDF, FILE_EXPORT_MAP_SNOTEL_AND_SCOS_PDF,
-          FILE_EXPORT_MAP_PRECIPITATION_PDF, FILE_EXPORT_CHART_ELEV_PRECIP_CORR_PDF,
+          FILE_EXPORT_MAP_PRECIPITATION_PDF, FILE_EXPORT_CHART_ELEV_PRECIP_CORR_PDF, FILE_EXPORT_MAP_PRECIPITATION_CONTRIBUTION_PDF,
           FILE_EXPORT_MAPS_SWE[0], FILE_EXPORT_MAPS_SWE[1], FILE_EXPORT_MAPS_SWE[2],
           FILE_EXPORT_MAPS_SWE[3], FILE_EXPORT_MAPS_SWE[4], FILE_EXPORT_MAPS_SWE[5],
           FILE_EXPORT_MAPS_SWE[6], FILE_EXPORT_MAPS_SWE[7], FILE_EXPORT_MAPS_SWE[8],
@@ -227,6 +229,7 @@ namespace bagis_pro
                                                                 "MapButtonPalette_BtnSitesAll_State",
                                                                 "MapButtonPalette_BtnAspect_State",
                                                                 "MapButtonPalette_BtnPrism_State",
+                                                                "MapButtonPalette_BtnPrecipContrib_State",
                                                                 "MapButtonPalette_BtnSlope_State",
                                                                 "MapButtonPalette_BtnSweJan_State",
                                                                 "MapButtonPalette_BtnSweFeb_State",
