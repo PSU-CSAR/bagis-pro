@@ -237,8 +237,9 @@ namespace bagis_pro
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
                         Constants.FILE_PRECIPITATION_CONTRIBUTION;
                     uri = new Uri(strPath);
-                    success = await MapTools.DisplayRasterWithClassifyAsync(uri, Constants.MAPS_PRECIPITATION_CONTRIBUTION, "ColorBrewer",
-                               "Yellow-Green-Blue (Continuous)", "VOL_ACRE_FT", 30, 10, ClassificationMethod.EqualInterval, false);
+                    success = await MapTools.DisplayRasterWithClassifyAsync(uri, Constants.MAPS_PRECIPITATION_CONTRIBUTION, "ColorBrewer Schemes (RGB)",
+                               "Yellow-Green-Blue (Continuous)", Constants.FIELD_VOL_ACRE_FT, 30, ClassificationMethod.EqualInterval, 10, false);
+
                     if (success == BA_ReturnCode.Success)
                         Module1.ActivateState("MapButtonPalette_BtnPrecipContrib_State");
 
@@ -791,8 +792,9 @@ namespace bagis_pro
         }
 
         public static async Task<BA_ReturnCode> DisplayRasterWithClassifyAsync(Uri rasterUri, string displayName, string styleCategory, 
-            string styleName, string fieldName, int transparency, int numClasses, ClassificationMethod classificationMethod, bool isVisible)
+            string styleName, string fieldName, int transparency, ClassificationMethod classificationMethod, int numClasses, bool isVisible)
         {
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
             // parse the uri for the folder and file
             string strFileName = null;
             string strFolderPath = null;
@@ -809,36 +811,32 @@ namespace bagis_pro
                     "Unable to add locate raster!!");
                 return BA_ReturnCode.ReadError;
             }
-            // Open the requested raster so we know it exists; return if it doesn't
-            await QueuedTask.Run(async () =>
+            // Create the raster layer on the active map
+            await QueuedTask.Run(() =>
             {
-                RasterLayer rasterLayer = null;
-                // Create the raster layer on the active map
-                await QueuedTask.Run(() =>
+                try
                 {
-                    try
+                    RasterLayer rasterLayer = (RasterLayer)LayerFactory.Instance.CreateLayer(rasterUri, MapView.Active.Map);
+                    // Set raster layer transparency and name
+                    if (rasterLayer != null)
                     {
-                        rasterLayer = (RasterLayer)LayerFactory.Instance.CreateLayer(rasterUri, MapView.Active.Map);
+                        rasterLayer.SetName(displayName);
+                        rasterLayer.SetTransparency(transparency);
+                        rasterLayer.SetVisibility(isVisible);
                     }
-                    catch (Exception e)
-                    {
-                        Module1.Current.ModuleLogManager.LogError(nameof(DisplayRasterWithClassifyAsync),
-                            e.Message);
-                    }
-                });
-
-                // Set raster layer transparency and name
-                if (rasterLayer != null)
+                }
+                catch (Exception e)
                 {
-                    rasterLayer.SetTransparency(transparency);
-                    rasterLayer.SetName(displayName);
-                    rasterLayer.SetVisibility(isVisible);
-                    // Create and deploy the unique values renderer
-                    await MapTools.SetToClassifyColorizer(displayName, styleCategory, styleName, fieldName, 
-                        numClasses, classificationMethod);
+                    Module1.Current.ModuleLogManager.LogError(nameof(DisplayRasterWithClassifyAsync),
+                        e.Message);
                 }
             });
-            return BA_ReturnCode.Success;
+
+            // Create and deploy the classify renderer
+            await MapTools.SetToClassifyRenderer(displayName, styleCategory, styleName, fieldName,
+                classificationMethod, numClasses);
+            success = BA_ReturnCode.Success;
+            return success;
         }
 
         public static async Task<BA_ReturnCode> DisplayStretchRasterWithSymbolAsync(Uri rasterUri, string displayName, string styleCategory, string styleName,
@@ -984,15 +982,22 @@ namespace bagis_pro
             });
         }
 
-        public static async Task SetToClassifyColorizer(string layerName, string styleCategory,
-            string styleName, string fieldName, int numberofClasses, ClassificationMethod classificationMethod)
+        public static async Task SetToClassifyRenderer(string layerName, string styleCategory,
+            string styleName, string fieldName, ClassificationMethod classificationMethod,int numberofClasses)
         {
             // Get the layer we want to symbolize from the map
             Layer oLayer =
                 MapView.Active.Map.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(layerName, StringComparison.CurrentCultureIgnoreCase));
-            if (oLayer == null)
+ 
+            BasicRasterLayer basicRasterLayer = null;
+            if (oLayer != null && oLayer is BasicRasterLayer)
+            {
+                basicRasterLayer = (BasicRasterLayer)oLayer;
+            }
+            else
+            {
                 return;
-            RasterLayer rasterLayer = (RasterLayer)oLayer;
+            }
 
             StyleProjectItem style =
                 Project.Current.GetItems<StyleProjectItem>().FirstOrDefault(s => s.Name == styleCategory);
@@ -1002,15 +1007,17 @@ namespace bagis_pro
             CIMColorRamp cimColorRamp = colorRampList[0].ColorRamp;
 
             // Creates a new Classify Colorizer Definition using defined parameters.
-            ClassifyColorizerDefinition classifyColorizerDef = new ClassifyColorizerDefinition(fieldName, numberofClasses, classificationMethod, cimColorRamp);
+            ClassifyColorizerDefinition classifyColorizerDef = 
+                new ClassifyColorizerDefinition(fieldName, numberofClasses, classificationMethod, cimColorRamp);
 
             // Creates a new Classify colorizer using the colorizer definition created above.
-            CIMRasterClassifyColorizer newColorizer = await rasterLayer.CreateColorizerAsync(classifyColorizerDef) as CIMRasterClassifyColorizer;
+            CIMRasterClassifyColorizer newColorizer = 
+                await basicRasterLayer.CreateColorizerAsync(classifyColorizerDef) as CIMRasterClassifyColorizer;
 
             // Sets the newly created colorizer on the layer.
             await QueuedTask.Run(() =>
             {
-                rasterLayer.SetColorizer(MapTools.RecalculateColorizer(newColorizer));
+                basicRasterLayer.SetColorizer(newColorizer);
             });
         }
 
@@ -1651,7 +1658,7 @@ namespace bagis_pro
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_PRECIPITATION_CONTRIBUTION };
                     lstLegendLayers = new List<string> { Constants.MAPS_PRECIPITATION_CONTRIBUTION};
                     mapDefinition = new BA_Objects.MapDefinition("ANNUAL PRECIPITATION CONTRIBUTION",
-                        " ", Constants.FILE_EXPORT_MAP_PRECIPITATION_CONTRIBUTION_PDF);
+                        "Units = Acre Feet", Constants.FILE_EXPORT_MAP_PRECIPITATION_CONTRIBUTION_PDF);
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;
