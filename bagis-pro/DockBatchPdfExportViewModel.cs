@@ -293,11 +293,6 @@ namespace bagis_pro
             }
         }
 
-        private async void SiteAnalysis()
-        {
-
-        }
-
         private async void RunImplAsync(object param)
         {
             // Create initial log entry
@@ -502,6 +497,12 @@ namespace bagis_pro
                             Module1.Current.ModuleLogManager.LogError(nameof(CmdRun),
                                 "No sites found to create sites zone layers!!");
                         }
+                    }
+                    // Precipitation Contribution; Passing in -1 for threshold so we use STDEV
+                    success = await AnalysisTools.CalculatePrecipitationContributionAsync(Module1.Current.Aoi.FilePath, -1);
+                    if (success != BA_ReturnCode.Success)
+                    {
+                        errorCount++;
                     }
 
                     if (SiteAnalysisChecked)
