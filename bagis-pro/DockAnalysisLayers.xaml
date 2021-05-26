@@ -30,6 +30,7 @@
             <RowDefinition Height="25"/>
             <RowDefinition Height="25"/>
             <RowDefinition Height="25"/>
+            <RowDefinition Height="25"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="25"/>
         </Grid.RowDefinitions>
@@ -127,6 +128,13 @@
             <CheckBox x:Name="chkPrecipContrib" Content="" HorizontalAlignment="Center"  Height="14" VerticalAlignment="Center"
                       IsChecked="{Binding Precip_Contrib_Checked}"/>
         </DockPanel>
-        <Button x:Name="button" Content="Generate Layers" Grid.Column="2"  Grid.Row="13" VerticalAlignment="Center" Width="90" Command="{Binding CmdGenerateLayers}" Margin="5,0,0,0" HorizontalAlignment="Right" HorizontalContentAlignment="Right"/>
+        <DockPanel Grid.Row="13" Grid.Column="0"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
+            <Label  Content="Winter Precipitation" HorizontalAlignment="Left" VerticalAlignment="Center"  Padding="5,0,20,0"/>
+        </DockPanel>
+        <DockPanel Grid.Row="13" Grid.Column="1"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
+            <CheckBox x:Name="chkWinterPrecip" Content="" HorizontalAlignment="Center"  Height="14" VerticalAlignment="Center"
+                      IsChecked="{Binding Winter_Precip_Checked}"/>
+        </DockPanel>
+        <Button x:Name="button" Content="Generate Layers" Grid.Column="2"  Grid.Row="14" VerticalAlignment="Center" Width="90" Command="{Binding CmdGenerateLayers}" Margin="5,0,0,0" HorizontalAlignment="Right" HorizontalContentAlignment="Right"/>
     </Grid>
 </UserControl>

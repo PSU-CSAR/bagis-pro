@@ -3347,5 +3347,85 @@ namespace bagis_pro
             });
             return success;
         }
+
+        public static async Task<BA_ReturnCode> GenerateWinterPrecipitationLayerAsync(string aoiFolderPath)
+        {
+            //@ToDo: The start and end months will come from a csv file in the NRCS Portal
+            int intStart = 11;
+            int intEnd = 3;
+
+            IList<int> lstMonths = new List<int>();
+            if (intStart== intEnd)  //only one month is selected
+            {
+                lstMonths.Add(intStart);
+            }
+            else if (intStart < intEnd) //single calendar year span
+            {
+                int monthDiff = intEnd - intStart;
+                for (int i = 0; i < monthDiff; i++)
+                {
+                    lstMonths.Add(intStart + i);
+                }
+            }
+            else if (intStart > intEnd) //cross-calendar year span
+            {
+                for (int i = 1; i < intEnd + 1; i++)
+                {
+                    lstMonths.Add(i);
+                }
+                for (int i = intStart; i < 13; i++)
+                {
+                    lstMonths.Add(i);
+                }
+            }
+
+            StringBuilder sb = new StringBuilder();
+            Uri gdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Prism));
+            foreach (var intMonth in lstMonths)
+            {
+                string rasterName = "";
+                if (Enum.IsDefined(typeof(PrismFile), intMonth -1))
+                    rasterName = ((PrismFile)intMonth - 1).ToString();
+                else
+                    rasterName = "Invalid Value";
+                bool bExists = await GeodatabaseTools.RasterDatasetExistsAsync(gdbUri, rasterName);
+                string strLayerPath = GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Prism, true) + rasterName;
+                if (bExists)
+                {
+                    sb.Append(strLayerPath);
+                    if (lstMonths.Count > 1)
+                    {
+                        sb.Append(";");
+                    }                    
+                }
+                else
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(GenerateWinterPrecipitationLayerAsync),
+                        "Unable to locate layer " + strLayerPath + "! Winter precipitation layer cannot be created");
+                    return BA_ReturnCode.ReadError;
+                }
+            }
+            string strInputLayerPaths = sb.ToString();
+            // Remove the ; at the end of the string
+            if (lstMonths.Count > 1)
+            {
+                strInputLayerPaths = strInputLayerPaths.Substring(0, strInputLayerPaths.Length - 1);
+            }
+            string strOutputPath = GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Analysis, true) 
+                + Constants.FILE_WINTER_PRECIPITATION;
+            var parameters = Geoprocessing.MakeValueArray(strInputLayerPaths, strOutputPath, "SUM");
+            var environments = Geoprocessing.MakeEnvironmentArray(workspace: aoiFolderPath);
+            var gpResult = await Geoprocessing.ExecuteToolAsync("CellStatistics_sa", parameters, environments,
+                                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+
+            if (gpResult.IsFailed)
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(GenerateWinterPrecipitationLayerAsync),
+                    "Unable to sum raster layers for winter precipitation map. Error code: " + gpResult.ErrorCode);
+                return BA_ReturnCode.UnknownError;
+            }
+            return BA_ReturnCode.Success;
+        }
     }
+
 }

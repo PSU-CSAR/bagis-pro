@@ -70,6 +70,7 @@ namespace bagis_pro
         private bool _ElevPrecipCorr_Checked = false;
         private bool _SWE_Delta_Checked = false;
         private bool _Precip_Contrib_Checked = false;
+        private bool _Winter_Precip_Checked = false;
         public string Heading
         {
             get { return _heading; }
@@ -187,6 +188,15 @@ namespace bagis_pro
             }
         }
 
+        public bool Winter_Precip_Checked
+        {
+            get { return _Winter_Precip_Checked; }
+            set
+            {
+                SetProperty(ref _Winter_Precip_Checked, value, () => Winter_Precip_Checked);
+            }
+        }
+
         public void ResetView()
         {
             RepresentedArea_Checked = false;
@@ -201,6 +211,7 @@ namespace bagis_pro
             ElevPrecipCorr_Checked = false;
             SWE_Delta_Checked = false;
             Precip_Contrib_Checked = false;
+            Winter_Precip_Checked = false;
         }
 
         public ICommand CmdGenerateLayers
@@ -212,7 +223,8 @@ namespace bagis_pro
                     // Create from template
                     await GenerateLayersAsync(RepresentedArea_Checked, PrismZones_Checked, AspectZones_Checked,
                         SlopeZones_Checked, ElevationZones_Checked, Roads_Checked, FederalLand_Checked, BelowTreeline_Checked,
-                        ElevPrecipCorr_Checked, SitesZones_Checked, SWE_Delta_Checked, Precip_Contrib_Checked);
+                        ElevPrecipCorr_Checked, SitesZones_Checked, SWE_Delta_Checked, Precip_Contrib_Checked,
+                        Winter_Precip_Checked);
                 });
             }
         }
@@ -220,7 +232,7 @@ namespace bagis_pro
         private async Task GenerateLayersAsync(bool calculateRepresented, bool calculatePrism, bool calculateAspect,
             bool calculateSlope, bool calculateElevation, bool bufferRoads, bool extractPublicLand,
             bool extractBelowTreeline, bool elevPrecipCorr, bool calculateSitesZones, bool calculateSweDelta,
-            bool calculatePrecipContrib)
+            bool calculatePrecipContrib, bool winterPrecip)
         {
             try
             {
@@ -233,7 +245,8 @@ namespace bagis_pro
                 if (calculateRepresented == false && calculatePrism == false && calculateAspect == false
                     && calculateSlope == false && calculateElevation == false && bufferRoads == false
                     && extractPublicLand == false && extractBelowTreeline == false && elevPrecipCorr == false
-                    && calculateSitesZones == false && calculateSweDelta == false && calculatePrecipContrib == false)
+                    && calculateSitesZones == false && calculateSweDelta == false && calculatePrecipContrib == false
+                    && winterPrecip == false)
                 {
                     MessageBox.Show("No layers selected to generate !!", "BAGIS-PRO");
                     return;
@@ -426,6 +439,15 @@ namespace bagis_pro
                     if (success == BA_ReturnCode.Success)
                     {
                         layersPane.Precip_Contrib_Checked = false;
+                    }
+                }
+
+                if (winterPrecip == true)
+                {
+                    success = await AnalysisTools.GenerateWinterPrecipitationLayerAsync(Module1.Current.Aoi.FilePath);
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        layersPane.Winter_Precip_Checked = false;
                     }
                 }
 

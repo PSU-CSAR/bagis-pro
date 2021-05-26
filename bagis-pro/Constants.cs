@@ -79,6 +79,7 @@ namespace bagis_pro
         public const string FILE_ELEV_ZONES_VECTOR = "elevzone_v";
         public const string FILE_CRITICAL_PRECIP_ZONE = "criticalprecipzone";
         public const string FILE_PRECIPITATION_CONTRIBUTION = "precipcontribzone";
+        public const string FILE_WINTER_PRECIPITATION = "winter_precip";
         public const string FILE_SETTINGS = "analysis.xml";
         public const string FILE_BATCH_TOOL_SETTINGS = "batch_tool_settings.json";
         public const string FILE_BATCH_LOG = "batch_tool_log.txt";
