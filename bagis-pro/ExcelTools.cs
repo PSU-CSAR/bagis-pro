@@ -1554,7 +1554,6 @@ namespace bagis_pro
                 if (Convert.ToDouble(meanVolumeRange.Value) >= dblMinVolume)
                 {
                     dictMeanVolumeZones.Add(strZone, Convert.ToDouble(meanVolumeRange.Value));
-                    totalSelectedVolume = totalSelectedVolume + Convert.ToDouble(meanVolumeRange.Value);
                     meanVolumeRange.Interior.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.LightBlue);
                 }
                 currentRow++;
@@ -1563,6 +1562,10 @@ namespace bagis_pro
             }
             // Intersect minimum area pct and minimum mean volume criteria
             var lstIntersect = lstMinVolumeZones.Select(i => i).Intersect(dictMeanVolumeZones.Keys);
+            foreach (var item in lstIntersect)
+            {
+                totalSelectedVolume = totalSelectedVolume + dictMeanVolumeZones[item];
+            }
             var sortedDict = from entry in dictPctVolume orderby entry.Value descending select entry;
             double runningTotal = 0.0F;
             double maxSelectedMeanVolume = totalSelectedVolume * dblMaxPctVolume / 100;
