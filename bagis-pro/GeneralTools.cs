@@ -1423,7 +1423,7 @@ namespace bagis_pro
             double Value = (begincnt + 1) * interval;
             for (int j = 0; j < ninterval; j++)
             {
-                rangearr[j].Value = j;
+                rangearr[j].Value = j + 1;  // Add 1 to counter because we don't want any zone 0
                 rangearr[j].UpperBound = Value / scalefactor;
                 if (j + 1 < ninterval)
                 {
@@ -1440,7 +1440,7 @@ namespace bagis_pro
                 }
             }
 
-            rangearr[ninterval - 1].Value = ninterval - 1;
+            rangearr[ninterval - 1].Value = ninterval;
             rangearr[ninterval - 1].UpperBound = maxval / scalefactor;
             if (ninterval > 1)
             {

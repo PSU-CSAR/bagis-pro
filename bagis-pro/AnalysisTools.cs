@@ -1286,13 +1286,32 @@ namespace bagis_pro
             string[] strFinalOutputLayer = { Constants.FILE_SNOTEL, Constants.FILE_SNOW_COURSE };
             string snowCosClipLayer = "";
             string strClipGdb = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, false);
-
+            string strLayers = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers);
+            Uri uriLayers = new Uri(strLayers);
 
             Webservices ws = new Webservices();
             Module1.Current.ModuleLogManager.LogDebug(nameof(ClipSnoLayersAsync),
                 "Contacting webservices server to retrieve layer metadata");
             IDictionary<string, dynamic> dictDataSources =
                 await ws.QueryDataSourcesAsync((string)Module1.Current.BatchToolSettings.EBagisServer);
+            if (dictDataSources != null)
+            {
+                if (!dictDataSources.ContainsKey(Constants.DATA_TYPE_SNOTEL) || 
+                    !dictDataSources.ContainsKey(Constants.DATA_TYPE_SNOW_COURSE))
+                {
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(ClipSnoLayersAsync),
+                        "Unable to retrieve snotel datasource information from " + (string) Module1.Current.BatchToolSettings.EBagisServer);
+                    MessageBox.Show("Unable to retrieve snotel datasource information. Clipping cancelled!!", "BAGIS-PRO");
+                    return success;
+                }
+            }
+            else
+            {
+                Module1.Current.ModuleLogManager.LogDebug(nameof(ClipSnoLayersAsync),
+                    "Unable to retrieve datasource information from " + (string)Module1.Current.BatchToolSettings.EBagisServer);
+                MessageBox.Show("Unable to retrieve datasource information. Clipping cancelled!!", "BAGIS-PRO");
+                return success;
+            }
 
             var url = (string)Module1.Current.BatchToolSettings.EBagisServer + Constants.URI_DESKTOP_SETTINGS;
             var response = new EsriHttpClient().Get(url);
@@ -1324,6 +1343,12 @@ namespace bagis_pro
                 else
                 {
                     snotelClipLayer = Constants.FILE_AOI_VECTOR;
+                }
+
+                // Delete the existing snotel layer
+                if (await GeodatabaseTools.FeatureClassExistsAsync(uriLayers, strFinalOutputLayer[0]))
+                {
+                    success = await GeoprocessingTools.DeleteDatasetAsync(strLayers + "\\" + strFinalOutputLayer[0]);
                 }
 
                 string strWsUri = dictDataSources[Constants.DATA_TYPE_SNOTEL].uri;
@@ -1373,6 +1398,12 @@ namespace bagis_pro
                 else
                 {
                     snowCosClipLayer = Constants.FILE_AOI_VECTOR;
+                }
+
+                // Delete the existing snotel layer
+                if (await GeodatabaseTools.FeatureClassExistsAsync(uriLayers, strFinalOutputLayer[1]))
+                {
+                    success = await GeoprocessingTools.DeleteDatasetAsync(strLayers + "\\" + strFinalOutputLayer[1]);
                 }
 
                 string strWsUri = dictDataSources[Constants.DATA_TYPE_SNOW_COURSE].uri;

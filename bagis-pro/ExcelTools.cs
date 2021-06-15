@@ -842,7 +842,7 @@ namespace bagis_pro
             sb.Append("elevation. The chart tells if the snow monitoring sites record the major precipitation in the AOI.");
             ChartTextBoxSettings textBoxSettings = new ChartTextBoxSettings
             {
-                Left = Constants.EXCEL_CHART_SPACING,
+                Left = leftPosition,
                 Top = topPosition + Constants.EXCEL_CHART_HEIGHT + 10,
                 Message = sb.ToString()
             };
@@ -1548,21 +1548,21 @@ namespace bagis_pro
                 {
                     lstMinVolumeZones.Add(strZone);
                     pctVolumeRange.Interior.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.Orange);
-                }
-                Range meanVolumeRange = pPRSIMWS.Cells[currentRow, idxMeanVolume];
-                // Meets minimum mean volume criterium
-                if (Convert.ToDouble(meanVolumeRange.Value) >= dblMinVolume)
-                {
-                    dictMeanVolumeZones.Add(strZone, Convert.ToDouble(meanVolumeRange.Value));
-                    meanVolumeRange.Interior.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.LightBlue);
+                    // Meets minimum mean volume criterium
+                    Range meanVolumeRange = pPRSIMWS.Cells[currentRow, idxMeanVolume];
+                    if (Convert.ToDouble(meanVolumeRange.Value) >= dblMinVolume)
+                    {
+                        dictMeanVolumeZones.Add(strZone, Convert.ToDouble(meanVolumeRange.Value));
+                        meanVolumeRange.Interior.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.LightBlue);
+                    }
                 }
                 currentRow++;
                 pRange = pPRSIMWS.Cells[currentRow, 1];
                 intCount++;
             }
             // Intersect minimum area pct and minimum mean volume criteria
-            var lstIntersect = lstMinVolumeZones.Select(i => i).Intersect(dictMeanVolumeZones.Keys);
-            foreach (var item in lstIntersect)
+            //var lstIntersect = lstMinVolumeZones.Select(i => i).Intersect(dictMeanVolumeZones.Keys);
+            foreach (var item in dictMeanVolumeZones.Keys)
             {
                 totalSelectedVolume = totalSelectedVolume + dictMeanVolumeZones[item];
             }
@@ -1573,7 +1573,7 @@ namespace bagis_pro
             foreach (var kvPair in sortedDict)
             {
                 // Check to make sure first 2 criteria have been met
-                if (lstIntersect.Contains(kvPair.Key))
+                if (dictMeanVolumeZones.Keys.Contains(kvPair.Key))
                 {
                     runningTotal = runningTotal + dictMeanVolumeZones[kvPair.Key];                  
                     if (runningTotal > maxSelectedMeanVolume)
@@ -1589,7 +1589,7 @@ namespace bagis_pro
             }
             // Add style to critical precipitation zone elevations
             currentRow = 3;
-            for (int i = 0; i < intCount; i++)
+            for (int i = 1; i < intCount +1; i++)   // start with 1 because that is the first zone value
             {
                 if (lstCriticalZones.Contains(Convert.ToString(i)))
                 {
@@ -1601,6 +1601,5 @@ namespace bagis_pro
             return lstCriticalZones;
         }
 
-        }
-
     }
+}

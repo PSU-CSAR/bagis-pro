@@ -1656,8 +1656,19 @@ namespace bagis_pro
                 case BagisMapType.PRECIPITATION_CONTRIBUTION:
                     lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_PRECIPITATION_CONTRIBUTION };
-                    lstLegendLayers = new List<string> { Constants.MAPS_PRECIPITATION_CONTRIBUTION};
-                    mapDefinition = new BA_Objects.MapDefinition("ANNUAL PRECIPITATION CONTRIBUTION",
+                    lstLegendLayers = new List<string>();
+                    if (Module1.Current.Aoi.HasSnowCourse == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOW_COURSE);
+                        lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE);
+                    }
+                    if (Module1.Current.Aoi.HasSnotel == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOTEL);
+                        lstLegendLayers.Add(Constants.MAPS_SNOTEL);
+                    }
+                    lstLegendLayers.Add(Constants.MAPS_PRECIPITATION_CONTRIBUTION);
+                    mapDefinition = new BA_Objects.MapDefinition("SUBBASIN ANNUAL PRECIPITATION CONTRIBUTION",
                         "Units = Acre Feet", Constants.FILE_EXPORT_MAP_PRECIPITATION_CONTRIBUTION_PDF);
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
