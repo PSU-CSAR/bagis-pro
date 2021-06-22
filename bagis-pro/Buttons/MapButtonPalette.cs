@@ -437,7 +437,7 @@ namespace bagis_pro.Buttons
         }
     }
 
-    internal class MapButtonPalette_BtnSweDeltaNovToDec : Button
+    internal class MapButtonPalette_BtnSweNovDelta : Button
     {
         protected override async void OnClick()
         {
@@ -454,13 +454,13 @@ namespace bagis_pro.Buttons
             catch (Exception e)
             {
                 MessageBox.Show("Unable to display SWE Delta map!!" + e.Message, "BAGIS-PRO");
-                Module1.Current.ModuleLogManager.LogError(nameof(MapButtonPalette_BtnSweDeltaNovToDec),
+                Module1.Current.ModuleLogManager.LogError(nameof(MapButtonPalette_BtnSweNovDelta),
                     "Exception: " + e.Message);
             }
         }
     }
 
-    internal class MapButtonPalette_BtnSweDeltaDecToJan : Button
+    internal class MapButtonPalette_BtnSweDecDelta : Button
     {
         protected override async void OnClick()
         {
@@ -477,13 +477,13 @@ namespace bagis_pro.Buttons
             catch (Exception e)
             {
                 MessageBox.Show("Unable to display SWE Delta map!!" + e.Message, "BAGIS-PRO");
-                Module1.Current.ModuleLogManager.LogError(nameof(MapButtonPalette_BtnSweDeltaDecToJan),
+                Module1.Current.ModuleLogManager.LogError(nameof(MapButtonPalette_BtnSweDecDelta),
                     "Exception: " + e.Message);
             }
         }
     }
 
-    internal class MapButtonPalette_BtnSweDeltaJanToFeb : Button
+    internal class MapButtonPalette_BtnSweJanDelta : Button
     {
         protected override async void OnClick()
         {
@@ -500,13 +500,13 @@ namespace bagis_pro.Buttons
             catch (Exception e)
             {
                 MessageBox.Show("Unable to display SWE Delta map!!" + e.Message, "BAGIS-PRO");
-                Module1.Current.ModuleLogManager.LogError(nameof(MapButtonPalette_BtnSweDeltaJanToFeb),
+                Module1.Current.ModuleLogManager.LogError(nameof(MapButtonPalette_BtnSweJanDelta),
                     "Exception: " + e.Message);
             }
         }
     }
 
-    internal class MapButtonPalette_BtnSweDeltaFebToMar : Button
+    internal class MapButtonPalette_BtnSweFebDelta : Button
     {
         protected override async void OnClick()
         {
@@ -523,13 +523,13 @@ namespace bagis_pro.Buttons
             catch (Exception e)
             {
                 MessageBox.Show("Unable to display SWE Delta map!!" + e.Message, "BAGIS-PRO");
-                Module1.Current.ModuleLogManager.LogError(nameof(MapButtonPalette_BtnSweDeltaFebToMar),
+                Module1.Current.ModuleLogManager.LogError(nameof(MapButtonPalette_BtnSweFebDelta),
                     "Exception: " + e.Message);
             }
         }
     }
 
-    internal class MapButtonPalette_BtnSweDeltaMarToApr : Button
+    internal class MapButtonPalette_BtnSweMarDelta : Button
     {
         protected override async void OnClick()
         {
@@ -546,13 +546,13 @@ namespace bagis_pro.Buttons
             catch (Exception e)
             {
                 MessageBox.Show("Unable to display SWE Delta map!!" + e.Message, "BAGIS-PRO");
-                Module1.Current.ModuleLogManager.LogError(nameof(MapButtonPalette_BtnSweDeltaMarToApr),
+                Module1.Current.ModuleLogManager.LogError(nameof(MapButtonPalette_BtnSweMarDelta),
                     "Exception: " + e.Message);
             }
         }
     }
 
-    internal class MapButtonPalette_BtnSweDeltaAprToMay : Button
+    internal class MapButtonPalette_BtnSweAprDelta : Button
     {
         protected override async void OnClick()
         {
@@ -569,13 +569,13 @@ namespace bagis_pro.Buttons
             catch (Exception e)
             {
                 MessageBox.Show("Unable to display SWE Delta map!!" + e.Message, "BAGIS-PRO");
-                Module1.Current.ModuleLogManager.LogError(nameof(MapButtonPalette_BtnSweDeltaAprToMay),
+                Module1.Current.ModuleLogManager.LogError(nameof(MapButtonPalette_BtnSweAprDelta),
                     "Exception: " + e.Message);
             }
         }
     }
 
-    internal class MapButtonPalette_BtnSweDeltaMayToJun : Button
+    internal class MapButtonPalette_BtnSweMayDelta : Button
     {
         protected override async void OnClick()
         {
@@ -592,13 +592,13 @@ namespace bagis_pro.Buttons
             catch (Exception e)
             {
                 MessageBox.Show("Unable to display SWE Delta map!!" + e.Message, "BAGIS-PRO");
-                Module1.Current.ModuleLogManager.LogError(nameof(MapButtonPalette_BtnSweDeltaMayToJun),
+                Module1.Current.ModuleLogManager.LogError(nameof(MapButtonPalette_BtnSweMayDelta),
                     "Exception: " + e.Message);
             }
         }
     }
 
-    internal class MapButtonPalette_BtnSweDeltaJunToJul : Button
+    internal class MapButtonPalette_BtnSweJunDelta : Button
     {
         protected override async void OnClick()
         {
@@ -615,7 +615,7 @@ namespace bagis_pro.Buttons
             catch (Exception e)
             {
                 MessageBox.Show("Unable to display SWE Delta map!!" + e.Message, "BAGIS-PRO");
-                Module1.Current.ModuleLogManager.LogError(nameof(MapButtonPalette_BtnSweDeltaJunToJul),
+                Module1.Current.ModuleLogManager.LogError(nameof(MapButtonPalette_BtnSweJunDelta),
                     "Exception: " + e.Message);
             }
         }

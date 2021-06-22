@@ -52,6 +52,7 @@ namespace bagis_pro.BA_Objects
         public double SubrangeElevMin;
         public double SubrangeElevMax;
         public int AspectDirectionsCount;
+        public double PrecipVolumeKaf = -1;
         public DateTime DateBagisSettingsConverted;
         public string DateCreatedText
         {

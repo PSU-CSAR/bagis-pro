@@ -2020,6 +2020,19 @@ namespace bagis_pro
                 double dblLabelMin = arrReturnValues[IDX_LABEL_MIN];
                 double dblLabelMax = arrReturnValues[IDX_LABEL_MAX];
 
+                // Need to set stretch min and max to same value so that white correctly displays 0 on all maps
+                // Check min and max values for whichever has the greatest absolute value
+                // Set min to the negative of that number and max to the positive of that number.
+                // https://community.esri.com/t5/arcgis-mapping-and-charting/set-meaningful-break-value-in-divergent-color-ramp/td-p/393182
+                if (Math.Abs(dblStretchMin) > Math.Abs(dblStretchMax))
+                {
+                    dblStretchMax = Math.Abs(dblStretchMin);
+                }
+                else if (Math.Abs(dblStretchMin) < Math.Abs(dblStretchMax))
+                {
+                    dblStretchMin = -1 * dblStretchMax;
+                }
+
                 success = await MapTools.DisplayStretchRasterWithSymbolAsync(uri, Constants.LAYER_NAMES_SWE_DELTA[idxDefaultDeltaMonth], "ColorBrewer Schemes (RGB)",
                     "Red-Blue (Continuous)", 0, false, true, dblStretchMin, dblStretchMax, dblLabelMin,
                     dblLabelMax);
@@ -2047,28 +2060,28 @@ namespace bagis_pro
                             switch (idx)
                             {
                                 case 0:     //Dec - Nov SWE
-                                    Module1.ActivateState("MapButtonPalette_BtnSweDeltaNovToDec_State");
+                                    Module1.ActivateState("MapButtonPalette_BtnSweNovDelta_State");
                                     break;
                                 case 1:     //Jan - Dec SWE
-                                    Module1.ActivateState("MapButtonPalette_BtnSweDeltaDecToJan_State");
+                                    Module1.ActivateState("MapButtonPalette_BtnSweDecDelta_State");
                                     break;
                                 case 2:     //Feb - Jan SWE
-                                    Module1.ActivateState("MapButtonPalette_BtnSweDeltaJanToFeb_State");
+                                    Module1.ActivateState("MapButtonPalette_BtnSweJanDelta_State");
                                     break;
                                 case 3:     //Mar - Feb SWE
-                                    Module1.ActivateState("MapButtonPalette_BtnSweDeltaFebToMar_State");
+                                    Module1.ActivateState("MapButtonPalette_BtnSweFebDelta_State");
                                     break;
                                 case 4:     //Apr - Mar SWE
-                                    Module1.ActivateState("MapButtonPalette_BtnSweDeltaMarToApr_State");
+                                    Module1.ActivateState("MapButtonPalette_BtnSweMarDelta_State");
                                     break;
                                 case 5:     //May - Apr SWE
-                                    Module1.ActivateState("MapButtonPalette_BtnSweDeltaAprToMay_State");
+                                    Module1.ActivateState("MapButtonPalette_BtnSweAprDelta_State");
                                     break;
                                 case 6:     //Jun - May SWE
-                                    Module1.ActivateState("MapButtonPalette_BtnSweDeltaMayToJun_State");
+                                    Module1.ActivateState("MapButtonPalette_BtnSweMayDelta_State");
                                     break;
                                 case 7:     //Jul - Jun SWE
-                                    Module1.ActivateState("MapButtonPalette_BtnSweDeltaJunToJul_State");
+                                    Module1.ActivateState("MapButtonPalette_BtnSweJunDelta_State");
                                     break;
                             }
                         }

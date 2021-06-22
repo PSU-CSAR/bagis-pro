@@ -85,14 +85,14 @@
           <button refID="MapButtonPalette_BtnSitesLocationZone" />
           <button refID="MapButtonPalette_BtnCriticalPrecipZone" />
           <button refID="MapButtonPalette_BtnPublicLandOwnership" />
-          <button refID="MapButtonPalette_BtnSweDeltaNovToDec" />
-          <button refID="MapButtonPalette_BtnSweDeltaDecToJan" />
-          <button refID="MapButtonPalette_BtnSweDeltaJanToFeb" />
-          <button refID="MapButtonPalette_BtnSweDeltaFebToMar" />
-          <button refID="MapButtonPalette_BtnSweDeltaMarToApr" />
-          <button refID="MapButtonPalette_BtnSweDeltaAprToMay" />
-          <button refID="MapButtonPalette_BtnSweDeltaMayToJun" />
-          <button refID="MapButtonPalette_BtnSweDeltaJunToJul" />
+          <button refID="MapButtonPalette_BtnSweNovDelta" />
+          <button refID="MapButtonPalette_BtnSweDecDelta" />
+          <button refID="MapButtonPalette_BtnSweJanDelta" />
+          <button refID="MapButtonPalette_BtnSweFebDelta" />
+          <button refID="MapButtonPalette_BtnSweMarDelta" />
+          <button refID="MapButtonPalette_BtnSweAprDelta" />
+          <button refID="MapButtonPalette_BtnSweMayDelta" />
+          <button refID="MapButtonPalette_BtnSweJunDelta" />
         </buttonPalette>
       </palettes>
       <controls>
@@ -207,42 +207,42 @@
           <tooltip heading="Display Map">
             ToolTip<disabledText /></tooltip>
         </button>
-        <button id="MapButtonPalette_BtnSweDeltaNovToDec" caption="Dec-Nov SWE Change" className="bagis_pro.Buttons.MapButtonPalette_BtnSweDeltaNovToDec" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSweDeltaNovToDec_Condition">
+        <button id="MapButtonPalette_BtnSweNovDelta" caption="November SWE Delta" className="bagis_pro.Buttons.MapButtonPalette_BtnSweNovDelta" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSweNovDelta_Condition">
           <tooltip heading="Display Map">
             ToolTip<disabledText />
           </tooltip>
         </button>
-        <button id="MapButtonPalette_BtnSweDeltaDecToJan" caption="Jan-Dec SWE Change" className="bagis_pro.Buttons.MapButtonPalette_BtnSweDeltaDecToJan" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSweDeltaDecToJan_Condition">
+        <button id="MapButtonPalette_BtnSweDecDelta" caption="December SWE Delta" className="bagis_pro.Buttons.MapButtonPalette_BtnSweDecDelta" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSweDecDelta_Condition">
           <tooltip heading="Display Map">
             ToolTip<disabledText />
           </tooltip>
         </button>
-        <button id="MapButtonPalette_BtnSweDeltaJanToFeb" caption="Feb-Jan SWE Change" className="bagis_pro.Buttons.MapButtonPalette_BtnSweDeltaJanToFeb" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSweDeltaJanToFeb_Condition">
+        <button id="MapButtonPalette_BtnSweJanDelta" caption="January SWE Delta" className="bagis_pro.Buttons.MapButtonPalette_BtnSweJanDelta" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSweJanDelta_Condition">
           <tooltip heading="Display Map">
             ToolTip<disabledText />
           </tooltip>
         </button>
-        <button id="MapButtonPalette_BtnSweDeltaFebToMar" caption="Mar-Feb SWE Change" className="bagis_pro.Buttons.MapButtonPalette_BtnSweDeltaFebToMar" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSweDeltaFebToMar_Condition">
+        <button id="MapButtonPalette_BtnSweFebDelta" caption="February SWE Delta" className="bagis_pro.Buttons.MapButtonPalette_BtnSweFebDelta" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSweFebDelta_Condition">
           <tooltip heading="Display Map">
             ToolTip<disabledText />
           </tooltip>
         </button>
-        <button id="MapButtonPalette_BtnSweDeltaMarToApr" caption="Apr-Mar SWE Change" className="bagis_pro.Buttons.MapButtonPalette_BtnSweDeltaMarToApr" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSweDeltaMarToApr_Condition">
+        <button id="MapButtonPalette_BtnSweMarDelta" caption="March SWE Delta" className="bagis_pro.Buttons.MapButtonPalette_BtnSweMarDelta" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSweMarDelta_Condition">
           <tooltip heading="Display Map">
             ToolTip<disabledText />
           </tooltip>
         </button>
-        <button id="MapButtonPalette_BtnSweDeltaAprToMay" caption="May-Apr SWE Change" className="bagis_pro.Buttons.MapButtonPalette_BtnSweDeltaAprToMay" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSweDeltaAprToMay_Condition">
+        <button id="MapButtonPalette_BtnSweAprDelta" caption="April SWE Delta" className="bagis_pro.Buttons.MapButtonPalette_BtnSweAprDelta" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSweAprDelta_Condition">
           <tooltip heading="Display Map">
             ToolTip<disabledText />
           </tooltip>
         </button>
-        <button id="MapButtonPalette_BtnSweDeltaMayToJun" caption="Jun-May SWE Change" className="bagis_pro.Buttons.MapButtonPalette_BtnSweDeltaMayToJun" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSweDeltaMayToJun_Condition">
+        <button id="MapButtonPalette_BtnSweMayDelta" caption="May SWE Delta" className="bagis_pro.Buttons.MapButtonPalette_BtnSweMayDelta" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSweMayDelta_Condition">
           <tooltip heading="Display Map">
             ToolTip<disabledText />
           </tooltip>
         </button>
-        <button id="MapButtonPalette_BtnSweDeltaJunToJul" caption="Jul-Jun SWE Change" className="bagis_pro.Buttons.MapButtonPalette_BtnSweDeltaJunToJul" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSweDeltaJunToJul_Condition">
+        <button id="MapButtonPalette_BtnSweJunDelta" caption="June SWE Delta" className="bagis_pro.Buttons.MapButtonPalette_BtnSweJunDelta" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSweJunDelta_Condition">
           <tooltip heading="Display Map">
             ToolTip<disabledText />
           </tooltip>
@@ -441,29 +441,29 @@
     <insertCondition id="MapButtonPalette_BtnPublicLandOwnership_Condition" caption="Map Disabled">
       <state id="MapButtonPalette_BtnPublicLandOwnership_State" />
     </insertCondition>
-    <insertCondition id="MapButtonPalette_BtnSweDeltaNovToDec_Condition" caption="Map Disabled">
-      <state id="MapButtonPalette_BtnSweDeltaNovToDec_State" />
+    <insertCondition id="MapButtonPalette_BtnSweNovDelta_Condition" caption="Map Disabled">
+      <state id="MapButtonPalette_BtnSweNovDelta_State" />
     </insertCondition>
-    <insertCondition id="MapButtonPalette_BtnSweDeltaDecToJan_Condition" caption="Map Disabled">
-      <state id="MapButtonPalette_BtnSweDeltaDecToJan_State" />
+    <insertCondition id="MapButtonPalette_BtnSweDecDelta_Condition" caption="Map Disabled">
+      <state id="MapButtonPalette_BtnSweDecDelta_State" />
     </insertCondition>
-    <insertCondition id="MapButtonPalette_BtnSweDeltaJanToFeb_Condition" caption="Map Disabled">
-      <state id="MapButtonPalette_BtnSweDeltaJanToFeb_State" />
+    <insertCondition id="MapButtonPalette_BtnSweJanDelta_Condition" caption="Map Disabled">
+      <state id="MapButtonPalette_BtnSweJanDelta_State" />
     </insertCondition>
-    <insertCondition id="MapButtonPalette_BtnSweDeltaFebToMar_Condition" caption="Map Disabled">
-      <state id="MapButtonPalette_BtnSweDeltaFebToMar_State" />
+    <insertCondition id="MapButtonPalette_BtnSweFebDelta_Condition" caption="Map Disabled">
+      <state id="MapButtonPalette_BtnSweFebDelta_State" />
     </insertCondition>
-    <insertCondition id="MapButtonPalette_BtnSweDeltaMarToApr_Condition" caption="Map Disabled">
-      <state id="MapButtonPalette_BtnSweDeltaMarToApr_State" />
+    <insertCondition id="MapButtonPalette_BtnSweMarDelta_Condition" caption="Map Disabled">
+      <state id="MapButtonPalette_BtnSweMarDelta_State" />
     </insertCondition>
-    <insertCondition id="MapButtonPalette_BtnSweDeltaAprToMay_Condition" caption="Map Disabled">
-      <state id="MapButtonPalette_BtnSweDeltaAprToMay_State" />
+    <insertCondition id="MapButtonPalette_BtnSweAprDelta_Condition" caption="Map Disabled">
+      <state id="MapButtonPalette_BtnSweAprDelta_State" />
     </insertCondition>
-        <insertCondition id="MapButtonPalette_BtnSweDeltaMayToJun_Condition" caption="Map Disabled">
-      <state id="MapButtonPalette_BtnSweDeltaMayToJun_State" />
+        <insertCondition id="MapButtonPalette_BtnSweMayDelta_Condition" caption="Map Disabled">
+      <state id="MapButtonPalette_BtnSweMayDelta_State" />
     </insertCondition>
-    <insertCondition id="MapButtonPalette_BtnSweDeltaJunToJul_Condition" caption="Map Disabled">
-      <state id="MapButtonPalette_BtnSweDeltaJunToJul_State" />
+    <insertCondition id="MapButtonPalette_BtnSweJunDelta_Condition" caption="Map Disabled">
+      <state id="MapButtonPalette_BtnSweJunDelta_State" />
     </insertCondition>
     <insertCondition id="MapButtonPalette_BtnPrecipContrib_Condition" caption="Map Disabled">
       <state id="MapButtonPalette_BtnPrecipContrib_State" />

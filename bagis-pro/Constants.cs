@@ -94,9 +94,9 @@ namespace bagis_pro
         public static readonly string[] FILE_EXPORT_MAPS_SWE = new string[] { "map_snodas_swe_november.pdf", "map_snodas_swe_december.pdf", "map_snodas_swe_january.pdf",
                                                                               "map_snodas_swe_february.pdf", "map_snodas_swe_march.pdf", "map_snodas_swe_april.pdf",
                                                                               "map_snodas_swe_may.pdf", "map_snodas_swe_june.pdf", "map_snodas_swe_july.pdf"};
-        public static readonly string[] FILE_EXPORT_MAPS_SWE_DELTA = new string[] { "map_swe_dec_minus_nov.pdf", "map_swe_jan_minus_dec.pdf", "map_swe_feb_minus_jan.pdf",
-                                                                                    "map_swe_mar_minus_feb.pdf", "map_swe_apr_minus_mar.pdf", "map_swe_may_minus_apr.pdf",
-                                                                                    "map_swe_jun_minus_may.pdf", "map_swe_jul_minus_jun.pdf"};
+        public static readonly string[] FILE_EXPORT_MAPS_SWE_DELTA = new string[] { "map_nov_swe_delta.pdf", "map_dec_swe_delta.pdf", "map_jan_swe_delta.pdf",
+                                                                                    "map_feb_swe_delta.pdf", "map_mar_swe_delta.pdf", "map_apr_swe_delta.pdf",
+                                                                                    "map_may_swe_delta.pdf", "map_jun_swe_delta.pdf"};
         public const string FILE_EXPORT_MAP_ROADS_PDF = "map_roads.pdf";
         public const string FILE_EXPORT_MAP_PUBLIC_LAND_ZONES_PDF = "map_public_land_zones.pdf";
         public const string FILE_EXPORT_MAP_BELOW_TREELINE_PDF = "map_below_treeline.pdf";
@@ -113,19 +113,16 @@ namespace bagis_pro
         public const string FILE_EXPORT_SITE_ANALYSIS_REPORT_PDF = "site_analysis_report.pdf";
         public const string FILE_EXPORT_CRITICAL_PRECIPITATION_ZONES_PDF = "critical_precipitation_zones.pdf";
         public const string FILE_EXPORT_MAP_PRECIPITATION_CONTRIBUTION_PDF = "map_precipitation_contrib.pdf";
+        public const string FILE_EXPORT_MAP_SWE_DELTA_ALL_PDF = "map_all_swe_delta.pdf";
+        public const string FILE_EXPORT_MAP_SNODAS_ALL_PDF = "map_all_snodas.pdf";
         // List of files in the watershed PDF map package and the order in which they will be assembled
         public static string[] FILES_EXPORT_WATERSHED_PDF = new string[]
         { FILE_TITLE_PAGE_PDF, FILE_EXPORT_MAP_ELEV_PDF, FILE_EXPORT_MAP_ASPECT_PDF,
           FILE_EXPORT_MAP_SLOPE_PDF, FILE_EXPORT_CHART_ASPECT_PDF, FILE_EXPORT_CHART_SLOPE_PDF,
           FILE_EXPORT_MAP_SNOTEL_PDF, FILE_EXPORT_MAP_SCOS_PDF, FILE_EXPORT_MAP_SNOTEL_AND_SCOS_PDF,
           FILE_EXPORT_MAP_PRECIPITATION_PDF, FILE_EXPORT_CHART_ELEV_PRECIP_CORR_PDF, FILE_EXPORT_MAP_PRECIPITATION_CONTRIBUTION_PDF,
-          FILE_EXPORT_MAPS_SWE[0], FILE_EXPORT_MAPS_SWE[1], FILE_EXPORT_MAPS_SWE[2],
-          FILE_EXPORT_MAPS_SWE[3], FILE_EXPORT_MAPS_SWE[4], FILE_EXPORT_MAPS_SWE[5],
-          FILE_EXPORT_MAPS_SWE[6], FILE_EXPORT_MAPS_SWE[7], FILE_EXPORT_MAPS_SWE[8],
-          FILE_EXPORT_MAPS_SWE_DELTA[0], FILE_EXPORT_MAPS_SWE_DELTA[1], FILE_EXPORT_MAPS_SWE_DELTA[2],
-          FILE_EXPORT_MAPS_SWE_DELTA[3], FILE_EXPORT_MAPS_SWE_DELTA[4], FILE_EXPORT_MAPS_SWE_DELTA[5],
-          FILE_EXPORT_MAPS_SWE_DELTA[6], FILE_EXPORT_MAPS_SWE_DELTA[7], FILE_EXPORT_CHART_AREA_ELEV_PRECIP_SITE_PDF,
-          FILE_EXPORT_CHART_PRECIP_REPRESENT_PDF,
+          FILE_EXPORT_MAP_SNODAS_ALL_PDF, FILE_EXPORT_MAP_SWE_DELTA_ALL_PDF,
+          FILE_EXPORT_CHART_AREA_ELEV_PRECIP_SITE_PDF, FILE_EXPORT_CHART_PRECIP_REPRESENT_PDF,
           FILE_EXPORT_MAP_CRITICAL_PRECIPITATION_ZONES_PDF, FILE_EXPORT_TABLE_PRECIP_REPRESENT_PDF
         };    
         // List of files in the site analysis PDF map package and the order in which they will be assembled
@@ -156,11 +153,12 @@ namespace bagis_pro
         public static readonly string[] FILES_SWE_DELTA = new string[] { "swe_dec_minus_nov", "swe_jan_minus_dec", "swe_feb_minus_jan",
                                                                          "swe_mar_minus_feb", "swe_apr_minus_mar", "swe_may_minus_apr",
                                                                          "swe_jun_minus_may", "swe_jul_minus_jun"};
-        public static readonly string[] LAYER_NAMES_SWE_DELTA = new string[] { "Dec - Nov SWE", "Jan - Dec SWE", "Feb - Jan SWE", "Mar - Feb SWE",
-                                                                               "Apr - Mar SWE", "May - Apr SWE", "Jun - May SWE", "Jul - Jun SWE" };
-        public static readonly string[] MAP_TITLES_SWE_DELTA = new string[] { "DEC 01 - NOV 01 SWE CHANGE", "JAN 01 - DEC 01 SWE CHANGE", "FEB 01 - JAN 01 SWE CHANGE",
-                                                                              "MAR 01 - FEB 01 SWE CHANGE", "APR 01 - MAR 01 SWE CHANGE", "MAY 01 - APR 01 SWE CHANGE",
-                                                                              "JUN 01 - MAY 01 SWE CHANGE", "JUL 01 - JUN 01 SWE CHANGE"};
+        public static readonly string[] LAYER_NAMES_SWE_DELTA = new string[] { "November SWE Delta", "December SWE Delta", "January SWE Delta",
+                                                                              "February SWE Delta", "March SWE Delta", "April SWE Delta",
+                                                                              "May SWE Delta", "June SWE Delta"};
+        public static readonly string[] MAP_TITLES_SWE_DELTA = new string[] { "AVERAGE NOVEMBER SWE DELTA", "AVERAGE DECEMBER SWE DELTA", "AVERAGE JANUARY SWE DELTA",
+                                                                              "AVERAGE FEBRUARY SWE DELTA", "AVERAGE MARCH SWE DELTA", "AVERAGE APRIL SWE DELTA",
+                                                                              "AVERAGE MAY SWE DELTA", "AVERAGE JUNE SWE DELTA"};
         public const string FILE_BAGIS_MAP_PARAMETERS = "map_parameters.txt";
         public const string URI_IMAGE_SERVER = "/ImageServer";
         public const string URI_DESKTOP_SETTINGS = "/api/rest/desktop/settings/";
@@ -241,14 +239,14 @@ namespace bagis_pro
                                                                 "MapButtonPalette_BtnSweJul_State",
                                                                 "MapButtonPalette_BtnSweNov_State",
                                                                 "MapButtonPalette_BtnSweDec_State",
-                                                                "MapButtonPalette_BtnSweDeltaNovToDec_State",
-                                                                "MapButtonPalette_BtnSweDeltaDecToJan_State",
-                                                                "MapButtonPalette_BtnSweDeltaJanToFeb_State",
-                                                                "MapButtonPalette_BtnSweDeltaFebToMar_State",
-                                                                "MapButtonPalette_BtnSweDeltaMarToApr_State",
-                                                                "MapButtonPalette_BtnSweDeltaAprToMay_State",
-                                                                "MapButtonPalette_BtnSweDeltaMayToJun_State",
-                                                                "MapButtonPalette_BtnSweDeltaJunToJul_State"};
+                                                                "MapButtonPalette_BtnSweNovDelta_State",
+                                                                "MapButtonPalette_BtnSweDecDelta_State",
+                                                                "MapButtonPalette_BtnSweJanDelta_State",
+                                                                "MapButtonPalette_BtnSweFebDelta_State",
+                                                                "MapButtonPalette_BtnSweMarDelta_State",
+                                                                "MapButtonPalette_BtnSweAprDelta_State",
+                                                                "MapButtonPalette_BtnSweMayDelta_State",
+                                                                "MapButtonPalette_BtnSweJunDelta_State"};
         public static string[] STATES_SITE_ANALYSIS_MAP_BUTTONS => new string[] {
                                                                 "MapButtonPalette_BtnRoads_State",
                                                                 "MapButtonPalette_BtnBelowTreeline_State",

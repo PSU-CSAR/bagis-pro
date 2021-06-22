@@ -592,6 +592,18 @@ namespace bagis_pro
                 //oddsRange.Formula = strOddsFormula;
             }
             pPRSIMWS.Columns.AutoFit();   // re-size every column to best fit after data is written
+
+            BA_Objects.Analysis oAnalysis = GeneralTools.GetAnalysisSettings(Module1.Current.Aoi.FilePath);
+            if (oAnalysis != null)
+            {
+                oAnalysis.PrecipVolumeKaf = total_vol / 1000;   //total volume converted to KAF
+                BA_ReturnCode success = GeneralTools.SaveAnalysisSettings(Module1.Current.Aoi.FilePath, oAnalysis);
+                if (success == BA_ReturnCode.Success)
+                {
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(EstimatePrecipitationVolume),
+                        "Saved total precip volume to " + oAnalysis.PrecipVolumeKaf + " in analysis.xml file");
+                }
+            }
             return intCount;
         }
 

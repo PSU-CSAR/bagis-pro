@@ -42,7 +42,8 @@ namespace bagis_pro.Buttons
                 Module1.Current.Aoi.StationName = arrValues[1];
 
                 // Delete any old PDF files
-                foreach (var item in Constants.FILES_EXPORT_SITE_ANALYSIS_PDF)
+                string[] arrFilesToDelete = Constants.FILES_EXPORT_WATERSHED_PDF.Concat(Constants.FILES_EXPORT_SITE_ANALYSIS_PDF).ToArray();
+                foreach (var item in arrFilesToDelete)
                 {
                     string strPath = GeneralTools.GetFullPdfFileName(item);
                     if (System.IO.File.Exists(strPath))

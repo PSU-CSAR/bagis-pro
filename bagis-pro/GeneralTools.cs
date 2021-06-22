@@ -113,12 +113,28 @@ namespace bagis_pro
                 var success = await ws.GetPortalFile(Constants.PORTAL_ORGANIZATION, documentId, Module1.Current.SettingsPath + "\\" + Constants.FOLDER_SETTINGS +
                     "\\" + Constants.FILE_ANNUAL_RUNOFF_CSV);
 
+                // Retrieve AOI Analysis object with settings for future use
+                BA_Objects.Analysis oAnalysis = GetAnalysisSettings(Module1.Current.Aoi.FilePath);
+
                 // Query for the annual runoff value
-                double dblRunoffRatio = QueryAnnualRunoffValue(Module1.Current.Aoi.StationTriplet);
+                double dblAnnualRunoff = QueryAnnualRunoffValue(Module1.Current.Aoi.StationTriplet);
+                double dblRunoffRatio = -1;
                 string strRunoffRatio = "No stream flow data";  // This is what we print if we couldn't get the runoff numbers
-                if (dblRunoffRatio >= 0)
+                if (dblAnnualRunoff >= 0)
                 {
-                    strRunoffRatio = Convert.ToString(dblRunoffRatio);
+                    if (oAnalysis != null)
+                    {
+                        if (oAnalysis.PrecipVolumeKaf > 0)
+                        {
+                            dblRunoffRatio = dblAnnualRunoff / oAnalysis.PrecipVolumeKaf;
+                            strRunoffRatio = dblRunoffRatio.ToString("0.##%");
+                        }
+                        else
+                        {
+                            Module1.Current.ModuleLogManager.LogDebug(nameof(GenerateMapsTitlePageAsync),
+                                "PrecipVolumeKaf is missing from the analysis.xml file. Please generate the Excel tables before generating the title page!");
+                        }
+                    }            
                 }
 
                 // Query for the drainage area
@@ -162,27 +178,16 @@ namespace bagis_pro
                 }
 
                 // Retrieve Represented Area Parameters
-                string settingsPath = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAPS + "\\" +
-                    Constants.FILE_SETTINGS;
                 double siteElevRange = 0;
                 string siteElevRangeUnits = "";
                 double siteBufferDistance = 0;
                 string siteBufferDistanceUnits = "";
-                if (File.Exists(settingsPath))
+                if (oAnalysis != null)
                 {
-                    BA_Objects.Analysis oAnalysis = null;
-                    using (var file = new StreamReader(settingsPath))
-                    {
-                        var reader = new System.Xml.Serialization.XmlSerializer(typeof(BA_Objects.Analysis));
-                        oAnalysis = (BA_Objects.Analysis)reader.Deserialize(file);
-                    }
-                    if (oAnalysis != null)
-                    {
-                        siteElevRange = oAnalysis.UpperRange;
-                        siteElevRangeUnits = oAnalysis.ElevUnitsText.ToLower();
-                        siteBufferDistance = oAnalysis.BufferDistance;
-                        siteBufferDistanceUnits = oAnalysis.BufferUnitsText.ToLower();
-                    }
+                    siteElevRange = oAnalysis.UpperRange;
+                    siteElevRangeUnits = oAnalysis.ElevUnitsText.ToLower();
+                    siteBufferDistance = oAnalysis.BufferDistance;
+                    siteBufferDistanceUnits = oAnalysis.BufferUnitsText.ToLower();
                 }
 
                 // Calculating percent represented area
@@ -1486,6 +1491,58 @@ namespace bagis_pro
             {
                 arrAllFiles = Constants.FILES_EXPORT_SITE_ANALYSIS_PDF;
             }
+            else
+            {
+                // Combine SNODAS maps into a single .pdf document
+                // Initialize output document
+                PdfDocument sweDeltaOutputDocument = new PdfDocument();
+                int idx = 0;
+                foreach (var strFileName in Constants.FILE_EXPORT_MAPS_SWE_DELTA)
+                {
+                    string fullPath = GetFullPdfFileName(strFileName);
+                    if (File.Exists(fullPath))
+                    {
+                        PdfDocument inputDocument = PdfReader.Open(fullPath, PdfDocumentOpenMode.Import);
+                        // Iterate pages
+                        int count = inputDocument.PageCount;
+                        for (idx = 0; idx < count; idx++)
+                        {
+                            // Get the page from the external document...
+                            PdfPage page = inputDocument.Pages[idx];
+                            sweDeltaOutputDocument.AddPage(page);
+                            File.Delete(fullPath);
+                        }
+                    }
+                }
+                if (idx > 0)
+                {
+                    sweDeltaOutputDocument.Save(GetFullPdfFileName(Constants.FILE_EXPORT_MAP_SWE_DELTA_ALL_PDF));
+                }
+                PdfDocument snodasOutputDocument = new PdfDocument();
+                idx = 0;
+                foreach (var strFileName in Constants.FILE_EXPORT_MAPS_SWE)
+                {
+                    string fullPath = GetFullPdfFileName(strFileName);
+                    if (File.Exists(fullPath))
+                    {
+                        PdfDocument inputDocument = PdfReader.Open(fullPath, PdfDocumentOpenMode.Import);
+                        // Iterate pages
+                        int count = inputDocument.PageCount;
+                        for (idx = 0; idx < count; idx++)
+                        {
+                            // Get the page from the external document...
+                            PdfPage page = inputDocument.Pages[idx];
+                            snodasOutputDocument.AddPage(page);
+                            File.Delete(fullPath);
+                        }
+                    }
+                }
+                if (idx > 0)
+                {
+                    snodasOutputDocument.Save(GetFullPdfFileName(Constants.FILE_EXPORT_MAP_SNODAS_ALL_PDF));
+                }
+
+            }
             foreach (string strFileName in arrAllFiles)
             {
                 string fullPath = GetFullPdfFileName(strFileName);
@@ -1922,6 +1979,34 @@ namespace bagis_pro
                 return Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\"
                     + Module1.Current.Aoi.FileStationName + "_" + strBaseFileName;
             } 
+        }
+
+        public static BA_Objects.Analysis GetAnalysisSettings(string strAoiPath)
+        {
+            BA_Objects.Analysis oAnalysis = new BA_Objects.Analysis();
+            string strSettingsFile = strAoiPath + "\\" + Constants.FOLDER_MAPS + "\\" +
+                Constants.FILE_SETTINGS;
+            if (File.Exists(strSettingsFile))
+            {
+                using (var file = new StreamReader(strSettingsFile))
+                {
+                    var reader = new System.Xml.Serialization.XmlSerializer(typeof(BA_Objects.Analysis));
+                    oAnalysis = (BA_Objects.Analysis)reader.Deserialize(file);
+                }
+            }
+            return oAnalysis;
+        }
+
+        public static BA_ReturnCode SaveAnalysisSettings(string strAoiPath, BA_Objects.Analysis oAnalysis)
+        {
+            string strSettingsFile = strAoiPath + "\\" + Constants.FOLDER_MAPS + "\\" +
+                Constants.FILE_SETTINGS;
+            using (var file_stream = File.Create(strSettingsFile))
+            {
+                var serializer = new System.Xml.Serialization.XmlSerializer(typeof(BA_Objects.Analysis));
+                serializer.Serialize(file_stream, oAnalysis);
+                return BA_ReturnCode.Success;
+            }
         }
 
 
