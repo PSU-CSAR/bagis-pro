@@ -1538,7 +1538,6 @@ namespace bagis_pro
         {
             IList<string> lstCriticalZones = new List<string>();
             Dictionary<string, double> dictPctVolume = new Dictionary<string, double>();
-            IList<string> lstMinVolumeZones = new List<string>();
             Dictionary<string, double> dictMeanVolumeZones = new Dictionary<string, double>();
             int intZones = lstIntervals.Count;
             double minVolume = 100 / (2.0F * intZones);
@@ -1548,56 +1547,47 @@ namespace bagis_pro
             int idxPctVolume = 15;
             int idxValue = 1;
             int idxMeanVolume = 7;
-            double totalSelectedVolume = 0;
+            double totalSelectedPctVolume = 0;
             while (!string.IsNullOrEmpty(pRange.Text.ToString()))
             {
                 string strZone = Convert.ToString(lstIntervals[currentRow - 3].Value);
+                // Meets minimum mean volume criterium
+                Range meanVolumeRange = pPRSIMWS.Cells[currentRow, idxMeanVolume];
+                bool bMinMeanVolume = false;
+                if (Convert.ToDouble(meanVolumeRange.Value) >= dblMinVolume)
+                {
+                    dictMeanVolumeZones.Add(strZone, Convert.ToDouble(meanVolumeRange.Value));
+                    meanVolumeRange.Interior.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.LightBlue);
+                    bMinMeanVolume = true;
+                }
                 Range pctVolumeRange = pPRSIMWS.Cells[currentRow, idxPctVolume];
                 double pctVolume = Convert.ToDouble(pctVolumeRange.Value);
-                dictPctVolume.Add(strZone, pctVolume);
                 // Meets minimum area pct criterium
                 if (pctVolume > minVolume)
                 {
-                    lstMinVolumeZones.Add(strZone);
-                    pctVolumeRange.Interior.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.Orange);
-                    // Meets minimum mean volume criterium
-                    Range meanVolumeRange = pPRSIMWS.Cells[currentRow, idxMeanVolume];
-                    if (Convert.ToDouble(meanVolumeRange.Value) >= dblMinVolume)
+                    if (bMinMeanVolume == true)
                     {
-                        dictMeanVolumeZones.Add(strZone, Convert.ToDouble(meanVolumeRange.Value));
-                        meanVolumeRange.Interior.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.LightBlue);
+                        dictPctVolume.Add(strZone, pctVolume);
+                        pctVolumeRange.Interior.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.Orange);
                     }
                 }
                 currentRow++;
                 pRange = pPRSIMWS.Cells[currentRow, 1];
                 intCount++;
             }
-            // Intersect minimum area pct and minimum mean volume criteria
-            //var lstIntersect = lstMinVolumeZones.Select(i => i).Intersect(dictMeanVolumeZones.Keys);
-            foreach (var item in dictMeanVolumeZones.Keys)
-            {
-                totalSelectedVolume = totalSelectedVolume + dictMeanVolumeZones[item];
-            }
             var sortedDict = from entry in dictPctVolume orderby entry.Value descending select entry;
-            double runningTotal = 0.0F;
-            double maxSelectedMeanVolume = totalSelectedVolume * dblMaxPctVolume / 100;
-            Module1.Current.ModuleLogManager.LogInfo(nameof(CreateCriticalPrecipitationZones), "Maximum selected mean volume is " + Convert.ToString(maxSelectedMeanVolume));
             foreach (var kvPair in sortedDict)
             {
-                // Check to make sure first 2 criteria have been met
-                if (dictMeanVolumeZones.Keys.Contains(kvPair.Key))
+                double testTotal = totalSelectedPctVolume + kvPair.Value;
+                if (testTotal > dblMaxPctVolume)
                 {
-                    runningTotal = runningTotal + dictMeanVolumeZones[kvPair.Key];                  
-                    if (runningTotal > maxSelectedMeanVolume)
-                    {
-                        break;
-                    }
-                    else
-                    {
-                        // Only include zone if we don't exceed 2/3 of selected mean volume
-                        lstCriticalZones.Add(kvPair.Key);
-                    }
+                    break;
                 }
+                else
+                {
+                    totalSelectedPctVolume = totalSelectedPctVolume + kvPair.Value;
+                    lstCriticalZones.Add(kvPair.Key);
+                }                
             }
             // Add style to critical precipitation zone elevations
             currentRow = 3;
