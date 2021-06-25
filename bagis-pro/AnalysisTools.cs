@@ -1288,6 +1288,9 @@ namespace bagis_pro
             string strClipGdb = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, false);
             string strLayers = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers);
             Uri uriLayers = new Uri(strLayers);
+            string strAnalysis = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Analysis);
+            Uri uriAnalysis = new Uri(strAnalysis);
+
 
             Webservices ws = new Webservices();
             Module1.Current.ModuleLogManager.LogDebug(nameof(ClipSnoLayersAsync),
@@ -1345,10 +1348,18 @@ namespace bagis_pro
                     snotelClipLayer = Constants.FILE_AOI_VECTOR;
                 }
 
-                // Delete the existing snotel layer
+                // Delete the existing snotel layer, snotel represented area, and snotel zones layers
                 if (await GeodatabaseTools.FeatureClassExistsAsync(uriLayers, strFinalOutputLayer[0]))
                 {
                     success = await GeoprocessingTools.DeleteDatasetAsync(strLayers + "\\" + strFinalOutputLayer[0]);
+                }
+                if (await GeodatabaseTools.FeatureClassExistsAsync(uriAnalysis, Constants.FILE_SNOTEL_REPRESENTED))
+                {
+                    success = await GeoprocessingTools.DeleteDatasetAsync(strAnalysis + "\\" + Constants.FILE_SNOTEL_REPRESENTED);
+                }
+                if (await GeodatabaseTools.RasterDatasetExistsAsync(uriAnalysis, Constants.FILE_SNOTEL_ZONE))
+                {
+                    success = await GeoprocessingTools.DeleteDatasetAsync(strAnalysis + "\\" + Constants.FILE_SNOTEL_ZONE);
                 }
 
                 string strWsUri = dictDataSources[Constants.DATA_TYPE_SNOTEL].uri;
@@ -1400,10 +1411,18 @@ namespace bagis_pro
                     snowCosClipLayer = Constants.FILE_AOI_VECTOR;
                 }
 
-                // Delete the existing snotel layer
+                // Delete the existing snow course layer, represented area, and snow course zones
                 if (await GeodatabaseTools.FeatureClassExistsAsync(uriLayers, strFinalOutputLayer[1]))
                 {
                     success = await GeoprocessingTools.DeleteDatasetAsync(strLayers + "\\" + strFinalOutputLayer[1]);
+                }
+                if (await GeodatabaseTools.FeatureClassExistsAsync(uriAnalysis, Constants.FILE_SCOS_REPRESENTED))
+                {
+                    success = await GeoprocessingTools.DeleteDatasetAsync(strAnalysis + "\\" + Constants.FILE_SCOS_REPRESENTED);
+                }
+                if (await GeodatabaseTools.RasterDatasetExistsAsync(uriAnalysis, Constants.FILE_SCOS_ZONE))
+                {
+                    success = await GeoprocessingTools.DeleteDatasetAsync(strAnalysis + "\\" + Constants.FILE_SCOS_ZONE);
                 }
 
                 string strWsUri = dictDataSources[Constants.DATA_TYPE_SNOW_COURSE].uri;
