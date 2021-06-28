@@ -558,6 +558,29 @@ namespace bagis_pro
                     double dblMaxPctVolume = (double)Module1.Current.BatchToolSettings.CriticalPrecipTotalMaxVolPct;
                     IList<string> lstCriticalZoneValues = ExcelTools.CreateCriticalPrecipitationZones(pPRISMWorkSheet, lstIntervals, dblMinVolume, dblMaxPctVolume);
 
+                    // Add textbox comments to worksheet
+                    if (lastRow > 10)
+                    {
+                        ChartTextBoxSettings textBoxSettings = new ChartTextBoxSettings
+                        {
+                            Left = 10,
+                            Top = lastRow * 15,
+                            Height = 80,
+                            Width = 725,
+                            Message = "Critical precipitation elevation zone selection criteria: \r\n" +
+                            "Criterion #1. mean annual precipitation > 20 inches \r\n" +
+                            "Criterion #2. %_VOL > 100% / (2 x zone#) \r\n" +
+                            "Criterion #3. higher %_VOL, but the total %_VOL of the selected zones must not exceed 66.67% (i.e., 2/3) \r\n" +
+                            "Red cells are zones meeting all criteria \r\n" +
+                            "Blue cells are zones meeting criterion #1 \r\n" +
+                            "Orange cells are zones meeting criteria #1 and #2"
+                        };
+                        pPRISMWorkSheet.Shapes.AddTextbox(Microsoft.Office.Core.MsoTextOrientation.msoTextOrientationHorizontal, 
+                                                           textBoxSettings.Left,
+                                                           textBoxSettings.Top, textBoxSettings.Width, textBoxSettings.Height).
+                                                           TextFrame.Characters().Text = textBoxSettings.Message;
+                    }
+                    
                     // Extract Critical Precipitation Zone layer
                     if (lstCriticalZoneValues.Count > 0)
                     {
@@ -694,7 +717,7 @@ namespace bagis_pro
 
                     //Cumulative precip table
                     pathToSave = GetFullPdfFileName(Constants.FILE_EXPORT_TABLE_PRECIP_REPRESENT_PDF);
-                    pPRISMWorkSheet.PageSetup.PrintArea = "$A$1:$P$" + lastRow;
+                    pPRISMWorkSheet.PageSetup.PrintArea = "$A$1:$P$" + (lastRow + 7);  // Extend print area for comment textbox
                     pPRISMWorkSheet.PageSetup.Orientation = XlPageOrientation.xlLandscape;
                     pPRISMWorkSheet.PageSetup.Zoom = false;     // Required to print on one page
                     pPRISMWorkSheet.PageSetup.PaperSize = oReqPaperSize;    // Required to print on one page
