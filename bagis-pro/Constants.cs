@@ -196,6 +196,7 @@ namespace bagis_pro
         public const string FIELD_RUNOFF_STATION_TRIPLET = "stationtriplet";
         public const string FIELD_VOL_ACRE_FT = "VOL_ACRE_FT";
         public const string FIELD_SUM = "SUM";
+        public const string FIELD_NWCCNAME = "nwccname";
 
         public const string DATA_TYPE_SWE = "Snotel SWE";
         public const string DATA_TYPE_PRECIPITATION = "Precipitation";

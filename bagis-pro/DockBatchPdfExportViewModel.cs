@@ -361,11 +361,6 @@ namespace bagis_pro
                         oAoi.Name + "\r\n";
                     File.AppendAllText(_strLogFile, strLogEntry);       // append
 
-                    // Query for station information and save it in the aoi object
-                    string[] arrValues = await AnalysisTools.GetStationValues();
-                    Module1.Current.Aoi.StationTriplet = arrValues[0];
-                    Module1.Current.Aoi.StationName = arrValues[1];
-
                     // Bring GP History tool forward
                     var cmdShowHistory = FrameworkApplication.GetPlugInWrapper("esri_geoprocessing_showToolHistory") as ICommand;
                     if (cmdShowHistory != null)

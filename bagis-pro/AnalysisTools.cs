@@ -406,13 +406,13 @@ namespace bagis_pro
             return sb.ToString();
         }
 
-        public static async Task<string[]> GetStationValues()
+        public static async Task<string[]> GetStationValues(string aoiFilePath)
         {
             string strTriplet = "";
             string strAwdbId = "";
             string strStationName = "";
             string[] arrReturnValues = new string[] { strTriplet, strStationName };
-            Uri ppUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi));
+            Uri ppUri = new Uri(GeodatabaseTools.GetGeodatabasePath(aoiFilePath, GeodatabaseNames.Aoi));
             string strPourpointClassPath = ppUri.LocalPath + "\\" + Constants.FILE_POURPOINT;
             Webservices ws = new Webservices();
             Module1.Current.ModuleLogManager.LogDebug(nameof(GetStationValues),

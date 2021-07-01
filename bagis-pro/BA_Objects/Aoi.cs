@@ -21,9 +21,11 @@ namespace bagis_pro.BA_Objects
         bool m_aoiBatchIsSelected;
         string m_stationTriplet = "";
         string m_stationName = "";
+        string m_NwccName = "";
         string m_fileStationName = "";
         string m_stationNumber = "";
         string m_stationState = "";
+        public string StationName = "";
 
         public Aoi()
         {
@@ -147,15 +149,15 @@ namespace bagis_pro.BA_Objects
             }
         }
 
-        public string StationName
+        public string NwccName
         {
-            get { return m_stationName; }
+            get { return m_NwccName; }
             set
             {
-                m_stationName = value;
-                if (! string.IsNullOrEmpty(m_stationName))
+                m_NwccName = value;
+                if (! string.IsNullOrEmpty(m_NwccName))
                 {
-                    m_fileStationName = m_stationName.Replace(' ', '_');
+                    m_fileStationName = m_NwccName.Replace(' ', '_');
                 }                
             }
         }

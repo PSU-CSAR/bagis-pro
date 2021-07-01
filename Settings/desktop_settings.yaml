@@ -69,6 +69,7 @@ bagis-pro:
      AnnualRunoffDataDescr: Basin Average Annual Naturalized Runoff Volume (1981-2010)
      AnnualRunoffDataYear: 2021
      PrecipContribZones: 9
+     MasterAoiList: https://services.arcgis.com/SXbDpmb7xQkk44JV/arcgis/rest/services/master_aoi_list_fs/FeatureServer
      Version: 1.0
 
 bagis-p:

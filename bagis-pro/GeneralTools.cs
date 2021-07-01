@@ -264,7 +264,7 @@ namespace bagis_pro
                 // Serialize the title page object
                 BA_Objects.ExportTitlePage tPage = new BA_Objects.ExportTitlePage
                 {
-                    aoi_name = Module1.Current.Aoi.Name,
+                    aoi_name = Module1.Current.Aoi.NwccName,
                     comments = strComments,
                     publisher = strPublisher,
                     local_path = Module1.Current.Aoi.FilePath,
@@ -699,7 +699,7 @@ namespace bagis_pro
                     pChartsWorksheet.PageSetup.FitToPagesTall = 1;
                     pChartsWorksheet.PageSetup.FitToPagesWide = 1;
                     pChartsWorksheet.PageSetup.PrintArea = "$A$1:$M$29";
-                    pChartsWorksheet.PageSetup.CenterHeader = "&C&\"Arial,Bold\"&16 " + Module1.Current.Aoi.StationName;
+                    pChartsWorksheet.PageSetup.CenterHeader = "&C&\"Arial,Bold\"&16 " + Module1.Current.Aoi.NwccName;
                     pChartsWorksheet.ExportAsFixedFormat(XlFixedFormatType.xlTypePDF, pathToSave);
                     Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Published combined chart to PDF");
 
@@ -722,7 +722,7 @@ namespace bagis_pro
                     pPRISMWorkSheet.PageSetup.Zoom = false;     // Required to print on one page
                     pPRISMWorkSheet.PageSetup.PaperSize = oReqPaperSize;    // Required to print on one page
                     pPRISMWorkSheet.PageSetup.PrintGridlines = true;
-                    pPRISMWorkSheet.PageSetup.CenterHeader = "&C&\"Arial,Bold\"&16 " + Module1.Current.Aoi.StationName; ;
+                    pPRISMWorkSheet.PageSetup.CenterHeader = "&C&\"Arial,Bold\"&16 " + Module1.Current.Aoi.NwccName; ;
                     string strTitle = "Precipitation Representation Table";
                     if (!String.IsNullOrEmpty(oAnalysis.PrecipZonesBegin))
                     {
@@ -752,7 +752,7 @@ namespace bagis_pro
                         pPrecipChartWorksheet.PageSetup.PaperSize = oReqPaperSize;
                         pPrecipChartWorksheet.PageSetup.FitToPagesTall = 1;
                         pPrecipChartWorksheet.PageSetup.FitToPagesWide = 1;
-                        pPrecipChartWorksheet.PageSetup.CenterHeader = "&C&\"Arial,Bold\"&16 " + Module1.Current.Aoi.StationName;
+                        pPrecipChartWorksheet.PageSetup.CenterHeader = "&C&\"Arial,Bold\"&16 " + Module1.Current.Aoi.NwccName;
                         pathToSave = GetFullPdfFileName(Constants.FILE_EXPORT_CHART_ELEV_PRECIP_CORR_PDF);
                         pPrecipChartWorksheet.ExportAsFixedFormat(XlFixedFormatType.xlTypePDF, pathToSave);
                         pPrecipChartWorksheet.PageSetup.PaperSize = oPaperSize;
@@ -1074,6 +1074,31 @@ namespace bagis_pro
                         "Unable to locate batch tool settings in BAGIS folder");
                 }
 
+                // Query for station information and save it in the aoi object
+                string[] arrValues = new string[2];
+                QueuedTask.Run(async() =>
+                {
+                    arrValues = await AnalysisTools.GetStationValues(oAoi.FilePath);
+                    if (arrValues.Length == 2)
+                    {
+                        oAoi.StationTriplet = arrValues[0];
+                        oAoi.StationName = arrValues[1];
+                    }
+                    if (!string.IsNullOrEmpty(oAoi.StationTriplet))
+                    {
+                        oAoi.NwccName = await GeneralTools.QueryNwccNameAsync(oAoi.StationTriplet);
+                    }
+                    else
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(SetAoi),
+                            "Unable to retrieve station triplet. Nwcc name could not be found!");
+                    }
+                    if (string.IsNullOrEmpty(oAoi.NwccName))
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(SetAoi),
+                            "Unable to query nwcc name from feature service!");
+                    }
+                });
                 string strSurfacesGdb = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Surfaces, false);
                 var fcPath = strSurfacesGdb + "\\" + Constants.FILE_DEM_FILLED;
                 QueuedTask.Run(() =>
@@ -2030,6 +2055,28 @@ namespace bagis_pro
                 serializer.Serialize(file_stream, oAnalysis);
                 return BA_ReturnCode.Success;
             }
+        }
+
+        public static async Task<string> QueryNwccNameAsync(string stationTriplet)
+        {
+            string strNwccName = "";
+            try
+            {
+                string strMasterUrl = (string) Module1.Current.BatchToolSettings.MasterAoiList;
+                Uri uriMaster = new Uri(strMasterUrl);
+                Webservices ws = new Webservices();
+                QueryFilter queryFilter = new QueryFilter
+                {
+                    WhereClause = Constants.FIELD_STATION_TRIPLET + " = '" + stationTriplet + "'"
+                };
+                strNwccName = await ws.QueryServiceForSingleValueAsync(uriMaster, "0", Constants.FIELD_NWCCNAME, queryFilter);
+            }
+            catch (Exception e)
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(QueryNwccNameAsync),
+                    "Exception: " + e.StackTrace);
+            }
+            return strNwccName;
         }
 
 
