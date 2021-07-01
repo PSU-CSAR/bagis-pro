@@ -1801,7 +1801,9 @@ namespace bagis_pro
                 if (textBox != null)
                 {
                     CIMTextGraphic graphic = (CIMTextGraphic)textBox.GetGraphic();
-                    graphic.Text = "Depth Units = " + Module1.Current.BatchToolSettings.SweDisplayUnits;
+                    // graphic.Text = "Depth Units = " + Module1.Current.BatchToolSettings.SweDisplayUnits;
+                    graphic.Text = "Depth Units = " + Module1.Current.BatchToolSettings.SweDisplayUnits +
+                    "\r\nSource = SNODAS";
                     textBox.SetGraphic(graphic);
                  }
             });
