@@ -655,4 +655,21 @@ namespace bagis_pro.Buttons
         }
     }
 
+    internal class MapButtonPalette_BtnWinterPrecipitation : Button
+    {
+        protected override async void OnClick()
+        {
+            try
+            {
+                Module1.Current.MapFinishedLoading = false;
+                await ToggleMapDisplay.ToggleAsync(BagisMapType.WINTER_PRECIPITATION);
+                Module1.Current.MapFinishedLoading = true;
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show("Unable to display Winter Precipitation map!!" + e.Message, "BAGIS-PRO");
+            }
+        }
+    }
+
 }

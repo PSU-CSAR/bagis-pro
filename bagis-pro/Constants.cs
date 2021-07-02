@@ -197,6 +197,8 @@ namespace bagis_pro
         public const string FIELD_VOL_ACRE_FT = "VOL_ACRE_FT";
         public const string FIELD_SUM = "SUM";
         public const string FIELD_NWCCNAME = "nwccname";
+        public const string FIELD_WINTER_START_MONTH = "winter_start_month";
+        public const string FIELD_WINTER_END_MONTH = "winter_end_month";
 
         public const string DATA_TYPE_SWE = "Snotel SWE";
         public const string DATA_TYPE_PRECIPITATION = "Precipitation";
@@ -229,6 +231,7 @@ namespace bagis_pro
                                                                 "MapButtonPalette_BtnSitesAll_State",
                                                                 "MapButtonPalette_BtnAspect_State",
                                                                 "MapButtonPalette_BtnPrism_State",
+                                                                "MapButtonPalette_BtnWinterPrecipitation_State",
                                                                 "MapButtonPalette_BtnPrecipContrib_State",
                                                                 "MapButtonPalette_BtnSlope_State",
                                                                 "MapButtonPalette_BtnSweJan_State",

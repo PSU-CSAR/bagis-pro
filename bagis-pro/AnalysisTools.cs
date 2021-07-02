@@ -479,12 +479,18 @@ namespace bagis_pro
                         }
                         QueryFilter queryFilter = new QueryFilter();
                         queryFilter.WhereClause = Constants.FIELD_USGS_ID + " = '" + strAwdbQueryId + "'";
-                        strTriplet = await ws.QueryServiceForSingleValueAsync(usgsServiceUri, usgsServiceLayerId, Constants.FIELD_STATION_TRIPLET, queryFilter);
+                        string[] arrSearch = { Constants.FIELD_STATION_TRIPLET, (string)oSettings.gaugeStationName };
+                        string[] arrFound = new string[arrSearch.Length];
+                        arrFound = await ws.QueryServiceForValuesAsync(usgsServiceUri, usgsServiceLayerId, arrSearch, queryFilter);
+                        if (arrFound.Length > 1)
+                        {
+                            strTriplet = arrFound[0];
+                            strStationName = arrFound[1];
+                        }
                         if (!string.IsNullOrEmpty(strTriplet))
                         {
                             bUpdateTriplet = true;
                         }
-                        strStationName = await ws.QueryServiceForSingleValueAsync(usgsServiceUri, usgsServiceLayerId, (string)oSettings.gaugeStationName, queryFilter);
                         if (!string.IsNullOrEmpty(strStationName))
                         {
                             bUpdateStationName = true;
@@ -500,20 +506,26 @@ namespace bagis_pro
                         QueryFilter queryFilter = new QueryFilter();
                         string strNearId = await GeodatabaseTools.QueryTableForSingleValueAsync(ppUri, Constants.FILE_POURPOINT,
                             Constants.FIELD_NEAR_ID, queryFilter);
+                        string[] arrSearch = { Constants.FIELD_STATION_TRIPLET, Constants.FIELD_USGS_ID, (string)oSettings.gaugeStationName };
+                        string[] arrFound = new string[arrSearch.Length];
                         if (!String.IsNullOrEmpty(strNearId))
                         {
                             queryFilter.WhereClause = Constants.FIELD_OBJECT_ID + " = '" + strNearId + "'";
-                            strTriplet = await ws.QueryServiceForSingleValueAsync(usgsServiceUri, usgsServiceLayerId, Constants.FIELD_STATION_TRIPLET, queryFilter);
+                            arrFound = await ws.QueryServiceForValuesAsync(usgsServiceUri, usgsServiceLayerId, arrSearch, queryFilter);
+                            if (arrFound.Length == 3)
+                            {
+                                strTriplet = arrFound[0];
+                                strAwdbId = arrFound[1];
+                                strStationName = arrFound[2];
+                            }
                             if (!String.IsNullOrEmpty(strTriplet))
                             {
                                 bUpdateTriplet = true;
                             }
-                            strAwdbId = await ws.QueryServiceForSingleValueAsync(usgsServiceUri, usgsServiceLayerId, Constants.FIELD_USGS_ID, queryFilter);
                             if (!String.IsNullOrEmpty(strAwdbId))
                             {
                                 bUpdateAwdb = true;
                             }
-                            strStationName = await ws.QueryServiceForSingleValueAsync(usgsServiceUri, usgsServiceLayerId, (string)oSettings.gaugeStationName, queryFilter);
                             if (!string.IsNullOrEmpty(strStationName))
                             {
                                 bUpdateStationName = true;
@@ -3398,11 +3410,16 @@ namespace bagis_pro
             return success;
         }
 
-        public static async Task<BA_ReturnCode> GenerateWinterPrecipitationLayerAsync(string aoiFolderPath)
+        public static async Task<BA_ReturnCode> GenerateWinterPrecipitationLayerAsync(BA_Objects.Aoi oAoi)
         {
-            //@ToDo: The start and end months will come from a csv file in the NRCS Portal
             int intStart = 11;
             int intEnd = 3;
+            if (string.IsNullOrEmpty(oAoi.WinterStartMonth) || string.IsNullOrEmpty(oAoi.WinterEndMonth))
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(GenerateWinterPrecipitationLayerAsync),
+                    "Missing start or end month from aoi master feature service. Unable to generate winter precipitation layer!");
+                return BA_ReturnCode.UnknownError;
+            }
 
             IList<int> lstMonths = new List<int>();
             if (intStart== intEnd)  //only one month is selected
@@ -3430,7 +3447,7 @@ namespace bagis_pro
             }
 
             StringBuilder sb = new StringBuilder();
-            Uri gdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Prism));
+            Uri gdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Prism));
             foreach (var intMonth in lstMonths)
             {
                 string rasterName = "";
@@ -3439,7 +3456,7 @@ namespace bagis_pro
                 else
                     rasterName = "Invalid Value";
                 bool bExists = await GeodatabaseTools.RasterDatasetExistsAsync(gdbUri, rasterName);
-                string strLayerPath = GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Prism, true) + rasterName;
+                string strLayerPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Prism, true) + rasterName;
                 if (bExists)
                 {
                     sb.Append(strLayerPath);
@@ -3461,10 +3478,10 @@ namespace bagis_pro
             {
                 strInputLayerPaths = strInputLayerPaths.Substring(0, strInputLayerPaths.Length - 1);
             }
-            string strOutputPath = GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Analysis, true) 
+            string strOutputPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) 
                 + Constants.FILE_WINTER_PRECIPITATION;
             var parameters = Geoprocessing.MakeValueArray(strInputLayerPaths, strOutputPath, "SUM");
-            var environments = Geoprocessing.MakeEnvironmentArray(workspace: aoiFolderPath);
+            var environments = Geoprocessing.MakeEnvironmentArray(workspace: oAoi.FilePath);
             var gpResult = await Geoprocessing.ExecuteToolAsync("CellStatistics_sa", parameters, environments,
                                             CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
 

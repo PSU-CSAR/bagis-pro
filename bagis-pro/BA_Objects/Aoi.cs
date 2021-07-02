@@ -20,12 +20,13 @@ namespace bagis_pro.BA_Objects
         string m_aoiBatchState;
         bool m_aoiBatchIsSelected;
         string m_stationTriplet = "";
-        string m_stationName = "";
         string m_NwccName = "";
         string m_fileStationName = "";
         string m_stationNumber = "";
         string m_stationState = "";
         public string StationName = "";
+        public string WinterStartMonth = "";
+        public string WinterEndMonth = "";
 
         public Aoi()
         {

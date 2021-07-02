@@ -66,6 +66,7 @@
           <button refID="MapButtonPalette_BtnSlope" />
           <button refID="MapButtonPalette_BtnAspect" />
           <button refID="MapButtonPalette_BtnPrism" />
+          <button refID="MapButtonPalette_BtnWinterPrecipitation" />
           <button refID="MapButtonPalette_BtnPrecipContrib" />
           <button refID="MapButtonPalette_BtnSnotel" />
           <button refID="MapButtonPalette_BtnSnowCourse" />
@@ -280,6 +281,11 @@
             ToolTip<disabledText />
           </tooltip>
         </button>
+        <button id="MapButtonPalette_BtnWinterPrecipitation" caption="Winter Precipitation" className="bagis_pro.Buttons.MapButtonPalette_BtnWinterPrecipitation" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnWinterPrecipitation_Condition">
+          <tooltip heading="Display Map">
+            ToolTip<disabledText />
+          </tooltip>
+        </button>
         <comboBox id="bagis_pro_Buttons_CboCurrentAoi" className="bagis_pro.Buttons.CboCurrentAoi" itemWidth="180" isEditable="false" isReadOnly="true" resizable="true">
           <tooltip heading="Tooltip Heading">Selected AOI<disabledText /></tooltip>
         </comboBox>
@@ -467,6 +473,9 @@
     </insertCondition>
     <insertCondition id="MapButtonPalette_BtnPrecipContrib_Condition" caption="Map Disabled">
       <state id="MapButtonPalette_BtnPrecipContrib_State" />
+    </insertCondition>
+    <insertCondition id="MapButtonPalette_BtnWinterPrecipitation_Condition" caption="Map Disabled">
+      <state id="MapButtonPalette_BtnWinterPrecipitation_State" />
     </insertCondition>
   </conditions>
 </ArcGIS>

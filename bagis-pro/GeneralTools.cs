@@ -1086,17 +1086,23 @@ namespace bagis_pro
                     }
                     if (!string.IsNullOrEmpty(oAoi.StationTriplet))
                     {
-                        oAoi.NwccName = await GeneralTools.QueryNwccNameAsync(oAoi.StationTriplet);
+                        string[] arrResults = await GeneralTools.QueryMasterAoiProperties(oAoi.StationTriplet);
+                        if (arrResults.Length == 3)
+                        {
+                            oAoi.NwccName = arrResults[0];
+                            oAoi.WinterStartMonth = arrResults[1];
+                            oAoi.WinterEndMonth = arrResults[2];
+                        }
+                        else
+                        {
+                            Module1.Current.ModuleLogManager.LogError(nameof(SetAoi),
+                                "Unable to retrieve nwcc name from feature service!");
+                        }
                     }
                     else
                     {
                         Module1.Current.ModuleLogManager.LogError(nameof(SetAoi),
                             "Unable to retrieve station triplet. Nwcc name could not be found!");
-                    }
-                    if (string.IsNullOrEmpty(oAoi.NwccName))
-                    {
-                        Module1.Current.ModuleLogManager.LogError(nameof(SetAoi),
-                            "Unable to query nwcc name from feature service!");
                     }
                 });
                 string strSurfacesGdb = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Surfaces, false);
@@ -2057,9 +2063,9 @@ namespace bagis_pro
             }
         }
 
-        public static async Task<string> QueryNwccNameAsync(string stationTriplet)
+        public static async Task<string[]> QueryMasterAoiProperties(string stationTriplet)
         {
-            string strNwccName = "";
+            string[] arrResults = { };
             try
             {
                 string strMasterUrl = (string) Module1.Current.BatchToolSettings.MasterAoiList;
@@ -2069,14 +2075,20 @@ namespace bagis_pro
                 {
                     WhereClause = Constants.FIELD_STATION_TRIPLET + " = '" + stationTriplet + "'"
                 };
-                strNwccName = await ws.QueryServiceForSingleValueAsync(uriMaster, "0", Constants.FIELD_NWCCNAME, queryFilter);
+                string[] arrSearch = { Constants.FIELD_NWCCNAME, Constants.FIELD_WINTER_START_MONTH, Constants.FIELD_WINTER_END_MONTH };
+                arrResults = await ws.QueryServiceForValuesAsync(uriMaster, "0", arrSearch, queryFilter);
+                if (arrResults.Length != arrSearch.Length)
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(QueryMasterAoiProperties),
+                        "An error occurred while retrieveing properties from the master aoi webservice");
+                }
             }
             catch (Exception e)
             {
-                Module1.Current.ModuleLogManager.LogError(nameof(QueryNwccNameAsync),
+                Module1.Current.ModuleLogManager.LogError(nameof(QueryMasterAoiProperties),
                     "Exception: " + e.StackTrace);
             }
-            return strNwccName;
+            return arrResults;
         }
 
 

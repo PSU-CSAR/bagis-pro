@@ -444,7 +444,7 @@ namespace bagis_pro
 
                 if (winterPrecip == true)
                 {
-                    success = await AnalysisTools.GenerateWinterPrecipitationLayerAsync(Module1.Current.Aoi.FilePath);
+                    success = await AnalysisTools.GenerateWinterPrecipitationLayerAsync(Module1.Current.Aoi);
                     if (success == BA_ReturnCode.Success)
                     {
                         layersPane.Winter_Precip_Checked = false;

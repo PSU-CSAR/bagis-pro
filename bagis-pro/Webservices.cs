@@ -122,7 +122,7 @@ namespace bagis_pro
 
         }
 
-            private async Task<string> GetToken(string userName)
+        private async Task<string> GetToken(string userName)
         {
             string password = "password";
             string url = "https://nrcs.maps.arcgis.com/sharing/rest/generateToken";
@@ -158,9 +158,9 @@ namespace bagis_pro
         /// <param name="fieldName"></param>
         /// <param name="queryFilter"></param>
         /// <returns></returns>
-        public async Task<string> QueryServiceForSingleValueAsync(Uri oWebServiceUri, string layerNumber, string fieldName, QueryFilter queryFilter)
+        public async Task<string[]> QueryServiceForValuesAsync(Uri oWebServiceUri, string layerNumber, string[] fieldNames, QueryFilter queryFilter)
         {
-            string returnValue = "";
+            string[] returnValues = new string[fieldNames.Length];
             await QueuedTask.Run(() =>
             {
                 try
@@ -175,10 +175,13 @@ namespace bagis_pro
                             Feature onlyFeature = (Feature)cursor.Current;
                             if (onlyFeature != null)
                             {
-                                int idx = onlyFeature.FindField(fieldName);
-                                if (idx > -1)
+                                for (int i = 0; i < fieldNames.Length; i++)
                                 {
-                                    returnValue = Convert.ToString(onlyFeature[idx]);
+                                    int idx = onlyFeature.FindField(fieldNames[i]);
+                                    if (idx > -1)
+                                    {
+                                        returnValues[i] = Convert.ToString(onlyFeature[idx]);
+                                    }
                                 }
                             }
 
@@ -187,11 +190,11 @@ namespace bagis_pro
                 }
                 catch (Exception e)
                 {
-                    Module1.Current.ModuleLogManager.LogError(nameof(QueryServiceForSingleValueAsync),
+                    Module1.Current.ModuleLogManager.LogError(nameof(QueryServiceForValuesAsync),
                         "Exception: " + e.Message);
                 }
             });
-            return returnValue;
+            return returnValues;
         }
 
         public async Task<IDictionary<string, dynamic>> QueryDataSourcesAsync(string webserviceUrl)

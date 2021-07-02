@@ -233,6 +233,15 @@ namespace bagis_pro
                     if (success == BA_ReturnCode.Success)
                         Module1.ActivateState("MapButtonPalette_BtnPrism_State");
 
+                    // add winter precpitation layer
+                    strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
+                        Constants.FILE_WINTER_PRECIPITATION;
+                    uri = new Uri(strPath);
+                    success = await MapTools.DisplayRasterWithSymbolAsync(uri, Constants.MAPS_PRISM_ZONE, "ArcGIS Colors",
+                               "Precipitation", "NAME", 30, false);
+                    if (success == BA_ReturnCode.Success)
+                        Module1.ActivateState("MapButtonPalette_BtnPrism_State");
+
                     // add Precipitation Contribution layer
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
                         Constants.FILE_PRECIPITATION_CONTRIBUTION;
