@@ -25,8 +25,8 @@ namespace bagis_pro.BA_Objects
         string m_stationNumber = "";
         string m_stationState = "";
         public string StationName = "";
-        public string WinterStartMonth = "";
-        public string WinterEndMonth = "";
+        public int WinterStartMonth;
+        public int WinterEndMonth;
 
         public Aoi()
         {

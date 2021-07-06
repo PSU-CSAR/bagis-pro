@@ -32,6 +32,7 @@ namespace bagis_pro
         public const string MAPS_CRITICAL_PRECIPITATION_ZONES = "Critical Precipitation";
         public const string MAPS_PUBLIC_LAND_OWNERSHIP = "Public Land Ownership";
         public const string MAPS_PRECIPITATION_CONTRIBUTION = "Precipitation Contribution";
+        public const string MAPS_WINTER_PRECIPITATION = "Winter Precipitation";
 
         public const string MAPS_LEGEND = "Legend";
         public const string MAPS_TITLE = "Title";
@@ -113,6 +114,7 @@ namespace bagis_pro
         public const string FILE_EXPORT_SITE_ANALYSIS_REPORT_PDF = "site_analysis_report.pdf";
         public const string FILE_EXPORT_CRITICAL_PRECIPITATION_ZONES_PDF = "critical_precipitation_zones.pdf";
         public const string FILE_EXPORT_MAP_PRECIPITATION_CONTRIBUTION_PDF = "map_precipitation_contrib.pdf";
+        public const string FILE_EXPORT_MAP_WINTER_PRECIPITATION_PDF = "map_winter_precipitation.pdf";
         public const string FILE_EXPORT_MAP_SWE_DELTA_ALL_PDF = "map_all_swe_delta.pdf";
         public const string FILE_EXPORT_MAP_SNODAS_ALL_PDF = "map_all_snodas.pdf";
         // List of files in the watershed PDF map package and the order in which they will be assembled
@@ -120,8 +122,8 @@ namespace bagis_pro
         { FILE_TITLE_PAGE_PDF, FILE_EXPORT_MAP_ELEV_PDF, FILE_EXPORT_MAP_ASPECT_PDF,
           FILE_EXPORT_MAP_SLOPE_PDF, FILE_EXPORT_CHART_ASPECT_PDF, FILE_EXPORT_CHART_SLOPE_PDF,
           FILE_EXPORT_MAP_SNOTEL_PDF, FILE_EXPORT_MAP_SCOS_PDF, FILE_EXPORT_MAP_SNOTEL_AND_SCOS_PDF,
-          FILE_EXPORT_MAP_PRECIPITATION_PDF, FILE_EXPORT_CHART_ELEV_PRECIP_CORR_PDF, FILE_EXPORT_MAP_PRECIPITATION_CONTRIBUTION_PDF,
-          FILE_EXPORT_MAP_SNODAS_ALL_PDF, FILE_EXPORT_MAP_SWE_DELTA_ALL_PDF,
+          FILE_EXPORT_MAP_PRECIPITATION_PDF, FILE_EXPORT_MAP_WINTER_PRECIPITATION_PDF, FILE_EXPORT_CHART_ELEV_PRECIP_CORR_PDF,
+          FILE_EXPORT_MAP_PRECIPITATION_CONTRIBUTION_PDF, FILE_EXPORT_MAP_SNODAS_ALL_PDF, FILE_EXPORT_MAP_SWE_DELTA_ALL_PDF,
           FILE_EXPORT_CHART_AREA_ELEV_PRECIP_SITE_PDF, FILE_EXPORT_CHART_PRECIP_REPRESENT_PDF,
           FILE_EXPORT_MAP_CRITICAL_PRECIPITATION_ZONES_PDF, FILE_EXPORT_TABLE_PRECIP_REPRESENT_PDF
         };    

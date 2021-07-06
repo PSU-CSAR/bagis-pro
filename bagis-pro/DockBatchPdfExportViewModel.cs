@@ -427,6 +427,13 @@ namespace bagis_pro
                         errorCount++;
                     }
 
+                    // Winter Precipitation
+                    success = await AnalysisTools.GenerateWinterPrecipitationLayerAsync(oAoi);
+                    if (success != BA_ReturnCode.Success)
+                    {
+                        errorCount++;
+                    }
+
                     // Clip SWE
                     success = await AnalysisTools.ClipSweLayersAsync(pBufferDistance, pBufferUnits,
                         strDefaultBufferDistance, strDefaultBufferUnits);

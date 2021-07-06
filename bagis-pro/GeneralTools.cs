@@ -1090,8 +1090,14 @@ namespace bagis_pro
                         if (arrResults.Length == 3)
                         {
                             oAoi.NwccName = arrResults[0];
-                            oAoi.WinterStartMonth = arrResults[1];
-                            oAoi.WinterEndMonth = arrResults[2];
+                            if (! string.IsNullOrEmpty(arrResults[1]))
+                            {
+                                oAoi.WinterStartMonth = Convert.ToInt32(arrResults[1]);
+                            }
+                            if (!string.IsNullOrEmpty(arrResults[2]))
+                            {
+                                oAoi.WinterEndMonth = Convert.ToInt32(arrResults[2]);
+                            }
                         }
                         else
                         {

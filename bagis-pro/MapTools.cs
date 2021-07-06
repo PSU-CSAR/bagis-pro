@@ -71,6 +71,9 @@ namespace bagis_pro
                     //remove existing layers from map frame
                     await MapTools.RemoveLayersfromMapFrame();
 
+                    //retrieve Analysis object
+                    BA_Objects.Analysis oAnalysis = GeneralTools.GetAnalysisSettings(Module1.Current.Aoi.FilePath);
+
                     //add Land Ownership Layer
                     string strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers, true) +
                         Constants.FILE_PUBLIC_LAND;
@@ -233,14 +236,15 @@ namespace bagis_pro
                     if (success == BA_ReturnCode.Success)
                         Module1.ActivateState("MapButtonPalette_BtnPrism_State");
 
-                    // add winter precpitation layer
+                    // add winter precipitation layer
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
                         Constants.FILE_WINTER_PRECIPITATION;
                     uri = new Uri(strPath);
-                    success = await MapTools.DisplayRasterWithSymbolAsync(uri, Constants.MAPS_PRISM_ZONE, "ArcGIS Colors",
-                               "Precipitation", "NAME", 30, false);
+                    success = await MapTools.DisplayRasterWithClassifyAsync(uri, Constants.MAPS_WINTER_PRECIPITATION, "ArcGIS Colors",
+                        "Precipitation", Constants.FIELD_VALUE, 30, ClassificationMethod.EqualInterval, 
+                            Convert.ToInt16(oAnalysis.PrecipZonesIntervalCount) + 1, false);
                     if (success == BA_ReturnCode.Success)
-                        Module1.ActivateState("MapButtonPalette_BtnPrism_State");
+                        Module1.ActivateState("MapButtonPalette_BtnWinterPrecipitation_State");
 
                     // add Precipitation Contribution layer
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
@@ -657,7 +661,7 @@ namespace bagis_pro
 
         public static async Task RemoveLayersfromMapFrame()
         {
-            string[] arrLayerNames = new string[36];
+            string[] arrLayerNames = new string[37];
             arrLayerNames[0] = Constants.MAPS_AOI_BOUNDARY;
             arrLayerNames[1] = Constants.MAPS_STREAMS;
             arrLayerNames[2] = Constants.MAPS_SNOTEL;
@@ -677,7 +681,8 @@ namespace bagis_pro
             arrLayerNames[16] = Constants.MAPS_CRITICAL_PRECIPITATION_ZONES;
             arrLayerNames[17] = Constants.MAPS_PUBLIC_LAND_OWNERSHIP;
             arrLayerNames[18] = Constants.MAPS_PRECIPITATION_CONTRIBUTION;
-            int idxLayerNames = 19;
+            arrLayerNames[19] = Constants.MAPS_WINTER_PRECIPITATION;
+            int idxLayerNames = 20;
             for (int i = 0; i < Constants.LAYER_NAMES_SNODAS_SWE.Length; i++)
             {
                 arrLayerNames[idxLayerNames] = Constants.LAYER_NAMES_SNODAS_SWE[i];
@@ -1436,6 +1441,22 @@ namespace bagis_pro
             IList<string> lstLayers = new List<string>();
             IList<string> lstLegendLayers = new List<string>();
 
+            // Get Analysis object for maps that need it
+            BA_Objects.Analysis oAnalysis = new BA_Objects.Analysis();
+            if (mapType == BagisMapType.PRISM || mapType == BagisMapType.WINTER_PRECIPITATION)
+            {
+                string settingsPath = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAPS + "\\" +
+                    Constants.FILE_SETTINGS;
+                if (System.IO.File.Exists(settingsPath))
+                {
+                    using (var file = new System.IO.StreamReader(settingsPath))
+                    {
+                        var reader = new System.Xml.Serialization.XmlSerializer(typeof(BA_Objects.Analysis));
+                        oAnalysis = (BA_Objects.Analysis)reader.Deserialize(file);
+                    }
+                }
+            }
+
             switch (mapType)
             {
                 case BagisMapType.ELEVATION:
@@ -1521,18 +1542,6 @@ namespace bagis_pro
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;
                 case BagisMapType.PRISM:
-                    // If we end up using this for more than PRISM, put it above the case statement so it can be shared
-                    string settingsPath = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAPS + "\\" +
-                        Constants.FILE_SETTINGS;
-                    BA_Objects.Analysis oAnalysis = null;
-                    if (System.IO.File.Exists(settingsPath))
-                    {
-                        using (var file = new System.IO.StreamReader(settingsPath))
-                        {
-                            var reader = new System.Xml.Serialization.XmlSerializer(typeof(BA_Objects.Analysis));
-                            oAnalysis = (BA_Objects.Analysis)reader.Deserialize(file);
-                        }
-                    }
                     lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_PRISM_ZONE};
                     lstLegendLayers = new List<string>();
@@ -1702,7 +1711,33 @@ namespace bagis_pro
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;
-
+                case BagisMapType.WINTER_PRECIPITATION:
+                    lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
+                                                       Constants.MAPS_HILLSHADE, Constants.MAPS_WINTER_PRECIPITATION};
+                    lstLegendLayers = new List<string>();
+                    if (Module1.Current.Aoi.HasSnotel == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOTEL);
+                        lstLegendLayers.Add(Constants.MAPS_SNOTEL);
+                    }
+                    if (Module1.Current.Aoi.HasSnowCourse == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOW_COURSE);
+                        lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE);
+                    }
+                    lstLegendLayers.Add(Constants.MAPS_WINTER_PRECIPITATION);
+                    strTitle = "WINTER PRECIPITATION";
+                    if (!String.IsNullOrEmpty(oAnalysis.WinterStartMonth))
+                    {
+                        string strSuffix = " (" + oAnalysis.WinterStartMonth.ToUpper() + " - " + 
+                            oAnalysis.WinterEndMonth.ToUpper() + ")";
+                        strTitle = strTitle + strSuffix;
+                    }
+                    mapDefinition = new BA_Objects.MapDefinition(strTitle,
+                        "Precipitation Units = Inches", Constants.FILE_EXPORT_MAP_WINTER_PRECIPITATION_PDF);
+                    mapDefinition.LayerList = lstLayers;
+                    mapDefinition.LegendLayerList = lstLegendLayers;
+                    break;
             }
             return mapDefinition;
         }

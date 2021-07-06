@@ -3412,9 +3412,7 @@ namespace bagis_pro
 
         public static async Task<BA_ReturnCode> GenerateWinterPrecipitationLayerAsync(BA_Objects.Aoi oAoi)
         {
-            int intStart = 11;
-            int intEnd = 3;
-            if (string.IsNullOrEmpty(oAoi.WinterStartMonth) || string.IsNullOrEmpty(oAoi.WinterEndMonth))
+            if (oAoi.WinterStartMonth < 1 || oAoi.WinterEndMonth < 1)
             {
                 Module1.Current.ModuleLogManager.LogError(nameof(GenerateWinterPrecipitationLayerAsync),
                     "Missing start or end month from aoi master feature service. Unable to generate winter precipitation layer!");
@@ -3422,25 +3420,25 @@ namespace bagis_pro
             }
 
             IList<int> lstMonths = new List<int>();
-            if (intStart== intEnd)  //only one month is selected
+            if (oAoi.WinterStartMonth == oAoi.WinterEndMonth)  //only one month is selected
             {
-                lstMonths.Add(intStart);
+                lstMonths.Add(oAoi.WinterStartMonth);
             }
-            else if (intStart < intEnd) //single calendar year span
+            else if (oAoi.WinterStartMonth < oAoi.WinterEndMonth) //single calendar year span
             {
-                int monthDiff = intEnd - intStart;
+                int monthDiff = oAoi.WinterEndMonth - oAoi.WinterStartMonth;
                 for (int i = 0; i < monthDiff; i++)
                 {
-                    lstMonths.Add(intStart + i);
+                    lstMonths.Add(oAoi.WinterStartMonth + i);
                 }
             }
-            else if (intStart > intEnd) //cross-calendar year span
+            else if (oAoi.WinterStartMonth > oAoi.WinterEndMonth) //cross-calendar year span
             {
-                for (int i = 1; i < intEnd + 1; i++)
+                for (int i = 1; i < oAoi.WinterEndMonth + 1; i++)
                 {
                     lstMonths.Add(i);
                 }
-                for (int i = intStart; i < 13; i++)
+                for (int i = oAoi.WinterStartMonth; i < 13; i++)
                 {
                     lstMonths.Add(i);
                 }
@@ -3484,14 +3482,38 @@ namespace bagis_pro
             var environments = Geoprocessing.MakeEnvironmentArray(workspace: oAoi.FilePath);
             var gpResult = await Geoprocessing.ExecuteToolAsync("CellStatistics_sa", parameters, environments,
                                             CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
             if (gpResult.IsFailed)
             {
                 Module1.Current.ModuleLogManager.LogError(nameof(GenerateWinterPrecipitationLayerAsync),
                     "Unable to sum raster layers for winter precipitation map. Error code: " + gpResult.ErrorCode);
-                return BA_ReturnCode.UnknownError;
+                success = BA_ReturnCode.UnknownError;
             }
-            return BA_ReturnCode.Success;
+            else
+            {
+                success = BA_ReturnCode.Success;
+            }
+            if (success == BA_ReturnCode.Success)
+            {
+                // Record the winter months information to be used later when presenting maps/charts
+                BA_Objects.Analysis oAnalysis = GeneralTools.GetAnalysisSettings(Module1.Current.Aoi.FilePath);
+                // Set the prism zones information on the analysis object and save
+                if (oAnalysis != null)
+                {
+                    oAnalysis.WinterStartMonth = ((PrismFile)oAoi.WinterStartMonth - 1).ToString();
+                    oAnalysis.WinterEndMonth = ((PrismFile)oAoi.WinterEndMonth - 1).ToString();
+                    string strSettingsFile = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAPS + "\\" +
+                        Constants.FILE_SETTINGS;
+                    using (var file_stream = File.Create(strSettingsFile))
+                    {
+                        var serializer = new System.Xml.Serialization.XmlSerializer(typeof(BA_Objects.Analysis));
+                        serializer.Serialize(file_stream, oAnalysis);
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(GenerateWinterPrecipitationLayerAsync),
+                            "Set winter start and end months in analysis.xml file");
+                    }
+                }
+            }
+            return success;
         }
     }
 
