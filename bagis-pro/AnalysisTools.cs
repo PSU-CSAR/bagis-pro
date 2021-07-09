@@ -177,6 +177,16 @@ namespace bagis_pro
                             {
                                 aSite.ObjectId = Convert.ToInt32(nextFeature[idx]);
                             }
+                            idx = nextFeature.FindField(Constants.FIELD_LONGITUDE);
+                            if (idx > -1)
+                            {
+                                aSite.Longitude = Convert.ToDouble(nextFeature[idx]);
+                            }
+                            idx = nextFeature.FindField(Constants.FIELD_LATITUDE);
+                            if (idx > -1)
+                            {
+                                aSite.Latitude = Convert.ToDouble(nextFeature[idx]);
+                            }
 
                             aSite.SiteTypeText = sType;
                             lstSites.Add(aSite);

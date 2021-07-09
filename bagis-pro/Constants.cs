@@ -135,6 +135,10 @@ namespace bagis_pro
         public const string FILE_TITLE_PAGE_XML = "title_page.xml";
         public const string FILE_TITLE_PAGE_HTML = "title_page.html";
         public const string FILE_TITLE_PAGE_PDF = "title_page.pdf";
+        public const string FILE_SITES_TABLE_XSL = "sites_table.xsl";
+        public const string FILE_SITES_TABLE_XML = "sites_table.xml";
+        public const string FILE_SITES_TABLE_HTML = "sites_table.html";
+        public const string FILE_SITES_TABLE_PDF = "sites_table.pdf";
         public const string FILE_FLOW_ACCUMULATION = "flow_accumulation";
         public const string FILE_FLOW_DIRECTION = "flow_direction";
         public const string FILE_AOI_BUFFERED_RASTER = "aoib";
@@ -201,6 +205,8 @@ namespace bagis_pro
         public const string FIELD_NWCCNAME = "nwccname";
         public const string FIELD_WINTER_START_MONTH = "winter_start_month";
         public const string FIELD_WINTER_END_MONTH = "winter_end_month";
+        public const string FIELD_LATITUDE = "latitude";
+        public const string FIELD_LONGITUDE = "longitude";
 
         public const string DATA_TYPE_SWE = "Snotel SWE";
         public const string DATA_TYPE_PRECIPITATION = "Precipitation";

@@ -2097,7 +2097,66 @@ namespace bagis_pro
             return arrResults;
         }
 
+        public static async Task<BA_ReturnCode> GenerateSitesTableAsync(BA_Objects.Aoi oAoi)
+        {
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            try
+            {
+                // Serialize the title page object
+                BA_Objects.ExportTitlePage tPage = new BA_Objects.ExportTitlePage
+                {
+                    aoi_name = oAoi.NwccName,
+                    local_path = oAoi.FilePath,
+                    date_created = DateTime.Now
+                };
+                IList <BA_Objects.Site> lstSites = 
+                    await AnalysisTools.AssembleSitesListAsync(Constants.FILE_SNOTEL, SiteType.Snotel.ToString(), -1);
+                // null out the buffer so the serialization won't fail
+                foreach (var site in lstSites)
+                {
+                    site.Buffer = null;
+                }
+                BA_Objects.Site[] arrSnotel = new BA_Objects.Site[lstSites.Count];
+                lstSites.CopyTo(arrSnotel, 0);
+                tPage.snotel_sites = arrSnotel;
+                string publishFolder = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE;
+                string myXmlFile = publishFolder + "\\" + Constants.FILE_SITES_TABLE_XML;
+                System.Xml.Serialization.XmlSerializer writer = new System.Xml.Serialization.XmlSerializer(tPage.GetType());
+                using (FileStream fs = System.IO.File.Create(myXmlFile))
+                {
+                    writer.Serialize(fs, tPage);
+                }
 
+                // Process the title page through the xsl template
+                string myStyleSheet = GeneralTools.GetAddInDirectory() + "\\" + Constants.FILE_SITES_TABLE_XSL;
+                XPathDocument myXPathDoc = new XPathDocument(myXmlFile);
+                XslCompiledTransform myXslTrans = new XslCompiledTransform();
+                myXslTrans.Load(myStyleSheet);
+                string htmlFilePath = publishFolder + "\\" + Constants.FILE_SITES_TABLE_HTML;
+                using (XmlTextWriter myWriter = new XmlTextWriter(htmlFilePath, null))
+                {
+                    myXslTrans.Transform(myXPathDoc, null, myWriter);
+                }
+
+                // Convert the title page to PDF
+                if (File.Exists(htmlFilePath))
+                {
+                    PdfSharp.Pdf.PdfDocument titlePageDoc = TheArtOfDev.HtmlRenderer.PdfSharp.PdfGenerator.GeneratePdf(System.IO.File.ReadAllText(htmlFilePath),
+                        PdfSharp.PageSize.Letter);
+                    titlePageDoc.Save(publishFolder + "\\" + Constants.FILE_SITES_TABLE_PDF);
+                }
+                Module1.Current.ModuleLogManager.LogDebug(nameof(GenerateSitesTableAsync),
+                    "Title page created!!");
+            }
+            catch (Exception e)
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(GenerateSitesTableAsync),
+                    "Exception: " + e.Message);
+                MessageBox.Show("An error occurred while trying to parse the XML!! " + e.Message, "BAGIS PRO");
+                return success;
+            }
+            return success;
+        }
     }
 
 }
