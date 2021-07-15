@@ -32,63 +32,62 @@
         .style4
         {
         font-family: Arial, Helvetica, sans-serif;
-        font-size: 95%;
-        padding-top: 1px;
-        padding-left: 10px;
-        }
-        .footer {
-        width: 100%;
-        text-align: center;
-        font-family: Arial, Helvetica, sans-serif;
+        padding: 1px 4px;
+        border-style: solid;
+        border-width: 1px;
+        border-color:black;
+        text-align: right;
         }
 
       </style>
   <head/>
-  <body>
-    <div class="style2">
-      Active Sites in <xsl:value-of select="aoi_name"/>
-    </div>
-    <div class ="style1">
-      <table style="border-collapse:collapse; width=600px">
-        <tr>
-          <td class="style3">
-            Type
-          </td>
-          <td class="style3">
-            Name
-          </td>
-          <td class="style3">
-            Elevation
-          </td>
-          <td class="style3">
-            Latitude
-          </td>
-          <td class="style3">
-            Longitude
-          </td>
-        </tr>
-        <xsl:for-each select="snotel_sites/Site">
+      <body>
+        <div class="style2">
+          Active Sites in <xsl:value-of select="aoi_name"/>
+        </div>
+        <br/>
+        <div class ="style1">
+          <table style="border-collapse:collapse; width=700px">
             <tr>
               <td class="style3">
-                <xsl:value-of select="SiteTypeText" />
+                Type
               </td>
               <td class="style3">
-                <xsl:value-of select="Name" />
+                Name
               </td>
               <td class="style3">
-                <xsl:value-of select="ElevationText" />
+                Elevation (<xsl:value-of select="site_elev_range_units"/>)
               </td>
               <td class="style3">
-                <xsl:value-of select="LatitudeText" />
+                Latitude
               </td>
               <td class="style3">
-                <xsl:value-of select="LongitudeText" />
+                Longitude
               </td>
             </tr>
-        </xsl:for-each>
-      </table>
-    </div>
-</body></html>
+            <xsl:for-each select="all_sites/Site">
+              <tr>
+                <td class="style3">
+                  <xsl:value-of select="SiteTypeText" />
+                </td>
+                <td class="style3">
+                  <xsl:value-of select="Name" />
+                </td>
+                <td class="style4">
+                  <xsl:value-of select="ElevationText" />
+                </td>
+                <td class="style4">
+                  <xsl:value-of select="LatitudeText" />
+                </td>
+                <td class="style4">
+                  <xsl:value-of select="LongitudeText" />
+                </td>
+              </tr>
+            </xsl:for-each>
+          </table>
+        </div>
+      </body>
+    </html>
   </xsl:template>
 
 </xsl:stylesheet>

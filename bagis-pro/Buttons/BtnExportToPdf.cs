@@ -103,9 +103,6 @@ namespace bagis_pro.Buttons
                 }
                 // Legend
                 success = await MapTools.DisplayLegendAsync(oLayout, "ArcGIS Colors", "1.5 Point");
-
-                success = await GeneralTools.GenerateSitesTableAsync(Module1.Current.Aoi);
-
                 success = await MapTools.PublishMapsAsync(rType); // export the maps to pdf
                 if (success != BA_ReturnCode.Success)
                 {
@@ -169,6 +166,7 @@ namespace bagis_pro.Buttons
                     }
                 }
 
+                success = await GeneralTools.GenerateSitesTableAsync(Module1.Current.Aoi);
                 string strPublisher = (string)Module1.Current.BatchToolSettings.Publisher;
                 success = await GeneralTools.GenerateMapsTitlePageAsync(rType, strPublisher, "");
                 string outputPath = GeneralTools.GetFullPdfFileName(Constants.FILE_EXPORT_WATERSHED_REPORT_PDF);

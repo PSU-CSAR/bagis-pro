@@ -34,7 +34,16 @@ namespace bagis_pro
                 if (System.IO.Directory.Exists(strAoiPath))
                 {
                     // Initialize AOI object
-                    GeneralTools.SetAoi(strAoiPath);
+                    oAoi = await GeneralTools.SetAoiAsync(strAoiPath);
+                    if (oAoi != null)
+                    {
+                        Module1.Current.CboCurrentAoi.SetAoiName(oAoi.Name);
+                        MessageBox.Show("AOI is set to " + oAoi.Name + "!", "BAGIS PRO");
+                    }
+                    else
+                    {
+                        MessageBox.Show("An error occurred while trying to set the AOI!!", "BAGIS PRO");
+                    }
                 }
                 else
                 {

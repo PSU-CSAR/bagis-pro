@@ -46,8 +46,7 @@ namespace bagis_pro.BA_Objects
         {
             get
             {
-                //return String.Format("{0:0.##}", Latitude);
-                return "latitude";
+                return String.Format("{0:0.00}", Latitude);
             }
             set
             {
@@ -59,7 +58,7 @@ namespace bagis_pro.BA_Objects
         {
             get
             {
-                return String.Format("{0:0.##}", Longitude);
+                return String.Format("{0:0.00}", Longitude);
             }
             set
             {

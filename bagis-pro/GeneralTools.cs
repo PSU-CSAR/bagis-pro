@@ -1013,7 +1013,7 @@ namespace bagis_pro
             return success;
         }
 
-        public static void SetAoi(string strAoiPath)
+        public static async Task<BA_Objects.Aoi> SetAoiAsync(string strAoiPath)
         {
             // Initialize AOI object
             BA_Objects.Aoi oAoi = new BA_Objects.Aoi(Path.GetFileName(strAoiPath), strAoiPath);
@@ -1041,12 +1041,12 @@ namespace bagis_pro
                         strSettingsPath + @"\" + Constants.FILE_BATCH_TOOL_SETTINGS));
                     if ((BA_ReturnCode)success.Result == BA_ReturnCode.Success)
                     {
-                        Module1.Current.ModuleLogManager.LogDebug(nameof(SetAoi),
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(SetAoiAsync),
                             "Copied default batch tool settings to BAGIS folder");
                     }
                     else
                     {
-                        Module1.Current.ModuleLogManager.LogError(nameof(SetAoi),
+                        Module1.Current.ModuleLogManager.LogError(nameof(SetAoiAsync),
                             "Unable to copy default batch tool settings to BAGIS folder");
                     }
 
@@ -1070,15 +1070,18 @@ namespace bagis_pro
                 }
                 else
                 {
-                    Module1.Current.ModuleLogManager.LogError(nameof(SetAoi),
+                    Module1.Current.ModuleLogManager.LogError(nameof(SetAoiAsync),
                         "Unable to locate batch tool settings in BAGIS folder");
                 }
 
                 // Query for station information and save it in the aoi object
                 string[] arrValues = new string[2];
-                QueuedTask.Run(async() =>
+                await QueuedTask.Run(async() =>
                 {
                     arrValues = await AnalysisTools.GetStationValues(oAoi.FilePath);
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(SetAoiAsync),
+                        "Station values returned. Array length: " +arrValues.Length);
+
                     if (arrValues.Length == 2)
                     {
                         oAoi.StationTriplet = arrValues[0];
@@ -1087,6 +1090,8 @@ namespace bagis_pro
                     if (!string.IsNullOrEmpty(oAoi.StationTriplet))
                     {
                         string[] arrResults = await GeneralTools.QueryMasterAoiProperties(oAoi.StationTriplet);
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(SetAoiAsync),
+                            "Master AOI properties returned. Array length: " + arrValues.Length);
                         if (arrResults.Length == 3)
                         {
                             oAoi.NwccName = arrResults[0];
@@ -1101,19 +1106,19 @@ namespace bagis_pro
                         }
                         else
                         {
-                            Module1.Current.ModuleLogManager.LogError(nameof(SetAoi),
+                            Module1.Current.ModuleLogManager.LogError(nameof(SetAoiAsync),
                                 "Unable to retrieve nwcc name from feature service!");
                         }
                     }
                     else
                     {
-                        Module1.Current.ModuleLogManager.LogError(nameof(SetAoi),
+                        Module1.Current.ModuleLogManager.LogError(nameof(SetAoiAsync),
                             "Unable to retrieve station triplet. Nwcc name could not be found!");
                     }
                 });
                 string strSurfacesGdb = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Surfaces, false);
                 var fcPath = strSurfacesGdb + "\\" + Constants.FILE_DEM_FILLED;
-                QueuedTask.Run(() =>
+                await QueuedTask.Run(() =>
                 {
                     FolderType fType = FolderType.FOLDER;
                     Uri gdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, false));
@@ -1223,7 +1228,7 @@ namespace bagis_pro
                                 }
                                 else
                                 {
-                                    Module1.Current.ModuleLogManager.LogDebug(nameof(SetAoi),
+                                    Module1.Current.ModuleLogManager.LogDebug(nameof(SetAoiAsync),
                                         "Unable to locate PRISM buffer distance on annual layer. Using default");
                                 }
                                 if (!String.IsNullOrEmpty(tempBufferUnits))
@@ -1232,7 +1237,7 @@ namespace bagis_pro
                                 }
                                 else
                                 {
-                                    Module1.Current.ModuleLogManager.LogDebug(nameof(SetAoi),
+                                    Module1.Current.ModuleLogManager.LogDebug(nameof(SetAoiAsync),
                                         "Unable to locate PRISM units on annual layer. Using default");
                                 }
                             }
@@ -1375,7 +1380,7 @@ namespace bagis_pro
                                                 layersPane.VegetationBufferUnits = bufferUnits;
                                             break;
                                         default:
-                                            Module1.Current.ModuleLogManager.LogError(nameof(SetAoi),
+                                            Module1.Current.ModuleLogManager.LogError(nameof(SetAoiAsync),
                                                 "Unidentified layer name");
                                             break;
                                     }
@@ -1388,19 +1393,19 @@ namespace bagis_pro
 
                     // Store current AOI in Module1
                     Module1.Current.Aoi = oAoi;
-                    Module1.Current.CboCurrentAoi.SetAoiName(oAoi.Name);
-                    MapTools.DeactivateMapButtons();
-                    Module1.ActivateState("Aoi_Selected_State");
-                    Module1.ActivateState("BtnExcelTables_State");
-
-                    MessageBox.Show("AOI is set to " + Module1.Current.Aoi.Name + "!", "BAGIS PRO");
                 });
 
+                MapTools.DeactivateMapButtons();
+                Module1.ActivateState("Aoi_Selected_State");
+                Module1.ActivateState("BtnExcelTables_State");
+                return oAoi;
             }
             catch (Exception e)
             {
-                Module1.Current.ModuleLogManager.LogError(nameof(SetAoi),
+                Module1.Current.ModuleLogManager.LogError(nameof(SetAoiAsync),
                     "Exception: " + e.Message);
+                Module1.Current.ModuleLogManager.LogError(nameof(SetAoiAsync), e.StackTrace);
+                return null;
             }
         }
 
@@ -2029,7 +2034,7 @@ namespace bagis_pro
 
         public static string GetFullPdfFileName(string strBaseFileName)
         {
-            if (Constants.FILE_TITLE_PAGE_PDF.Equals(strBaseFileName))
+            if (Constants.FILE_TITLE_PAGE_PDF.Equals(strBaseFileName) || Constants.FILE_SITES_TABLE_PDF.Equals(strBaseFileName))
             {
                 // The title page doesn't have the station name prefix
                 return Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\" + strBaseFileName;
@@ -2046,13 +2051,23 @@ namespace bagis_pro
             BA_Objects.Analysis oAnalysis = new BA_Objects.Analysis();
             string strSettingsFile = strAoiPath + "\\" + Constants.FOLDER_MAPS + "\\" +
                 Constants.FILE_SETTINGS;
-            if (File.Exists(strSettingsFile))
+            try
             {
-                using (var file = new StreamReader(strSettingsFile))
+                if (File.Exists(strSettingsFile))
                 {
-                    var reader = new System.Xml.Serialization.XmlSerializer(typeof(BA_Objects.Analysis));
-                    oAnalysis = (BA_Objects.Analysis)reader.Deserialize(file);
+                    using (var file = new StreamReader(strSettingsFile))
+                    {
+                        var reader = new System.Xml.Serialization.XmlSerializer(typeof(BA_Objects.Analysis));
+                        oAnalysis = (BA_Objects.Analysis)reader.Deserialize(file);
+                    }
                 }
+            }
+            catch (Exception e)
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(GetAnalysisSettings),
+                    "An error occurred while trying to retrieve the Analysis settings!");
+                Module1.Current.ModuleLogManager.LogError(nameof(GetAnalysisSettings),
+                    "Exception: " + e.StackTrace);
             }
             return oAnalysis;
         }
@@ -2102,23 +2117,77 @@ namespace bagis_pro
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
             try
             {
-                // Serialize the title page object
+                bool bHasSnotel = false;
+                bool bHasSnowCourse = false;
+                Uri sitesGdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers, false));
+                int intSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_SNOTEL);
+                if (intSites > 0)
+                    bHasSnotel = true;
+                intSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_SNOW_COURSE);
+                if (intSites > 0)
+                    bHasSnowCourse = true;
+                if (bHasSnotel == false && bHasSnowCourse == false)
+                {
+                    Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateMapsTitlePageAsync),
+                        "No sites found. Sites table will not be created!");
+                    return success;
+                }
+
+                // Initialize the title page object
                 BA_Objects.ExportTitlePage tPage = new BA_Objects.ExportTitlePage
                 {
                     aoi_name = oAoi.NwccName,
                     local_path = oAoi.FilePath,
                     date_created = DateTime.Now
                 };
-                IList <BA_Objects.Site> lstSites = 
-                    await AnalysisTools.AssembleSitesListAsync(Constants.FILE_SNOTEL, SiteType.Snotel.ToString(), -1);
-                // null out the buffer so the serialization won't fail
-                foreach (var site in lstSites)
+                //DEM is always in meters
+                string strDemDisplayUnits = (string)Module1.Current.BatchToolSettings.DemDisplayUnits;
+                IList<BA_Objects.Site> lstAllSites = new List<BA_Objects.Site>();
+                if (bHasSnotel)
                 {
-                    site.Buffer = null;
+                    lstAllSites = await AnalysisTools.AssembleSitesListAsync(Constants.FILE_SNOTEL, SiteType.Snotel.ToString(), -1);
                 }
-                BA_Objects.Site[] arrSnotel = new BA_Objects.Site[lstSites.Count];
-                lstSites.CopyTo(arrSnotel, 0);
-                tPage.snotel_sites = arrSnotel;
+
+                if (bHasSnowCourse)
+                {
+                    IList<BA_Objects.Site> lstSnowCourseSites =
+                        await AnalysisTools.AssembleSitesListAsync(Constants.FILE_SNOW_COURSE, SiteType.SnowCourse.ToString(), -1);
+                    if (lstSnowCourseSites != null && lstSnowCourseSites.Count > 0)
+                    {
+                        foreach (var aSite in lstSnowCourseSites)
+                        {
+                            lstAllSites.Add(aSite);
+                        }
+                    }
+                }
+
+                foreach (var site in lstAllSites)
+                {
+                    // null out the buffer so the serialization won't fail
+                    site.Buffer = null;
+                    // set the elevation text with units conversion
+                    if (strDemDisplayUnits.Equals("Feet"))
+                    {
+                        site.ElevationText = 
+                            String.Format("{0:0}", ArcGIS.Core.Geometry.LinearUnit.Meters.ConvertTo(site.ElevMeters, ArcGIS.Core.Geometry.LinearUnit.Feet));
+                    }
+                    else
+                    {
+                        site.ElevationText = String.Format("{0:0}", site.ElevMeters);
+                    }
+                }
+                BA_Objects.Site[] arrSites = new BA_Objects.Site[lstAllSites.Count];
+                lstAllSites.CopyTo(arrSites, 0);
+                tPage.all_sites = arrSites;
+                //Set the site elevation units
+                BA_Objects.Analysis oAnalysis = GetAnalysisSettings(oAoi.FilePath);
+                string siteElevationUnits = "?";
+                if (oAnalysis != null && !String.IsNullOrEmpty(oAnalysis.ElevUnitsText))
+                {
+                    siteElevationUnits = oAnalysis.ElevUnitsText;
+                }
+                tPage.site_elev_range_units = siteElevationUnits;
+
                 string publishFolder = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE;
                 string myXmlFile = publishFolder + "\\" + Constants.FILE_SITES_TABLE_XML;
                 System.Xml.Serialization.XmlSerializer writer = new System.Xml.Serialization.XmlSerializer(tPage.GetType());

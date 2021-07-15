@@ -353,8 +353,20 @@ namespace bagis_pro
                     Module1.Current.ModuleLogManager.UpdateLogFileLocation(logFolderName);
 
                     // Set current AOI
-                    BA_Objects.Aoi oAoi = new BA_Objects.Aoi(Path.GetFileName(AoiFolder), AoiFolder);
-                    Module1.Current.Aoi = oAoi;
+                    BA_Objects.Aoi oAoi = await GeneralTools.SetAoiAsync(AoiFolder);
+                    FrameworkApplication.Current.Dispatcher.Invoke(() =>
+                    {
+                        try
+                        {
+                            // Do something on the GUI thread
+                            Module1.Current.CboCurrentAoi.SetAoiName(oAoi.Name);
+                        }
+                        catch (Exception e)
+                        {
+                            Module1.Current.ModuleLogManager.LogError(nameof(RunImplAsync), e.StackTrace);
+                        }
+
+                    });
 
                     // Create opening log entry for AOI
                     strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Starting batch PDF export for " +
@@ -371,6 +383,7 @@ namespace bagis_pro
                         }
                     }
 
+                    oAoi = Module1.Current.Aoi;
                     // Elevation zones
                     BA_ReturnCode success = await AnalysisTools.CalculateElevationZonesAsync(Module1.Current.Aoi.FilePath);
                     if (success != BA_ReturnCode.Success)
@@ -453,7 +466,6 @@ namespace bagis_pro
                         dblDistance = 0;
                     }
                     string snoBufferDistance = dblDistance + " " + (string)Module1.Current.BatchToolSettings.SnotelBufferUnits;
-                    //@ToDo: Renable when ready
                     success = await AnalysisTools.ClipSnoLayersAsync(Module1.Current.Aoi.FilePath, true, snoBufferDistance,
                         true, snoBufferDistance);
                     if (success != BA_ReturnCode.Success)
@@ -461,16 +473,6 @@ namespace bagis_pro
                         errorCount++;
                     }
 
-                    if (success == BA_ReturnCode.Success)
-                    {
-                        double siteBufferDistanceMiles = (double)Module1.Current.BatchToolSettings.SiteBufferDistMiles;
-                        double siteElevRangeFeet = (double)Module1.Current.BatchToolSettings.SiteElevRangeFeet;
-                        success = await AnalysisTools.GenerateSiteLayersAsync(siteBufferDistanceMiles, siteElevRangeFeet);
-                        if (success != BA_ReturnCode.Success)
-                        {
-                            errorCount++;
-                        }
-                    }
                     // Represented Area
                     if (success == BA_ReturnCode.Success)
                     {
@@ -745,7 +747,8 @@ namespace bagis_pro
                                 }
                             }
                         }
- 
+
+                        success = await GeneralTools.GenerateSitesTableAsync(Module1.Current.Aoi);
                         success = await GeneralTools.GenerateMapsTitlePageAsync(ReportType.Watershed, strPublisher, Comments);
                         if (success != BA_ReturnCode.Success)
                         {

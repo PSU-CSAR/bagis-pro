@@ -19,7 +19,7 @@ namespace bagis_pro.Menus
 {
     internal class MnuMaps_BtnSelectAoi : Button
     {
-        protected override void OnClick()
+        protected async override void OnClick()
         {
             try
             {
@@ -34,7 +34,12 @@ namespace bagis_pro.Menus
                     Module1.DeactivateState("Aoi_Selected_State");
                     IEnumerable<Item> selectedItems = selectAoiDialog.Items;
                     var e = selectedItems.FirstOrDefault();
-                    GeneralTools.SetAoi(e.Path);
+                    BA_Objects.Aoi oAoi = await GeneralTools.SetAoiAsync(e.Path);
+                    if (oAoi != null)
+                    {
+                        Module1.Current.CboCurrentAoi.SetAoiName(oAoi.Name);
+                        MessageBox.Show("AOI is set to " + oAoi.Name + "!", "BAGIS PRO");
+                    }
                 }
             }
             catch (Exception e)

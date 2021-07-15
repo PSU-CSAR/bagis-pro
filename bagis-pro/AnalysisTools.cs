@@ -491,6 +491,8 @@ namespace bagis_pro
                         queryFilter.WhereClause = Constants.FIELD_USGS_ID + " = '" + strAwdbQueryId + "'";
                         string[] arrSearch = { Constants.FIELD_STATION_TRIPLET, (string)oSettings.gaugeStationName };
                         string[] arrFound = new string[arrSearch.Length];
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(GetStationValues),
+                            "Using awdb_id to query for the triplet from " + usgsServiceUri.ToString());
                         arrFound = await ws.QueryServiceForValuesAsync(usgsServiceUri, usgsServiceLayerId, arrSearch, queryFilter);
                         if (arrFound.Length > 1)
                         {
@@ -506,6 +508,11 @@ namespace bagis_pro
                             bUpdateStationName = true;
                         }
                     }
+                }
+                else
+                {
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(GetStationValues),
+                    "Triplet retrieved from pourpoint feature class: " + strTriplet);
                 }
                 if (string.IsNullOrEmpty(strTriplet))
                 {
@@ -544,12 +551,18 @@ namespace bagis_pro
                         //Delete fields added by NEAR process: NEAR_DIST and NEAR_ID
                         string[] arrFieldsToDelete = new string[] { Constants.FIELD_NEAR_ID, Constants.FIELD_NEAR_DIST };
                         success = await GeoprocessingTools.DeleteFeatureClassFieldsAsync(strPourpointClassPath, arrFieldsToDelete);
-
                     }
+                }
+                else
+                {
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(GetStationValues),
+                        "Triplet retrieved using the awdb_id and USGS webservice: " + strTriplet);
                 }
                 //Save the new values to the pourpoint layer if needed
                 if (bUpdateAwdb == true || bUpdateTriplet == true || bUpdateStationName == true)
                 {
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(GetStationValues),
+                        "Updating pourpoint layer attributes");
                     IDictionary<string, string> dictEdits = new Dictionary<string, string>();
                     if (bUpdateAwdb)
                         dictEdits.Add(Constants.FIELD_AWDB_ID, strAwdbId);
@@ -560,7 +573,6 @@ namespace bagis_pro
                     BA_ReturnCode success = await GeodatabaseTools.UpdateFeatureAttributesAsync(ppUri, Constants.FILE_POURPOINT,
                         new QueryFilter(), dictEdits);
                 }
-
             }
             arrReturnValues[0] = strTriplet;
             arrReturnValues[1] = strStationName;

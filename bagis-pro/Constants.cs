@@ -119,7 +119,7 @@ namespace bagis_pro
         public const string FILE_EXPORT_MAP_SNODAS_ALL_PDF = "map_all_snodas.pdf";
         // List of files in the watershed PDF map package and the order in which they will be assembled
         public static string[] FILES_EXPORT_WATERSHED_PDF = new string[]
-        { FILE_TITLE_PAGE_PDF, FILE_EXPORT_MAP_ELEV_PDF, FILE_EXPORT_MAP_ASPECT_PDF,
+        { FILE_TITLE_PAGE_PDF, FILE_SITES_TABLE_PDF, FILE_EXPORT_MAP_ELEV_PDF, FILE_EXPORT_MAP_ASPECT_PDF,
           FILE_EXPORT_MAP_SLOPE_PDF, FILE_EXPORT_CHART_ASPECT_PDF, FILE_EXPORT_CHART_SLOPE_PDF,
           FILE_EXPORT_MAP_SNOTEL_PDF, FILE_EXPORT_MAP_SCOS_PDF, FILE_EXPORT_MAP_SNOTEL_AND_SCOS_PDF,
           FILE_EXPORT_MAP_PRECIPITATION_PDF, FILE_EXPORT_MAP_WINTER_PRECIPITATION_PDF, FILE_EXPORT_CHART_ELEV_PRECIP_CORR_PDF,
@@ -128,7 +128,7 @@ namespace bagis_pro
           FILE_EXPORT_MAP_CRITICAL_PRECIPITATION_ZONES_PDF, FILE_EXPORT_TABLE_PRECIP_REPRESENT_PDF
         };    
         // List of files in the site analysis PDF map package and the order in which they will be assembled
-        public static string[] FILES_EXPORT_SITE_ANALYSIS_PDF = new string[] { FILE_TITLE_PAGE_PDF,
+        public static string[] FILES_EXPORT_SITE_ANALYSIS_PDF = new string[] { FILE_TITLE_PAGE_PDF, FILE_SITES_TABLE_PDF,
             FILE_EXPORT_MAP_ROADS_PDF, FILE_EXPORT_MAP_PUBLIC_LAND_ZONES_PDF, FILE_EXPORT_MAP_PUBLIC_LAND_OWNERSHIP_PDF,
             FILE_EXPORT_MAP_BELOW_TREELINE_PDF, FILE_EXPORT_MAP_SITES_LOCATION_PDF};
         public const string FILE_TITLE_PAGE_XSL = "title_page.xsl";
