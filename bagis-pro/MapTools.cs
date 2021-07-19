@@ -670,7 +670,7 @@ namespace bagis_pro
 
         public static async Task RemoveLayersfromMapFrame()
         {
-            string[] arrLayerNames = new string[37];
+            string[] arrLayerNames = new string[36];
             arrLayerNames[0] = Constants.MAPS_AOI_BOUNDARY;
             arrLayerNames[1] = Constants.MAPS_STREAMS;
             arrLayerNames[2] = Constants.MAPS_SNOTEL;
@@ -683,15 +683,14 @@ namespace bagis_pro
             arrLayerNames[9] = Constants.MAPS_ASPECT_ZONE;
             arrLayerNames[10] = Constants.MAPS_ALL_SITES_REPRESENTED;
             arrLayerNames[11] = Constants.MAPS_PRISM_ZONE;
-            arrLayerNames[12] = Module1.Current.RoadsLayerLegend;
-            arrLayerNames[13] = Constants.MAPS_FEDERAL_PUBLIC_LAND_ZONES;
-            arrLayerNames[14] = Constants.MAPS_BELOW_TREELINE;
-            arrLayerNames[15] = Constants.MAPS_SITES_LOCATION;
-            arrLayerNames[16] = Constants.MAPS_CRITICAL_PRECIPITATION_ZONES;
-            arrLayerNames[17] = Constants.MAPS_PUBLIC_LAND_OWNERSHIP;
-            arrLayerNames[18] = Constants.MAPS_PRECIPITATION_CONTRIBUTION;
-            arrLayerNames[19] = Constants.MAPS_WINTER_PRECIPITATION;
-            int idxLayerNames = 20;
+            arrLayerNames[12] = Constants.MAPS_FEDERAL_PUBLIC_LAND_ZONES;
+            arrLayerNames[13] = Constants.MAPS_BELOW_TREELINE;
+            arrLayerNames[14] = Constants.MAPS_SITES_LOCATION;
+            arrLayerNames[15] = Constants.MAPS_CRITICAL_PRECIPITATION_ZONES;
+            arrLayerNames[16] = Constants.MAPS_PUBLIC_LAND_OWNERSHIP;
+            arrLayerNames[17] = Constants.MAPS_PRECIPITATION_CONTRIBUTION;
+            arrLayerNames[18] = Constants.MAPS_WINTER_PRECIPITATION;
+            int idxLayerNames = 19;
             for (int i = 0; i < Constants.LAYER_NAMES_SNODAS_SWE.Length; i++)
             {
                 arrLayerNames[idxLayerNames] = Constants.LAYER_NAMES_SNODAS_SWE[i];
@@ -710,9 +709,32 @@ namespace bagis_pro
                     Layer oLayer =
                         map.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(strName, StringComparison.CurrentCultureIgnoreCase));
                     if (oLayer != null)
+                    {
+
                         map.RemoveLayer(oLayer);
+                    }
                 }
-            });
+
+
+                //special handling for the roads zones layer because the name may be different between AOI's; It's based on the buffer distance
+                var returnLayers =
+                     map.Layers.Where(m => m.Name.Contains("Within"));
+                IList<string> lstLayerNames = new List<string>();
+                foreach (var item in returnLayers)
+                {
+                    lstLayerNames.Add(item.Name);
+                }
+                foreach (var strName in lstLayerNames)
+                {
+                    Layer oLayer =
+                        map.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(strName, StringComparison.CurrentCultureIgnoreCase));
+                    if (oLayer != null)
+                    {
+
+                        map.RemoveLayer(oLayer);
+                    }
+                }
+           });
         }
 
         public static async Task DisplayRasterStretchSymbolAsync(Uri rasterUri, string displayName, string styleCategory,

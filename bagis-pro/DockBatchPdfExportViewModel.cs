@@ -354,19 +354,14 @@ namespace bagis_pro
 
                     // Set current AOI
                     BA_Objects.Aoi oAoi = await GeneralTools.SetAoiAsync(AoiFolder);
-                    FrameworkApplication.Current.Dispatcher.Invoke(() =>
+                    if (Module1.Current.CboCurrentAoi != null)
                     {
-                        try
+                        FrameworkApplication.Current.Dispatcher.Invoke(() =>
                         {
                             // Do something on the GUI thread
                             Module1.Current.CboCurrentAoi.SetAoiName(oAoi.Name);
-                        }
-                        catch (Exception e)
-                        {
-                            Module1.Current.ModuleLogManager.LogError(nameof(RunImplAsync), e.StackTrace);
-                        }
-
-                    });
+                        });
+                    }
 
                     // Create opening log entry for AOI
                     strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Starting batch PDF export for " +
