@@ -1779,10 +1779,10 @@ namespace bagis_pro
             {
                 Module1.DeactivateState(strButtonState);
             }
-            foreach (string strButtonState in Constants.STATES_SITE_ANALYSIS_MAP_BUTTONS)
-            {
-                Module1.DeactivateState(strButtonState);
-            }
+            //foreach (string strButtonState in Constants.STATES_SITE_ANALYSIS_MAP_BUTTONS)
+            //{
+            //    Module1.DeactivateState(strButtonState);
+            //}
             // if you can't use the maps, you can't export to pdf
             Module1.DeactivateState("BtnMapLoad_State");
         }
@@ -2182,10 +2182,10 @@ namespace bagis_pro
         public static async Task<BA_ReturnCode> PublishMapsAsync(ReportType rType)
         {
             string[] arrStates = Constants.STATES_WATERSHED_MAP_BUTTONS;
-            if (rType.Equals(ReportType.SiteAnalysis))
-            {
-                arrStates = Constants.STATES_SITE_ANALYSIS_MAP_BUTTONS;
-            }
+            //if (rType.Equals(ReportType.SiteAnalysis))
+            //{
+            //    arrStates = Constants.STATES_SITE_ANALYSIS_MAP_BUTTONS;
+            //}
             foreach (string strButtonState in arrStates)
             {
                 if (FrameworkApplication.State.Contains(strButtonState))

@@ -125,12 +125,14 @@ namespace bagis_pro
           FILE_EXPORT_MAP_PRECIPITATION_PDF, FILE_EXPORT_MAP_WINTER_PRECIPITATION_PDF, FILE_EXPORT_CHART_ELEV_PRECIP_CORR_PDF,
           FILE_EXPORT_MAP_PRECIPITATION_CONTRIBUTION_PDF, FILE_EXPORT_MAP_SNODAS_ALL_PDF, FILE_EXPORT_MAP_SWE_DELTA_ALL_PDF,
           FILE_EXPORT_CHART_AREA_ELEV_PRECIP_SITE_PDF, FILE_EXPORT_CHART_PRECIP_REPRESENT_PDF,
-          FILE_EXPORT_MAP_CRITICAL_PRECIPITATION_ZONES_PDF, FILE_EXPORT_TABLE_PRECIP_REPRESENT_PDF
+          FILE_EXPORT_MAP_CRITICAL_PRECIPITATION_ZONES_PDF, FILE_EXPORT_TABLE_PRECIP_REPRESENT_PDF, FILE_EXPORT_MAP_ROADS_PDF,
+          FILE_EXPORT_MAP_PUBLIC_LAND_ZONES_PDF, FILE_EXPORT_MAP_PUBLIC_LAND_OWNERSHIP_PDF, FILE_EXPORT_MAP_BELOW_TREELINE_PDF,
+          FILE_EXPORT_MAP_SITES_LOCATION_PDF
         };    
         // List of files in the site analysis PDF map package and the order in which they will be assembled
-        public static string[] FILES_EXPORT_SITE_ANALYSIS_PDF = new string[] { FILE_TITLE_PAGE_PDF, FILE_SITES_TABLE_PDF,
-            FILE_EXPORT_MAP_ROADS_PDF, FILE_EXPORT_MAP_PUBLIC_LAND_ZONES_PDF, FILE_EXPORT_MAP_PUBLIC_LAND_OWNERSHIP_PDF,
-            FILE_EXPORT_MAP_BELOW_TREELINE_PDF, FILE_EXPORT_MAP_SITES_LOCATION_PDF};
+        //public static string[] FILES_EXPORT_SITE_ANALYSIS_PDF = new string[] { FILE_TITLE_PAGE_PDF, FILE_SITES_TABLE_PDF,
+        //    FILE_EXPORT_MAP_ROADS_PDF, FILE_EXPORT_MAP_PUBLIC_LAND_ZONES_PDF, FILE_EXPORT_MAP_PUBLIC_LAND_OWNERSHIP_PDF,
+        //    FILE_EXPORT_MAP_BELOW_TREELINE_PDF, FILE_EXPORT_MAP_SITES_LOCATION_PDF};
         public const string FILE_TITLE_PAGE_XSL = "title_page.xsl";
         public const string FILE_TITLE_PAGE_XML = "title_page.xml";
         public const string FILE_TITLE_PAGE_HTML = "title_page.html";
@@ -258,13 +260,18 @@ namespace bagis_pro
                                                                 "MapButtonPalette_BtnSweMarDelta_State",
                                                                 "MapButtonPalette_BtnSweAprDelta_State",
                                                                 "MapButtonPalette_BtnSweMayDelta_State",
-                                                                "MapButtonPalette_BtnSweJunDelta_State"};
-        public static string[] STATES_SITE_ANALYSIS_MAP_BUTTONS => new string[] {
+                                                                "MapButtonPalette_BtnSweJunDelta_State",
                                                                 "MapButtonPalette_BtnRoads_State",
                                                                 "MapButtonPalette_BtnBelowTreeline_State",
                                                                 "MapButtonPalette_BtnPublicLandZones_State",
                                                                 "MapButtonPalette_BtnSitesLocationZone_State",
                                                                 "MapButtonPalette_BtnPublicLandOwnership_State"};
+        //public static string[] STATES_SITE_ANALYSIS_MAP_BUTTONS => new string[] {
+        //                                                        "MapButtonPalette_BtnRoads_State",
+        //                                                        "MapButtonPalette_BtnBelowTreeline_State",
+        //                                                        "MapButtonPalette_BtnPublicLandZones_State",
+        //                                                        "MapButtonPalette_BtnSitesLocationZone_State",
+        //                                                        "MapButtonPalette_BtnPublicLandOwnership_State"};
 
         public static string META_TAG_XPATH = @"/metadata/dataIdInfo/searchKeys/keyword";
         public static string META_TAG_PREFIX = "BAGIS Tag < Please do not modify: ";

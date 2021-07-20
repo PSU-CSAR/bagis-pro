@@ -604,11 +604,11 @@ namespace bagis_pro
                     try
                     {
                         // Delete any old PDF files
-                        string[] arrAllPdfFiles = new string[Constants.FILES_EXPORT_WATERSHED_PDF.Length + Constants.FILES_EXPORT_WATERSHED_PDF.Length];
-                        Array.Copy(Constants.FILES_EXPORT_WATERSHED_PDF, arrAllPdfFiles, Constants.FILES_EXPORT_WATERSHED_PDF.Length);
-                        Array.Copy(Constants.FILES_EXPORT_SITE_ANALYSIS_PDF, 0, arrAllPdfFiles, 
-                            Constants.FILES_EXPORT_WATERSHED_PDF.Length, Constants.FILES_EXPORT_SITE_ANALYSIS_PDF.Length);
-                        foreach (var item in arrAllPdfFiles)
+                        //string[] arrAllPdfFiles = new string[Constants.FILES_EXPORT_WATERSHED_PDF.Length + FILES_EXPORT_SITE_ANALYSIS_PDF.Length];
+                        //Array.Copy(Constants.FILES_EXPORT_WATERSHED_PDF, arrAllPdfFiles, Constants.FILES_EXPORT_WATERSHED_PDF.Length);
+                        //Array.Copy(Constants.FILES_EXPORT_SITE_ANALYSIS_PDF, 0, arrAllPdfFiles, 
+                        //    Constants.FILES_EXPORT_WATERSHED_PDF.Length, Constants.FILES_EXPORT_SITE_ANALYSIS_PDF.Length);
+                        foreach (var item in Constants.FILES_EXPORT_WATERSHED_PDF)
                         {
                             string strPath = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE
                                 + "\\" + item;
@@ -677,15 +677,15 @@ namespace bagis_pro
                             errorCount++;
                         }
 
-                        if (SiteAnalysisChecked)
-                        {
-                            success = await MapTools.PublishMapsAsync(ReportType.SiteAnalysis); // export the site analysis maps to pdf
-                            if (success != BA_ReturnCode.Success)
-                            {
-                                MessageBox.Show("An error occurred while generating the site analysis maps!!", "BAGIS-PRO");
-                                errorCount++;
-                            }
-                        }
+                        //if (SiteAnalysisChecked)
+                        //{
+                        //    success = await MapTools.PublishMapsAsync(ReportType.SiteAnalysis); // export the site analysis maps to pdf
+                        //    if (success != BA_ReturnCode.Success)
+                        //    {
+                        //        MessageBox.Show("An error occurred while generating the site analysis maps!!", "BAGIS-PRO");
+                        //        errorCount++;
+                        //    }
+                        //}
  
                         success = await GeneralTools.GenerateTablesAsync(false);   // export the tables to pdf
                         if (success != BA_ReturnCode.Success)
@@ -756,12 +756,12 @@ namespace bagis_pro
                         {
                             errorCount++;
                         }
-                        if (SiteAnalysisChecked)
-                        {
-                            success = await GeneralTools.GenerateMapsTitlePageAsync(ReportType.SiteAnalysis, strPublisher, Comments);
-                            outputPath = GeneralTools.GetFullPdfFileName(Constants.FILE_EXPORT_SITE_ANALYSIS_REPORT_PDF);
-                            success = GeneralTools.PublishFullPdfDocument(outputPath, ReportType.SiteAnalysis);    // Put it all together into a single pdf document
-                        }
+                        //if (SiteAnalysisChecked)
+                        //{
+                        //    success = await GeneralTools.GenerateMapsTitlePageAsync(ReportType.SiteAnalysis, strPublisher, Comments);
+                        //    outputPath = GeneralTools.GetFullPdfFileName(Constants.FILE_EXPORT_SITE_ANALYSIS_REPORT_PDF);
+                        //    success = GeneralTools.PublishFullPdfDocument(outputPath, ReportType.SiteAnalysis);    // Put it all together into a single pdf document
+                        //}
                         if (success != BA_ReturnCode.Success)
                         {
                             errorCount++;
@@ -774,11 +774,11 @@ namespace bagis_pro
                             {
                                 File.Copy(outputPath, GeneralTools.GetFullPdfFileName(reportName), true);
                             }
-                            if (SiteAnalysisChecked)
-                            {
-                                reportName = Constants.FILE_EXPORT_SITE_ANALYSIS_REPORT_PDF;
-                                File.Copy(outputPath, GeneralTools.GetFullPdfFileName(reportName), true);
-                            }
+                            //if (SiteAnalysisChecked)
+                            //{
+                            //    reportName = Constants.FILE_EXPORT_SITE_ANALYSIS_REPORT_PDF;
+                            //    File.Copy(outputPath, GeneralTools.GetFullPdfFileName(reportName), true);
+                            //}
                         }
                         // Create closing log entry for AOI
                         if (errorCount == 0)

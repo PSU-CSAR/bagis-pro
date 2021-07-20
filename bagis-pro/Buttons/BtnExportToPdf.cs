@@ -37,8 +37,8 @@ namespace bagis_pro.Buttons
                 }
 
                 // Delete any old PDF files
-                string[] arrFilesToDelete = Constants.FILES_EXPORT_WATERSHED_PDF.Concat(Constants.FILES_EXPORT_SITE_ANALYSIS_PDF).ToArray();
-                foreach (var item in arrFilesToDelete)
+                //string[] arrFilesToDelete = Constants.FILES_EXPORT_WATERSHED_PDF.Concat(Constants.FILES_EXPORT_SITE_ANALYSIS_PDF).ToArray();
+                foreach (var item in Constants.FILES_EXPORT_WATERSHED_PDF)
                 {
                     string strPath = GeneralTools.GetFullPdfFileName(item);
                     if (System.IO.File.Exists(strPath))
@@ -65,10 +65,10 @@ namespace bagis_pro.Buttons
                 // Load the maps if they aren't in the viewer already
                 BA_ReturnCode success = BA_ReturnCode.Success;
                 string strTestState = Constants.STATES_WATERSHED_MAP_BUTTONS[0];
-                if (rType.Equals(ReportType.SiteAnalysis))
-                {
-                    strTestState = Constants.STATES_SITE_ANALYSIS_MAP_BUTTONS[0];
-                }
+                //if (rType.Equals(ReportType.SiteAnalysis))
+                //{
+                //    strTestState = Constants.STATES_SITE_ANALYSIS_MAP_BUTTONS[0];
+                //}
                 if (!FrameworkApplication.State.Contains(strTestState))
                 {
                     success = await MapTools.DisplayMaps(Module1.Current.Aoi.FilePath, oLayout, true);
@@ -170,10 +170,10 @@ namespace bagis_pro.Buttons
                 string strPublisher = (string)Module1.Current.BatchToolSettings.Publisher;
                 success = await GeneralTools.GenerateMapsTitlePageAsync(rType, strPublisher, "");
                 string outputPath = GeneralTools.GetFullPdfFileName(Constants.FILE_EXPORT_WATERSHED_REPORT_PDF);
-                if (rType.Equals(ReportType.SiteAnalysis))
-                {
-                    outputPath = GeneralTools.GetFullPdfFileName(Constants.FILE_EXPORT_SITE_ANALYSIS_REPORT_PDF);
-                }
+                //if (rType.Equals(ReportType.SiteAnalysis))
+                //{
+                //    outputPath = GeneralTools.GetFullPdfFileName(Constants.FILE_EXPORT_SITE_ANALYSIS_REPORT_PDF);
+                //}
                 GeneralTools.PublishFullPdfDocument(outputPath, rType);    // Put it all together into a single pdf document
 
                 MessageBox.Show("Map package exported to " + outputPath + "!!", "BAGIS-PRO");

@@ -231,16 +231,17 @@ namespace bagis_pro
                 //Printing data sources
                 IDictionary<string, BA_Objects.DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
                 string[] keys = { Constants.DATA_TYPE_SWE, Constants.DATA_TYPE_PRECIPITATION, Constants.DATA_TYPE_SNOTEL,
-                                  Constants.DATA_TYPE_SNOW_COURSE};
-                if (rType.Equals(ReportType.SiteAnalysis))
-                {
-                    Array.Resize(ref keys, 5);
-                    keys[0] = Constants.DATA_TYPE_SNOTEL;
-                    keys[1] = Constants.DATA_TYPE_SNOW_COURSE;
-                    keys[2] = Constants.DATA_TYPE_ROADS;
-                    keys[3] = Constants.DATA_TYPE_PUBLIC_LAND;
-                    keys[4] = Constants.DATA_TYPE_VEGETATION;
-                }
+                                  Constants.DATA_TYPE_SNOW_COURSE, Constants.DATA_TYPE_SNOTEL, Constants.DATA_TYPE_SNOW_COURSE,
+                                  Constants.DATA_TYPE_PUBLIC_LAND, Constants.DATA_TYPE_VEGETATION};
+                //if (rType.Equals(ReportType.SiteAnalysis))
+                //{
+                //    Array.Resize(ref keys, 5);
+                //    keys[0] = Constants.DATA_TYPE_SNOTEL;
+                //    keys[1] = Constants.DATA_TYPE_SNOW_COURSE;
+                //    keys[2] = Constants.DATA_TYPE_ROADS;
+                //    keys[3] = Constants.DATA_TYPE_PUBLIC_LAND;
+                //    keys[4] = Constants.DATA_TYPE_VEGETATION;
+                //}
                 IList<BA_Objects.DataSource> lstDataSources = new List<BA_Objects.DataSource>();
                 foreach (string strKey in keys)
                 {
@@ -256,10 +257,10 @@ namespace bagis_pro
                     strComments = strComments.Trim();   // strip white space from comments
                 }
                 string strReportTitle = "Watershed Characteristics Report";
-                if (rType.Equals(ReportType.SiteAnalysis))
-                {
-                    strReportTitle = "Site Analysis Report";
-                }
+                //if (rType.Equals(ReportType.SiteAnalysis))
+                //{
+                //    strReportTitle = "Site Analysis Report";
+                //}
 
                 // Serialize the title page object
                 BA_Objects.ExportTitlePage tPage = new BA_Objects.ExportTitlePage
@@ -1552,12 +1553,12 @@ namespace bagis_pro
             PdfDocument outputDocument = new PdfDocument();
             //Iterate through files
             string[] arrAllFiles = Constants.FILES_EXPORT_WATERSHED_PDF;
-            if (rType.Equals(ReportType.SiteAnalysis))
-            {
-                arrAllFiles = Constants.FILES_EXPORT_SITE_ANALYSIS_PDF;
-            }
-            else
-            {
+            //if (rType.Equals(ReportType.SiteAnalysis))
+            //{
+            //    arrAllFiles = Constants.FILES_EXPORT_SITE_ANALYSIS_PDF;
+            //}
+            //else
+            //{
                 // Combine SNODAS maps into a single .pdf document
                 // Initialize output document
                 PdfDocument sweDeltaOutputDocument = new PdfDocument();
@@ -1607,7 +1608,7 @@ namespace bagis_pro
                     snodasOutputDocument.Save(GetFullPdfFileName(Constants.FILE_EXPORT_MAP_SNODAS_ALL_PDF));
                 }
 
-            }
+            //}
             foreach (string strFileName in arrAllFiles)
             {
                 string fullPath = GetFullPdfFileName(strFileName);
@@ -1616,7 +1617,7 @@ namespace bagis_pro
                     PdfDocument inputDocument = PdfReader.Open(fullPath, PdfDocumentOpenMode.Import);
                     // Iterate pages
                     int count = inputDocument.PageCount;
-                    for (int idx = 0; idx < count; idx++)
+                    for (idx = 0; idx < count; idx++)
                     {
                         // Get the page from the external document...
                         PdfPage page = inputDocument.Pages[idx];
