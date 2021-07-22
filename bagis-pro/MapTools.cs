@@ -1196,7 +1196,7 @@ namespace bagis_pro
                 success = await MapTools.DisplayTextBoxAsync(layout, Constants.MAPS_SUBTITLE, 4.0, 10.1, ColorFactory.Instance.BlackRGB, 20, "Times New Roman",
                     "Regular", "SubTitle");
                 // (optional) textbox
-                success = await MapTools.DisplayTextBoxAsync(layout, Constants.MAPS_TEXTBOX1, 5.0, 1.0, ColorFactory.Instance.BlackRGB, 12, "Times New Roman",
+                success = await MapTools.DisplayTextBoxAsync(layout, Constants.MAPS_TEXTBOX1, 5.0, 1.5, ColorFactory.Instance.BlackRGB, 12, "Times New Roman",
                     "Regular", "Text Box 1");
             }
             return success;
@@ -1438,24 +1438,43 @@ namespace bagis_pro
             {
                 await QueuedTask.Run(() =>
                 {
-                    var scaleBars = arcgis_2d.SearchScaleBars("Alternating Scale Bar");
-                if (scaleBars == null || scaleBars.Count == 0) return;
-                ScaleBarStyleItem scaleBarStyleItem = scaleBars[0];
+                    var scaleBars = arcgis_2d.SearchScaleBars("Scale Line ");
+                    if (scaleBars == null || scaleBars.Count == 0) return;
+                        ScaleBarStyleItem scaleBarStyleItem = scaleBars[0];
 
-                //Reference the map frame and define the location
-                MapFrame mapFrame = layout.FindElement(mapFrameName) as MapFrame;
-                Coordinate2D location = new Coordinate2D(3.8, 0.3);
+                    //Reference the map frame and define the location
+                    MapFrame mapFrame = layout.FindElement(mapFrameName) as MapFrame;
+                    double coordX = 3.7732;
+                    Coordinate2D location = new Coordinate2D(coordX, 0.9975);
 
-                //Construct the scale bar
-                ScaleBar scaleBar = LayoutElementFactory.Instance.CreateScaleBar(layout, location, mapFrame, scaleBarStyleItem);
-                CIMScaleBar cimScaleBar = (CIMScaleBar)scaleBar.GetDefinition();
-                cimScaleBar.Divisions = 2;
-                cimScaleBar.Subdivisions = 4;
-                cimScaleBar.DivisionsBeforeZero = 1;
-                cimScaleBar.MarkFrequency = ScaleBarFrequency.Divisions;
-                cimScaleBar.MarkPosition = ScaleBarVerticalPosition.Above;
-                cimScaleBar.UnitLabelPosition = ScaleBarLabelPosition.AfterLabels;
-                scaleBar.SetDefinition(cimScaleBar);
+                    //Construct the scale bar
+                    ScaleBar scaleBar = LayoutElementFactory.Instance.CreateScaleBar(layout, location, mapFrame, scaleBarStyleItem);
+                    CIMScaleBar cimScaleBar = (CIMScaleBar)scaleBar.GetDefinition();
+                    cimScaleBar.MarkPosition = ScaleBarVerticalPosition.Above;
+                    cimScaleBar.UnitLabelPosition = ScaleBarLabelPosition.AfterLabels;
+                    //cimScaleBar.AlignToZeroPoint = true;
+                    scaleBar.SetDefinition(cimScaleBar);
+
+                    // Second scale bar for kilometers
+                    // https://support.esri.com/en/technical-article/000011784
+                    // This article recommended setting AlignToZeroPoint to true but when I set this, the scale bars aren't added to
+                    // the map. Bug? Current version: 2.63
+                    scaleBars = arcgis_2d.SearchScaleBars("Scale Line 3");
+                    if (scaleBars == null || scaleBars.Count == 0) return;
+                    ScaleBarStyleItem scaleBarStyleItem2 = scaleBars[0];
+
+                    //Define the location
+                    Coordinate2D location2 = new Coordinate2D(coordX, 0.7035);
+
+                    //Construct the scale bar
+                    ScaleBar scaleBar2 = LayoutElementFactory.Instance.CreateScaleBar(layout, location2, mapFrame, scaleBarStyleItem2);
+                    CIMScaleBar cimScaleBar2 = (CIMScaleBar)scaleBar2.GetDefinition();
+                    cimScaleBar2.Units = LinearUnit.Kilometers;
+                    cimScaleBar2.UnitLabel = cimScaleBar2.Units.Name + "s";
+                    cimScaleBar2.UnitLabelPosition = ScaleBarLabelPosition.AfterLabels;
+                    //cimScaleBar2.AlignToZeroPoint = true;
+                    scaleBar2.SetDefinition(cimScaleBar2);
+
                 });
                 return BA_ReturnCode.Success;
             }
