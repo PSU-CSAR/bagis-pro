@@ -2143,16 +2143,140 @@ namespace bagis_pro
                 };
                 //DEM is always in meters
                 string strDemDisplayUnits = (string)Module1.Current.BatchToolSettings.DemDisplayUnits;
+                BA_Objects.Analysis oAnalysis = GetAnalysisSettings(oAoi.FilePath);
                 IList<BA_Objects.Site> lstAllSites = new List<BA_Objects.Site>();
+                bool bUpdateSites = false;
                 if (bHasSnotel)
                 {
                     lstAllSites = await AnalysisTools.AssembleSitesListAsync(Constants.FILE_SNOTEL, SiteType.Snotel.ToString(), -1);
+                    if (lstAllSites.Count > 0)
+                    {
+                        BA_Objects.Site[] aSites = oAnalysis.SnotelSites;
+                        if (aSites != null && aSites.Length > 0)
+                        {
+                            // store the sites in a dictionary so we can find them easier
+                            IDictionary<string, BA_Objects.Site> dictSites = new Dictionary<string, BA_Objects.Site>();
+                            foreach (var item in aSites)
+                            {
+                                dictSites.Add(Convert.ToString(item.ObjectId), item);
+                            }
+                            foreach (var item in lstAllSites)
+                            {
+                                string strKey = Convert.ToString(item.ObjectId);
+                                if (dictSites.ContainsKey(strKey))
+                                {
+                                    BA_Objects.Site checkSite = dictSites[strKey];
+                                    if (checkSite.Aspect != 0)
+                                    {
+                                        item.Aspect = checkSite.Aspect;
+                                        item.AspectName = checkSite.AspectName;
+                                    }
+                                    else
+                                    {
+                                        bUpdateSites = true;
+                                    }
+                                    if (checkSite.Slope != 0)
+                                    {
+                                        item.Slope = checkSite.Slope;
+                                    }
+                                    else
+                                    {
+                                        bUpdateSites = true;
+                                    }
+                                }
+                                else
+                                {
+                                    bUpdateSites = true;
+                                }
+                                if (bUpdateSites == true)
+                                {
+                                    break;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            bUpdateSites = true;
+                        }
+                        if (bUpdateSites)
+                        {
+                            success = await AnalysisTools.AppendSlopeAndAspectToSitesAsync(oAoi.FilePath, Constants.FILE_SNOTEL, lstAllSites);
+                            if (success == BA_ReturnCode.Success)
+                            {
+                                aSites = lstAllSites.ToArray<BA_Objects.Site>();
+                                oAnalysis.SnotelSites = aSites;
+                                // Save the results to the analysis.xml file
+                                SaveAnalysisSettings(oAoi.FilePath, oAnalysis);
+                            }
+                        }
+                    }
                 }
 
                 if (bHasSnowCourse)
                 {
                     IList<BA_Objects.Site> lstSnowCourseSites =
                         await AnalysisTools.AssembleSitesListAsync(Constants.FILE_SNOW_COURSE, SiteType.SnowCourse.ToString(), -1);
+                    if (lstSnowCourseSites.Count > 0)
+                    {
+                        BA_Objects.Site[] aSites = oAnalysis.SnowCourseSites;
+                        if (aSites != null && aSites.Length > 0)
+                        {
+                            // store the sites in a dictionary so we can find them easier
+                            IDictionary<string, BA_Objects.Site> dictSites = new Dictionary<string, BA_Objects.Site>();
+                            foreach (var item in aSites)
+                            {
+                                dictSites.Add(Convert.ToString(item.ObjectId), item);
+                            }
+                            foreach (var item in lstSnowCourseSites)
+                            {
+                                string strKey = Convert.ToString(item.ObjectId);
+                                if (dictSites.ContainsKey(strKey))
+                                {
+                                    BA_Objects.Site checkSite = dictSites[strKey];
+                                    if (checkSite.Aspect != 0)
+                                    {
+                                        item.Aspect = checkSite.Aspect;
+                                        item.AspectName = checkSite.AspectName;
+                                    }
+                                    else
+                                    {
+                                        bUpdateSites = true;
+                                    }
+                                    if (checkSite.Slope != 0)
+                                    { 
+                                      item.Slope = checkSite.Slope;
+                                    }
+                                    else
+                                    {
+                                         bUpdateSites = true;
+                                    }
+                                }
+                                else
+                                {
+                                    bUpdateSites = true;
+                                }
+                                if (bUpdateSites == true)
+                                {
+                                   break;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            bUpdateSites = true;
+                        }
+                        if (bUpdateSites)
+                        {
+                            success = await AnalysisTools.AppendSlopeAndAspectToSitesAsync(oAoi.FilePath, Constants.FILE_SNOW_COURSE, lstSnowCourseSites);
+                            if (success == BA_ReturnCode.Success)
+                                {
+                                    aSites = lstSnowCourseSites.ToArray<BA_Objects.Site>();
+                                    oAnalysis.SnowCourseSites = aSites;
+                                    // Save the results to the analysis.xml file
+                                    SaveAnalysisSettings(oAoi.FilePath, oAnalysis);
+                                }
+                            }
+                    }
                     if (lstSnowCourseSites != null && lstSnowCourseSites.Count > 0)
                     {
                         foreach (var aSite in lstSnowCourseSites)
@@ -2164,8 +2288,6 @@ namespace bagis_pro
 
                 foreach (var site in lstAllSites)
                 {
-                    // null out the buffer so the serialization won't fail
-                    site.Buffer = null;
                     // set the elevation text with units conversion
                     if (strDemDisplayUnits.Equals("Feet"))
                     {
@@ -2176,12 +2298,13 @@ namespace bagis_pro
                     {
                         site.ElevationText = String.Format("{0:0}", site.ElevMeters);
                     }
+                    // null out the buffer so the serialization won't fail; Do it again in case the slope/aspect came from the .xml file
+                    site.Buffer = null;
                 }
                 BA_Objects.Site[] arrSites = new BA_Objects.Site[lstAllSites.Count];
                 lstAllSites.CopyTo(arrSites, 0);
                 tPage.all_sites = arrSites;
                 //Set the site elevation units
-                BA_Objects.Analysis oAnalysis = GetAnalysisSettings(oAoi.FilePath);
                 string siteElevationUnits = "?";
                 if (oAnalysis != null && !String.IsNullOrEmpty(oAnalysis.ElevUnitsText))
                 {

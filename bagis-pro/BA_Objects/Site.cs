@@ -21,6 +21,10 @@ namespace bagis_pro.BA_Objects
         public bool IncludeInAnalysis;
         public double Latitude;
         public double Longitude;
+        public double Aspect;
+        public string AspectName;
+        public double Slope;
+
 
         public SiteType SiteType
         {
@@ -59,6 +63,30 @@ namespace bagis_pro.BA_Objects
             get
             {
                 return String.Format("{0:0.00}", Longitude);
+            }
+            set
+            {
+                // Does nothing; Required for XSL deserialization
+            }
+        }
+
+        public string AspectText
+        {
+            get
+            {
+                return String.Format("{0:0}", Aspect);
+            }
+            set
+            {
+                // Does nothing; Required for XSL deserialization
+            }
+        }
+
+        public string SlopeText
+        {
+            get
+            {
+                return String.Format("{0:0}", Slope);
             }
             set
             {

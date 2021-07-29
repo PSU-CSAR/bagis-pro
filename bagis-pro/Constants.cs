@@ -209,6 +209,8 @@ namespace bagis_pro
         public const string FIELD_WINTER_END_MONTH = "winter_end_month";
         public const string FIELD_LATITUDE = "latitude";
         public const string FIELD_LONGITUDE = "longitude";
+        public const string FIELD_SOURCE_ID_FEATURE = "SrcID_Feat";
+        public const string FIELD_SOURCE_ID_RASTER = "SrcID_Rast";
 
         public const string DATA_TYPE_SWE = "Snotel SWE";
         public const string DATA_TYPE_PRECIPITATION = "Precipitation";

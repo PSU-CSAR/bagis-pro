@@ -3537,6 +3537,141 @@ namespace bagis_pro
             }
             return success;
         }
+
+        public static async Task<BA_ReturnCode> AppendSlopeAndAspectToSitesAsync(string strAoiFilePath, 
+            string strSitesFile, IList<BA_Objects.Site> lstSites)
+        {
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            string strSurfacesGdb = GeodatabaseTools.GetGeodatabasePath(strAoiFilePath, GeodatabaseNames.Surfaces, true);
+            string strAspectPath = strSurfacesGdb + Constants.FILE_ASPECT;
+            string strSlopePath = strSurfacesGdb + Constants.FILE_SLOPE;
+            string strTableName = "tblExtract";
+            Uri layersUri = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiFilePath, GeodatabaseNames.Layers, false));
+            Uri analysisUri = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiFilePath, GeodatabaseNames.Analysis, false));
+            string strRasterInputs = strAspectPath + "; " + strSlopePath;
+            IDictionary<string, string> dictAspectNames = new Dictionary<string, string>();
+
+            // Check for aspect zones layer
+            bool bExists = await GeodatabaseTools.RasterDatasetExistsAsync(analysisUri, Constants.FILE_ASPECT_ZONE);
+            if (bExists)
+            {
+                strRasterInputs = strRasterInputs + "; " + analysisUri.LocalPath + "\\" + Constants.FILE_ASPECT_ZONE;
+            }
+            string strSitesPath = layersUri.LocalPath + "\\" + strSitesFile;
+
+            var parameters = Geoprocessing.MakeValueArray(strSitesPath, strRasterInputs,
+                analysisUri.LocalPath + "\\" + strTableName);
+            var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiFilePath);
+            IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("ExtractValuesToTable", parameters, environments,
+                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+            if (gpResult.IsFailed)
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(AppendSlopeAndAspectToSitesAsync),
+                    "Unable extract slope and aspect. Error code: " + gpResult.ErrorCode);
+                return success;
+            }
+            else
+            {
+                Module1.Current.ModuleLogManager.LogDebug(nameof(AppendSlopeAndAspectToSitesAsync), "Values extracted successfully");
+            }
+
+            await QueuedTask.Run(() =>
+            {
+                // store the aspect class names in a dictionary if aspect zones exists
+                if (bExists)
+                {
+                    using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(analysisUri)))
+                    using (RasterDataset rasterDataset = geodatabase.OpenDataset<RasterDataset>(Constants.FILE_ASPECT_ZONE))
+                    {
+                        RasterBandDefinition bandDefinition = rasterDataset.GetBand(0).GetDefinition();
+                        Raster raster = rasterDataset.CreateDefaultRaster();
+                        Table rasterTable = raster.GetAttributeTable();
+                        TableDefinition definition = rasterTable.GetDefinition();
+                        int idxName = definition.FindField(Constants.FIELD_NAME);
+                        int idxValue = definition.FindField(Constants.FIELD_VALUE);
+                        if (idxName < 0 || idxValue < 0)
+                        {
+                            Module1.Current.ModuleLogManager.LogError(nameof(AppendSlopeAndAspectToSitesAsync),
+                                "Unable to locate name or value fields in aspect zones!");
+                        }
+                        else
+                        {
+                            QueryFilter oQueryFilter = new QueryFilter();
+                            using (RowCursor cursor = rasterTable.Search(oQueryFilter, false))
+                            {
+                                while (cursor.MoveNext())
+                                {
+                                    Row nextRow = (Row)cursor.Current;
+                                    string strValue = Convert.ToString(nextRow[idxValue]);
+                                    string strName = Convert.ToString(nextRow[idxName]);
+                                    dictAspectNames.Add(strValue, strName);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(analysisUri)))
+                using (Table table = geodatabase.OpenDataset<Table>(strTableName))
+                {
+                    TableDefinition defTable = table.GetDefinition();
+                    int idxFeature = defTable.FindField(Constants.FIELD_SOURCE_ID_FEATURE);
+                    int idxRaster = defTable.FindField(Constants.FIELD_SOURCE_ID_RASTER);
+                    int idxValue = defTable.FindField(Constants.FIELD_VALUE);
+                    if (idxFeature < 0 || idxRaster < 0 || idxValue < 0)
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(AppendSlopeAndAspectToSitesAsync),
+                            "Unable to locate raster or feature id in output table!");
+                        return;
+                    }
+
+                    QueryFilter queryFilter = new QueryFilter();
+                    foreach (var site in lstSites)
+                    {
+                        queryFilter.WhereClause = Constants.FIELD_SOURCE_ID_FEATURE + " = " + site.ObjectId;
+                        using (RowCursor cursor = table.Search(queryFilter, false))
+                        {
+                            while (cursor.MoveNext())
+                            {
+                                Row nextRow = (Row) cursor.Current;
+                                int rasterId = Convert.ToInt32(nextRow[idxRaster]);
+                                switch (rasterId)
+                                {
+                                    case 0:
+                                        // Aspect
+                                        site.Aspect = Convert.ToDouble(nextRow[idxValue]);
+                                        break;
+                                    case 1:
+                                        // Slope
+                                        site.Slope = Convert.ToDouble(nextRow[idxValue]);
+                                        break;
+                                    case 2:
+                                        // Aspect Class
+                                        string key = Convert.ToString(nextRow[idxValue]);
+                                        if (dictAspectNames.ContainsKey(key))
+                                        {
+                                            site.AspectName = dictAspectNames[key];
+                                        }
+                                        break;
+                                }
+                            }
+                        }
+                        // null out the buffer so the serialization won't fail
+                        site.Buffer = null;
+                    }
+                }
+                success = BA_ReturnCode.Success;
+            });
+
+            if (success == BA_ReturnCode.Success)
+            {
+                success = await GeoprocessingTools.DeleteDatasetAsync(analysisUri.LocalPath + "\\" + strTableName);
+
+            }
+            return success;
+        }
+
+
     }
 
 }

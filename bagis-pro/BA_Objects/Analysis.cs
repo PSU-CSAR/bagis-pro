@@ -55,6 +55,8 @@ namespace bagis_pro.BA_Objects
         public double PrecipVolumeKaf = -1;
         public string WinterStartMonth;
         public string WinterEndMonth;
+        public Site[] SnotelSites;     // these parameters are used by bagis-pro to cache the aspect and slope for each site
+        public Site[] SnowCourseSites;     // these parameters are used by bagis-pro to cache the aspect and slope for each site
         public DateTime DateBagisSettingsConverted;
         public string DateCreatedText
         {

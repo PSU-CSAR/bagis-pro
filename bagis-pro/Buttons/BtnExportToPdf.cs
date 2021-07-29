@@ -36,6 +36,9 @@ namespace bagis_pro.Buttons
                     System.IO.Directory.CreateDirectory(outputDirectory);
                 }
 
+                await GeneralTools.GenerateSitesTableAsync(Module1.Current.Aoi);
+                return;
+
                 // Delete any old PDF files
                 //string[] arrFilesToDelete = Constants.FILES_EXPORT_WATERSHED_PDF.Concat(Constants.FILES_EXPORT_SITE_ANALYSIS_PDF).ToArray();
                 foreach (var item in Constants.FILES_EXPORT_WATERSHED_PDF)

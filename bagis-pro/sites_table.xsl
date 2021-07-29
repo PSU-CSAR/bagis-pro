@@ -59,10 +59,19 @@
                 Elevation (<xsl:value-of select="site_elev_range_units"/>)
               </td>
               <td class="style3">
-                Latitude
+                Slope %
               </td>
               <td class="style3">
-                Longitude
+                Aspect &#176;
+              </td>
+              <td class="style3">
+                Descr
+              </td>
+              <td class="style3">
+                Latitude &#176;
+              </td>
+              <td class="style3">
+                Longitude &#176;
               </td>
             </tr>
             <xsl:for-each select="all_sites/Site">
@@ -75,6 +84,15 @@
                 </td>
                 <td class="style4">
                   <xsl:value-of select="ElevationText" />
+                </td>
+                <td class="style4">
+                  <xsl:value-of select="SlopeText" />
+                </td>
+                <td class="style4">
+                  <xsl:value-of select="AspectText" />
+                </td>
+                <td class="style4">
+                  <xsl:value-of select="AspectName" />
                 </td>
                 <td class="style4">
                   <xsl:value-of select="LatitudeText" />

@@ -39,9 +39,9 @@ namespace bagis_pro
             return returnList;
         }
 
-        public static async Task<BA_ReturnCode> DeleteDatasetAsync(string featureClassPath)
+        public static async Task<BA_ReturnCode> DeleteDatasetAsync(string datasetPath)
         {
-            var parameters = Geoprocessing.MakeValueArray(featureClassPath);
+            var parameters = Geoprocessing.MakeValueArray(datasetPath);
             IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("Delete_management", parameters, null,
                 ArcGIS.Desktop.Framework.Threading.Tasks.CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
             if (gpResult.IsFailed)
