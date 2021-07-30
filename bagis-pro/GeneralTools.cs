@@ -2148,7 +2148,7 @@ namespace bagis_pro
                 bool bUpdateSites = false;
                 if (bHasSnotel)
                 {
-                    lstAllSites = await AnalysisTools.AssembleSitesListAsync(Constants.FILE_SNOTEL, SiteType.Snotel.ToString(), -1);
+                    lstAllSites = await AnalysisTools.AssembleSitesListAsync(Constants.FILE_SNOTEL, SiteType.Snotel.ToString(), -1, false);
                     if (lstAllSites.Count > 0)
                     {
                         BA_Objects.Site[] aSites = oAnalysis.SnotelSites;
@@ -2169,7 +2169,7 @@ namespace bagis_pro
                                     if (checkSite.Aspect != 0)
                                     {
                                         item.Aspect = checkSite.Aspect;
-                                        item.AspectName = checkSite.AspectName;
+                                        item.AspectDirection = checkSite.AspectDirection;
                                     }
                                     else
                                     {
@@ -2215,7 +2215,7 @@ namespace bagis_pro
                 if (bHasSnowCourse)
                 {
                     IList<BA_Objects.Site> lstSnowCourseSites =
-                        await AnalysisTools.AssembleSitesListAsync(Constants.FILE_SNOW_COURSE, SiteType.SnowCourse.ToString(), -1);
+                        await AnalysisTools.AssembleSitesListAsync(Constants.FILE_SNOW_COURSE, SiteType.SnowCourse.ToString(), -1, false);
                     if (lstSnowCourseSites.Count > 0)
                     {
                         BA_Objects.Site[] aSites = oAnalysis.SnowCourseSites;
@@ -2236,7 +2236,7 @@ namespace bagis_pro
                                     if (checkSite.Aspect != 0)
                                     {
                                         item.Aspect = checkSite.Aspect;
-                                        item.AspectName = checkSite.AspectName;
+                                        item.AspectDirection = checkSite.AspectDirection;
                                     }
                                     else
                                     {
@@ -2298,8 +2298,6 @@ namespace bagis_pro
                     {
                         site.ElevationText = String.Format("{0:0}", site.ElevMeters);
                     }
-                    // null out the buffer so the serialization won't fail; Do it again in case the slope/aspect came from the .xml file
-                    site.Buffer = null;
                 }
                 BA_Objects.Site[] arrSites = new BA_Objects.Site[lstAllSites.Count];
                 lstAllSites.CopyTo(arrSites, 0);

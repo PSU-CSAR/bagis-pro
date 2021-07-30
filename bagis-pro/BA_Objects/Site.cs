@@ -22,7 +22,7 @@ namespace bagis_pro.BA_Objects
         public double Latitude;
         public double Longitude;
         public double Aspect;
-        public string AspectName;
+        public string AspectDirection;
         public double Slope;
 
 

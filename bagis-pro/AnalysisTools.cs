@@ -69,7 +69,7 @@ namespace bagis_pro
                 IList<BA_Objects.Site> lstSites = null;
                 if (bHasSnotel)
                 {
-                    lstSites = await AnalysisTools.AssembleSitesListAsync(Constants.FILE_SNOTEL, SiteType.Snotel.ToString(), siteBufferDistanceMiles);
+                    lstSites = await AnalysisTools.AssembleSitesListAsync(Constants.FILE_SNOTEL, SiteType.Snotel.ToString(), siteBufferDistanceMiles, true);
                     success = await AnalysisTools.CalculateRepresentedArea(demElevMinMeters, demElevMaxMeters, lstSites, siteElevRangeFeet, Constants.FILE_SNOTEL_REPRESENTED);
                     if (success != BA_ReturnCode.Success)
                         bHasSnotel = false;
@@ -78,7 +78,7 @@ namespace bagis_pro
                 // snow course sites
                 if (bHasSnowCourse)
                 {
-                    lstSites = await AnalysisTools.AssembleSitesListAsync(Constants.FILE_SNOW_COURSE, SiteType.SnowCourse.ToString(), siteBufferDistanceMiles);
+                    lstSites = await AnalysisTools.AssembleSitesListAsync(Constants.FILE_SNOW_COURSE, SiteType.SnowCourse.ToString(), siteBufferDistanceMiles, true);
                     success = await AnalysisTools.CalculateRepresentedArea(demElevMinMeters, demElevMaxMeters, lstSites, siteElevRangeFeet, Constants.FILE_SCOS_REPRESENTED);
                     if (success != BA_ReturnCode.Success)
                         bHasSnowCourse = false;
@@ -138,7 +138,7 @@ namespace bagis_pro
         }
 
         public static async Task<IList<BA_Objects.Site>> AssembleSitesListAsync(string sitesFileName, string sType,
-            double siteBufferDistanceMiles)
+            double siteBufferDistanceMiles, bool bSetBuffer)
         {
             //2. Buffer point from feature class and query site information
             Uri layersUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, false));
@@ -157,9 +157,12 @@ namespace bagis_pro
                         {
                             Feature nextFeature = (Feature)cursor.Current;
                             BA_Objects.Site aSite = new BA_Objects.Site();
-                            var pointGeometry = nextFeature.GetShape();
-                            double bufferMeters = LinearUnit.Miles.ConvertTo(siteBufferDistanceMiles, LinearUnit.Meters);
-                            aSite.Buffer = GeometryEngine.Instance.Buffer(pointGeometry, bufferMeters);
+                            if (bSetBuffer)
+                            {
+                                var pointGeometry = nextFeature.GetShape();
+                                double bufferMeters = LinearUnit.Miles.ConvertTo(siteBufferDistanceMiles, LinearUnit.Meters);
+                                aSite.Buffer = GeometryEngine.Instance.Buffer(pointGeometry, bufferMeters);
+                            }
 
                             int idx = nextFeature.FindField(Constants.FIELD_SITE_ELEV);
                             if (idx > -1)
@@ -3041,15 +3044,50 @@ namespace bagis_pro
                         oAnalysis = (BA_Objects.Analysis)reader.Deserialize(file);
                     }
                 }
+
+                // Recalculate slope and aspect for the sites
+                bool bHasSnotel = false;
+                bool bHasSnowCourse = false;
+                Uri sitesGdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, false));
+                int intSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_SNOTEL);
+                if (intSites > 0)
+                    bHasSnotel = true;
+                intSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_SNOW_COURSE);
+                if (intSites > 0)
+                    bHasSnowCourse = true;
+                if (bHasSnotel == false && bHasSnowCourse == false)
+                {
+                    Module1.Current.ModuleLogManager.LogInfo(nameof(CalculateAspectZonesAsync),
+                        "No sites found. Sites aspect and slope will not be created!");
+                }
+                IList<BA_Objects.Site> lstAllSites = new List<BA_Objects.Site>();
+                if (bHasSnotel)
+                {
+                    lstAllSites = await AnalysisTools.AssembleSitesListAsync(Constants.FILE_SNOTEL, SiteType.Snotel.ToString(), -1, false);
+                    if (lstAllSites.Count > 0)
+                    {
+                        success = await AnalysisTools.AppendSlopeAndAspectToSitesAsync(Module1.Current.Aoi.FilePath, Constants.FILE_SNOTEL, lstAllSites);
+                        if (success == BA_ReturnCode.Success)
+                        {
+                            BA_Objects.Site[] arrSites = lstAllSites.ToArray<BA_Objects.Site>();
+                            oAnalysis.SnotelSites = arrSites;
+                        }
+                    }
+                }
+                if (bHasSnowCourse)
+                {
+                    IList<BA_Objects.Site> lstSnowCourseSites =
+                        await AnalysisTools.AssembleSitesListAsync(Constants.FILE_SNOW_COURSE, SiteType.SnowCourse.ToString(), -1, false);
+                    success = await AnalysisTools.AppendSlopeAndAspectToSitesAsync(Module1.Current.Aoi.FilePath, Constants.FILE_SNOW_COURSE, lstSnowCourseSites);
+                    {
+                        BA_Objects.Site[] arrSites = lstAllSites.ToArray<BA_Objects.Site>();
+                        oAnalysis.SnowCourseSites = arrSites;
+                    }
+                }
+
                 // Set the prism zones information on the analysis object and save
                 oAnalysis.AspectDirectionsCount = aspectDirectionsCount;
-                using (var file_stream = File.Create(strSettingsFile))
-                {
-                    var serializer = new System.Xml.Serialization.XmlSerializer(typeof(BA_Objects.Analysis));
-                    serializer.Serialize(file_stream, oAnalysis);
-                    Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateAspectZonesAsync),
-                        "Set aspect directions count in analysis.xml file");
-                }
+                GeneralTools.SaveAnalysisSettings(Module1.Current.Aoi.FilePath, oAnalysis);
             }
             return success;
         }
@@ -3650,14 +3688,12 @@ namespace bagis_pro
                                         string key = Convert.ToString(nextRow[idxValue]);
                                         if (dictAspectNames.ContainsKey(key))
                                         {
-                                            site.AspectName = dictAspectNames[key];
+                                            site.AspectDirection = dictAspectNames[key];
                                         }
                                         break;
                                 }
                             }
                         }
-                        // null out the buffer so the serialization won't fail
-                        site.Buffer = null;
                     }
                 }
                 success = BA_ReturnCode.Success;

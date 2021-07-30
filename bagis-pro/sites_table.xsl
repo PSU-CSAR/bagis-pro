@@ -65,7 +65,7 @@
                 Aspect &#176;
               </td>
               <td class="style3">
-                Descr
+                Direction
               </td>
               <td class="style3">
                 Latitude &#176;
@@ -92,7 +92,7 @@
                   <xsl:value-of select="AspectText" />
                 </td>
                 <td class="style4">
-                  <xsl:value-of select="AspectName" />
+                  <xsl:value-of select="AspectDirection" />
                 </td>
                 <td class="style4">
                   <xsl:value-of select="LatitudeText" />
