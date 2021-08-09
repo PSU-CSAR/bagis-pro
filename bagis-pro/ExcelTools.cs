@@ -1229,7 +1229,7 @@ namespace bagis_pro
                     string elevFieldName = Constants.FILE_PREC_MEAN_ELEV + "_band_1";
                     int idxPrecipTableCol = definition.FindField(prismFieldName);
                     int idxElevTableCol = definition.FindField(elevFieldName);
-                    int idxAspectTableCol = definition.FindField(Constants.FIELD_ASPECT);
+                    int idxAspectTableCol = definition.FindField(Constants.FIELD_DIRECTION);
 
                     if(idxPrecipTableCol < 0)
                     {
@@ -1300,14 +1300,14 @@ namespace bagis_pro
             Uri analysisUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false));
             await QueuedTask.Run(() => {
             using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(analysisUri)))
-            using (FeatureClass featureClass = geodatabase.OpenDataset<FeatureClass>(Constants.FILE_PREC_STEL))
+            using (FeatureClass featureClass = geodatabase.OpenDataset<FeatureClass>(Constants.FILE_MERGED_SITES))
             {
                 FeatureClassDefinition definition = featureClass.GetDefinition();
                 int idxPrecipTableCol = definition.FindField(Constants.FIELD_PRECIP);
                 int idxElevTableCol = definition.FindField(Constants.FIELD_SITE_ELEV);
                 int idxNameTableCol = definition.FindField(Constants.FIELD_SITE_NAME);
                 int idxTypeTableCol = definition.FindField(Constants.FIELD_SITE_TYPE);
-                int idxAspectTableCol = definition.FindField(Constants.FIELD_ASPECT);
+                int idxAspectTableCol = definition.FindField(Constants.FIELD_DIRECTION);
 
                 if (idxPrecipTableCol > -1 && idxElevTableCol > -1 && idxNameTableCol > -1 &&
                     idxTypeTableCol > -1 && idxAspectTableCol > -1)

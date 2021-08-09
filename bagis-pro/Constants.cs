@@ -75,7 +75,6 @@ namespace bagis_pro
         public const string FILE_ASP_ZONE_PREC = "aspzoneprec";
         public const string FILE_ASP_ZONE_PREC_TBL = "precmeanelev_tbl";
         public const string FILE_MERGED_SITES = "merged_sites";
-        public const string FILE_PREC_STEL = "prec_stel";
         public const string FILE_ELEV_ZONES_TBL = "tblZones";
         public const string FILE_ELEV_ZONES_VECTOR = "elevzone_v";
         public const string FILE_CRITICAL_PRECIP_ZONE = "criticalprecipzone";
@@ -183,6 +182,8 @@ namespace bagis_pro
         public const string FIELD_SITE_TYPE = "BA_STYPE";
         public const string FIELD_ASPECT = "BA_ASPECT";
         public const string FIELD_PRECIP = "BA_PRECIP";
+        public const string FIELD_DIRECTION = "BA_DIRECT";
+        public const string FIELD_SLOPE = "BA_SLOPE";
         public const string FIELD_OBJECT_ID = "OBJECTID";
         public const string FIELD_STATION_TRIPLET = "stationTriplet";
         public const string FIELD_STATION_NAME = "stationName";

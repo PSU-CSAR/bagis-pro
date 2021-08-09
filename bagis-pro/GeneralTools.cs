@@ -443,7 +443,7 @@ namespace bagis_pro
                 Worksheet pPrecipDemElevWorksheet = null;
                 Worksheet pPrecipChartWorksheet = null;
                 bool bPrecMeanElevTableExists = await GeodatabaseTools.TableExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false)), Constants.FILE_ASP_ZONE_PREC_TBL);
-                bool bPrecStelLayerExists = await GeodatabaseTools.FeatureClassExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false)), Constants.FILE_PREC_STEL);
+                bool bMergedSitesExists = await GeodatabaseTools.FeatureClassExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false)), Constants.FILE_MERGED_SITES);
                 if (bPrecMeanElevTableExists)
                 {
                     // Create Elevation Precipitation Worksheet
@@ -454,7 +454,7 @@ namespace bagis_pro
                     pPrecipChartWorksheet = bkWorkBook.Sheets.Add();
                     pPrecipChartWorksheet.Name = "Elev-Precip Chart";
                 }
-                if (bPrecStelLayerExists)
+                if (bMergedSitesExists)
                 {
                     // Create Site Precipitation Worksheet
                     pPrecipSiteWorksheet = bkWorkBook.Sheets.Add();
@@ -462,7 +462,7 @@ namespace bagis_pro
                 }
                 else
                 {
-                    Module1.Current.ModuleLogManager.LogError(nameof(GenerateTablesAsync), Constants.FILE_PREC_STEL +
+                    Module1.Current.ModuleLogManager.LogError(nameof(GenerateTablesAsync), Constants.FILE_MERGED_SITES +
                         " is missing. Precipitation correlation tables and chart cannot be created!");
                 }
 
@@ -661,7 +661,7 @@ namespace bagis_pro
                     intMinPrecip = await ExcelTools.CreateRepresentPrecipTableAsync(pPrecipDemElevWorksheet, strPrecipPath);
                     Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Created represented precip table");
                 }
-                if (intMinPrecip != 999 && bPrecStelLayerExists)
+                if (intMinPrecip != 999 && bMergedSitesExists)
                 {
                     success = await ExcelTools.CreateSnotelPrecipTableAsync(pPrecipSiteWorksheet,
                             new List<BA_Objects.Site>());

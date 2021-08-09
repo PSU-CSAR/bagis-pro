@@ -1328,6 +1328,9 @@ namespace bagis_pro
             string strAnalysis = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Analysis);
             Uri uriAnalysis = new Uri(strAnalysis);
 
+            string test = await CreateSitesLayerAsync(uriLayers);
+            return success;
+
 
             Webservices ws = new Webservices();
             Module1.Current.ModuleLogManager.LogDebug(nameof(ClipSnoLayersAsync),
@@ -2240,7 +2243,7 @@ namespace bagis_pro
                         "Sample tool run successfully");
                 }
 
-                success = await GeoprocessingTools.AddFieldAsync(uriAnalysis.LocalPath + "\\" + Constants.FILE_ASP_ZONE_PREC_TBL, Constants.FIELD_ASPECT, "TEXT");
+                success = await GeoprocessingTools.AddFieldAsync(uriAnalysis.LocalPath + "\\" + Constants.FILE_ASP_ZONE_PREC_TBL, Constants.FIELD_DIRECTION, "TEXT");
                 if (success == BA_ReturnCode.Success)
                 {
                     success = await UpdateAspectDirectionsAsync(uriAnalysis, Constants.FILE_ASP_ZONE_PREC_TBL,
@@ -2250,82 +2253,6 @@ namespace bagis_pro
                         MessageBox.Show("Unable to update aspect directions in " + Constants.FILE_ASP_ZONE_PREC_TBL
                             + ". Calculation cancelled!!", "BAGIS-PRO");
                         return success;
-                    }
-                }
-
-                string sitesPath = await GeodatabaseTools.CreateSitesLayerAsync(uriLayers);
-                if (!string.IsNullOrEmpty(sitesPath))
-                {
-                    string snotelPrecipPath = uriAnalysis.LocalPath + "\\" + Constants.FILE_PREC_STEL;
-                    string tempSnotelPrecipPath = uriAnalysis.LocalPath + "\\tmpSnoExtract";
-                    environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath, snapRaster: uriPrism.LocalPath + "\\" + prismFile);
-                    parameters = Geoprocessing.MakeValueArray(sitesPath, uriPrism.LocalPath + "\\" + prismFile, tempSnotelPrecipPath, "NONE", "VALUE_ONLY");
-                    gpResult = await Geoprocessing.ExecuteToolAsync("ExtractValuesToPoints_sa", parameters, environments,
-                        CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                    if (gpResult.IsFailed)
-                    {
-                        Module1.Current.ModuleLogManager.LogError(nameof(CalculateElevPrecipCorrAsync),
-                            "Extract values to points tool failed to create tmpSnoExtract. Error code: " + gpResult.ErrorCode);
-                        MessageBox.Show("Extract values to points tool failed to run. Calculation cancelled!!", "BAGIS-PRO");
-                        success = BA_ReturnCode.UnknownError;
-                        return success;
-                    }
-                    else
-                    {
-                        Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateElevPrecipCorrAsync),
-                            "Extract values to points tool run successfully with Prism file");
-                        // Rename extracted precip field
-                        parameters = Geoprocessing.MakeValueArray(tempSnotelPrecipPath, Constants.FIELD_RASTERVALU, Constants.FIELD_PRECIP, Constants.FIELD_PRECIP);
-                        gpResult = await Geoprocessing.ExecuteToolAsync("AlterField_management", parameters, environments,
-                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                        if (gpResult.IsFailed)
-                        {
-                            Module1.Current.ModuleLogManager.LogError(nameof(CalculateElevPrecipCorrAsync),
-                                "Alter field tool failed to rename RASTERVALU field. Error code: " + gpResult.ErrorCode);
-                            MessageBox.Show("Alter field tool failed to rename RASTERVALU field. Calculation cancelled!!", "BAGIS-PRO");
-                            success = BA_ReturnCode.UnknownError;
-                            return success;
-                        }
-                        else
-                        {
-                            Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateElevPrecipCorrAsync),
-                                "RASTERVALU field renamed successfully");
-
-                        }
-                    }
-                    parameters = Geoprocessing.MakeValueArray(tempSnotelPrecipPath, aspectZonesPath, snotelPrecipPath, "NONE", "VALUE_ONLY");
-                    gpResult = await Geoprocessing.ExecuteToolAsync("ExtractValuesToPoints_sa", parameters, environments,
-                        CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                    if (gpResult.IsFailed)
-                    {
-                        Module1.Current.ModuleLogManager.LogError(nameof(CalculateElevPrecipCorrAsync),
-                            "Extract values to points tool failed to update prec_stel. Error code: " + gpResult.ErrorCode);
-                        MessageBox.Show("Extract values to points tool failed to run. Calculation cancelled!!", "BAGIS-PRO");
-                        success = BA_ReturnCode.UnknownError;
-                        return success;
-                    }
-                    else
-                    {
-                        if (success == BA_ReturnCode.Success)
-                        {
-                            Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateElevPrecipCorrAsync),
-                                "Extract values to points tool run successfully with aspect directions layer");
-                            success = await GeoprocessingTools.AddFieldAsync(uriAnalysis.LocalPath + "\\" + Constants.FILE_PREC_STEL, Constants.FIELD_ASPECT, "TEXT");
-                            success = await UpdateAspectDirectionsAsync(uriAnalysis, Constants.FILE_PREC_STEL,
-                                lstAspectInterval, Constants.FIELD_RASTERVALU);
-                            if (success != BA_ReturnCode.Success)
-                            {
-                                MessageBox.Show("Unable to update aspect directions in " + Constants.FILE_PREC_STEL
-                                    + ". Calculation cancelled!!", "BAGIS-PRO");
-                                return success;
-                            }
-                            // delete raster_valu field from prec_stel
-                            string[] arrFieldsToDelete = new string[] { Constants.FIELD_RASTERVALU };
-                            success = await GeoprocessingTools.DeleteFeatureClassFieldsAsync(uriAnalysis.LocalPath + "\\" + Constants.FILE_PREC_STEL,
-                                arrFieldsToDelete);
-                            // delete temporary tmpSnoExtract file
-                            success = await GeoprocessingTools.DeleteDatasetAsync(tempSnotelPrecipPath);
-                        }
                     }
                 }
             }
@@ -2354,7 +2281,7 @@ namespace bagis_pro
                 using (Table table = geodatabase.OpenDataset<Table>(strUpdateFc))
                 {
                     TableDefinition defTable = table.GetDefinition();
-                    int idxAspect = defTable.FindField(Constants.FIELD_ASPECT);
+                    int idxAspect = defTable.FindField(Constants.FIELD_DIRECTION);
                     if (idxAspect < 0)
                     {
                         Module1.Current.ModuleLogManager.LogError(nameof(UpdateAspectDirectionsAsync),
@@ -3705,6 +3632,308 @@ namespace bagis_pro
 
             }
             return success;
+        }
+
+        public static async Task<string> CreateSitesLayerAsync(Uri gdbUri)
+        {
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            bool hasSnotel = await GeodatabaseTools.FeatureClassExistsAsync(gdbUri, Constants.FILE_SNOTEL);
+            bool hasSiteType = false;
+            bool bUpdateSnotel = false;
+            bool bUpdateSnowCourse = false;
+            if (hasSnotel)
+            {
+                hasSiteType = await GeodatabaseTools.AttributeExistsAsync(gdbUri, Constants.FILE_SNOTEL, Constants.FIELD_SITE_TYPE);
+                if (hasSiteType == false)
+                {
+                    success = await GeoprocessingTools.AddFieldAsync(gdbUri.LocalPath + "\\" + Constants.FILE_SNOTEL,
+                        Constants.FIELD_SITE_TYPE, "TEXT");
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        bUpdateSnotel = true;
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(CreateSitesLayerAsync),
+                            "Added ba_site_type field to Snotel");
+                    }
+                }
+            }
+            bool hasSnowCourse = await GeodatabaseTools.FeatureClassExistsAsync(gdbUri, Constants.FILE_SNOW_COURSE);
+            if (hasSnowCourse)
+            {
+                hasSiteType = await GeodatabaseTools.AttributeExistsAsync(gdbUri, Constants.FILE_SNOW_COURSE, Constants.FIELD_SITE_TYPE);
+                if (hasSiteType == false)
+                {
+                    success = await GeoprocessingTools.AddFieldAsync(gdbUri.LocalPath + "\\" + Constants.FILE_SNOW_COURSE,
+                        Constants.FIELD_SITE_TYPE, "TEXT");
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        bUpdateSnowCourse = true;
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(CreateSitesLayerAsync),
+                            "Added ba_site_type field to Snow Course");
+                    }
+                }
+            }
+
+            bool modificationResult = false;
+            string errorMsg = "";
+            await QueuedTask.Run(() => {
+                using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(gdbUri)))
+                {
+                    if (bUpdateSnotel)
+                    {
+                        using (FeatureClass featureClass = geodatabase.OpenDataset<FeatureClass>(Constants.FILE_SNOTEL))
+                        {
+                            FeatureClassDefinition featureClassDefinition = featureClass.GetDefinition();
+                            int idxSiteType = featureClassDefinition.FindField(Constants.FIELD_SITE_TYPE);
+                            if (idxSiteType > 0)
+                            {
+                                EditOperation editOperation = new EditOperation();
+                                editOperation.Callback(context =>
+                                {
+                                    using (RowCursor rowCursor = featureClass.Search(new QueryFilter(), false))
+                                    {
+                                        while (rowCursor.MoveNext())
+                                        {
+                                            using (Feature feature = (Feature)rowCursor.Current)
+                                            {
+                                                // In order to update the the attribute table has to be called before any changes are made to the row
+                                                context.Invalidate(feature);
+                                                feature[idxSiteType] = Constants.SITE_TYPE_SNOTEL;
+                                                feature.Store();
+                                                // Has to be called after the store too
+                                                context.Invalidate(feature);
+                                            }
+                                        }
+                                    }
+                                }, featureClass);
+
+                                try
+                                {
+                                    modificationResult = editOperation.Execute();
+                                    if (!modificationResult) errorMsg = editOperation.ErrorMessage;
+                                }
+                                catch (GeodatabaseException exObj)
+                                {
+                                    errorMsg = exObj.Message;
+                                }
+                            }
+                            else
+                            {
+                                Module1.Current.ModuleLogManager.LogDebug(nameof(CreateSitesLayerAsync),
+                                    "Unable to locate ba_site_type field on snotel_sites. Field could not be updated");
+                                return;
+                            }
+                        }
+                    }
+                    if (bUpdateSnowCourse)
+                    {
+                        using (FeatureClass featureClass = geodatabase.OpenDataset<FeatureClass>(Constants.FILE_SNOW_COURSE))
+                        {
+                            FeatureClassDefinition featureClassDefinition = featureClass.GetDefinition();
+                            int idxSiteType = featureClassDefinition.FindField(Constants.FIELD_SITE_TYPE);
+                            if (idxSiteType > 0)
+                            {
+                                EditOperation editOperation = new EditOperation();
+                                editOperation.Callback(context =>
+                                {
+                                    using (RowCursor rowCursor = featureClass.Search(new QueryFilter(), false))
+                                    {
+                                        while (rowCursor.MoveNext())
+                                        {
+                                            using (Feature feature = (Feature)rowCursor.Current)
+                                            {
+                                                // In order to update the the attribute table has to be called before any changes are made to the row
+                                                context.Invalidate(feature);
+                                                feature[idxSiteType] = Constants.SITE_TYPE_SNOW_COURSE;
+                                                feature.Store();
+                                                // Has to be called after the store too
+                                                context.Invalidate(feature);
+                                            }
+                                        }
+                                    }
+                                }, featureClass);
+
+                                try
+                                {
+                                    modificationResult = editOperation.Execute();
+                                    if (!modificationResult) errorMsg = editOperation.ErrorMessage;
+                                }
+                                catch (GeodatabaseException exObj)
+                                {
+                                    errorMsg = exObj.Message;
+                                }
+                            }
+                            else
+                            {
+                                Module1.Current.ModuleLogManager.LogDebug(nameof(CreateSitesLayerAsync),
+                                    "Unable to locate ba_site_type field on snow_course_sites. Field could not be updated");
+                                return;
+                            }
+                        }
+                    }
+                }
+            });
+            if (String.IsNullOrEmpty(errorMsg))
+            {
+                await Project.Current.SaveEditsAsync();
+            }
+            else
+            {
+                if (Project.Current.HasEdits)
+                    await Project.Current.DiscardEditsAsync();
+                Module1.Current.ModuleLogManager.LogError(nameof(CreateSitesLayerAsync),
+                    "Exception: " + errorMsg);
+                return "";
+            }
+
+            string returnPath = "";
+            if (hasSnotel && !hasSnowCourse)
+            {
+                // No snow course to merge; return path to Snotel layer
+                returnPath = gdbUri.LocalPath + "\\" + Constants.FILE_SNOTEL;
+
+            }
+            else if (!hasSnotel && hasSnowCourse)
+            {
+                // No snotel to merge; return path to snow course layer
+                returnPath = gdbUri.LocalPath + "\\" + Constants.FILE_SNOW_COURSE;
+            }
+            else
+            {
+                // merge snotel and snow course
+                string featuresToMerge = gdbUri.LocalPath + "\\" + Constants.FILE_SNOTEL + "; " +
+                                         gdbUri.LocalPath + "\\" + Constants.FILE_SNOW_COURSE;
+                string analysisPath = GeodatabaseTools.GetGeodatabasePath(System.IO.Path.GetDirectoryName(gdbUri.LocalPath), GeodatabaseNames.Analysis, true);
+                returnPath = analysisPath + Constants.FILE_MERGED_SITES;
+                var parameters = Geoprocessing.MakeValueArray(featuresToMerge, returnPath, "", "NO_SOURCE_INFO");
+                IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("Merge_management", parameters, null,
+                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                if (gpResult.IsFailed)
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(CreateSitesLayerAsync),
+                        "Unable to merge features. Error code: " + gpResult.ErrorCode);
+                    returnPath = ""; ;
+                }
+                else
+                {
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(CreateSitesLayerAsync),
+                        "Sites merged successfully");
+                }
+                if (!String.IsNullOrEmpty(returnPath))
+                {
+                    string strAoiPath = Module1.Current.Aoi.FilePath;
+                    var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath);
+                    string fileExtract = "tmpExtract";
+                    string fieldDirection = "tmp_dir";
+                    string[] arrFields = { Constants.FIELD_PRECIP, Constants.FIELD_ASPECT, Constants.FIELD_SLOPE, fieldDirection };
+                    string[] arrFieldDataTypes = { "DOUBLE", "DOUBLE", "DOUBLE", "INTEGER" };
+                    string[] arrUri = { GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Prism),
+                                        GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Surfaces),
+                                        GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Surfaces),
+                                        GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Analysis)};
+                    string[] arrInputRasters = {Path.GetFileName((string)Module1.Current.BatchToolSettings.AoiPrecipFile),
+                                                Constants.FILE_ASPECT,
+                                                Constants.FILE_SLOPE,
+                                                Constants.FILE_ASPECT_ZONE};
+
+                    for (int i = 0; i < arrFields.Length; i++)
+                    {
+                        success = await GeoprocessingTools.AddFieldAsync(returnPath, arrFields[i], arrFieldDataTypes[i]);
+                        if (success == BA_ReturnCode.Success)
+                        {
+                            Module1.Current.ModuleLogManager.LogDebug(nameof(CreateSitesLayerAsync),
+                                "New field " + arrFields[i] + " added to " + Constants.FILE_MERGED_SITES);
+                            string inputRaster = arrUri[i] + "\\" + arrInputRasters[i];
+                            if (await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(arrUri[i]), arrInputRasters[i]))
+                            {
+                                parameters = Geoprocessing.MakeValueArray(returnPath, inputRaster, analysisPath + "\\" + fileExtract, "NONE", "VALUE_ONLY");
+                                gpResult = await Geoprocessing.ExecuteToolAsync("ExtractValuesToPoints_sa", parameters, environments,
+                                                                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                                if (gpResult.IsFailed)
+                                {
+                                    Module1.Current.ModuleLogManager.LogError(nameof(CreateSitesLayerAsync),
+                                        "Extract values to points tool failed to create tmpExtract. Error code: " + gpResult.ErrorCode);
+                                    success = BA_ReturnCode.UnknownError;
+                                }
+                                else
+                                {
+                                    parameters = Geoprocessing.MakeValueArray(returnPath, Constants.FIELD_OBJECT_ID, analysisPath + "\\" + fileExtract,
+                                        Constants.FIELD_OBJECT_ID, "KEEP_ALL");
+                                    // Need GPExecuteToolFlag to add the layer to the map
+                                    gpResult = await Geoprocessing.ExecuteToolAsync("management.AddJoin", parameters, environments,
+                                        CancelableProgressor.None, GPExecuteToolFlags.Default);
+                                    if (gpResult.IsFailed)
+                                    {
+                                        Module1.Current.ModuleLogManager.LogError(nameof(CreateSitesLayerAsync),
+                                            "AddJoin tool failed. Error code: " + gpResult.ErrorCode);
+                                        success = BA_ReturnCode.UnknownError;
+                                    }
+                                    else
+                                    {
+                                        string lyrJoin = gpResult.ReturnValue;
+                                        parameters = Geoprocessing.MakeValueArray(lyrJoin, "merged_sites." + arrFields[i],
+                                            "!tmpExtract.RASTERVALU!", "PYTHON3", "", "DOUBLE");
+                                        await Geoprocessing.ExecuteToolAsync("management.CalculateField", parameters, environments,
+                                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                                        if (gpResult.IsFailed)
+                                        {
+                                            Module1.Current.ModuleLogManager.LogError(nameof(CreateSitesLayerAsync),
+                                                "CalculateField tool failed to update field. Error code: " + gpResult.ErrorCode);
+                                            success = BA_ReturnCode.UnknownError;
+                                        }
+                                        else
+                                        {
+                                            var map = MapView.Active.Map;
+                                            await QueuedTask.Run(() =>
+                                            {
+                                                Layer oLayer =
+                                                map.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(lyrJoin, StringComparison.CurrentCultureIgnoreCase));
+                                                if (oLayer != null)
+                                                {
+
+                                                    map.RemoveLayer(oLayer);
+                                                    success = BA_ReturnCode.Success;
+                                                }
+                                            });
+                                        }
+                                    }
+                                }
+
+                            }
+                            else
+                            {
+                                Module1.Current.ModuleLogManager.LogError(nameof(CreateSitesLayerAsync),
+                                    inputRaster + " not found. Values not extracted!!");
+
+                            }
+                        }
+
+                    }
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        // Update aspect directions
+                        Uri uriAnalysis = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Analysis));
+                        if (await GeodatabaseTools.AttributeExistsAsync(uriAnalysis,
+                            Constants.FILE_MERGED_SITES, fieldDirection))
+                        {
+                            success = await GeoprocessingTools.AddFieldAsync(returnPath, Constants.FIELD_DIRECTION, "TEXT");
+                            if (success == BA_ReturnCode.Success)
+                            {
+                                int intAspectCount = Convert.ToInt16(Module1.Current.BatchToolSettings.AspectDirectionsCount);
+                                IList<BA_Objects.Interval> lstAspectInterval = AnalysisTools.GetAspectClasses(intAspectCount);
+                                success = await UpdateAspectDirectionsAsync(uriAnalysis, Constants.FILE_MERGED_SITES,
+                                    lstAspectInterval, fieldDirection);
+                                if (success == BA_ReturnCode.Success)
+                                {
+                                    string[] arrFieldsToDelete = { fieldDirection };
+                                    success = await GeoprocessingTools.DeleteFeatureClassFieldsAsync(uriAnalysis.LocalPath + "\\" + Constants.FILE_MERGED_SITES,
+                                        arrFieldsToDelete);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            return returnPath;
         }
 
 
