@@ -1330,17 +1330,17 @@ namespace bagis_pro
                                     {
                                         if (strName.Equals(aSite.Name) && dblElevation == aSite.Elevation)
                                         {
-                                            if (aSite.SiteType.Equals(SiteType.Snotel) && strSiteType.Equals(Constants.SITE_TYPE_SNOTEL))
+                                            if (aSite.SiteType.Equals(SiteType.Snotel) && strSiteType.Equals(SiteType.Snotel.ToString()))
                                             {
                                                 bAddRow = true;
                                                 break;
                                             }
-                                            else if (aSite.SiteType.Equals(SiteType.SnowCourse) && strSiteType.Equals(Constants.SITE_TYPE_SNOW_COURSE))
+                                            else if (aSite.SiteType.Equals(SiteType.SnowCourse) && strSiteType.Equals(SiteType.SnowCourse.ToString()))
                                             {
                                                 bAddRow = true;
                                                 break;
                                             }
-                                            else if (aSite.SiteType.Equals(SiteType.Pseudo) && strSiteType.Equals(Constants.SITE_TYPE_PSEUDO))
+                                            else if (aSite.SiteType.Equals(SiteType.Pseudo) && strSiteType.Equals(SiteType.Pseudo.ToString()))
                                             {
                                                 bAddRow = true;
                                                 break;

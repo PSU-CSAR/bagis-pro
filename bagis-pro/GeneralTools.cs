@@ -442,8 +442,43 @@ namespace bagis_pro
                 Worksheet pPrecipSiteWorksheet = null;
                 Worksheet pPrecipDemElevWorksheet = null;
                 Worksheet pPrecipChartWorksheet = null;
-                bool bPrecMeanElevTableExists = await GeodatabaseTools.TableExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false)), Constants.FILE_ASP_ZONE_PREC_TBL);
-                bool bMergedSitesExists = await GeodatabaseTools.FeatureClassExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false)), Constants.FILE_MERGED_SITES);
+
+                Uri uriAnalysis = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false));
+                Uri uriLayers = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, false));
+                bool bPrecMeanElevTableExists = await GeodatabaseTools.TableExistsAsync(uriAnalysis, Constants.FILE_ASP_ZONE_PREC_TBL);
+                bool bMergedSitesExists = await GeodatabaseTools.FeatureClassExistsAsync(uriAnalysis, Constants.FILE_MERGED_SITES);
+                if (!bMergedSitesExists)
+                {
+                    Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), Constants.FILE_MERGED_SITES +
+                        " is missing. Creating it now...");
+                    // Create the merged sites layer if it doesn't exist
+                    string returnPath = await AnalysisTools.CreateSitesLayerAsync(uriAnalysis);
+                    if (string.IsNullOrEmpty(returnPath))
+                    {
+                        bMergedSitesExists = true;
+                    }
+                }
+                else
+                {
+                    // If it exists, check to make sure the direction and prism fields exist
+                    bool bDirectionField = await GeodatabaseTools.AttributeExistsAsync(uriAnalysis, Constants.FILE_MERGED_SITES, Constants.FIELD_DIRECTION);
+                    bool bPrecipField = await GeodatabaseTools.AttributeExistsAsync(uriAnalysis, Constants.FILE_MERGED_SITES, Constants.FIELD_PRECIP);
+                    if (!bDirectionField || !bPrecipField)
+                    {
+                        // At least one of the fields was missing, recreate the layer
+                        Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), Constants.FILE_MERGED_SITES +
+                            " was missing a critical field. Recreating it now...");
+                        string returnPath = await AnalysisTools.CreateSitesLayerAsync(uriLayers);
+                        if (string.IsNullOrEmpty(returnPath))
+                        {
+                            bMergedSitesExists = true;
+                        }
+                        else
+                        {
+                            bMergedSitesExists = false;
+                        }
+                    }
+                }
                 if (bPrecMeanElevTableExists)
                 {
                     // Create Elevation Precipitation Worksheet
@@ -494,7 +529,6 @@ namespace bagis_pro
                 }
 
                 Module1.Current.Aoi.HasSnotel = true;
-                Uri uriAnalysis = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false));
                 int intSites = await GeodatabaseTools.CountFeaturesAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, false)), Constants.FILE_SNOTEL);
                 if (intSites < 1)
                 {
@@ -2143,147 +2177,10 @@ namespace bagis_pro
                 };
                 //DEM is always in meters
                 string strDemDisplayUnits = (string)Module1.Current.BatchToolSettings.DemDisplayUnits;
-                BA_Objects.Analysis oAnalysis = GetAnalysisSettings(oAoi.FilePath);
                 IList<BA_Objects.Site> lstAllSites = new List<BA_Objects.Site>();
-                bool bUpdateSites = false;
-                if (bHasSnotel)
+                if (bHasSnotel || bHasSnowCourse)
                 {
-                    lstAllSites = await AnalysisTools.AssembleSitesListAsync(Constants.FILE_SNOTEL, SiteType.Snotel.ToString(), -1, false);
-                    if (lstAllSites.Count > 0)
-                    {
-                        BA_Objects.Site[] aSites = oAnalysis.SnotelSites;
-                        if (aSites != null && aSites.Length > 0)
-                        {
-                            // store the sites in a dictionary so we can find them easier
-                            IDictionary<string, BA_Objects.Site> dictSites = new Dictionary<string, BA_Objects.Site>();
-                            foreach (var item in aSites)
-                            {
-                                dictSites.Add(Convert.ToString(item.ObjectId), item);
-                            }
-                            foreach (var item in lstAllSites)
-                            {
-                                string strKey = Convert.ToString(item.ObjectId);
-                                if (dictSites.ContainsKey(strKey))
-                                {
-                                    BA_Objects.Site checkSite = dictSites[strKey];
-                                    if (checkSite.Aspect != 0)
-                                    {
-                                        item.Aspect = checkSite.Aspect;
-                                        item.AspectDirection = checkSite.AspectDirection;
-                                    }
-                                    else
-                                    {
-                                        bUpdateSites = true;
-                                    }
-                                    if (checkSite.Slope != 0)
-                                    {
-                                        item.Slope = checkSite.Slope;
-                                    }
-                                    else
-                                    {
-                                        bUpdateSites = true;
-                                    }
-                                }
-                                else
-                                {
-                                    bUpdateSites = true;
-                                }
-                                if (bUpdateSites == true)
-                                {
-                                    break;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            bUpdateSites = true;
-                        }
-                        if (bUpdateSites)
-                        {
-                            success = await AnalysisTools.AppendSlopeAndAspectToSitesAsync(oAoi.FilePath, Constants.FILE_SNOTEL, lstAllSites);
-                            if (success == BA_ReturnCode.Success)
-                            {
-                                aSites = lstAllSites.ToArray<BA_Objects.Site>();
-                                oAnalysis.SnotelSites = aSites;
-                                // Save the results to the analysis.xml file
-                                SaveAnalysisSettings(oAoi.FilePath, oAnalysis);
-                            }
-                        }
-                    }
-                }
-
-                if (bHasSnowCourse)
-                {
-                    IList<BA_Objects.Site> lstSnowCourseSites =
-                        await AnalysisTools.AssembleSitesListAsync(Constants.FILE_SNOW_COURSE, SiteType.SnowCourse.ToString(), -1, false);
-                    if (lstSnowCourseSites.Count > 0)
-                    {
-                        BA_Objects.Site[] aSites = oAnalysis.SnowCourseSites;
-                        if (aSites != null && aSites.Length > 0)
-                        {
-                            // store the sites in a dictionary so we can find them easier
-                            IDictionary<string, BA_Objects.Site> dictSites = new Dictionary<string, BA_Objects.Site>();
-                            foreach (var item in aSites)
-                            {
-                                dictSites.Add(Convert.ToString(item.ObjectId), item);
-                            }
-                            foreach (var item in lstSnowCourseSites)
-                            {
-                                string strKey = Convert.ToString(item.ObjectId);
-                                if (dictSites.ContainsKey(strKey))
-                                {
-                                    BA_Objects.Site checkSite = dictSites[strKey];
-                                    if (checkSite.Aspect != 0)
-                                    {
-                                        item.Aspect = checkSite.Aspect;
-                                        item.AspectDirection = checkSite.AspectDirection;
-                                    }
-                                    else
-                                    {
-                                        bUpdateSites = true;
-                                    }
-                                    if (checkSite.Slope != 0)
-                                    { 
-                                      item.Slope = checkSite.Slope;
-                                    }
-                                    else
-                                    {
-                                         bUpdateSites = true;
-                                    }
-                                }
-                                else
-                                {
-                                    bUpdateSites = true;
-                                }
-                                if (bUpdateSites == true)
-                                {
-                                   break;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            bUpdateSites = true;
-                        }
-                        if (bUpdateSites)
-                        {
-                            success = await AnalysisTools.AppendSlopeAndAspectToSitesAsync(oAoi.FilePath, Constants.FILE_SNOW_COURSE, lstSnowCourseSites);
-                            if (success == BA_ReturnCode.Success)
-                                {
-                                    aSites = lstSnowCourseSites.ToArray<BA_Objects.Site>();
-                                    oAnalysis.SnowCourseSites = aSites;
-                                    // Save the results to the analysis.xml file
-                                    SaveAnalysisSettings(oAoi.FilePath, oAnalysis);
-                                }
-                            }
-                    }
-                    if (lstSnowCourseSites != null && lstSnowCourseSites.Count > 0)
-                    {
-                        foreach (var aSite in lstSnowCourseSites)
-                        {
-                            lstAllSites.Add(aSite);
-                        }
-                    }
+                    lstAllSites = await AnalysisTools.AssembleMergedSitesListAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, false)));
                 }
 
                 foreach (var site in lstAllSites)
@@ -2303,6 +2200,7 @@ namespace bagis_pro
                 lstAllSites.CopyTo(arrSites, 0);
                 tPage.all_sites = arrSites;
                 //Set the site elevation units
+                BA_Objects.Analysis oAnalysis = GetAnalysisSettings(oAoi.FilePath);
                 string siteElevationUnits = "?";
                 if (oAnalysis != null && !String.IsNullOrEmpty(oAnalysis.ElevUnitsText))
                 {

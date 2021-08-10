@@ -69,7 +69,7 @@ namespace bagis_pro
                 IList<BA_Objects.Site> lstSites = null;
                 if (bHasSnotel)
                 {
-                    lstSites = await AnalysisTools.AssembleSitesListAsync(Constants.FILE_SNOTEL, SiteType.Snotel.ToString(), siteBufferDistanceMiles, true);
+                    lstSites = await AnalysisTools.AssembleSitesListAsync(Constants.FILE_SNOTEL, SiteType.Snotel.ToString(), siteBufferDistanceMiles);
                     success = await AnalysisTools.CalculateRepresentedArea(demElevMinMeters, demElevMaxMeters, lstSites, siteElevRangeFeet, Constants.FILE_SNOTEL_REPRESENTED);
                     if (success != BA_ReturnCode.Success)
                         bHasSnotel = false;
@@ -78,7 +78,7 @@ namespace bagis_pro
                 // snow course sites
                 if (bHasSnowCourse)
                 {
-                    lstSites = await AnalysisTools.AssembleSitesListAsync(Constants.FILE_SNOW_COURSE, SiteType.SnowCourse.ToString(), siteBufferDistanceMiles, true);
+                    lstSites = await AnalysisTools.AssembleSitesListAsync(Constants.FILE_SNOW_COURSE, SiteType.SnowCourse.ToString(), siteBufferDistanceMiles);
                     success = await AnalysisTools.CalculateRepresentedArea(demElevMinMeters, demElevMaxMeters, lstSites, siteElevRangeFeet, Constants.FILE_SCOS_REPRESENTED);
                     if (success != BA_ReturnCode.Success)
                         bHasSnowCourse = false;
@@ -138,7 +138,7 @@ namespace bagis_pro
         }
 
         public static async Task<IList<BA_Objects.Site>> AssembleSitesListAsync(string sitesFileName, string sType,
-            double siteBufferDistanceMiles, bool bSetBuffer)
+            double siteBufferDistanceMiles)
         {
             //2. Buffer point from feature class and query site information
             Uri layersUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, false));
@@ -157,12 +157,9 @@ namespace bagis_pro
                         {
                             Feature nextFeature = (Feature)cursor.Current;
                             BA_Objects.Site aSite = new BA_Objects.Site();
-                            if (bSetBuffer)
-                            {
-                                var pointGeometry = nextFeature.GetShape();
-                                double bufferMeters = LinearUnit.Miles.ConvertTo(siteBufferDistanceMiles, LinearUnit.Meters);
-                                aSite.Buffer = GeometryEngine.Instance.Buffer(pointGeometry, bufferMeters);
-                            }
+                            var pointGeometry = nextFeature.GetShape();
+                            double bufferMeters = LinearUnit.Miles.ConvertTo(siteBufferDistanceMiles, LinearUnit.Meters);
+                            aSite.Buffer = GeometryEngine.Instance.Buffer(pointGeometry, bufferMeters);
 
                             int idx = nextFeature.FindField(Constants.FIELD_SITE_ELEV);
                             if (idx > -1)
@@ -194,6 +191,84 @@ namespace bagis_pro
                             aSite.SiteTypeText = sType;
                             lstSites.Add(aSite);
                             Module1.Current.ModuleLogManager.LogDebug(nameof(AssembleSitesListAsync),
+                                "Added site " + aSite.Name + " to list");
+                        }
+                    }
+                }
+            });
+            return lstSites;
+        }
+
+        public static async Task<IList<BA_Objects.Site>> AssembleMergedSitesListAsync(Uri uriGdb)
+        {
+            IList<BA_Objects.Site> lstSites = new List<BA_Objects.Site>();
+            // Open geodatabase for sites
+            await QueuedTask.Run(() =>
+            {
+                using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(uriGdb)))
+                using (FeatureClass fClass = geodatabase.OpenDataset<FeatureClass>(Constants.FILE_MERGED_SITES))
+                {
+                    QueryFilter queryFilter = new QueryFilter();
+                    using (RowCursor cursor = fClass.Search(queryFilter, false))
+                    {
+                        while (cursor.MoveNext())
+                        {
+                            Feature nextFeature = (Feature)cursor.Current;
+                            BA_Objects.Site aSite = new BA_Objects.Site();
+                            int idx = nextFeature.FindField(Constants.FIELD_SITE_ELEV);
+                            if (idx > -1)
+                            {
+                                aSite.ElevMeters = Convert.ToDouble(nextFeature[idx]);
+                            }
+
+                            idx = nextFeature.FindField(Constants.FIELD_SITE_NAME);
+                            if (idx > -1)
+                            {
+                                aSite.Name = Convert.ToString(nextFeature[idx]);
+                            }
+                            idx = nextFeature.FindField(Constants.FIELD_OBJECT_ID);
+                            if (idx > -1)
+                            {
+                                aSite.ObjectId = Convert.ToInt32(nextFeature[idx]);
+                            }
+                            idx = nextFeature.FindField(Constants.FIELD_LONGITUDE);
+                            if (idx > -1)
+                            {
+                                aSite.Longitude = Convert.ToDouble(nextFeature[idx]);
+                            }
+                            idx = nextFeature.FindField(Constants.FIELD_LATITUDE);
+                            if (idx > -1)
+                            {
+                                aSite.Latitude = Convert.ToDouble(nextFeature[idx]);
+                            }
+                            idx = nextFeature.FindField(Constants.FIELD_SITE_TYPE);
+                            if (idx > -1)
+                            {
+                                aSite.SiteTypeText = Convert.ToString(nextFeature[idx]);
+                            }
+                            idx = nextFeature.FindField(Constants.FIELD_ASPECT);
+                            if (idx > -1)
+                            {
+                                aSite.Aspect = Convert.ToDouble(nextFeature[idx]);
+                            }
+                            idx = nextFeature.FindField(Constants.FIELD_DIRECTION);
+                            if (idx > -1)
+                            {
+                                aSite.AspectDirection = Convert.ToString(nextFeature[idx]);
+                            }
+                            idx = nextFeature.FindField(Constants.FIELD_SLOPE);
+                            if (idx > -1)
+                            {
+                                aSite.Slope = Convert.ToDouble(nextFeature[idx]);
+                            }
+                            idx = nextFeature.FindField(Constants.FIELD_PRECIP);
+                            if (idx > -1)
+                            {
+                                aSite.Precipitation = Convert.ToDouble(nextFeature[idx]);
+                            }
+
+                            lstSites.Add(aSite);
+                            Module1.Current.ModuleLogManager.LogDebug(nameof(AssembleMergedSitesListAsync),
                                 "Added site " + aSite.Name + " to list");
                         }
                     }
@@ -1328,10 +1403,6 @@ namespace bagis_pro
             string strAnalysis = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Analysis);
             Uri uriAnalysis = new Uri(strAnalysis);
 
-            string test = await CreateSitesLayerAsync(uriLayers);
-            return success;
-
-
             Webservices ws = new Webservices();
             Module1.Current.ModuleLogManager.LogDebug(nameof(ClipSnoLayersAsync),
                 "Contacting webservices server to retrieve layer metadata");
@@ -1549,10 +1620,10 @@ namespace bagis_pro
                                                 {
                                                     feature[idxTarget] = feature[idxSource];
                                                 }
-                                                string siteType = Constants.SITE_TYPE_SNOTEL;
+                                                string siteType = SiteType.Snotel.ToString();
                                                 if (i == 1)
                                                 {
-                                                    siteType = Constants.SITE_TYPE_SNOW_COURSE;
+                                                    siteType = SiteType.SnowCourse.ToString();
                                                 }
                                                 idxTarget = feature.FindField(Constants.FIELD_SITE_TYPE);
                                                 if (idxTarget > -1)
@@ -1730,6 +1801,12 @@ namespace bagis_pro
                 }
 
                 j++;
+            }
+
+            string returnPath = await AnalysisTools.CreateSitesLayerAsync(uriLayers);
+            if (string.IsNullOrEmpty(returnPath))
+            {
+                success = BA_ReturnCode.UnknownError;
             }
 
             return success;
@@ -2976,6 +3053,7 @@ namespace bagis_pro
                 bool bHasSnotel = false;
                 bool bHasSnowCourse = false;
                 Uri sitesGdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, false));
+                Uri uriAnalysis = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis));
                 int intSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_SNOTEL);
                 if (intSites > 0)
                     bHasSnotel = true;
@@ -2988,31 +3066,49 @@ namespace bagis_pro
                         "No sites found. Sites aspect and slope will not be created!");
                 }
                 IList<BA_Objects.Site> lstAllSites = new List<BA_Objects.Site>();
-                if (bHasSnotel)
+                if (bHasSnotel || bHasSnowCourse)
                 {
-                    lstAllSites = await AnalysisTools.AssembleSitesListAsync(Constants.FILE_SNOTEL, SiteType.Snotel.ToString(), -1, false);
-                    if (lstAllSites.Count > 0)
+                    bool bMergedSitesExists = await GeodatabaseTools.FeatureClassExistsAsync(uriAnalysis, Constants.FILE_MERGED_SITES);
+                    if (!bMergedSitesExists)
                     {
-                        success = await AnalysisTools.AppendSlopeAndAspectToSitesAsync(Module1.Current.Aoi.FilePath, Constants.FILE_SNOTEL, lstAllSites);
-                        if (success == BA_ReturnCode.Success)
+                        Module1.Current.ModuleLogManager.LogInfo(nameof(CalculateAspectZonesAsync), Constants.FILE_MERGED_SITES +
+                            " is missing. Creating it now...");
+                        // Create the merged sites layer if it doesn't exist
+                        string returnPath = await AnalysisTools.CreateSitesLayerAsync(sitesGdbUri);
+                        if (string.IsNullOrEmpty(returnPath))
                         {
-                            BA_Objects.Site[] arrSites = lstAllSites.ToArray<BA_Objects.Site>();
-                            oAnalysis.SnotelSites = arrSites;
+                            bMergedSitesExists = true;
                         }
                     }
-                }
-                if (bHasSnowCourse)
-                {
-                    IList<BA_Objects.Site> lstSnowCourseSites =
-                        await AnalysisTools.AssembleSitesListAsync(Constants.FILE_SNOW_COURSE, SiteType.SnowCourse.ToString(), -1, false);
-                    success = await AnalysisTools.AppendSlopeAndAspectToSitesAsync(Module1.Current.Aoi.FilePath, Constants.FILE_SNOW_COURSE, lstSnowCourseSites);
+                    else
                     {
-                        BA_Objects.Site[] arrSites = lstAllSites.ToArray<BA_Objects.Site>();
-                        oAnalysis.SnowCourseSites = arrSites;
+                        // If it exists, check to make sure the direction and prism fields exist
+                        bool bDirectionField = await GeodatabaseTools.AttributeExistsAsync(uriAnalysis, Constants.FILE_MERGED_SITES, Constants.FIELD_DIRECTION);
+                        bool bAspectField = await GeodatabaseTools.AttributeExistsAsync(uriAnalysis, Constants.FILE_MERGED_SITES, Constants.FIELD_ASPECT);
+                        if (!bDirectionField || !bAspectField)
+                        {
+                            // At least one of the fields was missing, recreate the layer
+                            Module1.Current.ModuleLogManager.LogInfo(nameof(CalculateAspectZonesAsync), Constants.FILE_MERGED_SITES +
+                                " was missing a critical field. Recreating it now...");
+                            string returnPath = await AnalysisTools.CreateSitesLayerAsync(sitesGdbUri);
+                            if (string.IsNullOrEmpty(returnPath))
+                            {
+                                bMergedSitesExists = true;
+                            }
+                            else
+                            {
+                                bMergedSitesExists = false;
+                            }
+                        }
+                    }
+                    lstAllSites = await AnalysisTools.AssembleMergedSitesListAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis)));
+                    if (lstAllSites.Count > 0)
+                    {
+                        success = await AnalysisTools.UpdateSitesPropertiesAsync(Module1.Current.Aoi.FilePath, SiteProperties.Aspect);
                     }
                 }
 
-                // Set the prism zones information on the analysis object and save
+                // Set the aspect directions information on the analysis object and save
                 oAnalysis.AspectDirectionsCount = aspectDirectionsCount;
                 GeneralTools.SaveAnalysisSettings(Module1.Current.Aoi.FilePath, oAnalysis);
             }
@@ -3503,133 +3599,150 @@ namespace bagis_pro
             return success;
         }
 
-        public static async Task<BA_ReturnCode> AppendSlopeAndAspectToSitesAsync(string strAoiFilePath, 
-            string strSitesFile, IList<BA_Objects.Site> lstSites)
+        //
+        //
+        //
+         public static async Task<BA_ReturnCode> UpdateSitesPropertiesAsync(string strAoiFilePath, 
+            SiteProperties siteProperties)
         {
-            BA_ReturnCode success = BA_ReturnCode.UnknownError;
-            string strSurfacesGdb = GeodatabaseTools.GetGeodatabasePath(strAoiFilePath, GeodatabaseNames.Surfaces, true);
-            string strAspectPath = strSurfacesGdb + Constants.FILE_ASPECT;
-            string strSlopePath = strSurfacesGdb + Constants.FILE_SLOPE;
-            string strTableName = "tblExtract";
-            Uri layersUri = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiFilePath, GeodatabaseNames.Layers, false));
-            Uri analysisUri = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiFilePath, GeodatabaseNames.Analysis, false));
-            string strRasterInputs = strAspectPath + "; " + strSlopePath;
-            IDictionary<string, string> dictAspectNames = new Dictionary<string, string>();
-
-            // Check for aspect zones layer
-            bool bExists = await GeodatabaseTools.RasterDatasetExistsAsync(analysisUri, Constants.FILE_ASPECT_ZONE);
-            if (bExists)
-            {
-                strRasterInputs = strRasterInputs + "; " + analysisUri.LocalPath + "\\" + Constants.FILE_ASPECT_ZONE;
-            }
-            string strSitesPath = layersUri.LocalPath + "\\" + strSitesFile;
-
-            var parameters = Geoprocessing.MakeValueArray(strSitesPath, strRasterInputs,
-                analysisUri.LocalPath + "\\" + strTableName);
             var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiFilePath);
-            IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("ExtractValuesToTable", parameters, environments,
-                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-            if (gpResult.IsFailed)
+            string fileExtract = "tmpExtract";
+            string fieldDirection = "tmp_dir";
+            IList<string> lstFields = new List<string>();
+            IList<string> lstFieldDataTypes = new List<string>();
+            IList<string> lstUri = new List<string>();
+            IList<string> lstInputRasters = new List<string>();
+            switch (siteProperties)
             {
-                Module1.Current.ModuleLogManager.LogError(nameof(AppendSlopeAndAspectToSitesAsync),
-                    "Unable extract slope and aspect. Error code: " + gpResult.ErrorCode);
-                return success;
-            }
-            else
-            {
-                Module1.Current.ModuleLogManager.LogDebug(nameof(AppendSlopeAndAspectToSitesAsync), "Values extracted successfully");
+                case SiteProperties.Aspect:
+                    lstFields.Add(Constants.FIELD_ASPECT);
+                    lstFields.Add(fieldDirection);
+                    lstFieldDataTypes.Add("DOUBLE");
+                    lstFieldDataTypes.Add("INTEGER");
+                    lstUri.Add(GeodatabaseTools.GetGeodatabasePath(strAoiFilePath, GeodatabaseNames.Surfaces));
+                    lstUri.Add(GeodatabaseTools.GetGeodatabasePath(strAoiFilePath, GeodatabaseNames.Analysis));
+                    lstInputRasters.Add(Constants.FILE_ASPECT);
+                    lstInputRasters.Add(Constants.FILE_ASPECT_ZONE);
+                    break;
+
+                case SiteProperties.Precipitation:
+                    lstFields.Add(Constants.FIELD_PRECIP);
+                    lstFieldDataTypes.Add("DOUBLE");
+                    lstUri.Add(GeodatabaseTools.GetGeodatabasePath(strAoiFilePath, GeodatabaseNames.Prism));
+                    lstInputRasters.Add(Path.GetFileName((string)Module1.Current.BatchToolSettings.AoiPrecipFile));
+                    break;
             }
 
-            await QueuedTask.Run(() =>
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            string analysisPath = GeodatabaseTools.GetGeodatabasePath(strAoiFilePath, GeodatabaseNames.Analysis);
+            string featureClassToUpdate = analysisPath + "\\" + Constants.FILE_MERGED_SITES;
+            for (int i = 0; i < lstFields.Count; i++)
             {
-                // store the aspect class names in a dictionary if aspect zones exists
-                if (bExists)
+                if (await GeodatabaseTools.AttributeExistsAsync(new Uri(analysisPath), Constants.FILE_MERGED_SITES, lstFields[i]))
                 {
-                    using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(analysisUri)))
-                    using (RasterDataset rasterDataset = geodatabase.OpenDataset<RasterDataset>(Constants.FILE_ASPECT_ZONE))
+                    success = BA_ReturnCode.Success;
+                }
+                else
+                {
+                    success = await GeoprocessingTools.AddFieldAsync(featureClassToUpdate, lstFields[i], lstFieldDataTypes[i]);
+                }
+                if (success == BA_ReturnCode.Success)
+                {
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(UpdateSitesPropertiesAsync),
+                        "New field " + lstFields[i] + " added to " + Constants.FILE_MERGED_SITES);
+                    string inputRaster = lstUri[i] + "\\" + lstInputRasters[i];
+                    if (await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(lstUri[i]), lstInputRasters[i]))
                     {
-                        RasterBandDefinition bandDefinition = rasterDataset.GetBand(0).GetDefinition();
-                        Raster raster = rasterDataset.CreateDefaultRaster();
-                        Table rasterTable = raster.GetAttributeTable();
-                        TableDefinition definition = rasterTable.GetDefinition();
-                        int idxName = definition.FindField(Constants.FIELD_NAME);
-                        int idxValue = definition.FindField(Constants.FIELD_VALUE);
-                        if (idxName < 0 || idxValue < 0)
+                        var parameters = Geoprocessing.MakeValueArray(featureClassToUpdate, inputRaster, analysisPath + "\\" + fileExtract, "NONE", "VALUE_ONLY");
+                        var gpResult = await Geoprocessing.ExecuteToolAsync("ExtractValuesToPoints_sa", parameters, environments,
+                                                        CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                        if (gpResult.IsFailed)
                         {
-                            Module1.Current.ModuleLogManager.LogError(nameof(AppendSlopeAndAspectToSitesAsync),
-                                "Unable to locate name or value fields in aspect zones!");
+                            Module1.Current.ModuleLogManager.LogError(nameof(UpdateSitesPropertiesAsync),
+                                "Extract values to points tool failed to create tmpExtract. Error code: " + gpResult.ErrorCode);
+                            success = BA_ReturnCode.UnknownError;
                         }
                         else
                         {
-                            QueryFilter oQueryFilter = new QueryFilter();
-                            using (RowCursor cursor = rasterTable.Search(oQueryFilter, false))
+                            parameters = Geoprocessing.MakeValueArray(featureClassToUpdate, Constants.FIELD_OBJECT_ID, analysisPath + "\\" + fileExtract,
+                                Constants.FIELD_OBJECT_ID, "KEEP_ALL");
+                            // Need GPExecuteToolFlag to add the layer to the map
+                            gpResult = await Geoprocessing.ExecuteToolAsync("management.AddJoin", parameters, environments,
+                                CancelableProgressor.None, GPExecuteToolFlags.Default);
+                            if (gpResult.IsFailed)
                             {
-                                while (cursor.MoveNext())
-                                {
-                                    Row nextRow = (Row)cursor.Current;
-                                    string strValue = Convert.ToString(nextRow[idxValue]);
-                                    string strName = Convert.ToString(nextRow[idxName]);
-                                    dictAspectNames.Add(strValue, strName);
-                                }
+                                Module1.Current.ModuleLogManager.LogError(nameof(UpdateSitesPropertiesAsync),
+                                    "AddJoin tool failed. Error code: " + gpResult.ErrorCode);
+                                success = BA_ReturnCode.UnknownError;
                             }
-                        }
-                    }
-                }
-
-                using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(analysisUri)))
-                using (Table table = geodatabase.OpenDataset<Table>(strTableName))
-                {
-                    TableDefinition defTable = table.GetDefinition();
-                    int idxFeature = defTable.FindField(Constants.FIELD_SOURCE_ID_FEATURE);
-                    int idxRaster = defTable.FindField(Constants.FIELD_SOURCE_ID_RASTER);
-                    int idxValue = defTable.FindField(Constants.FIELD_VALUE);
-                    if (idxFeature < 0 || idxRaster < 0 || idxValue < 0)
-                    {
-                        Module1.Current.ModuleLogManager.LogError(nameof(AppendSlopeAndAspectToSitesAsync),
-                            "Unable to locate raster or feature id in output table!");
-                        return;
-                    }
-
-                    QueryFilter queryFilter = new QueryFilter();
-                    foreach (var site in lstSites)
-                    {
-                        queryFilter.WhereClause = Constants.FIELD_SOURCE_ID_FEATURE + " = " + site.ObjectId;
-                        using (RowCursor cursor = table.Search(queryFilter, false))
-                        {
-                            while (cursor.MoveNext())
+                            else
                             {
-                                Row nextRow = (Row) cursor.Current;
-                                int rasterId = Convert.ToInt32(nextRow[idxRaster]);
-                                switch (rasterId)
+                                string lyrJoin = gpResult.ReturnValue;
+                                parameters = Geoprocessing.MakeValueArray(lyrJoin, "merged_sites." + lstFields[i],
+                                    "!tmpExtract.RASTERVALU!", "PYTHON3", "", "DOUBLE");
+                                await Geoprocessing.ExecuteToolAsync("management.CalculateField", parameters, environments,
+                                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                                if (gpResult.IsFailed)
                                 {
-                                    case 0:
-                                        // Aspect
-                                        site.Aspect = Convert.ToDouble(nextRow[idxValue]);
-                                        break;
-                                    case 1:
-                                        // Slope
-                                        site.Slope = Convert.ToDouble(nextRow[idxValue]);
-                                        break;
-                                    case 2:
-                                        // Aspect Class
-                                        string key = Convert.ToString(nextRow[idxValue]);
-                                        if (dictAspectNames.ContainsKey(key))
+                                    Module1.Current.ModuleLogManager.LogError(nameof(CreateSitesLayerAsync),
+                                        "CalculateField tool failed to update field. Error code: " + gpResult.ErrorCode);
+                                    success = BA_ReturnCode.UnknownError;
+                                }
+                                else
+                                {
+                                    var map = MapView.Active.Map;
+                                    await QueuedTask.Run(() =>
+                                    {
+                                        Layer oLayer =
+                                        map.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(lyrJoin, StringComparison.CurrentCultureIgnoreCase));
+                                        if (oLayer != null)
                                         {
-                                            site.AspectDirection = dictAspectNames[key];
+
+                                            map.RemoveLayer(oLayer);
+                                            success = BA_ReturnCode.Success;
                                         }
-                                        break;
+                                    });
                                 }
                             }
                         }
+
+                    }
+                    else
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(UpdateSitesPropertiesAsync),
+                            inputRaster + " not found. Values not extracted!!");
+
                     }
                 }
-                success = BA_ReturnCode.Success;
-            });
+            }
 
-            if (success == BA_ReturnCode.Success)
+            // Delete tmpExtract layer
+            success = await GeoprocessingTools.DeleteDatasetAsync(analysisPath + "\\" + fileExtract);
+
+
+            if (siteProperties == SiteProperties.Aspect && 
+                success == BA_ReturnCode.Success)
             {
-                success = await GeoprocessingTools.DeleteDatasetAsync(analysisUri.LocalPath + "\\" + strTableName);
-
+                // Update aspect directions
+                Uri uriAnalysis = new Uri(analysisPath);
+                if (await GeodatabaseTools.AttributeExistsAsync(uriAnalysis,
+                    Constants.FILE_MERGED_SITES, fieldDirection))
+                {
+                    success = await GeoprocessingTools.AddFieldAsync(featureClassToUpdate, Constants.FIELD_DIRECTION, "TEXT");
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        int intAspectCount = Convert.ToInt16(Module1.Current.BatchToolSettings.AspectDirectionsCount);
+                        IList<BA_Objects.Interval> lstAspectInterval = AnalysisTools.GetAspectClasses(intAspectCount);
+                        success = await UpdateAspectDirectionsAsync(uriAnalysis, Constants.FILE_MERGED_SITES,
+                            lstAspectInterval, fieldDirection);
+                        if (success == BA_ReturnCode.Success)
+                        {
+                            string[] arrFieldsToDelete = { fieldDirection };
+                            success = await GeoprocessingTools.DeleteFeatureClassFieldsAsync(uriAnalysis.LocalPath + "\\" + Constants.FILE_MERGED_SITES,
+                                arrFieldsToDelete);
+                        }
+                    }
+                }
             }
             return success;
         }
@@ -3697,7 +3810,7 @@ namespace bagis_pro
                                             {
                                                 // In order to update the the attribute table has to be called before any changes are made to the row
                                                 context.Invalidate(feature);
-                                                feature[idxSiteType] = Constants.SITE_TYPE_SNOTEL;
+                                                feature[idxSiteType] = SiteType.Snotel.ToString();
                                                 feature.Store();
                                                 // Has to be called after the store too
                                                 context.Invalidate(feature);
@@ -3743,7 +3856,7 @@ namespace bagis_pro
                                             {
                                                 // In order to update the the attribute table has to be called before any changes are made to the row
                                                 context.Invalidate(feature);
-                                                feature[idxSiteType] = Constants.SITE_TYPE_SNOW_COURSE;
+                                                feature[idxSiteType] = SiteType.SnowCourse.ToString();
                                                 feature.Store();
                                                 // Has to be called after the store too
                                                 context.Invalidate(feature);
@@ -3910,6 +4023,9 @@ namespace bagis_pro
                     }
                     if (success == BA_ReturnCode.Success)
                     {
+                        // Delete tmpExtract layer
+                        success = await GeoprocessingTools.DeleteDatasetAsync(analysisPath + "\\" + fileExtract);
+                        
                         // Update aspect directions
                         Uri uriAnalysis = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Analysis));
                         if (await GeodatabaseTools.AttributeExistsAsync(uriAnalysis,

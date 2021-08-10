@@ -108,4 +108,10 @@ namespace bagis_pro
         Watershed,
         SiteAnalysis
     }
+
+    public enum SiteProperties
+    {
+        Aspect,
+        Precipitation
+    }
 }

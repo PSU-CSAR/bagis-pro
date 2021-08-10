@@ -24,7 +24,7 @@ namespace bagis_pro.BA_Objects
         public double Aspect;
         public string AspectDirection;
         public double Slope;
-
+        public double Precipitation;
 
         public SiteType SiteType
         {
@@ -87,6 +87,18 @@ namespace bagis_pro.BA_Objects
             get
             {
                 return String.Format("{0:0}", Slope);
+            }
+            set
+            {
+                // Does nothing; Required for XSL deserialization
+            }
+        }
+
+        public string PrecipitationText
+        {
+            get
+            {
+                return String.Format("{0:0}", Precipitation);
             }
             set
             {
