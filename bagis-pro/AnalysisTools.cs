@@ -572,10 +572,15 @@ namespace bagis_pro
                         Module1.Current.ModuleLogManager.LogDebug(nameof(GetStationValues),
                             "Using awdb_id to query for the triplet from " + usgsServiceUri.ToString());
                         arrFound = await ws.QueryServiceForValuesAsync(usgsServiceUri, usgsServiceLayerId, arrSearch, queryFilter);
-                        if (arrFound.Length > 1)
+                        if (arrFound != null && arrFound.Length > 1)
                         {
                             strTriplet = arrFound[0];
                             strStationName = arrFound[1];
+                        }
+                        else if (arrFound != null && arrFound.Length > 1 && arrFound[0] == null)
+                        {
+                            Module1.Current.ModuleLogManager.LogError(nameof(GetStationValues),
+                                "Unable to retrieve at least 1 property from the master aoi webservice");
                         }
                         if (!string.IsNullOrEmpty(strTriplet))
                         {
@@ -607,12 +612,18 @@ namespace bagis_pro
                         {
                             queryFilter.WhereClause = Constants.FIELD_OBJECT_ID + " = '" + strNearId + "'";
                             arrFound = await ws.QueryServiceForValuesAsync(usgsServiceUri, usgsServiceLayerId, arrSearch, queryFilter);
-                            if (arrFound.Length == 3)
+                            if (arrFound != null && arrFound.Length == 3 && arrFound[0] != null)
                             {
                                 strTriplet = arrFound[0];
                                 strAwdbId = arrFound[1];
                                 strStationName = arrFound[2];
                             }
+                            else
+                            {
+                                Module1.Current.ModuleLogManager.LogError(nameof(GetStationValues),
+                                    "Unable to retrieve at least 1 property from the master aoi webservice");
+                            }
+
                             if (!String.IsNullOrEmpty(strTriplet))
                             {
                                 bUpdateTriplet = true;
@@ -3728,7 +3739,10 @@ namespace bagis_pro
                 if (await GeodatabaseTools.AttributeExistsAsync(uriAnalysis,
                     Constants.FILE_MERGED_SITES, fieldDirection))
                 {
-                    success = await GeoprocessingTools.AddFieldAsync(featureClassToUpdate, Constants.FIELD_DIRECTION, "TEXT");
+                    if (! await GeodatabaseTools.AttributeExistsAsync(new Uri(analysisPath), Constants.FILE_MERGED_SITES, Constants.FIELD_DIRECTION))
+                    {
+                        success = await GeoprocessingTools.AddFieldAsync(featureClassToUpdate, Constants.FIELD_DIRECTION, "TEXT");
+                    }                    
                     if (success == BA_ReturnCode.Success)
                     {
                         int intAspectCount = Convert.ToInt16(Module1.Current.BatchToolSettings.AspectDirectionsCount);
@@ -3898,39 +3912,39 @@ namespace bagis_pro
                 return "";
             }
 
-            string returnPath = "";
+            string analysisPath = GeodatabaseTools.GetGeodatabasePath(System.IO.Path.GetDirectoryName(gdbUri.LocalPath), GeodatabaseNames.Analysis, true);
+            string returnPath = analysisPath + Constants.FILE_MERGED_SITES;
             if (hasSnotel && !hasSnowCourse)
             {
-                // No snow course to merge; return path to Snotel layer
-                returnPath = gdbUri.LocalPath + "\\" + Constants.FILE_SNOTEL;
-
+                // No snow course to merge; copy SNOTEL to merged sites
+                success = await GeoprocessingTools.CopyFeaturesAsync(Module1.Current.Aoi.FilePath, gdbUri.LocalPath + "\\" + Constants.FILE_SNOTEL, returnPath);
             }
             else if (!hasSnotel && hasSnowCourse)
             {
-                // No snotel to merge; return path to snow course layer
-                returnPath = gdbUri.LocalPath + "\\" + Constants.FILE_SNOW_COURSE;
+                // No Snotel to merge; copy snow courses to merged sites
+                success = await GeoprocessingTools.CopyFeaturesAsync(Module1.Current.Aoi.FilePath, gdbUri.LocalPath + "\\" + Constants.FILE_SNOW_COURSE, returnPath);
             }
             else
             {
-                // merge snotel and snow course
-                string featuresToMerge = gdbUri.LocalPath + "\\" + Constants.FILE_SNOTEL + "; " +
-                                         gdbUri.LocalPath + "\\" + Constants.FILE_SNOW_COURSE;
-                string analysisPath = GeodatabaseTools.GetGeodatabasePath(System.IO.Path.GetDirectoryName(gdbUri.LocalPath), GeodatabaseNames.Analysis, true);
-                returnPath = analysisPath + Constants.FILE_MERGED_SITES;
-                var parameters = Geoprocessing.MakeValueArray(featuresToMerge, returnPath, "", "NO_SOURCE_INFO");
-                IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("Merge_management", parameters, null,
-                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                if (gpResult.IsFailed)
-                {
-                    Module1.Current.ModuleLogManager.LogError(nameof(CreateSitesLayerAsync),
-                        "Unable to merge features. Error code: " + gpResult.ErrorCode);
-                    returnPath = ""; ;
-                }
-                else
-                {
-                    Module1.Current.ModuleLogManager.LogDebug(nameof(CreateSitesLayerAsync),
-                        "Sites merged successfully");
-                }
+                    string featuresToMerge = gdbUri.LocalPath + "\\" + Constants.FILE_SNOTEL + "; " +
+                         gdbUri.LocalPath + "\\" + Constants.FILE_SNOW_COURSE;
+                    returnPath = analysisPath + Constants.FILE_MERGED_SITES;
+                    var parameters = Geoprocessing.MakeValueArray(featuresToMerge, returnPath, "", "NO_SOURCE_INFO");
+                    IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("Merge_management", parameters, null,
+                                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                    if (gpResult.IsFailed)
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(CreateSitesLayerAsync),
+                            "Unable to merge features. Error code: " + gpResult.ErrorCode);
+                        returnPath = ""; ;
+                    }
+                    else
+                    {
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(CreateSitesLayerAsync),
+                            "Sites merged successfully");
+                    }
+            }
+
                 if (!String.IsNullOrEmpty(returnPath))
                 {
                     string strAoiPath = Module1.Current.Aoi.FilePath;
@@ -3958,8 +3972,8 @@ namespace bagis_pro
                             string inputRaster = arrUri[i] + "\\" + arrInputRasters[i];
                             if (await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(arrUri[i]), arrInputRasters[i]))
                             {
-                                parameters = Geoprocessing.MakeValueArray(returnPath, inputRaster, analysisPath + "\\" + fileExtract, "NONE", "VALUE_ONLY");
-                                gpResult = await Geoprocessing.ExecuteToolAsync("ExtractValuesToPoints_sa", parameters, environments,
+                                var parameters = Geoprocessing.MakeValueArray(returnPath, inputRaster, analysisPath + "\\" + fileExtract, "NONE", "VALUE_ONLY");
+                                var gpResult = await Geoprocessing.ExecuteToolAsync("ExtractValuesToPoints_sa", parameters, environments,
                                                                 CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
                                 if (gpResult.IsFailed)
                                 {
@@ -4048,7 +4062,6 @@ namespace bagis_pro
                         }
                     }
                 }
-            }
             return returnPath;
         }
 

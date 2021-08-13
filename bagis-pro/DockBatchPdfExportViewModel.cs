@@ -400,13 +400,6 @@ namespace bagis_pro
                         errorCount++;
                     }
 
-                    // Aspect zones
-                    success = await AnalysisTools.CalculateAspectZonesAsync();
-                    if (success != BA_ReturnCode.Success)
-                    {
-                        errorCount++;
-                    }
-
                     // Check for PRISM units
                     string strPrismPath = GeodatabaseTools.GetGeodatabasePath(AoiFolder, GeodatabaseNames.Prism, true)
                         + PrismFile.Annual.ToString();
@@ -423,6 +416,10 @@ namespace bagis_pro
                     string strDefaultBufferUnits = (string)Module1.Current.BatchToolSettings.PrecipBufferUnits;
                     success = await AnalysisTools.ClipLayersAsync(AoiFolder, Constants.DATA_TYPE_PRECIPITATION,
                         pBufferDistance, pBufferUnits, strDefaultBufferDistance, strDefaultBufferUnits);
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        success = await AnalysisTools.UpdateSitesPropertiesAsync(Module1.Current.Aoi.FilePath, SiteProperties.Precipitation);
+                    }
                     if (success != BA_ReturnCode.Success)
                     {
                         errorCount++;
@@ -499,6 +496,13 @@ namespace bagis_pro
                     }
                     // Precipitation Contribution; Passing in -1 for threshold so we use STDEV
                     success = await AnalysisTools.CalculatePrecipitationContributionAsync(Module1.Current.Aoi.FilePath, -1);
+                    if (success != BA_ReturnCode.Success)
+                    {
+                        errorCount++;
+                    }
+
+                    // Aspect zones
+                    success = await AnalysisTools.CalculateAspectZonesAsync();
                     if (success != BA_ReturnCode.Success)
                     {
                         errorCount++;

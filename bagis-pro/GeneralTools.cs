@@ -2136,7 +2136,12 @@ namespace bagis_pro
                 if (arrResults.Length != arrSearch.Length)
                 {
                     Module1.Current.ModuleLogManager.LogError(nameof(QueryMasterAoiProperties),
-                        "An error occurred while retrieveing properties from the master aoi webservice");
+                        "An error occurred while retrieving properties from the master aoi webservice");
+                }
+                else if (arrResults != null && arrResults.Length > 1 && arrResults[0] == null)
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(QueryMasterAoiProperties),
+                        "Unable to retrieve at least 1 property from the master aoi webservice");
                 }
             }
             catch (Exception e)
@@ -2235,7 +2240,8 @@ namespace bagis_pro
                     titlePageDoc.Save(publishFolder + "\\" + Constants.FILE_SITES_TABLE_PDF);
                 }
                 Module1.Current.ModuleLogManager.LogDebug(nameof(GenerateSitesTableAsync),
-                    "Title page created!!");
+                    "Sites table created!!");
+                success = BA_ReturnCode.Success;
             }
             catch (Exception e)
             {

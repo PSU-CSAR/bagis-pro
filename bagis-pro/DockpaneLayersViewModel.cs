@@ -438,6 +438,10 @@ namespace bagis_pro
                         pBufferDistance, pBufferUnits, PrismBufferDistance, PrismBufferUnits);
                     if (success == BA_ReturnCode.Success)
                     {
+                        success = await AnalysisTools.UpdateSitesPropertiesAsync(Module1.Current.Aoi.FilePath, SiteProperties.Precipitation);
+                    }
+                    if (success == BA_ReturnCode.Success)
+                    {
                         layersPane.ReclipPrism_Checked = false;
                         layersPane.Prism_Checked = true;
                     }
