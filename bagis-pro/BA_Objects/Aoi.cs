@@ -27,6 +27,7 @@ namespace bagis_pro.BA_Objects
         public string StationName = "";
         public int WinterStartMonth;
         public int WinterEndMonth;
+        public string Huc;
 
         public Aoi()
         {

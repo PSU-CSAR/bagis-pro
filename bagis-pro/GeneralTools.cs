@@ -1127,7 +1127,7 @@ namespace bagis_pro
                         string[] arrResults = await GeneralTools.QueryMasterAoiProperties(oAoi.StationTriplet);
                         Module1.Current.ModuleLogManager.LogDebug(nameof(SetAoiAsync),
                             "Master AOI properties returned. Array length: " + arrValues.Length);
-                        if (arrResults.Length == 3)
+                        if (arrResults.Length == 4)
                         {
                             oAoi.NwccName = arrResults[0];
                             if (! string.IsNullOrEmpty(arrResults[1]))
@@ -1137,6 +1137,10 @@ namespace bagis_pro
                             if (!string.IsNullOrEmpty(arrResults[2]))
                             {
                                 oAoi.WinterEndMonth = Convert.ToInt32(arrResults[2]);
+                            }
+                            if (!string.IsNullOrEmpty(arrResults[3]))
+                            {
+                                oAoi.Huc = Convert.ToString(arrResults[3]);
                             }
                         }
                         else
@@ -2131,7 +2135,8 @@ namespace bagis_pro
                 {
                     WhereClause = Constants.FIELD_STATION_TRIPLET + " = '" + stationTriplet + "'"
                 };
-                string[] arrSearch = { Constants.FIELD_NWCCNAME, Constants.FIELD_WINTER_START_MONTH, Constants.FIELD_WINTER_END_MONTH };
+                string[] arrSearch = { Constants.FIELD_NWCCNAME, Constants.FIELD_WINTER_START_MONTH, Constants.FIELD_WINTER_END_MONTH,
+                    Constants.FIELD_HUC};
                 arrResults = await ws.QueryServiceForValuesAsync(uriMaster, "0", arrSearch, queryFilter);
                 if (arrResults.Length != arrSearch.Length)
                 {

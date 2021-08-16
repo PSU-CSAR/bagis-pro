@@ -208,6 +208,7 @@ namespace bagis_pro
         public const string FIELD_NWCCNAME = "nwccname";
         public const string FIELD_WINTER_START_MONTH = "winter_start_month";
         public const string FIELD_WINTER_END_MONTH = "winter_end_month";
+        public const string FIELD_HUC = "huc";
         public const string FIELD_LATITUDE = "latitude";
         public const string FIELD_LONGITUDE = "longitude";
         public const string FIELD_SOURCE_ID_FEATURE = "SrcID_Feat";
