@@ -1373,12 +1373,33 @@ namespace bagis_pro
                         "Unable to calculate " + strMessageKey + " maximum");
                     return;
                 }
-                // determine interval value based on # map classes
-                dblInterval = (dblMax - dblMin) / intZonesCount;
-                // round the number to 1 decimal places
-                dblInterval = Math.Round(dblInterval, 1);
+                double dblRange = dblMax - dblMin;
+                if (dblRange < intZonesCount)
+                {
+                    dblInterval = 0.5;
+                }
+                else
+                {
+                    // determine interval value based on desired # map classes
+                    dblInterval = dblRange / intZonesCount;
+                    // round the number to 1 decimal places
+                    dblInterval = Math.Round(dblInterval);
+                }
             });
             int zones = GeneralTools.CreateRangeArray(dblMin, dblMax, dblInterval, out lstIntervals);
+            // Check to be sure the highest interval isn't too small; if it is merge into the second-to-last
+            if (lstIntervals.Count > 0)
+            {
+                var lastInterval = lstIntervals[lstIntervals.Count - 1];
+                if (lastInterval.UpperBound - lastInterval.LowerBound < 1)
+                {
+                    var almostLastInterval = lstIntervals[lstIntervals.Count - 2];
+                    almostLastInterval.UpperBound = lastInterval.UpperBound;
+                    almostLastInterval.Name = almostLastInterval.LowerBound + " - " + almostLastInterval.UpperBound;
+                    lstIntervals.Remove(lastInterval);
+                    zones = zones - 1;
+                }
+            }
             Module1.Current.PrismZonesInterval = dblInterval;
             return lstIntervals;
         }

@@ -49,7 +49,7 @@ bagis-pro:
      DefaultDemInterval: 1000
      DemDisplayUnits: Feet
      AoiPrecipFile: prism.gdb\Annual
-     PrecipZonesCount: 6
+     PrecipZonesCount: 8
      AspectDirectionsCount: 8
      MinElevationZonesCount: 6
      PrecipBufferDistance: 1000
