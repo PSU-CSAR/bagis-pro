@@ -1109,6 +1109,10 @@ namespace bagis_pro
                         "Unable to locate batch tool settings in BAGIS folder");
                 }
 
+                // Set logger to AOI directory
+                string logFolderName = strAoiPath + "\\" + Constants.FOLDER_LOGS;
+                Module1.Current.ModuleLogManager.UpdateLogFileLocation(logFolderName);
+
                 // Query for station information and save it in the aoi object
                 string[] arrValues = new string[2];
                 await QueuedTask.Run(async() =>
@@ -1141,6 +1145,8 @@ namespace bagis_pro
                             if (!string.IsNullOrEmpty(arrResults[3]))
                             {
                                 oAoi.Huc = Convert.ToString(arrResults[3]);
+                                Module1.Current.ModuleLogManager.LogDebug(nameof(SetAoiAsync),
+                                    "HUC set to " + oAoi.Huc);
                             }
                         }
                         else
@@ -1217,10 +1223,6 @@ namespace bagis_pro
                             MessageBox.Show("Unable to create logs directory in Aoi folder!!", "BAGIS-PRO");
                         }
                     }
-                    // Set logger to AOI directory
-                    string logFolderName = strAoiPath + "\\" + Constants.FOLDER_LOGS;
-                    Module1.Current.ModuleLogManager.UpdateLogFileLocation(logFolderName);
-
 
                     // Update PRISM data status
                     layersPane.ResetView();

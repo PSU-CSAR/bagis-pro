@@ -94,6 +94,22 @@ namespace bagis_pro
         Prism_Precipitation_annual
     }
 
+    public enum SeasonalPrismFile
+    {
+        Sq1,
+        Sq2,
+        Sq3,
+        Sq4
+    }
+
+    public enum SeasonalPrismServiceNames
+    {
+        Prism_Precipitation_sq1,
+        Prism_Precipitation_sq2,
+        Prism_Precipitation_sq3,
+        Prism_Precipitation_sq4,
+    }
+
     public enum AoiBatchState
     {
         Waiting,

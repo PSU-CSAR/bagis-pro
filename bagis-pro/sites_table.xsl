@@ -65,7 +65,7 @@
                 Aspect &#176;
               </td>
               <td class="style3">
-                Direction
+                Aspect
               </td>
               <td class="style3">
                 Latitude &#176;

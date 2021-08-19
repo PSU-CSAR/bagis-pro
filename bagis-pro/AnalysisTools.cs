@@ -821,18 +821,33 @@ namespace bagis_pro
                         if (strDataType.Equals(Constants.DATA_TYPE_PRECIPITATION))
                         {
                             int prismCount = Enum.GetNames(typeof(PrismFile)).Length;
-                            Array.Resize<string>(ref arrClipUris, prismCount);
+                            int seasonalPrismCount = Enum.GetNames(typeof(SeasonalPrismFile)).Length;
+                            Array.Resize<string>(ref arrClipUris, prismCount + seasonalPrismCount);
                             int j = 0;
+                            int count = 0;
                             foreach (var month in Enum.GetValues(typeof(PrismServiceNames)))
                             {
                                 arrClipUris[j] = month.ToString();
                                 j++;
+                                count++;
                             }
-                            Array.Resize<string>(ref arrClippedFileNames, prismCount);
+                            Array.Resize<string>(ref arrClippedFileNames, prismCount + seasonalPrismCount);
                             j = 0;
                             foreach (var month in Enum.GetValues(typeof(PrismFile)))
                             {
                                 arrClippedFileNames[j] = month.ToString();
+                                j++;
+                            }
+                            j = count;
+                            foreach (var quarter in Enum.GetValues(typeof(SeasonalPrismServiceNames)))
+                            {
+                                arrClipUris[j] = quarter.ToString();
+                                j++;
+                            }
+                            j = count;
+                            foreach (var quarter in Enum.GetValues(typeof(SeasonalPrismFile)))
+                            {
+                                arrClippedFileNames[j] = quarter.ToString();
                                 j++;
                             }
                             strOutputGdb = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Prism, true);
@@ -3914,34 +3929,34 @@ namespace bagis_pro
 
             string analysisPath = GeodatabaseTools.GetGeodatabasePath(System.IO.Path.GetDirectoryName(gdbUri.LocalPath), GeodatabaseNames.Analysis, true);
             string returnPath = analysisPath + Constants.FILE_MERGED_SITES;
-            if (hasSnotel && !hasSnowCourse)
+            if (hasSnotel)
             {
                 // No snow course to merge; copy SNOTEL to merged sites
                 success = await GeoprocessingTools.CopyFeaturesAsync(Module1.Current.Aoi.FilePath, gdbUri.LocalPath + "\\" + Constants.FILE_SNOTEL, returnPath);
             }
-            else if (!hasSnotel && hasSnowCourse)
+            else if (hasSnowCourse)
             {
                 // No Snotel to merge; copy snow courses to merged sites
                 success = await GeoprocessingTools.CopyFeaturesAsync(Module1.Current.Aoi.FilePath, gdbUri.LocalPath + "\\" + Constants.FILE_SNOW_COURSE, returnPath);
             }
-            else
+            if (hasSnotel && hasSnowCourse)
             {
-                    string featuresToMerge = gdbUri.LocalPath + "\\" + Constants.FILE_SNOTEL + "; " +
-                         gdbUri.LocalPath + "\\" + Constants.FILE_SNOW_COURSE;
+                // Need to append sites
+                string featuresToAppend = gdbUri.LocalPath + "\\" + Constants.FILE_SNOW_COURSE;
                     returnPath = analysisPath + Constants.FILE_MERGED_SITES;
-                    var parameters = Geoprocessing.MakeValueArray(featuresToMerge, returnPath, "", "NO_SOURCE_INFO");
-                    IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("Merge_management", parameters, null,
+                    var parameters = Geoprocessing.MakeValueArray(featuresToAppend, returnPath);
+                    IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("Append_management", parameters, null,
                                 CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
                     if (gpResult.IsFailed)
                     {
                         Module1.Current.ModuleLogManager.LogError(nameof(CreateSitesLayerAsync),
-                            "Unable to merge features. Error code: " + gpResult.ErrorCode);
+                            "Unable to append features. Error code: " + gpResult.ErrorCode);
                         returnPath = ""; ;
                     }
                     else
                     {
                         Module1.Current.ModuleLogManager.LogDebug(nameof(CreateSitesLayerAsync),
-                            "Sites merged successfully");
+                            "Snow course sites appended successfully");
                     }
             }
 
