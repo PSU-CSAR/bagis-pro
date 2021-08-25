@@ -1990,6 +1990,39 @@ namespace bagis_pro
             return layerNames;
         }
 
+        public static async Task<IList<string>> GetLayersInGeodatabaseAsync(string strGdbPath, string strType)
+        {
+            IList<string> layerNames = new List<string>();
+
+            await QueuedTask.Run(() => {
+                using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(strGdbPath))))
+                {
+                    IReadOnlyList<Definition> lstDefinitions = null;
+                    switch (strType)
+                    {
+                        case "TableDefinition":
+                            lstDefinitions = geodatabase.GetDefinitions<TableDefinition>();
+                            break;
+                        case "FeatureClassDefinition":
+                            lstDefinitions = geodatabase.GetDefinitions<FeatureClassDefinition>();
+                            break;
+                        case "RasterDatasetDefinition":
+                            lstDefinitions = geodatabase.GetDefinitions<RasterDatasetDefinition>();
+                            break;
+                        default:
+                            Module1.Current.ModuleLogManager.LogError(nameof(GetLayersInGeodatabaseAsync),
+                                strType + " is not a supported dataset type!");
+                            break;
+                    }
+                    foreach (var item in lstDefinitions)
+                    {
+                        layerNames.Add(item.GetName());
+                    }
+                }
+            });
+            return layerNames;
+        }
+
         private static double QueryAnnualRunoffValue (string stationTriplet)
         {
             double returnValue = -1.0F;

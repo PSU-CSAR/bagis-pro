@@ -112,6 +112,7 @@ namespace bagis_pro
         public BA_Objects.ILoggerManager ModuleLogManager;
         internal string DisplayedSweMap { get; set; } = "";
         internal string DisplayedSweDeltaMap { get; set; } = "";
+        internal string DisplayedSeasonalPrecipContribMap { get; set; } = "";
         internal string RoadsLayerLegend { get; set; } = "";
         internal string SettingsPath { get; set; } = "";
         internal string DefaultEbagisServer { get; } = "https://ebagis.geog.pdx.edu";

@@ -122,7 +122,7 @@
                       IsChecked="{Binding SWE_Delta_Checked}"/>
         </DockPanel>
         <DockPanel Grid.Row="12" Grid.Column="0"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
-            <Label  Content="Precipitation Contribution Zones" HorizontalAlignment="Left" VerticalAlignment="Center"  Padding="5,0,20,0"/>
+            <Label  Content="Annual and Quarterly Precip Contribution" HorizontalAlignment="Left" VerticalAlignment="Center"  Padding="5,0,20,0"/>
         </DockPanel>
         <DockPanel Grid.Row="12" Grid.Column="1"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
             <CheckBox x:Name="chkPrecipContrib" Content="" HorizontalAlignment="Center"  Height="14" VerticalAlignment="Center"

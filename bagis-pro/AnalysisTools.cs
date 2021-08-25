@@ -3469,6 +3469,23 @@ namespace bagis_pro
                 return BA_ReturnCode.UnknownError;
             }
 
+            // Delete temporary file gdb
+            parameters = Geoprocessing.MakeValueArray(tempGdbPath);
+            gpResult = await Geoprocessing.ExecuteToolAsync("Delete_management", parameters, environments,
+                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+            if (gpResult.IsFailed)
+            {
+                Module1.Current.ModuleLogManager.LogDebug(nameof(CalculatePrecipitationContributionAsync),
+                    "Unable to run delete temporary file gdb!");
+                foreach (var objMessage in gpResult.Messages)
+                {
+                    IGPMessage msg = (IGPMessage)objMessage;
+                    Module1.Current.ModuleLogManager.LogError(nameof(CalculatePrecipitationContributionAsync),
+                        msg.Text);
+                }
+                return BA_ReturnCode.UnknownError;
+            }
+
             EditOperation editOperation = new EditOperation();
             await QueuedTask.Run(() => {
                 using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Analysis)))))
@@ -3537,6 +3554,64 @@ namespace bagis_pro
                     success = BA_ReturnCode.UnknownError;
                 }
             });
+            return success;
+        }
+
+        public static async Task<BA_ReturnCode> CalculateQuarterlyPrecipitationAsync(BA_Objects.Aoi oAoi)
+        {
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            string[] arrInput = { SeasonalPrismFile.Sq1.ToString(), SeasonalPrismFile.Sq2.ToString(), SeasonalPrismFile.Sq3.ToString(),
+                                  SeasonalPrismFile.Sq4.ToString()};
+            string strPrismGdb = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Prism);
+            string strAnalysisGdb = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis);
+            IList<string> lstLayers = await GeneralTools.GetLayersInGeodatabaseAsync(strPrismGdb, "RasterDatasetDefinition");
+            // Make sure annual layer exists; Can't divide by 0
+            if (!lstLayers.Contains(PrismFile.Annual.ToString()))
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(CalculateQuarterlyPrecipitationAsync),
+                    "Unable to locate annual PRISM layer. Process halted!");
+                return success;
+            }
+            string annualRaster = strPrismGdb + "\\" + PrismFile.Annual.ToString();
+            int i = 0;
+            foreach (var fName in arrInput)
+            {
+                if (lstLayers.Contains(fName))
+                {
+                    // define the map algebra expression
+                    string quarterlyRaster = strPrismGdb + "\\" + fName;
+                    string maExpression = String.Format("\"{1}\" / \"{0}\" * 100", annualRaster, quarterlyRaster);
+                    string outRaster = strAnalysisGdb + "\\" + Constants.FILES_SEASON_PRECIP_CONTRIB[i];
+                    // make the input parameter values array
+                    var valueArray = Geoprocessing.MakeValueArray(maExpression, outRaster);
+                    var environments = Geoprocessing.MakeEnvironmentArray(workspace:strPrismGdb);
+                    // execute the Raster calculator tool to process the map algebra expression
+                    var gpResult = await Geoprocessing.ExecuteToolAsync("RasterCalculator_sa", valueArray, environments);
+                    if (gpResult.IsFailed)
+                    {
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateQuarterlyPrecipitationAsync),
+                            "Raster Calculator failed for " + quarterlyRaster + "!");
+                        foreach (var objMessage in gpResult.Messages)
+                        {
+                            IGPMessage msg = (IGPMessage)objMessage;
+                            Module1.Current.ModuleLogManager.LogError(nameof(CalculateQuarterlyPrecipitationAsync),
+                                msg.Text);
+                        }
+                        return BA_ReturnCode.UnknownError;
+                    }
+                    else
+                    {
+                        success = BA_ReturnCode.Success;
+                    }                   
+                }
+                else
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(CalculateQuarterlyPrecipitationAsync),
+                        "Unable to locate " + fName + " layer. Quarter skipped!");
+                }
+                i++;
+            }
+
             return success;
         }
 

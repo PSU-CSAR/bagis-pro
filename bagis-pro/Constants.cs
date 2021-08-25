@@ -97,6 +97,8 @@ namespace bagis_pro
         public static readonly string[] FILE_EXPORT_MAPS_SWE_DELTA = new string[] { "map_nov_swe_delta.pdf", "map_dec_swe_delta.pdf", "map_jan_swe_delta.pdf",
                                                                                     "map_feb_swe_delta.pdf", "map_mar_swe_delta.pdf", "map_apr_swe_delta.pdf",
                                                                                     "map_may_swe_delta.pdf", "map_jun_swe_delta.pdf"};
+        public static readonly string[] FILE_EXPORT_MAPS_SEASONAL_PRECIP_CONTRIB = new string[] { "map_seasonal_precip_q1.pdf", "map_seasonal_precip_q2.pdf", "map_seasonal_precip_q3.pdf",
+                                                                                                  "map_seasonal_precip_q4.pdf"};
         public const string FILE_EXPORT_MAP_ROADS_PDF = "map_roads.pdf";
         public const string FILE_EXPORT_MAP_PUBLIC_LAND_ZONES_PDF = "map_public_land_zones.pdf";
         public const string FILE_EXPORT_MAP_BELOW_TREELINE_PDF = "map_below_treeline.pdf";
@@ -166,6 +168,12 @@ namespace bagis_pro
         public static readonly string[] MAP_TITLES_SWE_DELTA = new string[] { "AVERAGE NOVEMBER SWE DELTA", "AVERAGE DECEMBER SWE DELTA", "AVERAGE JANUARY SWE DELTA",
                                                                               "AVERAGE FEBRUARY SWE DELTA", "AVERAGE MARCH SWE DELTA", "AVERAGE APRIL SWE DELTA",
                                                                               "AVERAGE MAY SWE DELTA", "AVERAGE JUNE SWE DELTA"};
+        public static readonly string[] FILES_SEASON_PRECIP_CONTRIB = new string[] {"sq1_precip_contrib", "sq2_precip_contrib", "sq3_precip_contrib",
+                                                                                    "sq4_precip_contrib"};
+        public static readonly string[] LAYER_NAMES_SEASON_PRECIP_CONTRIB = new string[] {"SQ1 Precip Contribution", "SQ2 Precip Contribution", "SQ3 Precip Contribution",
+                                                                                          "SQ4 Precip Contribution"};
+        public static readonly string[] MAP_NAMES_SEASON_PRECIP_CONTRIB = new string[] {"SQ1 PRECIPITATION CONTRIBUTION", "SQ2 PRECIPITATION CONTRIBUTION", "SQ3 PRECIPITATION CONTRIBUTION",
+                                                                                        "SQ4 PRECIPITATION CONTRIBUTION"};
         public const string FILE_BAGIS_MAP_PARAMETERS = "map_parameters.txt";
         public const string URI_IMAGE_SERVER = "/ImageServer";
         public const string URI_DESKTOP_SETTINGS = "/api/rest/desktop/settings/";

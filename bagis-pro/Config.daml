@@ -1,11 +1,11 @@
 ﻿<ArcGIS defaultAssembly="bagis_pro.dll" defaultNamespace="bagis_pro" xmlns="http://schemas.esri.com/DADF/Registry" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://schemas.esri.com/DADF/Registry file:///C:/Program%20Files/ArcGIS/Pro/bin/ArcGIS.Desktop.Framework.xsd">
-  <AddInInfo id="{bfef0cd1-e877-48dc-8b78-40de4825c346}" version="1.0" desktopVersion="2.4">
+  <AddInInfo id="{bfef0cd1-e877-48dc-8b78-40de4825c346}" version="1.0" desktopVersion="2.8">
     <Name>BAGIS-PRO</Name>
     <Description>Basin Analysis for ArcGIS Pro</Description>
     <Image>Images\AddinDesktop32.png</Image>
     <Author>Lesley Bross and Geoffrey Duh</Author>
     <Company>Portland State University</Company>
-    <Date>10/01/2019 1:28:40 PM, 2019</Date>
+    <Date>08/23/2021 1:28:40 PM, 2021</Date>
     <Subject>Content, Geoprocessing, Map Authoring</Subject>
     <!-- Note subject can be one or more of these topics:
                     Content, Framework, Editing, Geodatabase, Geometry, Geoprocessing, Layouts, Map Authoring, Map Exploration -->
@@ -94,6 +94,7 @@
           <button refID="MapButtonPalette_BtnSweAprDelta" />
           <button refID="MapButtonPalette_BtnSweMayDelta" />
           <button refID="MapButtonPalette_BtnSweJunDelta" />
+          <button refID="MapButtonPalette_BtnSeasonalPrecipContribSQ1" />
         </buttonPalette>
       </palettes>
       <controls>
@@ -282,6 +283,11 @@
           </tooltip>
         </button>
         <button id="MapButtonPalette_BtnWinterPrecipitation" caption="Winter Precipitation" className="bagis_pro.Buttons.MapButtonPalette_BtnWinterPrecipitation" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnWinterPrecipitation_Condition">
+          <tooltip heading="Display Map">
+            ToolTip<disabledText />
+          </tooltip>
+        </button>
+        <button id="MapButtonPalette_BtnSeasonalPrecipContribSQ1" caption="SQ1 Precip Contribution" className="bagis_pro.Buttons.MapButtonPalette_BtnSeasonalPrecipContribSQ1" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSeasonalPrecipContribSQ1_Condition">
           <tooltip heading="Display Map">
             ToolTip<disabledText />
           </tooltip>
@@ -476,6 +482,18 @@
     </insertCondition>
     <insertCondition id="MapButtonPalette_BtnWinterPrecipitation_Condition" caption="Map Disabled">
       <state id="MapButtonPalette_BtnWinterPrecipitation_State" />
+    </insertCondition>
+    <insertCondition id="MapButtonPalette_BtnSeasonalPrecipContribSQ1_Condition" caption="Map Disabled">
+      <state id="MapButtonPalette_BtnSeasonalPrecipContribSQ1_State" />
+    </insertCondition>
+    <insertCondition id="MapButtonPalette_BtnSeasonalPrecipContribSQ2_Condition" caption="Map Disabled">
+      <state id="MapButtonPalette_BtnSeasonalPrecipContribSQ2_State" />
+    </insertCondition>
+    <insertCondition id="MapButtonPalette_BtnSeasonalPrecipContribSQ3_Condition" caption="Map Disabled">
+      <state id="MapButtonPalette_BtnSeasonalPrecipContribSQ3_State" />
+    </insertCondition>
+    <insertCondition id="MapButtonPalette_BtnSeasonalPrecipContribSQ4_Condition" caption="Map Disabled">
+      <state id="MapButtonPalette_BtnSeasonalPrecipContribSQ4_State" />
     </insertCondition>
   </conditions>
 </ArcGIS>

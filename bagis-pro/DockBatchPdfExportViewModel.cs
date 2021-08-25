@@ -501,6 +501,13 @@ namespace bagis_pro
                         errorCount++;
                     }
 
+                    // Quarterly Precipitation Contribution
+                    success = await AnalysisTools.CalculateQuarterlyPrecipitationAsync(Module1.Current.Aoi);
+                    if (success != BA_ReturnCode.Success)
+                    {
+                        errorCount++;
+                    }
+
                     // Aspect zones
                     success = await AnalysisTools.CalculateAspectZonesAsync();
                     if (success != BA_ReturnCode.Success)

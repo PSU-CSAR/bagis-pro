@@ -236,6 +236,9 @@ namespace bagis_pro
                     // add SWE delta layer
                     success = await DisplaySWEDeltaMapAsync(0, 5);
 
+                    // add quarterly seasonal precipitation layer; Default is Q1
+                    success = await DisplaySeasonalPrecipContribMapAsync(0);
+
                     // add Precipitation zones layer
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
                         Constants.FILE_PRECIP_ZONE;
@@ -1965,6 +1968,135 @@ namespace bagis_pro
             return success;
         }
 
+        public static async Task<BA_ReturnCode> UpdateMapAsync(string strGeodatabasePath, string strRaster, string strOldLayerName,
+                                                               string strNewLayerName, string strTitle, string strUnitsText,
+                                                               bool bDisplaySites, string strFileMapExport)
+        {
+            RasterDataset rDataset = null;
+            Layer oLayer = null;
+            Map map = MapView.Active.Map;
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            Uri uriGdb = new Uri(strGeodatabasePath);
+            Layout layout = null;
+            await QueuedTask.Run(() =>
+            {
+                Project proj = Project.Current;
+
+                //Get the default map layout
+                LayoutProjectItem lytItem =
+                   proj.GetItems<LayoutProjectItem>()
+                       .FirstOrDefault(m => m.Name.Equals(Constants.MAPS_DEFAULT_LAYOUT_NAME,
+                       StringComparison.CurrentCultureIgnoreCase));
+                if (lytItem != null)
+                {
+                    layout = lytItem.GetLayout();
+                }
+                else
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(LoadSweMapAsync),
+                        "Unable to find default layout!!");
+                    MessageBox.Show("Unable to find default layout. Cannot display maps!");
+                    return;
+                }
+
+                // Opens a file geodatabase. This will open the geodatabase if the folder exists and contains a valid geodatabase.
+                using (Geodatabase geodatabase =
+                    new Geodatabase(new FileGeodatabaseConnectionPath(uriGdb)))
+                {
+                    // Use the geodatabase.
+                    try
+                    {
+                        rDataset = geodatabase.OpenDataset<RasterDataset>(strRaster);
+                    }
+                    catch (GeodatabaseTableException e)
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(LoadSweMapAsync),
+                           "Unable to open raster " + strRaster);
+                        Module1.Current.ModuleLogManager.LogError(nameof(LoadSweMapAsync),
+                            "Exception: " + e.Message);
+                        return;
+                    }
+                }
+                oLayer = map.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(strOldLayerName, StringComparison.CurrentCultureIgnoreCase));
+            });
+
+            await QueuedTask.Run(() =>
+            {
+                if (oLayer.CanReplaceDataSource(rDataset))
+                {
+                    oLayer.ReplaceDataSource(rDataset);
+                    oLayer.SetName(strNewLayerName);
+                }
+                GraphicElement textBox = layout.FindElement(Constants.MAPS_TITLE) as GraphicElement;
+                if (textBox != null)
+                {
+                    CIMTextGraphic graphic = (CIMTextGraphic)textBox.GetGraphic();
+                    graphic.Text = strTitle;
+                    textBox.SetGraphic(graphic);
+                }
+                textBox = layout.FindElement(Constants.MAPS_SUBTITLE) as GraphicElement;
+                if (textBox != null)
+                {
+                    CIMTextGraphic graphic = (CIMTextGraphic)textBox.GetGraphic();
+                    graphic.Text = Module1.Current.Aoi.NwccName.ToUpper();
+                    textBox.SetGraphic(graphic);
+                    success = BA_ReturnCode.Success;
+                }
+
+                textBox = layout.FindElement(Constants.MAPS_TEXTBOX1) as GraphicElement;
+                if (textBox != null)
+                {
+                    CIMTextGraphic graphic = (CIMTextGraphic)textBox.GetGraphic();
+                    if (graphic != null)
+                    {
+                        graphic.Text = strUnitsText;
+                    }
+                    textBox.SetGraphic(graphic);
+                }
+            });
+
+            // toggle layers according to map definition
+            var allLayers = MapView.Active.Map.Layers.ToList();
+            IList<string> lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
+                                                         Constants.MAPS_HILLSHADE, strNewLayerName};
+            IList<string> lstLegend = new List<string>();
+
+            if (Module1.Current.Aoi.HasSnotel == true && bDisplaySites)
+            {
+                lstLayers.Add(Constants.MAPS_SNOTEL);
+                lstLegend.Add(Constants.MAPS_SNOTEL);
+            }
+            if (Module1.Current.Aoi.HasSnowCourse == true && bDisplaySites)
+            {
+                lstLayers.Add(Constants.MAPS_SNOW_COURSE);
+                lstLegend.Add(Constants.MAPS_SNOW_COURSE);
+            }
+            lstLegend.Add(strNewLayerName);
+            await QueuedTask.Run(() =>
+            {
+                foreach (var layer in allLayers)
+                {
+                    if (lstLayers.Contains(layer.Name))
+                    {
+                        layer.SetVisibility(true);
+                    }
+                    else
+                    {
+                        layer.SetVisibility(false);
+                    }
+                }
+            });
+
+            success = await MapTools.UpdateLegendAsync(layout, lstLegend);
+
+            if (success == BA_ReturnCode.Success)
+            {
+                Module1.Current.DisplayedMap = strFileMapExport;
+                Module1.Current.DisplayedSeasonalPrecipContribMap = strNewLayerName;
+            }
+            return success;
+        }
+
 
         public static async Task<BA_ReturnCode> DisplaySWEMapAsync(int idxDefaultMonth)
         {
@@ -2195,6 +2327,59 @@ namespace bagis_pro
                 }
                 Module1.Current.DisplayedSweDeltaMap = Constants.LAYER_NAMES_SWE_DELTA[idxDefaultDeltaMonth];
             }
+            return success;
+        }
+
+        public static async Task<BA_ReturnCode> DisplaySeasonalPrecipContribMapAsync(int idxDefaultMonth)
+        {
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            string strPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) +
+                Constants.FILES_SEASON_PRECIP_CONTRIB[idxDefaultMonth];
+            Uri uri = new Uri(strPath);
+
+            success = await MapTools.DisplayStretchRasterWithSymbolAsync(uri, Constants.LAYER_NAMES_SEASON_PRECIP_CONTRIB[idxDefaultMonth], "ArcGIS Colors",
+                    "Precipitation", 30, false, true, 0, 100, 0, 100);
+            IList<string> lstLayersFiles = new List<string>();
+                if (success == BA_ReturnCode.Success)
+                {
+                    await QueuedTask.Run(() =>
+                    {
+                        // Opens a file geodatabase. This will open the geodatabase if the folder exists and contains a valid geodatabase.
+                        Uri analysisUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis));
+                        using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(analysisUri)))
+                        {
+                            IReadOnlyList<RasterDatasetDefinition> definitions = geodatabase.GetDefinitions<RasterDatasetDefinition>();
+                            foreach (RasterDatasetDefinition def in definitions)
+                            {
+                                lstLayersFiles.Add(def.GetName());
+                            }
+                        }
+                    });
+                    int idx = 0;
+                    foreach (string strSqName in Constants.FILES_SEASON_PRECIP_CONTRIB)
+                    {
+                        if (lstLayersFiles.Contains(strSqName))
+                        {
+                            switch (idx)
+                            {
+                                case 0:     //SQ1
+                                    Module1.ActivateState("MapButtonPalette_BtnSeasonalPrecipContribSQ1_State");
+                                    break;
+                                case 1:     //SQ2
+                                    Module1.ActivateState("MapButtonPalette_BtnSeasonalPrecipContribSQ2_State");
+                                    break;
+                                case 2:     //SQ3
+                                    Module1.ActivateState("MapButtonPalette_BtnSeasonalPrecipContribSQ3_State");
+                                    break;
+                                case 3:     //SQ4
+                                    Module1.ActivateState("MapButtonPalette_BtnSeasonalPrecipContribSQ4_State");
+                                    break;
+                            }
+                        }
+                        idx++;
+                    }
+                }
+                Module1.Current.DisplayedSeasonalPrecipContribMap = Constants.LAYER_NAMES_SEASON_PRECIP_CONTRIB[idxDefaultMonth];
             return success;
         }
 

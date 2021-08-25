@@ -672,4 +672,26 @@ namespace bagis_pro.Buttons
         }
     }
 
+    internal class MapButtonPalette_BtnSeasonalPrecipContribSQ1 : Button
+    {
+        protected override async void OnClick()
+        {
+            try
+            {
+                Module1.Current.MapFinishedLoading = false;
+                int idxSQ1 = 0;
+                string strAnalysisGdb = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis);
+                await MapTools.UpdateMapAsync(strAnalysisGdb, Constants.FILES_SEASON_PRECIP_CONTRIB[idxSQ1], Module1.Current.DisplayedSeasonalPrecipContribMap,
+                    Constants.LAYER_NAMES_SEASON_PRECIP_CONTRIB[idxSQ1], "SQ1 PRECIPITATION CONTRIBUTION", "", true, Constants.FILE_EXPORT_MAPS_SEASONAL_PRECIP_CONTRIB[idxSQ1]);
+                Module1.Current.MapFinishedLoading = true;
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show("Unable to display Seasonal Precipitation Q1 map!!" + e.Message, "BAGIS-PRO");
+            }
+        }
+    }
+
+
+
 }
