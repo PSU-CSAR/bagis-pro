@@ -673,7 +673,7 @@ namespace bagis_pro
 
         public static async Task RemoveLayersfromMapFrame()
         {
-            string[] arrLayerNames = new string[36];
+            string[] arrLayerNames = new string[40];
             arrLayerNames[0] = Constants.MAPS_AOI_BOUNDARY;
             arrLayerNames[1] = Constants.MAPS_STREAMS;
             arrLayerNames[2] = Constants.MAPS_SNOTEL;
@@ -702,6 +702,11 @@ namespace bagis_pro
             for (int i = 0; i < Constants.LAYER_NAMES_SWE_DELTA.Length; i++)
             {
                 arrLayerNames[idxLayerNames] = Constants.LAYER_NAMES_SWE_DELTA[i];
+                idxLayerNames++;
+            }
+            for (int i = 0; i < Constants.LAYER_NAMES_SEASON_PRECIP_CONTRIB.Length; i++)
+            {
+                arrLayerNames[idxLayerNames] = Constants.LAYER_NAMES_SEASON_PRECIP_CONTRIB[i];
                 idxLayerNames++;
             }
             var map = MapView.Active.Map;
@@ -2337,8 +2342,8 @@ namespace bagis_pro
                 Constants.FILES_SEASON_PRECIP_CONTRIB[idxDefaultMonth];
             Uri uri = new Uri(strPath);
 
-            success = await MapTools.DisplayStretchRasterWithSymbolAsync(uri, Constants.LAYER_NAMES_SEASON_PRECIP_CONTRIB[idxDefaultMonth], "ArcGIS Colors",
-                    "Precipitation", 30, false, true, 0, 100, 0, 100);
+            success = await MapTools.DisplayStretchRasterWithSymbolAsync(uri, Constants.LAYER_NAMES_SEASON_PRECIP_CONTRIB[idxDefaultMonth], "ColorBrewer Schemes (RGB)",
+                    "Yellow-Orange-Red (continuous)", 30, false, true, 0, 35, 0, 35);
             IList<string> lstLayersFiles = new List<string>();
                 if (success == BA_ReturnCode.Success)
                 {

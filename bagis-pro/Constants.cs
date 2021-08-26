@@ -118,12 +118,14 @@ namespace bagis_pro
         public const string FILE_EXPORT_MAP_WINTER_PRECIPITATION_PDF = "map_winter_precipitation.pdf";
         public const string FILE_EXPORT_MAP_SWE_DELTA_ALL_PDF = "map_all_swe_delta.pdf";
         public const string FILE_EXPORT_MAP_SNODAS_ALL_PDF = "map_all_snodas.pdf";
+        public const string FILE_EXPORT_MAP_SEASONAL_PRECIP_ALL_PDF = "map_all_seasonal_precip.pdf";
         // List of files in the watershed PDF map package and the order in which they will be assembled
         public static string[] FILES_EXPORT_WATERSHED_PDF = new string[]
         { FILE_TITLE_PAGE_PDF, FILE_SITES_TABLE_PDF, FILE_EXPORT_MAP_ELEV_PDF, FILE_EXPORT_MAP_ASPECT_PDF,
           FILE_EXPORT_MAP_SLOPE_PDF, FILE_EXPORT_CHART_ASPECT_PDF, FILE_EXPORT_CHART_SLOPE_PDF,
           FILE_EXPORT_MAP_SNOTEL_PDF, FILE_EXPORT_MAP_SCOS_PDF, FILE_EXPORT_MAP_SNOTEL_AND_SCOS_PDF,
-          FILE_EXPORT_MAP_PRECIPITATION_PDF, FILE_EXPORT_MAP_WINTER_PRECIPITATION_PDF, FILE_EXPORT_CHART_ELEV_PRECIP_CORR_PDF,
+          FILE_EXPORT_MAP_PRECIPITATION_PDF, FILE_EXPORT_MAP_WINTER_PRECIPITATION_PDF, FILE_EXPORT_MAP_SEASONAL_PRECIP_ALL_PDF,
+          FILE_EXPORT_CHART_ELEV_PRECIP_CORR_PDF,
           FILE_EXPORT_MAP_PRECIPITATION_CONTRIBUTION_PDF, FILE_EXPORT_MAP_SNODAS_ALL_PDF, FILE_EXPORT_MAP_SWE_DELTA_ALL_PDF,
           FILE_EXPORT_CHART_AREA_ELEV_PRECIP_SITE_PDF, FILE_EXPORT_CHART_PRECIP_REPRESENT_PDF,
           FILE_EXPORT_MAP_CRITICAL_PRECIPITATION_ZONES_PDF, FILE_EXPORT_TABLE_PRECIP_REPRESENT_PDF, FILE_EXPORT_MAP_ROADS_PDF,
@@ -270,6 +272,10 @@ namespace bagis_pro
                                                                 "MapButtonPalette_BtnSweAprDelta_State",
                                                                 "MapButtonPalette_BtnSweMayDelta_State",
                                                                 "MapButtonPalette_BtnSweJunDelta_State",
+                                                                "MapButtonPalette_BtnSeasonalPrecipContribSQ1_State",
+                                                                "MapButtonPalette_BtnSeasonalPrecipContribSQ2_State",
+                                                                "MapButtonPalette_BtnSeasonalPrecipContribSQ3_State",
+                                                                "MapButtonPalette_BtnSeasonalPrecipContribSQ4_State",
                                                                 "MapButtonPalette_BtnRoads_State",
                                                                 "MapButtonPalette_BtnBelowTreeline_State",
                                                                 "MapButtonPalette_BtnPublicLandZones_State",

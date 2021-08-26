@@ -1599,7 +1599,7 @@ namespace bagis_pro
             //}
             //else
             //{
-                // Combine SNODAS maps into a single .pdf document
+                // Combine SWE Delta maps into a single .pdf document
                 // Initialize output document
                 PdfDocument sweDeltaOutputDocument = new PdfDocument();
                 int idx = 0;
@@ -1624,7 +1624,8 @@ namespace bagis_pro
                 {
                     sweDeltaOutputDocument.Save(GetFullPdfFileName(Constants.FILE_EXPORT_MAP_SWE_DELTA_ALL_PDF));
                 }
-                PdfDocument snodasOutputDocument = new PdfDocument();
+            // Combine monthly SNODAS maps into a single .pdf document
+            PdfDocument snodasOutputDocument = new PdfDocument();
                 idx = 0;
                 foreach (var strFileName in Constants.FILE_EXPORT_MAPS_SWE)
                 {
@@ -1666,6 +1667,48 @@ namespace bagis_pro
                 }
             }
 
+            // Combine monthly SQ PrecipContribu maps into a single .pdf document
+            PdfDocument seasonalPrecipOutputDocument = new PdfDocument();
+            idx = 0;
+            foreach (var strFileName in Constants.FILE_EXPORT_MAPS_SEASONAL_PRECIP_CONTRIB)
+            {
+                string fullPath = GetFullPdfFileName(strFileName);
+                if (File.Exists(fullPath))
+                {
+                    PdfDocument inputDocument = PdfReader.Open(fullPath, PdfDocumentOpenMode.Import);
+                    // Iterate pages
+                    int count = inputDocument.PageCount;
+                    for (idx = 0; idx < count; idx++)
+                    {
+                        // Get the page from the external document...
+                        PdfPage page = inputDocument.Pages[idx];
+                        seasonalPrecipOutputDocument.AddPage(page);
+                        File.Delete(fullPath);
+                    }
+                }
+            }
+            if (idx > 0)
+            {
+                seasonalPrecipOutputDocument.Save(GetFullPdfFileName(Constants.FILE_EXPORT_MAP_SEASONAL_PRECIP_ALL_PDF));
+            }
+
+            //}
+            foreach (string strFileName in arrAllFiles)
+            {
+                string fullPath = GetFullPdfFileName(strFileName);
+                if (File.Exists(fullPath))
+                {
+                    PdfDocument inputDocument = PdfReader.Open(fullPath, PdfDocumentOpenMode.Import);
+                    // Iterate pages
+                    int count = inputDocument.PageCount;
+                    for (idx = 0; idx < count; idx++)
+                    {
+                        // Get the page from the external document...
+                        PdfPage page = inputDocument.Pages[idx];
+                        outputDocument.AddPage(page);
+                    }
+                }
+            }
             // Save final document
             outputDocument.Save(outputPath);
             return BA_ReturnCode.Success;
