@@ -50,7 +50,7 @@ bagis-pro:
      DemDisplayUnits: Feet
      AoiPrecipFile: prism.gdb\Annual
      PrecipZonesCount: 8
-     AspectDirectionsCount: 8
+     AspectDirectionsCount: 4
      MinElevationZonesCount: 6
      PrecipBufferDistance: 1000
      PrecipBufferUnits: Meters
