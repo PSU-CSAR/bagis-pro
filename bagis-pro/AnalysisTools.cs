@@ -3574,6 +3574,7 @@ namespace bagis_pro
             }
             string annualRaster = strPrismGdb + "\\" + PrismFile.Annual.ToString();
             int i = 0;
+            StringBuilder sb = new StringBuilder();
             foreach (var fName in arrInput)
             {
                 if (lstLayers.Contains(fName))
@@ -3601,7 +3602,7 @@ namespace bagis_pro
                     }
                     else
                     {
-                        success = BA_ReturnCode.Success;
+                        sb.Append(outRaster + ";");
                     }                   
                 }
                 else
@@ -3611,7 +3612,59 @@ namespace bagis_pro
                 }
                 i++;
             }
-
+            if (sb.Length > 0)
+            {
+                string strInputLayerPaths = sb.ToString();
+                // Remove the ; at the end of the string
+                strInputLayerPaths = strInputLayerPaths.Substring(0, strInputLayerPaths.Length - 1);
+                string strOutputPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true)
+                    + "tmpMax";
+                var parameters = Geoprocessing.MakeValueArray(strInputLayerPaths, strOutputPath, "MAXIMUM");
+                var environments = Geoprocessing.MakeEnvironmentArray(workspace: oAoi.FilePath);
+                var gpResult = await Geoprocessing.ExecuteToolAsync("CellStatistics_sa", parameters, environments,
+                                                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                if (gpResult.IsFailed)
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(CalculateQuarterlyPrecipitationAsync),
+                        "Error Code: " + gpResult.ErrorCode + ". Unable to run cell statistics for seasonal quarters!");
+                    return success;
+                }
+                else
+                {
+                    double dblMax = -1;
+                    parameters = Geoprocessing.MakeValueArray(strOutputPath, "MAXIMUM");
+                    gpResult = await Geoprocessing.ExecuteToolAsync("GetRasterProperties_management", parameters, environments,
+                        CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                    if (gpResult.IsFailed)
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(CalculateQuarterlyPrecipitationAsync),
+                            "Error Code: " + gpResult.ErrorCode + ". Unable to calculate maximum value from cell statistics layer!");
+                        return success;
+                    }
+                    else
+                    {
+                        bool bIsDouble = Double.TryParse(Convert.ToString(gpResult.ReturnValue), out dblMax);
+                        if (dblMax > -1)
+                        {
+                            // save the max value to the configuration file
+                            dblMax = Math.Round(dblMax, 2) + 0.05;
+                            BA_Objects.Analysis oAnalysis = GeneralTools.GetAnalysisSettings(oAoi.FilePath);
+                            if (oAnalysis != null)
+                            {
+                                oAnalysis.SeasonalPrecipMax = dblMax;
+                                success = GeneralTools.SaveAnalysisSettings(oAoi.FilePath, oAnalysis);
+                                if (success != BA_ReturnCode.Success)
+                                {
+                                    Module1.Current.ModuleLogManager.LogError(nameof(CalculateQuarterlyPrecipitationAsync),
+                                        "Unable to save max value for quarterly precip to analysis settings!");
+                                }
+                            }
+                        }
+                        // Delete results of cell statistics
+                        success = await GeoprocessingTools.DeleteDatasetAsync(strOutputPath);
+                    }
+                }
+            }
             return success;
         }
 

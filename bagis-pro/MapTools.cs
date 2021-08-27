@@ -237,7 +237,7 @@ namespace bagis_pro
                     success = await DisplaySWEDeltaMapAsync(0, 5);
 
                     // add quarterly seasonal precipitation layer; Default is Q1
-                    success = await DisplaySeasonalPrecipContribMapAsync(0);
+                    success = await DisplaySeasonalPrecipContribMapAsync(0, oAnalysis.SeasonalPrecipMax);
 
                     // add Precipitation zones layer
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
@@ -2335,15 +2335,16 @@ namespace bagis_pro
             return success;
         }
 
-        public static async Task<BA_ReturnCode> DisplaySeasonalPrecipContribMapAsync(int idxDefaultMonth)
+        public static async Task<BA_ReturnCode> DisplaySeasonalPrecipContribMapAsync(int idxDefaultMonth, double dblMaxPercent)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
             string strPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) +
                 Constants.FILES_SEASON_PRECIP_CONTRIB[idxDefaultMonth];
             Uri uri = new Uri(strPath);
+            
 
             success = await MapTools.DisplayStretchRasterWithSymbolAsync(uri, Constants.LAYER_NAMES_SEASON_PRECIP_CONTRIB[idxDefaultMonth], "ColorBrewer Schemes (RGB)",
-                    "Yellow-Orange-Red (continuous)", 30, false, true, 0, 35, 0, 35);
+                    "Yellow-Orange-Red (continuous)", 30, false, true, 0, dblMaxPercent, 0, Math.Ceiling(dblMaxPercent));
             IList<string> lstLayersFiles = new List<string>();
                 if (success == BA_ReturnCode.Success)
                 {
