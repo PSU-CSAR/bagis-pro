@@ -76,6 +76,12 @@
                         </td>
                     </tr>
                     <tr>
+                      <td class="style3">
+                        For more information see the Basin Analysis Reports Users Manual at 
+                        <a href="https://nwcc-nrcs.hub.arcgis.com/documents/basin-analysis-reports-users-manual">https://nwcc-nrcs.hub.arcgis.com/documents/basin-analysis-reports-users-manual</a>
+                      </td>
+                    </tr>
+                    <tr>
                     <td class="style3">
                       <xsl:text disable-output-escaping="yes"><![CDATA[&nbsp;]]></xsl:text>
                     </td>
@@ -114,13 +120,15 @@
                 </tr>
                 <tr>
                   <td class="style3">
-                    SNOTEL Sites: within basin – <xsl:value-of select="snotel_sites_in_basin"/>, outside basin – <xsl:value-of select="snotel_sites_in_buffer"/>
+                    SNOTEL Sites: within basin – <xsl:value-of select="snotel_sites_in_basin"/>, within a <xsl:value-of select="snotel_sites_buffer_size"/> buffer distance outside 
+                    basin – <xsl:value-of select="snotel_sites_in_buffer"/>
                     <xsl:if test="has_snotel_sites = 'true'"> (See SNOTEL SITES REPRESENTATION map)</xsl:if>
                   </td>
                 </tr>
                 <tr>
                   <td class="style3">
-                    Snow Courses: within basin – <xsl:value-of select="scos_sites_in_basin"/>, outside basin – <xsl:value-of select="scos_sites_in_buffer"/> 
+                    Snow Courses: within basin – <xsl:value-of select="scos_sites_in_basin"/>, within a <xsl:value-of select="scos_sites_buffer_size"/> buffer distance outside 
+                    basin – <xsl:value-of select="scos_sites_in_buffer"/> 
                     <xsl:if test="has_scos_sites = 'true'"> (See SNOW COURSE SITES REPRESENTATION map)</xsl:if>
                   </td>
                 </tr>

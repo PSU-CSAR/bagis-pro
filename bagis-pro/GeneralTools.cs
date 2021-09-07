@@ -198,6 +198,8 @@ namespace bagis_pro
                 double aoiArea = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(gdbUri, Constants.FILE_AOI_VECTOR);
                 bool hasSnotelSites = false;
                 bool hasScosSites = false;
+                string snotelSitesBufferSize = "?";
+                string snowCourseSitesBufferSize = "?";
                 if (aoiArea > 0)
                 {
                     gdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false));
@@ -206,12 +208,34 @@ namespace bagis_pro
                         double repArea = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(gdbUri, Constants.FILE_SNOTEL_REPRESENTED);
                         pctSnotelRepresented = Math.Round(repArea / aoiArea * 100);
                         hasSnotelSites = true;
+                        string strPath = sitesGdbUri.LocalPath + "\\" + Constants.FILE_SNOTEL;
+                        string strBagisTag = await GeneralTools.GetBagisTagAsync(strPath, Constants.META_TAG_XPATH);
+                        if (!String.IsNullOrEmpty(strBagisTag))
+                        {
+                            string strBufferDistance = GeneralTools.GetValueForKey(strBagisTag, Constants.META_TAG_BUFFER_DISTANCE, ';');
+                            string strBufferUnits = GeneralTools.GetValueForKey(strBagisTag, Constants.META_TAG_XUNIT_VALUE, ';');
+                            if (!string.IsNullOrEmpty(strBufferDistance) && !string.IsNullOrEmpty(strBufferUnits))
+                            {
+                                snotelSitesBufferSize = strBufferDistance + " " + strBufferUnits;
+                            }
+                        }
                     }
                     if (totalScosSites > 0)
                     {
                         double repArea = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(gdbUri, Constants.FILE_SCOS_REPRESENTED);
                         pctSnowCourseRepresented = Math.Round(repArea / aoiArea * 100);
                         hasScosSites = true;
+                        string strPath = sitesGdbUri.LocalPath + "\\" + Constants.FILE_SNOW_COURSE;
+                        string strBagisTag = await GeneralTools.GetBagisTagAsync(strPath, Constants.META_TAG_XPATH);
+                        if (!String.IsNullOrEmpty(strBagisTag))
+                        {
+                            string strBufferDistance = GeneralTools.GetValueForKey(strBagisTag, Constants.META_TAG_BUFFER_DISTANCE, ';');
+                            string strBufferUnits = GeneralTools.GetValueForKey(strBagisTag, Constants.META_TAG_XUNIT_VALUE, ';');
+                            if (!string.IsNullOrEmpty(strBufferDistance) && !string.IsNullOrEmpty(strBufferUnits))
+                            {
+                                snowCourseSitesBufferSize = strBufferDistance + " " + strBufferUnits;
+                            }
+                        }
                     }
                     if (totalSnotelSites > 0 && totalScosSites > 0)
                     {
@@ -231,7 +255,7 @@ namespace bagis_pro
                 //Printing data sources
                 IDictionary<string, BA_Objects.DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
                 string[] keys = { Constants.DATA_TYPE_SWE, Constants.DATA_TYPE_PRECIPITATION, Constants.DATA_TYPE_SNOTEL,
-                                  Constants.DATA_TYPE_SNOW_COURSE, Constants.DATA_TYPE_SNOTEL, Constants.DATA_TYPE_SNOW_COURSE,
+                                  Constants.DATA_TYPE_SNOW_COURSE, Constants.DATA_TYPE_ROADS,
                                   Constants.DATA_TYPE_PUBLIC_LAND, Constants.DATA_TYPE_VEGETATION};
                 //if (rType.Equals(ReportType.SiteAnalysis))
                 //{
@@ -277,9 +301,11 @@ namespace bagis_pro
                     has_snotel_sites = hasSnotelSites,
                     snotel_sites_in_basin = snotelInBasin,
                     snotel_sites_in_buffer = snotelInBuffer,
+                    snotel_sites_buffer_size = snotelSitesBufferSize,
                     has_scos_sites = hasScosSites,
                     scos_sites_in_basin = scosInBasin,
                     scos_sites_in_buffer = scosInBuffer,
+                    scos_sites_buffer_size = snowCourseSitesBufferSize,
                     site_elev_range = siteElevRange,
                     site_elev_range_units = siteElevRangeUnits,
                     site_buffer_dist = siteBufferDistance,
