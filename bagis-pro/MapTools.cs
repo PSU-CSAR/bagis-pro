@@ -98,6 +98,11 @@ namespace bagis_pro
                     Uri aoiUri = new Uri(strPath);
                     success = await MapTools.AddAoiBoundaryToMapAsync(aoiUri, Constants.MAPS_AOI_BOUNDARY);
 
+                    //add subbasin contribution layer to map
+                    strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
+                                     Constants.FILE_PRECIP_CONTRIB_VECTOR;
+                    success = await MapTools.AddAoiBoundaryToMapAsync(new Uri(strPath), Constants.MAPS_SUBBASIN_BOUNDARY, false);
+
                     //add Snotel Represented Area Layer
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
                         Constants.FILE_SNOTEL_REPRESENTED;
@@ -183,7 +188,7 @@ namespace bagis_pro
                               Constants.FILE_SNOTEL;
                     uri = new Uri(strPath);
                     success = await MapTools.AddPointMarkersAsync(uri, Constants.MAPS_SNOTEL, CIMColor.CreateRGBColor(0, 255, 255),
-                        SimpleMarkerStyle.X, 10);
+                        SimpleMarkerStyle.X, 10, Constants.FIELD_SITE_ID);
                     if (success == BA_ReturnCode.Success)
                         Module1.Current.Aoi.HasSnotel = true;
 
@@ -192,7 +197,7 @@ namespace bagis_pro
                               Constants.FILE_SNOW_COURSE;
                     uri = new Uri(strPath);
                     success = await MapTools.AddPointMarkersAsync(uri, Constants.MAPS_SNOW_COURSE, CIMColor.CreateRGBColor(0, 255, 255),
-                        SimpleMarkerStyle.Star, 12);
+                        SimpleMarkerStyle.Star, 12, Constants.FIELD_SITE_ID);
                     if (success == BA_ReturnCode.Success)
                         Module1.Current.Aoi.HasSnowCourse = true;
 
@@ -356,7 +361,8 @@ namespace bagis_pro
             });
         }
 
-        public static async Task<BA_ReturnCode> AddAoiBoundaryToMapAsync(Uri aoiUri, string displayName = "", double lineSymbolWidth = 1.0)
+        public static async Task<BA_ReturnCode> AddAoiBoundaryToMapAsync(Uri aoiUri, string displayName = "", bool isVisible = true,
+            double lineSymbolWidth = 1.0)
         {
             // parse the uri for the folder and file
             string strFileName = null;
@@ -388,7 +394,7 @@ namespace bagis_pro
                 var flyrCreatnParam = new FeatureLayerCreationParams(fClass)
                 {
                     Name = displayName,
-                    IsVisible = true,
+                    IsVisible = isVisible,
                     RendererDefinition = new SimpleRendererDefinition()
                     {
                         SymbolTemplate = SymbolFactory.Instance.ConstructPolygonSymbol(
@@ -567,7 +573,7 @@ namespace bagis_pro
         }
 
         public static async Task<BA_ReturnCode> AddPointMarkersAsync(Uri aoiUri, string displayName, CIMColor markerColor,
-                                    SimpleMarkerStyle markerStyle, double markerSize)
+                                    SimpleMarkerStyle markerStyle, double markerSize, string labelField)
         {
             // parse the uri for the folder and file
             string strFileName = null;
@@ -581,6 +587,7 @@ namespace bagis_pro
             await QueuedTask.Run(() =>
             {
                 FeatureClass fClass = null;
+                int idxLabelField = -1;
                 // Opens a file geodatabase. This will open the geodatabase if the folder exists and contains a valid geodatabase.
                 using (Geodatabase geodatabase =
                     new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(strFolderPath))))
@@ -589,6 +596,8 @@ namespace bagis_pro
                     try
                     {
                         fClass = geodatabase.OpenDataset<FeatureClass>(strFileName);
+                        FeatureClassDefinition featureClassDefinition = fClass.GetDefinition();
+                        idxLabelField = featureClassDefinition.FindField(labelField);
                     }
                     catch (GeodatabaseTableException e)
                     {
@@ -613,6 +622,36 @@ namespace bagis_pro
                 };
 
                 FeatureLayer fLayer = LayerFactory.Instance.CreateLayer<FeatureLayer>(flyrCreatnParam, MapView.Active.Map);
+
+                if (fLayer != null && idxLabelField > -1)
+                {
+                    fLayer.SetLabelVisibility(true);   //set the label's visiblity
+                    //Get the layer's definition
+                    var lyrDefn = fLayer.GetDefinition() as CIMFeatureLayer;
+                    //Get the label classes - we need the first one
+                    var listLabelClasses = lyrDefn.LabelClasses.ToList();
+                    var theLabelClass = listLabelClasses.FirstOrDefault();
+                    //Select label field
+                    theLabelClass.Expression = "return $feature." + labelField + ";";
+                    //Modify label Placement 
+                    //Check if the label engine is Maplex or standard.
+                    CIMGeneralPlacementProperties labelEngine = MapView.Active.Map.GetDefinition().GeneralPlacementProperties;
+                    if (labelEngine is CIMStandardGeneralPlacementProperties) //Current labeling engine is Standard labeling engine               
+                        theLabelClass.StandardLabelPlacementProperties.PointPlacementMethod = StandardPointPlacementMethod.OnTopPoint;
+                    else    //Current labeling engine is Maplex labeling engine            
+                        theLabelClass.MaplexLabelPlacementProperties.PointPlacementMethod = MaplexPointPlacementMethod.NorthEastOfPoint;
+                    //Gets the text symbol of the label class            
+                    var textSymbol = listLabelClasses.FirstOrDefault().TextSymbol.Symbol as CIMTextSymbol; 
+                    textSymbol.FontStyleName = "Bold"; //set font as bold
+                    textSymbol.SetSize(14); //set font size 
+                    lyrDefn.LabelClasses = listLabelClasses.ToArray(); //Set the labelClasses back
+                    fLayer.SetDefinition(lyrDefn); //set the layer's definition
+                }
+                else
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(AddPointMarkersAsync),
+                        "Field " + labelField + " is missing from the feature class and cannot be used as a label!");
+                }
             });
             success = BA_ReturnCode.Success;
             return success;
@@ -673,7 +712,7 @@ namespace bagis_pro
 
         public static async Task RemoveLayersfromMapFrame()
         {
-            string[] arrLayerNames = new string[40];
+            string[] arrLayerNames = new string[41];
             arrLayerNames[0] = Constants.MAPS_AOI_BOUNDARY;
             arrLayerNames[1] = Constants.MAPS_STREAMS;
             arrLayerNames[2] = Constants.MAPS_SNOTEL;
@@ -693,7 +732,8 @@ namespace bagis_pro
             arrLayerNames[16] = Constants.MAPS_PUBLIC_LAND_OWNERSHIP;
             arrLayerNames[17] = Constants.MAPS_PRECIPITATION_CONTRIBUTION;
             arrLayerNames[18] = Constants.MAPS_WINTER_PRECIPITATION;
-            int idxLayerNames = 19;
+            arrLayerNames[19] = Constants.MAPS_SUBBASIN_BOUNDARY;
+            int idxLayerNames = 20;
             for (int i = 0; i < Constants.LAYER_NAMES_SNODAS_SWE.Length; i++)
             {
                 arrLayerNames[idxLayerNames] = Constants.LAYER_NAMES_SNODAS_SWE[i];
@@ -1683,6 +1723,16 @@ namespace bagis_pro
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_ELEV_ZONE,
                                                    Module1.Current.RoadsLayerLegend};
                     lstLegendLayers = new List<string> { Module1.Current.RoadsLayerLegend };
+                    if (Module1.Current.Aoi.HasSnotel == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOTEL);
+                        lstLegendLayers.Add(Constants.MAPS_SNOTEL);
+                    }
+                    if (Module1.Current.Aoi.HasSnowCourse == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOW_COURSE);
+                        lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE);
+                    }
                     mapDefinition = new BA_Objects.MapDefinition("PROXIMITY TO ACCESS ROAD",
                         " ", Constants.FILE_EXPORT_MAP_ROADS_PDF);
                     mapDefinition.LayerList = lstLayers;
@@ -1693,6 +1743,16 @@ namespace bagis_pro
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_ELEV_ZONE,
                                                    Constants.MAPS_FEDERAL_PUBLIC_LAND_ZONES};
                     lstLegendLayers = new List<string> { Constants.MAPS_FEDERAL_PUBLIC_LAND_ZONES };
+                    if (Module1.Current.Aoi.HasSnotel == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOTEL);
+                        lstLegendLayers.Add(Constants.MAPS_SNOTEL);
+                    }
+                    if (Module1.Current.Aoi.HasSnowCourse == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOW_COURSE);
+                        lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE);
+                    }
                     mapDefinition = new BA_Objects.MapDefinition("FEDERAL NON-WILDERNESS LAND",
                         " ", Constants.FILE_EXPORT_MAP_PUBLIC_LAND_ZONES_PDF);
                     mapDefinition.LayerList = lstLayers;
@@ -1703,6 +1763,16 @@ namespace bagis_pro
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_ELEV_ZONE,
                                                    Constants.MAPS_BELOW_TREELINE};
                     lstLegendLayers = new List<string> { Constants.MAPS_BELOW_TREELINE };
+                    if (Module1.Current.Aoi.HasSnotel == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOTEL);
+                        lstLegendLayers.Add(Constants.MAPS_SNOTEL);
+                    }
+                    if (Module1.Current.Aoi.HasSnowCourse == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOW_COURSE);
+                        lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE);
+                    }
                     mapDefinition = new BA_Objects.MapDefinition("AREA BELOW TREELINE",
                         " ", Constants.FILE_EXPORT_MAP_BELOW_TREELINE_PDF);
                     mapDefinition.LayerList = lstLayers;
@@ -1730,8 +1800,9 @@ namespace bagis_pro
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;
                 case BagisMapType.PRECIPITATION_CONTRIBUTION:
-                    lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
-                                                   Constants.MAPS_HILLSHADE, Constants.MAPS_PRECIPITATION_CONTRIBUTION };
+                    lstLayers = new List<string> { Constants.MAPS_SUBBASIN_BOUNDARY, Constants.MAPS_STREAMS,
+                                                   Constants.MAPS_HILLSHADE, Constants.MAPS_PRECIPITATION_CONTRIBUTION,
+                                                    Constants.MAPS_AOI_BOUNDARY};
                     lstLegendLayers = new List<string>();
                     if (Module1.Current.Aoi.HasSnowCourse == true)
                     {
@@ -1754,6 +1825,16 @@ namespace bagis_pro
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_ELEV_ZONE,
                                                    Constants.MAPS_CRITICAL_PRECIPITATION_ZONES};
                     lstLegendLayers = new List<string> { Constants.MAPS_CRITICAL_PRECIPITATION_ZONES, Constants.MAPS_ELEV_ZONE };
+                    if (Module1.Current.Aoi.HasSnotel == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOTEL);
+                        lstLegendLayers.Add(Constants.MAPS_SNOTEL);
+                    }
+                    if (Module1.Current.Aoi.HasSnowCourse == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOW_COURSE);
+                        lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE);
+                    }
                     mapDefinition = new BA_Objects.MapDefinition("CRITICAL PRECIPITATION ZONES",
                         " ", Constants.FILE_EXPORT_MAP_CRITICAL_PRECIPITATION_ZONES_PDF);
                     mapDefinition.LayerList = lstLayers;
@@ -1764,6 +1845,16 @@ namespace bagis_pro
                     lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_PUBLIC_LAND_OWNERSHIP };
                     lstLegendLayers = new List<string> { Constants.MAPS_PUBLIC_LAND_OWNERSHIP };
+                    if (Module1.Current.Aoi.HasSnotel == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOTEL);
+                        lstLegendLayers.Add(Constants.MAPS_SNOTEL);
+                    }
+                    if (Module1.Current.Aoi.HasSnowCourse == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOW_COURSE);
+                        lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE);
+                    }
                     mapDefinition = new BA_Objects.MapDefinition("PUBLIC LAND OWNERSHIP",
                         " ", Constants.FILE_EXPORT_MAP_PUBLIC_LAND_OWNERSHIP_PDF);
                     mapDefinition.LayerList = lstLayers;
@@ -1771,7 +1862,7 @@ namespace bagis_pro
                     break;
                 case BagisMapType.WINTER_PRECIPITATION:
                     lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
-                                                       Constants.MAPS_HILLSHADE, Constants.MAPS_WINTER_PRECIPITATION};
+                                                   Constants.MAPS_HILLSHADE, Constants.MAPS_WINTER_PRECIPITATION};
                     lstLegendLayers = new List<string>();
                     if (Module1.Current.Aoi.HasSnotel == true)
                     {
@@ -1929,12 +2020,12 @@ namespace bagis_pro
             }
             IList<string> lstLegend = new List<string>();
 
-            if (Module1.Current.Aoi.HasSnotel == true && bIsDelta == false)
+            if (Module1.Current.Aoi.HasSnotel)
             {
                 lstLayers.Add(Constants.MAPS_SNOTEL);
                 lstLegend.Add(Constants.MAPS_SNOTEL);
             }
-            if (Module1.Current.Aoi.HasSnowCourse == true && bIsDelta == false)
+            if (Module1.Current.Aoi.HasSnowCourse)
             {
                 lstLayers.Add(Constants.MAPS_SNOW_COURSE);
                 lstLegend.Add(Constants.MAPS_SNOW_COURSE);

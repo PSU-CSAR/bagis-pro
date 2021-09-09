@@ -33,6 +33,7 @@ namespace bagis_pro
         public const string MAPS_PUBLIC_LAND_OWNERSHIP = "Public Land Ownership";
         public const string MAPS_PRECIPITATION_CONTRIBUTION = "Precipitation Contribution";
         public const string MAPS_WINTER_PRECIPITATION = "Winter Precipitation";
+        public const string MAPS_SUBBASIN_BOUNDARY = "Subbasin Boundary";
 
         public const string MAPS_LEGEND = "Legend";
         public const string MAPS_TITLE = "Title";
@@ -79,6 +80,7 @@ namespace bagis_pro
         public const string FILE_ELEV_ZONES_VECTOR = "elevzone_v";
         public const string FILE_CRITICAL_PRECIP_ZONE = "criticalprecipzone";
         public const string FILE_PRECIPITATION_CONTRIBUTION = "precipcontribzone";
+        public const string FILE_PRECIP_CONTRIB_VECTOR = "precipcontribzone_v";
         public const string FILE_WINTER_PRECIPITATION = "winter_precip";
         public const string FILE_SETTINGS = "analysis.xml";
         public const string FILE_BATCH_TOOL_SETTINGS = "batch_tool_settings.json";
@@ -194,6 +196,7 @@ namespace bagis_pro
         public const string FIELD_PRECIP = "BA_PRECIP";
         public const string FIELD_DIRECTION = "BA_DIRECT";
         public const string FIELD_SLOPE = "BA_SLOPE";
+        public const string FIELD_SITE_ID = "BA_SITE_ID";
         public const string FIELD_OBJECT_ID = "OBJECTID";
         public const string FIELD_STATION_TRIPLET = "stationTriplet";
         public const string FIELD_STATION_NAME = "stationName";

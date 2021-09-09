@@ -118,5 +118,6 @@ namespace bagis_pro
         internal string DefaultEbagisServer { get; } = "https://ebagis.geog.pdx.edu";
         internal dynamic BatchToolSettings { get; set; } = "";
         internal double PrismZonesInterval { get; set; } = 999;
+        internal int BaSiteId { get; set; } = 0;
     }
 }

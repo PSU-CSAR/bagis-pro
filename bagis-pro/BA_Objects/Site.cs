@@ -25,6 +25,7 @@ namespace bagis_pro.BA_Objects
         public string AspectDirection;
         public double Slope;
         public double Precipitation;
+        public int SiteId;
 
         public SiteType SiteType
         {

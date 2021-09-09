@@ -50,6 +50,9 @@
           <table style="border-collapse:collapse; width=700px">
             <tr>
               <td class="style3">
+                Id
+              </td>
+              <td class="style3">
                 Type
               </td>
               <td class="style3">
@@ -76,6 +79,9 @@
             </tr>
             <xsl:for-each select="all_sites/Site">
               <tr>
+                <td class="style3">
+                  <xsl:value-of select="SiteId" />
+                </td>
                 <td class="style3">
                   <xsl:value-of select="SiteTypeText" />
                 </td>

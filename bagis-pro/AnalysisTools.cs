@@ -266,6 +266,11 @@ namespace bagis_pro
                             {
                                 aSite.Precipitation = Convert.ToDouble(nextFeature[idx]);
                             }
+                            idx = nextFeature.FindField(Constants.FIELD_SITE_ID);
+                            if (idx > -1)
+                            {
+                                aSite.SiteId = Convert.ToInt32(nextFeature[idx]);
+                            }
 
                             lstSites.Add(aSite);
                             Module1.Current.ModuleLogManager.LogDebug(nameof(AssembleMergedSitesListAsync),
@@ -3132,7 +3137,8 @@ namespace bagis_pro
                         // If it exists, check to make sure the direction and prism fields exist
                         bool bDirectionField = await GeodatabaseTools.AttributeExistsAsync(uriAnalysis, Constants.FILE_MERGED_SITES, Constants.FIELD_DIRECTION);
                         bool bAspectField = await GeodatabaseTools.AttributeExistsAsync(uriAnalysis, Constants.FILE_MERGED_SITES, Constants.FIELD_ASPECT);
-                        if (!bDirectionField || !bAspectField)
+                        bool bSiteIdField = await GeodatabaseTools.AttributeExistsAsync(uriAnalysis, Constants.FILE_MERGED_SITES, Constants.FIELD_SITE_ID);
+                        if (!bDirectionField || !bAspectField || !bSiteIdField)
                         {
                             // At least one of the fields was missing, recreate the layer
                             Module1.Current.ModuleLogManager.LogInfo(nameof(CalculateAspectZonesAsync), Constants.FILE_MERGED_SITES +
@@ -3554,6 +3560,19 @@ namespace bagis_pro
                     success = BA_ReturnCode.UnknownError;
                 }
             });
+
+            // Create vector representation of watersheds for map display
+            string vectorPath = GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Analysis, true) + Constants.FILE_PRECIP_CONTRIB_VECTOR;
+            parameters = Geoprocessing.MakeValueArray(watershedOutputPath, vectorPath);
+            gpResult = await Geoprocessing.ExecuteToolAsync("RasterToPolygon_conversion", parameters, environments,
+                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+            if (gpResult.IsFailed)
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(CalculatePrecipitationContributionAsync),
+                    "Failed to create vector representation of sub basin contribution zones!");
+                success = BA_ReturnCode.UnknownError;
+            }
+
             return success;
         }
 
@@ -3587,7 +3606,8 @@ namespace bagis_pro
                     var valueArray = Geoprocessing.MakeValueArray(maExpression, outRaster);
                     var environments = Geoprocessing.MakeEnvironmentArray(workspace:strPrismGdb);
                     // execute the Raster calculator tool to process the map algebra expression
-                    var gpResult = await Geoprocessing.ExecuteToolAsync("RasterCalculator_sa", valueArray, environments);
+                    var gpResult = await Geoprocessing.ExecuteToolAsync("RasterCalculator_sa", valueArray, environments,
+                        CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
                     if (gpResult.IsFailed)
                     {
                         Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateQuarterlyPrecipitationAsync),
@@ -3930,6 +3950,7 @@ namespace bagis_pro
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
             bool hasSnotel = await GeodatabaseTools.FeatureClassExistsAsync(gdbUri, Constants.FILE_SNOTEL);
             bool hasSiteType = false;
+            bool hasSiteId = false;
             bool bUpdateSnotel = false;
             bool bUpdateSnowCourse = false;
             if (hasSnotel)
@@ -3944,6 +3965,18 @@ namespace bagis_pro
                         bUpdateSnotel = true;
                         Module1.Current.ModuleLogManager.LogDebug(nameof(CreateSitesLayerAsync),
                             "Added ba_site_type field to Snotel");
+                    }
+                }
+                hasSiteId = await GeodatabaseTools.AttributeExistsAsync(gdbUri, Constants.FILE_SNOTEL, Constants.FIELD_SITE_ID);
+                if (hasSiteId == false)
+                {
+                    success = await GeoprocessingTools.AddFieldAsync(gdbUri.LocalPath + "\\" + Constants.FILE_SNOTEL,
+                        Constants.FIELD_SITE_ID, "INTEGER");
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        bUpdateSnotel = true;
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(CreateSitesLayerAsync),
+                            "Added ba_site_id field to Snotel");
                     }
                 }
             }
@@ -3961,6 +3994,26 @@ namespace bagis_pro
                         Module1.Current.ModuleLogManager.LogDebug(nameof(CreateSitesLayerAsync),
                             "Added ba_site_type field to Snow Course");
                     }
+                    success = await GeoprocessingTools.AddFieldAsync(gdbUri.LocalPath + "\\" + Constants.FILE_SNOW_COURSE,
+                        Constants.FIELD_SITE_ID, "INTEGER");
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        bUpdateSnowCourse = true;
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(CreateSitesLayerAsync),
+                            "Added ba_site_id field to Snow Course");
+                    }
+                }
+                hasSiteId = await GeodatabaseTools.AttributeExistsAsync(gdbUri, Constants.FILE_SNOW_COURSE, Constants.FIELD_SITE_ID);
+                if (hasSiteId == false)
+                {
+                    success = await GeoprocessingTools.AddFieldAsync(gdbUri.LocalPath + "\\" + Constants.FILE_SNOW_COURSE,
+                        Constants.FIELD_SITE_ID, "INTEGER");
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        bUpdateSnowCourse = true;
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(CreateSitesLayerAsync),
+                            "Added ba_site_id field to Snow Course");
+                    }
                 }
             }
 
@@ -3975,6 +4028,7 @@ namespace bagis_pro
                         {
                             FeatureClassDefinition featureClassDefinition = featureClass.GetDefinition();
                             int idxSiteType = featureClassDefinition.FindField(Constants.FIELD_SITE_TYPE);
+                            int idxSiteId = featureClassDefinition.FindField(Constants.FIELD_SITE_ID);
                             if (idxSiteType > 0)
                             {
                                 EditOperation editOperation = new EditOperation();
@@ -3989,6 +4043,9 @@ namespace bagis_pro
                                                 // In order to update the the attribute table has to be called before any changes are made to the row
                                                 context.Invalidate(feature);
                                                 feature[idxSiteType] = SiteType.Snotel.ToString();
+                                                // increment the site id
+                                                Module1.Current.BaSiteId++;
+                                                feature[idxSiteId] = Module1.Current.BaSiteId;
                                                 feature.Store();
                                                 // Has to be called after the store too
                                                 context.Invalidate(feature);
@@ -4021,6 +4078,7 @@ namespace bagis_pro
                         {
                             FeatureClassDefinition featureClassDefinition = featureClass.GetDefinition();
                             int idxSiteType = featureClassDefinition.FindField(Constants.FIELD_SITE_TYPE);
+                            int idxSiteId = featureClassDefinition.FindField(Constants.FIELD_SITE_ID);
                             if (idxSiteType > 0)
                             {
                                 EditOperation editOperation = new EditOperation();
@@ -4035,6 +4093,9 @@ namespace bagis_pro
                                                 // In order to update the the attribute table has to be called before any changes are made to the row
                                                 context.Invalidate(feature);
                                                 feature[idxSiteType] = SiteType.SnowCourse.ToString();
+                                                // increment the site id
+                                                Module1.Current.BaSiteId++;
+                                                feature[idxSiteId] = Module1.Current.BaSiteId;
                                                 feature.Store();
                                                 // Has to be called after the store too
                                                 context.Invalidate(feature);

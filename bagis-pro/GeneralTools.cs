@@ -489,7 +489,8 @@ namespace bagis_pro
                     // If it exists, check to make sure the direction and prism fields exist
                     bool bDirectionField = await GeodatabaseTools.AttributeExistsAsync(uriAnalysis, Constants.FILE_MERGED_SITES, Constants.FIELD_DIRECTION);
                     bool bPrecipField = await GeodatabaseTools.AttributeExistsAsync(uriAnalysis, Constants.FILE_MERGED_SITES, Constants.FIELD_PRECIP);
-                    if (!bDirectionField || !bPrecipField)
+                    bool bSiteIdField = await GeodatabaseTools.AttributeExistsAsync(uriAnalysis, Constants.FILE_MERGED_SITES, Constants.FIELD_SITE_ID);
+                    if (!bDirectionField || !bPrecipField || !bSiteIdField)
                     {
                         // At least one of the fields was missing, recreate the layer
                         Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), Constants.FILE_MERGED_SITES +
@@ -1674,24 +1675,6 @@ namespace bagis_pro
                 {
                     snodasOutputDocument.Save(GetFullPdfFileName(Constants.FILE_EXPORT_MAP_SNODAS_ALL_PDF));
                 }
-
-            //}
-            foreach (string strFileName in arrAllFiles)
-            {
-                string fullPath = GetFullPdfFileName(strFileName);
-                if (File.Exists(fullPath))
-                {
-                    PdfDocument inputDocument = PdfReader.Open(fullPath, PdfDocumentOpenMode.Import);
-                    // Iterate pages
-                    int count = inputDocument.PageCount;
-                    for (idx = 0; idx < count; idx++)
-                    {
-                        // Get the page from the external document...
-                        PdfPage page = inputDocument.Pages[idx];
-                        outputDocument.AddPage(page);
-                    }
-                }
-            }
 
             // Combine monthly SQ PrecipContribu maps into a single .pdf document
             PdfDocument seasonalPrecipOutputDocument = new PdfDocument();
