@@ -39,6 +39,7 @@ namespace bagis_pro
         public const string MAPS_TITLE = "Title";
         public const string MAPS_SUBTITLE = "SubTitle";
         public const string MAPS_TEXTBOX1 = "TextBox1";
+        public const string MAPS_TEXTBOX2 = "TextBox2";
 
         public const string FILE_AOI_VECTOR = "aoi_v";
         public const string FILE_AOI_BUFFERED_VECTOR = "aoib_v";

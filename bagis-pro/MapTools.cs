@@ -1244,8 +1244,11 @@ namespace bagis_pro
                 success = await MapTools.DisplayTextBoxAsync(layout, Constants.MAPS_SUBTITLE, 4.0, 10.1, ColorFactory.Instance.BlackRGB, 20, "Times New Roman",
                     "Regular", "SubTitle");
                 // (optional) textbox
-                success = await MapTools.DisplayTextBoxAsync(layout, Constants.MAPS_TEXTBOX1, 5.0, 1.5, ColorFactory.Instance.BlackRGB, 12, "Times New Roman",
+                success = await MapTools.DisplayTextBoxAsync(layout, Constants.MAPS_TEXTBOX1, 5.0, 1.6, ColorFactory.Instance.BlackRGB, 12, "Times New Roman",
                     "Regular", "Text Box 1");
+                // sites textbox
+                success = await MapTools.DisplayTextBoxAsync(layout, Constants.MAPS_TEXTBOX2, 5.2, 0.35, ColorFactory.Instance.BlackRGB, 12, "Times New Roman",
+                    "Regular", "See the Active Sites table for individual SNOTEL and Snow Course site descriptions");
             }
             return success;
         }
@@ -1464,7 +1467,7 @@ namespace bagis_pro
 
                     //Reference the map frame and define the location
                     MapFrame mapFrame = layout.FindElement(mapFrameName) as MapFrame;
-                    Coordinate2D nArrow = new Coordinate2D(7.7906, 0.8906);
+                    Coordinate2D nArrow = new Coordinate2D(7.7906, 0.9906);
 
                     //Construct the north arrow
                     NorthArrow northArrow = LayoutElementFactory.Instance.CreateNorthArrow(layout, nArrow, mapFrame, northArrowStyleItem);
@@ -1493,7 +1496,7 @@ namespace bagis_pro
                     //Reference the map frame and define the location
                     MapFrame mapFrame = layout.FindElement(mapFrameName) as MapFrame;
                     double coordX = 3.7732;
-                    Coordinate2D location = new Coordinate2D(coordX, 0.9975);
+                    Coordinate2D location = new Coordinate2D(coordX, 1.0975);
 
                     //Construct the scale bar
                     ScaleBar scaleBar = LayoutElementFactory.Instance.CreateScaleBar(layout, location, mapFrame, scaleBarStyleItem);
@@ -1512,7 +1515,7 @@ namespace bagis_pro
                     ScaleBarStyleItem scaleBarStyleItem2 = scaleBars[0];
 
                     //Define the location
-                    Coordinate2D location2 = new Coordinate2D(coordX, 0.7035);
+                    Coordinate2D location2 = new Coordinate2D(coordX, 0.8035);
 
                     //Construct the scale bar
                     ScaleBar scaleBar2 = LayoutElementFactory.Instance.CreateScaleBar(layout, location2, mapFrame, scaleBarStyleItem2);
