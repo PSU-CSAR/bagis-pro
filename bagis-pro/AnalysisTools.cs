@@ -3953,6 +3953,7 @@ namespace bagis_pro
             bool hasSiteId = false;
             bool bUpdateSnotel = false;
             bool bUpdateSnowCourse = false;
+            Module1.Current.BaSiteId = 0;       //Reset sites id to 0 before processing AOI
             if (hasSnotel)
             {
                 hasSiteType = await GeodatabaseTools.AttributeExistsAsync(gdbUri, Constants.FILE_SNOTEL, Constants.FIELD_SITE_TYPE);
