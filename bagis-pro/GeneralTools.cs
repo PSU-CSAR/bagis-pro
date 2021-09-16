@@ -471,7 +471,7 @@ namespace bagis_pro
 
                 Uri uriAnalysis = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false));
                 Uri uriLayers = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, false));
-                bool bPrecMeanElevTableExists = await GeodatabaseTools.TableExistsAsync(uriAnalysis, Constants.FILE_ASP_ZONE_PREC_TBL);
+                bool bPrecMeanElevTableExists = await GeodatabaseTools.FeatureClassExistsAsync(uriAnalysis, Constants.FILE_PREC_MEAN_ELEV_V);
                 bool bMergedSitesExists = await GeodatabaseTools.FeatureClassExistsAsync(uriAnalysis, Constants.FILE_MERGED_SITES);
                 if (!bMergedSitesExists)
                 {

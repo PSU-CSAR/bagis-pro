@@ -1222,25 +1222,23 @@ namespace bagis_pro
             double minPrecipValue = 999.0F;
             await QueuedTask.Run(() => {
                 using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(analysisUri)))
-                using (Table statisticsTable = geodatabase.OpenDataset<Table>(Constants.FILE_ASP_ZONE_PREC_TBL))
+                using (Table statisticsTable = geodatabase.OpenDataset<Table>(Constants.FILE_PREC_MEAN_ELEV_V))
                 {
                     TableDefinition definition = statisticsTable.GetDefinition();
-                    string prismFieldName = System.IO.Path.GetFileName(precipPath) + "_band_1";
-                    string elevFieldName = Constants.FILE_PREC_MEAN_ELEV + "_band_1";
-                    int idxPrecipTableCol = definition.FindField(prismFieldName);
-                    int idxElevTableCol = definition.FindField(elevFieldName);
+                    int idxPrecipTableCol = definition.FindField(Constants.FIELD_SAMPLE_INPUT_2);
+                    int idxElevTableCol = definition.FindField(Constants.FIELD_SAMPLE_INPUT_3);
                     int idxAspectTableCol = definition.FindField(Constants.FIELD_DIRECTION);
 
                     if(idxPrecipTableCol < 0)
                     {
                         Module1.Current.ModuleLogManager.LogError(nameof(CreateRepresentPrecipTableAsync), 
-                            "The " + prismFieldName + " field could not be found in " + Constants.FILE_ASP_ZONE_PREC_TBL +
+                            "The " + Constants.FIELD_SAMPLE_INPUT_2 + " field could not be found in " + Constants.FILE_PREC_MEAN_ELEV_V +
                             ". The most likely cause is that this table was created in ArcMap. Try creating the table in Pro"); 
                     }
                     else if (idxElevTableCol > -1 && idxAspectTableCol > -1)
                     {
                         QueryFilter pQFilter = new QueryFilter();
-                        pQFilter.WhereClause = prismFieldName + " is not null and " + elevFieldName + " is not null";
+                        pQFilter.WhereClause = Constants.FIELD_SAMPLE_INPUT_2 + " is not null and " + Constants.FIELD_SAMPLE_INPUT_3 + " is not null";
                         int idxRow = 2;
                         using (RowCursor cursor = statisticsTable.Search(pQFilter, false))
                         {

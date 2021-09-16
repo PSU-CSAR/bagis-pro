@@ -75,7 +75,7 @@ namespace bagis_pro
         public const string FILE_VEGETATION_EVT = "LF_us_140evt";
         public const string FILE_PREC_MEAN_ELEV = "precmeanelev";
         public const string FILE_ASP_ZONE_PREC = "aspzoneprec";
-        public const string FILE_ASP_ZONE_PREC_TBL = "precmeanelev_tbl";
+        public const string FILE_PREC_MEAN_ELEV_V = "precmeanelev_v";
         public const string FILE_MERGED_SITES = "merged_sites";
         public const string FILE_ELEV_ZONES_TBL = "tblZones";
         public const string FILE_ELEV_ZONES_VECTOR = "elevzone_v";
@@ -227,6 +227,9 @@ namespace bagis_pro
         public const string FIELD_LONGITUDE = "longitude";
         public const string FIELD_SOURCE_ID_FEATURE = "SrcID_Feat";
         public const string FIELD_SOURCE_ID_RASTER = "SrcID_Rast";
+        public const string FIELD_SAMPLE_INPUT_1 = "v_raster_10";
+        public const string FIELD_SAMPLE_INPUT_2 = "v_raster_20";
+        public const string FIELD_SAMPLE_INPUT_3 = "v_raster_30";
 
         public const string DATA_TYPE_SWE = "Snotel SWE";
         public const string DATA_TYPE_PRECIPITATION = "Precipitation";

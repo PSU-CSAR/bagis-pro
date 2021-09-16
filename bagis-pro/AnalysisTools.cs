@@ -2355,7 +2355,8 @@ namespace bagis_pro
                 sb.Append(precipMeanPath);
                 //Environment settings are same as Focal Statistics
                 parameters = Geoprocessing.MakeValueArray(sb.ToString(), uriPrism.LocalPath + "\\" + prismFile,
-                    uriAnalysis.LocalPath + "\\" + Constants.FILE_ASP_ZONE_PREC_TBL, "NEAREST");
+                    uriAnalysis.LocalPath + "\\" + Constants.FILE_PREC_MEAN_ELEV_V, "NEAREST", Constants.FIELD_VALUE, "CURRENT_SLICE",
+                    "","","","", "ROW_WISE", "FEATURE_CLASS");
                 gpResult = await Geoprocessing.ExecuteToolAsync("Sample_sa", parameters, environments,
                     CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
                 if (gpResult.IsFailed)
@@ -2372,14 +2373,14 @@ namespace bagis_pro
                         "Sample tool run successfully");
                 }
 
-                success = await GeoprocessingTools.AddFieldAsync(uriAnalysis.LocalPath + "\\" + Constants.FILE_ASP_ZONE_PREC_TBL, Constants.FIELD_DIRECTION, "TEXT");
+                success = await GeoprocessingTools.AddFieldAsync(uriAnalysis.LocalPath + "\\" + Constants.FILE_PREC_MEAN_ELEV_V, Constants.FIELD_DIRECTION, "TEXT");
                 if (success == BA_ReturnCode.Success)
                 {
-                    success = await UpdateAspectDirectionsAsync(uriAnalysis, Constants.FILE_ASP_ZONE_PREC_TBL,
-                        lstAspectInterval, Constants.FILE_ASP_ZONE_PREC + "_Band_1");
+                    success = await UpdateAspectDirectionsAsync(uriAnalysis, Constants.FILE_PREC_MEAN_ELEV_V,
+                        lstAspectInterval, Constants.FIELD_SAMPLE_INPUT_1);
                     if (success != BA_ReturnCode.Success)
                     {
-                        MessageBox.Show("Unable to update aspect directions in " + Constants.FILE_ASP_ZONE_PREC_TBL
+                        MessageBox.Show("Unable to update aspect directions in " + Constants.FILE_PREC_MEAN_ELEV_V
                             + ". Calculation cancelled!!", "BAGIS-PRO");
                         return success;
                     }
