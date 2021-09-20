@@ -1339,6 +1339,7 @@ namespace bagis_pro
             double dblMin = -999;
             double dblMax = 999;
             double dblInterval = 999;
+            bool bTooSmall = false;
 
             await QueuedTask.Run(() =>
             {
@@ -1382,6 +1383,7 @@ namespace bagis_pro
                 if (dblRange < intZonesCount)
                 {
                     dblInterval = 0.5;
+                    bTooSmall = true;
                 }
                 else
                 {
@@ -1392,11 +1394,26 @@ namespace bagis_pro
                 }
             });
             int zones = GeneralTools.CreateRangeArray(dblMin, dblMax, dblInterval, out lstIntervals);
+            // issue #18
             // Check to be sure the highest interval isn't too small; if it is merge into the second-to-last
             if (lstIntervals.Count > 0)
             {
+                double minInterval = 1;
+                if (bTooSmall)
+                {
+                    minInterval = 0.5;
+                }
+                var firstInterval = lstIntervals[0];
+                if (firstInterval.UpperBound - firstInterval.LowerBound < minInterval)
+                {
+                    var secondInterval = lstIntervals[1];
+                    secondInterval.LowerBound = firstInterval.LowerBound;
+                    secondInterval.Name = secondInterval.LowerBound + " - " + secondInterval.UpperBound;
+                    lstIntervals.Remove(firstInterval);
+                    zones = zones - 1;
+                }
                 var lastInterval = lstIntervals[lstIntervals.Count - 1];
-                if (lastInterval.UpperBound - lastInterval.LowerBound < 1)
+                if (lastInterval.UpperBound - lastInterval.LowerBound < minInterval)
                 {
                     var almostLastInterval = lstIntervals[lstIntervals.Count - 2];
                     almostLastInterval.UpperBound = lastInterval.UpperBound;

@@ -167,7 +167,12 @@ namespace bagis_pro
                     uri = new Uri(strPath);
                     success = await MapTools.AddPolygonLayerAsync(uri, fillColor, false, Constants.MAPS_SITES_LOCATION);
                     if (success.Equals(BA_ReturnCode.Success))
+                    {
                         Module1.ActivateState("MapButtonPalette_BtnSitesLocationZone_State");
+                        Module1.ActivateState("MapButtonPalette_BtnSitesLocationPrecip_State");
+                        Module1.ActivateState("MapButtonPalette_BtnSitesLocationPrecipContrib_State");
+                    }
+                        
 
                     //add Critical Precipitation Zones Layer
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
@@ -1797,8 +1802,53 @@ namespace bagis_pro
                         lstLegendLayers.Add(Constants.MAPS_SNOTEL);
                     }
                     lstLegendLayers.Add(Constants.MAPS_SITES_LOCATION);
+                    lstLegendLayers.Add(Constants.MAPS_ELEV_ZONE);
                     mapDefinition = new BA_Objects.MapDefinition("POTENTIAL SITE LOCATIONS",
                         " ", Constants.FILE_EXPORT_MAP_SITES_LOCATION_PDF);
+                    mapDefinition.LayerList = lstLayers;
+                    mapDefinition.LegendLayerList = lstLegendLayers;
+                    break;
+                case BagisMapType.SITES_LOCATION_PRECIP:
+                    lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
+                                                   Constants.MAPS_HILLSHADE, Constants.MAPS_PRISM_ZONE,
+                                                   Constants.MAPS_SITES_LOCATION};
+                    lstLegendLayers = new List<string>();
+                    if (Module1.Current.Aoi.HasSnowCourse == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOW_COURSE);
+                        lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE);
+                    }
+                    if (Module1.Current.Aoi.HasSnotel == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOTEL);
+                        lstLegendLayers.Add(Constants.MAPS_SNOTEL);
+                    }
+                    lstLegendLayers.Add(Constants.MAPS_SITES_LOCATION);
+                    lstLegendLayers.Add(Constants.MAPS_PRISM_ZONE);
+                    mapDefinition = new BA_Objects.MapDefinition("POTENTIAL SITE LOCATIONS",
+                        " ", Constants.FILE_EXPORT_MAP_SITES_LOCATION_PRECIP_PDF);
+                    mapDefinition.LayerList = lstLayers;
+                    mapDefinition.LegendLayerList = lstLegendLayers;
+                    break;
+                case BagisMapType.SITES_LOCATION_PRECIP_CONTRIB:
+                    lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
+                                                   Constants.MAPS_HILLSHADE, Constants.MAPS_PRECIPITATION_CONTRIBUTION,
+                                                   Constants.MAPS_SITES_LOCATION};
+                    lstLegendLayers = new List<string>();
+                    if (Module1.Current.Aoi.HasSnowCourse == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOW_COURSE);
+                        lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE);
+                    }
+                    if (Module1.Current.Aoi.HasSnotel == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOTEL);
+                        lstLegendLayers.Add(Constants.MAPS_SNOTEL);
+                    }
+                    lstLegendLayers.Add(Constants.MAPS_SITES_LOCATION);
+                    lstLegendLayers.Add(Constants.MAPS_PRECIPITATION_CONTRIBUTION);
+                    mapDefinition = new BA_Objects.MapDefinition("POTENTIAL SITE LOCATIONS",
+                        " ", Constants.FILE_EXPORT_MAP_SITES_LOCATION__PRECIP_CONTRIB_PDF);
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;

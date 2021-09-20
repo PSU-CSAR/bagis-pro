@@ -106,6 +106,8 @@ namespace bagis_pro
         public const string FILE_EXPORT_MAP_PUBLIC_LAND_ZONES_PDF = "map_public_land_zones.pdf";
         public const string FILE_EXPORT_MAP_BELOW_TREELINE_PDF = "map_below_treeline.pdf";
         public const string FILE_EXPORT_MAP_SITES_LOCATION_PDF = "map_sites_location.pdf";
+        public const string FILE_EXPORT_MAP_SITES_LOCATION_PRECIP_PDF = "map_sites_location_precip.pdf";
+        public const string FILE_EXPORT_MAP_SITES_LOCATION__PRECIP_CONTRIB_PDF = "map_sites_location_precip_contrib.pdf";
         public const string FILE_EXPORT_MAP_CRITICAL_PRECIPITATION_ZONES_PDF = "map_critical_precip_zones.pdf";
         public const string FILE_EXPORT_MAP_PUBLIC_LAND_OWNERSHIP_PDF = "map_public_land_ownership.pdf";
         public const string FILE_EXPORT_CHART_AREA_ELEV_PRECIP_SITE_PDF = "chart_area_elev_precip_site.pdf";
@@ -133,7 +135,7 @@ namespace bagis_pro
           FILE_EXPORT_CHART_AREA_ELEV_PRECIP_SITE_PDF, FILE_EXPORT_CHART_PRECIP_REPRESENT_PDF,
           FILE_EXPORT_MAP_CRITICAL_PRECIPITATION_ZONES_PDF, FILE_EXPORT_TABLE_PRECIP_REPRESENT_PDF, FILE_EXPORT_MAP_ROADS_PDF,
           FILE_EXPORT_MAP_PUBLIC_LAND_ZONES_PDF, FILE_EXPORT_MAP_PUBLIC_LAND_OWNERSHIP_PDF, FILE_EXPORT_MAP_BELOW_TREELINE_PDF,
-          FILE_EXPORT_MAP_SITES_LOCATION_PDF
+          FILE_EXPORT_MAP_SITES_LOCATION_PDF, FILE_EXPORT_MAP_SITES_LOCATION_PRECIP_PDF, FILE_EXPORT_MAP_SITES_LOCATION__PRECIP_CONTRIB_PDF
         };    
         // List of files in the site analysis PDF map package and the order in which they will be assembled
         //public static string[] FILES_EXPORT_SITE_ANALYSIS_PDF = new string[] { FILE_TITLE_PAGE_PDF, FILE_SITES_TABLE_PDF,
@@ -287,7 +289,9 @@ namespace bagis_pro
                                                                 "MapButtonPalette_BtnBelowTreeline_State",
                                                                 "MapButtonPalette_BtnPublicLandZones_State",
                                                                 "MapButtonPalette_BtnSitesLocationZone_State",
-                                                                "MapButtonPalette_BtnPublicLandOwnership_State"};
+                                                                "MapButtonPalette_BtnSitesLocationPrecip_State",
+                                                                "MapButtonPalette_BtnSitesLocationZone_State",
+                                                                "MapButtonPalette_BtnSitesLocationPrecipContrib_State"};
         //public static string[] STATES_SITE_ANALYSIS_MAP_BUTTONS => new string[] {
         //                                                        "MapButtonPalette_BtnRoads_State",
         //                                                        "MapButtonPalette_BtnBelowTreeline_State",

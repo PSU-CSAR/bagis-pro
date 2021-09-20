@@ -218,6 +218,36 @@ namespace bagis_pro.Buttons
         }
     }
 
+    internal class MapButtonPalette_BtnSitesLocationPrecip : Button
+    {
+        protected override async void OnClick()
+        {
+            try
+            {
+                await ToggleMapDisplay.ToggleAsync(BagisMapType.SITES_LOCATION_PRECIP);
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show("Unable to display potential site location map!!" + e.Message, "BAGIS-PRO");
+            }
+        }
+    }
+
+    internal class MapButtonPalette_BtnSitesLocationPrecipContrib : Button
+    {
+        protected override async void OnClick()
+        {
+            try
+            {
+                await ToggleMapDisplay.ToggleAsync(BagisMapType.SITES_LOCATION_PRECIP_CONTRIB);
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show("Unable to display potential site location map!!" + e.Message, "BAGIS-PRO");
+            }
+        }
+    }
+
     internal class MapButtonPalette_BtnCriticalPrecipZone : Button
     {
         protected override async void OnClick()
