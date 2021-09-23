@@ -1482,17 +1482,17 @@ namespace bagis_pro
                 if (!dictDataSources.ContainsKey(Constants.DATA_TYPE_SNOTEL) || 
                     !dictDataSources.ContainsKey(Constants.DATA_TYPE_SNOW_COURSE))
                 {
-                    Module1.Current.ModuleLogManager.LogDebug(nameof(ClipSnoLayersAsync),
-                        "Unable to retrieve snotel datasource information from " + (string) Module1.Current.BatchToolSettings.EBagisServer);
-                    MessageBox.Show("Unable to retrieve snotel datasource information. Clipping cancelled!!", "BAGIS-PRO");
+                    Module1.Current.ModuleLogManager.LogError(nameof(ClipSnoLayersAsync),
+                        "Unable to retrieve snotel datasource information from " + (string) Module1.Current.BatchToolSettings.EBagisServer +
+                        ". Clipping cancelled!!");
                     return success;
                 }
             }
             else
             {
-                Module1.Current.ModuleLogManager.LogDebug(nameof(ClipSnoLayersAsync),
-                    "Unable to retrieve datasource information from " + (string)Module1.Current.BatchToolSettings.EBagisServer);
-                MessageBox.Show("Unable to retrieve datasource information. Clipping cancelled!!", "BAGIS-PRO");
+                Module1.Current.ModuleLogManager.LogError(nameof(ClipSnoLayersAsync),
+                    "Unable to retrieve datasource information from " + (string)Module1.Current.BatchToolSettings.EBagisServer +
+                    ". Clipping cancelled!!");
                 return success;
             }
 
@@ -1502,9 +1502,8 @@ namespace bagis_pro
             dynamic oSettings = JObject.Parse(json);
             if (oSettings == null || String.IsNullOrEmpty(Convert.ToString(oSettings.snowCourseName)))
             {
-                Module1.Current.ModuleLogManager.LogDebug(nameof(ClipSnoLayersAsync),
-                    "Unable to retrieve snotel settings from " + url);
-                MessageBox.Show("Unable to retrieve snotel layer settings. Clipping cancelled!!", "BAGIS-PRO");
+                Module1.Current.ModuleLogManager.LogError(nameof(ClipSnoLayersAsync),
+                    "Unable to retrieve snotel settings from " + url + " .Clipping cancelled!!");
                 return success;
             }
 
@@ -1518,8 +1517,7 @@ namespace bagis_pro
                     if (string.IsNullOrEmpty(snotelClipLayer))
                     {
                         Module1.Current.ModuleLogManager.LogError(nameof(ClipSnoLayersAsync),
-                            "Unable to calculate snotel clip layer");
-                        MessageBox.Show("Unable to generate SNOTEL clip layer. Clipping cancelled!!", "BAGIS-PRO");
+                            "Unable to calculate snotel clip layer. Clipping cancelled!!");
                         return success;
                     }
                 }
@@ -1553,7 +1551,6 @@ namespace bagis_pro
                 {
                     Module1.Current.ModuleLogManager.LogError(nameof(ClipSnoLayersAsync),
                        "Unable to clip " + snotelClipLayer + ". Error code: " + gpResultClip.ErrorCode);
-                    MessageBox.Show("Unable to clip. Clipping cancelled!!", "BAGIS-PRO");
                     return success;
                 }
                 else
@@ -1580,8 +1577,7 @@ namespace bagis_pro
                         if (string.IsNullOrEmpty(snowCosClipLayer))
                         {
                             Module1.Current.ModuleLogManager.LogError(nameof(ClipSnoLayersAsync),
-                                "Unable to calculate snow course clip layer");
-                            MessageBox.Show("Unable to generate snow course clip layer. Clipping cancelled!!", "BAGIS-PRO");
+                                "Unable to calculate snow course clip layer. Clipping cancelled!!");
                             return success;
                         }
                     }
@@ -1616,7 +1612,6 @@ namespace bagis_pro
                 {
                     Module1.Current.ModuleLogManager.LogError(nameof(ClipSnoLayersAsync),
                        "Unable to clip " + snowCosClipLayer + ". Error code: " + gpResultClip.ErrorCode);
-                    MessageBox.Show("Unable to clip. Clipping cancelled!!", "BAGIS-PRO");
                     return success;
                 }
                 else

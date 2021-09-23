@@ -176,7 +176,6 @@
     <Compile Include="BA_Objects\DataSource.cs" />
     <Compile Include="BA_Objects\Interval.cs" />
     <Compile Include="BA_Objects\LoggerManager.cs" />
-    <Compile Include="BA_Objects\Settings.cs" />
     <Compile Include="BA_Objects\ExportTitlePage.cs" />
     <Compile Include="BA_Objects\MapDefinition.cs" />
     <Compile Include="BA_Objects\Site.cs" />

@@ -89,7 +89,7 @@ namespace bagis_pro.Menus
                 if (FrameworkApplication.State.Contains("MapButtonPalette_BtnElevation_State"))
                 {
                     BA_Objects.MapDefinition defaultMap = MapTools.LoadMapDefinition(BagisMapType.ELEVATION);
-                    await MapTools.UpdateMapElementsAsync(Module1.Current.Aoi.NwccName.ToUpper(), defaultMap);
+                    await MapTools.UpdateMapElementsAsync(Module1.Current.Aoi.NwccName.ToUpper(), defaultMap, Constants.TEXT_SITES_TABLE_DESCR);
                     success = await MapTools.UpdateLegendAsync(layout, defaultMap.LegendLayerList);
                 }
                 else

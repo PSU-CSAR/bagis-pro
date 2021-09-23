@@ -15,6 +15,7 @@ bagis:
   snowCourseElev: elevation
   snowCourseName: name
   prism: http://bagis.geog.pdx.edu/arcgis/services/BAGIS_PRISM_1981_2010
+  westernStateBoundaries: http://bagis.geog.pdx.edu/arcgis/rest/services/BAGIS_GISLayers/AOI_Location_Maps/MapServer/0
 
 bagis-pro:
   dataSources:

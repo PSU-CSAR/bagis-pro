@@ -104,7 +104,6 @@ namespace bagis_pro
         }
 
         internal BA_Objects.Aoi Aoi { get; set; } = new BA_Objects.Aoi();
-        internal BA_Objects.Settings Settings { get; set; } = new BA_Objects.Settings();
         internal bool MapDisplayElevationInMeters { get; } = false;
         internal string DisplayedMap { get; set; } = "";
         internal bool MapFinishedLoading { get; set; } = false;
@@ -119,5 +118,6 @@ namespace bagis_pro
         internal dynamic BatchToolSettings { get; set; } = "";
         internal double PrismZonesInterval { get; set; } = 999;
         internal int BaSiteId { get; set; } = 0;
+        internal string WesternStateBoundariesUri { get; } = "";
     }
 }

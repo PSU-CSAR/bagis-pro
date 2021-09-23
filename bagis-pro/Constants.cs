@@ -34,6 +34,7 @@ namespace bagis_pro
         public const string MAPS_PRECIPITATION_CONTRIBUTION = "Precipitation Contribution";
         public const string MAPS_WINTER_PRECIPITATION = "Winter Precipitation";
         public const string MAPS_SUBBASIN_BOUNDARY = "Subbasin Boundary";
+        public const string MAPS_WESTERN_STATES_BOUNDARY = "Western States Boundary";
 
         public const string MAPS_LEGEND = "Legend";
         public const string MAPS_TITLE = "Title";
@@ -124,9 +125,10 @@ namespace bagis_pro
         public const string FILE_EXPORT_MAP_SWE_DELTA_ALL_PDF = "map_all_swe_delta.pdf";
         public const string FILE_EXPORT_MAP_SNODAS_ALL_PDF = "map_all_snodas.pdf";
         public const string FILE_EXPORT_MAP_SEASONAL_PRECIP_ALL_PDF = "map_all_seasonal_precip.pdf";
+        public const string FILE_EXPORT_MAP_AOI_LOCATION_PDF = "map_aoi_location.pdf";
         // List of files in the watershed PDF map package and the order in which they will be assembled
         public static string[] FILES_EXPORT_WATERSHED_PDF = new string[]
-        { FILE_TITLE_PAGE_PDF, FILE_SITES_TABLE_PDF, FILE_EXPORT_MAP_ELEV_PDF, FILE_EXPORT_MAP_ASPECT_PDF,
+        { FILE_TITLE_PAGE_PDF, FILE_EXPORT_MAP_AOI_LOCATION_PDF, FILE_SITES_TABLE_PDF, FILE_EXPORT_MAP_ELEV_PDF, FILE_EXPORT_MAP_ASPECT_PDF,
           FILE_EXPORT_MAP_SLOPE_PDF, FILE_EXPORT_CHART_ASPECT_PDF, FILE_EXPORT_CHART_SLOPE_PDF,
           FILE_EXPORT_MAP_SNOTEL_PDF, FILE_EXPORT_MAP_SCOS_PDF, FILE_EXPORT_MAP_SNOTEL_AND_SCOS_PDF,
           FILE_EXPORT_MAP_PRECIPITATION_PDF, FILE_EXPORT_MAP_WINTER_PRECIPITATION_PDF, 
@@ -252,6 +254,8 @@ namespace bagis_pro
         public const string UNITS_MILLIMETERS = "Millimeters";
         public const string UNITS_FEET = "Feet";
         public const string UNITS_METERS = "Meters";
+        public const double MAP_BUFFER_FACTOR = 1.1;
+        public const string TEXT_SITES_TABLE_DESCR = "See the Active Sites table for individual SNOTEL and Snow Course site descriptions";
 
         // States that control the map display buttons
         // JanSwe always needs to be last so that we can export the other months directly
@@ -291,7 +295,8 @@ namespace bagis_pro
                                                                 "MapButtonPalette_BtnSitesLocationZone_State",
                                                                 "MapButtonPalette_BtnSitesLocationPrecip_State",
                                                                 "MapButtonPalette_BtnSitesLocationZone_State",
-                                                                "MapButtonPalette_BtnSitesLocationPrecipContrib_State"};
+                                                                "MapButtonPalette_BtnSitesLocationPrecipContrib_State",
+                                                                "MapButtonPalette_BtnAoiLocation_State"};
         //public static string[] STATES_SITE_ANALYSIS_MAP_BUTTONS => new string[] {
         //                                                        "MapButtonPalette_BtnRoads_State",
         //                                                        "MapButtonPalette_BtnBelowTreeline_State",

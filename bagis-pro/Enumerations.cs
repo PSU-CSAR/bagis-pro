@@ -42,7 +42,8 @@ namespace bagis_pro
         CRITICAL_PRECIP,
         PUBLIC_LAND_OWNERSHIP,
         PRECIPITATION_CONTRIBUTION,
-        WINTER_PRECIPITATION
+        WINTER_PRECIPITATION,
+        AOI_LOCATION
     }
 
     public enum SiteType

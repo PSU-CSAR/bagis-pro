@@ -26,8 +26,9 @@ namespace bagis_pro.Buttons
         {
             //Get map definition
             BA_Objects.MapDefinition thisMap = MapTools.LoadMapDefinition(mapType);
+            Layout oLayout = await MapTools.GetDefaultLayoutAsync(Constants.MAPS_DEFAULT_LAYOUT_NAME);
 
-            // toggle layers according to map definition
+           // toggle layers according to map definition
             Module1.Current.MapFinishedLoading = false;
             var allLayers = MapView.Active.Map.Layers.ToList();
             await QueuedTask.Run(() =>
@@ -45,9 +46,41 @@ namespace bagis_pro.Buttons
                 }
             });
 
-            await MapTools.UpdateMapElementsAsync(Module1.Current.Aoi.NwccName.ToUpper(), thisMap);
-            Layout oLayout = await MapTools.GetDefaultLayoutAsync(Constants.MAPS_DEFAULT_LAYOUT_NAME);
+            string sitesTextboxText = Constants.TEXT_SITES_TABLE_DESCR;
+            if (mapType.Equals(BagisMapType.AOI_LOCATION))
+            {
+                sitesTextboxText = "";
+            }
+
+            await MapTools.UpdateMapElementsAsync(Module1.Current.Aoi.NwccName.ToUpper(), thisMap, sitesTextboxText);
             BA_ReturnCode success = await MapTools.UpdateLegendAsync(oLayout, thisMap.LegendLayerList);
+
+            if (mapType.Equals(BagisMapType.AOI_LOCATION))
+            {
+                var map = MapView.Active.Map;
+                Envelope zoomEnv = null;
+                await QueuedTask.Run(() =>
+                {
+                    Layer oLayer =
+                    map.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(Constants.MAPS_WESTERN_STATES_BOUNDARY, StringComparison.CurrentCultureIgnoreCase));
+                    if (oLayer != null)
+                    {
+                        zoomEnv = oLayer.QueryExtent();
+                    }
+                });
+                await FrameworkApplication.Current.Dispatcher.Invoke(async () =>
+                {
+                    // Do something on the GUI thread
+                    bool bRetVal = await MapView.Active.ZoomToAsync(zoomEnv, null);
+                });
+            }
+            else
+            {
+                //zoom to aoi extent
+                Uri aoiUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) +
+                                 Constants.FILE_AOI_VECTOR);
+                success = await MapTools.ZoomToExtentAsync(aoiUri, Constants.MAP_BUFFER_FACTOR);
+            }
             Module1.Current.MapFinishedLoading = true;
             Module1.Current.DisplayedMap = thisMap.PdfFileName;
         }
@@ -782,6 +815,19 @@ namespace bagis_pro.Buttons
         }
     }
 
-
+    internal class MapButtonPalette_BtnAoiLocation : Button
+    {
+        protected override async void OnClick()
+        {
+            try
+            {
+                await ToggleMapDisplay.ToggleAsync(BagisMapType.AOI_LOCATION);
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show("Unable to display AOI location map!!" + e.Message, "BAGIS-PRO");
+            }
+        }
+    }
 
 }

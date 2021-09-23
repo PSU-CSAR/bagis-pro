@@ -308,5 +308,30 @@ namespace bagis_pro
                 return BA_ReturnCode.UnknownError;
             }
         }
+
+        public async Task<string> GetWesternStateBoundariesUriAsync()
+        {
+            if (!string.IsNullOrEmpty(Module1.Current.WesternStateBoundariesUri))
+            {
+                return Module1.Current.WesternStateBoundariesUri;
+            }
+            else
+            {
+                var url = (string)Module1.Current.BatchToolSettings.EBagisServer + Constants.URI_DESKTOP_SETTINGS;
+                var response = new EsriHttpClient().Get(url);
+                var json = await response.Content.ReadAsStringAsync();
+                dynamic oSettings = JObject.Parse(json);
+                if (oSettings == null || String.IsNullOrEmpty(Convert.ToString(oSettings.westernStateBoundaries)))
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(GetWesternStateBoundariesUriAsync),
+                        "Unable to retrieve settings from " + url);
+                    return "";
+                }
+                else
+                {
+                    return Convert.ToString(oSettings.westernStateBoundaries);
+                }
+            }
+        }
     }
 }

@@ -212,6 +212,13 @@ namespace bagis_pro
                     uri = new Uri(strPath);
                     await MapTools.DisplayRasterStretchSymbolAsync(uri, Constants.MAPS_HILLSHADE, "ArcGIS Colors", "Black to White", 0);
 
+                    // add western state boundaries map service layer
+                    Webservices ws = new Webservices();
+                    string url = await ws.GetWesternStateBoundariesUriAsync();
+                    uri = new Uri(url);
+                    await QueuedTask.Run(() => LayerFactory.Instance.CreateLayer(uri, MapView.Active.Map, LayerPosition.AutoArrange, Constants.MAPS_WESTERN_STATES_BOUNDARY));
+                    Module1.ActivateState("MapButtonPalette_BtnAoiLocation_State");
+
                     // add elev zones layer
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
                         Constants.FILE_ELEV_ZONE;
@@ -284,8 +291,7 @@ namespace bagis_pro
                     success = await MapTools.DisplayScaleBarAsync(layout, Constants.MAPS_DEFAULT_MAP_FRAME_NAME);
 
                     //zoom to aoi boundary layer
-                    double bufferFactor = 1.1;
-                    success = await MapTools.ZoomToExtentAsync(aoiUri, bufferFactor);
+                    success = await MapTools.ZoomToExtentAsync(aoiUri, Constants.MAP_BUFFER_FACTOR);
                     return success;
                 }
             }
@@ -717,7 +723,7 @@ namespace bagis_pro
 
         public static async Task RemoveLayersfromMapFrame()
         {
-            string[] arrLayerNames = new string[41];
+            string[] arrLayerNames = new string[42];
             arrLayerNames[0] = Constants.MAPS_AOI_BOUNDARY;
             arrLayerNames[1] = Constants.MAPS_STREAMS;
             arrLayerNames[2] = Constants.MAPS_SNOTEL;
@@ -738,7 +744,8 @@ namespace bagis_pro
             arrLayerNames[17] = Constants.MAPS_PRECIPITATION_CONTRIBUTION;
             arrLayerNames[18] = Constants.MAPS_WINTER_PRECIPITATION;
             arrLayerNames[19] = Constants.MAPS_SUBBASIN_BOUNDARY;
-            int idxLayerNames = 20;
+            arrLayerNames[19] = Constants.MAPS_WESTERN_STATES_BOUNDARY;
+            int idxLayerNames = 21;
             for (int i = 0; i < Constants.LAYER_NAMES_SNODAS_SWE.Length; i++)
             {
                 arrLayerNames[idxLayerNames] = Constants.LAYER_NAMES_SNODAS_SWE[i];
@@ -1253,7 +1260,7 @@ namespace bagis_pro
                     "Regular", "Text Box 1");
                 // sites textbox
                 success = await MapTools.DisplayTextBoxAsync(layout, Constants.MAPS_TEXTBOX2, 5.2, 0.35, ColorFactory.Instance.BlackRGB, 12, "Times New Roman",
-                    "Regular", "See the Active Sites table for individual SNOTEL and Snow Course site descriptions");
+                    "Regular", Constants.TEXT_SITES_TABLE_DESCR);
             }
             return success;
         }
@@ -1329,33 +1336,32 @@ namespace bagis_pro
             {
                 if (oLayout == null)
                 {
-                Project proj = Project.Current;
-                //Get the default map layout
-                LayoutProjectItem lytItem =
-                   proj.GetItems<LayoutProjectItem>()
-                       .FirstOrDefault(m => m.Name.Equals(Constants.MAPS_DEFAULT_LAYOUT_NAME,
-                       StringComparison.CurrentCultureIgnoreCase));
-                if (lytItem != null)
-                {
-                    oLayout = lytItem.GetLayout();
+                    Project proj = Project.Current;
+                    //Get the default map layout
+                    LayoutProjectItem lytItem =
+                    proj.GetItems<LayoutProjectItem>()
+                        .FirstOrDefault(m => m.Name.Equals(Constants.MAPS_DEFAULT_LAYOUT_NAME,
+                        StringComparison.CurrentCultureIgnoreCase));
+                    if (lytItem != null)
+                    {
+                        oLayout = lytItem.GetLayout();
+                    }
+                    else
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(UpdateLegendAsync),
+                            "Unable to find default layout!!");
+                        MessageBox.Show("Unable to find default layout. Cannot update legend!");
+                        return;
+                    }
                 }
-                else
-                {
-                    Module1.Current.ModuleLogManager.LogError(nameof(UpdateLegendAsync),
-                        "Unable to find default layout!!");
-                    MessageBox.Show("Unable to find default layout. Cannot update legend!");
-                    return;
-                }
-              }
 
                 //Get LayoutCIM and iterate through its elements
                 var layoutDef = oLayout.GetDefinition();
-
-                foreach (var elem in layoutDef.Elements)
+                var legend = layoutDef.Elements.OfType<CIMLegend>().FirstOrDefault();
+                if (legend != null)
                 {
-                    if (elem is CIMLegend)
+                    if (lstLegendLayer.Count > 0)
                     {
-                        var legend = elem as CIMLegend;
                         CIMLegendItem[] arrTempItems = new CIMLegendItem[legend.Items.Length];
                         int idx = 0;
                         //  Add items that we want to display to temporary array
@@ -1388,8 +1394,14 @@ namespace bagis_pro
                         }
                         // Set the legend items
                         legend.Items = arrTempItems;
+                        legend.Visible = true;
+                    }
+                    else
+                    {
+                        legend.Visible = false;
                     }
                 }
+
                 //Apply the changes back to the layout
                 oLayout.SetDefinition(layoutDef);
             });
@@ -1397,7 +1409,7 @@ namespace bagis_pro
             return success;
         }
 
-        public static async Task UpdateMapElementsAsync(string subTitleText, BA_Objects.MapDefinition mapDefinition)
+        public static async Task UpdateMapElementsAsync(string subTitleText, BA_Objects.MapDefinition mapDefinition, string sitesTextboxText)
         {
             await QueuedTask.Run(() =>
             {
@@ -1453,6 +1465,13 @@ namespace bagis_pro
                             graphic.Text = mapDefinition.UnitsText;
                             textBox.SetGraphic(graphic);
                         }
+                    }
+                    GraphicElement textbox2 = layout.FindElement(Constants.MAPS_TEXTBOX2) as GraphicElement;
+                    if (textbox2 != null)
+                    {
+                        CIMTextGraphic graphic = (CIMTextGraphic)textbox2.GetGraphic();
+                        graphic.Text = sitesTextboxText;
+                        textbox2.SetGraphic(graphic);
                     }
                 }
             });
@@ -1937,6 +1956,15 @@ namespace bagis_pro
                     }
                     mapDefinition = new BA_Objects.MapDefinition(strTitle,
                         "Precipitation Units = Inches", Constants.FILE_EXPORT_MAP_WINTER_PRECIPITATION_PDF);
+                    mapDefinition.LayerList = lstLayers;
+                    mapDefinition.LegendLayerList = lstLegendLayers;
+                    break;
+                case BagisMapType.AOI_LOCATION:
+                    lstLayers = new List<string> { Constants.MAPS_WESTERN_STATES_BOUNDARY, Constants.MAPS_AOI_BOUNDARY};
+                    lstLegendLayers = new List<string>();
+                    strTitle = "LOCATION MAP";
+                    mapDefinition = new BA_Objects.MapDefinition(strTitle,
+                        "", Constants.FILE_EXPORT_MAP_AOI_LOCATION_PDF);
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;
