@@ -1882,7 +1882,12 @@ namespace bagis_pro
             string strSnoClipLayer = "";
             string strLayerToDelete = "";
             string strAoiBoundaryPath = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, true) +
+                Constants.FILE_AOI_VECTOR;
+            if (string.IsNullOrEmpty(strBufferDistance))
+            {
+                strAoiBoundaryPath = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, true) +
                 Constants.FILE_AOI_BUFFERED_VECTOR;
+            }
             string strOutputFeatures = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, true) +
                 strTempBuffer;
             var parametersBuff = Geoprocessing.MakeValueArray(strAoiBoundaryPath, strOutputFeatures, strBufferDistance, "",

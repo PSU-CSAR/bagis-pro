@@ -14,6 +14,9 @@ namespace bagis_pro
         public const string MAPS_DEFAULT_LAYOUT_NAME = "Basin Analysis Layout";
         public const string MAPS_DEFAULT_MAP_FRAME_NAME = "Basin Analysis Map Frame";
         public const string MAPS_DEFAULT_MAP_NAME = "Basin Analysis";
+        public const string MAPS_AOI_LOCATION = "AOI Location";
+        public const string MAPS_AOI_LOCATION_LAYOUT = "AOI Location Layout";
+        public const string MAPS_AOI_LOCATION_MAP_FRAME_NAME = "AOI Location Map Frame";
         public const string MAPS_AOI_BOUNDARY = "AOI Boundary";
         public const string MAPS_STREAMS = "AOI Streams";
         public const string MAPS_SNOTEL = "SNOTEL Sites";
@@ -295,8 +298,8 @@ namespace bagis_pro
                                                                 "MapButtonPalette_BtnSitesLocationZone_State",
                                                                 "MapButtonPalette_BtnSitesLocationPrecip_State",
                                                                 "MapButtonPalette_BtnSitesLocationZone_State",
-                                                                "MapButtonPalette_BtnSitesLocationPrecipContrib_State",
-                                                                "MapButtonPalette_BtnAoiLocation_State"};
+                                                                "MapButtonPalette_BtnAoiLocation_State",
+                                                                "MapButtonPalette_BtnSitesLocationPrecipContrib_State"};
         //public static string[] STATES_SITE_ANALYSIS_MAP_BUTTONS => new string[] {
         //                                                        "MapButtonPalette_BtnRoads_State",
         //                                                        "MapButtonPalette_BtnBelowTreeline_State",

@@ -70,10 +70,15 @@ namespace bagis_pro.Menus
                     {
                         if (!(pane is ILayoutPane layoutPane))  //if not a layout view, continue to the next pane    
                             continue;
-                        if (layoutPane.LayoutView.Layout == layout) //if there is a match, activate the view  
+                        if (layoutPane.LayoutView != null &&
+                            layoutPane.LayoutView.Layout == layout) //if there is a match, activate the view  
                         {
                             (layoutPane as Pane).Activate();
                             bFoundIt = true;
+                        }
+                        else
+                        {
+                            continue;
                         }
                     }
                     if (!bFoundIt)
@@ -89,7 +94,7 @@ namespace bagis_pro.Menus
                 if (FrameworkApplication.State.Contains("MapButtonPalette_BtnElevation_State"))
                 {
                     BA_Objects.MapDefinition defaultMap = MapTools.LoadMapDefinition(BagisMapType.ELEVATION);
-                    await MapTools.UpdateMapElementsAsync(Module1.Current.Aoi.NwccName.ToUpper(), defaultMap, Constants.TEXT_SITES_TABLE_DESCR);
+                    await MapTools.UpdateMapElementsAsync(Module1.Current.Aoi.NwccName.ToUpper(), defaultMap);
                     success = await MapTools.UpdateLegendAsync(layout, defaultMap.LegendLayerList);
                 }
                 else

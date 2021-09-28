@@ -61,9 +61,14 @@ namespace bagis_pro
                 Layout layout = null;
                 await QueuedTask.Run(() =>
                 {
+                    string layoutName = Constants.MAPS_DEFAULT_LAYOUT_NAME;
+                    if (Module1.Current.DisplayedMap.Equals(Constants.FILE_EXPORT_MAP_AOI_LOCATION_PDF))
+                    {
+                        layoutName = Constants.MAPS_AOI_LOCATION_LAYOUT;
+                    }
                     LayoutProjectItem lytItem =
-                    ArcGIS.Desktop.Core.Project.Current.GetItems<LayoutProjectItem>()
-                        .FirstOrDefault(m => m.Name.Equals(Constants.MAPS_DEFAULT_LAYOUT_NAME, StringComparison.CurrentCultureIgnoreCase));
+                        Project.Current.GetItems<LayoutProjectItem>()
+                        .FirstOrDefault(m => m.Name.Equals(layoutName, StringComparison.CurrentCultureIgnoreCase));
                     if (lytItem != null)
                     {
                         layout = lytItem.GetLayout();
