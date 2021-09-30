@@ -662,7 +662,8 @@ namespace bagis_pro
                             {
                                 if (!(pane is ILayoutPane layoutPane))  //if not a layout view, continue to the next pane    
                                     continue;
-                                if (layoutPane.LayoutView.Layout == oLayout) //if there is a match, activate the view  
+                                if (layoutPane.LayoutView != null &&
+                                    layoutPane.LayoutView.Layout == oLayout) //if there is a match, activate the view  
                                 {
                                     (layoutPane as Pane).Activate();
                                     bFoundIt = true;
@@ -675,7 +676,8 @@ namespace bagis_pro
                             }
                         }
                         // Legend
-                        success = await MapTools.DisplayLegendAsync(oLayout, "ArcGIS Colors", "1.5 Point");
+                        success = await MapTools.DisplayLegendAsync(Constants.MAPS_DEFAULT_MAP_FRAME_NAME, oLayout, 
+                            "ArcGIS Colors", "1.5 Point");
                         if (success != BA_ReturnCode.Success)
                         {
                             errorCount++;

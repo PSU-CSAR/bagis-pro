@@ -96,12 +96,13 @@ namespace bagis_pro
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi, true) +
                                      Constants.FILE_AOI_VECTOR;
                     Uri aoiUri = new Uri(strPath);
-                    success = await MapTools.AddAoiBoundaryToMapAsync(aoiUri, ColorFactory.Instance.BlackRGB, Constants.MAPS_AOI_BOUNDARY);
+                    success = await MapTools.AddAoiBoundaryToMapAsync(aoiUri, ColorFactory.Instance.BlackRGB, Constants.MAPS_DEFAULT_MAP_NAME, Constants.MAPS_AOI_BOUNDARY);
 
                     //add subbasin contribution layer to map                    
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
                                      Constants.FILE_PRECIP_CONTRIB_VECTOR;
-                    success = await MapTools.AddAoiBoundaryToMapAsync(new Uri(strPath), ColorFactory.Instance.BlackRGB, Constants.MAPS_SUBBASIN_BOUNDARY, false);
+                    success = await MapTools.AddAoiBoundaryToMapAsync(new Uri(strPath), ColorFactory.Instance.BlackRGB, Constants.MAPS_DEFAULT_MAP_NAME, Constants.MAPS_SUBBASIN_BOUNDARY, 
+                        false);
 
                     //add Snotel Represented Area Layer
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
@@ -346,34 +347,40 @@ namespace bagis_pro
 
         public static async Task<Map> SetDefaultMapNameAsync(string mapName)
         {
-            return await QueuedTask.Run(async () =>
+            Project proj = Project.Current;
+            bool bCreateMapPane = false;
+            Map oMap = null;
+            await QueuedTask.Run(async () =>
             {
-                Map map = null;
-                Project proj = Project.Current;
-
-                //Finding the first project item with name matches with mapName
+                 //Finding the first project item with name matches with mapName
                 MapProjectItem mpi =
                     proj.GetItems<MapProjectItem>()
                         .FirstOrDefault(m => m.Name.Equals(mapName, StringComparison.CurrentCultureIgnoreCase));
                 if (mpi != null)
                 {
-                    map = mpi.GetMap();
+                    oMap = mpi.GetMap();
                 }
                 else
                 {
-                    map = MapFactory.Instance.CreateMap(mapName, basemap: Basemap.None);
-                    await FrameworkApplication.Panes.CreateMapPaneAsync(map);
+                    oMap = MapFactory.Instance.CreateMap(mapName, basemap: Basemap.None);
+                    bCreateMapPane = true;
                 }
-                return map;
             });
+            if (bCreateMapPane)
+            {
+                await ProApp.Panes.CreateMapPaneAsync(oMap);
+            }
+            return oMap;
         }
 
-        public static async Task<BA_ReturnCode> AddAoiBoundaryToMapAsync(Uri aoiUri, CIMColor lineColor, string displayName = "", 
+        public static async Task<BA_ReturnCode> AddAoiBoundaryToMapAsync(Uri aoiUri, CIMColor lineColor, string mapName = Constants.MAPS_DEFAULT_MAP_NAME,
+            string displayName = "", 
             bool isVisible = true, double lineSymbolWidth = 1.0)
         {
             // parse the uri for the folder and file
             string strFileName = null;
             string strFolderPath = null;
+            Map oMap = await MapTools.SetDefaultMapNameAsync(mapName);
             if (aoiUri.IsFile)
             {
                 strFileName = System.IO.Path.GetFileName(aoiUri.LocalPath);
@@ -417,7 +424,7 @@ namespace bagis_pro
                     }
                 };
 
-                FeatureLayer fLayer = LayerFactory.Instance.CreateLayer<FeatureLayer>(flyrCreatnParam, MapView.Active.Map);
+                FeatureLayer fLayer = LayerFactory.Instance.CreateLayer<FeatureLayer>(flyrCreatnParam, oMap);
             });
             return BA_ReturnCode.Success;
         }
@@ -1259,29 +1266,29 @@ namespace bagis_pro
             return BA_ReturnCode.Success;
         }
 
-        public static async Task<BA_ReturnCode> DisplayLegendAsync(Layout layout, string styleCategory, string styleName)
+        public static async Task<BA_ReturnCode> DisplayLegendAsync(string mapFrameName, Layout layout, string styleCategory, string styleName)
         {
             //Construct on the worker thread
             await QueuedTask.Run(() =>
-           {
+            {
                //Build 2D envelope geometry
                Coordinate2D leg_ll = new Coordinate2D(0.5, 0.3);
                Coordinate2D leg_ur = new Coordinate2D(2.14, 2.57);
                Envelope leg_env = EnvelopeBuilder.CreateEnvelope(leg_ll, leg_ur);
 
                //Reference MF, create legend and add to layout
-               MapFrame mapFrame = layout.FindElement(Constants.MAPS_DEFAULT_MAP_FRAME_NAME) as MapFrame;
-               if (mapFrame == null)
+               MapFrame mapFrame = layout.FindElement(mapFrameName) as MapFrame;
+               var layoutDef = layout.GetDefinition();
+               var legend = layoutDef.Elements.OfType<Legend>().FirstOrDefault();
+               if (legend == null)
                {
-                   ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("Map frame not found", "WARNING");
-                   return;
+                   legend = LayoutElementFactory.Instance.CreateLegend(layout, leg_env, mapFrame);
                }
-               Legend legendElm = LayoutElementFactory.Instance.CreateLegend(layout, leg_env, mapFrame);
-               legendElm.SetName(Constants.MAPS_LEGEND);
-               legendElm.SetAnchor(Anchor.BottomLeftCorner);
+               legend.SetName(Constants.MAPS_LEGEND);
+               legend.SetAnchor(Anchor.BottomLeftCorner);
 
                // Turn off all of the layers to start
-               CIMLegend cimLeg = legendElm.GetDefinition() as CIMLegend;
+               CIMLegend cimLeg = legend.GetDefinition() as CIMLegend;
                foreach (CIMLegendItem legItem in cimLeg.Items)
                {
                    legItem.ShowHeading = false;
@@ -1296,7 +1303,7 @@ namespace bagis_pro
                cimLeg.GraphicFrame.BorderGapX = 3;
                cimLeg.GraphicFrame.BorderGapY = 3;
                // Apply the changes
-               legendElm.SetDefinition(cimLeg);
+               legend.SetDefinition(cimLeg);
 
            });
             return BA_ReturnCode.Success;
@@ -1500,9 +1507,9 @@ namespace bagis_pro
                     // https://support.esri.com/en/technical-article/000011784
                     // This article recommended setting AlignToZeroPoint to true but when I set this, the scale bars aren't added to
                     // the map. Bug? Current version: 2.63
-                    scaleBars = arcgis_2d.SearchScaleBars("Scale Line 3");
-                    if (scaleBars == null || scaleBars.Count == 0) return;
-                    ScaleBarStyleItem scaleBarStyleItem2 = scaleBars[0];
+                    var scaleBars2 = arcgis_2d.SearchScaleBars("Scale Line 3");
+                    if (scaleBars2 == null || scaleBars2.Count == 0) return;
+                    ScaleBarStyleItem scaleBarStyleItem2 = scaleBars2[0];
 
                     //Define the location
                     Coordinate2D location2 = new Coordinate2D(coordX, 0.8035);
@@ -1517,7 +1524,7 @@ namespace bagis_pro
                     scaleBar2.SetDefinition(cimScaleBar2);
 
                 });
-                return BA_ReturnCode.Success;
+               return BA_ReturnCode.Success;
             }
             else
             {
@@ -2592,16 +2599,17 @@ namespace bagis_pro
             return BA_ReturnCode.Success;
         }
 
-    public static async Task<BA_ReturnCode> DisplayMapServiceLayerAsync(Uri mapUri, string displayName,
+    public static async Task<BA_ReturnCode> DisplayMapServiceLayerAsync(string strMapName, Uri mapUri, string displayName,
         bool bIsVisible)
         {
             Layer layer = null;
+            Map oMap = await MapTools.SetDefaultMapNameAsync(strMapName);
 
             // Open the requested raster so we know it exists; return if it doesn't
             await QueuedTask.Run(() =>
             {
             // Create the raster layer on the active map
-            layer = LayerFactory.Instance.CreateLayer(mapUri, MapView.Active.Map, LayerPosition.AutoArrange, displayName);
+            layer = LayerFactory.Instance.CreateLayer(mapUri, oMap, LayerPosition.AutoArrange, displayName);
 
                 // Set raster layer transparency and name
                 if (layer != null)
@@ -2667,10 +2675,12 @@ namespace bagis_pro
             string mapName = Constants.MAPS_AOI_LOCATION;
             string layoutName = Constants.MAPS_AOI_LOCATION_LAYOUT;
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            Map map = null;
+            Layout layout = null;
+            bool bCreateMapPane = false;
+            bool bCreateLayoutPane = false;
             await QueuedTask.Run(async () =>
             {
-                Map map = null;
-                Layout layout = null;
                 Project proj = Project.Current;
 
                 //Finding the first project item with name matches with mapName
@@ -2684,7 +2694,7 @@ namespace bagis_pro
                 else
                 {
                     map = MapFactory.Instance.CreateMap(mapName, basemap: Basemap.None);
-                    await ProApp.Panes.CreateMapPaneAsync(map);
+                    bCreateMapPane = true;
                 }
 
                 //Finding the first project item with name matches with layoutName
@@ -2701,8 +2711,25 @@ namespace bagis_pro
                     layout.SetName(layoutName);
                 }
 
+                // initialize layout pane
+                bool bFoundIt = false;
+                foreach (var pane in FrameworkApplication.Panes)
+                {
+                    if (!(pane is ILayoutPane layoutPane))  //if not a layout view, continue to the next pane    
+                        continue;
+                    if (layoutPane.LayoutView != null &&
+                        layoutPane.LayoutView.Layout == layout) //if there is a match, activate the view  
+                    {
+                        bFoundIt = true;
+                    }
+                }
+                if (!bFoundIt)
+                {
+                    bCreateLayoutPane = true;
+                }
+
                 success = await MapTools.SetDefaultMapFrameDimensionAsync(Constants.MAPS_AOI_LOCATION_MAP_FRAME_NAME, layout, map,
-                    1.0, 2.0, 7.5, 9.0);
+                1.0, 2.0, 7.5, 9.0);
 
                 // Remove existing layers from map frame
                 string[] arrLayerNames = new string[2];
@@ -2722,7 +2749,8 @@ namespace bagis_pro
                 Webservices ws = new Webservices();
                 string url = await ws.GetWesternStateBoundariesUriAsync();
                 Uri uri = new Uri(url);                
-                success = await MapTools.DisplayMapServiceLayerAsync(uri, Constants.MAPS_WESTERN_STATES_BOUNDARY, true);
+                success = await MapTools.DisplayMapServiceLayerAsync(Constants.MAPS_AOI_LOCATION, uri, 
+                        Constants.MAPS_WESTERN_STATES_BOUNDARY, true);
                 if (success == BA_ReturnCode.Success)
                 {
                     Module1.ActivateState("MapButtonPalette_BtnAoiLocation_State");
@@ -2732,28 +2760,8 @@ namespace bagis_pro
                 string strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi, true) +
                                  Constants.FILE_AOI_VECTOR;
                 uri = new Uri(strPath);
-                success = await MapTools.AddAoiBoundaryToMapAsync(uri, ColorFactory.Instance.RedRGB, Constants.MAPS_AOI_BOUNDARY,
-                    true, 3);
-
-                bool bFoundIt = false;
-                foreach (var pane in FrameworkApplication.Panes)
-                {
-                    if (!(pane is ILayoutPane layoutPane))  //if not a layout view, continue to the next pane    
-                        continue;
-                    if (layoutPane.LayoutView.Layout == layout) //if there is a match, activate the view  
-                    {
-                        bFoundIt = true;
-                    }
-                }
-                ILayoutPane newLayoutPane = null;
-                if (!bFoundIt)
-                {
-                    var result = Application.Current.Dispatcher.Invoke(async () =>
-                    {
-                        // Do something on the GUI thread
-                        newLayoutPane = await FrameworkApplication.Panes.CreateLayoutPaneAsync(layout);
-                    });
-                }
+                success = await MapTools.AddAoiBoundaryToMapAsync(uri, ColorFactory.Instance.RedRGB, Constants.MAPS_AOI_LOCATION, 
+                    Constants.MAPS_AOI_BOUNDARY, true, 3);
 
                 // create map elements
                 success = await MapTools.AddMapElements(Constants.MAPS_AOI_LOCATION_MAP_FRAME_NAME, Constants.MAPS_AOI_LOCATION_LAYOUT, false);
@@ -2776,6 +2784,17 @@ namespace bagis_pro
                     textBox.SetGraphic(graphic);
                 }
             });
+
+            //Need to call on GUI thread
+            if (bCreateMapPane)
+            {
+                IMapPane newMapPane = await ProApp.Panes.CreateMapPaneAsync(map);
+            }
+            if (bCreateLayoutPane)
+            {
+                ILayoutPane newLayoutPane = newLayoutPane = await ProApp.Panes.CreateLayoutPaneAsync(layout); //GUI thread
+                //(newLayoutPane as Pane).Activate();
+            }
             return success;
         }
     }

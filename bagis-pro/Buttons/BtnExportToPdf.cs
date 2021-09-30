@@ -72,6 +72,8 @@ namespace bagis_pro.Buttons
                 if (!FrameworkApplication.State.Contains(strTestState))
                 {
                     success = await MapTools.DisplayMaps(Module1.Current.Aoi.FilePath, oLayout, true);
+                    success = await MapTools.DisplayLegendAsync(Constants.MAPS_DEFAULT_MAP_FRAME_NAME, oLayout,
+                        "ArcGIS Colors", "1.5 Point");
                 }
 
                 if (success != BA_ReturnCode.Success)
