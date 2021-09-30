@@ -1266,7 +1266,8 @@ namespace bagis_pro
             return BA_ReturnCode.Success;
         }
 
-        public static async Task<BA_ReturnCode> DisplayLegendAsync(string mapFrameName, Layout layout, string styleCategory, string styleName)
+        public static async Task<BA_ReturnCode> DisplayLegendAsync(string mapFrameName, Layout layout, string styleCategory, string styleName,
+            bool bHideAllLayers)
         {
             //Construct on the worker thread
             await QueuedTask.Run(() =>
@@ -1287,13 +1288,17 @@ namespace bagis_pro
                legend.SetName(Constants.MAPS_LEGEND);
                legend.SetAnchor(Anchor.BottomLeftCorner);
 
-               // Turn off all of the layers to start
+               
                CIMLegend cimLeg = legend.GetDefinition() as CIMLegend;
-               foreach (CIMLegendItem legItem in cimLeg.Items)
-               {
-                   legItem.ShowHeading = false;
-                   legItem.IsVisible = false;
-               }
+                // Turn off all of the layers to start
+                if (bHideAllLayers)
+                {
+                    foreach (CIMLegendItem legItem in cimLeg.Items)
+                    {
+                        legItem.ShowHeading = false;
+                        legItem.IsVisible = false;
+                    }
+                }
 
                // Format other elements in the legend
                cimLeg.GraphicFrame.BorderSymbol = new CIMSymbolReference
@@ -2784,6 +2789,9 @@ namespace bagis_pro
                     textBox.SetGraphic(graphic);
                 }
             });
+
+            success = await MapTools.DisplayLegendAsync(Constants.MAPS_AOI_LOCATION_MAP_FRAME_NAME, layout,
+                "ArcGIS Colors", "1.5 Point", false);
 
             //Need to call on GUI thread
             if (bCreateMapPane)

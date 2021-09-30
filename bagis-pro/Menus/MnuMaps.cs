@@ -88,7 +88,8 @@ namespace bagis_pro.Menus
                 }
 
                 // Legend
-                success = await MapTools.DisplayLegendAsync(Constants.MAPS_DEFAULT_MAP_FRAME_NAME, layout, "ArcGIS Colors", "1.5 Point");
+                success = await MapTools.DisplayLegendAsync(Constants.MAPS_DEFAULT_MAP_FRAME_NAME, layout, "ArcGIS Colors", 
+                    "1.5 Point", true);
 
                 // update map elements for default map (elevation)
                 if (FrameworkApplication.State.Contains("MapButtonPalette_BtnElevation_State"))

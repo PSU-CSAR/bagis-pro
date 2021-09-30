@@ -677,7 +677,7 @@ namespace bagis_pro
                         }
                         // Legend
                         success = await MapTools.DisplayLegendAsync(Constants.MAPS_DEFAULT_MAP_FRAME_NAME, oLayout, 
-                            "ArcGIS Colors", "1.5 Point");
+                            "ArcGIS Colors", "1.5 Point", true);
                         if (success != BA_ReturnCode.Success)
                         {
                             errorCount++;
