@@ -426,7 +426,11 @@ namespace bagis_pro
                     }
 
                     // PRISM Zones
-                    success = await AnalysisTools.CalculatePrecipitationZonesAsync();
+                    strLayer = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Prism, true) +
+                        Path.GetFileName((string)Module1.Current.BatchToolSettings.AoiPrecipFile);
+                    strZonesRaster = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) +
+                        Constants.FILE_PRECIP_ZONE;
+                    success = await AnalysisTools.CalculatePrecipitationZonesAsync(strLayer, strZonesRaster);
                     if (success != BA_ReturnCode.Success)
                     {
                         errorCount++;

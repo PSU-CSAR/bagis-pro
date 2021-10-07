@@ -3047,19 +3047,16 @@ namespace bagis_pro
             return success;
         }
 
-        public static async Task<BA_ReturnCode> CalculatePrecipitationZonesAsync()
+        public static async Task<BA_ReturnCode> CalculatePrecipitationZonesAsync(string strLayer, string strZonesRaster)
         {
-            string strLayer = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Prism, true) +
-                  System.IO.Path.GetFileName((string)Module1.Current.BatchToolSettings.AoiPrecipFile);
-            string strZonesRaster = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) +
-                Constants.FILE_PRECIP_ZONE;
             string strMaskPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_PRISM_VECTOR;
             int prismZonesCount = (int)Module1.Current.BatchToolSettings.PrecipZonesCount;
             IList<BA_Objects.Interval> lstInterval = await AnalysisTools.GetPrismClassesAsync(Module1.Current.Aoi.FilePath,
                 strLayer, prismZonesCount, "PRISM");
             BA_ReturnCode success = await AnalysisTools.CalculateZonesAsync(Module1.Current.Aoi.FilePath, strLayer,
                 lstInterval, strZonesRaster, strMaskPath, "PRISM");
-            if (success == BA_ReturnCode.Success)
+            string zonesFile = Path.GetFileName(strZonesRaster);
+            if (success == BA_ReturnCode.Success && !Constants.FILE_WINTER_PRECIPITATION_ZONE.Equals(zonesFile))
             {
                 // Record the prism zones information to be used later when presenting maps/charts
                 // Open the current Analysis.xml from disk, if it exists
@@ -3078,7 +3075,7 @@ namespace bagis_pro
                 oAnalysis.PrecipZonesIntervalCount = prismZonesCount;
                 oAnalysis.PrecipZonesInterval = Module1.Current.PrismZonesInterval;
                 Module1.Current.PrismZonesInterval = 999;
-                string strPrecipFile = Path.GetFileName((string)Module1.Current.BatchToolSettings.AoiPrecipFile);
+                string strPrecipFile = Path.GetFileName(strLayer);
                 oAnalysis.PrecipZonesBegin = strPrecipFile;
                 oAnalysis.PrecipZonesEnd = strPrecipFile;
                 using (var file_stream = File.Create(strSettingsFile))
@@ -3772,9 +3769,9 @@ namespace bagis_pro
             {
                 strInputLayerPaths = strInputLayerPaths.Substring(0, strInputLayerPaths.Length - 1);
             }
-            string strOutputPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) 
-                + Constants.FILE_WINTER_PRECIPITATION;
-            var parameters = Geoprocessing.MakeValueArray(strInputLayerPaths, strOutputPath, "SUM");
+            string strLayer = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true)
+                + "tmpWinter";
+            var parameters = Geoprocessing.MakeValueArray(strInputLayerPaths, strLayer, "SUM");
             var environments = Geoprocessing.MakeEnvironmentArray(workspace: oAoi.FilePath);
             var gpResult = await Geoprocessing.ExecuteToolAsync("CellStatistics_sa", parameters, environments,
                                             CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
@@ -3788,6 +3785,18 @@ namespace bagis_pro
             else
             {
                 success = BA_ReturnCode.Success;
+            }
+
+            if (success == BA_ReturnCode.Success)
+            {
+                // Calculate zones from output file
+                string strZonesRaster = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true)
+                + Constants.FILE_WINTER_PRECIPITATION_ZONE;
+                success = await CalculatePrecipitationZonesAsync(strLayer, strZonesRaster);
+                if (success == BA_ReturnCode.Success)
+                {
+                    await GeoprocessingTools.DeleteDatasetAsync(strLayer);
+                }
             }
             if (success == BA_ReturnCode.Success)
             {

@@ -260,11 +260,10 @@ namespace bagis_pro
 
                     // add winter precipitation layer
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
-                        Constants.FILE_WINTER_PRECIPITATION;
+                        Constants.FILE_WINTER_PRECIPITATION_ZONE;
                     uri = new Uri(strPath);
-                    success = await MapTools.DisplayRasterWithClassifyAsync(uri, Constants.MAPS_WINTER_PRECIPITATION, "ArcGIS Colors",
-                        "Precipitation", Constants.FIELD_VALUE, 30, ClassificationMethod.EqualInterval, 
-                            Convert.ToInt16(oAnalysis.PrecipZonesIntervalCount) + 1, false);
+                    success = await MapTools.DisplayRasterWithSymbolAsync(uri, Constants.MAPS_WINTER_PRECIPITATION, "ArcGIS Colors",
+                        "Precipitation", "NAME", 30, false);
                     if (success == BA_ReturnCode.Success)
                         Module1.ActivateState("MapButtonPalette_BtnWinterPrecipitation_State");
 
@@ -663,7 +662,7 @@ namespace bagis_pro
                     {
                         //Current labeling engine is Maplex labeling engine            
                         theLabelClass.MaplexLabelPlacementProperties.PointPlacementMethod = mapPlacementMethod;
-                        //theLabelClass.MaplexLabelPlacementProperties.NeverRemoveLabel = true;
+                        theLabelClass.MaplexLabelPlacementProperties.NeverRemoveLabel = true;
                     }
                     //Gets the text symbol of the label class            
                     var textSymbol = listLabelClasses.FirstOrDefault().TextSymbol.Symbol as CIMTextSymbol; 
