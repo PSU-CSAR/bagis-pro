@@ -193,7 +193,7 @@ namespace bagis_pro
                               Constants.FILE_SNOTEL;
                     uri = new Uri(strPath);
                     success = await MapTools.AddPointMarkersAsync(uri, Constants.MAPS_SNOTEL, CIMColor.CreateRGBColor(0, 255, 255),
-                        SimpleMarkerStyle.X, 10, Constants.FIELD_SITE_ID);
+                        SimpleMarkerStyle.X, 10, Constants.FIELD_SITE_ID, MaplexPointPlacementMethod.NorthEastOfPoint);
                     if (success == BA_ReturnCode.Success)
                         Module1.Current.Aoi.HasSnotel = true;
 
@@ -202,7 +202,7 @@ namespace bagis_pro
                               Constants.FILE_SNOW_COURSE;
                     uri = new Uri(strPath);
                     success = await MapTools.AddPointMarkersAsync(uri, Constants.MAPS_SNOW_COURSE, CIMColor.CreateRGBColor(0, 255, 255),
-                        SimpleMarkerStyle.Star, 12, Constants.FIELD_SITE_ID);
+                        SimpleMarkerStyle.Star, 12, Constants.FIELD_SITE_ID, MaplexPointPlacementMethod.NorthWestOfPoint);
                     if (success == BA_ReturnCode.Success)
                         Module1.Current.Aoi.HasSnowCourse = true;
 
@@ -593,7 +593,8 @@ namespace bagis_pro
         }
 
         public static async Task<BA_ReturnCode> AddPointMarkersAsync(Uri aoiUri, string displayName, CIMColor markerColor,
-                                    SimpleMarkerStyle markerStyle, double markerSize, string labelField)
+                                    SimpleMarkerStyle markerStyle, double markerSize, string labelField, 
+                                    MaplexPointPlacementMethod mapPlacementMethod)
         {
             // parse the uri for the folder and file
             string strFileName = null;
@@ -658,8 +659,12 @@ namespace bagis_pro
                     CIMGeneralPlacementProperties labelEngine = MapView.Active.Map.GetDefinition().GeneralPlacementProperties;
                     if (labelEngine is CIMStandardGeneralPlacementProperties) //Current labeling engine is Standard labeling engine               
                         theLabelClass.StandardLabelPlacementProperties.PointPlacementMethod = StandardPointPlacementMethod.OnTopPoint;
-                    else    //Current labeling engine is Maplex labeling engine            
-                        theLabelClass.MaplexLabelPlacementProperties.PointPlacementMethod = MaplexPointPlacementMethod.NorthEastOfPoint;
+                    else
+                    {
+                        //Current labeling engine is Maplex labeling engine            
+                        theLabelClass.MaplexLabelPlacementProperties.PointPlacementMethod = mapPlacementMethod;
+                        //theLabelClass.MaplexLabelPlacementProperties.NeverRemoveLabel = true;
+                    }
                     //Gets the text symbol of the label class            
                     var textSymbol = listLabelClasses.FirstOrDefault().TextSymbol.Symbol as CIMTextSymbol; 
                     textSymbol.FontStyleName = "Bold"; //set font as bold
