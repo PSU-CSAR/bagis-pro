@@ -349,7 +349,7 @@ namespace bagis_pro
             Project proj = Project.Current;
             bool bCreateMapPane = false;
             Map oMap = null;
-            await QueuedTask.Run(async () =>
+            await QueuedTask.Run(() =>
             {
                  //Finding the first project item with name matches with mapName
                 MapProjectItem mpi =
@@ -927,7 +927,7 @@ namespace bagis_pro
 
         public static async Task<BA_ReturnCode> DisplayStretchRasterWithSymbolAsync(Uri rasterUri, string displayName, string styleCategory, string styleName,
             int transparency, bool isVisible, bool useCustomMinMax, double stretchMax, double stretchMin,
-            double labelMax, double labelMin)
+            double labelMax, double labelMin, bool bDisplayBackgroundValue)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
             // parse the uri for the folder and file
@@ -972,7 +972,7 @@ namespace bagis_pro
                     rasterLayer.SetVisibility(isVisible);
                     // Create and deploy the unique values renderer
                     await MapTools.SetToStretchValueColorizer(displayName, styleCategory, styleName, useCustomMinMax,
-                        stretchMin, stretchMax, labelMin, labelMax);
+                        stretchMin, stretchMax, labelMin, labelMax, bDisplayBackgroundValue);
                     success = BA_ReturnCode.Success;
                 }
             });
@@ -1108,7 +1108,7 @@ namespace bagis_pro
         }
 
         public static async Task SetToStretchValueColorizer(string layerName, string styleCategory, string styleName,
-            bool useCustomMinMax, double stretchMax, double stretchMin, double labelMax, double labelMin)
+            bool useCustomMinMax, double stretchMax, double stretchMin, double labelMax, double labelMin, bool bDisplayBackgroundValue)
         {
             // Get the layer we want to symbolize from the map
             Layer oLayer =
@@ -1127,6 +1127,7 @@ namespace bagis_pro
             // Create a new Stretch Colorizer Definition supplying the color ramp
             StretchColorizerDefinition stretchColorizerDef = new StretchColorizerDefinition(0, RasterStretchType.DefaultFromSource, 1.0, cimColorRamp);
             stretchColorizerDef.StretchType = RasterStretchType.PercentMinimumMaximum;
+            stretchColorizerDef.DisplayBackgroundValue = bDisplayBackgroundValue;
             //Create a new Stretch colorizer using the colorizer definition created above.
             CIMRasterStretchColorizer newStretchColorizer =
               await rasterLayer.CreateColorizerAsync(stretchColorizerDef) as CIMRasterStretchColorizer;
@@ -2073,7 +2074,7 @@ namespace bagis_pro
                                                          Constants.MAPS_HILLSHADE, strNewLayerName};
             if (bIsDelta)
             {
-                lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, strNewLayerName};
+                lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_HILLSHADE, strNewLayerName };
             }
             IList<string> lstLegend = new List<string>();
 
@@ -2295,7 +2296,7 @@ namespace bagis_pro
 
                 success = await MapTools.DisplayStretchRasterWithSymbolAsync(uri, Constants.LAYER_NAMES_SNODAS_SWE[idxDefaultMonth], "ColorBrewer Schemes (RGB)",
                     "Green-Blue (Continuous)", 30, false, true, dblStretchMin, dblStretchMax, dblLabelMin,
-                    dblLabelMax);
+                    dblLabelMax, true);
                 IList<string> lstLayersFiles = new List<string>();
                 if (success == BA_ReturnCode.Success)
                 {
@@ -2451,8 +2452,8 @@ namespace bagis_pro
                 }
 
                 success = await MapTools.DisplayStretchRasterWithSymbolAsync(uri, Constants.LAYER_NAMES_SWE_DELTA[idxDefaultDeltaMonth], "ColorBrewer Schemes (RGB)",
-                    "Red-Blue (Continuous)", 0, false, true, dblStretchMin, dblStretchMax, dblLabelMin,
-                    dblLabelMax);
+                    "Red-Blue (Continuous)", 30, false, true, dblStretchMin, dblStretchMax, dblLabelMin,
+                    dblLabelMax, true);
                 IList<string> lstLayersFiles = new List<string>();
                 if (success == BA_ReturnCode.Success)
                 {
@@ -2519,7 +2520,7 @@ namespace bagis_pro
             
 
             success = await MapTools.DisplayStretchRasterWithSymbolAsync(uri, Constants.LAYER_NAMES_SEASON_PRECIP_CONTRIB[idxDefaultMonth], "ColorBrewer Schemes (RGB)",
-                    "Yellow-Orange-Red (continuous)", 30, false, true, 0, dblMaxPercent, 0, Math.Ceiling(dblMaxPercent));
+                    "Yellow-Orange-Red (continuous)", 30, false, true, 0, dblMaxPercent, 0, Math.Ceiling(dblMaxPercent), false);
             IList<string> lstLayersFiles = new List<string>();
                 if (success == BA_ReturnCode.Success)
                 {
