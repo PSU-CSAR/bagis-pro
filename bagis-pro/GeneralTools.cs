@@ -765,14 +765,14 @@ namespace bagis_pro
                     pChartsWorksheet.PageSetup.PaperSize = oReqPaperSize;
                     pChartsWorksheet.PageSetup.FitToPagesTall = 1;
                     pChartsWorksheet.PageSetup.FitToPagesWide = 1;
-                    pChartsWorksheet.PageSetup.PrintArea = "$A$1:$M$29";
+                    pChartsWorksheet.PageSetup.PrintArea = "$A$1:$M$30";
                     pChartsWorksheet.PageSetup.CenterHeader = "&C&\"Arial,Bold\"&16 " + Module1.Current.Aoi.NwccName;
                     pChartsWorksheet.ExportAsFixedFormat(XlFixedFormatType.xlTypePDF, pathToSave);
                     Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Published combined chart to PDF");
 
                     // slope chart
                     pathToSave = GetFullPdfFileName(Constants.FILE_EXPORT_CHART_SLOPE_PDF);
-                    pChartsWorksheet.PageSetup.PrintArea = "$O$1:$AA$29";
+                    pChartsWorksheet.PageSetup.PrintArea = "$O$1:$AA$30";
                     pChartsWorksheet.ExportAsFixedFormat(XlFixedFormatType.xlTypePDF, pathToSave);
                     Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Published slope chart to PDF");
 
@@ -1631,39 +1631,145 @@ namespace bagis_pro
             //}
             //else
             //{
-                // Combine SWE Delta maps into a single .pdf document
-                // Initialize output document
-                PdfDocument sweDeltaOutputDocument = new PdfDocument();
-                int idx = 0;
-                foreach (var strFileName in Constants.FILE_EXPORT_MAPS_SWE_DELTA)
+            // Create intro section of report
+            int idx = 0;
+            PdfDocument combineDocument = new PdfDocument();
+            foreach (var strFileName in Constants.FILE_EXPORT_OVERVIEW_FILES)
+            {
+                string fullPath = GetFullPdfFileName(strFileName);
+                if (File.Exists(fullPath))
                 {
-                    string fullPath = GetFullPdfFileName(strFileName);
-                    if (File.Exists(fullPath))
+                    PdfDocument inputDocument = PdfReader.Open(fullPath, PdfDocumentOpenMode.Import);
+                    // Iterate pages
+                    int count = inputDocument.PageCount;
+                    for (idx = 0; idx < count; idx++)
                     {
-                        PdfDocument inputDocument = PdfReader.Open(fullPath, PdfDocumentOpenMode.Import);
-                        // Iterate pages
-                        int count = inputDocument.PageCount;
-                        for (idx = 0; idx < count; idx++)
-                        {
-                            // Get the page from the external document...
-                            PdfPage page = inputDocument.Pages[idx];
-                            sweDeltaOutputDocument.AddPage(page);
-                            File.Delete(fullPath);
-                        }
+                        // Get the page from the external document...
+                        PdfPage page = inputDocument.Pages[idx];
+                        combineDocument.AddPage(page);
                     }
+                    File.Delete(fullPath);
                 }
-                if (idx > 0)
+            }
+            if (idx > 0)
+            {
+                combineDocument.Save(GetFullPdfFileName(Constants.FILE_EXPORT_OVERVIEW_PDF));
+            }
+            // Combine aspect files
+            combineDocument = new PdfDocument();
+            idx = 0;
+            foreach (var strFileName in Constants.FILE_EXPORT_ASPECT_FILES)
+            {
+                string fullPath = GetFullPdfFileName(strFileName);
+                if (File.Exists(fullPath))
                 {
-                    sweDeltaOutputDocument.Save(GetFullPdfFileName(Constants.FILE_EXPORT_MAP_SWE_DELTA_ALL_PDF));
+                    PdfDocument inputDocument = PdfReader.Open(fullPath, PdfDocumentOpenMode.Import);
+                    // Get the page from the external document...
+                    PdfPage page = inputDocument.Pages[0];
+                    combineDocument.AddPage(page);
+                    idx++;
+                    File.Delete(fullPath);
                 }
-            // Combine monthly SNODAS maps into a single .pdf document
-            PdfDocument snodasOutputDocument = new PdfDocument();
-                idx = 0;
-                foreach (var strFileName in Constants.FILE_EXPORT_MAPS_SWE)
+            }
+            if (idx > 0)
+            {
+                combineDocument.Save(GetFullPdfFileName(Constants.FILE_EXPORT_ASPECT_DISTRIBUTION_PDF));
+            }
+            // Combine slope files
+            combineDocument = new PdfDocument();
+            idx = 0;
+            foreach (var strFileName in Constants.FILE_EXPORT_SLOPE_FILES)
+            {
+                string fullPath = GetFullPdfFileName(strFileName);
+                if (File.Exists(fullPath))
                 {
-                    string fullPath = GetFullPdfFileName(strFileName);
-                    if (File.Exists(fullPath))
+                    PdfDocument inputDocument = PdfReader.Open(fullPath, PdfDocumentOpenMode.Import);
+                    // Get the page from the external document...
+                    PdfPage page = inputDocument.Pages[0];
+                    combineDocument.AddPage(page);
+                    idx++;
+                    File.Delete(fullPath);
+                }
+            }
+            if (idx > 0)
+            {
+                combineDocument.Save(GetFullPdfFileName(Constants.FILE_EXPORT_SLOPE_DISTRIBUTION_PDF));
+            }
+            // Combine sites files
+            combineDocument = new PdfDocument();
+            idx = 0;
+            foreach (var strFileName in Constants.FILE_EXPORT_SITE_REPRESENTATION_FILES)
+            {
+                string fullPath = GetFullPdfFileName(strFileName);
+                if (File.Exists(fullPath))
+                {
+                    PdfDocument inputDocument = PdfReader.Open(fullPath, PdfDocumentOpenMode.Import);
+                    // Get the page from the external document...
+                    PdfPage page = inputDocument.Pages[0];
+                    combineDocument.AddPage(page);
+                    idx++;
+                    File.Delete(fullPath);
+                }
+            }
+            if (idx > 0)
+            {
+                combineDocument.Save(GetFullPdfFileName(Constants.FILE_EXPORT_SITE_REPRESENTATION_PDF));
+            }
+
+            // Combine precipitation distribution files
+            combineDocument = new PdfDocument();
+            idx = 0;
+            foreach (var strFileName in Constants.FILE_EXPORT_PRECIPITATION_DISTRIBUTION_FILES)
+            {
+                string fullPath = GetFullPdfFileName(strFileName);
+                if (File.Exists(fullPath))
+                {
+                    PdfDocument inputDocument = PdfReader.Open(fullPath, PdfDocumentOpenMode.Import);
+                    // Iterate pages
+                    int count = inputDocument.PageCount;
+                    for (idx = 0; idx < count; idx++)
                     {
+                        // Get the page from the external document...
+                        PdfPage page = inputDocument.Pages[idx];
+                        combineDocument.AddPage(page);
+                    }
+                    File.Delete(fullPath);
+                }
+            }
+            if (idx > 0)
+            {
+                combineDocument.Save(GetFullPdfFileName(Constants.FILE_EXPORT_PRECIPITATION_DISTRIBUTION_PDF));
+            }
+            // Potential site locations
+            combineDocument = new PdfDocument();
+            idx = 0;
+            foreach (var strFileName in Constants.FILE_EXPORT_SITE_ANALYSIS_FILES)
+            {
+                string fullPath = GetFullPdfFileName(strFileName);
+                if (File.Exists(fullPath))
+                {
+                    PdfDocument inputDocument = PdfReader.Open(fullPath, PdfDocumentOpenMode.Import);
+                    // Get the page from the external document...
+                    PdfPage page = inputDocument.Pages[0];
+                    combineDocument.AddPage(page);
+                    idx++;
+                    File.Delete(fullPath);
+                }
+            }
+            if (idx > 0)
+            {
+                combineDocument.Save(GetFullPdfFileName(Constants.FILE_EXPORT_POTENTIAL_SITE_ANALYSIS_PDF));
+            }
+
+            // Combine SWE Delta maps into a single .pdf document
+            // Initialize output document
+            PdfDocument snodasOutputDocument = new PdfDocument();
+            // Combine monthly SNODAS maps into a single .pdf document
+            foreach (var strFileName in Constants.FILE_EXPORT_MAPS_SWE)
+            {
+                string fullPath = GetFullPdfFileName(strFileName);
+                if (File.Exists(fullPath))
+                {
                         PdfDocument inputDocument = PdfReader.Open(fullPath, PdfDocumentOpenMode.Import);
                         // Iterate pages
                         int count = inputDocument.PageCount;
@@ -1672,18 +1778,41 @@ namespace bagis_pro
                             // Get the page from the external document...
                             PdfPage page = inputDocument.Pages[idx];
                             snodasOutputDocument.AddPage(page);
-                            File.Delete(fullPath);
                         }
-                    }
+                        File.Delete(fullPath);
                 }
-                if (idx > 0)
+            }
+            foreach (var strFileName in Constants.FILE_EXPORT_MAPS_SWE_DELTA)
+            {
+                string fullPath = GetFullPdfFileName(strFileName);
+                if (File.Exists(fullPath))
+                {
+                    PdfDocument inputDocument = PdfReader.Open(fullPath, PdfDocumentOpenMode.Import);
+                    // Iterate pages
+                    int count = inputDocument.PageCount;
+                    for (idx = 0; idx < count; idx++)
+                    {
+                        // Get the page from the external document...
+                        PdfPage page = inputDocument.Pages[idx];
+                        snodasOutputDocument.AddPage(page);
+                    }
+                    File.Delete(fullPath);
+                }
+            }
+            if (idx > 0)
                 {
                     snodasOutputDocument.Save(GetFullPdfFileName(Constants.FILE_EXPORT_MAP_SNODAS_ALL_PDF));
                 }
 
-            // Combine monthly SQ PrecipContribu maps into a single .pdf document
+            // Combine monthly SQ PrecipContribution maps into a single .pdf document
             PdfDocument seasonalPrecipOutputDocument = new PdfDocument();
             idx = 0;
+            // Winter Precipitation map
+            PdfDocument winterDocument = PdfReader.Open(GetFullPdfFileName(Constants.FILE_EXPORT_MAP_WINTER_PRECIPITATION_PDF), 
+                PdfDocumentOpenMode.Import);
+            PdfPage winterPage = winterDocument.Pages[0];
+            seasonalPrecipOutputDocument.AddPage(winterPage);
+            File.Delete(GetFullPdfFileName(Constants.FILE_EXPORT_MAP_WINTER_PRECIPITATION_PDF));
             foreach (var strFileName in Constants.FILE_EXPORT_MAPS_SEASONAL_PRECIP_CONTRIB)
             {
                 string fullPath = GetFullPdfFileName(strFileName);
@@ -1697,8 +1826,8 @@ namespace bagis_pro
                         // Get the page from the external document...
                         PdfPage page = inputDocument.Pages[idx];
                         seasonalPrecipOutputDocument.AddPage(page);
-                        File.Delete(fullPath);
                     }
+                    File.Delete(fullPath);
                 }
             }
             if (idx > 0)
@@ -2265,7 +2394,7 @@ namespace bagis_pro
                     bHasSnowCourse = true;
                 if (bHasSnotel == false && bHasSnowCourse == false)
                 {
-                    Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateMapsTitlePageAsync),
+                    Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateSitesTableAsync),
                         "No sites found. Sites table will not be created!");
                     return success;
                 }
@@ -2318,7 +2447,7 @@ namespace bagis_pro
                     writer.Serialize(fs, tPage);
                 }
 
-                // Process the title page through the xsl template
+                // Process the sites table page through the xsl template
                 string myStyleSheet = GeneralTools.GetAddInDirectory() + "\\" + Constants.FILE_SITES_TABLE_XSL;
                 XPathDocument myXPathDoc = new XPathDocument(myXmlFile);
                 XslCompiledTransform myXslTrans = new XslCompiledTransform();
@@ -2329,12 +2458,12 @@ namespace bagis_pro
                     myXslTrans.Transform(myXPathDoc, null, myWriter);
                 }
 
-                // Convert the title page to PDF
+                // Convert the sites table to PDF
                 if (File.Exists(htmlFilePath))
                 {
-                    PdfSharp.Pdf.PdfDocument titlePageDoc = TheArtOfDev.HtmlRenderer.PdfSharp.PdfGenerator.GeneratePdf(System.IO.File.ReadAllText(htmlFilePath),
+                    PdfSharp.Pdf.PdfDocument sitesPageDoc = TheArtOfDev.HtmlRenderer.PdfSharp.PdfGenerator.GeneratePdf(System.IO.File.ReadAllText(htmlFilePath),
                         PdfSharp.PageSize.Letter);
-                    titlePageDoc.Save(publishFolder + "\\" + Constants.FILE_SITES_TABLE_PDF);
+                    sitesPageDoc.Save(publishFolder + "\\" + Constants.FILE_SITES_TABLE_PDF);
                 }
                 Module1.Current.ModuleLogManager.LogDebug(nameof(GenerateSitesTableAsync),
                     "Sites table created!!");

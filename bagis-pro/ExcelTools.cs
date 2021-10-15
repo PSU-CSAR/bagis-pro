@@ -811,6 +811,8 @@ namespace bagis_pro
             axis.MinimumScale = Y_Min;
             axis.MajorUnit = Y_Unit;
 
+            // Descriptive textbox
+            StringBuilder sb = new StringBuilder();
             // Top Axis
             Axis topAxis = (Axis) myChart.Axes(Microsoft.Office.Interop.Excel.XlAxisType.xlCategory,
                 Microsoft.Office.Interop.Excel.XlAxisGroup.xlSecondary);
@@ -818,10 +820,18 @@ namespace bagis_pro
             if (bCumulativeVolume == false)
             {
                 topAxis.AxisTitle.Characters.Text = "Precipitation Distribution (% contribution by elevation zone)";
+                sb.Append("Precipitation Distribution - % contribution by elevation zone \r\n");
+                sb.Append("The chart shows the percentage of the precipitation contributed by the user-specified elevation intervals and the snow monitoring ");
+                sb.Append("sites plotted on the Area-Elevation Distribution curve according to the sites' elevation. The chart tells if the snow monitoring sites ");
+                sb.Append("record the major precipitation in the AOI.");
             }
             else
             {
-                topAxis.AxisTitle.Characters.Text = "Cumulative precipitation Distribution (% contribution by elevation zone)";
+                topAxis.AxisTitle.Characters.Text = "Cumulative Precipitation Distribution (cumulative % contribution by elevation zone)";
+                sb.Append("Area-Elevation, Precipitation and Site Distribution chart - Cumulative precipitation Distribution (cumulative % contribution by elevation zone) \r\n");
+                sb.Append("The chart shows the cumulative percentage from low elevation to high elevation of the precipitation contributed by the ");
+                sb.Append("user-specified elevation intervals and the snow monitoring sites plotted on the Area-Elevation Distribution curve according to ");
+                sb.Append("the sites' elevation. The chart tells if the snow monitoring sites record the major precipitation in the AOI.");
             }
             
             topAxis.AxisTitle.Font.Bold = true;
@@ -846,12 +856,6 @@ namespace bagis_pro
             myChart.HasAxis[Microsoft.Office.Interop.Excel.XlAxisType.xlValue, Microsoft.Office.Interop.Excel.XlAxisGroup.xlPrimary] = true;
             myChart.HasAxis[Microsoft.Office.Interop.Excel.XlAxisType.xlValue, Microsoft.Office.Interop.Excel.XlAxisGroup.xlSecondary] = true;
 
-            // Descriptive textbox
-            StringBuilder sb = new StringBuilder();
-            sb.Append("Area-Elevation, Precipitation and Site Distribution chart \r\n");
-            sb.Append("The chart shows the percentage of the precipitation contributed by the user-specified elevation intervals");
-            sb.Append("and the snow monitoring sites plotted on the Area-Elevation Distribution curve according to the sites'");
-            sb.Append("elevation. The chart tells if the snow monitoring sites record the major precipitation in the AOI.");
             ChartTextBoxSettings textBoxSettings = new ChartTextBoxSettings
             {
                 Left = leftPosition,

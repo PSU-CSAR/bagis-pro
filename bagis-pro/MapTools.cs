@@ -2072,10 +2072,6 @@ namespace bagis_pro
             var allLayers = map.Layers.ToList();
             IList<string> lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
                                                          Constants.MAPS_HILLSHADE, strNewLayerName};
-            if (bIsDelta)
-            {
-                lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_HILLSHADE, strNewLayerName };
-            }
             IList<string> lstLegend = new List<string>();
 
             if (Module1.Current.Aoi.HasSnotel)

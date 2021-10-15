@@ -90,14 +90,14 @@ namespace bagis_pro
         public const string FILE_SETTINGS = "analysis.xml";
         public const string FILE_BATCH_TOOL_SETTINGS = "batch_tool_settings.json";
         public const string FILE_BATCH_LOG = "batch_tool_log.txt";
-        public const string FILE_EXPORT_MAP_ELEV_PDF = "map_elevation.pdf";
+        public const string FILE_EXPORT_MAP_ELEV_PDF = "elevation_distribution.pdf";
         public const string FILE_EXPORT_MAP_SNOTEL_PDF = "map_elevation_snotel.pdf";
         public const string FILE_EXPORT_MAP_SCOS_PDF = "map_elevation_sc.pdf";
         public const string FILE_EXPORT_MAP_SNOTEL_AND_SCOS_PDF = "map_elevation_snotel_sc.pdf";
+        public const string FILE_EXPORT_SITE_REPRESENTATION_PDF = "site_representation.pdf";
         public const string FILE_EXPORT_MAP_PRECIPITATION_PDF = "map_precipitation.pdf";
         public const string FILE_EXPORT_MAP_ASPECT_PDF = "map_aspect.pdf";
         public const string FILE_EXPORT_MAP_SLOPE_PDF = "map_slope.pdf";
-        public const string FILE_EXPORT_MAP_ELEVATION_SNOTEL_PDF = "map_elevation_snotel.pdf";
         public static readonly string[] FILE_EXPORT_MAPS_SWE = new string[] { "map_snodas_swe_november.pdf", "map_snodas_swe_december.pdf", "map_snodas_swe_january.pdf",
                                                                               "map_snodas_swe_february.pdf", "map_snodas_swe_march.pdf", "map_snodas_swe_april.pdf",
                                                                               "map_snodas_swe_may.pdf", "map_snodas_swe_june.pdf", "map_snodas_swe_july.pdf"};
@@ -106,6 +106,17 @@ namespace bagis_pro
                                                                                     "map_may_swe_delta.pdf", "map_jun_swe_delta.pdf"};
         public static readonly string[] FILE_EXPORT_MAPS_SEASONAL_PRECIP_CONTRIB = new string[] { "map_seasonal_precip_q1.pdf", "map_seasonal_precip_q2.pdf", "map_seasonal_precip_q3.pdf",
                                                                                                   "map_seasonal_precip_q4.pdf"};
+        public static readonly string[] FILE_EXPORT_OVERVIEW_FILES = new string[] { FILE_TITLE_PAGE_PDF, FILE_EXPORT_MAP_AOI_LOCATION_PDF, FILE_SITES_TABLE_PDF };
+        public static readonly string[] FILE_EXPORT_ASPECT_FILES = new string[] { FILE_EXPORT_MAP_ASPECT_PDF, FILE_EXPORT_CHART_ASPECT_PDF };
+        public static readonly string[] FILE_EXPORT_SLOPE_FILES = new string[] { FILE_EXPORT_MAP_SLOPE_PDF, FILE_EXPORT_CHART_SLOPE_PDF };
+        public static readonly string[] FILE_EXPORT_SITE_REPRESENTATION_FILES = new string[] { FILE_EXPORT_MAP_SNOTEL_PDF, FILE_EXPORT_MAP_SCOS_PDF,
+                                                                                               FILE_EXPORT_MAP_SNOTEL_AND_SCOS_PDF};
+        public static readonly string[] FILE_EXPORT_PRECIPITATION_DISTRIBUTION_FILES = new string[] { FILE_EXPORT_MAP_PRECIPITATION_PDF, FILE_EXPORT_CHART_ELEV_PRECIP_CORR_PDF,
+                                                                                               FILE_EXPORT_MAP_PRECIPITATION_CONTRIBUTION_PDF, FILE_EXPORT_CHART_AREA_ELEV_PRECIP_SITE_PDF,
+                                                                                               FILE_EXPORT_CHART_PRECIP_REPRESENT_PDF, FILE_EXPORT_CRITICAL_PRECIPITATION_ZONES_PDF };
+        public static readonly string[] FILE_EXPORT_SITE_ANALYSIS_FILES = new string[] { FILE_EXPORT_MAP_ROADS_PDF, FILE_EXPORT_MAP_PUBLIC_LAND_ZONES_PDF, FILE_EXPORT_MAP_PUBLIC_LAND_OWNERSHIP_PDF,
+                                                                            FILE_EXPORT_MAP_BELOW_TREELINE_PDF, FILE_EXPORT_MAP_SITES_LOCATION_PDF, FILE_EXPORT_MAP_SITES_LOCATION_PRECIP_PDF,
+                                                                            FILE_EXPORT_MAP_SITES_LOCATION__PRECIP_CONTRIB_PDF };
         public const string FILE_EXPORT_MAP_ROADS_PDF = "map_roads.pdf";
         public const string FILE_EXPORT_MAP_PUBLIC_LAND_ZONES_PDF = "map_public_land_zones.pdf";
         public const string FILE_EXPORT_MAP_BELOW_TREELINE_PDF = "map_below_treeline.pdf";
@@ -117,30 +128,26 @@ namespace bagis_pro
         public const string FILE_EXPORT_CHART_AREA_ELEV_PRECIP_SITE_PDF = "chart_area_elev_precip_site.pdf";
         public const string FILE_EXPORT_CHART_SLOPE_PDF = "chart_slope.pdf";
         public const string FILE_EXPORT_CHART_ASPECT_PDF = "chart_aspect.pdf";
+        public const string FILE_EXPORT_ASPECT_DISTRIBUTION_PDF = "aspect_distribution.pdf";
+        public const string FILE_EXPORT_SLOPE_DISTRIBUTION_PDF = "slope_distribution.pdf";
         public const string FILE_EXPORT_TABLE_PRECIP_REPRESENT_PDF = "table_precip_representation.pdf";
         public const string FILE_EXPORT_CHART_PRECIP_REPRESENT_PDF = "chart_precip_representation.pdf";
         public const string FILE_EXPORT_CHART_ELEV_PRECIP_CORR_PDF = "chart_elev_precip_correlation.pdf";
         public const string FILE_EXPORT_WATERSHED_REPORT_PDF = "watershed_report.pdf";
         public const string FILE_EXPORT_SITE_ANALYSIS_REPORT_PDF = "site_analysis_report.pdf";
         public const string FILE_EXPORT_CRITICAL_PRECIPITATION_ZONES_PDF = "critical_precipitation_zones.pdf";
+        public const string FILE_EXPORT_PRECIPITATION_DISTRIBUTION_PDF = "precipitation_distribution.pdf";
         public const string FILE_EXPORT_MAP_PRECIPITATION_CONTRIBUTION_PDF = "map_precipitation_contrib.pdf";
         public const string FILE_EXPORT_MAP_WINTER_PRECIPITATION_PDF = "map_winter_precipitation.pdf";
-        public const string FILE_EXPORT_MAP_SWE_DELTA_ALL_PDF = "map_all_swe_delta.pdf";
         public const string FILE_EXPORT_MAP_SNODAS_ALL_PDF = "map_all_snodas.pdf";
         public const string FILE_EXPORT_MAP_SEASONAL_PRECIP_ALL_PDF = "map_all_seasonal_precip.pdf";
         public const string FILE_EXPORT_MAP_AOI_LOCATION_PDF = "map_aoi_location.pdf";
         // List of files in the watershed PDF map package and the order in which they will be assembled
         public static string[] FILES_EXPORT_WATERSHED_PDF = new string[]
-        { FILE_TITLE_PAGE_PDF, FILE_EXPORT_MAP_AOI_LOCATION_PDF, FILE_SITES_TABLE_PDF, FILE_EXPORT_MAP_ELEV_PDF, FILE_EXPORT_MAP_ASPECT_PDF,
-          FILE_EXPORT_MAP_SLOPE_PDF, FILE_EXPORT_CHART_ASPECT_PDF, FILE_EXPORT_CHART_SLOPE_PDF,
-          FILE_EXPORT_MAP_SNOTEL_PDF, FILE_EXPORT_MAP_SCOS_PDF, FILE_EXPORT_MAP_SNOTEL_AND_SCOS_PDF,
-          FILE_EXPORT_MAP_PRECIPITATION_PDF, FILE_EXPORT_MAP_WINTER_PRECIPITATION_PDF, 
-          FILE_EXPORT_CHART_ELEV_PRECIP_CORR_PDF, FILE_EXPORT_MAP_PRECIPITATION_CONTRIBUTION_PDF,
-          FILE_EXPORT_MAP_SNODAS_ALL_PDF, FILE_EXPORT_MAP_SWE_DELTA_ALL_PDF, FILE_EXPORT_MAP_SEASONAL_PRECIP_ALL_PDF,
-          FILE_EXPORT_CHART_AREA_ELEV_PRECIP_SITE_PDF, FILE_EXPORT_CHART_PRECIP_REPRESENT_PDF,
-          FILE_EXPORT_MAP_CRITICAL_PRECIPITATION_ZONES_PDF, FILE_EXPORT_TABLE_PRECIP_REPRESENT_PDF, FILE_EXPORT_MAP_ROADS_PDF,
-          FILE_EXPORT_MAP_PUBLIC_LAND_ZONES_PDF, FILE_EXPORT_MAP_PUBLIC_LAND_OWNERSHIP_PDF, FILE_EXPORT_MAP_BELOW_TREELINE_PDF,
-          FILE_EXPORT_MAP_SITES_LOCATION_PDF, FILE_EXPORT_MAP_SITES_LOCATION_PRECIP_PDF, FILE_EXPORT_MAP_SITES_LOCATION__PRECIP_CONTRIB_PDF
+        { FILE_EXPORT_OVERVIEW_PDF, FILE_EXPORT_MAP_ELEV_PDF, FILE_EXPORT_ASPECT_DISTRIBUTION_PDF, FILE_EXPORT_SLOPE_DISTRIBUTION_PDF,
+          FILE_EXPORT_SITE_REPRESENTATION_PDF,
+          FILE_EXPORT_PRECIPITATION_DISTRIBUTION_PDF, FILE_EXPORT_MAP_SEASONAL_PRECIP_ALL_PDF, FILE_EXPORT_MAP_SNODAS_ALL_PDF,
+          FILE_EXPORT_POTENTIAL_SITE_ANALYSIS_PDF
         };    
         // List of files in the site analysis PDF map package and the order in which they will be assembled
         //public static string[] FILES_EXPORT_SITE_ANALYSIS_PDF = new string[] { FILE_TITLE_PAGE_PDF, FILE_SITES_TABLE_PDF,
@@ -154,6 +161,8 @@ namespace bagis_pro
         public const string FILE_SITES_TABLE_XML = "sites_table.xml";
         public const string FILE_SITES_TABLE_HTML = "sites_table.html";
         public const string FILE_SITES_TABLE_PDF = "sites_table.pdf";
+        public const string FILE_EXPORT_OVERVIEW_PDF = "overview.pdf";
+        public const string FILE_EXPORT_POTENTIAL_SITE_ANALYSIS_PDF = "potential_site_analysis.pdf";
         public const string FILE_FLOW_ACCUMULATION = "flow_accumulation";
         public const string FILE_FLOW_DIRECTION = "flow_direction";
         public const string FILE_AOI_BUFFERED_RASTER = "aoib";
@@ -319,7 +328,7 @@ namespace bagis_pro
         public static int EXCEL_CHART_SPACING = 5;
         public static int EXCEL_CHART_HEIGHT = 330;
         public static int EXCEL_CHART_WIDTH = 600;
-        public static int EXCEL_CHART_DESCR_HEIGHT = 70;
+        public static int EXCEL_CHART_DESCR_HEIGHT = 80;
         public static int EXCEL_LARGE_CHART_WIDTH = 800;
         public static int EXCEL_LARGE_CHART_HEIGHT = 500;
 
