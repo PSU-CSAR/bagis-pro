@@ -656,6 +656,13 @@ namespace bagis_pro
                             Names[idxRow].AoiBatchStateText = AoiBatchState.Failed.ToString();
                             return;
                         }
+                        // Legend
+                        success = await MapTools.DisplayLegendAsync(Constants.MAPS_DEFAULT_MAP_FRAME_NAME, oLayout,
+                            "ArcGIS Colors", "1.5 Point", true);
+                        if (success != BA_ReturnCode.Success)
+                        {
+                            errorCount++;
+                        }
 
                         if (oLayout != null)
                         {
@@ -675,16 +682,13 @@ namespace bagis_pro
                             }
                             if (!bFoundIt)
                             {
-                                ILayoutPane iNewLayoutPane = await FrameworkApplication.Panes.CreateLayoutPaneAsync(oLayout); //GUI thread
-                                (iNewLayoutPane as Pane).Activate();
+                                await FrameworkApplication.Current.Dispatcher.Invoke(async () =>
+                                {
+                                    // Do something on the GUI thread
+                                    ILayoutPane iNewLayoutPane = await FrameworkApplication.Panes.CreateLayoutPaneAsync(oLayout); //GUI thread
+                                    (iNewLayoutPane as Pane).Activate();
+                                });
                             }
-                        }
-                        // Legend
-                        success = await MapTools.DisplayLegendAsync(Constants.MAPS_DEFAULT_MAP_FRAME_NAME, oLayout, 
-                            "ArcGIS Colors", "1.5 Point", true);
-                        if (success != BA_ReturnCode.Success)
-                        {
-                            errorCount++;
                         }
 
                         success = await MapTools.PublishMapsAsync(ReportType.Watershed); // export the watershed maps to pdf

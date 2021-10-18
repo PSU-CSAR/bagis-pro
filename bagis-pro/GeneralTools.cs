@@ -1801,7 +1801,7 @@ namespace bagis_pro
             }
             if (idx > 0)
                 {
-                    snodasOutputDocument.Save(GetFullPdfFileName(Constants.FILE_EXPORT_MAP_SNODAS_ALL_PDF));
+                    snodasOutputDocument.Save(GetFullPdfFileName(Constants.FILE_EXPORT_SNODAS_SWE_PDF));
                 }
 
             // Combine monthly SQ PrecipContribution maps into a single .pdf document
@@ -1832,7 +1832,7 @@ namespace bagis_pro
             }
             if (idx > 0)
             {
-                seasonalPrecipOutputDocument.Save(GetFullPdfFileName(Constants.FILE_EXPORT_MAP_SEASONAL_PRECIP_ALL_PDF));
+                seasonalPrecipOutputDocument.Save(GetFullPdfFileName(Constants.FILE_EXPORT_SEASONAL_PRECIP_DISTRIBUTION_PDF));
             }
 
             //}

@@ -139,14 +139,14 @@ namespace bagis_pro
         public const string FILE_EXPORT_PRECIPITATION_DISTRIBUTION_PDF = "precipitation_distribution.pdf";
         public const string FILE_EXPORT_MAP_PRECIPITATION_CONTRIBUTION_PDF = "map_precipitation_contrib.pdf";
         public const string FILE_EXPORT_MAP_WINTER_PRECIPITATION_PDF = "map_winter_precipitation.pdf";
-        public const string FILE_EXPORT_MAP_SNODAS_ALL_PDF = "map_all_snodas.pdf";
-        public const string FILE_EXPORT_MAP_SEASONAL_PRECIP_ALL_PDF = "map_all_seasonal_precip.pdf";
+        public const string FILE_EXPORT_SNODAS_SWE_PDF = "snodas_swe.pdf";
+        public const string FILE_EXPORT_SEASONAL_PRECIP_DISTRIBUTION_PDF = "seasonal_precip_distribution.pdf";
         public const string FILE_EXPORT_MAP_AOI_LOCATION_PDF = "map_aoi_location.pdf";
         // List of files in the watershed PDF map package and the order in which they will be assembled
         public static string[] FILES_EXPORT_WATERSHED_PDF = new string[]
         { FILE_EXPORT_OVERVIEW_PDF, FILE_EXPORT_MAP_ELEV_PDF, FILE_EXPORT_ASPECT_DISTRIBUTION_PDF, FILE_EXPORT_SLOPE_DISTRIBUTION_PDF,
           FILE_EXPORT_SITE_REPRESENTATION_PDF,
-          FILE_EXPORT_PRECIPITATION_DISTRIBUTION_PDF, FILE_EXPORT_MAP_SEASONAL_PRECIP_ALL_PDF, FILE_EXPORT_MAP_SNODAS_ALL_PDF,
+          FILE_EXPORT_PRECIPITATION_DISTRIBUTION_PDF, FILE_EXPORT_SEASONAL_PRECIP_DISTRIBUTION_PDF, FILE_EXPORT_SNODAS_SWE_PDF,
           FILE_EXPORT_POTENTIAL_SITE_ANALYSIS_PDF
         };    
         // List of files in the site analysis PDF map package and the order in which they will be assembled
