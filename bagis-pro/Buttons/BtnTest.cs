@@ -27,7 +27,10 @@ namespace bagis_pro.Buttons
     {
         protected override async void OnClick()
         {
-            int test = await AddPortalItem();
+            //int test = await AddPortalItem();
+            Webservices ws = new Webservices();
+            ws.UpdateItemAsync();
+
         }
 
         private async Task<int> AddPortalItem()

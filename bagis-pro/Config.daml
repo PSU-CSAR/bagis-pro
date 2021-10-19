@@ -118,8 +118,8 @@
         <button id="bagis_pro_Menus_MnuBasinAnalyst_AoiUtilities" caption="AOI Utilities" className="bagis_pro.Menus.MnuBasinAnalyst_AoiUtilities" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GeoprocessingEnvironmentSettings16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GeoprocessingEnvironmentSettings32.png" keytip="B4">
           <tooltip heading="AOI Utilities">AOI Utilities<disabledText /></tooltip>
         </button>
-        <button id="bagis_pro_Menus_MnuBasinAnalyst_AOIShapefile" caption="Test PDF Upload" className="bagis_pro.Menus.MnuBasinAnalyst_AOIShapefile" loadOnClick="true" condition="BtnExportToPdf_Condition" keytip="B5">
-          <tooltip heading="Test PDF Upload">Test PDF Upload<disabledText /></tooltip>
+        <button id="bagis_pro_Menus_MnuBasinAnalyst_AOIShapefile" caption="Update PDF Document Properties" className="bagis_pro.Menus.MnuBasinAnalyst_AOIShapefile" loadOnClick="true" condition="BtnExportToPdf_Condition" keytip="B5">
+          <tooltip heading="Update PDF Document Properties">Update PDF Document Properties<disabledText /></tooltip>
         </button>
         <button id="bagis_pro_Menus_MnuBasinAnalyst_Options" caption="Options" className="bagis_pro.Menus.MnuBasinAnalyst_Options" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericOptions16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericOptions32.png" keytip="B6">
           <tooltip heading="Options">

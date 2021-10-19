@@ -333,5 +333,108 @@ namespace bagis_pro
                 }
             }
         }
+
+        public async void UpdateItemAsync()
+        {
+            UriBuilder searchURL = new UriBuilder(ArcGISPortalManager.Current.GetActivePortal().PortalUri)
+            {
+                Path = "sharing/rest/portals/self",
+                Query = "f=json"
+            };
+            EsriHttpClient httpClient = new EsriHttpClient();
+            EsriHttpResponseMessage response = httpClient.Get(searchURL.Uri.ToString());
+            string strToken = ArcGISPortalManager.Current.GetActivePortal().GetToken();
+
+            dynamic portalSelf = JObject.Parse(await response.Content.ReadAsStringAsync());
+            // if the response doesn't contain the user information then it is essentially
+            // an anonymous request against the portal
+            if (portalSelf.user == null)
+                return;
+            string userName = portalSelf.user.username;
+
+            string aoiName = "Boise_R_nr_Boise";
+            searchURL.Path = "sharing/rest/search";
+            string pdfDocs = "(type:\"PDF\")";
+            string titleAoi = "(title:\"" + aoiName + "\")";
+            searchURL.Query = string.Format("q=owner:{0} {1} {2} &f=json", userName, titleAoi, pdfDocs);
+            var searchResponse = httpClient.Get(searchURL.Uri.ToString());
+            dynamic resultItems = JObject.Parse(await searchResponse.Content.ReadAsStringAsync());
+
+            long numberOfTotalItems = resultItems.total.Value;
+            if (numberOfTotalItems == 0)
+                return;
+            string fileName = aoiName + "_overview.pdf";
+            List<dynamic> resultItemList = new List<dynamic>();
+            resultItemList.AddRange(resultItems.results);
+            string itemId = "";
+            List<string> tags = null;
+            foreach (var item in resultItemList)
+            {
+                string itemFile = (string)item.name;
+                if (itemFile.Equals(fileName))
+                {
+                    itemId = (string)item.id;
+                    tags = item.tags.ToObject<List<string>>();
+                }
+            }
+
+            string strCredits = "Basin Analysis GIS is developed under the collaboration between NRCS NWCC " +
+                "and the Center for Spatial Analysis &Research at Portland State University.";
+            string strDescription = "This report was generated in Basin Analysis GIS (BAGIS). See the " +
+                "<a href = 'https://nrcs.maps.arcgis.com/sharing/rest/content/items/b121d25cc73c4b30a700b8d2d2ea23bc/data' " +
+                "target = '_blank' rel = 'nofollow ugc noopener noreferrer' > Basin Analysis Report Users Manual</ a > " +
+                "for a complete description of the report. Please contact NWCC(<a href = 'https://www.wcc.nrcs.usda.gov/' target = '_blank' " +
+                "rel = 'nofollow ugc noopener noreferrer' >https://www.wcc.nrcs.usda.gov/</a>) for any questions.";
+            string strLicense = "Public domain data. See <a href='https://www.wcc.nrcs.usda.gov/disclaimer.htm' target='_blank' " +
+                "rel='nofollow ugc noopener noreferrer'>https://www.wcc.nrcs.usda.gov/disclaimer.htm</a> for disclaimer.";
+            List<string> requiredTags = new List<string>()
+            {
+                "GIS",
+                "BAGIS",
+                "SNOTEL",
+                "eBagis"
+            };
+            if (tags == null)
+            {
+                tags = new List<string>();  // Ensure tags is never null to avoid exception
+            }
+            List<string> mergedTags = requiredTags.Union(tags).ToList();
+            string strMerged = string.Join(",", mergedTags);
+            if (! string.IsNullOrEmpty(itemId))
+            {
+                // Updating fields on item
+                searchURL.Path = "sharing/rest/content/users/" + userName + "/items/" + itemId + "/update";
+                EsriHttpClient myClient = new EsriHttpClient();
+                var postData = new List<KeyValuePair<string, string>>();
+                postData.Add(new KeyValuePair<string, string>("f", "json"));
+                postData.Add(new KeyValuePair<string, string>("description", strDescription));
+                postData.Add(new KeyValuePair<string, string>("licenseInfo", strLicense));
+                postData.Add(new KeyValuePair<string, string>("accessInformation", strCredits));
+                postData.Add(new KeyValuePair<string, string>("tags", strMerged));
+
+                using (HttpContent content = new FormUrlEncodedContent(postData))
+                {
+                    EsriHttpResponseMessage respMsg = myClient.Post(searchURL.Uri.ToString(), content);
+                    if (respMsg == null)
+                        return;
+                    string outStr = respMsg.Content.ReadAsStringAsync().Result;
+                }
+
+                // Updating sharing for item
+                searchURL.Path = "sharing/rest/content/users/" + userName + "/items/" + itemId + "/share";
+                postData.Clear();
+                postData.Add(new KeyValuePair<string, string>("f", "json"));
+                postData.Add(new KeyValuePair<string, string>("everyone", "true"));
+                postData.Add(new KeyValuePair<string, string>("groups", "a4474cec000e46869a9980930c7c9bd0"));
+                using (HttpContent content = new FormUrlEncodedContent(postData))
+                {
+                    EsriHttpResponseMessage respMsg = myClient.Post(searchURL.Uri.ToString(), content);
+                    if (respMsg == null)
+                        return;
+                    string outStr = respMsg.Content.ReadAsStringAsync().Result;
+                }
+            }
+
+        }
     }
 }
