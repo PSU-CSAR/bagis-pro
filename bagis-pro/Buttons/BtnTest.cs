@@ -25,12 +25,11 @@ namespace bagis_pro.Buttons
 {
     internal class BtnTest : Button
     {
-        protected override async void OnClick()
+        protected override void OnClick()
         {
             //int test = await AddPortalItem();
             Webservices ws = new Webservices();
-            ws.UpdateItemAsync();
-
+            ws.UpdateAoiItemsAsync("13202000:ID:USGS");
         }
 
         private async Task<int> AddPortalItem()

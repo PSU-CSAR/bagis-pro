@@ -334,9 +334,40 @@ namespace bagis_pro
             }
         }
 
-        public async void UpdateItemAsync()
+        public async void UpdateAoiItemsAsync(string stationTriplet)
         {
-            UriBuilder searchURL = new UriBuilder(ArcGISPortalManager.Current.GetActivePortal().PortalUri)
+            string nwccAoiName = "";
+            string huc = "";
+            string aoiSummaryTag="";
+            BA_ReturnCode success = GeneralTools.LoadBatchToolSettings();
+            if (success != BA_ReturnCode.Success)
+            {
+                MessageBox.Show("Batch tool settings could not be loaded. The portal files cannot be updated!!");
+                return;
+            }
+            string[] arrResults = await GeneralTools.QueryMasterAoiProperties(stationTriplet);
+            if (arrResults.Length == 4)
+            {
+                nwccAoiName = arrResults[0].Trim();
+                nwccAoiName = nwccAoiName.Replace(" ", "_");
+                huc = arrResults[3];
+                string[] pieces = stationTriplet.Split(':');
+                if (pieces.Length == 3)
+                {
+                    aoiSummaryTag = arrResults[0].Trim() + " " + pieces[0] + " " + pieces[1];
+                }
+                else
+                {
+                    MessageBox.Show("Unable to parse station triplet. The portal files cannot be updated!!");
+                    return;
+                }
+            }
+            else
+            {
+                MessageBox.Show("Unable to retrieve AOI properties from Master. The portal files cannot be updated!!");
+                return;
+            }
+                UriBuilder searchURL = new UriBuilder(ArcGISPortalManager.Current.GetActivePortal().PortalUri)
             {
                 Path = "sharing/rest/portals/self",
                 Query = "f=json"
@@ -352,10 +383,9 @@ namespace bagis_pro
                 return;
             string userName = portalSelf.user.username;
 
-            string aoiName = "Boise_R_nr_Boise";
             searchURL.Path = "sharing/rest/search";
             string pdfDocs = "(type:\"PDF\")";
-            string titleAoi = "(title:\"" + aoiName + "\")";
+            string titleAoi = "(title:\"" + nwccAoiName + "\")";
             searchURL.Query = string.Format("q=owner:{0} {1} {2} &f=json", userName, titleAoi, pdfDocs);
             var searchResponse = httpClient.Get(searchURL.Uri.ToString());
             dynamic resultItems = JObject.Parse(await searchResponse.Content.ReadAsStringAsync());
@@ -363,78 +393,113 @@ namespace bagis_pro
             long numberOfTotalItems = resultItems.total.Value;
             if (numberOfTotalItems == 0)
                 return;
-            string fileName = aoiName + "_overview.pdf";
-            List<dynamic> resultItemList = new List<dynamic>();
-            resultItemList.AddRange(resultItems.results);
-            string itemId = "";
-            List<string> tags = null;
-            foreach (var item in resultItemList)
+            //string fileName = aoiName + "_overview.pdf";
+            List<string> allFileNames = new List<string>
             {
-                string itemFile = (string)item.name;
-                if (itemFile.Equals(fileName))
-                {
-                    itemId = (string)item.id;
-                    tags = item.tags.ToObject<List<string>>();
-                }
-            }
-
-            string strCredits = "Basin Analysis GIS is developed under the collaboration between NRCS NWCC " +
-                "and the Center for Spatial Analysis &Research at Portland State University.";
-            string strDescription = "This report was generated in Basin Analysis GIS (BAGIS). See the " +
-                "<a href = 'https://nrcs.maps.arcgis.com/sharing/rest/content/items/b121d25cc73c4b30a700b8d2d2ea23bc/data' " +
-                "target = '_blank' rel = 'nofollow ugc noopener noreferrer' > Basin Analysis Report Users Manual</ a > " +
-                "for a complete description of the report. Please contact NWCC(<a href = 'https://www.wcc.nrcs.usda.gov/' target = '_blank' " +
-                "rel = 'nofollow ugc noopener noreferrer' >https://www.wcc.nrcs.usda.gov/</a>) for any questions.";
-            string strLicense = "Public domain data. See <a href='https://www.wcc.nrcs.usda.gov/disclaimer.htm' target='_blank' " +
-                "rel='nofollow ugc noopener noreferrer'>https://www.wcc.nrcs.usda.gov/disclaimer.htm</a> for disclaimer.";
+                nwccAoiName + "_" + Constants.FILE_EXPORT_OVERVIEW_PDF,
+                nwccAoiName + "_" + Constants.FILE_EXPORT_MAP_ELEV_PDF,
+                nwccAoiName + "_" + Constants.FILE_EXPORT_ASPECT_DISTRIBUTION_PDF,
+                nwccAoiName + "_" + Constants.FILE_EXPORT_SLOPE_DISTRIBUTION_PDF,
+                nwccAoiName + "_" + Constants.FILE_EXPORT_SITE_REPRESENTATION_PDF,
+                nwccAoiName + "_" + Constants.FILE_EXPORT_PRECIPITATION_DISTRIBUTION_PDF,
+                nwccAoiName + "_" + Constants.FILE_EXPORT_SEASONAL_PRECIP_DISTRIBUTION_PDF,
+                nwccAoiName + "_" + Constants.FILE_EXPORT_SNODAS_SWE_PDF,
+                nwccAoiName + "_" + Constants.FILE_EXPORT_POTENTIAL_SITE_ANALYSIS_PDF,
+                nwccAoiName + "_" + Constants.FILE_EXPORT_WATERSHED_REPORT_PDF
+            };
             List<string> requiredTags = new List<string>()
             {
                 "GIS",
                 "BAGIS",
                 "SNOTEL",
-                "eBagis"
+                "eBagis",
+                huc, 
+                aoiSummaryTag
             };
+            List<dynamic> resultItemList = new List<dynamic>();
+            resultItemList.AddRange(resultItems.results);
+            foreach (var item in resultItemList)
+            {
+                string itemFile = (string)item.name;
+                if (allFileNames.Contains(itemFile))
+                {
+                    string itemId = (string)item.id;
+                    string strTitle = (string)item.title;
+                    List<string> tags = item.tags.ToObject<List<string>>();
+                    UpdateItem(userName, itemId, strTitle, requiredTags, tags);
+                }
+            }
+        }
+
+        public void UpdateItem(string userName, string itemId, string strTitle, List<string> requiredTags, List<string> tags)
+        {
+            string strCredits = "Basin Analysis GIS is developed under the collaboration between NRCS NWCC " +
+                "and the Center for Spatial Analysis &Research at Portland State University.";
+            string strDescription = "This report was generated in Basin Analysis GIS (BAGIS). See the " +
+                "<a href=\"https://nrcs.maps.arcgis.com/sharing/rest/content/items/b121d25cc73c4b30a700b8d2d2ea23bc/data\" " +
+                "target=\"_blank\">Basin Analysis Report Users Manual</a> for a complete description of the report. Please contact NWCC " +
+                "(<a href=\"https://www.wcc.nrcs.usda.gov/\" target=\"_blank\">https://www.wcc.nrcs.usda.gov/</a>) for any questions.";
+            string strLicense = "Public domain data. See <a href='https://www.wcc.nrcs.usda.gov/disclaimer.htm' target='_blank' " +
+                "rel='nofollow ugc noopener noreferrer'>https://www.wcc.nrcs.usda.gov/disclaimer.htm</a> for disclaimer.";
             if (tags == null)
             {
                 tags = new List<string>();  // Ensure tags is never null to avoid exception
             }
             List<string> mergedTags = requiredTags.Union(tags).ToList();
             string strMerged = string.Join(",", mergedTags);
-            if (! string.IsNullOrEmpty(itemId))
+
+            // Generate summary from title
+            string strSummary = "";
+            if (!string.IsNullOrEmpty(strTitle))
             {
-                // Updating fields on item
-                searchURL.Path = "sharing/rest/content/users/" + userName + "/items/" + itemId + "/update";
-                EsriHttpClient myClient = new EsriHttpClient();
-                var postData = new List<KeyValuePair<string, string>>();
-                postData.Add(new KeyValuePair<string, string>("f", "json"));
-                postData.Add(new KeyValuePair<string, string>("description", strDescription));
-                postData.Add(new KeyValuePair<string, string>("licenseInfo", strLicense));
-                postData.Add(new KeyValuePair<string, string>("accessInformation", strCredits));
-                postData.Add(new KeyValuePair<string, string>("tags", strMerged));
-
-                using (HttpContent content = new FormUrlEncodedContent(postData))
+                string[] pieces = strTitle.Split(new char[0]);
+                if (pieces.Length > 0)
                 {
-                    EsriHttpResponseMessage respMsg = myClient.Post(searchURL.Uri.ToString(), content);
-                    if (respMsg == null)
-                        return;
-                    string outStr = respMsg.Content.ReadAsStringAsync().Result;
+                    strSummary = pieces[0];
+                }
+                if (pieces.Length > 1)
+                {
+                    for (int i = 1; i < pieces.Length; i++)
+                    {
+                        strSummary = strSummary + " " + pieces[i].ToUpper();
+                    }
                 }
 
-                // Updating sharing for item
-                searchURL.Path = "sharing/rest/content/users/" + userName + "/items/" + itemId + "/share";
-                postData.Clear();
-                postData.Add(new KeyValuePair<string, string>("f", "json"));
-                postData.Add(new KeyValuePair<string, string>("everyone", "true"));
-                postData.Add(new KeyValuePair<string, string>("groups", "a4474cec000e46869a9980930c7c9bd0"));
-                using (HttpContent content = new FormUrlEncodedContent(postData))
-                {
-                    EsriHttpResponseMessage respMsg = myClient.Post(searchURL.Uri.ToString(), content);
-                    if (respMsg == null)
-                        return;
-                    string outStr = respMsg.Content.ReadAsStringAsync().Result;
-                }
             }
 
+            // Updating fields on item
+            UriBuilder searchURL = new UriBuilder(ArcGISPortalManager.Current.GetActivePortal().PortalUri);
+            searchURL.Path = "sharing/rest/content/users/" + userName + "/items/" + itemId + "/update";
+            EsriHttpClient myClient = new EsriHttpClient();
+            var postData = new List<KeyValuePair<string, string>>();
+            postData.Add(new KeyValuePair<string, string>("f", "json"));
+            postData.Add(new KeyValuePair<string, string>("description", strDescription));
+            postData.Add(new KeyValuePair<string, string>("snippet", strSummary));
+            postData.Add(new KeyValuePair<string, string>("licenseInfo", strLicense));
+            postData.Add(new KeyValuePair<string, string>("accessInformation", strCredits));
+            postData.Add(new KeyValuePair<string, string>("tags", strMerged));
+
+            using (HttpContent content = new FormUrlEncodedContent(postData))
+            {
+                EsriHttpResponseMessage respMsg = myClient.Post(searchURL.Uri.ToString(), content);
+                if (respMsg == null)
+                    return;
+                string outStr = respMsg.Content.ReadAsStringAsync().Result;
+            }
+
+            // Updating sharing for item
+            searchURL.Path = "sharing/rest/content/users/" + userName + "/items/" + itemId + "/share";
+            postData.Clear();
+            postData.Add(new KeyValuePair<string, string>("f", "json"));
+            postData.Add(new KeyValuePair<string, string>("everyone", "true"));
+            postData.Add(new KeyValuePair<string, string>("groups", "a4474cec000e46869a9980930c7c9bd0"));
+            using (HttpContent content = new FormUrlEncodedContent(postData))
+            {
+                EsriHttpResponseMessage respMsg = myClient.Post(searchURL.Uri.ToString(), content);
+                if (respMsg == null)
+                    return;
+                string outStr = respMsg.Content.ReadAsStringAsync().Result;
+            }
         }
     }
 }

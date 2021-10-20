@@ -1088,58 +1088,7 @@ namespace bagis_pro
             var layersPane = (DockpaneLayersViewModel)FrameworkApplication.DockPaneManager.Find("bagis_pro_DockpaneLayers");
             try
             {
-                // Load batch tool settings; Make sure we have the central BAGIS folder
-                string strSettingsPath = GetBagisSettingsPath();
-                if (!string.IsNullOrEmpty(strSettingsPath))
-                {
-                    string strTempPath = strSettingsPath + @"\" + Constants.FOLDER_SETTINGS;
-                    if (!Directory.Exists(strTempPath))
-                    {
-                        DirectoryInfo dirInfo = Directory.CreateDirectory(Constants.FOLDER_SETTINGS);
-                    }
-                    strSettingsPath = strTempPath;
-
-                }
-                // Check to see if batch tool settings are already there
-                if (!File.Exists(strSettingsPath + @"\" + Constants.FILE_BATCH_TOOL_SETTINGS))
-                {
-                    Webservices ws = new Webservices();
-                    var success = Task.Run(() => ws.DownloadBatchSettingsAsync(Module1.Current.DefaultEbagisServer,
-                        strSettingsPath + @"\" + Constants.FILE_BATCH_TOOL_SETTINGS));
-                    if ((BA_ReturnCode)success.Result == BA_ReturnCode.Success)
-                    {
-                        Module1.Current.ModuleLogManager.LogDebug(nameof(SetAoiAsync),
-                            "Copied default batch tool settings to BAGIS folder");
-                    }
-                    else
-                    {
-                        Module1.Current.ModuleLogManager.LogError(nameof(SetAoiAsync),
-                            "Unable to copy default batch tool settings to BAGIS folder");
-                    }
-
-                }
-                // Load batch tool settings from file
-                if (File.Exists(strSettingsPath + @"\" + Constants.FILE_BATCH_TOOL_SETTINGS))
-                {
-                    // read JSON directly from a file
-                    using (FileStream fs = File.OpenRead(strSettingsPath + @"\" + Constants.FILE_BATCH_TOOL_SETTINGS))
-                    {
-                        using (JsonTextReader reader = new JsonTextReader(new StreamReader(fs)))
-                        {
-                            dynamic oBatchSettings = (JObject)JToken.ReadFrom(reader);
-                            if (oBatchSettings != null)
-                            {
-                                Module1.Current.BatchToolSettings = oBatchSettings;
-                            }
-                            string server = oBatchSettings.EBagisServer;
-                        }
-                    }
-                }
-                else
-                {
-                    Module1.Current.ModuleLogManager.LogError(nameof(SetAoiAsync),
-                        "Unable to locate batch tool settings in BAGIS folder");
-                }
+                BA_ReturnCode success = LoadBatchToolSettings();
 
                 // Set logger to AOI directory
                 string logFolderName = strAoiPath + "\\" + Constants.FOLDER_LOGS;
@@ -2477,6 +2426,64 @@ namespace bagis_pro
                 return success;
             }
             return success;
+        }
+
+        public static BA_ReturnCode LoadBatchToolSettings()
+        {
+            // Load batch tool settings; Make sure we have the central BAGIS folder
+            string strSettingsPath = GetBagisSettingsPath();
+            if (!string.IsNullOrEmpty(strSettingsPath))
+            {
+                string strTempPath = strSettingsPath + @"\" + Constants.FOLDER_SETTINGS;
+                if (!Directory.Exists(strTempPath))
+                {
+                    DirectoryInfo dirInfo = Directory.CreateDirectory(Constants.FOLDER_SETTINGS);
+                }
+                strSettingsPath = strTempPath;
+
+            }
+            // Check to see if batch tool settings are already there
+            if (!File.Exists(strSettingsPath + @"\" + Constants.FILE_BATCH_TOOL_SETTINGS))
+            {
+                Webservices ws = new Webservices();
+                var success = Task.Run(() => ws.DownloadBatchSettingsAsync(Module1.Current.DefaultEbagisServer,
+                    strSettingsPath + @"\" + Constants.FILE_BATCH_TOOL_SETTINGS));
+                if ((BA_ReturnCode)success.Result == BA_ReturnCode.Success)
+                {
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(LoadBatchToolSettings),
+                        "Copied default batch tool settings to BAGIS folder");
+                }
+                else
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(LoadBatchToolSettings),
+                        "Unable to copy default batch tool settings to BAGIS folder");
+                }
+
+            }
+            // Load batch tool settings from file
+            if (File.Exists(strSettingsPath + @"\" + Constants.FILE_BATCH_TOOL_SETTINGS))
+            {
+                // read JSON directly from a file
+                using (FileStream fs = File.OpenRead(strSettingsPath + @"\" + Constants.FILE_BATCH_TOOL_SETTINGS))
+                {
+                    using (JsonTextReader reader = new JsonTextReader(new StreamReader(fs)))
+                    {
+                        dynamic oBatchSettings = (JObject)JToken.ReadFrom(reader);
+                        if (oBatchSettings != null)
+                        {
+                            Module1.Current.BatchToolSettings = oBatchSettings;
+                        }
+                        string server = oBatchSettings.EBagisServer;
+                    }
+                }
+                return BA_ReturnCode.Success;
+            }
+            else
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(LoadBatchToolSettings),
+                    "Unable to locate batch tool settings in BAGIS folder");
+                return BA_ReturnCode.ReadError;
+            }
         }
     }
 
