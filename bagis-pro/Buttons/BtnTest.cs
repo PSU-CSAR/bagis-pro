@@ -28,8 +28,19 @@ namespace bagis_pro.Buttons
         protected override void OnClick()
         {
             //int test = await AddPortalItem();
-            Webservices ws = new Webservices();
-            ws.UpdateAoiItemsAsync("13202000:ID:USGS");
+            string stationTriplet = "Example: 13202000:ID:USGS";
+            System.Windows.Forms.DialogResult res = GeneralTools.ShowInputDialog("Enter station triplet", ref stationTriplet, 400, 80);
+            if (res == System.Windows.Forms.DialogResult.OK)
+            {
+                string[] pieces = stationTriplet.Split(':');
+                if (pieces.Length != 3)
+                {
+                    MessageBox.Show("Please enter a valid station triplet!");
+                    return;
+                }
+                Webservices ws = new Webservices();
+                ws.UpdateAoiItemsAsync(stationTriplet.Trim());
+            }
         }
 
         private async Task<int> AddPortalItem()

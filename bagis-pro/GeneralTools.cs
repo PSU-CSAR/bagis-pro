@@ -2485,6 +2485,46 @@ namespace bagis_pro
                 return BA_ReturnCode.ReadError;
             }
         }
+
+        public static System.Windows.Forms.DialogResult ShowInputDialog(string name, ref string input, int width, int height)
+        {
+            System.Drawing.Size size = new System.Drawing.Size(width, height);
+            System.Windows.Forms.Form inputBox = new System.Windows.Forms.Form
+            {
+                FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog,
+                ClientSize = size,
+                Text = name
+            };
+
+            System.Windows.Forms.TextBox textBox = new System.Windows.Forms.TextBox();
+            textBox.Size = new System.Drawing.Size(size.Width - 10, 23);
+            textBox.Location = new System.Drawing.Point(5, 5);
+            textBox.Text = input;
+            inputBox.Controls.Add(textBox);
+
+            System.Windows.Forms.Button okButton = new System.Windows.Forms.Button();
+            okButton.DialogResult = System.Windows.Forms.DialogResult.OK;
+            okButton.Name = "okButton";
+            okButton.Size = new System.Drawing.Size(75, 23);
+            okButton.Text = "&OK";
+            okButton.Location = new System.Drawing.Point(size.Width - 80 - 80, 39);
+            inputBox.Controls.Add(okButton);
+
+            System.Windows.Forms.Button cancelButton = new System.Windows.Forms.Button();
+            cancelButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
+            cancelButton.Name = "cancelButton";
+            cancelButton.Size = new System.Drawing.Size(75, 23);
+            cancelButton.Text = "&Cancel";
+            cancelButton.Location = new System.Drawing.Point(size.Width - 80, 39);
+            inputBox.Controls.Add(cancelButton);
+
+            inputBox.AcceptButton = okButton;
+            inputBox.CancelButton = cancelButton;
+
+            System.Windows.Forms.DialogResult result = inputBox.ShowDialog();
+            input = textBox.Text;
+            return result;
+        }
     }
 
 }
