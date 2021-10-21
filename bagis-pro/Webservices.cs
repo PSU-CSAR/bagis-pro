@@ -334,7 +334,7 @@ namespace bagis_pro
             }
         }
 
-        public async void UpdateAoiItemsAsync(string stationTriplet)
+        public async Task<BA_ReturnCode> UpdateAoiItemsAsync(string stationTriplet)
         {
             string nwccAoiName = "";
             string huc = "";
@@ -343,7 +343,7 @@ namespace bagis_pro
             if (success != BA_ReturnCode.Success)
             {
                 MessageBox.Show("Batch tool settings could not be loaded. The portal files cannot be updated!!");
-                return;
+                return success;
             }
             string[] arrResults = await GeneralTools.QueryMasterAoiProperties(stationTriplet);
             if (arrResults.Length == 4)
@@ -359,13 +359,13 @@ namespace bagis_pro
                 else
                 {
                     MessageBox.Show("Unable to parse station triplet. The portal files cannot be updated!!");
-                    return;
+                    return BA_ReturnCode.ReadError;
                 }
             }
             else
             {
                 MessageBox.Show("Unable to retrieve AOI properties from Master. The portal files cannot be updated!!");
-                return;
+                return BA_ReturnCode.ReadError;
             }
                 UriBuilder searchURL = new UriBuilder(ArcGISPortalManager.Current.GetActivePortal().PortalUri)
             {
@@ -380,7 +380,7 @@ namespace bagis_pro
             // if the response doesn't contain the user information then it is essentially
             // an anonymous request against the portal
             if (portalSelf.user == null)
-                return;
+                return BA_ReturnCode.NotSupportedOperation;
             string userName = portalSelf.user.username;
 
             searchURL.Path = "sharing/rest/search";
@@ -392,7 +392,7 @@ namespace bagis_pro
 
             long numberOfTotalItems = resultItems.total.Value;
             if (numberOfTotalItems == 0)
-                return;
+                return BA_ReturnCode.ReadError;
             //string fileName = aoiName + "_overview.pdf";
             List<string> allFileNames = new List<string>
             {
@@ -429,6 +429,7 @@ namespace bagis_pro
                     UpdateItem(userName, itemId, strTitle, requiredTags, tags);
                 }
             }
+            return BA_ReturnCode.Success;
         }
 
         public void UpdateItem(string userName, string itemId, string strTitle, List<string> requiredTags, List<string> tags)

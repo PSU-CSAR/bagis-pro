@@ -25,7 +25,7 @@ namespace bagis_pro.Buttons
 {
     internal class BtnTest : Button
     {
-        protected override void OnClick()
+        protected async override void OnClick()
         {
             //int test = await AddPortalItem();
             string stationTriplet = "Example: 13202000:ID:USGS";
@@ -39,7 +39,15 @@ namespace bagis_pro.Buttons
                     return;
                 }
                 Webservices ws = new Webservices();
-                ws.UpdateAoiItemsAsync(stationTriplet.Trim());
+                var success = await ws.UpdateAoiItemsAsync(stationTriplet.Trim());
+                if (success == BA_ReturnCode.Success)
+                {
+                    MessageBox.Show("PDF items successfully updated for " + stationTriplet, "BAGIS-PRO");
+                }
+                else
+                {
+                    MessageBox.Show("PDF item update filed for " + stationTriplet, "BAGIS-PRO");
+                }
             }
         }
 
