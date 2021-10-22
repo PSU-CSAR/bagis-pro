@@ -115,7 +115,7 @@ namespace bagis_pro
                 string annualRunoffDataYear = (string)Module1.Current.BatchToolSettings.AnnualRunoffDataYear;
 
                 Webservices ws = new Webservices();
-                var success = await ws.GetPortalFile(Constants.PORTAL_ORGANIZATION, documentId, Module1.Current.SettingsPath + "\\" + Constants.FOLDER_SETTINGS +
+                var success = await ws.GetPortalFile(BA_Objects.AGSPortalProperties.PORTAL_ORGANIZATION, documentId, Module1.Current.SettingsPath + "\\" + Constants.FOLDER_SETTINGS +
                     "\\" + Constants.FILE_ANNUAL_RUNOFF_CSV);
 
                 // Retrieve AOI Analysis object with settings for future use
@@ -190,9 +190,15 @@ namespace bagis_pro
                 if (oAnalysis != null)
                 {
                     siteElevRange = oAnalysis.UpperRange;
-                    siteElevRangeUnits = oAnalysis.ElevUnitsText.ToLower();
+                    if (!string.IsNullOrEmpty(oAnalysis.ElevUnitsText))
+                    {
+                        siteElevRangeUnits = oAnalysis.ElevUnitsText.ToLower();
+                    }
                     siteBufferDistance = oAnalysis.BufferDistance;
-                    siteBufferDistanceUnits = oAnalysis.BufferUnitsText.ToLower();
+                    if (!string.IsNullOrEmpty(oAnalysis.BufferUnitsText))
+                    {
+                        siteElevRangeUnits = oAnalysis.BufferUnitsText.ToLower();
+                    }
                 }
 
                 // Calculating percent represented area

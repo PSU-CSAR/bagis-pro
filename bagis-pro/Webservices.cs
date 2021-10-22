@@ -367,26 +367,46 @@ namespace bagis_pro
                 MessageBox.Show("Unable to retrieve AOI properties from Master. The portal files cannot be updated!!");
                 return BA_ReturnCode.ReadError;
             }
-                UriBuilder searchURL = new UriBuilder(ArcGISPortalManager.Current.GetActivePortal().PortalUri)
+            // Ensure that the user is signed into the NRCS Portal 
+            BA_Objects.AGSPortalProperties portalProps = new BA_Objects.AGSPortalProperties();
+            var info = await ArcGISPortalManager.Current.GetActivePortal().GetPortalInfoAsync();
+            if (info.OrganizationName.Equals(BA_Objects.AGSPortalProperties.PORTAL_ORGANIZATION))
             {
-                Path = "sharing/rest/portals/self",
-                Query = "f=json"
-            };
-            EsriHttpClient httpClient = new EsriHttpClient();
-            EsriHttpResponseMessage response = httpClient.Get(searchURL.Uri.ToString());
-            string strToken = ArcGISPortalManager.Current.GetActivePortal().GetToken();
-
-            dynamic portalSelf = JObject.Parse(await response.Content.ReadAsStringAsync());
-            // if the response doesn't contain the user information then it is essentially
-            // an anonymous request against the portal
-            if (portalSelf.user == null)
+                portalProps.IsNrcsPortal = true;
+            }
+            await QueuedTask.Run(() =>
+            {
+                portalProps.IsSignedIn = ArcGISPortalManager.Current.GetActivePortal().IsSignedOn();
+                portalProps.UserName = ArcGISPortalManager.Current.GetActivePortal().GetSignOnUsername();
+                if (portalProps.UserName.Equals(BA_Objects.AGSPortalProperties.NWCC_NRCS_USER))
+                {
+                    portalProps.IsNrcsUser = true;
+                }
+            });
+            if (!portalProps.IsNrcsPortal)
+            {
+                MessageBox.Show("Please sign into the USDA NRCS ArcGIS Online portal before trying to update items!!", "BAGIS-PRO");
                 return BA_ReturnCode.NotSupportedOperation;
-            string userName = portalSelf.user.username;
+            }
+            if (!portalProps.IsSignedIn)
+            {
+                var result = await ArcGISPortalManager.Current.GetActivePortal().SignInAsync();
+                if (result.success == false)
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(GetPortalFile),
+                        "Unable to signIn to the NRCS Portal. Can you connect to the portal in the ArcGIS Pro 'Portals' tab? Items cannot be updated ! " +
+                        "ArcGIS Pro will use a previous version of the file if it exists");
+                    return BA_ReturnCode.NotSupportedOperation;
+                }
+            }
 
+            UriBuilder searchURL = new UriBuilder(ArcGISPortalManager.Current.GetActivePortal().PortalUri);
+
+            EsriHttpClient httpClient = new EsriHttpClient();
             searchURL.Path = "sharing/rest/search";
             string pdfDocs = "(type:\"PDF\")";
             string titleAoi = "(title:\"" + nwccAoiName + "\")";
-            searchURL.Query = string.Format("q=owner:{0} {1} {2} &f=json", userName, titleAoi, pdfDocs);
+            searchURL.Query = string.Format("q=owner:{0} {1} {2} &f=json", portalProps.UserName, titleAoi, pdfDocs);
             var searchResponse = httpClient.Get(searchURL.Uri.ToString());
             dynamic resultItems = JObject.Parse(await searchResponse.Content.ReadAsStringAsync());
 
@@ -426,7 +446,7 @@ namespace bagis_pro
                     string itemId = (string)item.id;
                     string strTitle = (string)item.title;
                     List<string> tags = item.tags.ToObject<List<string>>();
-                    UpdateItem(userName, itemId, strTitle, requiredTags, tags);
+                    UpdateItem(portalProps.UserName, itemId, strTitle, requiredTags, tags);
                 }
             }
             return BA_ReturnCode.Success;

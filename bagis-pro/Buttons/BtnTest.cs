@@ -46,7 +46,7 @@ namespace bagis_pro.Buttons
                 }
                 else
                 {
-                    MessageBox.Show("PDF item update filed for " + stationTriplet, "BAGIS-PRO");
+                    MessageBox.Show("PDF item update failed for " + stationTriplet + "!!", "BAGIS-PRO");
                 }
             }
         }

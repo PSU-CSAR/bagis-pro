@@ -40,7 +40,8 @@ namespace bagis_pro
                     bHasSnowCourse = true;
                 if (!bHasSnotel && !bHasSnowCourse)
                 {
-                    MessageBox.Show("No SNOTEL or Snow Course layers found for AOI. Site Layers cannot be generated!!");
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(GenerateSiteLayersAsync),
+                        "No SNOTEL or Snow Course layers found for AOI. Site Layers cannot be generated!!");
                     return success;
                 }
 

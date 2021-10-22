@@ -332,8 +332,6 @@ namespace bagis_pro
         public static int EXCEL_LARGE_CHART_WIDTH = 800;
         public static int EXCEL_LARGE_CHART_HEIGHT = 500;
 
-        public static string PORTAL_ORGANIZATION = "Natural Resources Conservation Service";
-
     }
 
 }
