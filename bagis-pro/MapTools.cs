@@ -2353,7 +2353,7 @@ namespace bagis_pro
             return success;
         }
 
-        private static async Task<double[]> SWEUnitsConversionAsync(string strDataType, int idxDefaultMonth)
+        public static async Task<double[]> SWEUnitsConversionAsync(string strDataType, int idxDefaultMonth)
         {
             double[] arrReturnValues = new double[4];
             IDictionary<string, BA_Objects.DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
