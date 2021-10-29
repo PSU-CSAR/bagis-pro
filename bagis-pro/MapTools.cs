@@ -239,8 +239,8 @@ namespace bagis_pro
                     if (success == BA_ReturnCode.Success)
                         Module1.ActivateState("MapButtonPalette_BtnAspect_State");
 
-                    // add SNOTEL SWE layer
-                    int idxDefaultMonth = 5;    // April
+                    // add SNOTEL SWE zones layer
+                    int idxDefaultMonth = 6;    // May
                     success = await DisplaySWEMapAsync(idxDefaultMonth);
 
                     // add SWE delta layer
@@ -877,6 +877,56 @@ namespace bagis_pro
             return BA_ReturnCode.Success;
         }
 
+        public static async Task<BA_ReturnCode> DisplayRasterWithCustomColorsAsync(Uri rasterUri, string displayName,
+            string fieldName, int[,] arrColors, int transparency, bool isVisible)
+        {
+            // parse the uri for the folder and file
+            string strFileName = null;
+            string strFolderPath = null;
+            if (rasterUri.IsFile)
+            {
+                strFileName = System.IO.Path.GetFileName(rasterUri.LocalPath);
+                strFolderPath = System.IO.Path.GetDirectoryName(rasterUri.LocalPath);
+            }
+            // Check to see if the raster exists before trying to add it
+            bool bExists = await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(strFolderPath), strFileName);
+            if (!bExists)
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(DisplayRasterWithCustomColorsAsync),
+                    "Unable to add locate raster!!");
+                return BA_ReturnCode.ReadError;
+            }
+            // Open the requested raster so we know it exists; return if it doesn't
+            await QueuedTask.Run(async () =>
+            {
+                RasterLayer rasterLayer = null;
+                // Create the raster layer on the active map
+                await QueuedTask.Run(() =>
+                {
+                    try
+                    {
+                        rasterLayer = (RasterLayer)LayerFactory.Instance.CreateLayer(rasterUri, MapView.Active.Map);
+                    }
+                    catch (Exception e)
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(DisplayRasterWithCustomColorsAsync),
+                            e.Message);
+                    }
+                });
+
+                // Set raster layer transparency and name
+                if (rasterLayer != null)
+                {
+                    rasterLayer.SetTransparency(transparency);
+                    rasterLayer.SetName(displayName);
+                    rasterLayer.SetVisibility(isVisible);
+
+                    await MapTools.SetToCustomUniqueValueColorizer(displayName, "NAME", Constants.ARR_SWE_COLORS);
+                }
+            });
+            return BA_ReturnCode.Success;
+        }
+
         public static async Task<BA_ReturnCode> DisplayRasterWithClassifyAsync(Uri rasterUri, string displayName, string styleCategory, 
             string styleName, string fieldName, int transparency, ClassificationMethod classificationMethod, int numClasses, bool isVisible)
         {
@@ -1057,6 +1107,29 @@ namespace bagis_pro
 
             // Creates a new UV Colorizer Definition using the default constructor.
             UniqueValueColorizerDefinition UVColorizerDef = new UniqueValueColorizerDefinition(fieldName, cimColorRamp);
+
+            // Creates a new UV colorizer using the colorizer definition created above.
+            CIMRasterUniqueValueColorizer newColorizer = await rasterLayer.CreateColorizerAsync(UVColorizerDef) as CIMRasterUniqueValueColorizer;
+
+            // Sets the newly created colorizer on the layer.
+            await QueuedTask.Run(() =>
+            {
+                rasterLayer.SetColorizer(MapTools.RecalculateColorizer(newColorizer));
+            });
+        }
+
+        public static async Task SetToCustomUniqueValueColorizer(string layerName, string fieldName, int[,] arrColors)
+        {
+            // Get the layer we want to symbolize from the map
+            Layer oLayer =
+                MapView.Active.Map.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(layerName, StringComparison.CurrentCultureIgnoreCase));
+            if (oLayer == null)
+                return;
+            RasterLayer rasterLayer = (RasterLayer)oLayer;
+
+
+            // Creates a uniqueVAlueColorizer definition using our colors
+            UniqueValueColorizerDefinition UVColorizerDef = CreateUniqueValueColorizerFromScratch(fieldName, arrColors);
 
             // Creates a new UV colorizer using the colorizer definition created above.
             CIMRasterUniqueValueColorizer newColorizer = await rasterLayer.CreateColorizerAsync(UVColorizerDef) as CIMRasterUniqueValueColorizer;
@@ -1961,17 +2034,13 @@ namespace bagis_pro
         }
 
         public static async Task<BA_ReturnCode> LoadSweMapAsync(string strRaster, string strNewLayerName,
-                                                                string strTitle, string strFileMapExport, bool bIsDelta)
+                                                                string strTitle, string strFileMapExport)
         {
             RasterDataset rDataset = null;
             Layer oLayer = null;
             Map map = null;
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
-            Uri uriSweGdb = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers));
-            if (bIsDelta)
-            {
-                uriSweGdb = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis));
-            }
+            Uri uriSweGdb = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis));
             Layout layout = null;
             await QueuedTask.Run(() =>
             {
@@ -2015,14 +2084,154 @@ namespace bagis_pro
                         return;
                     }
                 }
-                if (!bIsDelta)
+                oLayer = map.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(Module1.Current.DisplayedSweMap, StringComparison.CurrentCultureIgnoreCase));
+            });
+
+            await QueuedTask.Run(() =>
+            {
+                if (oLayer.CanReplaceDataSource(rDataset))
                 {
-                    oLayer = map.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(Module1.Current.DisplayedSweMap, StringComparison.CurrentCultureIgnoreCase));
+                    oLayer.ReplaceDataSource(rDataset);
+                    oLayer.SetName(strNewLayerName);
+                }
+                GraphicElement textBox = layout.FindElement(Constants.MAPS_TITLE) as GraphicElement;
+                if (textBox != null)
+                {
+                    CIMTextGraphic graphic = (CIMTextGraphic)textBox.GetGraphic();
+                    graphic.Text = strTitle;
+                    textBox.SetGraphic(graphic);
+                }
+                textBox = layout.FindElement(Constants.MAPS_SUBTITLE) as GraphicElement;
+                if (textBox != null)
+                {
+                    CIMTextGraphic graphic = (CIMTextGraphic)textBox.GetGraphic();
+                    graphic.Text = Module1.Current.Aoi.NwccName.ToUpper();
+                    textBox.SetGraphic(graphic);
+                    success = BA_ReturnCode.Success;
+                }
+
+                textBox = layout.FindElement(Constants.MAPS_TEXTBOX1) as GraphicElement;
+                if (textBox != null)
+                {
+                    CIMTextGraphic graphic = (CIMTextGraphic)textBox.GetGraphic();
+                    if (graphic != null)
+                    {        
+                        graphic.Text = "Depth Units = " + Module1.Current.BatchToolSettings.SweDisplayUnits;
+                    }
+                    textBox.SetGraphic(graphic);
+                 }
+            });
+
+            await MapTools.SetToCustomUniqueValueColorizer(strNewLayerName, "NAME", Constants.ARR_SWE_COLORS);
+
+            // toggle layers according to map definition
+            var allLayers = map.Layers.ToList();
+            IList<string> lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
+                                                         Constants.MAPS_HILLSHADE, strNewLayerName};
+            IList<string> lstLegend = new List<string>();
+
+            if (Module1.Current.Aoi.HasSnotel)
+            {
+                lstLayers.Add(Constants.MAPS_SNOTEL);
+                lstLegend.Add(Constants.MAPS_SNOTEL);
+            }
+            if (Module1.Current.Aoi.HasSnowCourse)
+            {
+                lstLayers.Add(Constants.MAPS_SNOW_COURSE);
+                lstLegend.Add(Constants.MAPS_SNOW_COURSE);
+            }
+            lstLegend.Add(strNewLayerName);
+            await QueuedTask.Run(() =>
+            {
+                foreach (var layer in allLayers)
+                {
+                    if (lstLayers.Contains(layer.Name))
+                    {
+                        layer.SetVisibility(true);
+                    }
+                    else
+                    {
+                        layer.SetVisibility(false);
+                    }
+                }
+            });
+
+            success = await MapTools.UpdateLegendAsync(layout, lstLegend);
+
+            if (layout != null)
+            {
+                foreach (var pane in FrameworkApplication.Panes)
+                {
+                    if (!(pane is ILayoutPane layoutPane))  //if not a layout view, continue to the next pane    
+                        continue;
+                    if (layoutPane.LayoutView.Layout == layout) //if there is a match, activate the view  
+                    {
+                        (layoutPane as Pane).Activate();
+                    }
+                }
+            }
+
+            if (success == BA_ReturnCode.Success)
+            {
+                Module1.Current.DisplayedMap = strFileMapExport;
+                Module1.Current.DisplayedSweMap = strNewLayerName;                
+            }
+            return success;
+        }
+
+        public static async Task<BA_ReturnCode> LoadSweDeltaMapAsync(string strRaster, string strNewLayerName,
+                                                                     string strTitle, string strFileMapExport)
+        {
+            RasterDataset rDataset = null;
+            Layer oLayer = null;
+            Map map = null;
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            Uri uriSweGdb = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis));
+            Layout layout = null;
+            await QueuedTask.Run(() =>
+            {
+                Project proj = Project.Current;
+
+                // Set map to Basin Analysis map
+                map = Project.Current.GetItems<MapProjectItem>().FirstOrDefault(m => m.Name.Equals(Constants.MAPS_DEFAULT_MAP_NAME)).GetMap();
+
+                //Get the default map layout
+                LayoutProjectItem lytItem =
+                   proj.GetItems<LayoutProjectItem>()
+                       .FirstOrDefault(m => m.Name.Equals(Constants.MAPS_DEFAULT_LAYOUT_NAME,
+                       StringComparison.CurrentCultureIgnoreCase));
+                if (lytItem != null)
+                {
+                    layout = lytItem.GetLayout();
                 }
                 else
                 {
-                    oLayer = map.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(Module1.Current.DisplayedSweDeltaMap, StringComparison.CurrentCultureIgnoreCase));
+                    Module1.Current.ModuleLogManager.LogError(nameof(LoadSweMapAsync),
+                        "Unable to find default layout!!");
+                    MessageBox.Show("Unable to find default layout. Cannot display maps!");
+                    return;
                 }
+
+                // Opens a file geodatabase. This will open the geodatabase if the folder exists and contains a valid geodatabase.
+                using (Geodatabase geodatabase =
+                    new Geodatabase(new FileGeodatabaseConnectionPath(uriSweGdb)))
+                {
+                    // Use the geodatabase.
+                    try
+                    {
+                        rDataset = geodatabase.OpenDataset<RasterDataset>(strRaster);
+                    }
+                    catch (GeodatabaseTableException e)
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(LoadSweMapAsync),
+                           "Unable to open raster " + strRaster);
+                        Module1.Current.ModuleLogManager.LogError(nameof(LoadSweMapAsync),
+                            "Exception: " + e.Message);
+                        return;
+                    }
+                }
+
+                oLayer = map.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(Module1.Current.DisplayedSweDeltaMap, StringComparison.CurrentCultureIgnoreCase));
             });
 
             await QueuedTask.Run(() =>
@@ -2054,18 +2263,11 @@ namespace bagis_pro
                     CIMTextGraphic graphic = (CIMTextGraphic)textBox.GetGraphic();
                     if (graphic != null)
                     {
-                        if (bIsDelta)
-                        {
-                            graphic.Text = "Depth Units = " + Module1.Current.BatchToolSettings.SweDisplayUnits +
-                                           "\r\nSource = SNODAS";
-                        }
-                        else
-                        {
-                            graphic.Text = "Depth Units = " + Module1.Current.BatchToolSettings.SweDisplayUnits;
-                        }
+                        graphic.Text = "Depth Units = " + Module1.Current.BatchToolSettings.SweDisplayUnits +
+                                       "\r\nSource = SNODAS";
                     }
                     textBox.SetGraphic(graphic);
-                 }
+                }
             });
 
             // toggle layers according to map definition
@@ -2118,15 +2320,7 @@ namespace bagis_pro
             if (success == BA_ReturnCode.Success)
             {
                 Module1.Current.DisplayedMap = strFileMapExport;
-                if (!bIsDelta)
-                {
-                    Module1.Current.DisplayedSweMap = strNewLayerName;
-                }
-                else
-                {
-                    Module1.Current.DisplayedSweDeltaMap = strNewLayerName;
-                }
-                
+                Module1.Current.DisplayedSweDeltaMap = strNewLayerName;
             }
             return success;
         }
@@ -2278,29 +2472,20 @@ namespace bagis_pro
         public static async Task<BA_ReturnCode> DisplaySWEMapAsync(int idxDefaultMonth)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
-            string strPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, true) +
-                Constants.FILES_SNODAS_SWE[idxDefaultMonth];
+            string strPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) +
+                Constants.FILES_SWE_ZONES[idxDefaultMonth];
             Uri uri = new Uri(strPath);
 
-            double[] arrReturnValues = await MapTools.SWEUnitsConversionAsync(Constants.DATA_TYPE_SWE, idxDefaultMonth);
-            double dblStretchMin = arrReturnValues[IDX_STRETCH_MIN];
-            if (dblStretchMin != ERROR_MIN)
-            {
-                double dblStretchMax = arrReturnValues[IDX_STRETCH_MAX];
-                double dblLabelMin = arrReturnValues[IDX_LABEL_MIN];
-                double dblLabelMax = arrReturnValues[IDX_LABEL_MAX];
-
-                success = await MapTools.DisplayStretchRasterWithSymbolAsync(uri, Constants.LAYER_NAMES_SNODAS_SWE[idxDefaultMonth], "ColorBrewer Schemes (RGB)",
-                    "Green-Blue (Continuous)", 30, false, true, dblStretchMin, dblStretchMax, dblLabelMin,
-                    dblLabelMax, true);
-                IList<string> lstLayersFiles = new List<string>();
+            success = await MapTools.DisplayRasterWithCustomColorsAsync(uri, Constants.LAYER_NAMES_SNODAS_SWE[idxDefaultMonth], "NAME", Constants.ARR_SWE_COLORS,
+                30, false);
+            IList<string> lstLayersFiles = new List<string>();
                 if (success == BA_ReturnCode.Success)
                 {
                     await QueuedTask.Run(() =>
                     {
                         // Opens a file geodatabase. This will open the geodatabase if the folder exists and contains a valid geodatabase.
-                        Uri layersUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers));
-                        using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(layersUri)))
+                        Uri analysisUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis));
+                        using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(analysisUri)))
                         {
                             IReadOnlyList<RasterDatasetDefinition> definitions = geodatabase.GetDefinitions<RasterDatasetDefinition>();
                             foreach (RasterDatasetDefinition def in definitions)
@@ -2310,7 +2495,7 @@ namespace bagis_pro
                         }
                     });
                     int idx = 0;
-                    foreach (string strSweName in Constants.FILES_SNODAS_SWE)
+                    foreach (string strSweName in Constants.FILES_SWE_ZONES)
                     {
                         if (lstLayersFiles.Contains(strSweName))
                         {
@@ -2349,7 +2534,6 @@ namespace bagis_pro
                     }
                 }
                 Module1.Current.DisplayedSweMap = Constants.LAYER_NAMES_SNODAS_SWE[idxDefaultMonth];
-            }
             return success;
         }
 
@@ -2805,6 +2989,49 @@ namespace bagis_pro
                 //(newLayoutPane as Pane).Activate();
             }
             return success;
+        }
+
+        private static UniqueValueColorizerDefinition CreateUniqueValueColorizerFromScratch(string fieldName, int[,] colors)
+        {
+            //All of these methods have to be called on the MCT
+
+            var multiPartRamp = new CIMMultipartColorRamp
+            {
+                Weights = new double[colors.GetLength(0)]
+            };
+            CIMColorRamp[] rampValues = new CIMColorRamp[colors.GetLength(0)];
+            for (int i = 0; i < colors.GetLength(0) - 1; i++)
+            {
+                var ramp = new CIMPolarContinuousColorRamp();
+                var r = colors[i, 0];
+                var g = colors[i, 1];
+                var b = colors[i, 2];
+                ramp.FromColor = new CIMRGBColor() { R = r, G = g, B = b };
+                r = colors[i + 1, 0];
+                g = colors[i + 1, 1];
+                b = colors[i + 1, 2];
+                ramp.ToColor = new CIMRGBColor() { R = r, G = g, B = b };
+                ramp.PolarDirection = PolarDirection.Clockwise;
+                rampValues[i] = ramp;
+                multiPartRamp.Weights[i] = 1;
+            }
+            multiPartRamp.Weights[colors.GetLength(0) - 1] = 1;
+
+            multiPartRamp.ColorRamps = rampValues;
+
+            UniqueValueColorizerDefinition UVColorizerDef = new UniqueValueColorizerDefinition(fieldName, multiPartRamp);
+            return UVColorizerDef;
+        }
+
+        private static int[,] getColors()
+        {
+            return new int[,] {{161,255,255,255},
+                                {73,116,220,255},
+                                {164,20,0,255},
+                                {255,255,0,255},
+                                {255,255,255,161},
+                                {220,116,73,255},
+                                {164,255,0,20}};
         }
     }
 }

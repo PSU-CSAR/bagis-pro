@@ -283,9 +283,9 @@ namespace bagis_pro.Buttons
             {
                 Module1.Current.MapFinishedLoading = false;
                 int idxJan = 2;
-                await MapTools.LoadSweMapAsync(Constants.FILES_SNODAS_SWE[idxJan],
+                await MapTools.LoadSweMapAsync(Constants.FILES_SWE_ZONES[idxJan],
                     Constants.LAYER_NAMES_SNODAS_SWE[idxJan], Constants.MAP_TITLES_SNODAS_SWE[idxJan],
-                    Constants.FILE_EXPORT_MAPS_SWE[idxJan], false);
+                    Constants.FILE_EXPORT_MAPS_SWE[idxJan]);
                 Module1.Current.MapFinishedLoading = true;
             }
             catch (Exception e)
@@ -305,9 +305,9 @@ namespace bagis_pro.Buttons
             {
                 Module1.Current.MapFinishedLoading = false;
                 int idxFeb = 3;
-                await MapTools.LoadSweMapAsync(Constants.FILES_SNODAS_SWE[idxFeb],
+                await MapTools.LoadSweMapAsync(Constants.FILES_SWE_ZONES[idxFeb],
                     Constants.LAYER_NAMES_SNODAS_SWE[idxFeb], Constants.MAP_TITLES_SNODAS_SWE[idxFeb],
-                    Constants.FILE_EXPORT_MAPS_SWE[idxFeb], false);
+                    Constants.FILE_EXPORT_MAPS_SWE[idxFeb]);
                 Module1.Current.MapFinishedLoading = true;
             }
             catch (Exception e)
@@ -327,9 +327,9 @@ namespace bagis_pro.Buttons
             {
                 Module1.Current.MapFinishedLoading = false;
                 int idxMar = 4;
-                await MapTools.LoadSweMapAsync(Constants.FILES_SNODAS_SWE[idxMar],
+                await MapTools.LoadSweMapAsync(Constants.FILES_SWE_ZONES[idxMar],
                     Constants.LAYER_NAMES_SNODAS_SWE[idxMar], Constants.MAP_TITLES_SNODAS_SWE[idxMar],
-                    Constants.FILE_EXPORT_MAPS_SWE[idxMar], false);
+                    Constants.FILE_EXPORT_MAPS_SWE[idxMar]);
                 Module1.Current.MapFinishedLoading = true;
             }
             catch (Exception e)
@@ -349,9 +349,9 @@ namespace bagis_pro.Buttons
             {
                 Module1.Current.MapFinishedLoading = false;
                 int idxApr = 5;
-                await MapTools.LoadSweMapAsync(Constants.FILES_SNODAS_SWE[idxApr],
+                await MapTools.LoadSweMapAsync(Constants.FILES_SWE_ZONES[idxApr],
                     Constants.LAYER_NAMES_SNODAS_SWE[idxApr], Constants.MAP_TITLES_SNODAS_SWE[idxApr],
-                    Constants.FILE_EXPORT_MAPS_SWE[idxApr], false);
+                    Constants.FILE_EXPORT_MAPS_SWE[idxApr]);
                 Module1.Current.MapFinishedLoading = true;
             }
             catch (Exception e)
@@ -372,9 +372,9 @@ namespace bagis_pro.Buttons
             {
                 Module1.Current.MapFinishedLoading = false;
                 int idxMay = 6;
-                await MapTools.LoadSweMapAsync(Constants.FILES_SNODAS_SWE[idxMay],
+                await MapTools.LoadSweMapAsync(Constants.FILES_SWE_ZONES[idxMay],
                     Constants.LAYER_NAMES_SNODAS_SWE[idxMay], Constants.MAP_TITLES_SNODAS_SWE[idxMay],
-                    Constants.FILE_EXPORT_MAPS_SWE[idxMay], false);
+                    Constants.FILE_EXPORT_MAPS_SWE[idxMay]);
 
                 Module1.Current.MapFinishedLoading = true;
             }
@@ -395,9 +395,9 @@ namespace bagis_pro.Buttons
             {
                 Module1.Current.MapFinishedLoading = false;
                 int idxJun = 7;
-                await MapTools.LoadSweMapAsync(Constants.FILES_SNODAS_SWE[idxJun],
+                await MapTools.LoadSweMapAsync(Constants.FILES_SWE_ZONES[idxJun],
                     Constants.LAYER_NAMES_SNODAS_SWE[idxJun], Constants.MAP_TITLES_SNODAS_SWE[idxJun],
-                    Constants.FILE_EXPORT_MAPS_SWE[idxJun], false);
+                    Constants.FILE_EXPORT_MAPS_SWE[idxJun]);
 
                 Module1.Current.MapFinishedLoading = true;
             }
@@ -418,9 +418,9 @@ namespace bagis_pro.Buttons
             {
                 Module1.Current.MapFinishedLoading = false;
                 int idxJul = 8;
-                await MapTools.LoadSweMapAsync(Constants.FILES_SNODAS_SWE[idxJul],
+                await MapTools.LoadSweMapAsync(Constants.FILES_SWE_ZONES[idxJul],
                     Constants.LAYER_NAMES_SNODAS_SWE[idxJul], Constants.MAP_TITLES_SNODAS_SWE[idxJul],
-                    Constants.FILE_EXPORT_MAPS_SWE[idxJul], false);
+                    Constants.FILE_EXPORT_MAPS_SWE[idxJul]);
 
                 Module1.Current.MapFinishedLoading = true;
             }
@@ -441,9 +441,9 @@ namespace bagis_pro.Buttons
             {
                 Module1.Current.MapFinishedLoading = false;
                 int idxNov = 0;
-                await MapTools.LoadSweMapAsync(Constants.FILES_SNODAS_SWE[idxNov],
+                await MapTools.LoadSweMapAsync(Constants.FILES_SWE_ZONES[idxNov],
                     Constants.LAYER_NAMES_SNODAS_SWE[idxNov], Constants.MAP_TITLES_SNODAS_SWE[idxNov],
-                    Constants.FILE_EXPORT_MAPS_SWE[idxNov], false);
+                    Constants.FILE_EXPORT_MAPS_SWE[idxNov]);
 
                 Module1.Current.MapFinishedLoading = true;
             }
@@ -464,9 +464,9 @@ namespace bagis_pro.Buttons
             {
                 Module1.Current.MapFinishedLoading = false;
                 int idxDec = 1;
-                await MapTools.LoadSweMapAsync(Constants.FILES_SNODAS_SWE[idxDec],
+                await MapTools.LoadSweMapAsync(Constants.FILES_SWE_ZONES[idxDec],
                     Constants.LAYER_NAMES_SNODAS_SWE[idxDec], Constants.MAP_TITLES_SNODAS_SWE[idxDec],
-                    Constants.FILE_EXPORT_MAPS_SWE[idxDec], false);
+                    Constants.FILE_EXPORT_MAPS_SWE[idxDec]);
 
                 Module1.Current.MapFinishedLoading = true;
             }
@@ -487,9 +487,9 @@ namespace bagis_pro.Buttons
             {
                 Module1.Current.MapFinishedLoading = false;
                 int idxNov = 0;
-                await MapTools.LoadSweMapAsync(Constants.FILES_SWE_DELTA[idxNov],
+                await MapTools.LoadSweDeltaMapAsync(Constants.FILES_SWE_DELTA[idxNov],
                     Constants.LAYER_NAMES_SWE_DELTA[idxNov], Constants.MAP_TITLES_SWE_DELTA[idxNov],
-                    Constants.FILE_EXPORT_MAPS_SWE_DELTA[idxNov], true);
+                    Constants.FILE_EXPORT_MAPS_SWE_DELTA[idxNov]);
 
                 Module1.Current.MapFinishedLoading = true;
             }
@@ -510,9 +510,9 @@ namespace bagis_pro.Buttons
             {
                 Module1.Current.MapFinishedLoading = false;
                 int idxDec = 1;
-                await MapTools.LoadSweMapAsync(Constants.FILES_SWE_DELTA[idxDec],
+                await MapTools.LoadSweDeltaMapAsync(Constants.FILES_SWE_DELTA[idxDec],
                     Constants.LAYER_NAMES_SWE_DELTA[idxDec], Constants.MAP_TITLES_SWE_DELTA[idxDec],
-                    Constants.FILE_EXPORT_MAPS_SWE_DELTA[idxDec], true);
+                    Constants.FILE_EXPORT_MAPS_SWE_DELTA[idxDec]);
 
                 Module1.Current.MapFinishedLoading = true;
             }
@@ -533,9 +533,9 @@ namespace bagis_pro.Buttons
             {
                 Module1.Current.MapFinishedLoading = false;
                 int idxJan = 2;
-                await MapTools.LoadSweMapAsync(Constants.FILES_SWE_DELTA[idxJan],
+                await MapTools.LoadSweDeltaMapAsync(Constants.FILES_SWE_DELTA[idxJan],
                     Constants.LAYER_NAMES_SWE_DELTA[idxJan], Constants.MAP_TITLES_SWE_DELTA[idxJan],
-                    Constants.FILE_EXPORT_MAPS_SWE_DELTA[idxJan], true);
+                    Constants.FILE_EXPORT_MAPS_SWE_DELTA[idxJan]);
 
                 Module1.Current.MapFinishedLoading = true;
             }
@@ -556,9 +556,9 @@ namespace bagis_pro.Buttons
             {
                 Module1.Current.MapFinishedLoading = false;
                 int idxFeb = 3;
-                await MapTools.LoadSweMapAsync(Constants.FILES_SWE_DELTA[idxFeb],
+                await MapTools.LoadSweDeltaMapAsync(Constants.FILES_SWE_DELTA[idxFeb],
                     Constants.LAYER_NAMES_SWE_DELTA[idxFeb], Constants.MAP_TITLES_SWE_DELTA[idxFeb],
-                    Constants.FILE_EXPORT_MAPS_SWE_DELTA[idxFeb], true);
+                    Constants.FILE_EXPORT_MAPS_SWE_DELTA[idxFeb]);
 
                 Module1.Current.MapFinishedLoading = true;
             }
@@ -579,9 +579,9 @@ namespace bagis_pro.Buttons
             {
                 Module1.Current.MapFinishedLoading = false;
                 int idxMar = 4;
-                await MapTools.LoadSweMapAsync(Constants.FILES_SWE_DELTA[idxMar],
+                await MapTools.LoadSweDeltaMapAsync(Constants.FILES_SWE_DELTA[idxMar],
                     Constants.LAYER_NAMES_SWE_DELTA[idxMar], Constants.MAP_TITLES_SWE_DELTA[idxMar],
-                    Constants.FILE_EXPORT_MAPS_SWE_DELTA[idxMar], true);
+                    Constants.FILE_EXPORT_MAPS_SWE_DELTA[idxMar]);
 
                 Module1.Current.MapFinishedLoading = true;
             }
@@ -602,9 +602,9 @@ namespace bagis_pro.Buttons
             {
                 Module1.Current.MapFinishedLoading = false;
                 int idxApr = 5;
-                await MapTools.LoadSweMapAsync(Constants.FILES_SWE_DELTA[idxApr],
+                await MapTools.LoadSweDeltaMapAsync(Constants.FILES_SWE_DELTA[idxApr],
                     Constants.LAYER_NAMES_SWE_DELTA[idxApr], Constants.MAP_TITLES_SWE_DELTA[idxApr],
-                    Constants.FILE_EXPORT_MAPS_SWE_DELTA[idxApr], true);
+                    Constants.FILE_EXPORT_MAPS_SWE_DELTA[idxApr]);
 
                 Module1.Current.MapFinishedLoading = true;
             }
@@ -625,9 +625,9 @@ namespace bagis_pro.Buttons
             {
                 Module1.Current.MapFinishedLoading = false;
                 int idxMay = 6;
-                await MapTools.LoadSweMapAsync(Constants.FILES_SWE_DELTA[idxMay],
+                await MapTools.LoadSweDeltaMapAsync(Constants.FILES_SWE_DELTA[idxMay],
                     Constants.LAYER_NAMES_SWE_DELTA[idxMay], Constants.MAP_TITLES_SWE_DELTA[idxMay],
-                    Constants.FILE_EXPORT_MAPS_SWE_DELTA[idxMay], true);
+                    Constants.FILE_EXPORT_MAPS_SWE_DELTA[idxMay]);
 
                 Module1.Current.MapFinishedLoading = true;
             }
@@ -648,9 +648,9 @@ namespace bagis_pro.Buttons
             {
                 Module1.Current.MapFinishedLoading = false;
                 int idxJun = 7;
-                await MapTools.LoadSweMapAsync(Constants.FILES_SWE_DELTA[idxJun],
+                await MapTools.LoadSweDeltaMapAsync(Constants.FILES_SWE_DELTA[idxJun],
                     Constants.LAYER_NAMES_SWE_DELTA[idxJun], Constants.MAP_TITLES_SWE_DELTA[idxJun],
-                    Constants.FILE_EXPORT_MAPS_SWE_DELTA[idxJun], true);
+                    Constants.FILE_EXPORT_MAPS_SWE_DELTA[idxJun]);
 
                 Module1.Current.MapFinishedLoading = true;
             }

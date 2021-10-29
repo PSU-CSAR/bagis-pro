@@ -189,6 +189,8 @@ namespace bagis_pro
         public static readonly string[] MAP_TITLES_SWE_DELTA = new string[] { "AVERAGE NOVEMBER SWE DELTA", "AVERAGE DECEMBER SWE DELTA", "AVERAGE JANUARY SWE DELTA",
                                                                               "AVERAGE FEBRUARY SWE DELTA", "AVERAGE MARCH SWE DELTA", "AVERAGE APRIL SWE DELTA",
                                                                               "AVERAGE MAY SWE DELTA", "AVERAGE JUNE SWE DELTA"};
+        public static readonly string[] FILES_SWE_ZONES = new string[] { "swe_nov_zone", "swe_dec_zone", "swe_jan_zone", "swe_feb_zone", "swe_mar_zone",
+                                                                         "swe_apr_zone", "swe_may_zone", "swe_jun_zone", "swe_jul_zone"};
         public static readonly string[] FILES_SEASON_PRECIP_CONTRIB = new string[] {"sq1_precip_contrib", "sq2_precip_contrib", "sq3_precip_contrib",
                                                                                     "sq4_precip_contrib"};
         public static readonly string[] LAYER_NAMES_SEASON_PRECIP_CONTRIB = new string[] {"SQ1 Precip Contribution", "SQ2 Precip Contribution", "SQ3 Precip Contribution",
@@ -332,6 +334,14 @@ namespace bagis_pro
         public static int EXCEL_LARGE_CHART_WIDTH = 800;
         public static int EXCEL_LARGE_CHART_HEIGHT = 500;
 
-    }
+        public static int[,] ARR_SWE_COLORS = new int[,] {
+            {204,204,204,255},
+            {156,156,156,255},
+            {255,211,127,255},
+            {230,152,0,255},
+            {115,178,255,255},
+            {0,92,230,255},
+            {255,255,255,255}};
+        }
 
 }
