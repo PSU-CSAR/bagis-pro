@@ -283,7 +283,7 @@ namespace bagis_pro.Buttons
             {
                 Module1.Current.MapFinishedLoading = false;
                 int idxJan = 2;
-                await MapTools.LoadSweMapAsync(Constants.FILES_SWE_ZONES[idxJan],
+                await MapTools.LoadSweMapAsync(Constants.FILES_SNODAS_SWE[idxJan],
                     Constants.LAYER_NAMES_SNODAS_SWE[idxJan], Constants.MAP_TITLES_SNODAS_SWE[idxJan],
                     Constants.FILE_EXPORT_MAPS_SWE[idxJan]);
                 Module1.Current.MapFinishedLoading = true;
@@ -305,7 +305,7 @@ namespace bagis_pro.Buttons
             {
                 Module1.Current.MapFinishedLoading = false;
                 int idxFeb = 3;
-                await MapTools.LoadSweMapAsync(Constants.FILES_SWE_ZONES[idxFeb],
+                await MapTools.LoadSweMapAsync(Constants.FILES_SNODAS_SWE[idxFeb],
                     Constants.LAYER_NAMES_SNODAS_SWE[idxFeb], Constants.MAP_TITLES_SNODAS_SWE[idxFeb],
                     Constants.FILE_EXPORT_MAPS_SWE[idxFeb]);
                 Module1.Current.MapFinishedLoading = true;
@@ -327,7 +327,7 @@ namespace bagis_pro.Buttons
             {
                 Module1.Current.MapFinishedLoading = false;
                 int idxMar = 4;
-                await MapTools.LoadSweMapAsync(Constants.FILES_SWE_ZONES[idxMar],
+                await MapTools.LoadSweMapAsync(Constants.FILES_SNODAS_SWE[idxMar],
                     Constants.LAYER_NAMES_SNODAS_SWE[idxMar], Constants.MAP_TITLES_SNODAS_SWE[idxMar],
                     Constants.FILE_EXPORT_MAPS_SWE[idxMar]);
                 Module1.Current.MapFinishedLoading = true;
@@ -349,7 +349,7 @@ namespace bagis_pro.Buttons
             {
                 Module1.Current.MapFinishedLoading = false;
                 int idxApr = 5;
-                await MapTools.LoadSweMapAsync(Constants.FILES_SWE_ZONES[idxApr],
+                await MapTools.LoadSweMapAsync(Constants.FILES_SNODAS_SWE[idxApr],
                     Constants.LAYER_NAMES_SNODAS_SWE[idxApr], Constants.MAP_TITLES_SNODAS_SWE[idxApr],
                     Constants.FILE_EXPORT_MAPS_SWE[idxApr]);
                 Module1.Current.MapFinishedLoading = true;
@@ -372,7 +372,7 @@ namespace bagis_pro.Buttons
             {
                 Module1.Current.MapFinishedLoading = false;
                 int idxMay = 6;
-                await MapTools.LoadSweMapAsync(Constants.FILES_SWE_ZONES[idxMay],
+                await MapTools.LoadSweMapAsync(Constants.FILES_SNODAS_SWE[idxMay],
                     Constants.LAYER_NAMES_SNODAS_SWE[idxMay], Constants.MAP_TITLES_SNODAS_SWE[idxMay],
                     Constants.FILE_EXPORT_MAPS_SWE[idxMay]);
 
@@ -395,7 +395,7 @@ namespace bagis_pro.Buttons
             {
                 Module1.Current.MapFinishedLoading = false;
                 int idxJun = 7;
-                await MapTools.LoadSweMapAsync(Constants.FILES_SWE_ZONES[idxJun],
+                await MapTools.LoadSweMapAsync(Constants.FILES_SNODAS_SWE[idxJun],
                     Constants.LAYER_NAMES_SNODAS_SWE[idxJun], Constants.MAP_TITLES_SNODAS_SWE[idxJun],
                     Constants.FILE_EXPORT_MAPS_SWE[idxJun]);
 
@@ -418,7 +418,7 @@ namespace bagis_pro.Buttons
             {
                 Module1.Current.MapFinishedLoading = false;
                 int idxJul = 8;
-                await MapTools.LoadSweMapAsync(Constants.FILES_SWE_ZONES[idxJul],
+                await MapTools.LoadSweMapAsync(Constants.FILES_SNODAS_SWE[idxJul],
                     Constants.LAYER_NAMES_SNODAS_SWE[idxJul], Constants.MAP_TITLES_SNODAS_SWE[idxJul],
                     Constants.FILE_EXPORT_MAPS_SWE[idxJul]);
 
@@ -441,7 +441,7 @@ namespace bagis_pro.Buttons
             {
                 Module1.Current.MapFinishedLoading = false;
                 int idxNov = 0;
-                await MapTools.LoadSweMapAsync(Constants.FILES_SWE_ZONES[idxNov],
+                await MapTools.LoadSweMapAsync(Constants.FILES_SNODAS_SWE[idxNov],
                     Constants.LAYER_NAMES_SNODAS_SWE[idxNov], Constants.MAP_TITLES_SNODAS_SWE[idxNov],
                     Constants.FILE_EXPORT_MAPS_SWE[idxNov]);
 
@@ -464,7 +464,7 @@ namespace bagis_pro.Buttons
             {
                 Module1.Current.MapFinishedLoading = false;
                 int idxDec = 1;
-                await MapTools.LoadSweMapAsync(Constants.FILES_SWE_ZONES[idxDec],
+                await MapTools.LoadSweMapAsync(Constants.FILES_SNODAS_SWE[idxDec],
                     Constants.LAYER_NAMES_SNODAS_SWE[idxDec], Constants.MAP_TITLES_SNODAS_SWE[idxDec],
                     Constants.FILE_EXPORT_MAPS_SWE[idxDec]);
 

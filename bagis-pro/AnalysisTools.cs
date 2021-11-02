@@ -2859,7 +2859,6 @@ namespace bagis_pro
                     }
 
                     // Save overall min and max in metadata
-                    string dataSourceUnits = Constants.UNITS_MILLIMETERS;
                     if (dblOverallMin != 9999)
                     {
                         IDictionary<string, BA_Objects.DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
@@ -2868,7 +2867,6 @@ namespace bagis_pro
                             BA_Objects.DataSource dataSource = dictLocalDataSources[Constants.DATA_TYPE_SWE];
                             dataSource.minValue = dblOverallMin;
                             dataSource.maxValue = dblOverallMax;
-                            dataSourceUnits = dataSource.units;
                             success = GeneralTools.SaveDataSourcesToFile(dictLocalDataSources);
                             Module1.Current.ModuleLogManager.LogDebug(nameof(ClipSweLayersAsync),
                                 "Updated settings overall min and max metadata for SWE");
@@ -2880,7 +2878,6 @@ namespace bagis_pro
                         }
                         success = GeneralTools.SaveDataSourcesToFile(dictLocalDataSources);
                     }
-                    success = await GenerateSweZoneLayersAsync(Module1.Current.Aoi.FilePath, 5, dataSourceUnits);
                 }
             }
             catch (Exception e)
@@ -4322,124 +4319,6 @@ namespace bagis_pro
                 }
             return returnPath;
         }
-
-
-        private static async Task<BA_ReturnCode> GenerateSweZoneLayersAsync(string aoiFilePath, int idxDefaultMonth, 
-            string dataSourceUnits)
-        {
-            // Calculate interval list
-            //@ToDo: Move this to config file
-            double intZones = 7;
-            intZones = intZones - 2;  //Subtract the 2 zones on the bottom that we create
-            double[] arrReturnValues = await MapTools.SWEUnitsConversionAsync(Constants.DATA_TYPE_SWE, idxDefaultMonth);
-            if (arrReturnValues.Length == 4)
-            {
-                bool bSkipInterval2 = false;
-                double floor = 0.5;
-                if (arrReturnValues[2] > floor)
-                {
-                    floor = arrReturnValues[2]; // min display value
-                    bSkipInterval2 = true;
-                }
-                // Calculate elevation interval for remaining intervals
-                double dblInterval = Math.Round(arrReturnValues[3] / intZones, 1);
-                IList<BA_Objects.Interval> lstCalcInterval = new List<BA_Objects.Interval>();
-                int zones = GeneralTools.CreateRangeArray(floor, arrReturnValues[3], dblInterval, out lstCalcInterval);
-                // Manually build first 2 intervals; Spec is hard-coded
-                List<BA_Objects.Interval> lstIntervals = new List<BA_Objects.Interval>();
-                int idx = 1;
-                BA_Objects.Interval interval1 = new BA_Objects.Interval
-                {
-                    LowerBound = 0.0F,
-                    Value = idx
-                };
-                if (bSkipInterval2)
-                {
-                    interval1.UpperBound = floor;
-                }
-                else
-                {
-                    interval1.UpperBound = 0.00001;
-                }
-                interval1.Name = interval1.LowerBound + " - " + interval1.UpperBound.ToString("0." + new string('#', 10));
-                lstIntervals.Add(interval1);
-                idx++;
-                if (!bSkipInterval2)
-                {
-                    BA_Objects.Interval interval2 = new BA_Objects.Interval
-                    {
-                        LowerBound = interval1.UpperBound,
-                        UpperBound = floor,
-                        Value = idx
-                    };
-                    interval2.Name = interval2.LowerBound.ToString("0." + new string('#', 10)) + " - " + interval2.UpperBound;
-                    lstIntervals.Add(interval2);
-                    idx++;
-                }
-                // Reset values in calculated interval list
-                foreach (var item in lstCalcInterval)
-                {
-                    item.Value = idx;
-                    idx++;
-                }
-                // Reset lower bound for first item in lstCalcInterval
-                var calcItem = lstCalcInterval[0];
-                calcItem.LowerBound = lstIntervals.Last().UpperBound;
-                calcItem.Name = calcItem.LowerBound + " - " + calcItem.UpperBound;
-                // Merge 2 lists together
-                lstIntervals.AddRange(lstCalcInterval);
-                // Reset lower and upper bound to layer units
-                string strDisplayUnits = Module1.Current.BatchToolSettings.SweDisplayUnits;
-                if (!dataSourceUnits.Equals(strDisplayUnits))
-                {
-                    foreach (var nextInterval in lstIntervals)
-                    {
-                        if (strDisplayUnits.Equals(Constants.UNITS_INCHES))
-                        {
-                            nextInterval.LowerBound = LinearUnit.Inches.ConvertTo(nextInterval.LowerBound, LinearUnit.Millimeters);
-                            nextInterval.UpperBound = LinearUnit.Inches.ConvertTo(nextInterval.UpperBound, LinearUnit.Millimeters);
-                        }
-                        else if (dataSourceUnits.Equals(Constants.UNITS_MILLIMETERS))
-                        {
-                            nextInterval.LowerBound = LinearUnit.Millimeters.ConvertTo(nextInterval.LowerBound, LinearUnit.Inches);
-                            nextInterval.UpperBound = LinearUnit.Millimeters.ConvertTo(nextInterval.UpperBound, LinearUnit.Inches);
-                        }
-                    }
-                }
-                // Create zones layer
-                string strMaskPath = GeodatabaseTools.GetGeodatabasePath(aoiFilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_BUFFERED_VECTOR;
-                Uri uriLayers = new Uri(GeodatabaseTools.GetGeodatabasePath(aoiFilePath, GeodatabaseNames.Layers));
-                BA_ReturnCode success = BA_ReturnCode.UnknownError;
-                for (int i = 0; i < Constants.FILES_SNODAS_SWE.Length; i++)
-                {
-                    string strLayer = uriLayers.LocalPath + "\\" + Constants.FILES_SNODAS_SWE[i];
-                    string strZonesRaster = GeodatabaseTools.GetGeodatabasePath(aoiFilePath, GeodatabaseNames.Analysis, true) +
-                        Constants.FILES_SWE_ZONES[i];
-                    if (! await GeodatabaseTools.RasterDatasetExistsAsync(uriLayers, Constants.FILES_SNODAS_SWE[i]))
-                    {
-                        Module1.Current.ModuleLogManager.LogError(nameof(GenerateSweZoneLayersAsync),
-                            "Unable to locate " + strLayer + ". Zones layer will not be created!");
-                    }
-                    else
-                    {
-                        success = await AnalysisTools.CalculateZonesAsync(aoiFilePath, strLayer,
-                            lstIntervals, strZonesRaster, strMaskPath, "SWE");
-                    }
-
-                }
-                return success;
-            }
-            else
-            {
-                Module1.Current.ModuleLogManager.LogError(nameof(GenerateSweZoneLayersAsync),
-                    "Unable to retrieve min/max SWE values from analysis.xml. Calculation halted!");
-                return BA_ReturnCode.UnknownError;
-            }
-
-        }
-
-
-
     }
 
 }

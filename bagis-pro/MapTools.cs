@@ -240,7 +240,7 @@ namespace bagis_pro
                         Module1.ActivateState("MapButtonPalette_BtnAspect_State");
 
                     // add SNOTEL SWE zones layer
-                    int idxDefaultMonth = 6;    // May
+                    int idxDefaultMonth = 5;    // May
                     success = await DisplaySWEMapAsync(idxDefaultMonth);
 
                     // add SWE delta layer
@@ -272,7 +272,7 @@ namespace bagis_pro
                         Constants.FILE_PRECIPITATION_CONTRIBUTION;
                     uri = new Uri(strPath);
                     success = await MapTools.DisplayRasterWithClassifyAsync(uri, Constants.MAPS_PRECIPITATION_CONTRIBUTION, "ColorBrewer Schemes (RGB)",
-                               "Yellow-Green-Blue (Continuous)", Constants.FIELD_VOL_ACRE_FT, 30, ClassificationMethod.EqualInterval, 10, false);
+                               "Yellow-Green-Blue (Continuous)", Constants.FIELD_VOL_ACRE_FT, 30, ClassificationMethod.EqualInterval, 10, null, false);
 
                     if (success == BA_ReturnCode.Success)
                         Module1.ActivateState("MapButtonPalette_BtnPrecipContrib_State");
@@ -877,58 +877,9 @@ namespace bagis_pro
             return BA_ReturnCode.Success;
         }
 
-        public static async Task<BA_ReturnCode> DisplayRasterWithCustomColorsAsync(Uri rasterUri, string displayName,
-            string fieldName, int[,] arrColors, int transparency, bool isVisible)
-        {
-            // parse the uri for the folder and file
-            string strFileName = null;
-            string strFolderPath = null;
-            if (rasterUri.IsFile)
-            {
-                strFileName = System.IO.Path.GetFileName(rasterUri.LocalPath);
-                strFolderPath = System.IO.Path.GetDirectoryName(rasterUri.LocalPath);
-            }
-            // Check to see if the raster exists before trying to add it
-            bool bExists = await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(strFolderPath), strFileName);
-            if (!bExists)
-            {
-                Module1.Current.ModuleLogManager.LogError(nameof(DisplayRasterWithCustomColorsAsync),
-                    "Unable to add locate raster!!");
-                return BA_ReturnCode.ReadError;
-            }
-            // Open the requested raster so we know it exists; return if it doesn't
-            await QueuedTask.Run(async () =>
-            {
-                RasterLayer rasterLayer = null;
-                // Create the raster layer on the active map
-                await QueuedTask.Run(() =>
-                {
-                    try
-                    {
-                        rasterLayer = (RasterLayer)LayerFactory.Instance.CreateLayer(rasterUri, MapView.Active.Map);
-                    }
-                    catch (Exception e)
-                    {
-                        Module1.Current.ModuleLogManager.LogError(nameof(DisplayRasterWithCustomColorsAsync),
-                            e.Message);
-                    }
-                });
-
-                // Set raster layer transparency and name
-                if (rasterLayer != null)
-                {
-                    rasterLayer.SetTransparency(transparency);
-                    rasterLayer.SetName(displayName);
-                    rasterLayer.SetVisibility(isVisible);
-
-                    await MapTools.SetToCustomUniqueValueColorizer(displayName, "NAME", Constants.ARR_SWE_COLORS);
-                }
-            });
-            return BA_ReturnCode.Success;
-        }
-
         public static async Task<BA_ReturnCode> DisplayRasterWithClassifyAsync(Uri rasterUri, string displayName, string styleCategory, 
-            string styleName, string fieldName, int transparency, ClassificationMethod classificationMethod, int numClasses, bool isVisible)
+            string styleName, string fieldName, int transparency, ClassificationMethod classificationMethod, int numClasses, IList<BA_Objects.Interval> lstInterval,
+                bool isVisible)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
             // parse the uri for the folder and file
@@ -969,8 +920,16 @@ namespace bagis_pro
             });
 
             // Create and deploy the classify renderer
-            await MapTools.SetToClassifyRenderer(displayName, styleCategory, styleName, fieldName,
-                classificationMethod, numClasses);
+            if (lstInterval == null || lstInterval.Count == 0)
+            {
+                await MapTools.SetToClassifyRenderer(displayName, styleCategory, styleName, fieldName,
+                    classificationMethod, numClasses);
+            }
+            else
+            {
+                await MapTools.SetToClassifyRenderer(displayName, fieldName, lstInterval);
+            }
+
             success = BA_ReturnCode.Success;
             return success;
         }
@@ -1118,29 +1077,6 @@ namespace bagis_pro
             });
         }
 
-        public static async Task SetToCustomUniqueValueColorizer(string layerName, string fieldName, int[,] arrColors)
-        {
-            // Get the layer we want to symbolize from the map
-            Layer oLayer =
-                MapView.Active.Map.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(layerName, StringComparison.CurrentCultureIgnoreCase));
-            if (oLayer == null)
-                return;
-            RasterLayer rasterLayer = (RasterLayer)oLayer;
-
-
-            // Creates a uniqueVAlueColorizer definition using our colors
-            UniqueValueColorizerDefinition UVColorizerDef = CreateUniqueValueColorizerFromScratch(fieldName, arrColors);
-
-            // Creates a new UV colorizer using the colorizer definition created above.
-            CIMRasterUniqueValueColorizer newColorizer = await rasterLayer.CreateColorizerAsync(UVColorizerDef) as CIMRasterUniqueValueColorizer;
-
-            // Sets the newly created colorizer on the layer.
-            await QueuedTask.Run(() =>
-            {
-                rasterLayer.SetColorizer(MapTools.RecalculateColorizer(newColorizer));
-            });
-        }
-
         public static async Task SetToClassifyRenderer(string layerName, string styleCategory,
             string styleName, string fieldName, ClassificationMethod classificationMethod,int numberofClasses)
         {
@@ -1176,6 +1112,54 @@ namespace bagis_pro
             // Sets the newly created colorizer on the layer.
             await QueuedTask.Run(() =>
             {
+                basicRasterLayer.SetColorizer(newColorizer);
+            });
+        }
+
+        public static async Task SetToClassifyRenderer(string layerName, string fieldName, IList<BA_Objects.Interval> lstInterval)
+        {
+            // Get the layer we want to symbolize from the map
+            Layer oLayer =
+                MapView.Active.Map.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(layerName, StringComparison.CurrentCultureIgnoreCase));
+
+            BasicRasterLayer basicRasterLayer = null;
+            if (oLayer != null && oLayer is BasicRasterLayer)
+            {
+                basicRasterLayer = (BasicRasterLayer)oLayer;
+            }
+            else
+            {
+                return;
+            }
+
+            CIMColorRamp cimColorRamp = await CreateCustomColorRampAsync(Constants.ARR_SWE_COLORS);
+
+            // Creates a new Classify Colorizer Definition using defined parameters.
+            ClassifyColorizerDefinition classifyColorizerDef =
+                new ClassifyColorizerDefinition(fieldName, lstInterval.Count, ClassificationMethod.Manual, cimColorRamp);
+
+            // Creates a new Classify colorizer using the colorizer definition created above.
+            CIMRasterClassifyColorizer newColorizer =
+                await basicRasterLayer.CreateColorizerAsync(classifyColorizerDef) as CIMRasterClassifyColorizer;
+
+            // Sets the newly created colorizer on the layer.
+            await QueuedTask.Run(() =>
+            {
+                basicRasterLayer.SetColorizer(newColorizer);
+                var json = newColorizer.ToJson();
+                dynamic jsonColorizer = Newtonsoft.Json.Linq.JObject.Parse(json);
+                Newtonsoft.Json.Linq.JArray arrClassBreaks = (Newtonsoft.Json.Linq.JArray)jsonColorizer["classBreaks"];
+                int i = 0;
+                // Customize the upper bound and label for the class breaks
+                foreach (dynamic classBreak in arrClassBreaks)
+                {
+                    var nextInterval = lstInterval[i];
+                    classBreak.upperBound = nextInterval.UpperBound;
+                    classBreak.label = nextInterval.Name;
+                    i++;
+                }
+                string stringjson = Newtonsoft.Json.JsonConvert.SerializeObject(jsonColorizer);
+                newColorizer = CIMRasterClassifyColorizer.FromJson(stringjson);
                 basicRasterLayer.SetColorizer(newColorizer);
             });
         }
@@ -2040,7 +2024,7 @@ namespace bagis_pro
             Layer oLayer = null;
             Map map = null;
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
-            Uri uriSweGdb = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis));
+            Uri uriSweGdb = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers));
             Layout layout = null;
             await QueuedTask.Run(() =>
             {
@@ -2121,8 +2105,6 @@ namespace bagis_pro
                     textBox.SetGraphic(graphic);
                  }
             });
-
-            await MapTools.SetToCustomUniqueValueColorizer(strNewLayerName, "NAME", Constants.ARR_SWE_COLORS);
 
             // toggle layers according to map definition
             var allLayers = map.Layers.ToList();
@@ -2472,19 +2454,35 @@ namespace bagis_pro
         public static async Task<BA_ReturnCode> DisplaySWEMapAsync(int idxDefaultMonth)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
-            string strPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) +
-                Constants.FILES_SWE_ZONES[idxDefaultMonth];
+            string strPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, true) +
+                Constants.FILES_SNODAS_SWE[idxDefaultMonth];
             Uri uri = new Uri(strPath);
 
-            success = await MapTools.DisplayRasterWithCustomColorsAsync(uri, Constants.LAYER_NAMES_SNODAS_SWE[idxDefaultMonth], "NAME", Constants.ARR_SWE_COLORS,
-                30, false);
+            //success = await MapTools.DisplayRasterWithCustomColorsAsync(uri, Constants.LAYER_NAMES_SNODAS_SWE[idxDefaultMonth], "NAME", Constants.ARR_SWE_COLORS,
+            //    30, false);
+            //success = await MapTools.DisplayRasterWithSymbolAsync(uri, Constants.LAYER_NAMES_SNODAS_SWE[idxDefaultMonth], "ArcGIS Colors",
+            //            "Spectrum-Full Bright", "NAME", 30, false);
+            string dataSourceUnits = Constants.UNITS_MILLIMETERS;
+            IDictionary<string, BA_Objects.DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
+            if (dictLocalDataSources.ContainsKey(Constants.DATA_TYPE_SWE))
+            {
+                BA_Objects.DataSource dataSource = dictLocalDataSources[Constants.DATA_TYPE_SWE];
+                dataSourceUnits = dataSource.units;
+            }
+            else
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(DisplaySWEMapAsync), "Unable to data source unit metadata for SWE");
+            }
+            IList<BA_Objects.Interval> lstInterval = await CalculateSweZonesAsync(idxDefaultMonth, dataSourceUnits);
+            success = await MapTools.DisplayRasterWithClassifyAsync(uri, Constants.LAYER_NAMES_SNODAS_SWE[idxDefaultMonth], "ArcGIS Colors",
+                "Spectrum-Full Bright", "NAME", 30, ClassificationMethod.Manual, lstInterval.Count, lstInterval, false);
             IList<string> lstLayersFiles = new List<string>();
                 if (success == BA_ReturnCode.Success)
                 {
                     await QueuedTask.Run(() =>
                     {
                         // Opens a file geodatabase. This will open the geodatabase if the folder exists and contains a valid geodatabase.
-                        Uri analysisUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis));
+                        Uri analysisUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers));
                         using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(analysisUri)))
                         {
                             IReadOnlyList<RasterDatasetDefinition> definitions = geodatabase.GetDefinitions<RasterDatasetDefinition>();
@@ -2495,7 +2493,7 @@ namespace bagis_pro
                         }
                     });
                     int idx = 0;
-                    foreach (string strSweName in Constants.FILES_SWE_ZONES)
+                    foreach (string strSweName in Constants.FILES_SNODAS_SWE)
                     {
                         if (lstLayersFiles.Contains(strSweName))
                         {
@@ -2991,47 +2989,163 @@ namespace bagis_pro
             return success;
         }
 
-        private static UniqueValueColorizerDefinition CreateUniqueValueColorizerFromScratch(string fieldName, int[,] colors)
+        private static async Task<CIMMultipartColorRamp> CreateCustomColorRampAsync(int[,] colors)
         {
-            //All of these methods have to be called on the MCT
-
             var multiPartRamp = new CIMMultipartColorRamp
             {
                 Weights = new double[colors.GetLength(0)]
             };
-            CIMColorRamp[] rampValues = new CIMColorRamp[colors.GetLength(0)];
-            for (int i = 0; i < colors.GetLength(0) - 1; i++)
+            await QueuedTask.Run(() =>
             {
-                var ramp = new CIMPolarContinuousColorRamp();
-                var r = colors[i, 0];
-                var g = colors[i, 1];
-                var b = colors[i, 2];
-                ramp.FromColor = new CIMRGBColor() { R = r, G = g, B = b };
-                r = colors[i + 1, 0];
-                g = colors[i + 1, 1];
-                b = colors[i + 1, 2];
-                ramp.ToColor = new CIMRGBColor() { R = r, G = g, B = b };
-                ramp.PolarDirection = PolarDirection.Clockwise;
-                rampValues[i] = ramp;
-                multiPartRamp.Weights[i] = 1;
-            }
-            multiPartRamp.Weights[colors.GetLength(0) - 1] = 1;
+                CIMColorRamp[] rampValues = new CIMColorRamp[colors.GetLength(0)];
+                for (int i = 0; i < colors.GetLength(0) - 1; i++)
+                {
+                    var ramp = new CIMPolarContinuousColorRamp();
+                    var r = colors[i, 0];
+                    var g = colors[i, 1];
+                    var b = colors[i, 2];
+                    ramp.FromColor = new CIMRGBColor() { R = r, G = g, B = b };
+                    r = colors[i + 1, 0];
+                    g = colors[i + 1, 1];
+                    b = colors[i + 1, 2];
+                    ramp.ToColor = new CIMRGBColor() { R = r, G = g, B = b };
+                    ramp.PolarDirection = PolarDirection.Clockwise;
+                    rampValues[i] = ramp;
+                    multiPartRamp.Weights[i] = 1;
+                }
+                multiPartRamp.Weights[colors.GetLength(0) - 1] = 1;
 
-            multiPartRamp.ColorRamps = rampValues;
-
-            UniqueValueColorizerDefinition UVColorizerDef = new UniqueValueColorizerDefinition(fieldName, multiPartRamp);
-            return UVColorizerDef;
+                multiPartRamp.ColorRamps = rampValues;
+            });
+            return multiPartRamp;
         }
 
-        private static int[,] getColors()
+        private static async Task<IList<BA_Objects.Interval>> CalculateSweZonesAsync(int idxDefaultMonth,
+            string dataSourceUnits)
         {
-            return new int[,] {{161,255,255,255},
-                                {73,116,220,255},
-                                {164,20,0,255},
-                                {255,255,0,255},
-                                {255,255,255,161},
-                                {220,116,73,255},
-                                {164,255,0,20}};
+            // Calculate interval list
+            //@ToDo: Move this to config file
+            int intZones = 7;
+            intZones = intZones - 2;  //Subtract the 2 zones on the bottom that we create
+            double[] arrReturnValues = await MapTools.SWEUnitsConversionAsync(Constants.DATA_TYPE_SWE, idxDefaultMonth);
+            if (arrReturnValues.Length == 4)
+            {
+                bool bSkipInterval2 = false;
+                double floor = 0.5;
+                if (arrReturnValues[2] > floor)
+                {
+                    floor = arrReturnValues[2]; // min display value
+                    bSkipInterval2 = true;
+                }
+                // Calculate elevation interval for remaining intervals
+                double dblInterval = Math.Round(arrReturnValues[3] / intZones, 1);
+                IList<BA_Objects.Interval> lstCalcInterval = new List<BA_Objects.Interval>();
+                int zones = GeneralTools.CreateRangeArray(floor, arrReturnValues[3], dblInterval, out lstCalcInterval);
+                // Make sure we don't have > than intzones
+                if (zones > intZones)
+                {
+                    // Merge 2 upper zones
+                    if (lstCalcInterval.Count >= intZones)
+                    {
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateSweZonesAsync),
+                            "Merging 2 upper intervals. Too many intervals created.");
+                        var interval = lstCalcInterval[intZones - 1];
+                        interval.UpperBound = lstCalcInterval[intZones].UpperBound;
+                        interval.Name = interval.LowerBound + " - " + interval.UpperBound;
+                        lstCalcInterval.RemoveAt(intZones);
+                    }
+                }
+                // Manually build first 2 intervals; Spec is hard-coded
+                List<BA_Objects.Interval> lstIntervals = new List<BA_Objects.Interval>();
+                int idx = 1;
+                BA_Objects.Interval interval1 = new BA_Objects.Interval
+                {
+                    LowerBound = 0.0F,
+                    Value = idx
+                };
+                if (bSkipInterval2)
+                {
+                    interval1.UpperBound = floor;
+                }
+                else
+                {
+                    interval1.UpperBound = 0.00001;
+                }
+                interval1.Name = interval1.LowerBound + " - " + interval1.UpperBound.ToString("0." + new string('#', 10));
+                lstIntervals.Add(interval1);
+                idx++;
+                if (!bSkipInterval2)
+                {
+                    BA_Objects.Interval interval2 = new BA_Objects.Interval
+                    {
+                        LowerBound = interval1.UpperBound,
+                        UpperBound = floor,
+                        Value = idx
+                    };
+                    interval2.Name = interval2.LowerBound.ToString("0." + new string('#', 10)) + " - " + interval2.UpperBound;
+                    lstIntervals.Add(interval2);
+                    idx++;
+                }
+                // Reset values in calculated interval list
+                foreach (var item in lstCalcInterval)
+                {
+                    item.Value = idx;
+                    idx++;
+                }
+                // Reset lower bound for first item in lstCalcInterval
+                var calcItem = lstCalcInterval[0];
+                calcItem.LowerBound = lstIntervals.Last().UpperBound;
+                calcItem.Name = calcItem.LowerBound + " - " + calcItem.UpperBound;
+                // Merge 2 lists together
+                lstIntervals.AddRange(lstCalcInterval);
+                // Reset lower and upper bound to layer units
+                string strDisplayUnits = Module1.Current.BatchToolSettings.SweDisplayUnits;
+                if (!dataSourceUnits.Equals(strDisplayUnits))
+                {
+                    foreach (var nextInterval in lstIntervals)
+                    {
+                        if (strDisplayUnits.Equals(Constants.UNITS_INCHES))
+                        {
+                            nextInterval.LowerBound = LinearUnit.Inches.ConvertTo(nextInterval.LowerBound, LinearUnit.Millimeters);
+                            nextInterval.UpperBound = LinearUnit.Inches.ConvertTo(nextInterval.UpperBound, LinearUnit.Millimeters);
+                        }
+                        else if (dataSourceUnits.Equals(Constants.UNITS_MILLIMETERS))
+                        {
+                            nextInterval.LowerBound = LinearUnit.Millimeters.ConvertTo(nextInterval.LowerBound, LinearUnit.Inches);
+                            nextInterval.UpperBound = LinearUnit.Millimeters.ConvertTo(nextInterval.UpperBound, LinearUnit.Inches);
+                        }
+                    }
+                }
+                //// Create zones layer
+                //string strMaskPath = GeodatabaseTools.GetGeodatabasePath(aoiFilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_BUFFERED_VECTOR;
+                //Uri uriLayers = new Uri(GeodatabaseTools.GetGeodatabasePath(aoiFilePath, GeodatabaseNames.Layers));
+                //BA_ReturnCode success = BA_ReturnCode.UnknownError;
+                //for (int i = 0; i < Constants.FILES_SNODAS_SWE.Length; i++)
+                //{
+                //    string strLayer = uriLayers.LocalPath + "\\" + Constants.FILES_SNODAS_SWE[i];
+                //    string strZonesRaster = GeodatabaseTools.GetGeodatabasePath(aoiFilePath, GeodatabaseNames.Analysis, true) +
+                //        Constants.FILES_SWE_ZONES[i];
+                //    if (! await GeodatabaseTools.RasterDatasetExistsAsync(uriLayers, Constants.FILES_SNODAS_SWE[i]))
+                //    {
+                //        Module1.Current.ModuleLogManager.LogError(nameof(GenerateSweZoneLayersAsync),
+                //            "Unable to locate " + strLayer + ". Zones layer will not be created!");
+                //    }
+                //    else
+                //    {
+                //        success = await AnalysisTools.CalculateZonesAsync(aoiFilePath, strLayer,
+                //            lstIntervals, strZonesRaster, strMaskPath, "SWE");
+                //    }
+
+                //}
+                return lstIntervals;
+            }
+            else
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(CalculateSweZonesAsync),
+                    "Unable to retrieve min/max SWE values from analysis.xml. Calculation halted!");
+                return null;
+            }
+
         }
     }
 }
