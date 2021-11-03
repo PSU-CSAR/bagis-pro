@@ -927,7 +927,7 @@ namespace bagis_pro
             }
             else
             {
-                await MapTools.SetToClassifyRenderer(displayName, fieldName, lstInterval);
+                await MapTools.SetToClassifyRenderer(displayName, styleCategory, styleName, fieldName, lstInterval);
             }
 
             success = BA_ReturnCode.Success;
@@ -1116,7 +1116,7 @@ namespace bagis_pro
             });
         }
 
-        public static async Task SetToClassifyRenderer(string layerName, string fieldName, IList<BA_Objects.Interval> lstInterval)
+        public static async Task SetToClassifyRenderer(string layerName, string styleCategory, string styleName, string fieldName, IList<BA_Objects.Interval> lstInterval)
         {
             // Get the layer we want to symbolize from the map
             Layer oLayer =
@@ -1132,7 +1132,20 @@ namespace bagis_pro
                 return;
             }
 
-            CIMColorRamp cimColorRamp = await CreateCustomColorRampAsync(Constants.ARR_SWE_COLORS);
+            CIMColorRamp cimColorRamp = null;
+            if (string.IsNullOrEmpty(styleCategory))
+            {
+                cimColorRamp = await CreateCustomColorRampAsync(Constants.ARR_SWE_COLORS);
+            }
+            else
+            {
+                StyleProjectItem style =
+                    Project.Current.GetItems<StyleProjectItem>().FirstOrDefault(s => s.Name == styleCategory);
+                if (style == null) return;
+                var colorRampList = await QueuedTask.Run(() => style.SearchColorRamps(styleName));
+                if (colorRampList == null || colorRampList.Count == 0) return;
+                cimColorRamp = colorRampList[0].ColorRamp;
+            }
 
             // Creates a new Classify Colorizer Definition using defined parameters.
             ClassifyColorizerDefinition classifyColorizerDef =
@@ -2458,24 +2471,9 @@ namespace bagis_pro
                 Constants.FILES_SNODAS_SWE[idxDefaultMonth];
             Uri uri = new Uri(strPath);
 
-            //success = await MapTools.DisplayRasterWithCustomColorsAsync(uri, Constants.LAYER_NAMES_SNODAS_SWE[idxDefaultMonth], "NAME", Constants.ARR_SWE_COLORS,
-            //    30, false);
-            //success = await MapTools.DisplayRasterWithSymbolAsync(uri, Constants.LAYER_NAMES_SNODAS_SWE[idxDefaultMonth], "ArcGIS Colors",
-            //            "Spectrum-Full Bright", "NAME", 30, false);
-            string dataSourceUnits = Constants.UNITS_MILLIMETERS;
-            IDictionary<string, BA_Objects.DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
-            if (dictLocalDataSources.ContainsKey(Constants.DATA_TYPE_SWE))
-            {
-                BA_Objects.DataSource dataSource = dictLocalDataSources[Constants.DATA_TYPE_SWE];
-                dataSourceUnits = dataSource.units;
-            }
-            else
-            {
-                Module1.Current.ModuleLogManager.LogError(nameof(DisplaySWEMapAsync), "Unable to data source unit metadata for SWE");
-            }
-            IList<BA_Objects.Interval> lstInterval = await CalculateSweZonesAsync(idxDefaultMonth, dataSourceUnits);
-            success = await MapTools.DisplayRasterWithClassifyAsync(uri, Constants.LAYER_NAMES_SNODAS_SWE[idxDefaultMonth], "ArcGIS Colors",
-                "Spectrum-Full Bright", "NAME", 30, ClassificationMethod.Manual, lstInterval.Count, lstInterval, false);
+            IList<BA_Objects.Interval> lstInterval = await CalculateSweZonesAsync(idxDefaultMonth);
+            success = await MapTools.DisplayRasterWithClassifyAsync(uri, Constants.LAYER_NAMES_SNODAS_SWE[idxDefaultMonth], "",
+                "", "NAME", 30, ClassificationMethod.Manual, lstInterval.Count, lstInterval, false);
             IList<string> lstLayersFiles = new List<string>();
                 if (success == BA_ReturnCode.Success)
                 {
@@ -2540,33 +2538,17 @@ namespace bagis_pro
             double[] arrReturnValues = new double[4];
             IDictionary<string, BA_Objects.DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
             BA_Objects.DataSource oValuesDataSource = null;
-            BA_Objects.DataSource oUnitsDataSource = null;
             if (dictLocalDataSources.ContainsKey(strDataType))
             {
                oValuesDataSource = dictLocalDataSources[strDataType];
             }
-            if (dictLocalDataSources.ContainsKey(Constants.DATA_TYPE_SWE))
-            {
-                oUnitsDataSource = dictLocalDataSources[Constants.DATA_TYPE_SWE];
-            }
-            if (oValuesDataSource != null && oUnitsDataSource != null)
+            if (oValuesDataSource != null)
             {
                 double dblStretchMin = oValuesDataSource.minValue;
                 double dblStretchMax = oValuesDataSource.maxValue;
                 string strPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, true) +
                     Constants.FILES_SNODAS_SWE[idxDefaultMonth];
-                string strBagisTag = await GeneralTools.GetBagisTagAsync(strPath, Constants.META_TAG_XPATH);
-                string layerUnits = "";
-                if (!string.IsNullOrEmpty(strBagisTag))
-                {
-                    layerUnits = GeneralTools.GetValueForKey(strBagisTag, Constants.META_TAG_ZUNIT_VALUE, ';');
-                }
-                if (string.IsNullOrEmpty(layerUnits))
-                {
-                    Module1.Current.ModuleLogManager.LogError(nameof(SWEUnitsConversionAsync),
-                        "Unable to read units from layer. Reading from local config file!!");
-                    layerUnits = oUnitsDataSource.units;
-                }
+                string layerUnits = await QuerySweLayerUnitsAsync(strPath);
                 string strSweDisplayUnits = Module1.Current.BatchToolSettings.SweDisplayUnits;
                 if (layerUnits != null && !strSweDisplayUnits.Equals(layerUnits))
                 {
@@ -2601,6 +2583,32 @@ namespace bagis_pro
             return arrReturnValues;
         }
 
+        public static async Task<string> QuerySweLayerUnitsAsync(string strPath)
+        {
+            string strBagisTag = await GeneralTools.GetBagisTagAsync(strPath, Constants.META_TAG_XPATH);
+            string layerUnits = Constants.UNITS_MILLIMETERS;
+                if (!string.IsNullOrEmpty(strBagisTag))
+            {
+                layerUnits = GeneralTools.GetValueForKey(strBagisTag, Constants.META_TAG_ZUNIT_VALUE, ';');
+            }
+            if (string.IsNullOrEmpty(layerUnits))
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(QuerySweLayerUnitsAsync),
+                    "Unable to read units from layer. Reading from local config file!!");
+                IDictionary<string, BA_Objects.DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
+                BA_Objects.DataSource oUnitsDataSource = null;
+                if (dictLocalDataSources.ContainsKey(Constants.DATA_TYPE_SWE))
+                {
+                    oUnitsDataSource = dictLocalDataSources[Constants.DATA_TYPE_SWE];
+                }
+                if (oUnitsDataSource != null)
+                {
+                    layerUnits = oUnitsDataSource.units;
+                }                
+            }
+            return layerUnits;
+        }
+
         public static async Task<BA_ReturnCode> DisplaySWEDeltaMapAsync(int idxDefaultDeltaMonth, int idxDefaultUnitsMonth)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
@@ -2608,31 +2616,14 @@ namespace bagis_pro
                 Constants.FILES_SWE_DELTA[idxDefaultDeltaMonth];
             Uri uri = new Uri(strPath);
 
-            double[] arrReturnValues = await MapTools.SWEUnitsConversionAsync(Constants.DATA_TYPE_SWE_DELTA, idxDefaultUnitsMonth);
-            double dblStretchMin = arrReturnValues[IDX_STRETCH_MIN];
-            if (dblStretchMin != ERROR_MIN)
-            {
-                double dblStretchMax = arrReturnValues[IDX_STRETCH_MAX];
-                double dblLabelMin = arrReturnValues[IDX_LABEL_MIN];
-                double dblLabelMax = arrReturnValues[IDX_LABEL_MAX];
+            IList<BA_Objects.Interval> lstInterval = await CalculateSweDeltaZonesAsync(idxDefaultDeltaMonth);
+            success = await MapTools.DisplayRasterWithClassifyAsync(uri, Constants.LAYER_NAMES_SWE_DELTA[idxDefaultDeltaMonth], "ColorBrewer Schemes (RGB)",
+                "Red-Blue (Continuous)", "NAME", 30, ClassificationMethod.Manual, lstInterval.Count, lstInterval, false);
 
-                // Need to set stretch min and max to same value so that white correctly displays 0 on all maps
-                // Check min and max values for whichever has the greatest absolute value
-                // Set min to the negative of that number and max to the positive of that number.
-                // https://community.esri.com/t5/arcgis-mapping-and-charting/set-meaningful-break-value-in-divergent-color-ramp/td-p/393182
-                if (Math.Abs(dblStretchMin) > Math.Abs(dblStretchMax))
-                {
-                    dblStretchMax = Math.Abs(dblStretchMin);
-                }
-                else if (Math.Abs(dblStretchMin) < Math.Abs(dblStretchMax))
-                {
-                    dblStretchMin = -1 * dblStretchMax;
-                }
-
-                success = await MapTools.DisplayStretchRasterWithSymbolAsync(uri, Constants.LAYER_NAMES_SWE_DELTA[idxDefaultDeltaMonth], "ColorBrewer Schemes (RGB)",
-                    "Red-Blue (Continuous)", 30, false, true, dblStretchMin, dblStretchMax, dblLabelMin,
-                    dblLabelMax, true);
-                IList<string> lstLayersFiles = new List<string>();
+            //success = await MapTools.DisplayStretchRasterWithSymbolAsync(uri, Constants.LAYER_NAMES_SWE_DELTA[idxDefaultDeltaMonth], "ColorBrewer Schemes (RGB)",
+            //    "Red-Blue (Continuous)", 30, false, true, dblStretchMin, dblStretchMax, dblLabelMin,
+            //    dblLabelMax, true);
+            IList<string> lstLayersFiles = new List<string>();
                 if (success == BA_ReturnCode.Success)
                 {
                     await QueuedTask.Run(() =>
@@ -2685,7 +2676,6 @@ namespace bagis_pro
                     }
                 }
                 Module1.Current.DisplayedSweDeltaMap = Constants.LAYER_NAMES_SWE_DELTA[idxDefaultDeltaMonth];
-            }
             return success;
         }
 
@@ -3020,14 +3010,16 @@ namespace bagis_pro
             return multiPartRamp;
         }
 
-        private static async Task<IList<BA_Objects.Interval>> CalculateSweZonesAsync(int idxDefaultMonth,
-            string dataSourceUnits)
+        private static async Task<IList<BA_Objects.Interval>> CalculateSweZonesAsync(int idxDefaultMonth)
         {
             // Calculate interval list
             //@ToDo: Move this to config file
             int intZones = 7;
             intZones = intZones - 2;  //Subtract the 2 zones on the bottom that we create
             double[] arrReturnValues = await MapTools.SWEUnitsConversionAsync(Constants.DATA_TYPE_SWE, idxDefaultMonth);
+            string strPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, true) +
+                Constants.FILES_SNODAS_SWE[idxDefaultMonth];
+            string dataSourceUnits = await QuerySweLayerUnitsAsync(strPath);
             if (arrReturnValues.Length == 4)
             {
                 bool bSkipInterval2 = false;
@@ -3116,27 +3108,6 @@ namespace bagis_pro
                         }
                     }
                 }
-                //// Create zones layer
-                //string strMaskPath = GeodatabaseTools.GetGeodatabasePath(aoiFilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_BUFFERED_VECTOR;
-                //Uri uriLayers = new Uri(GeodatabaseTools.GetGeodatabasePath(aoiFilePath, GeodatabaseNames.Layers));
-                //BA_ReturnCode success = BA_ReturnCode.UnknownError;
-                //for (int i = 0; i < Constants.FILES_SNODAS_SWE.Length; i++)
-                //{
-                //    string strLayer = uriLayers.LocalPath + "\\" + Constants.FILES_SNODAS_SWE[i];
-                //    string strZonesRaster = GeodatabaseTools.GetGeodatabasePath(aoiFilePath, GeodatabaseNames.Analysis, true) +
-                //        Constants.FILES_SWE_ZONES[i];
-                //    if (! await GeodatabaseTools.RasterDatasetExistsAsync(uriLayers, Constants.FILES_SNODAS_SWE[i]))
-                //    {
-                //        Module1.Current.ModuleLogManager.LogError(nameof(GenerateSweZoneLayersAsync),
-                //            "Unable to locate " + strLayer + ". Zones layer will not be created!");
-                //    }
-                //    else
-                //    {
-                //        success = await AnalysisTools.CalculateZonesAsync(aoiFilePath, strLayer,
-                //            lstIntervals, strZonesRaster, strMaskPath, "SWE");
-                //    }
-
-                //}
                 return lstIntervals;
             }
             else
@@ -3145,7 +3116,115 @@ namespace bagis_pro
                     "Unable to retrieve min/max SWE values from analysis.xml. Calculation halted!");
                 return null;
             }
+        }
 
+        private static async Task<IList<BA_Objects.Interval>> CalculateSweDeltaZonesAsync(int idxDefaultMonth)
+        {
+            // Calculate interval list
+            //@ToDo: Move this to config file
+            int intZones = 7;
+            intZones = intZones - 1;  //Subtract the zones in the middle that we create
+            int halfZones = intZones / 2;
+            double[] arrReturnValues = await MapTools.SWEUnitsConversionAsync(Constants.DATA_TYPE_SWE_DELTA, idxDefaultMonth);
+            string strPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, true) +
+                Constants.FILES_SNODAS_SWE[idxDefaultMonth];
+            string dataSourceUnits = await QuerySweLayerUnitsAsync(strPath);    // Data source units come from source SWE layer
+            if (arrReturnValues.Length == 4)
+            {
+                // Calculate interval list for negative values
+                double dblInterval = Math.Round(arrReturnValues[2] / halfZones, 2);
+                //determine the interval decimal place to add an increment value to the lower bound
+                IList<BA_Objects.Interval> lstNegInterval = new List<BA_Objects.Interval>();
+                int zones = GeneralTools.CreateRangeArray(arrReturnValues[2], -0.00001, Math.Abs(dblInterval), out lstNegInterval);
+                // Make sure we don't have > than intzones / 2
+                if (zones > halfZones)
+                {
+                    // Merge 2 lower zones
+                    if (lstNegInterval.Count > halfZones)
+                    {
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateSweDeltaZonesAsync),
+                            "Merging 2 lowest intervals. Too many intervals created.");
+                        var interval = lstNegInterval[0];
+                        interval.LowerBound = lstNegInterval[1].LowerBound;
+                        interval.Name = interval.LowerBound + " - " + interval.UpperBound;
+                        lstNegInterval.RemoveAt(0);
+                    }
+                }
+                // Reset upper interval to mesh with middle interval
+                lstNegInterval[halfZones - 1].UpperBound = -0.00001;
+                lstNegInterval[halfZones - 1].Name = lstNegInterval[halfZones - 1].LowerBound + "-" + 
+                    lstNegInterval[halfZones - 1].UpperBound.ToString("0." + new string('#', 10));
+                // Manually build middle intervals; Spec is defined
+                BA_Objects.Interval oInterval = new BA_Objects.Interval
+                {
+                    LowerBound = lstNegInterval[halfZones-1].UpperBound,
+                    UpperBound = 0.00001F,
+                    Value = halfZones + 1
+                };
+                oInterval.Name = oInterval.LowerBound.ToString("0." + new string('#', 10)) + " - " + oInterval.UpperBound.ToString("0." + new string('#', 10));
+                lstNegInterval.Add(oInterval);
+
+                // Calculate interval list for negative values
+                dblInterval = Math.Round(arrReturnValues[3] / halfZones, 2);
+                IList<BA_Objects.Interval> lstPosInterval = new List<BA_Objects.Interval>();
+                zones = GeneralTools.CreateRangeArray(lstNegInterval.Last().UpperBound, arrReturnValues[3],dblInterval, out lstPosInterval);
+                // Make sure we don't have > than half zones
+                if (zones > halfZones)
+                {
+                    // Merge 2 upper zones
+                    if (lstPosInterval.Count > halfZones)
+                    {
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateSweDeltaZonesAsync),
+                            "Merging 2 highest intervals. Too many intervals created.");
+                        var interval = lstPosInterval[zones - 1];
+                        interval.UpperBound = lstPosInterval[halfZones].UpperBound;
+                        interval.Name = interval.LowerBound + " - " + interval.UpperBound;
+                        lstPosInterval.RemoveAt(halfZones);
+                    }
+                }
+                // Reset lower interval to mesh with middle interval
+                lstPosInterval[0].LowerBound = lstNegInterval.Last().UpperBound;
+                lstPosInterval[0].Name = lstPosInterval[0].LowerBound.ToString("0." + new string('#', 10)) + " - " +
+                    lstPosInterval[0].UpperBound.ToString("0." + new string('#', 10));
+
+                // Merge intervals to create 1 list
+                foreach (var item in lstPosInterval)
+                {
+                    lstNegInterval.Add(item);
+                }
+
+                // Reset values in calculated interval list
+                int idx = 1;
+                foreach (var item in lstNegInterval)
+                {
+                    item.Value = idx;
+                    idx++;
+                }
+                string strDisplayUnits = Module1.Current.BatchToolSettings.SweDisplayUnits;
+                if (!dataSourceUnits.Equals(strDisplayUnits))
+                {
+                    foreach (var nextInterval in lstNegInterval)
+                    {
+                        if (strDisplayUnits.Equals(Constants.UNITS_INCHES))
+                        {
+                            nextInterval.LowerBound = LinearUnit.Inches.ConvertTo(nextInterval.LowerBound, LinearUnit.Millimeters);
+                            nextInterval.UpperBound = LinearUnit.Inches.ConvertTo(nextInterval.UpperBound, LinearUnit.Millimeters);
+                        }
+                        else if (dataSourceUnits.Equals(Constants.UNITS_MILLIMETERS))
+                        {
+                            nextInterval.LowerBound = LinearUnit.Millimeters.ConvertTo(nextInterval.LowerBound, LinearUnit.Inches);
+                            nextInterval.UpperBound = LinearUnit.Millimeters.ConvertTo(nextInterval.UpperBound, LinearUnit.Inches);
+                        }
+                    }
+                }
+                return lstNegInterval;
+            }
+            else
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(CalculateSweDeltaZonesAsync),
+                    "Unable to retrieve min/max SWE values from analysis.xml. Calculation halted!");
+                return null;
+            }
         }
     }
 }
