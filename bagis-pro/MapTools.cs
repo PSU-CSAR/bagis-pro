@@ -272,7 +272,7 @@ namespace bagis_pro
                         Constants.FILE_PRECIPITATION_CONTRIBUTION;
                     uri = new Uri(strPath);
                     success = await MapTools.DisplayRasterWithClassifyAsync(uri, Constants.MAPS_PRECIPITATION_CONTRIBUTION, "ColorBrewer Schemes (RGB)",
-                               "Yellow-Green-Blue (Continuous)", Constants.FIELD_VOL_ACRE_FT, 30, ClassificationMethod.EqualInterval, 10, null, false);
+                               "Yellow-Green-Blue (Continuous)", Constants.FIELD_VOL_ACRE_FT, 30, ClassificationMethod.EqualInterval, 10, null, null, false);
 
                     if (success == BA_ReturnCode.Success)
                         Module1.ActivateState("MapButtonPalette_BtnPrecipContrib_State");
@@ -879,7 +879,7 @@ namespace bagis_pro
 
         public static async Task<BA_ReturnCode> DisplayRasterWithClassifyAsync(Uri rasterUri, string displayName, string styleCategory, 
             string styleName, string fieldName, int transparency, ClassificationMethod classificationMethod, int numClasses, IList<BA_Objects.Interval> lstInterval,
-                bool isVisible)
+            int[,] arrColors, bool isVisible)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
             // parse the uri for the folder and file
@@ -927,7 +927,7 @@ namespace bagis_pro
             }
             else
             {
-                await MapTools.SetToClassifyRenderer(displayName, styleCategory, styleName, fieldName, lstInterval);
+                await MapTools.SetToClassifyRenderer(displayName, fieldName, lstInterval, arrColors);
             }
 
             success = BA_ReturnCode.Success;
@@ -1078,7 +1078,7 @@ namespace bagis_pro
         }
 
         public static async Task SetToClassifyRenderer(string layerName, string styleCategory,
-            string styleName, string fieldName, ClassificationMethod classificationMethod,int numberofClasses)
+            string styleName, string fieldName, ClassificationMethod classificationMethod, int numberofClasses)
         {
             // Get the layer we want to symbolize from the map
             Layer oLayer =
@@ -1116,7 +1116,8 @@ namespace bagis_pro
             });
         }
 
-        public static async Task SetToClassifyRenderer(string layerName, string styleCategory, string styleName, string fieldName, IList<BA_Objects.Interval> lstInterval)
+        public static async Task SetToClassifyRenderer(string layerName, string fieldName, IList<BA_Objects.Interval> lstInterval,
+            int[,] arrColors)
         {
             // Get the layer we want to symbolize from the map
             Layer oLayer =
@@ -1132,20 +1133,7 @@ namespace bagis_pro
                 return;
             }
 
-            CIMColorRamp cimColorRamp = null;
-            if (string.IsNullOrEmpty(styleCategory))
-            {
-                cimColorRamp = await CreateCustomColorRampAsync(Constants.ARR_SWE_COLORS);
-            }
-            else
-            {
-                StyleProjectItem style =
-                    Project.Current.GetItems<StyleProjectItem>().FirstOrDefault(s => s.Name == styleCategory);
-                if (style == null) return;
-                var colorRampList = await QueuedTask.Run(() => style.SearchColorRamps(styleName));
-                if (colorRampList == null || colorRampList.Count == 0) return;
-                cimColorRamp = colorRampList[0].ColorRamp;
-            }
+            CIMColorRamp cimColorRamp = await CreateCustomColorRampAsync(arrColors);
 
             // Creates a new Classify Colorizer Definition using defined parameters.
             ClassifyColorizerDefinition classifyColorizerDef =
@@ -2473,7 +2461,7 @@ namespace bagis_pro
 
             IList<BA_Objects.Interval> lstInterval = await CalculateSweZonesAsync(idxDefaultMonth);
             success = await MapTools.DisplayRasterWithClassifyAsync(uri, Constants.LAYER_NAMES_SNODAS_SWE[idxDefaultMonth], "",
-                "", "NAME", 30, ClassificationMethod.Manual, lstInterval.Count, lstInterval, false);
+                "", "NAME", 30, ClassificationMethod.Manual, lstInterval.Count, lstInterval, Constants.ARR_SWE_COLORS, false);
             IList<string> lstLayersFiles = new List<string>();
                 if (success == BA_ReturnCode.Success)
                 {
@@ -2617,8 +2605,8 @@ namespace bagis_pro
             Uri uri = new Uri(strPath);
 
             IList<BA_Objects.Interval> lstInterval = await CalculateSweDeltaZonesAsync(idxDefaultDeltaMonth);
-            success = await MapTools.DisplayRasterWithClassifyAsync(uri, Constants.LAYER_NAMES_SWE_DELTA[idxDefaultDeltaMonth], "ColorBrewer Schemes (RGB)",
-                "Red-Blue (Continuous)", "NAME", 30, ClassificationMethod.Manual, lstInterval.Count, lstInterval, false);
+            success = await MapTools.DisplayRasterWithClassifyAsync(uri, Constants.LAYER_NAMES_SWE_DELTA[idxDefaultDeltaMonth], "",
+                "", "NAME", 30, ClassificationMethod.Manual, lstInterval.Count, lstInterval, Constants.ARR_SWE_DELTA_COLORS, false);
 
             //success = await MapTools.DisplayStretchRasterWithSymbolAsync(uri, Constants.LAYER_NAMES_SWE_DELTA[idxDefaultDeltaMonth], "ColorBrewer Schemes (RGB)",
             //    "Red-Blue (Continuous)", 30, false, true, dblStretchMin, dblStretchMax, dblLabelMin,
@@ -3043,7 +3031,6 @@ namespace bagis_pro
                             "Merging 2 upper intervals. Too many intervals created.");
                         var interval = lstCalcInterval[intZones - 1];
                         interval.UpperBound = lstCalcInterval[intZones].UpperBound;
-                        interval.Name = interval.LowerBound + " - " + interval.UpperBound;
                         lstCalcInterval.RemoveAt(intZones);
                     }
                 }
@@ -3074,7 +3061,6 @@ namespace bagis_pro
                         UpperBound = floor,
                         Value = idx
                     };
-                    interval2.Name = interval2.LowerBound.ToString("0." + new string('#', 10)) + " - " + interval2.UpperBound;
                     lstIntervals.Add(interval2);
                     idx++;
                 }
@@ -3087,9 +3073,26 @@ namespace bagis_pro
                 // Reset lower bound for first item in lstCalcInterval
                 var calcItem = lstCalcInterval[0];
                 calcItem.LowerBound = lstIntervals.Last().UpperBound;
-                calcItem.Name = calcItem.LowerBound + " - " + calcItem.UpperBound;
                 // Merge 2 lists together
                 lstIntervals.AddRange(lstCalcInterval);
+                // Format name values
+                foreach (var item in lstIntervals)
+                {
+                    if (item.Value == 1)    // first interval: 
+                    {
+                        item.Name = String.Format("{0:0}", item.LowerBound);
+                    }
+                    else if (item.Value == 2)   // second interval
+                    {
+                        item.Name = String.Format("{0:0}", item.LowerBound) + " - " +
+                            String.Format("{0:0.0}", item.UpperBound);
+                    }
+                    else
+                    {
+                        item.Name = String.Format("{0:0.0}", item.LowerBound) + " - " +
+                            String.Format("{0:0.0}", item.UpperBound);
+                    }
+                }
                 // Reset lower and upper bound to layer units
                 string strDisplayUnits = Module1.Current.BatchToolSettings.SweDisplayUnits;
                 if (!dataSourceUnits.Equals(strDisplayUnits))
@@ -3146,14 +3149,11 @@ namespace bagis_pro
                             "Merging 2 lowest intervals. Too many intervals created.");
                         var interval = lstNegInterval[0];
                         interval.LowerBound = lstNegInterval[1].LowerBound;
-                        interval.Name = interval.LowerBound + " - " + interval.UpperBound;
                         lstNegInterval.RemoveAt(0);
                     }
                 }
                 // Reset upper interval to mesh with middle interval
                 lstNegInterval[halfZones - 1].UpperBound = -0.00001;
-                lstNegInterval[halfZones - 1].Name = lstNegInterval[halfZones - 1].LowerBound + "-" + 
-                    lstNegInterval[halfZones - 1].UpperBound.ToString("0." + new string('#', 10));
                 // Manually build middle intervals; Spec is defined
                 BA_Objects.Interval oInterval = new BA_Objects.Interval
                 {
@@ -3161,7 +3161,6 @@ namespace bagis_pro
                     UpperBound = 0.00001F,
                     Value = halfZones + 1
                 };
-                oInterval.Name = oInterval.LowerBound.ToString("0." + new string('#', 10)) + " - " + oInterval.UpperBound.ToString("0." + new string('#', 10));
                 lstNegInterval.Add(oInterval);
 
                 // Calculate interval list for negative values
@@ -3178,14 +3177,11 @@ namespace bagis_pro
                             "Merging 2 highest intervals. Too many intervals created.");
                         var interval = lstPosInterval[zones - 1];
                         interval.UpperBound = lstPosInterval[halfZones].UpperBound;
-                        interval.Name = interval.LowerBound + " - " + interval.UpperBound;
                         lstPosInterval.RemoveAt(halfZones);
                     }
                 }
                 // Reset lower interval to mesh with middle interval
                 lstPosInterval[0].LowerBound = lstNegInterval.Last().UpperBound;
-                lstPosInterval[0].Name = lstPosInterval[0].LowerBound.ToString("0." + new string('#', 10)) + " - " +
-                    lstPosInterval[0].UpperBound.ToString("0." + new string('#', 10));
 
                 // Merge intervals to create 1 list
                 foreach (var item in lstPosInterval)
@@ -3198,6 +3194,26 @@ namespace bagis_pro
                 foreach (var item in lstNegInterval)
                 {
                     item.Value = idx;
+                    // Format name property
+                    if (idx == halfZones + 1) // Middle interval
+                    {
+                        item.Name = String.Format("{0:0}", item.LowerBound);
+                    }
+                    else if (idx == halfZones)
+                    {
+                        item.Name = String.Format("{0:0.00}", item.LowerBound) + " - " +
+                            String.Format("{0:0}", item.UpperBound);
+                    }
+                    else if (idx == halfZones + 2)
+                    {
+                        item.Name = String.Format("{0:0}", item.LowerBound) + " - " +
+                            String.Format("{0:0.00}", item.UpperBound);
+                    }
+                    else
+                    {
+                        item.Name = String.Format("{0:0.00}", item.LowerBound) + " - " +
+                            String.Format("{0:0.00}", item.UpperBound);
+                    }
                     idx++;
                 }
                 string strDisplayUnits = Module1.Current.BatchToolSettings.SweDisplayUnits;
