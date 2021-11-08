@@ -240,11 +240,11 @@ namespace bagis_pro
                         Module1.ActivateState("MapButtonPalette_BtnAspect_State");
 
                     // add SNOTEL SWE zones layer
-                    int idxDefaultMonth = 5;    // May
+                    int idxDefaultMonth = 8;    // Note: This needs to be the month with the lowest SWE value for symbology; In this case July
                     success = await DisplaySWEMapAsync(idxDefaultMonth);
 
                     // add SWE delta layer
-                    success = await DisplaySWEDeltaMapAsync(0, 5);
+                    success = await DisplaySWEDeltaMapAsync(7, idxDefaultMonth);  // Note: this needs to be the month with the lowest delta value for symbology: June Delta
 
                     // add quarterly seasonal precipitation layer; Default is Q1
                     success = await DisplaySeasonalPrecipContribMapAsync(0, oAnalysis.SeasonalPrecipMax);
@@ -2604,7 +2604,7 @@ namespace bagis_pro
                 Constants.FILES_SWE_DELTA[idxDefaultDeltaMonth];
             Uri uri = new Uri(strPath);
 
-            IList<BA_Objects.Interval> lstInterval = await CalculateSweDeltaZonesAsync(idxDefaultDeltaMonth);
+            IList<BA_Objects.Interval> lstInterval = await CalculateSweDeltaZonesAsync(idxDefaultUnitsMonth);
             success = await MapTools.DisplayRasterWithClassifyAsync(uri, Constants.LAYER_NAMES_SWE_DELTA[idxDefaultDeltaMonth], "",
                 "", "NAME", 30, ClassificationMethod.Manual, lstInterval.Count, lstInterval, Constants.ARR_SWE_DELTA_COLORS, false);
 
@@ -3048,7 +3048,7 @@ namespace bagis_pro
                 }
                 else
                 {
-                    interval1.UpperBound = 0.00001;
+                    interval1.UpperBound = 0.0001;
                 }
                 interval1.Name = interval1.LowerBound + " - " + interval1.UpperBound.ToString("0." + new string('#', 10));
                 lstIntervals.Add(interval1);
