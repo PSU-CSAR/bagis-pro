@@ -52,6 +52,7 @@ namespace bagis_pro
         /// </summary>
         private string _heading = "Migrate to File Geodatabase";
         private string _aoiFolder = "";
+        private string _editFolder = "";
         private bool _canRun = false;   // Flag that indicates if things are in a state that the process can successfully run; Enables the button on the form
         public string Heading
         {
@@ -67,6 +68,14 @@ namespace bagis_pro
             set
             {
                 SetProperty(ref _aoiFolder, value, () => AoiFolder);
+            }
+        }
+        public string EditFolder
+        {
+            get { return _editFolder; }
+            set
+            {
+                SetProperty(ref _editFolder, value, () => EditFolder);
             }
         }
 
@@ -321,6 +330,80 @@ namespace bagis_pro
 
                 });
             }
+        }
+
+        public ICommand CmdEditFolder
+        {
+            get
+            {
+                return new RelayCommand( () =>
+                {
+                    //Display the filter in an Open Item dialog
+                    OpenItemDialog aNewFilter = new OpenItemDialog
+                    {
+                        Title = "Select a basin, aoi, or folder",
+                        MultiSelect = false,
+                        Filter = ItemFilters.folders
+                    };
+                    bool? ok = aNewFilter.ShowDialog();
+                    bool bOk = ok ?? false;
+                    if (bOk)
+                    {
+                        AoiFolder = "";
+                        var arrFileNames = aNewFilter.Items;
+                        foreach (var item in arrFileNames)
+                        {
+                            AoiFolder = item.Path;
+                        }
+                    }
+
+                    System.Windows.MessageBoxResult res = MessageBox.Show("This process will rename the parent folder and all child folders to remove spaces. It" +
+                        " cannot be undone. Do you wish to continue?", "BAGIS-PRO", System.Windows.MessageBoxButton.YesNo);
+                    if (res != System.Windows.MessageBoxResult.Yes)
+                    {
+                        return;
+                    }
+
+                    string strLogFolder = AoiFolder + "\\" + Constants.FOLDER_MAP_PACKAGE;
+                    // Make sure the maps_publish folder exists under the selected folder
+                    if (!Directory.Exists(Path.GetDirectoryName(strLogFolder)))
+                    {
+                        Directory.CreateDirectory(Path.GetDirectoryName(strLogFolder));
+                    }
+
+                    // Set logger to parent folder directory
+                    Module1.Current.ModuleLogManager.UpdateLogFileLocation(strLogFolder);
+                    string strLogEntry = "BEGIN renaming folders";
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(CmdEditFolder), strLogEntry);
+
+                    int intCount = 0;
+                    try
+                    {
+                        string[] folders = Directory.GetDirectories(AoiFolder, "*", SearchOption.AllDirectories);
+                        // Add parent folder
+                        Array.Resize(ref folders, folders.Length + 1);
+                        folders[folders.Length - 1] = AoiFolder;
+                        foreach (var item in folders)
+                        {
+                            string dirName = new DirectoryInfo(item).Name;
+                            if (dirName.Contains(" "))
+                            {
+                                strLogEntry = item + " contains a space and will be renamed";
+                                Module1.Current.ModuleLogManager.LogDebug(nameof(CmdEditFolder), strLogEntry);
+                                string renamedItem = item.Replace(" ", "_");
+                                Directory.Move(item, renamedItem);
+                                intCount++;
+                            }
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        strLogEntry = "An error occurred while renaming the directories " + e.StackTrace + "\r\n";
+                        Module1.Current.ModuleLogManager.LogError(nameof(CmdEditFolder), strLogEntry);
+                    }
+                    MessageBox.Show(intCount + " folders were renamed!", "BAGIS-PRO");
+                });
+            }                                
         }
 
 
