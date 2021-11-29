@@ -259,8 +259,8 @@ namespace bagis_pro
         public const int VALUE_NO_DATA_9999 = -9999;
         public const string VALUE_NO_DATA = "NoData";
         public const string VALUE_UNKNOWN = "Unknown";
-        // BAGIS V3 allowed elevation intervals up to 5000; This tool only allows up to 500
-        public static readonly short[] VALUES_ELEV_INTERVALS = new short[] { 50, 100, 200, 250, 500};
+        // BAGIS V3 allowed elevation intervals up to 5000; This tool only allows up to 1000
+        public static readonly short[] VALUES_ELEV_INTERVALS = new short[] { 50, 100, 200, 250, 500, 1000};
 
         public const string UNITS_INCHES = "Inches";
         public const string UNITS_MILLIMETERS = "Millimeters";
@@ -302,6 +302,7 @@ namespace bagis_pro
                                                                 "MapButtonPalette_BtnSeasonalPrecipContribSQ3_State",
                                                                 "MapButtonPalette_BtnSeasonalPrecipContribSQ4_State",
                                                                 "MapButtonPalette_BtnRoads_State",
+                                                                "MapButtonPalette_BtnPublicLandOwnership_State",
                                                                 "MapButtonPalette_BtnBelowTreeline_State",
                                                                 "MapButtonPalette_BtnPublicLandZones_State",
                                                                 "MapButtonPalette_BtnSitesLocationZone_State",

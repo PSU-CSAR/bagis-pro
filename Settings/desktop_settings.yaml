@@ -15,7 +15,7 @@ bagis:
   snowCourseElev: elevation
   snowCourseName: name
   prism: http://bagis.geog.pdx.edu/arcgis/services/BAGIS_PRISM_1981_2010
-  westernStateBoundaries: http://bagis.geog.pdx.edu/arcgis/rest/services/BAGIS_GISLayers/AOI_Location_Maps/MapServer/0
+  westernStateBoundaries: http://bagis.geog.pdx.edu/arcgis/rest/services/BAGIS_GISLayers/AOI_Location_Maps/MapServer
 
 bagis-pro:
   dataSources:
@@ -52,7 +52,8 @@ bagis-pro:
      AoiPrecipFile: prism.gdb\Annual
      PrecipZonesCount: 8
      AspectDirectionsCount: 4
-     MinElevationZonesCount: 6
+     MinElevationZonesCount: 8
+     SnotelSweZonesCount: 7
      PrecipBufferDistance: 1000
      PrecipBufferUnits: Meters
      SnotelBufferDistance: 100

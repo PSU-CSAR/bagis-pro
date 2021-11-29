@@ -616,7 +616,7 @@ namespace bagis_pro
                         string[] arrFound = new string[arrSearch.Length];
                         if (!String.IsNullOrEmpty(strNearId))
                         {
-                            queryFilter.WhereClause = Constants.FIELD_OBJECT_ID + " = '" + strNearId + "'";
+                            queryFilter.WhereClause = Constants.FIELD_OBJECT_ID + " = " + strNearId;
                             arrFound = await ws.QueryServiceForValuesAsync(usgsServiceUri, usgsServiceLayerId, arrSearch, queryFilter);
                             if (arrFound != null && arrFound.Length == 3 && arrFound[0] != null)
                             {

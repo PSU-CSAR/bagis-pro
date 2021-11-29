@@ -1370,8 +1370,10 @@ namespace bagis_pro
                };
                cimLeg.GraphicFrame.BorderGapX = 3;
                cimLeg.GraphicFrame.BorderGapY = 3;
-               // Apply the changes
-               legend.SetDefinition(cimLeg);
+                //cimLeg.FittingStrategy = LegendFittingStrategy.AdjustFrame;
+
+                // Apply the changes
+                legend.SetDefinition(cimLeg);
 
            });
             return BA_ReturnCode.Success;
@@ -1442,6 +1444,17 @@ namespace bagis_pro
                         }
                         // Set the legend items
                         legend.Items = arrTempItems;
+
+                        // Set legend fitting strategy to accommodate longer classification list if elevation
+                        // Otherwise adjust columns and size to make it fit
+                        if (lstLegendLayer.Contains(Constants.MAPS_ELEV_ZONE))
+                        {
+                            legend.FittingStrategy = LegendFittingStrategy.AdjustFrame;
+                        }
+                        else
+                        {
+                            legend.FittingStrategy = LegendFittingStrategy.AdjustColumnsAndSize;
+                        }
                         legend.Visible = true;
                     }
                     else
@@ -3001,8 +3014,18 @@ namespace bagis_pro
         private static async Task<IList<BA_Objects.Interval>> CalculateSweZonesAsync(int idxDefaultMonth)
         {
             // Calculate interval list
-            //@ToDo: Move this to config file
-            int intZones = 7;
+            List<BA_Objects.Interval> lstIntervals = new List<BA_Objects.Interval>();
+            int intZones = -1;
+            if (Module1.Current.BatchToolSettings.SnotelSweZonesCount != null)
+            {
+                intZones = (int)Module1.Current.BatchToolSettings.SnotelSweZonesCount;
+            }
+            else
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(CalculateSweZonesAsync),
+                    "Unable to retrieve SnotelSweZonesCount from batch_tool_settings.json. Calculation halted!");
+                return null;
+            }
             intZones = intZones - 2;  //Subtract the 2 zones on the bottom that we create
             double[] arrReturnValues = await MapTools.SWEUnitsConversionAsync(Constants.DATA_TYPE_SWE, idxDefaultMonth);
             string strPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, true) +
@@ -3035,7 +3058,6 @@ namespace bagis_pro
                     }
                 }
                 // Manually build first 2 intervals; Spec is hard-coded
-                List<BA_Objects.Interval> lstIntervals = new List<BA_Objects.Interval>();
                 int idx = 1;
                 BA_Objects.Interval interval1 = new BA_Objects.Interval
                 {
