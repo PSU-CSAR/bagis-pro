@@ -2767,7 +2767,7 @@ namespace bagis_pro
                     }
                     while (Module1.Current.MapFinishedLoading == false);
 
-                    BA_ReturnCode success2 = await GeneralTools.ExportMapToPdfAsync();    // export each map to pdf
+                    BA_ReturnCode success2 = await GeneralTools.ExportMapToPdfAsync(150);    // export each map to pdf
                 }
                 else
                 {

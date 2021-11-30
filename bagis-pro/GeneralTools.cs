@@ -37,7 +37,7 @@ namespace bagis_pro
                                       new Uri(asm.CodeBase).LocalPath));
         }
 
-        public static async Task<BA_ReturnCode> ExportMapToPdfAsync()
+        public static async Task<BA_ReturnCode> ExportMapToPdfAsync(int intResolution)
         {
             try
             {
@@ -48,7 +48,7 @@ namespace bagis_pro
                 PDFFormat PDF = new PDFFormat()
                 {
                     OutputFileName = GetFullPdfFileName(Module1.Current.DisplayedMap),
-                    Resolution = 300,
+                    Resolution = intResolution,
                     DoCompressVectorGraphics = true,
                     DoEmbedFonts = true,
                     HasGeoRefInfo = true,

@@ -114,9 +114,9 @@ namespace bagis_pro
         public static readonly string[] FILE_EXPORT_PRECIPITATION_DISTRIBUTION_FILES = new string[] { FILE_EXPORT_MAP_PRECIPITATION_PDF, FILE_EXPORT_CHART_ELEV_PRECIP_CORR_PDF,
                                                                                                FILE_EXPORT_MAP_PRECIPITATION_CONTRIBUTION_PDF, FILE_EXPORT_CHART_AREA_ELEV_PRECIP_SITE_PDF,
                                                                                                FILE_EXPORT_CHART_PRECIP_REPRESENT_PDF, FILE_EXPORT_CRITICAL_PRECIPITATION_ZONES_PDF };
-        public static readonly string[] FILE_EXPORT_SITE_ANALYSIS_FILES = new string[] { FILE_EXPORT_MAP_ROADS_PDF, FILE_EXPORT_MAP_PUBLIC_LAND_ZONES_PDF, FILE_EXPORT_MAP_PUBLIC_LAND_OWNERSHIP_PDF,
-                                                                            FILE_EXPORT_MAP_BELOW_TREELINE_PDF, FILE_EXPORT_MAP_SITES_LOCATION_PDF, FILE_EXPORT_MAP_SITES_LOCATION_PRECIP_PDF,
-                                                                            FILE_EXPORT_MAP_SITES_LOCATION__PRECIP_CONTRIB_PDF };
+        public static readonly string[] FILE_EXPORT_SITE_ANALYSIS_FILES = new string[] { FILE_EXPORT_MAP_SITES_LOCATION_PDF, FILE_EXPORT_MAP_SITES_LOCATION_PRECIP_PDF, FILE_EXPORT_MAP_SITES_LOCATION__PRECIP_CONTRIB_PDF,
+                                                                                          FILE_EXPORT_MAP_ROADS_PDF, FILE_EXPORT_MAP_PUBLIC_LAND_ZONES_PDF, FILE_EXPORT_MAP_PUBLIC_LAND_OWNERSHIP_PDF,
+                                                                                          FILE_EXPORT_MAP_BELOW_TREELINE_PDF};
         public const string FILE_EXPORT_MAP_ROADS_PDF = "map_roads.pdf";
         public const string FILE_EXPORT_MAP_PUBLIC_LAND_ZONES_PDF = "map_public_land_zones.pdf";
         public const string FILE_EXPORT_MAP_BELOW_TREELINE_PDF = "map_below_treeline.pdf";
@@ -177,18 +177,18 @@ namespace bagis_pro
         public static readonly string[] LAYER_NAMES_SNODAS_SWE = new string[] { "November 1 SWE", "December 1 SWE", "January 1 SWE", "February 1 SWE",
                                                                                 "March 1 SWE", "April 1 SWE", "May 1 SWE", "June 1 SWE",
                                                                                 "July 1 SWE"};
-        public static readonly string[] MAP_TITLES_SNODAS_SWE = new string[] { "SNODAS SWE NOV 1ST", "SNODAS SWE DEC 1ST", "SNODAS SWE JAN 1ST", "SNODAS SWE FEB 1ST",
-                                                                               "SNODAS SWE MAR 1ST", "SNODAS SWE APR 1ST", "SNODAS SWE MAY 1ST",
-                                                                               "SNODAS SWE JUN 1ST", "SNODAS SWE JUL 1ST" };
+        public static readonly string[] MAP_TITLES_SNODAS_SWE = new string[] { "SNODAS MEAN SWE, NOV 1ST", "SNODAS MEAN SWE, DEC 1ST", "SNODAS MEAN SWE, JAN 1ST", "SNODAS MEAN SWE, FEB 1ST",
+                                                                               "SNODAS MEAN SWE, MAR 1ST", "SNODAS MEAN SWE, APR 1ST", "SNODAS MEAN SWE, MAY 1ST",
+                                                                               "SNODAS MEAN SWE, JUN 1ST", "SNODAS MEAN SWE, JUL 1ST" };
         public static readonly string[] FILES_SWE_DELTA = new string[] { "swe_dec_minus_nov", "swe_jan_minus_dec", "swe_feb_minus_jan",
                                                                          "swe_mar_minus_feb", "swe_apr_minus_mar", "swe_may_minus_apr",
                                                                          "swe_jun_minus_may", "swe_jul_minus_jun"};
         public static readonly string[] LAYER_NAMES_SWE_DELTA = new string[] { "November SWE Delta", "December SWE Delta", "January SWE Delta",
                                                                               "February SWE Delta", "March SWE Delta", "April SWE Delta",
                                                                               "May SWE Delta", "June SWE Delta"};
-        public static readonly string[] MAP_TITLES_SWE_DELTA = new string[] { "AVERAGE NOVEMBER SWE DELTA", "AVERAGE DECEMBER SWE DELTA", "AVERAGE JANUARY SWE DELTA",
-                                                                              "AVERAGE FEBRUARY SWE DELTA", "AVERAGE MARCH SWE DELTA", "AVERAGE APRIL SWE DELTA",
-                                                                              "AVERAGE MAY SWE DELTA", "AVERAGE JUNE SWE DELTA"};
+        public static readonly string[] MAP_TITLES_SWE_DELTA = new string[] { "SNODAS MEAN NOVEMBER SWE DELTA", "SNODAS MEAN DECEMBER SWE DELTA", "SNODAS MEAN JANUARY SWE DELTA",
+                                                                              "SNODAS MEAN FEBRUARY SWE DELTA", "SNODAS MEAN MARCH SWE DELTA", "SNODAS MEAN APRIL SWE DELTA",
+                                                                              "SNODAS MEAN MAY SWE DELTA", "SNODAS MEAN JUNE SWE DELTA"};
         public static readonly string[] FILES_SEASON_PRECIP_CONTRIB = new string[] {"sq1_precip_contrib", "sq2_precip_contrib", "sq3_precip_contrib",
                                                                                     "sq4_precip_contrib"};
         public static readonly string[] LAYER_NAMES_SEASON_PRECIP_CONTRIB = new string[] {"SQ1 Precip Contribution", "SQ2 Precip Contribution", "SQ3 Precip Contribution",
