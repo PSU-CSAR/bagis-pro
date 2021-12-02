@@ -247,7 +247,7 @@ namespace bagis_pro
                     success = await DisplaySWEDeltaMapAsync(7, idxDefaultMonth);  // Note: this needs to be the month with the lowest delta value for symbology: June Delta
 
                     // add quarterly seasonal precipitation layer; Default is Q1
-                    success = await DisplaySeasonalPrecipContribMapAsync(0, oAnalysis.SeasonalPrecipMax);
+                    success = await DisplaySeasonalPrecipContribMapAsync(0);
 
                     // add Precipitation zones layer
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
@@ -2680,16 +2680,39 @@ namespace bagis_pro
             return success;
         }
 
-        public static async Task<BA_ReturnCode> DisplaySeasonalPrecipContribMapAsync(int idxDefaultMonth, double dblMaxPercent)
+        public static async Task<BA_ReturnCode> DisplaySeasonalPrecipContribMapAsync(int idxDefaultMonth)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
             string strPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) +
                 Constants.FILES_SEASON_PRECIP_CONTRIB[idxDefaultMonth];
             Uri uri = new Uri(strPath);
-            
 
-            success = await MapTools.DisplayStretchRasterWithSymbolAsync(uri, Constants.LAYER_NAMES_SEASON_PRECIP_CONTRIB[idxDefaultMonth], "ColorBrewer Schemes (RGB)",
-                    "Yellow-Orange-Red (continuous)", 30, false, true, 0, dblMaxPercent, 0, Math.Ceiling(dblMaxPercent), false);
+            IList<BA_Objects.Interval> lstInterval = CalculateSeasonalPrecipZones();
+            //int[,] arrColors = null;
+            //if (lstInterval.Count < Constants.ARR_SWE_DELTA_COLORS.GetLength(0))
+            //{
+            //    arrColors = new int[lstInterval.Count, 4];
+            //    int idxSource = 3;
+            //    for (int i = 0; i < arrColors.GetLength(0); i++)
+            //    {
+            //        for (int j = 0; j < 4; j++)
+            //        {
+            //            arrColors[i, j] = Constants.ARR_SWE_DELTA_COLORS[idxSource, j];
+            //        }
+            //        idxSource++;
+            //    }
+            //}
+            //else
+            //{
+            //    arrColors = Constants.ARR_SWE_DELTA_COLORS;
+            //}
+            success = await MapTools.DisplayRasterWithClassifyAsync(uri, Constants.LAYER_NAMES_SEASON_PRECIP_CONTRIB[idxDefaultMonth], "",
+                "", "NAME", 30, ClassificationMethod.Manual, lstInterval.Count, lstInterval, Constants.ARR_SWE_DELTA_COLORS, false);
+
+
+            //success = await MapTools.DisplayStretchRasterWithSymbolAsync(uri, Constants.LAYER_NAMES_SEASON_PRECIP_CONTRIB[idxDefaultMonth], "ColorBrewer Schemes (RGB)",
+            //        "Yellow-Orange-Red (continuous)", 30, false, true, 0, dblMaxPercent, 0, Math.Ceiling(dblMaxPercent), false);
+
             IList<string> lstLayersFiles = new List<string>();
                 if (success == BA_ReturnCode.Success)
                 {
@@ -3146,7 +3169,6 @@ namespace bagis_pro
         private static async Task<IList<BA_Objects.Interval>> CalculateSweDeltaZonesAsync(int idxDefaultMonth)
         {
             // Calculate interval list
-            //@ToDo: Move this to config file
             int intZones = 7;
             intZones = intZones - 1;  //Subtract the zones in the middle that we create
             int halfZones = intZones / 2;
@@ -3261,6 +3283,112 @@ namespace bagis_pro
             {
                 Module1.Current.ModuleLogManager.LogError(nameof(CalculateSweDeltaZonesAsync),
                     "Unable to retrieve min/max SWE values from analysis.xml. Calculation halted!");
+                return null;
+            }
+        }
+
+        private static IList<BA_Objects.Interval> CalculateSeasonalPrecipZones()
+        {
+            // Calculate interval list
+            int intZones = 7;
+            intZones = intZones - 1;  //Subtract the zones in the middle that we create
+            int halfZones = intZones / 2;
+            BA_Objects.Analysis oAnalysis = GeneralTools.GetAnalysisSettings(Module1.Current.Aoi.FilePath);
+            if (oAnalysis != null && oAnalysis.SeasonalPrecipMin > 0 && oAnalysis.SeasonalPrecipMax > 0)
+            {
+                // Calculate interval list for lower-range values
+                double lBound = 23.0F;
+                double uBound = 27.0F;
+                IList<BA_Objects.Interval> lstNegInterval = new List<BA_Objects.Interval>();
+                double dblRange = -1.0F;
+                double dblInterval = -1.0F;
+                int zones = -1;
+                if (oAnalysis.SeasonalPrecipMin >= lBound)
+                {
+                    lBound = oAnalysis.SeasonalPrecipMin;
+                    // Manually build middle intervals; Spec is defined
+                    BA_Objects.Interval oInterval = new BA_Objects.Interval
+                    {
+                        LowerBound = lBound,
+                        UpperBound = uBound,
+                        Value = 1
+                    };
+                    lstNegInterval.Add(oInterval);
+                }
+                else
+                {
+                    dblRange = lBound - oAnalysis.SeasonalPrecipMin;
+                    dblInterval = Math.Round(dblRange / halfZones, 2);
+                    //determine the interval decimal place to add an increment value to the lower bound
+                    zones = GeneralTools.CreateRangeArray(oAnalysis.SeasonalPrecipMin, lBound, dblInterval, out lstNegInterval);
+                    // Make sure we don't have > than intzones / 2
+                    if (zones > halfZones)
+                    {
+                        // Merge 2 lower zones
+                        if (lstNegInterval.Count > halfZones)
+                        {
+                            Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateSweDeltaZonesAsync),
+                                "Merging 2 lowest intervals. Too many intervals created.");
+                            var interval = lstNegInterval[0];
+                            interval.LowerBound = lstNegInterval[1].LowerBound;
+                            lstNegInterval.RemoveAt(0);
+                        }
+                    }
+                    // Reset upper interval to mesh with middle interval
+                    lstNegInterval[halfZones - 1].UpperBound = lBound;
+                    // Manually build middle intervals; Spec is defined
+                    BA_Objects.Interval oInterval = new BA_Objects.Interval
+                    {
+                        LowerBound = lstNegInterval[halfZones - 1].UpperBound,
+                        UpperBound = uBound,
+                        Value = halfZones + 1
+                    };
+                    lstNegInterval.Add(oInterval);
+                }
+
+                // Calculate interval list for positive values
+                dblRange = oAnalysis.SeasonalPrecipMax - uBound;
+                dblInterval = Math.Round(dblRange / halfZones, 2);
+                IList<BA_Objects.Interval> lstPosInterval = new List<BA_Objects.Interval>();
+                zones = GeneralTools.CreateRangeArray(uBound, oAnalysis.SeasonalPrecipMax, dblInterval, out lstPosInterval);
+                // Make sure we don't have > than half zones
+                if (zones > halfZones)
+                {
+                    // Merge 2 upper zones
+                    if (lstPosInterval.Count > halfZones)
+                    {
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateSweDeltaZonesAsync),
+                            "Merging 2 highest intervals. Too many intervals created.");
+                        var interval = lstPosInterval[zones - 1];
+                        interval.UpperBound = lstPosInterval[halfZones].UpperBound;
+                        lstPosInterval.RemoveAt(halfZones);
+                    }
+                }
+                // Reset lower interval to mesh with middle interval
+                lstPosInterval[0].LowerBound = lstNegInterval.Last().UpperBound;
+
+                // Merge intervals to create 1 list
+                foreach (var item in lstPosInterval)
+                {
+                    lstNegInterval.Add(item);
+                }
+
+                // Reset values in calculated interval list
+                int idx = 1;
+                foreach (var item in lstNegInterval)
+                {
+                    item.Value = idx;
+                    // Format name property
+                    item.Name = String.Format("{0:0.0}", item.LowerBound) + " - " +
+                            String.Format("{0:0.0}", item.UpperBound);
+                    idx++;
+                }
+                return lstNegInterval;
+            }
+            else
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(CalculateSweDeltaZonesAsync),
+                    "Unable to retrieve min/max seasonal precip values from analysis.xml. Calculation halted!");
                 return null;
             }
         }

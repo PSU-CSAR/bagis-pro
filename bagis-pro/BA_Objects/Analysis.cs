@@ -56,6 +56,7 @@ namespace bagis_pro.BA_Objects
         public string WinterStartMonth;
         public string WinterEndMonth;
         public double SeasonalPrecipMax = 100;
+        public double SeasonalPrecipMin = 0;
         public DateTime DateBagisSettingsConverted;
         public string DateCreatedText
         {

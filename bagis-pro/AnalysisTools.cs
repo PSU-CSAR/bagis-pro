@@ -3654,9 +3654,10 @@ namespace bagis_pro
                 string strInputLayerPaths = sb.ToString();
                 // Remove the ; at the end of the string
                 strInputLayerPaths = strInputLayerPaths.Substring(0, strInputLayerPaths.Length - 1);
-                string strOutputPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true)
+                string strMaxPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true)
                     + "tmpMax";
-                var parameters = Geoprocessing.MakeValueArray(strInputLayerPaths, strOutputPath, "MAXIMUM");
+                // Calculate maximum of all 4 layers using Cell Statistics
+                var parameters = Geoprocessing.MakeValueArray(strInputLayerPaths, strMaxPath, "MAXIMUM");
                 var environments = Geoprocessing.MakeEnvironmentArray(workspace: oAoi.FilePath);
                 var gpResult = await Geoprocessing.ExecuteToolAsync("CellStatistics_sa", parameters, environments,
                                                 CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
@@ -3666,41 +3667,66 @@ namespace bagis_pro
                         "Error Code: " + gpResult.ErrorCode + ". Unable to run cell statistics for seasonal quarters!");
                     return success;
                 }
-                else
+
+                string strMinPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true)
+                    + "tmpMin";
+                // Calculate minimum of all 4 layers using Cell Statistics
+                parameters = Geoprocessing.MakeValueArray(strInputLayerPaths, strMinPath, "MINIMUM");
+                gpResult = await Geoprocessing.ExecuteToolAsync("CellStatistics_sa", parameters, environments,
+                                                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                if (gpResult.IsFailed)
                 {
-                    double dblMax = -1;
-                    parameters = Geoprocessing.MakeValueArray(strOutputPath, "MAXIMUM");
-                    gpResult = await Geoprocessing.ExecuteToolAsync("GetRasterProperties_management", parameters, environments,
-                        CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                    if (gpResult.IsFailed)
+                    Module1.Current.ModuleLogManager.LogError(nameof(CalculateQuarterlyPrecipitationAsync),
+                        "Error Code: " + gpResult.ErrorCode + ". Unable to run cell statistics for seasonal quarters!");
+                    return success;
+                }
+
+                // Save outputs from GP tools into analysis.xml file
+                double dblMax = -1;
+                parameters = Geoprocessing.MakeValueArray(strMaxPath, "MAXIMUM");
+                gpResult = await Geoprocessing.ExecuteToolAsync("GetRasterProperties_management", parameters, environments,
+                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                if (gpResult.IsFailed)
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(CalculateQuarterlyPrecipitationAsync),
+                        "Error Code: " + gpResult.ErrorCode + ". Unable to calculate maximum value from cell statistics layer!");
+                    return success;
+                }
+                bool bIsDouble = Double.TryParse(Convert.ToString(gpResult.ReturnValue), out dblMax);
+
+                double dblMin = -1;
+                parameters = Geoprocessing.MakeValueArray(strMinPath, "MINIMUM");
+                gpResult = await Geoprocessing.ExecuteToolAsync("GetRasterProperties_management", parameters, environments,
+                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                if (gpResult.IsFailed)
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(CalculateQuarterlyPrecipitationAsync),
+                        "Error Code: " + gpResult.ErrorCode + ". Unable to calculate minimum value from cell statistics layer!");
+                    return success;
+                }
+                bIsDouble = Double.TryParse(Convert.ToString(gpResult.ReturnValue), out dblMin);
+
+                    if (dblMax > -1 && dblMin > -1)
                     {
-                        Module1.Current.ModuleLogManager.LogError(nameof(CalculateQuarterlyPrecipitationAsync),
-                            "Error Code: " + gpResult.ErrorCode + ". Unable to calculate maximum value from cell statistics layer!");
-                        return success;
-                    }
-                    else
-                    {
-                        bool bIsDouble = Double.TryParse(Convert.ToString(gpResult.ReturnValue), out dblMax);
-                        if (dblMax > -1)
+                        // save the min/max values to the configuration file
+                        dblMin = Math.Round(dblMin, 2) + 0.05;
+                        dblMax = Math.Round(dblMax, 2) + 0.05;
+                        BA_Objects.Analysis oAnalysis = GeneralTools.GetAnalysisSettings(oAoi.FilePath);
+                        if (oAnalysis != null)
                         {
-                            // save the max value to the configuration file
-                            dblMax = Math.Round(dblMax, 2) + 0.05;
-                            BA_Objects.Analysis oAnalysis = GeneralTools.GetAnalysisSettings(oAoi.FilePath);
-                            if (oAnalysis != null)
+                            oAnalysis.SeasonalPrecipMax = dblMax;
+                            oAnalysis.SeasonalPrecipMin = dblMin;
+                            success = GeneralTools.SaveAnalysisSettings(oAoi.FilePath, oAnalysis);
+                            if (success != BA_ReturnCode.Success)
                             {
-                                oAnalysis.SeasonalPrecipMax = dblMax;
-                                success = GeneralTools.SaveAnalysisSettings(oAoi.FilePath, oAnalysis);
-                                if (success != BA_ReturnCode.Success)
-                                {
-                                    Module1.Current.ModuleLogManager.LogError(nameof(CalculateQuarterlyPrecipitationAsync),
-                                        "Unable to save max value for quarterly precip to analysis settings!");
-                                }
+                                Module1.Current.ModuleLogManager.LogError(nameof(CalculateQuarterlyPrecipitationAsync),
+                                    "Unable to save min/max values for quarterly precip to analysis settings!");
                             }
                         }
-                        // Delete results of cell statistics
-                        success = await GeoprocessingTools.DeleteDatasetAsync(strOutputPath);
                     }
-                }
+                    // Delete results of cell statistics
+                    success = await GeoprocessingTools.DeleteDatasetAsync(strMaxPath);
+                    success = await GeoprocessingTools.DeleteDatasetAsync(strMinPath);
             }
             return success;
         }
