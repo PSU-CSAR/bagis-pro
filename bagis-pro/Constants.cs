@@ -335,12 +335,12 @@ namespace bagis_pro
 
         public static int[,] ARR_SWE_COLORS = new int[,] {
             {163,255,115,255},  // green
-            {156,156,156,255},
-            {255,211,127,255},
-            {230,152,0,255},
-            {0,92,230,255},
-            {115,178,255,255},
-            {255,255,255,255}};
+            {156,156,156,255},  // grey
+            {115,223,255,255},  // apatite blue
+            {115,178,255,255},  // light blue
+            {0,92,230,255},     // dark blue
+            {197,0,255,255},  // amethyst
+            {132,0,168,255}}; // dark amethyst
 
         public static int[,] ARR_SWE_DELTA_COLORS = new int[,] {
             {168,0,0,255},

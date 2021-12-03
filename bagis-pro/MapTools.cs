@@ -2707,7 +2707,7 @@ namespace bagis_pro
             //    arrColors = Constants.ARR_SWE_DELTA_COLORS;
             //}
             success = await MapTools.DisplayRasterWithClassifyAsync(uri, Constants.LAYER_NAMES_SEASON_PRECIP_CONTRIB[idxDefaultMonth], "",
-                "", "NAME", 30, ClassificationMethod.Manual, lstInterval.Count, lstInterval, Constants.ARR_SWE_DELTA_COLORS, false);
+                "", "NAME", 30, ClassificationMethod.Manual, lstInterval.Count, lstInterval, Constants.ARR_SWE_COLORS, false);
 
 
             //success = await MapTools.DisplayStretchRasterWithSymbolAsync(uri, Constants.LAYER_NAMES_SEASON_PRECIP_CONTRIB[idxDefaultMonth], "ColorBrewer Schemes (RGB)",
