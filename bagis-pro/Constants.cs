@@ -38,6 +38,7 @@ namespace bagis_pro
         public const string MAPS_WINTER_PRECIPITATION = "Winter Precipitation";
         public const string MAPS_SUBBASIN_BOUNDARY = "Subbasin Boundary";
         public const string MAPS_WESTERN_STATES_BOUNDARY = "Western States Boundary";
+        public const string MAPS_LAND_COVER = "Land Cover";
 
         public const string MAPS_LEGEND = "Legend";
         public const string MAPS_TITLE = "Title";
@@ -77,6 +78,7 @@ namespace bagis_pro
         public const string FILE_ROADS = "fs_roads";
         public const string FILE_PUBLIC_LAND = "public_lands";
         public const string FILE_VEGETATION_EVT = "LF_us_140evt";
+        public const string FILE_LAND_COVER = "nlcd_land_cover";
         public const string FILE_PREC_MEAN_ELEV = "precmeanelev";
         public const string FILE_ASP_ZONE_PREC = "aspzoneprec";
         public const string FILE_PREC_MEAN_ELEV_V = "precmeanelev_v";
@@ -142,6 +144,7 @@ namespace bagis_pro
         public const string FILE_EXPORT_SNODAS_SWE_PDF = "snodas_swe.pdf";
         public const string FILE_EXPORT_SEASONAL_PRECIP_DISTRIBUTION_PDF = "seasonal_precip_distribution.pdf";
         public const string FILE_EXPORT_MAP_AOI_LOCATION_PDF = "map_aoi_location.pdf";
+        public const string FILE_EXPORT_MAP_LAND_COVER_PDF = "map_land_cover.pdf";
         // List of files in the watershed PDF map package and the order in which they will be assembled
         public static string[] FILES_EXPORT_WATERSHED_PDF = new string[]
         { FILE_EXPORT_OVERVIEW_PDF, FILE_EXPORT_MAP_ELEV_PDF, FILE_EXPORT_ASPECT_DISTRIBUTION_PDF, FILE_EXPORT_SLOPE_DISTRIBUTION_PDF,
@@ -255,6 +258,7 @@ namespace bagis_pro
         public const string DATA_TYPE_PUBLIC_LAND = "Public Land";
         public const string DATA_TYPE_VEGETATION = "Vegetation Type";
         public const string DATA_TYPE_SWE_DELTA = "Snotel SWE Delta";
+        public const string DATA_TYPE_LAND_COVER = "Land Cover";
 
         public const int VALUE_NO_DATA_9999 = -9999;
         public const string VALUE_NO_DATA = "NoData";
@@ -309,7 +313,8 @@ namespace bagis_pro
                                                                 "MapButtonPalette_BtnSitesLocationPrecip_State",
                                                                 "MapButtonPalette_BtnSitesLocationZone_State",
                                                                 "MapButtonPalette_BtnAoiLocation_State",
-                                                                "MapButtonPalette_BtnSitesLocationPrecipContrib_State"};
+                                                                "MapButtonPalette_BtnSitesLocationPrecipContrib_State",
+                                                                "MapButtonPalette_BtnLandCover_State"};
         //public static string[] STATES_SITE_ANALYSIS_MAP_BUTTONS => new string[] {
         //                                                        "MapButtonPalette_BtnRoads_State",
         //                                                        "MapButtonPalette_BtnBelowTreeline_State",

@@ -197,7 +197,7 @@ namespace bagis_pro
                     siteBufferDistance = oAnalysis.BufferDistance;
                     if (!string.IsNullOrEmpty(oAnalysis.BufferUnitsText))
                     {
-                        siteElevRangeUnits = oAnalysis.BufferUnitsText.ToLower();
+                        siteBufferDistanceUnits = oAnalysis.BufferUnitsText.ToLower();
                     }
                 }
 

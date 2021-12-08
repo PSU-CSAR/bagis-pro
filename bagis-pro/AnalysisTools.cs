@@ -3014,15 +3014,22 @@ namespace bagis_pro
                     Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateSitesZonesAsync), "Begin create Snotel zone");
                     lstInterval = await GeodatabaseTools.GetUniqueSortedValuesAsync(uri, Constants.FILE_SNOTEL,
                         Constants.FIELD_SITE_ELEV, Constants.FIELD_SITE_NAME, demElevMaxMeters, demElevMinMeters);
-                    strLayer = GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Surfaces, true) +
-                        Constants.FILE_DEM_FILLED;
-                    strZonesRaster = GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Analysis, true) +
-                        Constants.FILE_SNOTEL_ZONE;
-                    success = await AnalysisTools.CalculateZonesAsync(aoiFolderPath, strLayer,
-                        lstInterval, strZonesRaster, strMaskPath, "SNOTEL");
-                    if (success == BA_ReturnCode.Success)
+                    if (lstInterval.Count > 0)
                     {
-                        Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateSitesZonesAsync), "Snotel zones created");
+                        strLayer = GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Surfaces, true) +
+                            Constants.FILE_DEM_FILLED;
+                        strZonesRaster = GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Analysis, true) +
+                            Constants.FILE_SNOTEL_ZONE;
+                        success = await AnalysisTools.CalculateZonesAsync(aoiFolderPath, strLayer,
+                            lstInterval, strZonesRaster, strMaskPath, "SNOTEL");
+                        if (success == BA_ReturnCode.Success)
+                        {
+                            Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateSitesZonesAsync), "Snotel zones created");
+                        }
+                    }
+                    else
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(CalculateSitesZonesAsync), "Could not create interval list. Snotel zones NOT created");
                     }
                 }
                 if (hasSnowCourse)
@@ -3030,13 +3037,20 @@ namespace bagis_pro
                     Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateSitesZonesAsync), "Begin create Snow Course zone");
                     lstInterval = await GeodatabaseTools.GetUniqueSortedValuesAsync(uri, Constants.FILE_SNOW_COURSE,
                         Constants.FIELD_SITE_ELEV, Constants.FIELD_SITE_NAME, demElevMaxMeters, demElevMinMeters);
-                    strZonesRaster = GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Analysis, true) +
-                        Constants.FILE_SCOS_ZONE;
-                    success = await AnalysisTools.CalculateZonesAsync(aoiFolderPath, strLayer,
-                        lstInterval, strZonesRaster, strMaskPath, "SNOW COURSE");
-                    if (success == BA_ReturnCode.Success)
+                    if (lstInterval.Count > 0)
                     {
-                        Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateSitesZonesAsync), "Snow course zones created");
+                        strZonesRaster = GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Analysis, true) +
+                            Constants.FILE_SCOS_ZONE;
+                        success = await AnalysisTools.CalculateZonesAsync(aoiFolderPath, strLayer,
+                            lstInterval, strZonesRaster, strMaskPath, "SNOW COURSE");
+                        if (success == BA_ReturnCode.Success)
+                        {
+                            Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateSitesZonesAsync), "Snow course zones created");
+                        }
+                    }
+                    else
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(CalculateSitesZonesAsync), "Could not create interval list. Snow course zones NOT created");
                     }
                 }
             }

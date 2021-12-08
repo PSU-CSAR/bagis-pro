@@ -754,7 +754,7 @@ namespace bagis_pro
 
         public static async Task RemoveLayersfromMapFrame()
         {
-            string[] arrLayerNames = new string[41];
+            string[] arrLayerNames = new string[42];
             arrLayerNames[0] = Constants.MAPS_AOI_BOUNDARY;
             arrLayerNames[1] = Constants.MAPS_STREAMS;
             arrLayerNames[2] = Constants.MAPS_SNOTEL;
@@ -775,7 +775,8 @@ namespace bagis_pro
             arrLayerNames[17] = Constants.MAPS_PRECIPITATION_CONTRIBUTION;
             arrLayerNames[18] = Constants.MAPS_WINTER_PRECIPITATION;
             arrLayerNames[19] = Constants.MAPS_SUBBASIN_BOUNDARY;
-            int idxLayerNames = 20;
+            arrLayerNames[20] = Constants.MAPS_LAND_COVER;
+            int idxLayerNames = 21;
             for (int i = 0; i < Constants.LAYER_NAMES_SNODAS_SWE.Length; i++)
             {
                 arrLayerNames[idxLayerNames] = Constants.LAYER_NAMES_SNODAS_SWE[i];
@@ -2010,6 +2011,25 @@ namespace bagis_pro
                     }
                     mapDefinition = new BA_Objects.MapDefinition(strTitle,
                         "Precipitation Units = Inches", Constants.FILE_EXPORT_MAP_WINTER_PRECIPITATION_PDF);
+                    mapDefinition.LayerList = lstLayers;
+                    mapDefinition.LegendLayerList = lstLegendLayers;
+                    break;
+                case BagisMapType.LAND_COVER:
+                    lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
+                                                   Constants.MAPS_HILLSHADE, Constants.MAPS_LAND_COVER};
+                    lstLegendLayers = new List<string> { Constants.MAPS_LAND_COVER };
+                    if (Module1.Current.Aoi.HasSnotel == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOTEL);
+                        lstLegendLayers.Add(Constants.MAPS_SNOTEL);
+                    }
+                    if (Module1.Current.Aoi.HasSnowCourse == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOW_COURSE);
+                        lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE);
+                    }
+                    mapDefinition = new BA_Objects.MapDefinition("LAND COVER",
+                        " ", Constants.FILE_EXPORT_MAP_LAND_COVER_PDF);
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;

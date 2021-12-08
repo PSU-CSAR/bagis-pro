@@ -24,8 +24,8 @@ bagis-pro:
       uri: http://bagis.geog.pdx.edu/arcgis/services/DAILY_SWE_NORMALS/
       units: Millimeters
     - layerType: Precipitation
-      description: 30-year (1981-2010) monthly/quarterly/annual average precipitation data created by the PRISM Climate Group
-      uri: http://bagis.geog.pdx.edu/arcgis/services/BAGIS_PRISM_1981_2010/
+      description: 30-year (1991-2020) monthly/quarterly/annual average precipitation data created by the PRISM Climate Group
+      uri: http://bagis.geog.pdx.edu/arcgis/services/BAGIS_PRISM_1991_2020/
       units: Inches
     - layerType: SNOTEL
       description: Active SNOTEL sites
@@ -41,7 +41,11 @@ bagis-pro:
       uri: https://services.arcgis.com/SXbDpmb7xQkk44JV/arcgis/rest/services/BAGIS_Public_Land/FeatureServer/0
     - layerType: Vegetation Type
       description: 30-meter Landfire Existing Vegetation Type with additional attributes of intcp_snow, intcp_srain, intcp_wrain, and root_depth
-      uri: http://bagis.geog.pdx.edu/arcgis/rest/services/BAGIS_Databin/LF_us_140evt/ImageServer 
+      uri: http://bagis.geog.pdx.edu/arcgis/rest/services/BAGIS_Databin/LF_us_140evt/ImageServer
+    - layerType: Land Cover
+      description: 2019 30-meter NLCD Land Cover
+      uri: http://bagis.geog.pdx.edu/arcgis/rest/services/BAGIS_Databin/NLCD_2019_land_cover/ImageServer
+ 
 
   BatchSettings:
      EBagisServer: https://ebagis.geog.pdx.edu
@@ -56,8 +60,8 @@ bagis-pro:
      SnotelSweZonesCount: 7
      PrecipBufferDistance: 1000
      PrecipBufferUnits: Meters
-     SnotelBufferDistance: 100
-     SnotelBufferUnits: Meters
+     SnotelBufferDistance: 5
+     SnotelBufferUnits: Kilometers
      RoadsBufferUnits: Meters
      RoadsAnalysisBufferDistance: 300
      RoadsAnalysisBufferUnits: Feet
@@ -78,22 +82,22 @@ bagis-p:
   datasources:
     - id: 4
       name: JH_Coef_Aug_Tmax
-      source: http://bagis.geog.pdx.edu/arcgis/services/BAGIS_Databin/PRISM_1981_2010_tmax_august/ImageServer
+      source: http://bagis.geog.pdx.edu/arcgis/services/BAGIS_Databin/PRISM_1991_2020_tmax_august/ImageServer
       description: August Max Temperature for JH_Coef estimation
       jhCoeff: JH_Coef_Aug_Tmax
     - id: 5
       name: JH_Coef_Aug_Tmin
-      source: http://bagis.geog.pdx.edu/arcgis/services/BAGIS_Databin/PRISM_1981_2010_tmin_august/ImageServer 
+      source: http://bagis.geog.pdx.edu/arcgis/services/BAGIS_Databin/PRISM_1991_2020_tmin_august/ImageServer 
       description: August Min Temperature for JH_Coef estimation
       jhCoeff: JH_Coef_Aug_Tmin
     - id: 6
       name: JH_Coef_Jul_Tmin
-      source: http://bagis.geog.pdx.edu/arcgis/services/BAGIS_Databin/PRISM_1981_2010_tmin_july/ImageServer 
+      source: http://bagis.geog.pdx.edu/arcgis/services/BAGIS_Databin/PRISM_1991_2020_tmin_july/ImageServer 
       description: July Min Temperature for JH_Coef estimation
       jhCoeff: JH_Coef_Jul_Tmin
     - id: 7
       name: JH_Coef_Jul_Tmax
-      source: http://bagis.geog.pdx.edu/arcgis/services/BAGIS_Databin/PRISM_1981_2010_tmax_july/ImageServer 
+      source: http://bagis.geog.pdx.edu/arcgis/services/BAGIS_Databin/PRISM_1991_2020_tmax_july/ImageServer 
       description: July Max Temperature for JH_Coef estimation
       jhCoeff: JH_Coef_Jul_Tmax
     - id: 8
@@ -110,7 +114,7 @@ bagis-p:
       description: Landfire Existing Vegetation 
     - id: 11
       name: NLCD_Impervious
-      source: http://bagis.geog.pdx.edu/arcgis/services/BAGIS_Databin/NLCD_imp_2011/ImageServer 
+      source: http://bagis.geog.pdx.edu/arcgis/services/BAGIS_Databin/NLCD_2019_impervious/ImageServer 
       description: NLCD % Impervious
     - id: 12
       name: Soil

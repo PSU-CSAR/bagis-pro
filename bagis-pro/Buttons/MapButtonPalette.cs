@@ -824,4 +824,19 @@ namespace bagis_pro.Buttons
         }
     }
 
+    internal class MapButtonPalette_BtnLandCover : Button
+    {
+        protected override async void OnClick()
+        {
+            try
+            {
+                await ToggleMapDisplay.ToggleAsync(BagisMapType.LAND_COVER);
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show("Unable to display land cover map!!" + e.Message, "BAGIS-PRO");
+            }
+        }
+    }
+
 }

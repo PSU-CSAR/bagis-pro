@@ -101,6 +101,7 @@
           <button refID="MapButtonPalette_BtnSeasonalPrecipContribSQ3" />
           <button refID="MapButtonPalette_BtnSeasonalPrecipContribSQ4" />
           <button refID="MapButtonPalette_BtnAoiLocation" />
+          <button refID="MapButtonPalette_BtnLandCover" />
         </buttonPalette>
       </palettes>
       <controls>
@@ -330,6 +331,11 @@
             ToolTip<disabledText />
           </tooltip>
         </button>
+        <button id="MapButtonPalette_BtnLandCover" caption="Land Cover" className="bagis_pro.Buttons.MapButtonPalette_BtnLandCover" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnLandCover_Condition" keytip="B55">
+          <tooltip heading="Display Map">
+            ToolTip<disabledText />
+          </tooltip>
+        </button>
         <comboBox id="bagis_pro_Buttons_CboCurrentAoi" className="bagis_pro.Buttons.CboCurrentAoi" itemWidth="180" isEditable="false" isReadOnly="true" resizable="true" caption=" " keytip="C1">
           <tooltip heading="Tooltip Heading">Selected AOI<disabledText /></tooltip>
         </comboBox>
@@ -542,6 +548,10 @@
     <insertCondition id="MapButtonPalette_BtnAoiLocation_Condition" caption="Map Disabled">
       <state id="MapButtonPalette_BtnAoiLocation_State" />
     </insertCondition>
+    <insertCondition id="MapButtonPalette_BtnLandCover_Condition" caption="Map Disabled">
+      <state id="MapButtonPalette_BtnLandCover_State" />
+    </insertCondition>
+
 
   </conditions>
 </ArcGIS>

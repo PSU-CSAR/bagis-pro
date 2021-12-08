@@ -859,7 +859,6 @@ namespace bagis_pro
                                     Module1.Current.ModuleLogManager.LogError(nameof(GetUniqueSortedValuesAsync),
                                         "WARNING!! A monitoring site is ignored in the analysis! The site's elevation (" + 
                                         value + ") is outside the DEM range (" + lowerBound + ", " + upperBound + ")!");
-                                    return;
                                 }
                             }
                         //add upper and lower bnds to the dictionary

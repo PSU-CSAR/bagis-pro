@@ -50,7 +50,7 @@
           <table style="border-collapse:collapse; width=700px">
             <tr>
               <td class="style3">
-                Id
+                Site #
               </td>
               <td class="style3">
                 Type
