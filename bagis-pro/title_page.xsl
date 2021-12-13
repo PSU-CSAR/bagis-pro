@@ -165,31 +165,6 @@
                   </td>
                 </tr>
               </table>
-              <table>
-                <tr>
-                  <td class="style3">
-                    Data sources:
-                  </td>
-                </tr>
-                <xsl:for-each select="data_sources/DataSource">
-                    <tr>
-                      <td class="style4">
-                        <xsl:value-of select="description" />
-                        <br/>
-                        Clipped from: <xsl:value-of select="uri" />
-                        <br/>
-                        Clipped on: <xsl:value-of select="DateClippedText" />
-                      </td>
-                    </tr>
-                </xsl:for-each>
-                <tr>
-                  <td class="style4">
-                    <xsl:value-of select="annual_runoff_data_descr" />
-                    <br/>
-                    Data provided by NWCC based on AWDB data in <xsl:value-of select="annual_runoff_data_year" />
-                  </td>
-                </tr>
-              </table>
             </div>
                    
             <div class="footer">

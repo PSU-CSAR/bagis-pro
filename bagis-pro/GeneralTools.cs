@@ -267,7 +267,7 @@ namespace bagis_pro
                 IDictionary<string, BA_Objects.DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
                 string[] keys = { Constants.DATA_TYPE_SWE, Constants.DATA_TYPE_PRECIPITATION, Constants.DATA_TYPE_SNOTEL,
                                   Constants.DATA_TYPE_SNOW_COURSE, Constants.DATA_TYPE_ROADS,
-                                  Constants.DATA_TYPE_PUBLIC_LAND, Constants.DATA_TYPE_VEGETATION};
+                                  Constants.DATA_TYPE_PUBLIC_LAND, Constants.DATA_TYPE_VEGETATION, Constants.DATA_TYPE_LAND_COVER};
                 //if (rType.Equals(ReportType.SiteAnalysis))
                 //{
                 //    Array.Resize(ref keys, 5);
@@ -364,6 +364,34 @@ namespace bagis_pro
                 }
                 Module1.Current.ModuleLogManager.LogDebug(nameof(GenerateMapsTitlePageAsync),
                     "Title page created!!");
+
+                // Data sources page
+                myXmlFile = publishFolder + "\\" + Constants.FILE_DATA_SOURCES_XML;
+                using (System.IO.FileStream fs = System.IO.File.Create(myXmlFile))
+                {
+                    writer.Serialize(fs, tPage);
+                }
+
+                // Process the data sources page through the xsl template
+                myStyleSheet = GeneralTools.GetAddInDirectory() + "\\" + Constants.FILE_DATA_SOURCES_XSL;
+                myXPathDoc = new XPathDocument(myXmlFile);
+                myXslTrans = new XslCompiledTransform();
+                myXslTrans.Load(myStyleSheet);
+                htmlFilePath = publishFolder + "\\" + Constants.FILE_DATA_SOURCES_HTML;
+                using (XmlTextWriter myWriter = new XmlTextWriter(htmlFilePath, null))
+                {
+                    myXslTrans.Transform(myXPathDoc, null, myWriter);
+                }
+
+                // Convert the title page to PDF
+                if (System.IO.File.Exists(htmlFilePath))
+                {
+                    PdfSharp.Pdf.PdfDocument titlePageDoc = TheArtOfDev.HtmlRenderer.PdfSharp.PdfGenerator.GeneratePdf(System.IO.File.ReadAllText(htmlFilePath),
+                        PdfSharp.PageSize.Letter);
+                    titlePageDoc.Save(publishFolder + "\\" + Constants.FILE_DATA_SOURCES_PDF);
+                }
+                Module1.Current.ModuleLogManager.LogDebug(nameof(GenerateMapsTitlePageAsync),
+                    "Data sources page created!!");
                 return BA_ReturnCode.Success;
             }
             catch (Exception e)
@@ -2249,7 +2277,8 @@ namespace bagis_pro
 
         public static string GetFullPdfFileName(string strBaseFileName)
         {
-            if (Constants.FILE_TITLE_PAGE_PDF.Equals(strBaseFileName) || Constants.FILE_SITES_TABLE_PDF.Equals(strBaseFileName))
+            if (Constants.FILE_TITLE_PAGE_PDF.Equals(strBaseFileName) || Constants.FILE_DATA_SOURCES_PDF.Equals(strBaseFileName) ||
+                Constants.FILE_SITES_TABLE_PDF.Equals(strBaseFileName))
             {
                 // The title page doesn't have the station name prefix
                 return Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\" + strBaseFileName;

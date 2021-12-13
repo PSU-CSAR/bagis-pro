@@ -108,7 +108,7 @@ namespace bagis_pro
                                                                                     "map_may_swe_delta.pdf", "map_jun_swe_delta.pdf"};
         public static readonly string[] FILE_EXPORT_MAPS_SEASONAL_PRECIP_CONTRIB = new string[] { "map_seasonal_precip_q1.pdf", "map_seasonal_precip_q2.pdf", "map_seasonal_precip_q3.pdf",
                                                                                                   "map_seasonal_precip_q4.pdf"};
-        public static readonly string[] FILE_EXPORT_OVERVIEW_FILES = new string[] { FILE_TITLE_PAGE_PDF, FILE_EXPORT_MAP_AOI_LOCATION_PDF, FILE_SITES_TABLE_PDF };
+        public static readonly string[] FILE_EXPORT_OVERVIEW_FILES = new string[] { FILE_TITLE_PAGE_PDF, FILE_DATA_SOURCES_PDF, FILE_EXPORT_MAP_AOI_LOCATION_PDF, FILE_SITES_TABLE_PDF };
         public static readonly string[] FILE_EXPORT_ASPECT_FILES = new string[] { FILE_EXPORT_MAP_ASPECT_PDF, FILE_EXPORT_CHART_ASPECT_PDF };
         public static readonly string[] FILE_EXPORT_SLOPE_FILES = new string[] { FILE_EXPORT_MAP_SLOPE_PDF, FILE_EXPORT_CHART_SLOPE_PDF };
         public static readonly string[] FILE_EXPORT_SITE_REPRESENTATION_FILES = new string[] { FILE_EXPORT_MAP_SNOTEL_PDF, FILE_EXPORT_MAP_SCOS_PDF,
@@ -160,6 +160,10 @@ namespace bagis_pro
         public const string FILE_TITLE_PAGE_XML = "title_page.xml";
         public const string FILE_TITLE_PAGE_HTML = "title_page.html";
         public const string FILE_TITLE_PAGE_PDF = "title_page.pdf";
+        public const string FILE_DATA_SOURCES_XSL = "data_sources.xsl";
+        public const string FILE_DATA_SOURCES_XML = "data_sources.xml";
+        public const string FILE_DATA_SOURCES_HTML = "data_sources.html";
+        public const string FILE_DATA_SOURCES_PDF = "data_sources.pdf";
         public const string FILE_SITES_TABLE_XSL = "sites_table.xsl";
         public const string FILE_SITES_TABLE_XML = "sites_table.xml";
         public const string FILE_SITES_TABLE_HTML = "sites_table.html";
