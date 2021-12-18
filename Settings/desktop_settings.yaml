@@ -72,6 +72,7 @@ bagis-pro:
      CriticalPrecipMinMeanVolInches: 20.0
      CriticalPrecipTotalMaxVolPct: 66.6
      AnnualRunoffItemId: f641bbacceff4c1bb3f9661bd8f9de8d
+     WaterbodiesLayerItemId: 42b8dd923ed745d286e00d0631905451
      AnnualRunoffDataDescr: Basin Average Annual Naturalized Runoff Volume (1981-2010)
      AnnualRunoffDataYear: 2021
      PrecipContribZones: 9

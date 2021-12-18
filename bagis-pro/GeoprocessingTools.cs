@@ -236,5 +236,23 @@ namespace bagis_pro
                 return BA_ReturnCode.Success;
             }
         }
+
+        public static async Task<BA_ReturnCode> SetNullAsync(string strInputRaster, string strConstant, string strOutputRaster, string strWhere)
+        {
+            IGPResult gpResult = await QueuedTask.Run(() =>
+            {
+                var parameters = Geoprocessing.MakeValueArray(strInputRaster, strConstant, strOutputRaster, strWhere);
+                return Geoprocessing.ExecuteToolAsync("SetNull_sa", parameters, null,
+                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+            });
+            if (gpResult.IsFailed)
+            {
+                return BA_ReturnCode.UnknownError;
+            }
+            else
+            {
+                return BA_ReturnCode.Success;
+            }
+        }
     }
 }

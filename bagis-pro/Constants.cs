@@ -39,6 +39,7 @@ namespace bagis_pro
         public const string MAPS_SUBBASIN_BOUNDARY = "Subbasin Boundary";
         public const string MAPS_WESTERN_STATES_BOUNDARY = "Western States Boundary";
         public const string MAPS_LAND_COVER = "Land Cover";
+        public const string MAPS_WATERBODIES = "Waterbodies";
 
         public const string MAPS_LEGEND = "Legend";
         public const string MAPS_TITLE = "Title";
@@ -79,6 +80,7 @@ namespace bagis_pro
         public const string FILE_PUBLIC_LAND = "public_lands";
         public const string FILE_VEGETATION_EVT = "LF_us_140evt";
         public const string FILE_LAND_COVER = "nlcd_land_cover";
+        public const string FILE_WATER_BODIES = "water_bodies";
         public const string FILE_PREC_MEAN_ELEV = "precmeanelev";
         public const string FILE_ASP_ZONE_PREC = "aspzoneprec";
         public const string FILE_PREC_MEAN_ELEV_V = "precmeanelev_v";
@@ -205,6 +207,7 @@ namespace bagis_pro
         public const string FILE_BAGIS_MAP_PARAMETERS = "map_parameters.txt";
         public const string URI_IMAGE_SERVER = "/ImageServer";
         public const string URI_DESKTOP_SETTINGS = "/api/rest/desktop/settings/";
+        public const string LAYER_FILE_WATERBODIES = "Waterbodies.lyrx";
 
 
         public const string FOLDER_MAP_PACKAGE = "maps_publish";

@@ -1303,8 +1303,9 @@ namespace bagis_pro
                     // Update data status for files in layers.gdb
                     string[] arrCheckLayers = new string[] { Constants.FILE_SNODAS_SWE_APRIL, Constants.FILE_SNOTEL,
                                                              Constants.FILE_SNOW_COURSE, Constants.FILE_ROADS,
-                                                             Constants.FILE_PUBLIC_LAND, Constants.FILE_VEGETATION_EVT};
-                    bool[] arrLayerExists = new bool[] { false, false, false, false, false, false };
+                                                             Constants.FILE_PUBLIC_LAND, Constants.FILE_VEGETATION_EVT,
+                                                             Constants.FILE_LAND_COVER};
+                    bool[] arrLayerExists = new bool[] { false, false, false, false, false, false, false };
                     gdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers, false));
                     bExists = false;
                     if (gdbUri.IsFile)
@@ -1434,6 +1435,19 @@ namespace bagis_pro
                                             }
                                             if (!string.IsNullOrEmpty(bufferUnits))
                                                 layersPane.VegetationBufferUnits = bufferUnits;
+                                            break;
+                                        case Constants.FILE_LAND_COVER:
+                                            layersPane.LandCover_Checked = true;
+                                            if (!string.IsNullOrEmpty(bufferDistance))
+                                            {
+                                                layersPane.LandCoverBufferDistance = bufferDistance;
+                                            }
+                                            else
+                                            {
+                                                layersPane.LandCoverBufferDistance = "";
+                                            }
+                                            if (!string.IsNullOrEmpty(bufferUnits))
+                                                layersPane.LandCoverBufferUnits = bufferUnits;
                                             break;
                                         default:
                                             Module1.Current.ModuleLogManager.LogError(nameof(SetAoiAsync),

@@ -80,6 +80,9 @@ namespace bagis_pro
                     //remove existing layers from map frame
                     await MapTools.RemoveLayersfromMapFrame();
 
+                    //retrieve layer symbology files from portal iff needed
+                    success = await GetLayerFilesFromPortalAsync();
+
                     //retrieve Analysis object
                     BA_Objects.Analysis oAnalysis = GeneralTools.GetAnalysisSettings(Module1.Current.Aoi.FilePath);
 
@@ -108,7 +111,7 @@ namespace bagis_pro
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
                         Constants.FILE_SNOTEL_REPRESENTED;
                     uri = new Uri(strPath);
-                    CIMColor fillColor = CIMColor.CreateRGBColor(255, 0, 0, 50);    //Red with 30% transparency
+                    CIMColor fillColor = CIMColor.CreateRGBColor(255, 0, 0, 70);    //Red with 30% transparency
                     success = await MapTools.AddPolygonLayerAsync(uri, fillColor, false, Constants.MAPS_SNOTEL_REPRESENTED);
                     if (success.Equals(BA_ReturnCode.Success))
                         Module1.ActivateState("MapButtonPalette_BtnSnotel_State");
@@ -129,8 +132,16 @@ namespace bagis_pro
                     if (success.Equals(BA_ReturnCode.Success))
                         Module1.ActivateState("MapButtonPalette_BtnSitesAll_State");
 
+                    //add waterbodies layer Layer
+                    fillColor = CIMColor.CreateRGBColor(0, 0, 255, 100);    //Blue with 0% transparency
+                    strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
+                        Constants.FILE_WATER_BODIES;
+                    uri = new Uri(strPath);
+                    success = await MapTools.AddPolygonLayerAsync(uri, fillColor, true, Constants.MAPS_WATERBODIES);
+
                     // add roads layer
                     Module1.Current.RoadsLayerLegend = "Within unknown distance of access road";
+                    fillColor = CIMColor.CreateRGBColor(255, 0, 0, 70);    //Red with 30% transparency
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
                         Constants.FILE_ROADS_ZONE;
                     // Get buffer units out of the metadata so we can set the layer name
@@ -754,7 +765,7 @@ namespace bagis_pro
 
         public static async Task RemoveLayersfromMapFrame()
         {
-            string[] arrLayerNames = new string[42];
+            string[] arrLayerNames = new string[43];
             arrLayerNames[0] = Constants.MAPS_AOI_BOUNDARY;
             arrLayerNames[1] = Constants.MAPS_STREAMS;
             arrLayerNames[2] = Constants.MAPS_SNOTEL;
@@ -776,7 +787,8 @@ namespace bagis_pro
             arrLayerNames[18] = Constants.MAPS_WINTER_PRECIPITATION;
             arrLayerNames[19] = Constants.MAPS_SUBBASIN_BOUNDARY;
             arrLayerNames[20] = Constants.MAPS_LAND_COVER;
-            int idxLayerNames = 21;
+            arrLayerNames[21] = Constants.MAPS_WATERBODIES;
+            int idxLayerNames = 22;
             for (int i = 0; i < Constants.LAYER_NAMES_SNODAS_SWE.Length; i++)
             {
                 arrLayerNames[idxLayerNames] = Constants.LAYER_NAMES_SNODAS_SWE[i];
@@ -989,9 +1001,17 @@ namespace bagis_pro
             return success;
         }
 
-        public static async Task<BA_ReturnCode> DisplayRasterFromLayerFileAsync(Uri rasterUri, string displayName,
+        public static async Task<BA_ReturnCode> DisplayUniqueValuesRasterFromLayerFileAsync(Uri rasterUri, string displayName,
             string layerFilePath, int transparency, bool bIsVisible)
         {
+            // Make sure the layer file exists before trying to display
+            if (!System.IO.File.Exists(layerFilePath))
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(DisplayUniqueValuesRasterFromLayerFileAsync),
+                    "Unable to add locate layer file: " + layerFilePath + ". Layer cannot be displayed!!");
+                return BA_ReturnCode.ReadError;
+            }
+
             // parse the uri for the folder and file
             string strFileName = null;
             string strFolderPath = null;
@@ -1004,7 +1024,7 @@ namespace bagis_pro
             bool bExists = await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(strFolderPath), strFileName);
             if (!bExists)
             {
-                Module1.Current.ModuleLogManager.LogError(nameof(DisplayRasterFromLayerFileAsync),
+                Module1.Current.ModuleLogManager.LogError(nameof(DisplayUniqueValuesRasterFromLayerFileAsync),
                     "Unable to add locate raster!!");
                 return BA_ReturnCode.ReadError;
             }
@@ -1027,7 +1047,7 @@ namespace bagis_pro
 
                     //Get the colorizer from the layer file
                     var layerDefs = cimLyrDoc.LayerDefinitions;
-                    var colorizerFromLayerFile = ((CIMRasterLayer)cimLyrDoc.LayerDefinitions[0]).Colorizer as CIMRasterStretchColorizer;
+                    var colorizerFromLayerFile = ((CIMRasterLayer)cimLyrDoc.LayerDefinitions[0]).Colorizer as CIMRasterUniqueValueColorizer;
 
                     //Apply the colorizer to the raster layer
                     rasterLayer?.SetColorizer(colorizerFromLayerFile);
@@ -1036,13 +1056,6 @@ namespace bagis_pro
                     rasterLayer?.SetName(displayName);
                     rasterLayer?.SetTransparency(transparency);
                     rasterLayer?.SetVisibility(bIsVisible);
-
-                    if (rasterLayer?.GetColorizer() is CIMRasterStretchColorizer)
-                    {
-                        // if the stretch renderer is used get the selected band index
-                        var stretchColorizer = rasterLayer?.GetColorizer() as CIMRasterStretchColorizer;
-                        RasterStretchType mine = stretchColorizer.StretchType;
-                    }
                 }
             });
             return BA_ReturnCode.Success;
@@ -1641,7 +1654,8 @@ namespace bagis_pro
             {
                 case BagisMapType.ELEVATION:
                     lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
-                                                   Constants.MAPS_HILLSHADE, Constants.MAPS_ELEV_ZONE};
+                                                   Constants.MAPS_HILLSHADE, Constants.MAPS_ELEV_ZONE,
+                                                   Constants.MAPS_WATERBODIES};
                     lstLegendLayers = new List<string>();
                     if (Module1.Current.Aoi.HasSnotel == true)
                     {
@@ -1653,6 +1667,7 @@ namespace bagis_pro
                         lstLayers.Add(Constants.MAPS_SNOW_COURSE);
                         lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE);
                     }
+                    lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
                     lstLegendLayers.Add(Constants.MAPS_ELEV_ZONE);
 
                     string strDemDisplayUnits = (string)Module1.Current.BatchToolSettings.DemDisplayUnits;
@@ -1663,7 +1678,8 @@ namespace bagis_pro
                     break;
                 case BagisMapType.SLOPE:
                     lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
-                                                   Constants.MAPS_HILLSHADE, Constants.MAPS_SLOPE_ZONE};
+                                                   Constants.MAPS_HILLSHADE, Constants.MAPS_SLOPE_ZONE,
+                                                   Constants.MAPS_WATERBODIES};
                     lstLegendLayers = new List<string>();
                     if (Module1.Current.Aoi.HasSnotel == true)
                     {
@@ -1675,6 +1691,7 @@ namespace bagis_pro
                         lstLayers.Add(Constants.MAPS_SNOW_COURSE);
                         lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE);
                     }
+                    lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
                     lstLegendLayers.Add(Constants.MAPS_SLOPE_ZONE);
                     mapDefinition = new BA_Objects.MapDefinition("SLOPE DISTRIBUTION",
                         " ", Constants.FILE_EXPORT_MAP_SLOPE_PDF);
@@ -1683,7 +1700,8 @@ namespace bagis_pro
                     break;
                 case BagisMapType.ASPECT:
                     lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
-                                                   Constants.MAPS_HILLSHADE, Constants.MAPS_ASPECT_ZONE};
+                                                   Constants.MAPS_HILLSHADE, Constants.MAPS_ASPECT_ZONE,
+                                                   Constants.MAPS_WATERBODIES};
                     lstLegendLayers = new List<string>();
                     if (Module1.Current.Aoi.HasSnotel == true)
                     {
@@ -1695,6 +1713,7 @@ namespace bagis_pro
                         lstLayers.Add(Constants.MAPS_SNOW_COURSE);
                         lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE);
                     }
+                    lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
                     lstLegendLayers.Add(Constants.MAPS_ASPECT_ZONE);
                     mapDefinition = new BA_Objects.MapDefinition("ASPECT DISTRIBUTION",
                         " ", Constants.FILE_EXPORT_MAP_ASPECT_PDF);
@@ -1703,7 +1722,8 @@ namespace bagis_pro
                     break;
                 case BagisMapType.SNODAS_SWE:
                     lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
-                                                   Constants.MAPS_HILLSHADE, Constants.LAYER_NAMES_SNODAS_SWE[5]};
+                                                   Constants.MAPS_HILLSHADE, Constants.LAYER_NAMES_SNODAS_SWE[5],
+                                                   Constants.MAPS_WATERBODIES};
                     lstLegendLayers = new List<string>();
                     if (Module1.Current.Aoi.HasSnotel == true)
                     {
@@ -1715,6 +1735,7 @@ namespace bagis_pro
                         lstLayers.Add(Constants.MAPS_SNOW_COURSE);
                         lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE);
                     }
+                    lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
                     lstLegendLayers.Add(Constants.LAYER_NAMES_SNODAS_SWE[5]);
                     mapDefinition = new BA_Objects.MapDefinition(Constants.MAP_TITLES_SNODAS_SWE[5],
                         "Depth Units = " + Module1.Current.BatchToolSettings.SweDisplayUnits, Constants.FILE_EXPORT_MAPS_SWE[5]);
@@ -1723,7 +1744,8 @@ namespace bagis_pro
                     break;
                 case BagisMapType.PRISM:
                     lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
-                                                   Constants.MAPS_HILLSHADE, Constants.MAPS_PRISM_ZONE};
+                                                   Constants.MAPS_HILLSHADE, Constants.MAPS_PRISM_ZONE,
+                                                   Constants.MAPS_WATERBODIES};
                     lstLegendLayers = new List<string>();
                     if (Module1.Current.Aoi.HasSnotel == true)
                     {
@@ -1735,6 +1757,7 @@ namespace bagis_pro
                         lstLayers.Add(Constants.MAPS_SNOW_COURSE);
                         lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE);
                     }
+                    lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
                     lstLegendLayers.Add(Constants.MAPS_PRISM_ZONE);
                     string strTitle = "PRECIPITATION DISTRIBUTION";
                     if (!String.IsNullOrEmpty(oAnalysis.PrecipZonesBegin))
@@ -1750,13 +1773,14 @@ namespace bagis_pro
                 case BagisMapType.SNOTEL:
                     lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_ELEV_ZONE,
-                                                   Constants.MAPS_SNOTEL_REPRESENTED};
+                                                   Constants.MAPS_WATERBODIES, Constants.MAPS_SNOTEL_REPRESENTED};
                     lstLegendLayers = new List<string>();
                     if (Module1.Current.Aoi.HasSnotel == true)
                     {
                         lstLayers.Add(Constants.MAPS_SNOTEL);
                         lstLegendLayers.Add(Constants.MAPS_SNOTEL);
                     }
+                    lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
                     lstLegendLayers.Add(Constants.MAPS_SNOTEL_REPRESENTED);
                     mapDefinition = new BA_Objects.MapDefinition("SNOTEL SITES REPRESENTATION",
                         " ", Constants.FILE_EXPORT_MAP_SNOTEL_PDF);
@@ -1766,13 +1790,14 @@ namespace bagis_pro
                 case BagisMapType.SCOS:
                     lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_ELEV_ZONE,
-                                                   Constants.MAPS_SNOW_COURSE_REPRESENTED};
+                                                   Constants.MAPS_WATERBODIES, Constants.MAPS_SNOW_COURSE_REPRESENTED};
                     lstLegendLayers = new List<string>();
                     if (Module1.Current.Aoi.HasSnowCourse == true)
                     {
                         lstLayers.Add(Constants.MAPS_SNOW_COURSE);
                         lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE);
                     }
+                    lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
                     lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE_REPRESENTED);
                     mapDefinition = new BA_Objects.MapDefinition("SNOW COURSE SITES REPRESENTATION",
                         " ", Constants.FILE_EXPORT_MAP_SCOS_PDF);
@@ -1782,7 +1807,7 @@ namespace bagis_pro
                 case BagisMapType.SITES_ALL:
                     lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_ELEV_ZONE,
-                                                   Constants.MAPS_ALL_SITES_REPRESENTED};
+                                                   Constants.MAPS_WATERBODIES, Constants.MAPS_ALL_SITES_REPRESENTED};
                     lstLegendLayers = new List<string>();
                     if (Module1.Current.Aoi.HasSnowCourse == true)
                     {
@@ -1794,6 +1819,7 @@ namespace bagis_pro
                         lstLayers.Add(Constants.MAPS_SNOTEL);
                         lstLegendLayers.Add(Constants.MAPS_SNOTEL);
                     }
+                    lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
                     lstLegendLayers.Add(Constants.MAPS_ALL_SITES_REPRESENTED);
                     mapDefinition = new BA_Objects.MapDefinition("SNOTEL AND SNOW COURSE SITES REPRESENTATION",
                         " ", Constants.FILE_EXPORT_MAP_SNOTEL_AND_SCOS_PDF);
@@ -1803,8 +1829,9 @@ namespace bagis_pro
                 case BagisMapType.ROADS:
                     lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_ELEV_ZONE,
-                                                   Module1.Current.RoadsLayerLegend};
+                                                   Constants.MAPS_WATERBODIES, Module1.Current.RoadsLayerLegend};
                     lstLegendLayers = new List<string> { Module1.Current.RoadsLayerLegend };
+                    lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
                     if (Module1.Current.Aoi.HasSnotel == true)
                     {
                         lstLayers.Add(Constants.MAPS_SNOTEL);
@@ -1823,8 +1850,9 @@ namespace bagis_pro
                 case BagisMapType.PUBLIC_LAND_ZONES:
                     lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_ELEV_ZONE,
-                                                   Constants.MAPS_FEDERAL_PUBLIC_LAND_ZONES};
+                                                   Constants.MAPS_WATERBODIES, Constants.MAPS_FEDERAL_PUBLIC_LAND_ZONES};
                     lstLegendLayers = new List<string> { Constants.MAPS_FEDERAL_PUBLIC_LAND_ZONES };
+                    lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
                     if (Module1.Current.Aoi.HasSnotel == true)
                     {
                         lstLayers.Add(Constants.MAPS_SNOTEL);
@@ -1843,8 +1871,9 @@ namespace bagis_pro
                 case BagisMapType.BELOW_TREELINE:
                     lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_ELEV_ZONE,
-                                                   Constants.MAPS_BELOW_TREELINE};
+                                                   Constants.MAPS_WATERBODIES, Constants.MAPS_BELOW_TREELINE};
                     lstLegendLayers = new List<string> { Constants.MAPS_BELOW_TREELINE };
+                    lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
                     if (Module1.Current.Aoi.HasSnotel == true)
                     {
                         lstLayers.Add(Constants.MAPS_SNOTEL);
@@ -1863,7 +1892,7 @@ namespace bagis_pro
                 case BagisMapType.SITES_LOCATION:
                     lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_ELEV_ZONE,
-                                                   Constants.MAPS_SITES_LOCATION};
+                                                   Constants.MAPS_WATERBODIES, Constants.MAPS_SITES_LOCATION};
                     lstLegendLayers = new List<string>();
                     if (Module1.Current.Aoi.HasSnowCourse == true)
                     {
@@ -1875,6 +1904,7 @@ namespace bagis_pro
                         lstLayers.Add(Constants.MAPS_SNOTEL);
                         lstLegendLayers.Add(Constants.MAPS_SNOTEL);
                     }
+                    lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
                     lstLegendLayers.Add(Constants.MAPS_SITES_LOCATION);
                     lstLegendLayers.Add(Constants.MAPS_ELEV_ZONE);
                     mapDefinition = new BA_Objects.MapDefinition("POTENTIAL SITE LOCATIONS",
@@ -1885,7 +1915,7 @@ namespace bagis_pro
                 case BagisMapType.SITES_LOCATION_PRECIP:
                     lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_PRISM_ZONE,
-                                                   Constants.MAPS_SITES_LOCATION};
+                                                   Constants.MAPS_WATERBODIES, Constants.MAPS_SITES_LOCATION};
                     lstLegendLayers = new List<string>();
                     if (Module1.Current.Aoi.HasSnowCourse == true)
                     {
@@ -1897,6 +1927,7 @@ namespace bagis_pro
                         lstLayers.Add(Constants.MAPS_SNOTEL);
                         lstLegendLayers.Add(Constants.MAPS_SNOTEL);
                     }
+                    lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
                     lstLegendLayers.Add(Constants.MAPS_SITES_LOCATION);
                     lstLegendLayers.Add(Constants.MAPS_PRISM_ZONE);
                     mapDefinition = new BA_Objects.MapDefinition("POTENTIAL SITE LOCATIONS",
@@ -1907,7 +1938,7 @@ namespace bagis_pro
                 case BagisMapType.SITES_LOCATION_PRECIP_CONTRIB:
                     lstLayers = new List<string> { Constants.MAPS_SUBBASIN_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_PRECIPITATION_CONTRIBUTION,
-                                                   Constants.MAPS_SITES_LOCATION, Constants.MAPS_AOI_BOUNDARY};
+                                                   Constants.MAPS_SITES_LOCATION, Constants.MAPS_WATERBODIES, Constants.MAPS_AOI_BOUNDARY};
                     lstLegendLayers = new List<string>();
                     if (Module1.Current.Aoi.HasSnowCourse == true)
                     {
@@ -1919,6 +1950,7 @@ namespace bagis_pro
                         lstLayers.Add(Constants.MAPS_SNOTEL);
                         lstLegendLayers.Add(Constants.MAPS_SNOTEL);
                     }
+                    lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
                     lstLegendLayers.Add(Constants.MAPS_SITES_LOCATION);
                     lstLegendLayers.Add(Constants.MAPS_PRECIPITATION_CONTRIBUTION);
                     mapDefinition = new BA_Objects.MapDefinition("POTENTIAL SITE LOCATIONS",
@@ -1929,7 +1961,7 @@ namespace bagis_pro
                 case BagisMapType.PRECIPITATION_CONTRIBUTION:
                     lstLayers = new List<string> { Constants.MAPS_SUBBASIN_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_PRECIPITATION_CONTRIBUTION,
-                                                    Constants.MAPS_AOI_BOUNDARY};
+                                                   Constants.MAPS_WATERBODIES, Constants.MAPS_AOI_BOUNDARY};
                     lstLegendLayers = new List<string>();
                     if (Module1.Current.Aoi.HasSnowCourse == true)
                     {
@@ -1941,6 +1973,7 @@ namespace bagis_pro
                         lstLayers.Add(Constants.MAPS_SNOTEL);
                         lstLegendLayers.Add(Constants.MAPS_SNOTEL);
                     }
+                    lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
                     lstLegendLayers.Add(Constants.MAPS_PRECIPITATION_CONTRIBUTION);
                     mapDefinition = new BA_Objects.MapDefinition("SUBBASIN ANNUAL PRECIPITATION CONTRIBUTION",
                         "Units = Acre Feet", Constants.FILE_EXPORT_MAP_PRECIPITATION_CONTRIBUTION_PDF);
@@ -1950,8 +1983,9 @@ namespace bagis_pro
                 case BagisMapType.CRITICAL_PRECIP:
                     lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_ELEV_ZONE,
-                                                   Constants.MAPS_CRITICAL_PRECIPITATION_ZONES};
-                    lstLegendLayers = new List<string> { Constants.MAPS_CRITICAL_PRECIPITATION_ZONES, Constants.MAPS_ELEV_ZONE };
+                                                   Constants.MAPS_WATERBODIES, Constants.MAPS_CRITICAL_PRECIPITATION_ZONES};
+                    lstLegendLayers = new List<string> { Constants.MAPS_CRITICAL_PRECIPITATION_ZONES, Constants.MAPS_WATERBODIES,
+                                                         Constants.MAPS_ELEV_ZONE };
                     if (Module1.Current.Aoi.HasSnotel == true)
                     {
                         lstLayers.Add(Constants.MAPS_SNOTEL);
@@ -1970,8 +2004,10 @@ namespace bagis_pro
 
                 case BagisMapType.PUBLIC_LAND_OWNERSHIP:
                     lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
-                                                   Constants.MAPS_HILLSHADE, Constants.MAPS_PUBLIC_LAND_OWNERSHIP };
+                                                   Constants.MAPS_HILLSHADE, Constants.MAPS_PUBLIC_LAND_OWNERSHIP,
+                                                   Constants.MAPS_WATERBODIES};
                     lstLegendLayers = new List<string> { Constants.MAPS_PUBLIC_LAND_OWNERSHIP };
+                    lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
                     if (Module1.Current.Aoi.HasSnotel == true)
                     {
                         lstLayers.Add(Constants.MAPS_SNOTEL);
@@ -1989,7 +2025,8 @@ namespace bagis_pro
                     break;
                 case BagisMapType.WINTER_PRECIPITATION:
                     lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
-                                                   Constants.MAPS_HILLSHADE, Constants.MAPS_WINTER_PRECIPITATION};
+                                                   Constants.MAPS_HILLSHADE, Constants.MAPS_WATERBODIES,
+                                                   Constants.MAPS_WINTER_PRECIPITATION};
                     lstLegendLayers = new List<string>();
                     if (Module1.Current.Aoi.HasSnotel == true)
                     {
@@ -2001,6 +2038,7 @@ namespace bagis_pro
                         lstLayers.Add(Constants.MAPS_SNOW_COURSE);
                         lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE);
                     }
+                    lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
                     lstLegendLayers.Add(Constants.MAPS_WINTER_PRECIPITATION);
                     strTitle = "WINTER PRECIPITATION";
                     if (!String.IsNullOrEmpty(oAnalysis.WinterStartMonth))
@@ -2018,6 +2056,7 @@ namespace bagis_pro
                     lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_LAND_COVER};
                     lstLegendLayers = new List<string> { Constants.MAPS_LAND_COVER };
+                    lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
                     if (Module1.Current.Aoi.HasSnotel == true)
                     {
                         lstLayers.Add(Constants.MAPS_SNOTEL);
@@ -2143,7 +2182,7 @@ namespace bagis_pro
             // toggle layers according to map definition
             var allLayers = map.Layers.ToList();
             IList<string> lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
-                                                         Constants.MAPS_HILLSHADE, strNewLayerName};
+                                                         Constants.MAPS_HILLSHADE, Constants.MAPS_WATERBODIES, strNewLayerName};
             IList<string> lstLegend = new List<string>();
 
             if (Module1.Current.Aoi.HasSnotel)
@@ -2156,6 +2195,7 @@ namespace bagis_pro
                 lstLayers.Add(Constants.MAPS_SNOW_COURSE);
                 lstLegend.Add(Constants.MAPS_SNOW_COURSE);
             }
+            lstLegend.Add(Constants.MAPS_WATERBODIES);
             lstLegend.Add(strNewLayerName);
             await QueuedTask.Run(() =>
             {
@@ -2289,7 +2329,7 @@ namespace bagis_pro
             // toggle layers according to map definition
             var allLayers = map.Layers.ToList();
             IList<string> lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
-                                                         Constants.MAPS_HILLSHADE, strNewLayerName};
+                                                         Constants.MAPS_HILLSHADE, Constants.MAPS_WATERBODIES, strNewLayerName};
             IList<string> lstLegend = new List<string>();
 
             if (Module1.Current.Aoi.HasSnotel)
@@ -2302,6 +2342,7 @@ namespace bagis_pro
                 lstLayers.Add(Constants.MAPS_SNOW_COURSE);
                 lstLegend.Add(Constants.MAPS_SNOW_COURSE);
             }
+            lstLegend.Add(Constants.MAPS_WATERBODIES);
             lstLegend.Add(strNewLayerName);
             await QueuedTask.Run(() =>
             {
@@ -2433,7 +2474,7 @@ namespace bagis_pro
             // toggle layers according to map definition
             var allLayers = map.Layers.ToList();
             IList<string> lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
-                                                         Constants.MAPS_HILLSHADE, strNewLayerName};
+                                                         Constants.MAPS_HILLSHADE, Constants.MAPS_WATERBODIES, strNewLayerName};
             IList<string> lstLegend = new List<string>();
 
             if (Module1.Current.Aoi.HasSnotel == true && bDisplaySites)
@@ -2446,6 +2487,7 @@ namespace bagis_pro
                 lstLayers.Add(Constants.MAPS_SNOW_COURSE);
                 lstLegend.Add(Constants.MAPS_SNOW_COURSE);
             }
+            lstLegend.Add(Constants.MAPS_WATERBODIES);
             lstLegend.Add(strNewLayerName);
             await QueuedTask.Run(() =>
             {
@@ -3411,6 +3453,39 @@ namespace bagis_pro
                     "Unable to retrieve min/max seasonal precip values from analysis.xml. Calculation halted!");
                 return null;
             }
+        }
+
+        public static async Task<BA_ReturnCode> GetLayerFilesFromPortalAsync()
+        {
+            string[] documentIds = new string[1];
+            documentIds[0] = (string) Module1.Current.BatchToolSettings.WaterbodiesLayerItemId;
+            string[] layerFileNames = new string[] { Constants.LAYER_FILE_WATERBODIES };
+            Webservices ws = new Webservices();
+            BA_ReturnCode success = BA_ReturnCode.ReadError;
+
+            int i = 0;
+            foreach (var fName in layerFileNames)
+            {
+                string fullPath = Module1.Current.SettingsPath + "\\" + Constants.FOLDER_SETTINGS + "\\" + fName;
+                if (! System.IO.File.Exists(fullPath))
+                {
+                    Module1.Current.ModuleLogManager.LogInfo(nameof(GetLayerFilesFromPortalAsync),
+                        "Retrieving layer file from portal: " + layerFileNames[i]);
+                    success = await ws.GetPortalFile(BA_Objects.AGSPortalProperties.PORTAL_ORGANIZATION, documentIds[i], 
+                        fullPath);
+                    if (success != BA_ReturnCode.Success)
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(GetLayerFilesFromPortalAsync),
+                            "Unable to download layer from portal: " + layerFileNames[i]);
+                    }
+                }
+                else
+                {
+                    success = BA_ReturnCode.Success;
+                }
+                i++;
+            }
+            return success;
         }
     }
 }
