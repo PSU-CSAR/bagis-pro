@@ -585,40 +585,7 @@ namespace bagis_pro
 
                 if (clipLandcover)
                 {
-                    string strOutputRaster = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, true)
-                        + Constants.FILE_LAND_COVER;
-                    success = await AnalysisTools.ClipRasterLayerAsync(Module1.Current.Aoi.FilePath, strOutputRaster, Constants.DATA_TYPE_LAND_COVER,
-                        LandCoverBufferDistance, LandCoverBufferUnits);
-                    string strNullOutput = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true)
-                        + "tmpNull";
-                    if (success == BA_ReturnCode.Success)
-                    {
-                        string strConstant = "11";  // water bodies
-                        string strWaterbodies = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true)
-                            + Constants.FILE_WATER_BODIES;
-                        string strWhere = "Value <> 11";
-                        success = await GeoprocessingTools.SetNullAsync(strOutputRaster, strConstant, strNullOutput, strWhere);
-                    }
-                    if (success == BA_ReturnCode.Success)
-                    {
-                        // Create vector representation of waterbodies for map display
-                        string strWaterbodies = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true)
-                            + Constants.FILE_WATER_BODIES;
-                        var parameters = Geoprocessing.MakeValueArray(strNullOutput, strWaterbodies);
-                        var gpResult = await Geoprocessing.ExecuteToolAsync("RasterToPolygon_conversion", parameters, null,
-                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                        if (gpResult.IsFailed)
-                        {
-                            Module1.Current.ModuleLogManager.LogError(nameof(ClipLayersAsync),
-                                "Failed to create vector representation of waterbodies!");
-                            success = BA_ReturnCode.UnknownError;
-                        }
-                        else
-                        {
-                            // Delete temp null raster
-                            success = await GeoprocessingTools.DeleteDatasetAsync(strNullOutput);
-                        }
-                    }
+                    success = await AnalysisTools.ClipLandCoverAsync(Module1.Current.Aoi.FilePath, LandCoverBufferDistance, LandCoverBufferUnits);
                     if (success == BA_ReturnCode.Success)
                     {
                         layersPane.ReclipLandCover_Checked = false;

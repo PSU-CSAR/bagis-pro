@@ -26,9 +26,9 @@ namespace bagis_pro
         public const string MAPS_SLOPE_ZONE = "Slope Zones";
         public const string MAPS_ASPECT_ZONE = "Aspect Zones";
         public const string MAPS_PRISM_ZONE = "Precipitation Zones";
-        public const string MAPS_SNOTEL_REPRESENTED = "SNOTEL Sites Represented Area";
-        public const string MAPS_SNOW_COURSE_REPRESENTED = "Snow Course Sites Represented Area";
-        public const string MAPS_ALL_SITES_REPRESENTED = "All Sites Represented Area";
+        public const string MAPS_SNOTEL_REPRESENTED = "SNOTEL Rep Area";
+        public const string MAPS_SNOW_COURSE_REPRESENTED = "Snow Courses Rep Area";
+        public const string MAPS_ALL_SITES_REPRESENTED = "All Sites Rep Area";
         public const string MAPS_FEDERAL_PUBLIC_LAND_ZONES = "Federal Non-Wilderness Land";
         public const string MAPS_BELOW_TREELINE = "Area Below Treeline";
         public const string MAPS_SITES_LOCATION = "Meet All Criteria";
@@ -146,13 +146,12 @@ namespace bagis_pro
         public const string FILE_EXPORT_SNODAS_SWE_PDF = "snodas_swe.pdf";
         public const string FILE_EXPORT_SEASONAL_PRECIP_DISTRIBUTION_PDF = "seasonal_precip_distribution.pdf";
         public const string FILE_EXPORT_MAP_AOI_LOCATION_PDF = "map_aoi_location.pdf";
-        public const string FILE_EXPORT_MAP_LAND_COVER_PDF = "map_land_cover.pdf";
+        public const string FILE_EXPORT_LAND_COVER_PDF = "land_cover.pdf";
         // List of files in the watershed PDF map package and the order in which they will be assembled
         public static string[] FILES_EXPORT_WATERSHED_PDF = new string[]
-        { FILE_EXPORT_OVERVIEW_PDF, FILE_EXPORT_MAP_ELEV_PDF, FILE_EXPORT_ASPECT_DISTRIBUTION_PDF, FILE_EXPORT_SLOPE_DISTRIBUTION_PDF,
-          FILE_EXPORT_SITE_REPRESENTATION_PDF,
-          FILE_EXPORT_PRECIPITATION_DISTRIBUTION_PDF, FILE_EXPORT_SEASONAL_PRECIP_DISTRIBUTION_PDF, FILE_EXPORT_SNODAS_SWE_PDF,
-          FILE_EXPORT_POTENTIAL_SITE_ANALYSIS_PDF
+        { FILE_EXPORT_OVERVIEW_PDF, FILE_EXPORT_MAP_ELEV_PDF, FILE_EXPORT_LAND_COVER_PDF, FILE_EXPORT_ASPECT_DISTRIBUTION_PDF,
+          FILE_EXPORT_SLOPE_DISTRIBUTION_PDF, FILE_EXPORT_SITE_REPRESENTATION_PDF, FILE_EXPORT_PRECIPITATION_DISTRIBUTION_PDF,
+          FILE_EXPORT_SEASONAL_PRECIP_DISTRIBUTION_PDF, FILE_EXPORT_SNODAS_SWE_PDF, FILE_EXPORT_POTENTIAL_SITE_ANALYSIS_PDF
         };    
         // List of files in the site analysis PDF map package and the order in which they will be assembled
         //public static string[] FILES_EXPORT_SITE_ANALYSIS_PDF = new string[] { FILE_TITLE_PAGE_PDF, FILE_SITES_TABLE_PDF,
@@ -207,7 +206,7 @@ namespace bagis_pro
         public const string FILE_BAGIS_MAP_PARAMETERS = "map_parameters.txt";
         public const string URI_IMAGE_SERVER = "/ImageServer";
         public const string URI_DESKTOP_SETTINGS = "/api/rest/desktop/settings/";
-        public const string LAYER_FILE_WATERBODIES = "Waterbodies.lyrx";
+        public const string LAYER_FILE_NLCD_LAND_COVER = "nlcd_land_cover.lyrx";
 
 
         public const string FOLDER_MAP_PACKAGE = "maps_publish";

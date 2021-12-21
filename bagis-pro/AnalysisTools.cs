@@ -4359,6 +4359,45 @@ namespace bagis_pro
                 }
             return returnPath;
         }
+
+        public static async Task<BA_ReturnCode> ClipLandCoverAsync(string aoiFolderPath, string landCoverBufferDistance, string landCoverBufferUnits)
+        {
+            string strOutputRaster = GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Layers, true)
+                + Constants.FILE_LAND_COVER;
+            BA_ReturnCode success = await AnalysisTools.ClipRasterLayerAsync(aoiFolderPath, strOutputRaster, Constants.DATA_TYPE_LAND_COVER,
+                landCoverBufferDistance, landCoverBufferUnits);
+            string strNullOutput = GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Analysis, true)
+                + "tmpNull";
+            if (success == BA_ReturnCode.Success)
+            {
+                string strConstant = "11";  // water bodies
+                string strWaterbodies = GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Analysis, true)
+                    + Constants.FILE_WATER_BODIES;
+                string strWhere = "Value <> 11";
+                success = await GeoprocessingTools.SetNullAsync(strOutputRaster, strConstant, strNullOutput, strWhere);
+            }
+            if (success == BA_ReturnCode.Success)
+            {
+                // Create vector representation of waterbodies for map display
+                string strWaterbodies = GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Analysis, true)
+                    + Constants.FILE_WATER_BODIES;
+                var parameters = Geoprocessing.MakeValueArray(strNullOutput, strWaterbodies);
+                var gpResult = await Geoprocessing.ExecuteToolAsync("RasterToPolygon_conversion", parameters, null,
+                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                if (gpResult.IsFailed)
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(ClipLandCoverAsync),
+                        "Failed to create vector representation of waterbodies!");
+                    success = BA_ReturnCode.UnknownError;
+                }
+                else
+                {
+                    // Delete temp null raster
+                    success = await GeoprocessingTools.DeleteDatasetAsync(strNullOutput);
+                }
+            }
+            return success;
+        }
     }
 
 }

@@ -418,6 +418,7 @@ namespace bagis_pro
             {
                 nwccAoiName + "_" + Constants.FILE_EXPORT_OVERVIEW_PDF,
                 nwccAoiName + "_" + Constants.FILE_EXPORT_MAP_ELEV_PDF,
+                nwccAoiName + "_" + Constants.FILE_EXPORT_LAND_COVER_PDF,
                 nwccAoiName + "_" + Constants.FILE_EXPORT_ASPECT_DISTRIBUTION_PDF,
                 nwccAoiName + "_" + Constants.FILE_EXPORT_SLOPE_DISTRIBUTION_PDF,
                 nwccAoiName + "_" + Constants.FILE_EXPORT_SITE_REPRESENTATION_PDF,

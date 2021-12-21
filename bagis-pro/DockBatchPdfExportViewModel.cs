@@ -521,10 +521,10 @@ namespace bagis_pro
                         errorCount++;
                     }
 
+                    string snoBufferUnits = (string)Module1.Current.BatchToolSettings.SnotelBufferUnits;
                     if (SiteAnalysisChecked)
                     {
                         // Clip Roads
-                        string snoBufferUnits = (string)Module1.Current.BatchToolSettings.SnotelBufferUnits;
                         string strOutputFc = GeodatabaseTools.GetGeodatabasePath(AoiFolder, GeodatabaseNames.Layers, true)
                             + Constants.FILE_ROADS;
                         success = await AnalysisTools.ClipFeatureLayerAsync(AoiFolder, strOutputFc, Constants.DATA_TYPE_ROADS,
@@ -601,6 +601,9 @@ namespace bagis_pro
                         }
                     }
 
+                    // Clip Land cover
+                    success = await AnalysisTools.ClipLandCoverAsync(AoiFolder, Convert.ToString(dblDistance), snoBufferUnits);
+                    
                     // Generate Elevation Precipitation Correlation layer
                     strLayer = GeodatabaseTools.GetGeodatabasePath(AoiFolder, GeodatabaseNames.Prism, true) +
                         Path.GetFileName((string)Module1.Current.BatchToolSettings.AoiPrecipFile);
