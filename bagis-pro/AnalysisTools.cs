@@ -2341,10 +2341,10 @@ namespace bagis_pro
                 string aspectZonesPath = uriAnalysis.LocalPath + "\\" + Constants.FILE_ASPECT_ZONE;
                 if (dblPrismCellSize != dblAspectCellSize)
                 {
-                    // Execute focal statistics to account for differing cell sizes
-                    //"Rectangle 935.365128254473 935.365128254473 MAP"
-                    string aspectPath = uriAnalysis.LocalPath + "\\" + Constants.FILE_ASPECT_ZONE;
-                    aspectZonesPath = uriAnalysis.LocalPath + "\\" + Constants.FILE_ASP_ZONE_PREC;
+                        // Execute focal statistics to account for differing cell sizes
+                        //"Rectangle 935.365128254473 935.365128254473 MAP"
+                        string aspectPath = uriAnalysis.LocalPath + "\\" + Constants.FILE_ASPECT_ZONE;
+                        aspectZonesPath = uriAnalysis.LocalPath + "\\" + Constants.FILE_ASP_ZONE_PREC;
                     string neighborhood = "Rectangle " + dblPrismCellSize + " " + dblPrismCellSize + " MAP";
                     parameters = Geoprocessing.MakeValueArray(aspectPath, aspectZonesPath, neighborhood, "MAJORITY", "DATA");
                     environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath,
@@ -2394,9 +2394,9 @@ namespace bagis_pro
                 success = await GeoprocessingTools.AddFieldAsync(uriAnalysis.LocalPath + "\\" + Constants.FILE_PREC_MEAN_ELEV_V, Constants.FIELD_DIRECTION, "TEXT");
                 if (success == BA_ReturnCode.Success)
                 {
-                    success = await UpdateAspectDirectionsAsync(uriAnalysis, Constants.FILE_PREC_MEAN_ELEV_V,
-                        lstAspectInterval, Constants.FIELD_SAMPLE_INPUT_1);
-                    if (success != BA_ReturnCode.Success)
+                        success = await UpdateAspectDirectionsFromZonesAsync(uriAnalysis, Constants.FILE_PREC_MEAN_ELEV_V,
+                            lstAspectInterval, Constants.FIELD_SAMPLE_INPUT_1);
+                        if (success != BA_ReturnCode.Success)
                     {
                         MessageBox.Show("Unable to update aspect directions in " + Constants.FILE_PREC_MEAN_ELEV_V
                             + ". Calculation cancelled!!", "BAGIS-PRO");
@@ -2414,6 +2414,90 @@ namespace bagis_pro
         }
 
         private static async Task<BA_ReturnCode> UpdateAspectDirectionsAsync(Uri uriAnalysis, string strUpdateFc,
+            IList<BA_Objects.Interval> lstAspectInterval, string fieldAspect)
+        {
+            string errorMsg = "";
+            bool modificationResult = false;
+            await QueuedTask.Run(() =>
+            {
+                Module1.Current.ModuleLogManager.LogDebug(nameof(UpdateAspectDirectionsAsync),
+                    "Start UpdateAspectDirectionsAsync");
+
+                // Copy aspect value into ba_aspect field
+                EditOperation editOperation = new EditOperation();
+                using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(uriAnalysis)))
+                using (Table table = geodatabase.OpenDataset<Table>(strUpdateFc))
+                {
+                    TableDefinition defTable = table.GetDefinition();
+                    int idxAspectDirect = defTable.FindField(Constants.FIELD_DIRECTION);
+                    int idxAspect = defTable.FindField(fieldAspect);
+                    if (idxAspectDirect < 0 || idxAspect < 0)
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(UpdateAspectDirectionsAsync),
+                            "Unable to locate BA_ASPECT field in " + strUpdateFc + ". Cannot update field");
+                         return;
+                    }
+                    QueryFilter queryFilter = new QueryFilter();
+                    editOperation.Callback(context =>
+                    {
+                        using (RowCursor aCursor = table.Search(queryFilter, false))
+                        {
+                            while (aCursor.MoveNext())
+                            {
+                                using (Row row = aCursor.Current)
+                                {
+                                    double dblAspect = Convert.ToDouble(row[idxAspect]);
+                                    foreach (var interval in lstAspectInterval)
+                                    {
+                                        if (dblAspect > interval.LowerBound && dblAspect < interval.UpperBound)
+                                        {
+                                            row[idxAspectDirect] = interval.Name;
+                                            row.Store();
+                                            // Has to be called after the store too
+                                            context.Invalidate(row);
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }, table);
+                    try
+                    {
+                        modificationResult = editOperation.Execute();
+                        if (!modificationResult) errorMsg = editOperation.ErrorMessage;
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(UpdateAspectDirectionsAsync),
+                            "Save modification result for Aspect Directions");
+                    }
+                    catch (GeodatabaseException exObj)
+                    {
+                        errorMsg = exObj.Message;
+                        Module1.Current.ModuleLogManager.LogError(nameof(UpdateAspectDirectionsAsync),
+                            "An error occurred while trying to update aspect directions");
+                        Module1.Current.ModuleLogManager.LogError(nameof(UpdateAspectDirectionsAsync),
+                            exObj.StackTrace);
+                    }
+                }
+            });
+
+            if (String.IsNullOrEmpty(errorMsg))
+            {
+                await Project.Current.SaveEditsAsync();
+                Module1.Current.ModuleLogManager.LogDebug(nameof(UpdateAspectDirectionsAsync),
+                    "Edits saved to project");
+            }
+            else
+            {
+                if (Project.Current.HasEdits)
+                    await Project.Current.DiscardEditsAsync();
+                Module1.Current.ModuleLogManager.LogError(nameof(UpdateAspectDirectionsAsync),
+                    "Exception: " + errorMsg);
+                return BA_ReturnCode.UnknownError;
+            }
+            return BA_ReturnCode.Success;
+        }
+
+        private static async Task<BA_ReturnCode> UpdateAspectDirectionsFromZonesAsync(Uri uriAnalysis, string strUpdateFc,
             IList<BA_Objects.Interval> lstAspectInterval, string strQueryFieldName)
         {
             string errorMsg = "";
@@ -3869,9 +3953,28 @@ namespace bagis_pro
          public static async Task<BA_ReturnCode> UpdateSitesPropertiesAsync(string strAoiFilePath, 
             SiteProperties siteProperties)
         {
-            var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiFilePath);
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            string analysisPath = GeodatabaseTools.GetGeodatabasePath(strAoiFilePath, GeodatabaseNames.Analysis);
+            string featureClassToUpdate = analysisPath + "\\" + Constants.FILE_MERGED_SITES;
+
+            // Check to see if all sites are within the buffered AOI. If not, need to reclip DEM and generate slope and aspect
+            int outsideCount = 0;
+            Uri gdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, false));
+            Uri sitesGdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false));
+            int sitesInBasin = await GeodatabaseTools.CountPointsWithinInFeatureAsync(sitesGdbUri, Constants.FILE_MERGED_SITES,
+                gdbUri, Constants.FILE_AOI_BUFFERED_VECTOR);
+            int totalSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_MERGED_SITES);
+            if (totalSites > 0)
+            {
+                outsideCount = totalSites - sitesInBasin;
+            }
+            if (outsideCount > 0)
+            {
+                success = await ReclipSurfacesAsync(strAoiFilePath, Constants.FILE_MERGED_SITES);
+            }
+
+            var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiFilePath, snapRaster: BA_Objects.Aoi.SnapRasterPath(strAoiFilePath));
             string fileExtract = "tmpExtract";
-            string fieldDirection = "tmp_dir";
             IList<string> lstFields = new List<string>();
             IList<string> lstFieldDataTypes = new List<string>();
             IList<string> lstUri = new List<string>();
@@ -3880,13 +3983,17 @@ namespace bagis_pro
             {
                 case SiteProperties.Aspect:
                     lstFields.Add(Constants.FIELD_ASPECT);
-                    lstFields.Add(fieldDirection);
                     lstFieldDataTypes.Add("DOUBLE");
-                    lstFieldDataTypes.Add("INTEGER");
-                    lstUri.Add(GeodatabaseTools.GetGeodatabasePath(strAoiFilePath, GeodatabaseNames.Surfaces));
-                    lstUri.Add(GeodatabaseTools.GetGeodatabasePath(strAoiFilePath, GeodatabaseNames.Analysis));
-                    lstInputRasters.Add(Constants.FILE_ASPECT);
-                    lstInputRasters.Add(Constants.FILE_ASPECT_ZONE);
+                    if (outsideCount == 0)
+                    {
+                        lstUri.Add(GeodatabaseTools.GetGeodatabasePath(strAoiFilePath, GeodatabaseNames.Surfaces));
+                        lstInputRasters.Add(Constants.FILE_ASPECT);
+                    }
+                    else
+                    {
+                        lstUri.Add(GeodatabaseTools.GetGeodatabasePath(strAoiFilePath, GeodatabaseNames.Analysis));
+                        lstInputRasters.Add(Constants.FILE_SITES_ASPECT);
+                    }
                     break;
 
                 case SiteProperties.Precipitation:
@@ -3897,9 +4004,6 @@ namespace bagis_pro
                     break;
             }
 
-            BA_ReturnCode success = BA_ReturnCode.UnknownError;
-            string analysisPath = GeodatabaseTools.GetGeodatabasePath(strAoiFilePath, GeodatabaseNames.Analysis);
-            string featureClassToUpdate = analysisPath + "\\" + Constants.FILE_MERGED_SITES;
             for (int i = 0; i < lstFields.Count; i++)
             {
                 if (await GeodatabaseTools.AttributeExistsAsync(new Uri(analysisPath), Constants.FILE_MERGED_SITES, lstFields[i]))
@@ -3975,7 +4079,6 @@ namespace bagis_pro
                     {
                         Module1.Current.ModuleLogManager.LogError(nameof(UpdateSitesPropertiesAsync),
                             inputRaster + " not found. Values not extracted!!");
-
                     }
                 }
             }
@@ -3983,15 +4086,11 @@ namespace bagis_pro
             // Delete tmpExtract layer
             success = await GeoprocessingTools.DeleteDatasetAsync(analysisPath + "\\" + fileExtract);
 
-
             if (siteProperties == SiteProperties.Aspect && 
                 success == BA_ReturnCode.Success)
             {
                 // Update aspect directions
                 Uri uriAnalysis = new Uri(analysisPath);
-                if (await GeodatabaseTools.AttributeExistsAsync(uriAnalysis,
-                    Constants.FILE_MERGED_SITES, fieldDirection))
-                {
                     if (! await GeodatabaseTools.AttributeExistsAsync(new Uri(analysisPath), Constants.FILE_MERGED_SITES, Constants.FIELD_DIRECTION))
                     {
                         success = await GeoprocessingTools.AddFieldAsync(featureClassToUpdate, Constants.FIELD_DIRECTION, "TEXT");
@@ -4001,15 +4100,8 @@ namespace bagis_pro
                         int intAspectCount = Convert.ToInt16(Module1.Current.BatchToolSettings.AspectDirectionsCount);
                         IList<BA_Objects.Interval> lstAspectInterval = AnalysisTools.GetAspectClasses(intAspectCount);
                         success = await UpdateAspectDirectionsAsync(uriAnalysis, Constants.FILE_MERGED_SITES,
-                            lstAspectInterval, fieldDirection);
-                        if (success == BA_ReturnCode.Success)
-                        {
-                            string[] arrFieldsToDelete = { fieldDirection };
-                            success = await GeoprocessingTools.DeleteFeatureClassFieldsAsync(uriAnalysis.LocalPath + "\\" + Constants.FILE_MERGED_SITES,
-                                arrFieldsToDelete);
-                        }
+                            lstAspectInterval, Constants.FIELD_ASPECT);
                     }
-                }
             }
             return success;
         }
@@ -4207,8 +4299,8 @@ namespace bagis_pro
                 return "";
             }
 
-            string analysisPath = GeodatabaseTools.GetGeodatabasePath(System.IO.Path.GetDirectoryName(gdbUri.LocalPath), GeodatabaseNames.Analysis, true);
-            string returnPath = analysisPath + Constants.FILE_MERGED_SITES;
+            string analysisPath = GeodatabaseTools.GetGeodatabasePath(System.IO.Path.GetDirectoryName(gdbUri.LocalPath), GeodatabaseNames.Analysis);
+            string returnPath = analysisPath + "\\" + Constants.FILE_MERGED_SITES;
             if (hasSnotel)
             {
                 // No snow course to merge; copy SNOTEL to merged sites
@@ -4223,7 +4315,7 @@ namespace bagis_pro
             {
                 // Need to append sites
                 string featuresToAppend = gdbUri.LocalPath + "\\" + Constants.FILE_SNOW_COURSE;
-                    returnPath = analysisPath + Constants.FILE_MERGED_SITES;
+                    returnPath = analysisPath + "\\" + Constants.FILE_MERGED_SITES;
                     var parameters = Geoprocessing.MakeValueArray(featuresToAppend, returnPath);
                     IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("Append_management", parameters, null,
                                 CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
@@ -4240,22 +4332,42 @@ namespace bagis_pro
                     }
             }
 
-                if (!String.IsNullOrEmpty(returnPath))
+            string strAoiPath = Module1.Current.Aoi.FilePath;
+            if (!String.IsNullOrEmpty(returnPath))
+            {
+                // Check to see if all sites are within the buffered AOI. If not, need to reclip DEM and generate slope and aspect
+                int outsideCount = 0;
+                Uri aoiUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, false));
+                Uri sitesGdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false));
+                int sitesInBasin = await GeodatabaseTools.CountPointsWithinInFeatureAsync(sitesGdbUri, Constants.FILE_MERGED_SITES,
+                    aoiUri, Constants.FILE_AOI_BUFFERED_VECTOR);
+                int totalSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_MERGED_SITES);
+                if (totalSites > 0)
                 {
-                    string strAoiPath = Module1.Current.Aoi.FilePath;
-                    var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath);
+                    outsideCount = totalSites - sitesInBasin;
+                }
+                if (outsideCount > 0)
+                {
+                    success = await ReclipSurfacesAsync(strAoiPath, returnPath);
+                }
+
+                    var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath, snapRaster: BA_Objects.Aoi.SnapRasterPath(strAoiPath));
                     string fileExtract = "tmpExtract";
-                    string fieldDirection = "tmp_dir";
-                    string[] arrFields = { Constants.FIELD_PRECIP, Constants.FIELD_ASPECT, Constants.FIELD_SLOPE, fieldDirection };
-                    string[] arrFieldDataTypes = { "DOUBLE", "DOUBLE", "DOUBLE", "INTEGER" };
+                    string[] arrFields = { Constants.FIELD_PRECIP, Constants.FIELD_ASPECT, Constants.FIELD_SLOPE};
+                    string[] arrFieldDataTypes = { "DOUBLE", "DOUBLE", "DOUBLE" };
                     string[] arrUri = { GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Prism),
                                         GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Surfaces),
-                                        GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Surfaces),
-                                        GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Analysis)};
+                                        GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Surfaces)};
                     string[] arrInputRasters = {Path.GetFileName((string)Module1.Current.BatchToolSettings.AoiPrecipFile),
                                                 Constants.FILE_ASPECT,
-                                                Constants.FILE_SLOPE,
-                                                Constants.FILE_ASPECT_ZONE};
+                                                Constants.FILE_SLOPE};
+                if (outsideCount > 0 && success == BA_ReturnCode.Success)
+                {
+                    arrUri[1] = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Analysis);
+                    arrUri[2] = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Analysis);
+                    arrInputRasters[1] = Constants.FILE_SITES_ASPECT;
+                    arrInputRasters[2] = Constants.FILE_SITES_SLOPE;
+                }
 
                     for (int i = 0; i < arrFields.Length; i++)
                     {
@@ -4318,7 +4430,7 @@ namespace bagis_pro
                                             });
                                         }
                                     }
-                                }
+                                } //
 
                             }
                             else
@@ -4337,24 +4449,15 @@ namespace bagis_pro
                         
                         // Update aspect directions
                         Uri uriAnalysis = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Analysis));
-                        if (await GeodatabaseTools.AttributeExistsAsync(uriAnalysis,
-                            Constants.FILE_MERGED_SITES, fieldDirection))
+                        success = await GeoprocessingTools.AddFieldAsync(returnPath, Constants.FIELD_DIRECTION, "TEXT");
+                        if (success == BA_ReturnCode.Success)
                         {
-                            success = await GeoprocessingTools.AddFieldAsync(returnPath, Constants.FIELD_DIRECTION, "TEXT");
-                            if (success == BA_ReturnCode.Success)
-                            {
-                                int intAspectCount = Convert.ToInt16(Module1.Current.BatchToolSettings.AspectDirectionsCount);
-                                IList<BA_Objects.Interval> lstAspectInterval = AnalysisTools.GetAspectClasses(intAspectCount);
-                                success = await UpdateAspectDirectionsAsync(uriAnalysis, Constants.FILE_MERGED_SITES,
-                                    lstAspectInterval, fieldDirection);
-                                if (success == BA_ReturnCode.Success)
-                                {
-                                    string[] arrFieldsToDelete = { fieldDirection };
-                                    success = await GeoprocessingTools.DeleteFeatureClassFieldsAsync(uriAnalysis.LocalPath + "\\" + Constants.FILE_MERGED_SITES,
-                                        arrFieldsToDelete);
-                                }
+                            int intAspectCount = Convert.ToInt16(Module1.Current.BatchToolSettings.AspectDirectionsCount);
+                            IList<BA_Objects.Interval> lstAspectInterval = AnalysisTools.GetAspectClasses(intAspectCount);
+                            //@ToDo: Fix this not to use the aspect zone
+                            success = await UpdateAspectDirectionsAsync(uriAnalysis, Constants.FILE_MERGED_SITES,
+                                    lstAspectInterval, Constants.FIELD_ASPECT);
                             }
-                        }
                     }
                 }
             return returnPath;
@@ -4394,6 +4497,136 @@ namespace bagis_pro
                 {
                     // Delete temp null raster
                     success = await GeoprocessingTools.DeleteDatasetAsync(strNullOutput);
+                }
+            }
+            return success;
+        }
+
+        public static async Task<BA_ReturnCode> ReclipSurfacesAsync(string aoiFolderPath, string strSitesPath)
+        {
+            Webservices ws = new Webservices();
+            string demUri = await ws.GetDem30UriAsync();
+
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            string clipEnvelope = "";
+            string strOutputFeatures = GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Analysis, true) +
+                "tmpBuffer";
+            string strDistance = "1 Kilometers";
+            var parameters = Geoprocessing.MakeValueArray(strSitesPath, strOutputFeatures, strDistance, "",
+                                                              "", "ALL");
+            var res = Geoprocessing.ExecuteToolAsync("Buffer_analysis", parameters, null,
+                                 CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+            if (res.Result.IsFailed)
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(ReclipSurfacesAsync),
+                   "Unable to buffer sites layer. Error code: " + res.Result.ErrorCode);
+            }
+            else
+            {
+                await QueuedTask.Run(() =>
+                {
+                    using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Analysis)))))
+                    using (FeatureClass fClass = geodatabase.OpenDataset<FeatureClass>("tmpBuffer"))
+                    {
+                        Envelope env = fClass.GetExtent();
+                        clipEnvelope = env.Extent.XMin + " " + env.Extent.YMin + " " + env.Extent.XMax + " " + env.Extent.YMax;
+                    }
+                });
+            }
+            if (! String.IsNullOrEmpty(clipEnvelope))
+            {
+                success = await GeoprocessingTools.DeleteDatasetAsync(strOutputFeatures);
+            }
+            string outputRaster = GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Analysis, true) + Constants.FILE_SITES_DEM;
+            var environments = Geoprocessing.MakeEnvironmentArray(workspace: aoiFolderPath, 
+                snapRaster: BA_Objects.Aoi.SnapRasterPath(aoiFolderPath));
+            IGPResult gpResult = null;
+            if (success == BA_ReturnCode.Success)
+            {
+                success = await GeoprocessingTools.ClipRasterAsync(demUri, clipEnvelope, outputRaster, null, null, false,
+                    aoiFolderPath, BA_Objects.Aoi.SnapRasterPath(aoiFolderPath));
+                // Recalculate slope layer on clipped DEM
+                parameters = Geoprocessing.MakeValueArray(outputRaster, GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Analysis, true) +
+                    Constants.FILE_SITES_SLOPE, "PERCENT_RISE");
+                gpResult = await Geoprocessing.ExecuteToolAsync("Slope_sa", parameters, environments,
+                                                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                if (gpResult.IsFailed)
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(ReclipSurfacesAsync),
+                        "Slope tool failed to create sites_slope layer. Error code: " + gpResult.ErrorCode);
+                    success = BA_ReturnCode.UnknownError;
+                }
+            }
+
+            // Recalculate aspect layer on clipped DEM
+            if (success == BA_ReturnCode.Success)
+            {
+                parameters = Geoprocessing.MakeValueArray(outputRaster, GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Analysis, true) +
+                        Constants.FILE_SITES_ASPECT, "Planar");
+                gpResult = await Geoprocessing.ExecuteToolAsync("Aspect_sa", parameters, environments,
+                                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                if (gpResult.IsFailed)
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(ReclipSurfacesAsync),
+                        "Slope tool failed to create sites_aspect layer. Error code: " + gpResult.ErrorCode);
+                    success = BA_ReturnCode.UnknownError;
+                }
+            }
+            if (success == BA_ReturnCode.Success)
+            {
+                //Run the ExtractValuesToPoints tool to get all the elevations
+                string tempPath = GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Analysis, true) + "tmpExtract";
+                parameters = Geoprocessing.MakeValueArray(strSitesPath, outputRaster, tempPath, "NONE", "ALL");
+                gpResult = await Geoprocessing.ExecuteToolAsync("ExtractValuesToPoints_sa", parameters, environments,
+                                                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                if (gpResult.IsFailed)
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(ReclipSurfacesAsync),
+                        "Extract values to points tool failed to create tmpExtract. Error code: " + gpResult.ErrorCode);
+                    success = BA_ReturnCode.UnknownError;
+                }
+                else
+                {
+                    parameters = Geoprocessing.MakeValueArray(strSitesPath, Constants.FIELD_OBJECT_ID, tempPath,
+                        Constants.FIELD_OBJECT_ID, "KEEP_ALL");
+                    // Need GPExecuteToolFlag to add the layer to the map
+                    gpResult = await Geoprocessing.ExecuteToolAsync("management.AddJoin", parameters, environments,
+                        CancelableProgressor.None, GPExecuteToolFlags.Default);
+                    if (gpResult.IsFailed)
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(ReclipSurfacesAsync),
+                            "AddJoin tool failed. Error code: " + gpResult.ErrorCode);
+                        success = BA_ReturnCode.UnknownError;
+                    }
+                    else
+                    {
+                        string lyrJoin = gpResult.ReturnValue;
+                        parameters = Geoprocessing.MakeValueArray(lyrJoin, "merged_sites." + Constants.FIELD_SITE_ELEV,
+                            "!tmpExtract.RASTERVALU!", "PYTHON3", "", "DOUBLE");
+                        await Geoprocessing.ExecuteToolAsync("management.CalculateField", parameters, environments,
+                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                        if (gpResult.IsFailed)
+                        {
+                            Module1.Current.ModuleLogManager.LogError(nameof(ReclipSurfacesAsync),
+                                "CalculateField tool failed to update field. Error code: " + gpResult.ErrorCode);
+                            success = BA_ReturnCode.UnknownError;
+                        }
+                        else
+                        {
+                            var map = MapView.Active.Map;
+                            await QueuedTask.Run(() =>
+                            {
+                                Layer oLayer =
+                                map.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(lyrJoin, StringComparison.CurrentCultureIgnoreCase));
+                                if (oLayer != null)
+                                {
+
+                                    map.RemoveLayer(oLayer);
+                                    success = BA_ReturnCode.Success;
+                                }
+                            });
+                        }
+                    }
                 }
             }
             return success;

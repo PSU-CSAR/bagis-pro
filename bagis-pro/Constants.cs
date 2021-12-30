@@ -91,6 +91,9 @@ namespace bagis_pro
         public const string FILE_PRECIPITATION_CONTRIBUTION = "precipcontribzone";
         public const string FILE_PRECIP_CONTRIB_VECTOR = "precipcontribzone_v";
         public const string FILE_WINTER_PRECIPITATION_ZONE = "winterprecipzone";
+        public const string FILE_SITES_DEM = "sites_dem";
+        public const string FILE_SITES_ASPECT = "sites_aspect";
+        public const string FILE_SITES_SLOPE = "sites_slope";
         public const string FILE_SETTINGS = "analysis.xml";
         public const string FILE_BATCH_TOOL_SETTINGS = "batch_tool_settings.json";
         public const string FILE_BATCH_LOG = "batch_tool_log.txt";

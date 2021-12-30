@@ -119,5 +119,6 @@ namespace bagis_pro
         internal double PrismZonesInterval { get; set; } = 999;
         internal int BaSiteId { get; set; } = 0;
         internal string WesternStateBoundariesUri { get; } = "";
+        internal string Dem30Uri { get; } = "";
     }
 }

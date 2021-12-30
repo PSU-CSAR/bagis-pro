@@ -334,6 +334,31 @@ namespace bagis_pro
             }
         }
 
+        public async Task<string> GetDem30UriAsync()
+        {
+            if (!string.IsNullOrEmpty(Module1.Current.Dem30Uri))
+            {
+                return Module1.Current.Dem30Uri;
+            }
+            else
+            {
+                var url = (string)Module1.Current.BatchToolSettings.EBagisServer + Constants.URI_DESKTOP_SETTINGS;
+                var response = new EsriHttpClient().Get(url);
+                var json = await response.Content.ReadAsStringAsync();
+                dynamic oSettings = JObject.Parse(json);
+                if (oSettings == null || String.IsNullOrEmpty(Convert.ToString(oSettings.dem30)))
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(GetDem30UriAsync),
+                        "Unable to retrieve settings from " + url);
+                    return "";
+                }
+                else
+                {
+                    return Convert.ToString(oSettings.dem30);
+                }
+            }
+        }
+
         public async Task<BA_ReturnCode> UpdateAoiItemsAsync(string stationTriplet)
         {
             string nwccAoiName = "";
