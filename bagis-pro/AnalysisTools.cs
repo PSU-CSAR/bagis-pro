@@ -1808,6 +1808,10 @@ namespace bagis_pro
                     }
                     // Save buffer distance and units in metadata
                     string[] arrPieces = snotelBufferDistance.Split(' ');
+                    if (j==1)   // Working with snow course layer
+                    {
+                        arrPieces = snowCosBufferDistance.Split(' ');
+                    }
                     string strBufferDistance = "0";
                     string strBufferUnits = "Meters";
                     if (arrPieces.Length == 2)
@@ -3979,11 +3983,13 @@ namespace bagis_pro
             IList<string> lstFieldDataTypes = new List<string>();
             IList<string> lstUri = new List<string>();
             IList<string> lstInputRasters = new List<string>();
+            IList<bool> lstIsImageService = new List<bool>();
             switch (siteProperties)
             {
                 case SiteProperties.Aspect:
                     lstFields.Add(Constants.FIELD_ASPECT);
                     lstFieldDataTypes.Add("DOUBLE");
+                    lstIsImageService.Add(false);
                     if (outsideCount == 0)
                     {
                         lstUri.Add(GeodatabaseTools.GetGeodatabasePath(strAoiFilePath, GeodatabaseNames.Surfaces));
@@ -3999,8 +4005,19 @@ namespace bagis_pro
                 case SiteProperties.Precipitation:
                     lstFields.Add(Constants.FIELD_PRECIP);
                     lstFieldDataTypes.Add("DOUBLE");
-                    lstUri.Add(GeodatabaseTools.GetGeodatabasePath(strAoiFilePath, GeodatabaseNames.Prism));
-                    lstInputRasters.Add(Path.GetFileName((string)Module1.Current.BatchToolSettings.AoiPrecipFile));
+                    string prismImageUri = await GetPrismImageUriAsync(sitesGdbUri, gdbUri, totalSites);
+                    if (string.IsNullOrEmpty(prismImageUri))
+                    {
+                        lstUri.Add(GeodatabaseTools.GetGeodatabasePath(strAoiFilePath, GeodatabaseNames.Prism));
+                        lstInputRasters.Add(Path.GetFileName((string)Module1.Current.BatchToolSettings.AoiPrecipFile));
+                        lstIsImageService.Add(false);
+                    }
+                    else
+                    {
+                        lstUri.Add(prismImageUri);
+                        lstInputRasters.Add("");
+                        lstIsImageService.Add(true);
+                    }
                     break;
             }
 
@@ -4019,7 +4036,11 @@ namespace bagis_pro
                     Module1.Current.ModuleLogManager.LogDebug(nameof(UpdateSitesPropertiesAsync),
                         "New field " + lstFields[i] + " added to " + Constants.FILE_MERGED_SITES);
                     string inputRaster = lstUri[i] + "\\" + lstInputRasters[i];
-                    if (await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(lstUri[i]), lstInputRasters[i]))
+                    if (lstIsImageService[i] == true)
+                    {
+                        inputRaster = lstUri[i];
+                    }
+                    if (lstIsImageService[i] == true || await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(lstUri[i]), lstInputRasters[i]))
                     {
                         var parameters = Geoprocessing.MakeValueArray(featureClassToUpdate, inputRaster, analysisPath + "\\" + fileExtract, "NONE", "VALUE_ONLY");
                         var gpResult = await Geoprocessing.ExecuteToolAsync("ExtractValuesToPoints_sa", parameters, environments,
@@ -4351,16 +4372,23 @@ namespace bagis_pro
                     success = await ReclipSurfacesAsync(strAoiPath, returnPath);
                 }
 
-                    var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath, snapRaster: BA_Objects.Aoi.SnapRasterPath(strAoiPath));
-                    string fileExtract = "tmpExtract";
-                    string[] arrFields = { Constants.FIELD_PRECIP, Constants.FIELD_ASPECT, Constants.FIELD_SLOPE};
-                    string[] arrFieldDataTypes = { "DOUBLE", "DOUBLE", "DOUBLE" };
-                    string[] arrUri = { GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Prism),
-                                        GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Surfaces),
-                                        GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Surfaces)};
-                    string[] arrInputRasters = {Path.GetFileName((string)Module1.Current.BatchToolSettings.AoiPrecipFile),
-                                                Constants.FILE_ASPECT,
-                                                Constants.FILE_SLOPE};
+                var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath, snapRaster: BA_Objects.Aoi.SnapRasterPath(strAoiPath));
+                string fileExtract = "tmpExtract";
+                string[] arrFields = { Constants.FIELD_PRECIP, Constants.FIELD_ASPECT, Constants.FIELD_SLOPE};
+                string[] arrFieldDataTypes = { "DOUBLE", "DOUBLE", "DOUBLE" };
+                string[] arrUri = { GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Prism),
+                                    GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Surfaces),
+                                    GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Surfaces)};
+                string[] arrInputRasters = {Path.GetFileName((string)Module1.Current.BatchToolSettings.AoiPrecipFile),
+                                            Constants.FILE_ASPECT,
+                                            Constants.FILE_SLOPE};
+                bool[] arrIsImageService = {false, false, false};
+                string prismImageUri = await GetPrismImageUriAsync(sitesGdbUri, aoiUri, totalSites);
+                if (! string.IsNullOrEmpty(prismImageUri))
+                {
+                    arrUri[0] = prismImageUri;
+                    arrIsImageService[0] = true;
+                }
                 if (outsideCount > 0 && success == BA_ReturnCode.Success)
                 {
                     arrUri[1] = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Analysis);
@@ -4369,19 +4397,23 @@ namespace bagis_pro
                     arrInputRasters[2] = Constants.FILE_SITES_SLOPE;
                 }
 
-                    for (int i = 0; i < arrFields.Length; i++)
+                for (int i = 0; i < arrFields.Length; i++)
+                {
+                    success = await GeoprocessingTools.AddFieldAsync(returnPath, arrFields[i], arrFieldDataTypes[i]);
+                    if (success == BA_ReturnCode.Success)
                     {
-                        success = await GeoprocessingTools.AddFieldAsync(returnPath, arrFields[i], arrFieldDataTypes[i]);
-                        if (success == BA_ReturnCode.Success)
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(CreateSitesLayerAsync),
+                            "New field " + arrFields[i] + " added to " + Constants.FILE_MERGED_SITES);
+                        string inputRaster = arrUri[i] + "\\" + arrInputRasters[i];
+                        if (arrIsImageService[i] == true)
                         {
-                            Module1.Current.ModuleLogManager.LogDebug(nameof(CreateSitesLayerAsync),
-                                "New field " + arrFields[i] + " added to " + Constants.FILE_MERGED_SITES);
-                            string inputRaster = arrUri[i] + "\\" + arrInputRasters[i];
-                            if (await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(arrUri[i]), arrInputRasters[i]))
-                            {
-                                var parameters = Geoprocessing.MakeValueArray(returnPath, inputRaster, analysisPath + "\\" + fileExtract, "NONE", "VALUE_ONLY");
-                                var gpResult = await Geoprocessing.ExecuteToolAsync("ExtractValuesToPoints_sa", parameters, environments,
-                                                                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                            inputRaster = arrUri[i];
+                        }
+                        if (arrIsImageService[i] == true || await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(arrUri[i]), arrInputRasters[i]))
+                        {
+                            var parameters = Geoprocessing.MakeValueArray(returnPath, inputRaster, analysisPath + "\\" + fileExtract, "NONE", "VALUE_ONLY");
+                            var gpResult = await Geoprocessing.ExecuteToolAsync("ExtractValuesToPoints_sa", parameters, environments,
+                                                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
                                 if (gpResult.IsFailed)
                                 {
                                     Module1.Current.ModuleLogManager.LogError(nameof(CreateSitesLayerAsync),
@@ -4630,6 +4662,40 @@ namespace bagis_pro
                 }
             }
             return success;
+        }
+
+        public static async Task<string> GetPrismImageUriAsync(Uri sitesGdbUri, Uri aoiUri, int totalSites)
+        {
+            string strUri = "";
+            // Check to see if all sites are with the PRISM buffered AOI. If not, need to get the correct service name
+            int outsidePrism = 0;
+            int sitesInBasin = await GeodatabaseTools.CountPointsWithinInFeatureAsync(sitesGdbUri, Constants.FILE_MERGED_SITES,
+                aoiUri, Constants.FILE_AOI_PRISM_VECTOR);
+            if (totalSites > 0)
+            {
+                outsidePrism = totalSites - sitesInBasin;
+            }
+
+            if (outsidePrism > 0)
+            {
+                Webservices ws = new Webservices();
+                Module1.Current.ModuleLogManager.LogDebug(nameof(GetPrismImageUriAsync),
+                    "Contacting webservices server to retrieve prism layer uri");
+                IDictionary<string, dynamic> dictDataSources =
+                    await ws.QueryDataSourcesAsync((string)Module1.Current.BatchToolSettings.EBagisServer);
+                string strWsPrefix = dictDataSources[Constants.DATA_TYPE_PRECIPITATION].uri;
+                if (!string.IsNullOrEmpty(strWsPrefix))
+                {
+                    string localLayerName = Path.GetFileName((string)Module1.Current.BatchToolSettings.AoiPrecipFile);
+                    PrismFile prismFile = (PrismFile) Enum.Parse(typeof(PrismFile), localLayerName);
+                    int index = Array.IndexOf(Enum.GetValues(prismFile.GetType()), prismFile);
+                    PrismServiceNames serviceName = (PrismServiceNames)index;
+                    Uri imageServiceUri = new Uri(strWsPrefix + serviceName.ToString() +
+                        Constants.URI_IMAGE_SERVER);
+                    strUri = imageServiceUri.AbsoluteUri;
+                }
+            }
+            return strUri;
         }
     }
 
