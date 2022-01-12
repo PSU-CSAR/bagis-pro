@@ -23,6 +23,8 @@ using PdfSharp.Pdf;
 using PdfSharp.Pdf.IO;
 using ArcGIS.Desktop.Catalog;
 using Microsoft.VisualBasic.FileIO;
+using ArcGIS.Desktop.Core.Geoprocessing;
+using System.Text;
 
 namespace bagis_pro
 {
@@ -104,13 +106,13 @@ namespace bagis_pro
 
         }
 
-        public static async Task<BA_ReturnCode> GenerateMapsTitlePageAsync(ReportType rType, 
+        public static async Task<BA_ReturnCode> GenerateMapsTitlePageAsync(ReportType rType,
             string strPublisher, string strComments)
         {
             try
             {
                 // Download the runoff csv file from the NRCS Portal                
-                string documentId = (string) Module1.Current.BatchToolSettings.AnnualRunoffItemId;
+                string documentId = (string)Module1.Current.BatchToolSettings.AnnualRunoffItemId;
                 string annualRunoffDataDescr = (string)Module1.Current.BatchToolSettings.AnnualRunoffDataDescr;
                 string annualRunoffDataYear = (string)Module1.Current.BatchToolSettings.AnnualRunoffDataYear;
 
@@ -139,7 +141,7 @@ namespace bagis_pro
                             Module1.Current.ModuleLogManager.LogDebug(nameof(GenerateMapsTitlePageAsync),
                                 "PrecipVolumeKaf is missing from the analysis.xml file. Please generate the Excel tables before generating the title page!");
                         }
-                    }            
+                    }
                 }
 
                 // Query for the drainage area
@@ -655,7 +657,7 @@ namespace bagis_pro
                     // Update table with Critical Precipitation Zone information
                     Uri uriElevZones = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false));
                     IList<BA_Objects.Interval> lstIntervals = await GeodatabaseTools.ReadReclassRasterAttribute(uriElevZones, Constants.FILE_ELEV_ZONE);
-                    double dblMinVolume = (double) Module1.Current.BatchToolSettings.CriticalPrecipMinMeanVolInches;                   
+                    double dblMinVolume = (double)Module1.Current.BatchToolSettings.CriticalPrecipMinMeanVolInches;
                     double dblMaxPctVolume = (double)Module1.Current.BatchToolSettings.CriticalPrecipTotalMaxVolPct;
                     IList<string> lstCriticalZoneValues = ExcelTools.CreateCriticalPrecipitationZones(pPRISMWorkSheet, lstIntervals, dblMinVolume, dblMaxPctVolume);
 
@@ -676,12 +678,12 @@ namespace bagis_pro
                             "Blue cells are zones meeting criterion #1 \r\n" +
                             "Orange cells are zones meeting criteria #1 and #2"
                         };
-                        pPRISMWorkSheet.Shapes.AddTextbox(Microsoft.Office.Core.MsoTextOrientation.msoTextOrientationHorizontal, 
+                        pPRISMWorkSheet.Shapes.AddTextbox(Microsoft.Office.Core.MsoTextOrientation.msoTextOrientationHorizontal,
                                                            textBoxSettings.Left,
                                                            textBoxSettings.Top, textBoxSettings.Width, textBoxSettings.Height).
                                                            TextFrame.Characters().Text = textBoxSettings.Message;
                     }
-                    
+
                     // Extract Critical Precipitation Zone layer
                     if (lstCriticalZoneValues.Count > 0)
                     {
@@ -1130,11 +1132,11 @@ namespace bagis_pro
 
                 // Query for station information and save it in the aoi object
                 string[] arrValues = new string[2];
-                await QueuedTask.Run(async() =>
+                await QueuedTask.Run(async () =>
                 {
                     arrValues = await AnalysisTools.GetStationValues(oAoi.FilePath);
                     Module1.Current.ModuleLogManager.LogDebug(nameof(SetAoiAsync),
-                        "Station values returned. Array length: " +arrValues.Length);
+                        "Station values returned. Array length: " + arrValues.Length);
 
                     if (arrValues.Length == 2)
                     {
@@ -1149,7 +1151,7 @@ namespace bagis_pro
                         if (arrResults.Length == 4)
                         {
                             oAoi.NwccName = arrResults[0];
-                            if (! string.IsNullOrEmpty(arrResults[1]))
+                            if (!string.IsNullOrEmpty(arrResults[1]))
                             {
                                 oAoi.WinterStartMonth = Convert.ToInt32(arrResults[1]);
                             }
@@ -1178,7 +1180,7 @@ namespace bagis_pro
                 });
                 string strSurfacesGdb = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Surfaces, false);
                 var fcPath = strSurfacesGdb + "\\" + Constants.FILE_DEM_FILLED;
-                await QueuedTask.Run(() =>
+                await QueuedTask.Run(async () =>
                 {
                     FolderType fType = FolderType.FOLDER;
                     Uri gdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, false));
@@ -1281,24 +1283,53 @@ namespace bagis_pro
                                 if (!String.IsNullOrEmpty(tempBufferDistance))
                                 {
                                     layersPane.PrismBufferDistance = tempBufferDistance;
+                                    layersPane.SWEBufferDistance = tempBufferDistance;
                                 }
                                 else
                                 {
                                     Module1.Current.ModuleLogManager.LogDebug(nameof(SetAoiAsync),
-                                        "Unable to locate PRISM buffer distance on annual layer. Using default");
+                                        "Unable to locate PRISM buffer distance on annual layer.");
                                 }
                                 if (!String.IsNullOrEmpty(tempBufferUnits))
                                 {
                                     layersPane.PrismBufferUnits = tempBufferUnits;
+                                    layersPane.SWEBufferUnits = tempBufferUnits;
                                 }
                                 else
                                 {
                                     Module1.Current.ModuleLogManager.LogDebug(nameof(SetAoiAsync),
-                                        "Unable to locate PRISM units on annual layer. Using default");
+                                        "Unable to locate PRISM units on annual layer.");
                                 }
                             }
                         }
                     }
+                    // Set PRISM buffer distanced to prism aoi distance if still missing
+                    string strAoiGdbPath = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, false);
+                    if (string.IsNullOrEmpty(layersPane.PrismBufferDistance))
+                    {
+                        string[] arrPrismBuffer = await QueryBufferDistanceAsync(strAoiPath, strAoiGdbPath, Constants.FILE_AOI_PRISM_VECTOR, false);
+                        layersPane.PrismBufferDistance = arrPrismBuffer[0];
+                        layersPane.SWEBufferDistance = arrPrismBuffer[0];
+                        layersPane.PrismBufferUnits = arrPrismBuffer[1];
+                        layersPane.SWEBufferUnits = arrPrismBuffer[1];
+                    }
+
+                    // Query for default buffer distance for other layers in AOI from aoi_b
+                    string[] arrDefaultBuffer = await QueryBufferDistanceAsync(strAoiPath, strAoiGdbPath, Constants.FILE_AOI_BUFFERED_VECTOR, false);
+                    layersPane.UnmanagedBufferDistance = arrDefaultBuffer[0];
+                    layersPane.UnmanagedBufferBufferUnits = arrDefaultBuffer[1];
+                    layersPane.SnotelBufferDistance = layersPane.UnmanagedBufferDistance;
+                    layersPane.SnotelBufferUnits = layersPane.UnmanagedBufferBufferUnits;
+                    layersPane.SnowCosBufferDistance = layersPane.UnmanagedBufferDistance;
+                    layersPane.SnowCosBufferUnits = layersPane.UnmanagedBufferBufferUnits;
+                    layersPane.RoadsBufferDistance = layersPane.UnmanagedBufferDistance;
+                    layersPane.RoadsBufferUnits = layersPane.UnmanagedBufferBufferUnits;
+                    layersPane.PublicLandsBufferDistance = layersPane.UnmanagedBufferDistance;
+                    layersPane.PublicLandsBufferUnits = layersPane.UnmanagedBufferBufferUnits;
+                    layersPane.VegetationBufferDistance = layersPane.UnmanagedBufferDistance;
+                    layersPane.VegetationBufferUnits = layersPane.UnmanagedBufferBufferUnits;
+                    layersPane.LandCoverBufferDistance = layersPane.UnmanagedBufferDistance;
+                    layersPane.LandCoverBufferUnits = layersPane.UnmanagedBufferBufferUnits;
 
                     // Update data status for files in layers.gdb
                     string[] arrCheckLayers = new string[] { Constants.FILE_SNODAS_SWE_APRIL, Constants.FILE_SNOTEL,
@@ -1377,10 +1408,6 @@ namespace bagis_pro
                                             {
                                                 layersPane.SnotelBufferDistance = bufferDistance;
                                             }
-                                            else
-                                            {
-                                                layersPane.SnotelBufferDistance = "";
-                                            }
                                             if (!string.IsNullOrEmpty(bufferUnits))
                                                 layersPane.SnotelBufferUnits = bufferUnits;
                                             break;
@@ -1389,10 +1416,6 @@ namespace bagis_pro
                                             if (!string.IsNullOrEmpty(bufferDistance))
                                             {
                                                 layersPane.SnowCosBufferDistance = bufferDistance;
-                                            }
-                                            else
-                                            {
-                                                layersPane.SnowCosBufferDistance = "";
                                             }
                                             if (!string.IsNullOrEmpty(bufferUnits))
                                                 layersPane.SnowCosBufferUnits = bufferUnits;
@@ -1403,10 +1426,6 @@ namespace bagis_pro
                                             {
                                                 layersPane.RoadsBufferDistance = bufferDistance;
                                             }
-                                            else
-                                            {
-                                                layersPane.RoadsBufferDistance = "";
-                                            }
                                             if (!string.IsNullOrEmpty(bufferUnits))
                                                 layersPane.RoadsBufferUnits = bufferUnits;
                                             break;
@@ -1415,10 +1434,6 @@ namespace bagis_pro
                                             if (!string.IsNullOrEmpty(bufferDistance))
                                             {
                                                 layersPane.PublicLandsBufferDistance = bufferDistance;
-                                            }
-                                            else
-                                            {
-                                                layersPane.PublicLandsBufferDistance = "";
                                             }
                                             if (!string.IsNullOrEmpty(bufferUnits))
                                                 layersPane.PublicLandsBufferUnits = bufferUnits;
@@ -1429,10 +1444,6 @@ namespace bagis_pro
                                             {
                                                 layersPane.VegetationBufferDistance = bufferDistance;
                                             }
-                                            else
-                                            {
-                                                layersPane.VegetationBufferDistance = "";
-                                            }
                                             if (!string.IsNullOrEmpty(bufferUnits))
                                                 layersPane.VegetationBufferUnits = bufferUnits;
                                             break;
@@ -1441,10 +1452,6 @@ namespace bagis_pro
                                             if (!string.IsNullOrEmpty(bufferDistance))
                                             {
                                                 layersPane.LandCoverBufferDistance = bufferDistance;
-                                            }
-                                            else
-                                            {
-                                                layersPane.LandCoverBufferDistance = "";
                                             }
                                             if (!string.IsNullOrEmpty(bufferUnits))
                                                 layersPane.LandCoverBufferUnits = bufferUnits;
@@ -1455,7 +1462,6 @@ namespace bagis_pro
                                             break;
                                     }
                                 }
-
                                 i++;
                             }
                         }
@@ -1767,16 +1773,16 @@ namespace bagis_pro
                 string fullPath = GetFullPdfFileName(strFileName);
                 if (File.Exists(fullPath))
                 {
-                        PdfDocument inputDocument = PdfReader.Open(fullPath, PdfDocumentOpenMode.Import);
-                        // Iterate pages
-                        int count = inputDocument.PageCount;
-                        for (idx = 0; idx < count; idx++)
-                        {
-                            // Get the page from the external document...
-                            PdfPage page = inputDocument.Pages[idx];
-                            snodasOutputDocument.AddPage(page);
-                        }
-                        File.Delete(fullPath);
+                    PdfDocument inputDocument = PdfReader.Open(fullPath, PdfDocumentOpenMode.Import);
+                    // Iterate pages
+                    int count = inputDocument.PageCount;
+                    for (idx = 0; idx < count; idx++)
+                    {
+                        // Get the page from the external document...
+                        PdfPage page = inputDocument.Pages[idx];
+                        snodasOutputDocument.AddPage(page);
+                    }
+                    File.Delete(fullPath);
                 }
             }
             foreach (var strFileName in Constants.FILE_EXPORT_MAPS_SWE_DELTA)
@@ -1797,15 +1803,15 @@ namespace bagis_pro
                 }
             }
             if (idx > 0)
-                {
-                    snodasOutputDocument.Save(GetFullPdfFileName(Constants.FILE_EXPORT_SNODAS_SWE_PDF));
-                }
+            {
+                snodasOutputDocument.Save(GetFullPdfFileName(Constants.FILE_EXPORT_SNODAS_SWE_PDF));
+            }
 
             // Combine monthly SQ PrecipContribution maps into a single .pdf document
             PdfDocument seasonalPrecipOutputDocument = new PdfDocument();
             idx = 0;
             // Winter Precipitation map
-            PdfDocument winterDocument = PdfReader.Open(GetFullPdfFileName(Constants.FILE_EXPORT_MAP_WINTER_PRECIPITATION_PDF), 
+            PdfDocument winterDocument = PdfReader.Open(GetFullPdfFileName(Constants.FILE_EXPORT_MAP_WINTER_PRECIPITATION_PDF),
                 PdfDocumentOpenMode.Import);
             PdfPage winterPage = winterDocument.Pages[0];
             seasonalPrecipOutputDocument.AddPage(winterPage);
@@ -2206,7 +2212,7 @@ namespace bagis_pro
             return layerNames;
         }
 
-        private static double QueryAnnualRunoffValue (string stationTriplet)
+        private static double QueryAnnualRunoffValue(string stationTriplet)
         {
             double returnValue = -1.0F;
             string strCsvPath = Module1.Current.SettingsPath + "\\" + Constants.FOLDER_SETTINGS +
@@ -2223,53 +2229,53 @@ namespace bagis_pro
                 using (TextFieldParser parser = new TextFieldParser(strCsvPath))
                 {
                     parser.TextFieldType = Microsoft.VisualBasic.FileIO.FieldType.Delimited;
-                parser.SetDelimiters(",");
-                int idxId = -1;
-                int idxValue = -1;
-                bool headerRow = true;
-                while (!parser.EndOfData)
-                {
-                    //Process header row
-                    string[] fields = parser.ReadFields();
-                    int i = 0;
-                    foreach (string field in fields)
+                    parser.SetDelimiters(",");
+                    int idxId = -1;
+                    int idxValue = -1;
+                    bool headerRow = true;
+                    while (!parser.EndOfData)
                     {
-                        if (headerRow == true)
+                        //Process header row
+                        string[] fields = parser.ReadFields();
+                        int i = 0;
+                        foreach (string field in fields)
                         {
-                            if (field.ToUpper().Trim().Equals(Constants.FIELD_RUNOFF_STATION_TRIPLET.ToUpper().Trim()))
+                            if (headerRow == true)
                             {
-                                idxId = i;
-                            }
-                            else if (field.ToUpper().Trim().Equals(Constants.FIELD_RUNOFF_AVERAGE.ToUpper().Trim()))
-                            {
-                                idxValue = i;
-                            }
-                            if (idxId > 0 && idxValue > 0)
-                            {
-                                break;
-                            }
-                            i++;
-                        }
-                        else
-                        {
-                            string strId =fields[idxId];
-                            if (strId.Trim().Equals(stationTriplet.Trim()))
-                            {
-                                if (!string.IsNullOrEmpty(fields[idxValue]))
+                                if (field.ToUpper().Trim().Equals(Constants.FIELD_RUNOFF_STATION_TRIPLET.ToUpper().Trim()))
                                 {
-                                    bool isDouble;
-                                    isDouble = Double.TryParse(fields[idxValue], out returnValue);  
+                                    idxId = i;
+                                }
+                                else if (field.ToUpper().Trim().Equals(Constants.FIELD_RUNOFF_AVERAGE.ToUpper().Trim()))
+                                {
+                                    idxValue = i;
+                                }
+                                if (idxId > 0 && idxValue > 0)
+                                {
                                     break;
                                 }
-                                else
+                                i++;
+                            }
+                            else
+                            {
+                                string strId = fields[idxId];
+                                if (strId.Trim().Equals(stationTriplet.Trim()))
                                 {
-                                    // This is how we handle nulls
-                                    // For now we return the same thing if the record is missing or null
-                                    // returnValue = 0;
-                                    break;
+                                    if (!string.IsNullOrEmpty(fields[idxValue]))
+                                    {
+                                        bool isDouble;
+                                        isDouble = Double.TryParse(fields[idxValue], out returnValue);
+                                        break;
+                                    }
+                                    else
+                                    {
+                                        // This is how we handle nulls
+                                        // For now we return the same thing if the record is missing or null
+                                        // returnValue = 0;
+                                        break;
+                                    }
                                 }
                             }
-                        }
                         }
                         headerRow = false;
                     }
@@ -2301,7 +2307,7 @@ namespace bagis_pro
             {
                 return Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\"
                     + Module1.Current.Aoi.FileStationName + "_" + strBaseFileName;
-            } 
+            }
         }
 
         public static BA_Objects.Analysis GetAnalysisSettings(string strAoiPath)
@@ -2347,7 +2353,7 @@ namespace bagis_pro
             string[] arrResults = { };
             try
             {
-                string strMasterUrl = (string) Module1.Current.BatchToolSettings.MasterAoiList;
+                string strMasterUrl = (string)Module1.Current.BatchToolSettings.MasterAoiList;
                 Uri uriMaster = new Uri(strMasterUrl);
                 Webservices ws = new Webservices();
                 QueryFilter queryFilter = new QueryFilter
@@ -2417,7 +2423,7 @@ namespace bagis_pro
                     // set the elevation text with units conversion
                     if (strDemDisplayUnits.Equals("Feet"))
                     {
-                        site.ElevationText = 
+                        site.ElevationText =
                             String.Format("{0:0}", ArcGIS.Core.Geometry.LinearUnit.Meters.ConvertTo(site.ElevMeters, ArcGIS.Core.Geometry.LinearUnit.Feet));
                     }
                     else
@@ -2533,6 +2539,118 @@ namespace bagis_pro
                     "Unable to locate batch tool settings in BAGIS folder");
                 return BA_ReturnCode.ReadError;
             }
+        }
+
+        public static async Task<string[]> QueryBufferDistanceAsync(string aoiPath, string strInputGdb, string strInputFile, bool overWriteMetadata)
+        {
+            string[] arrBuffer = new string[2];
+            string strBagisTag = await GeneralTools.GetBagisTagAsync(strInputGdb + "\\" + strInputFile, Constants.META_TAG_XPATH);
+            if (!overWriteMetadata && !String.IsNullOrEmpty(strBagisTag))
+            {
+                string strBufferDistance = GeneralTools.GetValueForKey(strBagisTag, Constants.META_TAG_BUFFER_DISTANCE, ';');
+                string strBufferUnits = GeneralTools.GetValueForKey(strBagisTag, Constants.META_TAG_XUNIT_VALUE, ';');
+                if (!string.IsNullOrEmpty(strBufferDistance) && !string.IsNullOrEmpty(strBufferUnits))
+                {
+                    arrBuffer[0] = strBufferDistance;
+                    arrBuffer[1] = strBufferUnits;
+                    return arrBuffer;
+                }
+            }
+
+            if (arrBuffer[0] == null)
+            {
+                // Buffer information not found in the input file; We need to calculate it
+                string outputLinesBuffered = strInputGdb + "\\" + strInputFile + "_line";
+                string outputLines = strInputGdb + "\\" + Constants.FILE_AOI_VECTOR + "_line";
+                var environments = Geoprocessing.MakeEnvironmentArray(workspace: aoiPath);
+                var parameters = Geoprocessing.MakeValueArray(strInputGdb + "\\" + strInputFile, outputLinesBuffered);
+                var gpResult = await Geoprocessing.ExecuteToolAsync("PolygonToLine_management", parameters, environments,
+                                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                if (gpResult.IsFailed)
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(QueryBufferDistanceAsync),
+                        "Error Code: " + gpResult.ErrorCode + ". Convert Polygon to line!");
+                    return arrBuffer;
+                }
+                else
+                {
+                    parameters = Geoprocessing.MakeValueArray(strInputGdb + "\\" + Constants.FILE_AOI_VECTOR, outputLines);
+                    gpResult = await Geoprocessing.ExecuteToolAsync("PolygonToLine_management", parameters, environments,
+                                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                    if (gpResult.IsFailed)
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(QueryBufferDistanceAsync),
+                            "Error Code: " + gpResult.ErrorCode + ". Convert Polygon to line!");
+                        return arrBuffer;
+                    }
+                }
+                BA_ReturnCode success = await GeoprocessingTools.NearAsync(outputLines, outputLinesBuffered);
+                if (success != BA_ReturnCode.Success)
+                {
+                    return arrBuffer;
+                }
+                else
+                {
+                    QueryFilter queryFilter = new QueryFilter();
+                    Uri uriQuery = new Uri(strInputGdb);
+                    string strNearDistance = await GeodatabaseTools.QueryTableForSingleValueAsync(uriQuery, Constants.FILE_AOI_VECTOR + "_line",
+                        Constants.FIELD_NEAR_DIST, queryFilter);
+                    int intDistance = -1;
+                    if (!string.IsNullOrEmpty(strNearDistance))
+                    {
+                        intDistance = (int) Math.Round(Convert.ToDouble(strNearDistance));
+                    }
+                    await QueuedTask.Run(() =>
+                    {
+                        try
+                        {
+                            using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(uriQuery)))
+                            {
+                                FeatureClass fc = geodatabase.OpenDataset<FeatureClass>(Constants.FILE_AOI_VECTOR + "_line");
+                                var classDefinition = fc.GetDefinition() as FeatureClassDefinition;
+                                // store the spatial reference as its own variable
+                                var spatialReference = classDefinition.GetSpatialReference();
+                                var unit = spatialReference.Unit.Name;
+                                string strUnits = Constants.UNITS_METERS;
+                                if (unit.Equals("Foot"))
+                                {
+                                    strUnits = Constants.UNITS_FEET;
+                                }
+                                arrBuffer[1] = strUnits;
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            Module1.Current.ModuleLogManager.LogError(nameof(QueryBufferDistanceAsync),
+                                "Unable to read SpatialReference from feature class");
+                        }
+                    });
+                    arrBuffer[0] = Convert.ToString(intDistance);
+                    StringBuilder sb = new StringBuilder();
+                    sb.Append(Constants.META_TAG_PREFIX);
+                    // Buffer Distance
+                    sb.Append(Constants.META_TAG_BUFFER_DISTANCE + intDistance + "; ");
+                    // X Units
+                    sb.Append(Constants.META_TAG_XUNIT_VALUE + arrBuffer[1] + "; ");
+                    sb.Append(Constants.META_TAG_SUFFIX);
+
+                    //Update the metadata
+                    var item = ItemFactory.Instance.Create(strInputGdb + "\\" + strInputFile, ItemFactory.ItemType.PathItem);
+                    if (item != null)
+                    {
+                        string strXml = string.Empty;
+                        strXml = item.GetXml();
+                        System.Xml.XmlDocument xmlDocument = GeneralTools.UpdateMetadata(strXml, Constants.META_TAG_XPATH, sb.ToString(),
+                            Constants.META_TAG_PREFIX.Length);
+                        item.SetXml(xmlDocument.OuterXml);
+
+                    }
+                }
+                // Delete line layers to clean-up
+                success = await GeoprocessingTools.DeleteDatasetAsync(outputLinesBuffered);
+                success = await GeoprocessingTools.DeleteDatasetAsync(outputLines);
+            }
+            return arrBuffer;
         }
 
         public static System.Windows.Forms.DialogResult ShowInputDialog(string name, ref string input, int width, int height)

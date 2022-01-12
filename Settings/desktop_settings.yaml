@@ -62,10 +62,8 @@ bagis-pro:
      PrecipBufferUnits: Meters
      SnotelBufferDistance: 5
      SnotelBufferUnits: Kilometers
-     RoadsBufferUnits: Meters
      RoadsAnalysisBufferDistance: 300
      RoadsAnalysisBufferUnits: Feet
-     VegetationBufferUnits: Meters
      Publisher: nwcc_nrcs
      SiteElevRangeFeet: 500
      SiteBufferDistMiles: 5.642

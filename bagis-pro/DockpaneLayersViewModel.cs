@@ -89,6 +89,11 @@ namespace bagis_pro
         private string _landCoverBufferDistance = "";
         private string _landCoverBufferUnits = "";
         private bool _reclipLandCover_Checked = false;
+        // This is buffer information for aoib_v; Not displayed anywhere on the form
+        // but used for default buffer distances for everything except PRISM and SWE
+        private string _unmanagedBufferDistance = "";
+        private string _unmanagedBufferUnits = "";
+
 
 
         public bool ReclipSwe_Checked
@@ -378,35 +383,50 @@ namespace bagis_pro
             }
         }
 
+        public string UnmanagedBufferDistance
+        {
+            get { return _unmanagedBufferDistance; }
+            set
+            {
+                SetProperty(ref _unmanagedBufferDistance, value, () => UnmanagedBufferDistance);
+            }
+        }
+
+        public string UnmanagedBufferBufferUnits
+        {
+            get { return _landCoverBufferUnits; }
+            set
+            {
+                SetProperty(ref _landCoverBufferUnits, value, () => UnmanagedBufferBufferUnits);
+            }
+        }
+
         public void ResetView()
         {
             Prism_Checked = false;
-            PrismBufferDistance = (string) Module1.Current.BatchToolSettings.PrecipBufferDistance;
-            PrismBufferUnits = (string) Module1.Current.BatchToolSettings.PrecipBufferUnits;
+            PrismBufferDistance = "";
+            PrismBufferUnits = "";
             ReclipPrism_Checked = false;
             SWE_Checked = false;
-            SWEBufferDistance = (string) Module1.Current.BatchToolSettings.PrecipBufferDistance;
-            SWEBufferUnits = (string) Module1.Current.BatchToolSettings.PrecipBufferUnits;
+            SWEBufferDistance = "";
+            SWEBufferUnits = "";
             ReclipSwe_Checked = false;
             SNOTEL_Checked = false;
             SnotelBufferDistance = "";
-            SnotelBufferUnits = (string) Module1.Current.BatchToolSettings.SnotelBufferUnits;
+            SnotelBufferUnits = "";
             ReclipSNOTEL_Checked = false;
             SnowCos_Checked = false;
             SnowCosBufferDistance = "";
-            SnowCosBufferUnits = (string) Module1.Current.BatchToolSettings.SnotelBufferUnits;
+            SnowCosBufferUnits = "";
             ReclipSnowCos_Checked = false;
             Roads_Checked = false;
             RoadsBufferDistance = "";
-            RoadsBufferUnits = (string) Module1.Current.BatchToolSettings.RoadsBufferUnits;
             ReclipRoads_Checked = false;
             PublicLands_Checked = false;
             PublicLandsBufferDistance = "";
-            PublicLandsBufferUnits = (string) Module1.Current.BatchToolSettings.RoadsBufferUnits;
             ReclipPublicLands_Checked = false;
             Vegetation_Checked = false;
             VegetationBufferDistance = "";
-            VegetationBufferUnits = (string)Module1.Current.BatchToolSettings.VegetationBufferUnits;
             ReclipVegetation_Checked = false;
             ReclipLandCover_Checked = false;
 
