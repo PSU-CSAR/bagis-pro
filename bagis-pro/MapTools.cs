@@ -132,12 +132,13 @@ namespace bagis_pro
                     if (success.Equals(BA_ReturnCode.Success))
                         Module1.ActivateState("MapButtonPalette_BtnSitesAll_State");
 
-                    //add waterbodies layer Layer
-                    fillColor = CIMColor.CreateRGBColor(0, 0, 255, 100);    //Blue with 0% transparency
+                    //add Critical Precipitation Zones Layer
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
-                        Constants.FILE_WATER_BODIES;
+                        Constants.FILE_CRITICAL_PRECIP_ZONE;
                     uri = new Uri(strPath);
-                    success = await MapTools.AddPolygonLayerAsync(uri, fillColor, true, Constants.MAPS_WATERBODIES);
+                    success = await MapTools.AddPolygonLayerAsync(uri, fillColor, false, Constants.MAPS_CRITICAL_PRECIPITATION_ZONES);
+                    if (success.Equals(BA_ReturnCode.Success))
+                        Module1.ActivateState("MapButtonPalette_BtnCriticalPrecipZone_State");
 
                     // add roads layer
                     Module1.Current.RoadsLayerLegend = "Within unknown distance of access road";
@@ -184,14 +185,13 @@ namespace bagis_pro
                         Module1.ActivateState("MapButtonPalette_BtnSitesLocationPrecip_State");
                         Module1.ActivateState("MapButtonPalette_BtnSitesLocationPrecipContrib_State");
                     }
-                        
-                    //add Critical Precipitation Zones Layer
+
+                    //add waterbodies layer Layer; Adding it last so it shows up on top
+                    fillColor = CIMColor.CreateRGBColor(0, 0, 255, 100);    //Blue with 0% transparency
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
-                        Constants.FILE_CRITICAL_PRECIP_ZONE;
+                        Constants.FILE_WATER_BODIES;
                     uri = new Uri(strPath);
-                    success = await MapTools.AddPolygonLayerAsync(uri, fillColor, false, Constants.MAPS_CRITICAL_PRECIPITATION_ZONES);
-                    if (success.Equals(BA_ReturnCode.Success))
-                        Module1.ActivateState("MapButtonPalette_BtnCriticalPrecipZone_State");
+                    success = await MapTools.AddPolygonLayerAsync(uri, fillColor, true, Constants.MAPS_WATERBODIES);
 
                     // add aoi streams layer
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers, true) +
@@ -2000,7 +2000,7 @@ namespace bagis_pro
                 case BagisMapType.CRITICAL_PRECIP:
                     lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_ELEV_ZONE,
-                                                   Constants.MAPS_CRITICAL_PRECIPITATION_ZONES, Constants.MAPS_WATERBODIES};
+                                                   Constants.MAPS_WATERBODIES, Constants.MAPS_CRITICAL_PRECIPITATION_ZONES};
 
                     lstLegendLayers = new List<string>();
                     if (Module1.Current.Aoi.HasSnotel == true)
@@ -2075,7 +2075,8 @@ namespace bagis_pro
                     break;
                 case BagisMapType.LAND_COVER:
                     lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
-                                                   Constants.MAPS_HILLSHADE, Constants.MAPS_LAND_COVER};
+                                                   Constants.MAPS_HILLSHADE, Constants.MAPS_LAND_COVER,
+                                                   Constants.MAPS_WATERBODIES};
                     lstLegendLayers = new List<string> ();
                     if (Module1.Current.Aoi.HasSnotel == true)
                     {
@@ -2087,6 +2088,7 @@ namespace bagis_pro
                         lstLayers.Add(Constants.MAPS_SNOW_COURSE);
                         lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE);
                     }
+                    lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
                     lstLegendLayers.Add(Constants.MAPS_LAND_COVER);
                     mapDefinition = new BA_Objects.MapDefinition("LAND COVER",
                         " ", Constants.FILE_EXPORT_LAND_COVER_PDF);
@@ -3507,6 +3509,64 @@ namespace bagis_pro
                 i++;
             }
             return success;
+        }
+
+        public static async Task<BA_ReturnCode> DisplayCriticalPrecipitationZonesMap(Uri uriAnalysis)
+        {
+            CIMColor fillColor = CIMColor.CreateRGBColor(255, 0, 0, 70);    //Red with 30% transparency
+            string strLayerPath = uriAnalysis.LocalPath + "\\" + Constants.FILE_CRITICAL_PRECIP_ZONE;
+            BA_ReturnCode success = await MapTools.AddPolygonLayerAsync(new Uri(strLayerPath), fillColor, false, Constants.MAPS_CRITICAL_PRECIPITATION_ZONES);
+
+            if (success == BA_ReturnCode.Success)
+            {
+                Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
+                var layerToMove = MapView.Active.Map.GetLayersAsFlattenedList().OfType<FeatureLayer>().Where(f =>
+                f.Name == Constants.MAPS_CRITICAL_PRECIPITATION_ZONES).FirstOrDefault();
+                if (layerToMove == null)
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(DisplayCriticalPrecipitationZonesMap), "The Critical Precipitation Zones layer could not be found!");
+                    success = BA_ReturnCode.UnknownError;
+                    return success;
+                }
+                var moveBelowThisLayerName = Constants.MAPS_WATERBODIES;
+                //In order to move layerToMove, I need to know if the destination is a group layer and the zero based position it needs to move to.
+                Tuple<GroupLayer, int> moveToLayerPosition = FindLayerPosition(null, moveBelowThisLayerName);
+                if (moveToLayerPosition.Item2 == -1)
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(DisplayCriticalPrecipitationZonesMap), $"Layer {moveBelowThisLayerName} not found ");
+                    success = BA_ReturnCode.UnknownError;
+                    return success;
+                }
+                await QueuedTask.Run(() => {
+                    if (moveToLayerPosition.Item1 != null) //layer gets moved into the group
+                        moveToLayerPosition.Item1.MoveLayer(layerToMove, moveToLayerPosition.Item2);
+                    else //Layer gets moved into the root
+                        MapView.Active.Map.MoveLayer(layerToMove, moveToLayerPosition.Item2);
+                });
+            }
+            return success;
+        }
+
+        private static Tuple<GroupLayer, int> FindLayerPosition(GroupLayer groupLayer, string moveToLayerNameBelow)
+        {
+            int index = 0;
+            foreach (var lyr in groupLayer != null ? groupLayer.Layers : MapView.Active.Map.Layers)
+            {
+                index++;
+                if (lyr is GroupLayer)
+                {
+                    //We descend into a group layer and search all the layers within.
+                    var result = FindLayerPosition(lyr as GroupLayer, moveToLayerNameBelow);
+                    if (result.Item2 >= 0)
+                        return result;
+                    continue;
+                }
+                if (moveToLayerNameBelow == lyr.Name)    //We have a match
+                {
+                    return new Tuple<GroupLayer, int>(groupLayer, index);
+                }
+            }
+            return new Tuple<GroupLayer, int>(null, -1);
         }
     }
 }

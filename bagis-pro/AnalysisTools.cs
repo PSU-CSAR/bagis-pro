@@ -701,6 +701,10 @@ namespace bagis_pro
                         // if the buffer is different from PRISM, we need to create a new buffer file
                         string strTempBuffer = "tmpBuffer";
                         string strTempBuffer2 = "";
+                        if (string.IsNullOrEmpty(strBufferDistance))
+                        {
+                            strBufferDistance = "0";
+                        }
                         if (!strBufferDistance.Trim().Equals(prismBufferDistance.Trim()) ||
                             !strBufferUnits.Trim().Equals(prismBufferUnits.Trim()))
                         {
@@ -1524,7 +1528,8 @@ namespace bagis_pro
                 }
                 else
                 {
-                    snotelClipLayer = Constants.FILE_AOI_VECTOR;
+                    snotelBufferDistance = "0 Meters";
+                    snotelClipLayer = await AnalysisTools.GetSnoClipLayer(strAoiPath, strClipGdb, strTempBuffer, snotelBufferDistance);
                 }
 
                 // Delete the existing snotel layer, snotel represented area, and snotel zones layers
@@ -1585,7 +1590,8 @@ namespace bagis_pro
                 }
                 else
                 {
-                    snowCosClipLayer = Constants.FILE_AOI_VECTOR;
+                    snowCosBufferDistance = "0 Meters";
+                    snowCosClipLayer = await AnalysisTools.GetSnoClipLayer(strAoiPath, strClipGdb, strTempBuffer, snowCosBufferDistance);
                 }
 
                 // Delete the existing snow course layer, represented area, and snow course zones
@@ -1884,67 +1890,77 @@ namespace bagis_pro
         public static async Task<string> GetSnoClipLayer(string strAoiPath, string strClipGdb, string strTempBuffer,
             string strBufferDistance)
         {
-            string strSnoClipLayer = "";
+            string strSnoClipLayer = Constants.FILE_AOI_BUFFERED_VECTOR;
             string strLayerToDelete = "";
             string strAoiBoundaryPath = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, true) +
                 Constants.FILE_AOI_VECTOR;
             if (string.IsNullOrEmpty(strBufferDistance))
             {
-                strAoiBoundaryPath = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, true) +
-                Constants.FILE_AOI_BUFFERED_VECTOR;
+                strBufferDistance = "0 Meters";
             }
-            string strOutputFeatures = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, true) +
-                strTempBuffer;
-            var parametersBuff = Geoprocessing.MakeValueArray(strAoiBoundaryPath, strOutputFeatures, strBufferDistance, "",
-                                                              "", "ALL");
-            var gpResultBuff = await Geoprocessing.ExecuteToolAsync("Buffer_analysis", parametersBuff, null,
-                                 CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-            if (gpResultBuff.IsFailed)
+            // Check to see if the buffer distance is the same as the AOI; If so, we don't need to create a new buffer vector
+            bool bNewBufferFile = true;
+            string[] arrResult = await GeneralTools.QueryBufferDistanceAsync(strAoiPath, strClipGdb, Constants.FILE_AOI_BUFFERED_VECTOR, false);
+            string strTestDistance = arrResult[0] +" " + arrResult[1];
+            if (strBufferDistance.Equals(strTestDistance))
             {
-                Module1.Current.ModuleLogManager.LogError(nameof(GetSnoClipLayer),
-                   "Unable to buffer aoi_v. Error code: " + gpResultBuff.ErrorCode);
-                MessageBox.Show("Unable to buffer aoi_v. Clipping cancelled!!", "BAGIS-PRO");
-                return strSnoClipLayer;
+                bNewBufferFile = false;
             }
-
-            // Check to make sure the buffer file only has one feature; No dangles
-            int featureCount = 0;
-            await QueuedTask.Run(async () =>
+            if (bNewBufferFile)
             {
-                using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(strClipGdb))))
-                using (Table table = geodatabase.OpenDataset<Table>(strTempBuffer))
-                {
-                    featureCount = table.GetCount();
-                }
-                Module1.Current.ModuleLogManager.LogDebug(nameof(GetSnoClipLayer),
-                    "Number of features in clip file: " + featureCount);
-
-                // If > 1 feature, buffer the clip file again
-                if (featureCount > 1)
-                {
-                    string strTempBuffer2 = "tempBuffer2";
-                    strLayerToDelete = strTempBuffer;
-                    parametersBuff = Geoprocessing.MakeValueArray(strClipGdb + "\\" + strTempBuffer,
-                        strClipGdb + "\\" + strTempBuffer2, "0.5 Meters", "", "", "ALL");
-                    gpResultBuff = await Geoprocessing.ExecuteToolAsync("Buffer_analysis", parametersBuff, null,
+                string strOutputFeatures = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, true) +
+                    strTempBuffer;
+                var parametersBuff = Geoprocessing.MakeValueArray(strAoiBoundaryPath, strOutputFeatures, strBufferDistance, "",
+                                                                  "", "ALL");
+                var gpResultBuff = await Geoprocessing.ExecuteToolAsync("Buffer_analysis", parametersBuff, null,
                                      CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                    if (gpResultBuff.IsFailed)
-                    {
-                        Module1.Current.ModuleLogManager.LogError(nameof(ClipLayersAsync),
-                           "Unable to buffer " + strTempBuffer + ". Error code: " + gpResultBuff.ErrorCode);
-                        MessageBox.Show("Unable to temporary clip file. Clipping cancelled!!", "BAGIS-PRO");
-                        return;
-                    }
-                    Module1.Current.ModuleLogManager.LogDebug(nameof(ClipLayersAsync),
-                        "Ran buffer tool again because clip file has > 2 features");
-                    BA_ReturnCode success = await GeoprocessingTools.DeleteDatasetAsync(strClipGdb + "\\" + strTempBuffer);
-                    strSnoClipLayer = strTempBuffer2;
-                }
-                else
+                if (gpResultBuff.IsFailed)
                 {
-                    strSnoClipLayer = strTempBuffer;
+                    Module1.Current.ModuleLogManager.LogError(nameof(GetSnoClipLayer),
+                       "Unable to buffer aoi_v. Error code: " + gpResultBuff.ErrorCode);
+                    MessageBox.Show("Unable to buffer aoi_v. Clipping cancelled!!", "BAGIS-PRO");
+                    return strSnoClipLayer;
                 }
-            });
+
+                // Check to make sure the buffer file only has one feature; No dangles
+                int featureCount = 0;
+                await QueuedTask.Run(async () =>
+                {
+                    using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(strClipGdb))))
+                    using (Table table = geodatabase.OpenDataset<Table>(strTempBuffer))
+                    {
+                        featureCount = table.GetCount();
+                    }
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(GetSnoClipLayer),
+                        "Number of features in clip file: " + featureCount);
+
+                    // If > 1 feature, buffer the clip file again
+                    if (featureCount > 1)
+                    {
+                        string strTempBuffer2 = "tempBuffer2";
+                        strLayerToDelete = strTempBuffer;
+                        parametersBuff = Geoprocessing.MakeValueArray(strClipGdb + "\\" + strTempBuffer,
+                            strClipGdb + "\\" + strTempBuffer2, "0.5 Meters", "", "", "ALL");
+                        gpResultBuff = await Geoprocessing.ExecuteToolAsync("Buffer_analysis", parametersBuff, null,
+                                         CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                        if (gpResultBuff.IsFailed)
+                        {
+                            Module1.Current.ModuleLogManager.LogError(nameof(ClipLayersAsync),
+                               "Unable to buffer " + strTempBuffer + ". Error code: " + gpResultBuff.ErrorCode);
+                            MessageBox.Show("Unable to temporary clip file. Clipping cancelled!!", "BAGIS-PRO");
+                            return;
+                        }
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(ClipLayersAsync),
+                            "Ran buffer tool again because clip file has > 2 features");
+                        BA_ReturnCode success = await GeoprocessingTools.DeleteDatasetAsync(strClipGdb + "\\" + strTempBuffer);
+                        strSnoClipLayer = strTempBuffer2;
+                    }
+                    else
+                    {
+                        strSnoClipLayer = strTempBuffer;
+                    }
+                });
+            }
             return strSnoClipLayer;
         }
 
@@ -1970,10 +1986,21 @@ namespace bagis_pro
                 {
                     try
                     {
+                        // Check to see if the buffer distance is the same as the AOI; If so, we don't need to create a new buffer vector
+                        if (string.IsNullOrEmpty(strBufferDistance))
+                        {
+                            strBufferDistance = "0";
+                        }
+                        bool bNewBufferFile = true;
+                        string[] arrResult = await GeneralTools.QueryBufferDistanceAsync(strAoiPath, strClipGdb, strClipFile, false);
+                        if (arrResult[0].Equals(strBufferDistance) && arrResult[1].Equals(strBufferUnits))
+                        {
+                            bNewBufferFile = false;
+                        }
                         string strTempBuffer = "tmpBuffer";
                         // a buffer distance was requested
                         string strTempBuffer2 = "";
-                        if (!String.IsNullOrEmpty(strBufferDistance))
+                        if (bNewBufferFile)
                         {
                             string strAoiBoundaryPath = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, true) +
                                 Constants.FILE_AOI_VECTOR;
@@ -2602,10 +2629,20 @@ namespace bagis_pro
             {
                 await QueuedTask.Run(async () =>
                 {
+                    // Check to see if the buffer distance is the same as the AOI; If so, we don't need to create a new buffer vector
+                    bool bNewBufferFile = true;
+                    if (string.IsNullOrEmpty(strBufferDistance))
+                    {
+                        strBufferDistance = "0";
+                    }
+                    string[] arrResult = await GeneralTools.QueryBufferDistanceAsync(strAoiPath, strClipGdb, strClipFile, false);
+                    if (arrResult[0].Equals(strBufferDistance) && arrResult[1].Equals(strBufferUnits))
+                    {
+                        bNewBufferFile = false;
+                    }
                     string strTempBuffer = "tmpBuffer";
-                    // a buffer distance was requested
                     string strTempBuffer2 = "";
-                    if (!String.IsNullOrEmpty(strBufferDistance))
+                    if (bNewBufferFile)
                     {
                         string strAoiBoundaryPath = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, true) +
                             Constants.FILE_AOI_VECTOR;

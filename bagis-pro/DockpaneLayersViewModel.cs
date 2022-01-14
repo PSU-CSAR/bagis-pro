@@ -394,10 +394,10 @@ namespace bagis_pro
 
         public string UnmanagedBufferBufferUnits
         {
-            get { return _landCoverBufferUnits; }
+            get { return _unmanagedBufferUnits; }
             set
             {
-                SetProperty(ref _landCoverBufferUnits, value, () => UnmanagedBufferBufferUnits);
+                SetProperty(ref _unmanagedBufferUnits, value, () => UnmanagedBufferBufferUnits);
             }
         }
 

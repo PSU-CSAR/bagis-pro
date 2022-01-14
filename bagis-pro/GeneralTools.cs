@@ -1305,9 +1305,9 @@ namespace bagis_pro
                     }
                     // Set PRISM buffer distanced to prism aoi distance if still missing
                     string strAoiGdbPath = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, false);
+                    string[] arrPrismBuffer = await QueryBufferDistanceAsync(strAoiPath, strAoiGdbPath, Constants.FILE_AOI_PRISM_VECTOR, false);
                     if (string.IsNullOrEmpty(layersPane.PrismBufferDistance))
                     {
-                        string[] arrPrismBuffer = await QueryBufferDistanceAsync(strAoiPath, strAoiGdbPath, Constants.FILE_AOI_PRISM_VECTOR, false);
                         layersPane.PrismBufferDistance = arrPrismBuffer[0];
                         layersPane.SWEBufferDistance = arrPrismBuffer[0];
                         layersPane.PrismBufferUnits = arrPrismBuffer[1];
@@ -2619,7 +2619,7 @@ namespace bagis_pro
                                 arrBuffer[1] = strUnits;
                             }
                         }
-                        catch (Exception e)
+                        catch (Exception)
                         {
                             Module1.Current.ModuleLogManager.LogError(nameof(QueryBufferDistanceAsync),
                                 "Unable to read SpatialReference from feature class");

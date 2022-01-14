@@ -330,7 +330,7 @@ namespace bagis_pro
                     bool hasSnowCourse = await GeodatabaseTools.FeatureClassExistsAsync(uri, Constants.FILE_SNOW_COURSE);
                     if (hasSnotel || hasSnowCourse)
                     {
-                        success = await AnalysisTools.CalculateSitesZonesAsync(Module1.Current.Aoi.FilePath, hasSnowCourse, hasSnowCourse);
+                        success = await AnalysisTools.CalculateSitesZonesAsync(Module1.Current.Aoi.FilePath, hasSnotel, hasSnowCourse);
                     }
                     else
                     {

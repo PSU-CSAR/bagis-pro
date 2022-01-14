@@ -123,9 +123,7 @@ namespace bagis_pro.Buttons
                         Uri uriAnalysis = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis));
                         if (await GeodatabaseTools.FeatureClassExistsAsync(uriAnalysis, Constants.FILE_CRITICAL_PRECIP_ZONE))
                         {
-                            CIMColor fillColor = CIMColor.CreateRGBColor(255, 0, 0, 50);    //Red with 30% transparency
-                            string strLayerPath = uriAnalysis.LocalPath + "\\" + Constants.FILE_CRITICAL_PRECIP_ZONE;
-                            success = await MapTools.AddPolygonLayerAsync(new Uri(strLayerPath), fillColor, false, Constants.MAPS_CRITICAL_PRECIPITATION_ZONES);
+                            success = await MapTools.DisplayCriticalPrecipitationZonesMap(uriAnalysis);
                             string strButtonState = "MapButtonPalette_BtnCriticalPrecipZone_State";
                             if (success.Equals(BA_ReturnCode.Success))
                                 Module1.ActivateState(strButtonState);

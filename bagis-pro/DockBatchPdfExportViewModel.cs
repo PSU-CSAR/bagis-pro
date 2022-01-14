@@ -400,17 +400,12 @@ namespace bagis_pro
                         errorCount++;
                     }
 
-                    // Check for PRISM units
-                    string strPrismPath = GeodatabaseTools.GetGeodatabasePath(AoiFolder, GeodatabaseNames.Prism, true)
-                        + PrismFile.Annual.ToString();
-                    string pBufferDistance = "";
-                    string pBufferUnits = "";
-                    string strBagisTag = await GeneralTools.GetBagisTagAsync(strPrismPath, Constants.META_TAG_XPATH);
-                    if (!string.IsNullOrEmpty(strBagisTag))
-                    {
-                        pBufferDistance = GeneralTools.GetValueForKey(strBagisTag, Constants.META_TAG_BUFFER_DISTANCE, ';');
-                        pBufferUnits = GeneralTools.GetValueForKey(strBagisTag, Constants.META_TAG_XUNIT_VALUE, ';');
-                    }
+                    // Check for PRISM buffer units
+                    string[] arrPrismBufferInfo = await GeneralTools.QueryBufferDistanceAsync(AoiFolder, GeodatabaseTools.GetGeodatabasePath(AoiFolder, GeodatabaseNames.Aoi),
+                        Constants.FILE_AOI_PRISM_VECTOR, false);
+                    string pBufferDistance = arrPrismBufferInfo[0];
+                    string pBufferUnits = arrPrismBufferInfo[1];
+
                     // Clip PRISM
                     string strDefaultBufferDistance = (string)Module1.Current.BatchToolSettings.PrecipBufferDistance;
                     string strDefaultBufferUnits = (string)Module1.Current.BatchToolSettings.PrecipBufferUnits;
@@ -488,7 +483,7 @@ namespace bagis_pro
                         bool hasSnowCourse = await GeodatabaseTools.FeatureClassExistsAsync(uri, Constants.FILE_SNOW_COURSE);
                         if (hasSnotel || hasSnowCourse)
                         {
-                            success = await AnalysisTools.CalculateSitesZonesAsync(Module1.Current.Aoi.FilePath, hasSnowCourse, hasSnowCourse);
+                            success = await AnalysisTools.CalculateSitesZonesAsync(Module1.Current.Aoi.FilePath, hasSnotel, hasSnowCourse);
                             if (success != BA_ReturnCode.Success)
                             {
                                 errorCount++;
@@ -521,14 +516,17 @@ namespace bagis_pro
                         errorCount++;
                     }
 
-                    string snoBufferUnits = (string)Module1.Current.BatchToolSettings.SnotelBufferUnits;
+                    string[] arrUnmanagedBufferInfo = await GeneralTools.QueryBufferDistanceAsync(AoiFolder, GeodatabaseTools.GetGeodatabasePath(AoiFolder, GeodatabaseNames.Aoi),
+                        Constants.FILE_AOI_BUFFERED_VECTOR, false);
+                    string unmanagedBufferDistance = arrPrismBufferInfo[0];
+                    string unmanagedBufferUnits = arrPrismBufferInfo[1];
                     if (SiteAnalysisChecked)
                     {
                         // Clip Roads
                         string strOutputFc = GeodatabaseTools.GetGeodatabasePath(AoiFolder, GeodatabaseNames.Layers, true)
                             + Constants.FILE_ROADS;
                         success = await AnalysisTools.ClipFeatureLayerAsync(AoiFolder, strOutputFc, Constants.DATA_TYPE_ROADS,
-                            Convert.ToString(dblDistance), snoBufferUnits);
+                            unmanagedBufferDistance, unmanagedBufferUnits);
                         if (success != BA_ReturnCode.Success)
                         {
                             errorCount++;
@@ -559,7 +557,7 @@ namespace bagis_pro
                         strOutputFc = GeodatabaseTools.GetGeodatabasePath(AoiFolder, GeodatabaseNames.Layers, true)
                             + Constants.FILE_PUBLIC_LAND;
                         success = await AnalysisTools.ClipFeatureLayerAsync(AoiFolder, strOutputFc, Constants.DATA_TYPE_PUBLIC_LAND,
-                            Convert.ToString(dblDistance), snoBufferUnits);
+                            unmanagedBufferDistance, unmanagedBufferUnits);
                         if (success != BA_ReturnCode.Success)
                         {
                             errorCount++;
@@ -578,7 +576,7 @@ namespace bagis_pro
                         string strOutputRaster = GeodatabaseTools.GetGeodatabasePath(AoiFolder, GeodatabaseNames.Layers, true)
                             + Constants.FILE_VEGETATION_EVT;
                         success = await AnalysisTools.ClipRasterLayerAsync(AoiFolder, strOutputRaster, Constants.DATA_TYPE_VEGETATION,
-                            Convert.ToString(dblDistance), snoBufferUnits);
+                            unmanagedBufferDistance, unmanagedBufferUnits);
                         if (success != BA_ReturnCode.Success)
                         {
                             errorCount++;
@@ -602,7 +600,7 @@ namespace bagis_pro
                     }
 
                     // Clip Land cover
-                    success = await AnalysisTools.ClipLandCoverAsync(AoiFolder, Convert.ToString(dblDistance), snoBufferUnits);
+                    success = await AnalysisTools.ClipLandCoverAsync(AoiFolder, unmanagedBufferDistance, unmanagedBufferUnits);
                     
                     // Generate Elevation Precipitation Correlation layer
                     strLayer = GeodatabaseTools.GetGeodatabasePath(AoiFolder, GeodatabaseNames.Prism, true) +
@@ -721,18 +719,16 @@ namespace bagis_pro
                         }
                         else
                         {
-                                // Generate the crtical precip map; It has to follow the tables
-                                Uri uriAnalysis = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis));
-                                if (await GeodatabaseTools.FeatureClassExistsAsync(uriAnalysis, Constants.FILE_CRITICAL_PRECIP_ZONE))
-                                {
-                                    CIMColor fillColor = CIMColor.CreateRGBColor(255, 0, 0, 50);    //Red with 30% transparency
-                                    string strLayerPath = uriAnalysis.LocalPath + "\\" + Constants.FILE_CRITICAL_PRECIP_ZONE;
-                                    success = await MapTools.AddPolygonLayerAsync(new Uri(strLayerPath), fillColor, false, Constants.MAPS_CRITICAL_PRECIPITATION_ZONES);
-                                    string strButtonState = "MapButtonPalette_BtnCriticalPrecipZone_State";
-                                    if (success.Equals(BA_ReturnCode.Success))
-                                        Module1.ActivateState(strButtonState);
-                                    int foundS1 = strButtonState.IndexOf("_State");
-                                    string strMapButton = strButtonState.Remove(foundS1);
+                           // Generate the crtical precip map; It has to follow the tables
+                           Uri uriAnalysis = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis));
+                           if (await GeodatabaseTools.FeatureClassExistsAsync(uriAnalysis, Constants.FILE_CRITICAL_PRECIP_ZONE))
+                           {
+                                success = await MapTools.DisplayCriticalPrecipitationZonesMap(uriAnalysis);
+                                string strButtonState = "MapButtonPalette_BtnCriticalPrecipZone_State";
+                                if (success.Equals(BA_ReturnCode.Success))
+                                      Module1.ActivateState(strButtonState);
+                                int foundS1 = strButtonState.IndexOf("_State");
+                                string strMapButton = strButtonState.Remove(foundS1);
                                     ICommand cmd = FrameworkApplication.GetPlugInWrapper(strMapButton) as ICommand;
                                     Module1.Current.ModuleLogManager.LogDebug(nameof(RunImplAsync),
                                         "About to toggle map button " + strMapButton);
