@@ -694,7 +694,13 @@ namespace bagis_pro
                             }
                         }
 
-                        success = await MapTools.PublishMapsAsync(ReportType.Watershed); // export the watershed maps to pdf
+                        int pdfExportResolution = Constants.PDF_EXPORT_RESOLUTION;
+                        if (Module1.Current.BatchToolSettings.PdfExportResolution != null)
+                        {
+                            pdfExportResolution = (int)Module1.Current.BatchToolSettings.PdfExportResolution;
+                        }
+
+                        success = await MapTools.PublishMapsAsync(ReportType.Watershed, pdfExportResolution); // export the watershed maps to pdf
                         if (success != BA_ReturnCode.Success)
                         {
                             MessageBox.Show("An error occurred while generating the watershed characteristics maps!!", "BAGIS-PRO");

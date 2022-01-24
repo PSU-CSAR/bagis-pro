@@ -243,7 +243,6 @@ namespace bagis_pro
         public const string FIELD_SUITABLE_PUBLIC = "Suitable_Public";   //Indicates non-wilderness federal land on the Public Lands layer
         public const string FIELD_ALPINE_ABV_TREELINE = "ALPINE_ABV_TREELINE";   //Indicates alpine vegetation types that are above the treeline
         public const string FIELD_GRID_CODE = "gridcode";   //Value after raster is converted to polygon
-        public const string FIELD_RUNOFF_AVERAGE = "Average_kac_ft";
         public const string FIELD_RUNOFF_STATION_TRIPLET = "stationtriplet";
         public const string FIELD_VOL_ACRE_FT = "VOL_ACRE_FT";
         public const string FIELD_SUM = "SUM";
@@ -280,7 +279,8 @@ namespace bagis_pro
         public const string UNITS_FEET = "Feet";
         public const string UNITS_METERS = "Meters";
         public const double MAP_BUFFER_FACTOR = 1.1;
-        public const string TEXT_SITES_TABLE_DESCR = "See the Active Sites table for individual SNOTEL and Snow Course site descriptions";
+        public const string TEXT_SITES_TABLE_DESCR = "See the Active Sites table for individual snow survey site descriptions";
+        public const int PDF_EXPORT_RESOLUTION = 150;
 
         // States that control the map display buttons
         // JanSwe always needs to be last so that we can export the other months directly

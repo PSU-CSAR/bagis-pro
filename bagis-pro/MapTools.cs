@@ -293,10 +293,7 @@ namespace bagis_pro
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers, true) +
                         Constants.FILE_LAND_COVER;
                     uri = new Uri(strPath);
-                    success = await MapTools.DisplayRasterWithClassifyAsync(uri, Constants.MAPS_PRECIPITATION_CONTRIBUTION, "ColorBrewer Schemes (RGB)",
-                               "Yellow-Green-Blue (Continuous)", Constants.FIELD_VOL_ACRE_FT, 30, ClassificationMethod.EqualInterval, 10, null, null, false);
                     success = await MapTools.DisplayUniqueValuesRasterFromLayerFileAsync(uri, Constants.MAPS_LAND_COVER, strLayerFilePath, 30, false);
-
 
                     if (success == BA_ReturnCode.Success)
                         Module1.ActivateState("MapButtonPalette_BtnLandCover_State");
@@ -1329,7 +1326,7 @@ namespace bagis_pro
                     success = await MapTools.DisplayTextBoxAsync(layout, Constants.MAPS_TEXTBOX1, 5.0, 1.6, ColorFactory.Instance.BlackRGB, 12, "Times New Roman",
                         "Regular", "Text Box 1");
                     // sites textbox
-                    success = await MapTools.DisplayTextBoxAsync(layout, Constants.MAPS_TEXTBOX2, 5.2, 0.35, ColorFactory.Instance.BlackRGB, 12, "Times New Roman",
+                    success = await MapTools.DisplayTextBoxAsync(layout, Constants.MAPS_TEXTBOX2, 5.6, 0.35, ColorFactory.Instance.BlackRGB, 12, "Times New Roman",
                         "Regular", Constants.TEXT_SITES_TABLE_DESCR);
                 }
             }
@@ -2842,7 +2839,7 @@ namespace bagis_pro
             return success;
         }
 
-        public static async Task<BA_ReturnCode> PublishMapsAsync(ReportType rType)
+        public static async Task<BA_ReturnCode> PublishMapsAsync(ReportType rType, int pdfExportResolution)
         {
             string[] arrStates = Constants.STATES_WATERSHED_MAP_BUTTONS;
             //if (rType.Equals(ReportType.SiteAnalysis))
@@ -2875,7 +2872,7 @@ namespace bagis_pro
                     }
                     while (Module1.Current.MapFinishedLoading == false);
 
-                    BA_ReturnCode success2 = await GeneralTools.ExportMapToPdfAsync(150);    // export each map to pdf
+                    BA_ReturnCode success2 = await GeneralTools.ExportMapToPdfAsync(pdfExportResolution);    // export each map to pdf
                 }
                 else
                 {

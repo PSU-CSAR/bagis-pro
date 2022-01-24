@@ -104,7 +104,7 @@ namespace bagis_pro.Buttons
                         (iNewLayoutPane as Pane).Activate();
                     }
                 }
-                success = await MapTools.PublishMapsAsync(rType); // export the maps to pdf
+                success = await MapTools.PublishMapsAsync(rType, Constants.PDF_EXPORT_RESOLUTION); // export the maps to pdf
                 if (success != BA_ReturnCode.Success)
                 {
                     MessageBox.Show("An error occurred while generating the maps!!", "BAGIS-PRO");
@@ -147,7 +147,7 @@ namespace bagis_pro.Buttons
                                 await Task.Delay(TimeSpan.FromSeconds(0.4));  // build in delay so maps can load
                             }
                             while (Module1.Current.MapFinishedLoading == false);
-                            success = await GeneralTools.ExportMapToPdfAsync(150);    // export map to pdf
+                            success = await GeneralTools.ExportMapToPdfAsync(Constants.PDF_EXPORT_RESOLUTION);    // export map to pdf
                             if (success==BA_ReturnCode.Success)
                             {
                                 // append the map and chart together for posting

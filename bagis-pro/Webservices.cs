@@ -290,7 +290,7 @@ namespace bagis_pro
                 if (success == true)
                 {
                     Module1.Current.ModuleLogManager.LogDebug(nameof(GetPortalFile),
-                        "The requested file cannot was successfully downloaded from the Portal");
+                        "The requested file was successfully downloaded from the Portal");
                     return BA_ReturnCode.Success;
                 }
                 else

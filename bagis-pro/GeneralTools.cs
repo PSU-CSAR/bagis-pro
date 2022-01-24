@@ -115,6 +115,7 @@ namespace bagis_pro
                 string documentId = (string)Module1.Current.BatchToolSettings.AnnualRunoffItemId;
                 string annualRunoffDataDescr = (string)Module1.Current.BatchToolSettings.AnnualRunoffDataDescr;
                 string annualRunoffDataYear = (string)Module1.Current.BatchToolSettings.AnnualRunoffDataYear;
+                string annualRunoffField = (string)Module1.Current.BatchToolSettings.AnnualRunoffDataField;
 
                 Webservices ws = new Webservices();
                 var success = await ws.GetPortalFile(BA_Objects.AGSPortalProperties.PORTAL_ORGANIZATION, documentId, Module1.Current.SettingsPath + "\\" + Constants.FOLDER_SETTINGS +
@@ -124,7 +125,7 @@ namespace bagis_pro
                 BA_Objects.Analysis oAnalysis = GetAnalysisSettings(Module1.Current.Aoi.FilePath);
 
                 // Query for the annual runoff value
-                double dblAnnualRunoff = QueryAnnualRunoffValue(Module1.Current.Aoi.StationTriplet);
+                double dblAnnualRunoff = QueryAnnualRunoffValue(Module1.Current.Aoi.StationTriplet, annualRunoffField);
                 double dblRunoffRatio = -1;
                 string strRunoffRatio = "No stream flow data";  // This is what we print if we couldn't get the runoff numbers
                 if (dblAnnualRunoff >= 0)
@@ -2212,7 +2213,7 @@ namespace bagis_pro
             return layerNames;
         }
 
-        private static double QueryAnnualRunoffValue(string stationTriplet)
+        private static double QueryAnnualRunoffValue(string stationTriplet, string strField)
         {
             double returnValue = -1.0F;
             string strCsvPath = Module1.Current.SettingsPath + "\\" + Constants.FOLDER_SETTINGS +
@@ -2246,7 +2247,7 @@ namespace bagis_pro
                                 {
                                     idxId = i;
                                 }
-                                else if (field.ToUpper().Trim().Equals(Constants.FIELD_RUNOFF_AVERAGE.ToUpper().Trim()))
+                                else if (field.ToUpper().Trim().Equals(strField.ToUpper().Trim()))
                                 {
                                     idxValue = i;
                                 }

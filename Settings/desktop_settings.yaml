@@ -71,10 +71,12 @@ bagis-pro:
      CriticalPrecipTotalMaxVolPct: 66.6
      AnnualRunoffItemId: f641bbacceff4c1bb3f9661bd8f9de8d
      NLCDLandCoverLayerItemId: 9f61719bc5314247bda76469362c7554
-     AnnualRunoffDataDescr: Basin Average Annual Naturalized Runoff Volume (1981-2010)
-     AnnualRunoffDataYear: 2021
+     AnnualRunoffDataDescr: Basin Average Annual Naturalized Runoff Volume (1991-2020)
+     AnnualRunoffDataYear: 2022
+     AnnualRunoffDataField: Average_kac_ft_1991_2020
      PrecipContribZones: 9
      MasterAoiList: https://services.arcgis.com/SXbDpmb7xQkk44JV/arcgis/rest/services/master_aoi_list_fs/FeatureServer
+     PdfExportResolution: 75
      Version: 1.0
 
 bagis-p:
