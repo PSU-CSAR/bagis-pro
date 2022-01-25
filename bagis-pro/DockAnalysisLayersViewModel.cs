@@ -273,7 +273,10 @@ namespace bagis_pro
                     {
                         layersPane.RepresentedArea_Checked = false;
                     }
-
+                    else
+                    {
+                        MessageBox.Show("An error occurred while trying to calculate the sites represented area !!", "BAGIS-PRO");
+                    }
                 }
 
                 if (calculatePrism)

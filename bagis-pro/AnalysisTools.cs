@@ -85,33 +85,36 @@ namespace bagis_pro
                         bHasSnowCourse = false;
                 }
 
-                // record buffer distances and units in metadata
-                string settingsPath = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAPS + "\\" +
-                    Constants.FILE_SETTINGS;
-                BA_Objects.Analysis oAnalysis = new BA_Objects.Analysis();
-                if (File.Exists(settingsPath))
+                if (bHasSnotel || bHasSnowCourse)
                 {
-                    using (var file = new StreamReader(settingsPath))
+                    // record buffer distances and units in metadata
+                    string settingsPath = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAPS + "\\" +
+                        Constants.FILE_SETTINGS;
+                    BA_Objects.Analysis oAnalysis = new BA_Objects.Analysis();
+                    if (File.Exists(settingsPath))
                     {
-                        var reader = new System.Xml.Serialization.XmlSerializer(typeof(BA_Objects.Analysis));
-                        oAnalysis = (BA_Objects.Analysis)reader.Deserialize(file);
+                        using (var file = new StreamReader(settingsPath))
+                        {
+                            var reader = new System.Xml.Serialization.XmlSerializer(typeof(BA_Objects.Analysis));
+                            oAnalysis = (BA_Objects.Analysis)reader.Deserialize(file);
+                        }
                     }
-                }
-                if (oAnalysis != null)
-                {
-                    oAnalysis.UpperRange = siteElevRangeFeet;
-                    oAnalysis.UpperRangeText = Convert.ToString(siteElevRangeFeet);
-                    oAnalysis.LowerRange = siteElevRangeFeet;
-                    oAnalysis.LowerRangeText = Convert.ToString(siteElevRangeFeet);
-                    oAnalysis.ElevUnitsText = "Feet";
-                    oAnalysis.BufferDistance = siteBufferDistanceMiles;
-                    oAnalysis.BufferUnitsText = "Miles";
-                }
-                // Save settings file
-                using (var file_stream = File.Create(settingsPath))
-                {
-                    var serializer = new System.Xml.Serialization.XmlSerializer(typeof(BA_Objects.Analysis));
-                    serializer.Serialize(file_stream, oAnalysis);
+                    if (oAnalysis != null)
+                    {
+                        oAnalysis.UpperRange = siteElevRangeFeet;
+                        oAnalysis.UpperRangeText = Convert.ToString(siteElevRangeFeet);
+                        oAnalysis.LowerRange = siteElevRangeFeet;
+                        oAnalysis.LowerRangeText = Convert.ToString(siteElevRangeFeet);
+                        oAnalysis.ElevUnitsText = "Feet";
+                        oAnalysis.BufferDistance = siteBufferDistanceMiles;
+                        oAnalysis.BufferUnitsText = "Miles";
+                    }
+                    // Save settings file
+                    using (var file_stream = File.Create(settingsPath))
+                    {
+                        var serializer = new System.Xml.Serialization.XmlSerializer(typeof(BA_Objects.Analysis));
+                        serializer.Serialize(file_stream, oAnalysis);
+                    }
                 }
 
                 // combine site layers
@@ -294,6 +297,7 @@ namespace bagis_pro
             string tmpUnion = "tmpUnion";
             string tmpDissolve = "tmpDissolve";
             IList<string> lstLayersToDelete = new List<string> { tmpBuffer, tmpUnion, tmpDissolve };
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
 
             foreach (BA_Objects.Site aSite in lstSites)
             {
@@ -363,27 +367,50 @@ namespace bagis_pro
                 environments = Geoprocessing.MakeEnvironmentArray(mask: maskPath, workspace: Module1.Current.Aoi.FilePath);
                 gpResult = await Geoprocessing.ExecuteToolAsync("Reclassify_sa", parameters, environments,
                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateRepresentedArea),
-                    "Execute reclass with mask set to buffered point");
+                if (gpResult.IsFailed)
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(CalculateRepresentedArea),
+                        "Failed to execute reclass with mask set to buffered point: " + reclassString);
+                    break;
+                }
+                else
+                {
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateRepresentedArea),
+                        "Execute reclass with mask set to buffered point");
+                    success = BA_ReturnCode.Success;
+                }
+
 
                 //7. Save the reclass as a poly so we can merge with other buffered site polys
-                string siteRepFileName = AnalysisTools.GetSiteScenarioFileName(aSite);
-                string siteRepresentedPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) + siteRepFileName;
-                parameters = Geoprocessing.MakeValueArray(outputRasterPath, siteRepresentedPath);
-                gpResult = await Geoprocessing.ExecuteToolAsync("RasterToPolygon_conversion", parameters, environments,
-                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                if (!gpResult.IsFailed)
+                if (success == BA_ReturnCode.Success)
                 {
-                    sb.Append(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) + siteRepFileName);
-                    sb.Append(";");
-                    Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateRepresentedArea),
-                        "Finished processing site " + aSite.Name);
+                    string siteRepFileName = AnalysisTools.GetSiteScenarioFileName(aSite);
+                    string siteRepresentedPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) + siteRepFileName;
+                    parameters = Geoprocessing.MakeValueArray(outputRasterPath, siteRepresentedPath);
+                    gpResult = await Geoprocessing.ExecuteToolAsync("RasterToPolygon_conversion", parameters, environments,
+                        CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                    if (!gpResult.IsFailed)
+                    {
+                        sb.Append(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) + siteRepFileName);
+                        sb.Append(";");
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateRepresentedArea),
+                            "Created file site file named " + siteRepFileName);
+                    }
+                    else
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(CalculateRepresentedArea),
+                            "Failed to convert raster to polygon for site file!");
+                        success = BA_ReturnCode.UnknownError;
+                        break;
+                    }
                 }
             }
 
             if (sb.Length > 0)
             {
                 string inFeatures = sb.ToString().TrimEnd(';');
+                Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateRepresentedArea),
+                    "Site files to be merged " + inFeatures);
                 string outputUnionPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) + tmpUnion;
                 var parameters = Geoprocessing.MakeValueArray(inFeatures, outputUnionPath);
                 var environments = Geoprocessing.MakeEnvironmentArray(workspace: Module1.Current.Aoi.FilePath);
@@ -430,17 +457,11 @@ namespace bagis_pro
                 }
                 else
                 {
-                    return BA_ReturnCode.UnknownError;
+                    success = BA_ReturnCode.UnknownError;
                 }
 
             }
-
-            //if (gpResult != null)
-            //{
-            //    Geoprocessing.ShowMessageBox(gpResult.Messages, "GP Messages",
-            //        gpResult.IsFailed ? GPMessageBoxStyle.Error : GPMessageBoxStyle.Default);
-            //}
-            return BA_ReturnCode.Success;
+            return success;
         }
 
         public static async Task<BA_ReturnCode> CombineSitesRepresentedArea()
