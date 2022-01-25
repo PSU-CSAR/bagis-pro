@@ -161,7 +161,7 @@ namespace bagis_pro.Buttons
         {
             try
             {
-                await ToggleMapDisplay.ToggleAsync(BagisMapType.ROADS);
+                //await ToggleMapDisplay.ToggleAsync(BagisMapType.ROADS);
             }
             catch (Exception e)
             {

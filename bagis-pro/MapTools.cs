@@ -141,22 +141,22 @@ namespace bagis_pro
                         Module1.ActivateState("MapButtonPalette_BtnCriticalPrecipZone_State");
 
                     // add roads layer
-                    Module1.Current.RoadsLayerLegend = "Within unknown distance of access road";
-                    fillColor = CIMColor.CreateRGBColor(255, 0, 0, 70);    //Red with 30% transparency
-                    strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
-                        Constants.FILE_ROADS_ZONE;
-                    // Get buffer units out of the metadata so we can set the layer name
-                    string strBagisTag = await GeneralTools.GetBagisTagAsync(strPath, Constants.META_TAG_XPATH);
-                    if (!String.IsNullOrEmpty(strBagisTag))
-                    {
-                        string strBufferDistance = GeneralTools.GetValueForKey(strBagisTag, Constants.META_TAG_BUFFER_DISTANCE, ';');
-                        string strBufferUnits = GeneralTools.GetValueForKey(strBagisTag, Constants.META_TAG_XUNIT_VALUE, ';');
-                        Module1.Current.RoadsLayerLegend = "Within " + strBufferDistance + " " + strBufferUnits + " of access road";
-                    }
-                    uri = new Uri(strPath);
-                    success = await MapTools.AddPolygonLayerAsync(uri, fillColor, false, Module1.Current.RoadsLayerLegend);
-                    if (success.Equals(BA_ReturnCode.Success))
-                        Module1.ActivateState("MapButtonPalette_BtnRoads_State");
+                    //Module1.Current.RoadsLayerLegend = "Within unknown distance of access road";
+                    //fillColor = CIMColor.CreateRGBColor(255, 0, 0, 70);    //Red with 30% transparency
+                    //strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
+                    //    Constants.FILE_ROADS_ZONE;
+                    //// Get buffer units out of the metadata so we can set the layer name
+                    //string strBagisTag = await GeneralTools.GetBagisTagAsync(strPath, Constants.META_TAG_XPATH);
+                    //if (!String.IsNullOrEmpty(strBagisTag))
+                    //{
+                    //    string strBufferDistance = GeneralTools.GetValueForKey(strBagisTag, Constants.META_TAG_BUFFER_DISTANCE, ';');
+                    //    string strBufferUnits = GeneralTools.GetValueForKey(strBagisTag, Constants.META_TAG_XUNIT_VALUE, ';');
+                    //    Module1.Current.RoadsLayerLegend = "Within " + strBufferDistance + " " + strBufferUnits + " of access road";
+                    //}
+                    //uri = new Uri(strPath);
+                    //success = await MapTools.AddPolygonLayerAsync(uri, fillColor, false, Module1.Current.RoadsLayerLegend);
+                    //if (success.Equals(BA_ReturnCode.Success))
+                    //    Module1.ActivateState("MapButtonPalette_BtnRoads_State");
 
                     //add Public Land Layer
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
@@ -193,11 +193,17 @@ namespace bagis_pro
                     uri = new Uri(strPath);
                     success = await MapTools.AddPolygonLayerAsync(uri, fillColor, true, Constants.MAPS_WATERBODIES);
 
+                    // add roads layer
+                    strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers, true) +
+                        Constants.FILE_ROADS;
+                    uri = new Uri(strPath);
+                    await MapTools.AddLineLayerAsync(uri, Constants.MAPS_ROADS, false, ColorFactory.Instance.CreateRGBColor(150, 75, 0, 100));
+
                     // add aoi streams layer
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers, true) +
                               Constants.FILE_STREAMS;
                     uri = new Uri(strPath);
-                    await MapTools.AddLineLayerAsync(uri, Constants.MAPS_STREAMS, ColorFactory.Instance.BlueRGB);
+                    await MapTools.AddLineLayerAsync(uri, Constants.MAPS_STREAMS, true, ColorFactory.Instance.BlueRGB);
 
                     // add Snotel Layer
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers, true) +
@@ -566,7 +572,7 @@ namespace bagis_pro
             return success;
         }
 
-        public static async Task AddLineLayerAsync(Uri aoiUri, string displayName, CIMColor lineColor)
+        public static async Task AddLineLayerAsync(Uri aoiUri, string displayName, bool bIsVisible, CIMColor lineColor)
         {
             // parse the uri for the folder and file
             string strFileName = null;
@@ -601,7 +607,7 @@ namespace bagis_pro
                 var flyrCreatnParam = new FeatureLayerCreationParams(fClass)
                 {
                     Name = displayName,
-                    IsVisible = true,
+                    IsVisible = bIsVisible,
                     RendererDefinition = new SimpleRendererDefinition()
                     {
                         SymbolTemplate = SymbolFactory.Instance.ConstructLineSymbol(lineColor)
@@ -776,7 +782,7 @@ namespace bagis_pro
 
         public static async Task RemoveLayersfromMapFrame()
         {
-            string[] arrLayerNames = new string[43];
+            string[] arrLayerNames = new string[44];
             arrLayerNames[0] = Constants.MAPS_AOI_BOUNDARY;
             arrLayerNames[1] = Constants.MAPS_STREAMS;
             arrLayerNames[2] = Constants.MAPS_SNOTEL;
@@ -799,7 +805,8 @@ namespace bagis_pro
             arrLayerNames[19] = Constants.MAPS_SUBBASIN_BOUNDARY;
             arrLayerNames[20] = Constants.MAPS_LAND_COVER;
             arrLayerNames[21] = Constants.MAPS_WATERBODIES;
-            int idxLayerNames = 22;
+            arrLayerNames[22] = Constants.MAPS_ROADS;
+            int idxLayerNames = 23;
             for (int i = 0; i < Constants.LAYER_NAMES_SNODAS_SWE.Length; i++)
             {
                 arrLayerNames[idxLayerNames] = Constants.LAYER_NAMES_SNODAS_SWE[i];
@@ -829,25 +836,24 @@ namespace bagis_pro
                     }
                 }
 
-
                 //special handling for the roads zones layer because the name may be different between AOI's; It's based on the buffer distance
-                var returnLayers =
-                     map.Layers.Where(m => m.Name.Contains("Within"));
-                IList<string> lstLayerNames = new List<string>();
-                foreach (var item in returnLayers)
-                {
-                    lstLayerNames.Add(item.Name);
-                }
-                foreach (var strName in lstLayerNames)
-                {
-                    Layer oLayer =
-                        map.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(strName, StringComparison.CurrentCultureIgnoreCase));
-                    if (oLayer != null)
-                    {
+                //var returnLayers =
+                //     map.Layers.Where(m => m.Name.Contains("Within"));
+                //IList<string> lstLayerNames = new List<string>();
+                //foreach (var item in returnLayers)
+                //{
+                //    lstLayerNames.Add(item.Name);
+                //}
+                //foreach (var strName in lstLayerNames)
+                //{
+                //    Layer oLayer =
+                //        map.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(strName, StringComparison.CurrentCultureIgnoreCase));
+                //    if (oLayer != null)
+                //    {
 
-                        map.RemoveLayer(oLayer);
-                    }
-                }
+                //        map.RemoveLayer(oLayer);
+                //    }
+                //}
            });
         }
 
@@ -1837,31 +1843,11 @@ namespace bagis_pro
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;
-                case BagisMapType.ROADS:
-                    lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
-                                                   Constants.MAPS_HILLSHADE, Constants.MAPS_ELEV_ZONE,
-                                                   Constants.MAPS_WATERBODIES, Module1.Current.RoadsLayerLegend};
-                    lstLegendLayers = new List<string> { Module1.Current.RoadsLayerLegend };
-                    lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
-                    if (Module1.Current.Aoi.HasSnotel == true)
-                    {
-                        lstLayers.Add(Constants.MAPS_SNOTEL);
-                        lstLegendLayers.Add(Constants.MAPS_SNOTEL);
-                    }
-                    if (Module1.Current.Aoi.HasSnowCourse == true)
-                    {
-                        lstLayers.Add(Constants.MAPS_SNOW_COURSE);
-                        lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE);
-                    }
-                    mapDefinition = new BA_Objects.MapDefinition("PROXIMITY TO ACCESS ROAD",
-                        " ", Constants.FILE_EXPORT_MAP_ROADS_PDF);
-                    mapDefinition.LayerList = lstLayers;
-                    mapDefinition.LegendLayerList = lstLegendLayers;
-                    break;
                 case BagisMapType.PUBLIC_LAND_ZONES:
                     lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_ELEV_ZONE,
-                                                   Constants.MAPS_FEDERAL_PUBLIC_LAND_ZONES, Constants.MAPS_WATERBODIES};
+                                                   Constants.MAPS_FEDERAL_PUBLIC_LAND_ZONES, Constants.MAPS_ROADS,
+                                                   Constants.MAPS_WATERBODIES};
                     lstLegendLayers = new List<string> ();
                     
                     if (Module1.Current.Aoi.HasSnotel == true)
@@ -1875,8 +1861,9 @@ namespace bagis_pro
                         lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE);
                     }
                     lstLegendLayers.Add(Constants.MAPS_FEDERAL_PUBLIC_LAND_ZONES);
+                    lstLegendLayers.Add(Constants.MAPS_ROADS);
                     lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
-                    mapDefinition = new BA_Objects.MapDefinition("FEDERAL NON-WILDERNESS LAND",
+                    mapDefinition = new BA_Objects.MapDefinition("ACCESS ROADS AND FEDERAL NON-WILDERNESS LAND",
                         " ", Constants.FILE_EXPORT_MAP_PUBLIC_LAND_ZONES_PDF);
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;

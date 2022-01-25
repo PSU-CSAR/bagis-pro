@@ -33,7 +33,6 @@ namespace bagis_pro
         SITES_ALL,
         SNODAS_SWE,
         PRISM,
-        ROADS,
         PUBLIC_LAND_ZONES,
         BELOW_TREELINE,
         SITES_LOCATION,

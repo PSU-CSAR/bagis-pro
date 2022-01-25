@@ -80,7 +80,6 @@
           <button refID="MapButtonPalette_BtnSweJul" />
           <button refID="MapButtonPalette_BtnSweNov" />
           <button refID="MapButtonPalette_BtnSweDec" />
-          <button refID="MapButtonPalette_BtnRoads" />
           <button refID="MapButtonPalette_BtnPublicLandZones" />
           <button refID="MapButtonPalette_BtnBelowTreeline" />
           <button refID="MapButtonPalette_BtnSitesLocationZone" />
@@ -262,10 +261,10 @@
           <tooltip heading="Display Map">
             ToolTip<disabledText /></tooltip>
         </button>
-        <button id="MapButtonPalette_BtnRoads" caption="Access Roads Proximity" className="bagis_pro.Buttons.MapButtonPalette_BtnRoads" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnRoads_Condition" keytip="B40">
+        <!--<button id="MapButtonPalette_BtnRoads" caption="Access Roads Proximity" className="bagis_pro.Buttons.MapButtonPalette_BtnRoads" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnRoads_Condition" keytip="B40">
           <tooltip heading="Display Map">
             ToolTip<disabledText /></tooltip>
-        </button>
+        </button> -->
         <button id="MapButtonPalette_BtnPublicLandZones" caption="Federal Non_Wilderness Land" className="bagis_pro.Buttons.MapButtonPalette_BtnPublicLandZones" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnPublicLandZones_Condition" keytip="B41" >
           <tooltip heading="Display Map">
             ToolTip<disabledText /></tooltip>
@@ -479,9 +478,9 @@
     <insertCondition id="Aoi_Selected_Condition" caption="AOI selected">
       <state id="Aoi_Selected_State" />
     </insertCondition>
-    <insertCondition id="MapButtonPalette_BtnRoads_Condition" caption="Map Disabled">
-      <state id="MapButtonPalette_BtnRoads_State" />
-    </insertCondition>
+    <!--<insertCondition id="MapButtonPalette_BtnRoads_Condition" caption="Map Disabled">
+      <state id="MapButtonPalette_BtnRoads_State" /> 
+    </insertCondition> -->
     <insertCondition id="MapButtonPalette_BtnPublicLandZones_Condition" caption="Map Disabled">
       <state id="MapButtonPalette_BtnPublicLandZones_State" />
     </insertCondition>

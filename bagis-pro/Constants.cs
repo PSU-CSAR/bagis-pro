@@ -19,6 +19,7 @@ namespace bagis_pro
         public const string MAPS_AOI_LOCATION_MAP_FRAME_NAME = "AOI Location Map Frame";
         public const string MAPS_AOI_BOUNDARY = "AOI Boundary";
         public const string MAPS_STREAMS = "AOI Streams";
+        public const string MAPS_ROADS = "AOI Roads";
         public const string MAPS_SNOTEL = "SNOTEL Sites";
         public const string MAPS_SNOW_COURSE = "Snow Courses";
         public const string MAPS_HILLSHADE = "hillshade";
@@ -122,9 +123,8 @@ namespace bagis_pro
                                                                                                FILE_EXPORT_MAP_PRECIPITATION_CONTRIBUTION_PDF, FILE_EXPORT_CHART_AREA_ELEV_PRECIP_SITE_PDF,
                                                                                                FILE_EXPORT_CHART_PRECIP_REPRESENT_PDF, FILE_EXPORT_CRITICAL_PRECIPITATION_ZONES_PDF };
         public static readonly string[] FILE_EXPORT_SITE_ANALYSIS_FILES = new string[] { FILE_EXPORT_MAP_SITES_LOCATION_PDF, FILE_EXPORT_MAP_SITES_LOCATION_PRECIP_PDF, FILE_EXPORT_MAP_SITES_LOCATION__PRECIP_CONTRIB_PDF,
-                                                                                          FILE_EXPORT_MAP_ROADS_PDF, FILE_EXPORT_MAP_PUBLIC_LAND_ZONES_PDF, FILE_EXPORT_MAP_PUBLIC_LAND_OWNERSHIP_PDF,
+                                                                                          FILE_EXPORT_MAP_PUBLIC_LAND_ZONES_PDF, FILE_EXPORT_MAP_PUBLIC_LAND_OWNERSHIP_PDF,
                                                                                           FILE_EXPORT_MAP_BELOW_TREELINE_PDF};
-        public const string FILE_EXPORT_MAP_ROADS_PDF = "map_roads.pdf";
         public const string FILE_EXPORT_MAP_PUBLIC_LAND_ZONES_PDF = "map_public_land_zones.pdf";
         public const string FILE_EXPORT_MAP_BELOW_TREELINE_PDF = "map_below_treeline.pdf";
         public const string FILE_EXPORT_MAP_SITES_LOCATION_PDF = "map_sites_location.pdf";
@@ -314,7 +314,6 @@ namespace bagis_pro
                                                                 "MapButtonPalette_BtnSeasonalPrecipContribSQ2_State",
                                                                 "MapButtonPalette_BtnSeasonalPrecipContribSQ3_State",
                                                                 "MapButtonPalette_BtnSeasonalPrecipContribSQ4_State",
-                                                                "MapButtonPalette_BtnRoads_State",
                                                                 "MapButtonPalette_BtnPublicLandOwnership_State",
                                                                 "MapButtonPalette_BtnBelowTreeline_State",
                                                                 "MapButtonPalette_BtnPublicLandZones_State",
@@ -325,7 +324,6 @@ namespace bagis_pro
                                                                 "MapButtonPalette_BtnSitesLocationPrecipContrib_State",
                                                                 "MapButtonPalette_BtnLandCover_State"};
         //public static string[] STATES_SITE_ANALYSIS_MAP_BUTTONS => new string[] {
-        //                                                        "MapButtonPalette_BtnRoads_State",
         //                                                        "MapButtonPalette_BtnBelowTreeline_State",
         //                                                        "MapButtonPalette_BtnPublicLandZones_State",
         //                                                        "MapButtonPalette_BtnSitesLocationZone_State",
