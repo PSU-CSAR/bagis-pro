@@ -310,6 +310,8 @@ namespace bagis_pro
                     success = await MapTools.DisplayNorthArrowAsync(layout, Constants.MAPS_DEFAULT_MAP_FRAME_NAME);
                     success = await MapTools.DisplayScaleBarAsync(layout, Constants.MAPS_DEFAULT_MAP_FRAME_NAME);
 
+                    SetClipGeometryAsync(oAoi.FilePath);
+                    
                     //zoom to aoi boundary layer
                     success = await MapTools.ZoomToExtentAsync(aoiUri, Constants.MAP_BUFFER_FACTOR);
 
@@ -3551,6 +3553,91 @@ namespace bagis_pro
                 }
             }
             return new Tuple<GroupLayer, int>(null, -1);
+        }
+
+        private static async void SetClipGeometryAsync(string strAoiPath)
+        {
+            // Get Basin Analysis map
+            Project proj = Project.Current;
+
+            // Check to make sure the buffer file only has one feature; No dangles
+            Uri uriAoi = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi));
+            int featureCount = await GeodatabaseTools.CountFeaturesAsync(uriAoi, Constants.FILE_AOI_VECTOR);
+            string strClipFile = Constants.FILE_AOI_VECTOR;
+            string strTempBuffer = "tmpBuffer";
+
+            await QueuedTask.Run(() =>
+            {
+                Map map = Project.Current.GetItems<MapProjectItem>().FirstOrDefault(m => m.Name.Equals(Constants.MAPS_DEFAULT_MAP_NAME)).GetMap();
+                //Get the polygon to use to clip the map
+                Polygon aoiGeo = null;
+                if (featureCount > 1)
+                {
+                    var parameters = ArcGIS.Desktop.Core.Geoprocessing.Geoprocessing.MakeValueArray(uriAoi.LocalPath + "\\" + Constants.FILE_AOI_VECTOR,
+                        uriAoi.LocalPath + "\\" + strTempBuffer, "0.5 Meters", "", "", "ALL");
+                    var gpResultBuff = ArcGIS.Desktop.Core.Geoprocessing.Geoprocessing.ExecuteToolAsync("Buffer_analysis", parameters, null,
+                                     CancelableProgressor.None, ArcGIS.Desktop.Core.Geoprocessing.GPExecuteToolFlags.AddToHistory);
+                    if (gpResultBuff.Result.IsFailed)
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(SetClipGeometryAsync),
+                           "Unable to buffer " + Constants.FILE_AOI_VECTOR + ". Error code: " + gpResultBuff.Result.ErrorCode);
+                        return;
+                    }
+                    strClipFile = strTempBuffer;
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(SetClipGeometryAsync), "Ran buffer tool again because clip file has > 2 features");
+                }
+                if (featureCount == 1)
+                {
+                    using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(uriAoi)))
+                    using (Table table = geodatabase.OpenDataset<Table>(strClipFile))
+                    {
+                        //check for multiple buffer polygons and buffer AOI if we need to
+                        QueryFilter queryFilter = new QueryFilter();
+                        using (RowCursor cursor = table.Search(queryFilter, false))
+                        {
+                            while (cursor.MoveNext())
+                            {
+                                using (Feature feature = (Feature)cursor.Current)
+                                {
+                                    aoiGeo = (Polygon) feature.GetShape();
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // set the clip geometry
+                map.SetClipGeometry(aoiGeo, null);
+                Module1.Current.ModuleLogManager.LogDebug(nameof(SetClipGeometryAsync), "Map clip geometry set to aoi polygon");
+
+                // get the uris for the sites layers
+                string[] arrSites = new string[] { Constants.MAPS_SNOTEL, Constants.MAPS_SNOW_COURSE };
+                List<string> layerUris = new List<string>();
+                foreach (var item in arrSites)
+                {
+                    var lyrOfInterest = map.GetLayersAsFlattenedList().Where(l => l.Name.Contains(item));
+                    if (lyrOfInterest.FirstOrDefault() != null)
+                    {
+                        if (!string.IsNullOrEmpty(lyrOfInterest.FirstOrDefault().URI))
+                        {
+                            layerUris.Add(lyrOfInterest.FirstOrDefault().URI);
+                        }
+                    }
+                }
+                // get the map definition
+                var mapDef = map.GetDefinition();
+                // assign the layers to be excluded 
+                mapDef.LayersExcludedFromClipping = layerUris.ToArray();
+                Module1.Current.ModuleLogManager.LogDebug(nameof(SetClipGeometryAsync), "Sites layers excluded from clipping");
+                // set the map definition
+                map.SetDefinition(mapDef);
+            });
+
+            if (!string.IsNullOrEmpty(strTempBuffer))
+            {
+                BA_ReturnCode success = await GeoprocessingTools.DeleteDatasetAsync(uriAoi.LocalPath + "\\" + strTempBuffer);
+            }
         }
     }
 }
