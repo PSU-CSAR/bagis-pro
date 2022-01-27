@@ -81,7 +81,7 @@
           <button refID="MapButtonPalette_BtnSweNov" />
           <button refID="MapButtonPalette_BtnSweDec" />
           <button refID="MapButtonPalette_BtnPublicLandZones" />
-          <button refID="MapButtonPalette_BtnBelowTreeline" />
+          <button refID="MapButtonPalette_BtnForestedArea" />
           <button refID="MapButtonPalette_BtnSitesLocationZone" />
           <button refID="MapButtonPalette_BtnSitesLocationPrecip" />
           <button refID="MapButtonPalette_BtnSitesLocationPrecipContrib" />
@@ -269,7 +269,7 @@
           <tooltip heading="Display Map">
             ToolTip<disabledText /></tooltip>
         </button>
-        <button id="MapButtonPalette_BtnBelowTreeline" caption="Area Below Treeline" className="bagis_pro.Buttons.MapButtonPalette_BtnBelowTreeline" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnBelowTreeline_Condition" keytip="B42">
+        <button id="MapButtonPalette_BtnForestedArea" caption="Forested Land Cover" className="bagis_pro.Buttons.MapButtonPalette_BtnForestedArea" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnForestedArea_Condition" keytip="B42">
           <tooltip heading="Display Map">
             ToolTip<disabledText /></tooltip>
         </button>
@@ -484,8 +484,8 @@
     <insertCondition id="MapButtonPalette_BtnPublicLandZones_Condition" caption="Map Disabled">
       <state id="MapButtonPalette_BtnPublicLandZones_State" />
     </insertCondition>
-    <insertCondition id="MapButtonPalette_BtnBelowTreeline_Condition" caption="Map Disabled">
-      <state id="MapButtonPalette_BtnBelowTreeline_State" />
+    <insertCondition id="MapButtonPalette_BtnForestedArea_Condition" caption="Map Disabled">
+      <state id="MapButtonPalette_BtnForestedArea_State" />
     </insertCondition>
     <insertCondition id="MapButtonPalette_BtnSitesLocationZone_Condition" caption="Map Disabled">
       <state id="MapButtonPalette_BtnSitesLocationZone_State" />

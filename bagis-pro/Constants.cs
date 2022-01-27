@@ -19,7 +19,7 @@ namespace bagis_pro
         public const string MAPS_AOI_LOCATION_MAP_FRAME_NAME = "AOI Location Map Frame";
         public const string MAPS_AOI_BOUNDARY = "AOI Boundary";
         public const string MAPS_STREAMS = "AOI Streams";
-        public const string MAPS_ROADS = "AOI Roads";
+        public const string MAPS_ACCESS_ROADS = "Access Roads";
         public const string MAPS_SNOTEL = "SNOTEL Sites";
         public const string MAPS_SNOW_COURSE = "Snow Courses";
         public const string MAPS_HILLSHADE = "hillshade";
@@ -31,7 +31,7 @@ namespace bagis_pro
         public const string MAPS_SNOW_COURSE_REPRESENTED = "Snow Courses Rep Area";
         public const string MAPS_ALL_SITES_REPRESENTED = "All Sites Rep Area";
         public const string MAPS_FEDERAL_PUBLIC_LAND_ZONES = "Federal Non-Wilderness Land";
-        public const string MAPS_BELOW_TREELINE = "Area Below Treeline";
+        public const string MAPS_FORESTED_LAND_COVER = "Forested Land Cover";
         public const string MAPS_SITES_LOCATION = "Meet All Criteria";
         public const string MAPS_CRITICAL_PRECIPITATION_ZONES = "Critical Precipitation";
         public const string MAPS_PUBLIC_LAND_OWNERSHIP = "Public Land Ownership";
@@ -66,7 +66,7 @@ namespace bagis_pro
         public const string FILE_SCOS_ZONE = "scoszone";
         public const string FILE_ROADS_ZONE = "roadszone";
         public const string FILE_PUBLIC_LAND_ZONE = "publiclandszone";
-        public const string FILE_BELOW_TREELINE_ZONE = "belowtreelinezone";
+        public const string FILE_FORESTED_ZONE = "forestedzone";
         public const string FILE_SITES_LOCATION_ZONE = "sitesloczone";
         //public const string FILE_SNOTEL_REPRESENTED = "npactual";
         public const string FILE_SNOTEL_REPRESENTED = "snotel_rep";
@@ -124,9 +124,9 @@ namespace bagis_pro
                                                                                                FILE_EXPORT_CHART_PRECIP_REPRESENT_PDF, FILE_EXPORT_CRITICAL_PRECIPITATION_ZONES_PDF };
         public static readonly string[] FILE_EXPORT_SITE_ANALYSIS_FILES = new string[] { FILE_EXPORT_MAP_SITES_LOCATION_PDF, FILE_EXPORT_MAP_SITES_LOCATION_PRECIP_PDF, FILE_EXPORT_MAP_SITES_LOCATION__PRECIP_CONTRIB_PDF,
                                                                                           FILE_EXPORT_MAP_PUBLIC_LAND_ZONES_PDF, FILE_EXPORT_MAP_PUBLIC_LAND_OWNERSHIP_PDF,
-                                                                                          FILE_EXPORT_MAP_BELOW_TREELINE_PDF};
+                                                                                          FILE_EXPORT_MAP_FORESTED_LAND_COVER_PDF};
         public const string FILE_EXPORT_MAP_PUBLIC_LAND_ZONES_PDF = "map_public_land_zones.pdf";
-        public const string FILE_EXPORT_MAP_BELOW_TREELINE_PDF = "map_below_treeline.pdf";
+        public const string FILE_EXPORT_MAP_FORESTED_LAND_COVER_PDF = "map_forested_land_cover.pdf";
         public const string FILE_EXPORT_MAP_SITES_LOCATION_PDF = "map_sites_location.pdf";
         public const string FILE_EXPORT_MAP_SITES_LOCATION_PRECIP_PDF = "map_sites_location_precip.pdf";
         public const string FILE_EXPORT_MAP_SITES_LOCATION__PRECIP_CONTRIB_PDF = "map_sites_location_precip_contrib.pdf";
@@ -241,7 +241,6 @@ namespace bagis_pro
         public const string FIELD_COUNT = "COUNT";
         public const string FIELD_RASTERVALU = "RASTERVALU";   //Field generated when using BA_ExtractValuesToPoints to populate BA_SELEV from DEM
         public const string FIELD_SUITABLE_PUBLIC = "Suitable_Public";   //Indicates non-wilderness federal land on the Public Lands layer
-        public const string FIELD_ALPINE_ABV_TREELINE = "ALPINE_ABV_TREELINE";   //Indicates alpine vegetation types that are above the treeline
         public const string FIELD_GRID_CODE = "gridcode";   //Value after raster is converted to polygon
         public const string FIELD_RUNOFF_STATION_TRIPLET = "stationtriplet";
         public const string FIELD_VOL_ACRE_FT = "VOL_ACRE_FT";
@@ -315,7 +314,7 @@ namespace bagis_pro
                                                                 "MapButtonPalette_BtnSeasonalPrecipContribSQ3_State",
                                                                 "MapButtonPalette_BtnSeasonalPrecipContribSQ4_State",
                                                                 "MapButtonPalette_BtnPublicLandOwnership_State",
-                                                                "MapButtonPalette_BtnBelowTreeline_State",
+                                                                "MapButtonPalette_BtnForestedArea_State",
                                                                 "MapButtonPalette_BtnPublicLandZones_State",
                                                                 "MapButtonPalette_BtnSitesLocationZone_State",
                                                                 "MapButtonPalette_BtnSitesLocationPrecip_State",

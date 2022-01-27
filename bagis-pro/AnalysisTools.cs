@@ -2232,43 +2232,41 @@ namespace bagis_pro
             return success;
         }
 
-        public static async Task<BA_ReturnCode> ExtractBelowTreelineAsync(string strAoiPath)
+        public static async Task<BA_ReturnCode> ExtractForestedAreaAsync(string strAoiPath)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
             Uri uriLayers = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers));
-            bool bExists = await GeodatabaseTools.RasterDatasetExistsAsync(uriLayers, Constants.FILE_VEGETATION_EVT);
+            bool bExists = await GeodatabaseTools.RasterDatasetExistsAsync(uriLayers, Constants.FILE_LAND_COVER);
             if (!bExists)
             {
-                MessageBox.Show("The vegetation layer is missing. Clip the vegetation layer before generating the area below treeline analysis layer!!", "BAGIS-PRO");
-                Module1.Current.ModuleLogManager.LogDebug(nameof(GetFederalNonWildernessLandsAsync),
-                    "Unable to extract below treeline because vegetation layer does not exist. Process stopped!!");
+                Module1.Current.ModuleLogManager.LogDebug(nameof(ExtractForestedAreaAsync),
+                    "Unable to extract forested area because " + Constants.FILE_LAND_COVER + " layer does not exist. Process stopped!!");
                 return success;
             }
-            string strInputRaster = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers, true) + Constants.FILE_VEGETATION_EVT;
+            string strInputRaster = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers, true) + Constants.FILE_LAND_COVER;
             Uri uriFull = new Uri(strInputRaster);
             await QueuedTask.Run(() =>
             {
-                // Convert vegetation raster to vector using ALPINE_ABV_TREELINE since that's the only value we care about
+                // Convert vegetation raster to vector using VALUE
                 var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath);
                 string strAnalysisGdb = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Analysis);
-                string strTempVector = "temp_veg";
+                string strTempVector = "temp_nlcd";
                 var parameters = Geoprocessing.MakeValueArray(strInputRaster, strAnalysisGdb + "\\" + strTempVector,
-                    "SIMPLIFY", Constants.FIELD_ALPINE_ABV_TREELINE);
+                    "SIMPLIFY", Constants.FIELD_VALUE);
                 var gpResult = Geoprocessing.ExecuteToolAsync("RasterToPolygon_conversion", parameters, environments,
                                     CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
                 if (gpResult.Result.IsFailed)
                 {
-                    Module1.Current.ModuleLogManager.LogError(nameof(ExtractBelowTreelineAsync),
-                    "Unable to convert vegetation raster to polygon. Error code: " + gpResult.Result.ErrorCode);
-                    MessageBox.Show("Unable to convert vegetation raster to polygon. Process cancelled!!", "BAGIS-PRO");
+                    Module1.Current.ModuleLogManager.LogError(nameof(ExtractForestedAreaAsync),
+                    "Unable to convert NLCD raster to polygon. Error code: " + gpResult.Result.ErrorCode);
                     return;
                 }
 
                 // Create feature layer so we can use definition query to select public lands
                 var uriTemp = new Uri(strAnalysisGdb + "\\" + strTempVector);
                 var slectionLayer = LayerFactory.Instance.CreateFeatureLayer(uriTemp, MapView.Active.Map, 0, "Selection Layer");
-                slectionLayer.SetDefinitionQuery(Constants.FIELD_GRID_CODE + " <> 1");
-                string dissolveOutputPath = strAnalysisGdb + "\\" + Constants.FILE_BELOW_TREELINE_ZONE;
+                slectionLayer.SetDefinitionQuery(Constants.FIELD_GRID_CODE + " IN (41, 42, 43)");
+                string dissolveOutputPath = strAnalysisGdb + "\\" + Constants.FILE_FORESTED_ZONE;
                 // Copy selected features to a new, temporary feature class
                 environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath);
                 parameters = Geoprocessing.MakeValueArray(slectionLayer, dissolveOutputPath, Constants.FIELD_GRID_CODE);
@@ -2277,8 +2275,8 @@ namespace bagis_pro
 
                 if (gpResult.Result.IsFailed)
                 {
-                    Module1.Current.ModuleLogManager.LogError(nameof(ExtractBelowTreelineAsync),
-                   "Unable to dissolve selected features. Error code: " + gpResult.Result.ErrorCode);
+                    Module1.Current.ModuleLogManager.LogError(nameof(ExtractForestedAreaAsync),
+                        "Unable to dissolve selected features. Error code: " + gpResult.Result.ErrorCode);
                 }
                 // Remove temporary layer
                 MapView.Active.Map.RemoveLayer(slectionLayer);
@@ -2288,15 +2286,14 @@ namespace bagis_pro
                     CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
                 if (gpResult.Result.IsFailed)
                 {
-                    MessageBox.Show("Unable to delete temporary vegetation layer. Process cancelled!!", "BAGIS-PRO");
-                    Module1.Current.ModuleLogManager.LogError(nameof(ExtractBelowTreelineAsync),
-                        "Failed to delete temporary vegetation layer");
+                    Module1.Current.ModuleLogManager.LogError(nameof(ExtractForestedAreaAsync),
+                        "Failed to delete temporary forested area layer");
                     return;
                 }
                 else
                 {
-                    Module1.Current.ModuleLogManager.LogDebug(nameof(ExtractBelowTreelineAsync),
-                        "Deleted temporary vegetation layer");
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(ExtractForestedAreaAsync),
+                        "Deleted temporary vegetation forested area layer");
                 }
             });
             success = BA_ReturnCode.Success;
@@ -2945,7 +2942,7 @@ namespace bagis_pro
                                 CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
             if (gpResult.Result.IsFailed)
             {
-                Module1.Current.ModuleLogManager.LogError(nameof(ExtractBelowTreelineAsync),
+                Module1.Current.ModuleLogManager.LogError(nameof(CalculateElevationZonesAsync),
                 "Unable to convert elevation zones raster to polygon. Error code: " + gpResult.Result.ErrorCode);
                 MessageBox.Show("Unable to convert elevation zones raster to polygon. Process cancelled!!", "BAGIS-PRO");
                 success = BA_ReturnCode.UnknownError;
@@ -3089,7 +3086,7 @@ namespace bagis_pro
             try
             {
                 Uri uriLayersGdb = new Uri(GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Analysis));
-                string[] arrSiteFileNames = { Constants.FILE_PUBLIC_LAND_ZONE, Constants.FILE_ROADS_ZONE, Constants.FILE_BELOW_TREELINE_ZONE };
+                string[] arrSiteFileNames = { Constants.FILE_PUBLIC_LAND_ZONE, Constants.FILE_ROADS_ZONE, Constants.FILE_FORESTED_ZONE };
                 IList<string> lstIntersectLayers = new List<string>();
                 string strOutputPath = uriLayersGdb.LocalPath + "\\" + Constants.FILE_SITES_LOCATION_ZONE;
                 foreach (var fileName in arrSiteFileNames)

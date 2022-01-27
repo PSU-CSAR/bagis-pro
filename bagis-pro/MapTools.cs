@@ -166,13 +166,13 @@ namespace bagis_pro
                     if (success.Equals(BA_ReturnCode.Success))
                         Module1.ActivateState("MapButtonPalette_BtnPublicLandZones_State");
 
-                    //add Below Treeline Layer
+                    //add Forested Layer
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
-                        Constants.FILE_BELOW_TREELINE_ZONE;
+                        Constants.FILE_FORESTED_ZONE;
                     uri = new Uri(strPath);
-                    success = await MapTools.AddPolygonLayerAsync(uri, fillColor, false, Constants.MAPS_BELOW_TREELINE);
+                    success = await MapTools.AddPolygonLayerAsync(uri, fillColor, false, Constants.MAPS_FORESTED_LAND_COVER);
                     if (success.Equals(BA_ReturnCode.Success))
-                        Module1.ActivateState("MapButtonPalette_BtnBelowTreeline_State");
+                        Module1.ActivateState("MapButtonPalette_BtnForestedArea_State");
 
                     //add Potential Site Locations Layer
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
@@ -197,7 +197,7 @@ namespace bagis_pro
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers, true) +
                         Constants.FILE_ROADS;
                     uri = new Uri(strPath);
-                    await MapTools.AddLineLayerAsync(uri, Constants.MAPS_ROADS, false, ColorFactory.Instance.CreateRGBColor(150, 75, 0, 100));
+                    await MapTools.AddLineLayerAsync(uri, Constants.MAPS_ACCESS_ROADS, false, ColorFactory.Instance.CreateRGBColor(150, 75, 0, 100));
 
                     // add aoi streams layer
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers, true) +
@@ -798,7 +798,7 @@ namespace bagis_pro
             arrLayerNames[10] = Constants.MAPS_ALL_SITES_REPRESENTED;
             arrLayerNames[11] = Constants.MAPS_PRISM_ZONE;
             arrLayerNames[12] = Constants.MAPS_FEDERAL_PUBLIC_LAND_ZONES;
-            arrLayerNames[13] = Constants.MAPS_BELOW_TREELINE;
+            arrLayerNames[13] = Constants.MAPS_FORESTED_LAND_COVER;
             arrLayerNames[14] = Constants.MAPS_SITES_LOCATION;
             arrLayerNames[15] = Constants.MAPS_CRITICAL_PRECIPITATION_ZONES;
             arrLayerNames[16] = Constants.MAPS_PUBLIC_LAND_OWNERSHIP;
@@ -807,7 +807,7 @@ namespace bagis_pro
             arrLayerNames[19] = Constants.MAPS_SUBBASIN_BOUNDARY;
             arrLayerNames[20] = Constants.MAPS_LAND_COVER;
             arrLayerNames[21] = Constants.MAPS_WATERBODIES;
-            arrLayerNames[22] = Constants.MAPS_ROADS;
+            arrLayerNames[22] = Constants.MAPS_ACCESS_ROADS;
             int idxLayerNames = 23;
             for (int i = 0; i < Constants.LAYER_NAMES_SNODAS_SWE.Length; i++)
             {
@@ -1848,7 +1848,7 @@ namespace bagis_pro
                 case BagisMapType.PUBLIC_LAND_ZONES:
                     lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_ELEV_ZONE,
-                                                   Constants.MAPS_FEDERAL_PUBLIC_LAND_ZONES, Constants.MAPS_ROADS,
+                                                   Constants.MAPS_FEDERAL_PUBLIC_LAND_ZONES, Constants.MAPS_ACCESS_ROADS,
                                                    Constants.MAPS_WATERBODIES};
                     lstLegendLayers = new List<string> ();
                     
@@ -1863,17 +1863,17 @@ namespace bagis_pro
                         lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE);
                     }
                     lstLegendLayers.Add(Constants.MAPS_FEDERAL_PUBLIC_LAND_ZONES);
-                    lstLegendLayers.Add(Constants.MAPS_ROADS);
+                    lstLegendLayers.Add(Constants.MAPS_ACCESS_ROADS);
                     lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
                     mapDefinition = new BA_Objects.MapDefinition("ACCESS ROADS AND FEDERAL NON-WILDERNESS LAND",
                         " ", Constants.FILE_EXPORT_MAP_PUBLIC_LAND_ZONES_PDF);
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;
-                case BagisMapType.BELOW_TREELINE:
+                case BagisMapType.FORESTED_AREA:
                     lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_ELEV_ZONE,
-                                                   Constants.MAPS_WATERBODIES, Constants.MAPS_BELOW_TREELINE};
+                                                   Constants.MAPS_WATERBODIES, Constants.MAPS_FORESTED_LAND_COVER};
                     lstLegendLayers = new List<string> ();
                     if (Module1.Current.Aoi.HasSnotel == true)
                     {
@@ -1886,9 +1886,9 @@ namespace bagis_pro
                         lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE);
                     }
                     lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
-                    lstLegendLayers.Add(Constants.MAPS_BELOW_TREELINE);
-                    mapDefinition = new BA_Objects.MapDefinition("AREA BELOW TREELINE",
-                        " ", Constants.FILE_EXPORT_MAP_BELOW_TREELINE_PDF);
+                    lstLegendLayers.Add(Constants.MAPS_FORESTED_LAND_COVER);
+                    mapDefinition = new BA_Objects.MapDefinition("FORESTED LAND COVER",
+                        " ", Constants.FILE_EXPORT_MAP_FORESTED_LAND_COVER_PDF);
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;

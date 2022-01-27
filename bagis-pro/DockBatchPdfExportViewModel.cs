@@ -583,8 +583,8 @@ namespace bagis_pro
                         }
                         if (success == BA_ReturnCode.Success)
                         {
-                            // Create area below treeline layer for potential site analysis
-                            success = await AnalysisTools.ExtractBelowTreelineAsync(AoiFolder);
+                            // Create area below forested area layer for potential site analysis
+                            success = await AnalysisTools.ExtractForestedAreaAsync(AoiFolder);
                             if (success != BA_ReturnCode.Success)
                             {
                                 errorCount++;

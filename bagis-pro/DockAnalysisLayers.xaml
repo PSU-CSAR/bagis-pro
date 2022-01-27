@@ -101,11 +101,11 @@
                       IsChecked="{Binding FederalLand_Checked}"/>
         </DockPanel>
         <DockPanel Grid.Row="9" Grid.Column="0"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
-            <Label Content="Area Below Treeline" HorizontalAlignment="Left" VerticalAlignment="Center"  Padding="5,0,20,0"/>
+            <Label Content="Forested Area" HorizontalAlignment="Left" VerticalAlignment="Center"  Padding="5,0,20,0"/>
         </DockPanel>
         <DockPanel Grid.Row="9" Grid.Column="1"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
-            <CheckBox x:Name="chkBelowTreeline" Grid.Row="8" Grid.Column="1" Content="" HorizontalAlignment="Center"  Height="14" VerticalAlignment="Center"
-                      IsChecked="{Binding BelowTreeline_Checked}"/>
+            <CheckBox x:Name="chkForestedArea" Grid.Row="8" Grid.Column="1" Content="" HorizontalAlignment="Center"  Height="14" VerticalAlignment="Center"
+                      IsChecked="{Binding ForestedArea_Checked}"/>
         </DockPanel>
         <DockPanel Grid.Row="10" Grid.Column="0"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
             <Label  Content="Elevation-Precipitation Correlation" HorizontalAlignment="Left" VerticalAlignment="Center"  Padding="5,0,20,0"/>

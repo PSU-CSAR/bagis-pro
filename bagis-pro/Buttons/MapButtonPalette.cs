@@ -200,17 +200,17 @@ namespace bagis_pro.Buttons
         }
     }
 
-    internal class MapButtonPalette_BtnBelowTreeline : Button
+    internal class MapButtonPalette_BtnForestedArea : Button
     {
         protected override async void OnClick()
         {
             try
             {
-                await ToggleMapDisplay.ToggleAsync(BagisMapType.BELOW_TREELINE);
+                await ToggleMapDisplay.ToggleAsync(BagisMapType.FORESTED_AREA);
             }
             catch (Exception e)
             {
-                MessageBox.Show("Unable to display area below treeline map!!" + e.Message, "BAGIS-PRO");
+                MessageBox.Show("Unable to display forested area map!!" + e.Message, "BAGIS-PRO");
             }
         }
     }

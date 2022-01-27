@@ -66,7 +66,7 @@ namespace bagis_pro
         private bool _SitesZones_Checked = false;
         private bool _Roads_Checked = false;
         private bool _FederalLand_Checked = false;
-        private bool _BelowTreeline_Checked = false;
+        private bool _ForestedArea_Checked = false;
         private bool _ElevPrecipCorr_Checked = false;
         private bool _SWE_Delta_Checked = false;
         private bool _Precip_Contrib_Checked = false;
@@ -152,12 +152,12 @@ namespace bagis_pro
             }
         }
 
-        public bool BelowTreeline_Checked
+        public bool ForestedArea_Checked
         {
-            get { return _BelowTreeline_Checked; }
+            get { return _ForestedArea_Checked; }
             set
             {
-                SetProperty(ref _BelowTreeline_Checked, value, () => BelowTreeline_Checked);
+                SetProperty(ref _ForestedArea_Checked, value, () => ForestedArea_Checked);
             }
         }
 
@@ -207,7 +207,7 @@ namespace bagis_pro
             SitesZones_Checked = false;
             Roads_Checked = false;
             FederalLand_Checked = false;
-            BelowTreeline_Checked = false;
+            ForestedArea_Checked = false;
             ElevPrecipCorr_Checked = false;
             SWE_Delta_Checked = false;
             Precip_Contrib_Checked = false;
@@ -222,7 +222,7 @@ namespace bagis_pro
                 {
                     // Create from template
                     await GenerateLayersAsync(RepresentedArea_Checked, PrismZones_Checked, AspectZones_Checked,
-                        SlopeZones_Checked, ElevationZones_Checked, Roads_Checked, FederalLand_Checked, BelowTreeline_Checked,
+                        SlopeZones_Checked, ElevationZones_Checked, Roads_Checked, FederalLand_Checked, ForestedArea_Checked,
                         ElevPrecipCorr_Checked, SitesZones_Checked, SWE_Delta_Checked, Precip_Contrib_Checked,
                         Winter_Precip_Checked);
                 });
@@ -231,7 +231,7 @@ namespace bagis_pro
 
         private async Task GenerateLayersAsync(bool calculateRepresented, bool calculatePrism, bool calculateAspect,
             bool calculateSlope, bool calculateElevation, bool bufferRoads, bool extractPublicLand,
-            bool extractBelowTreeline, bool elevPrecipCorr, bool calculateSitesZones, bool calculateSweDelta,
+            bool extractForestedArea, bool elevPrecipCorr, bool calculateSitesZones, bool calculateSweDelta,
             bool calculatePrecipContrib, bool winterPrecip)
         {
             try
@@ -244,7 +244,7 @@ namespace bagis_pro
 
                 if (calculateRepresented == false && calculatePrism == false && calculateAspect == false
                     && calculateSlope == false && calculateElevation == false && bufferRoads == false
-                    && extractPublicLand == false && extractBelowTreeline == false && elevPrecipCorr == false
+                    && extractPublicLand == false && extractForestedArea == false && elevPrecipCorr == false
                     && calculateSitesZones == false && calculateSweDelta == false && calculatePrecipContrib == false
                     && winterPrecip == false)
                 {
@@ -387,13 +387,13 @@ namespace bagis_pro
                     }
                 }
 
-                if (extractBelowTreeline)
+                if (extractForestedArea)
                 {
 
-                    success = await AnalysisTools.ExtractBelowTreelineAsync(Module1.Current.Aoi.FilePath);
+                    success = await AnalysisTools.ExtractForestedAreaAsync(Module1.Current.Aoi.FilePath);
                     if (success == BA_ReturnCode.Success)
                     {
-                        layersPane.BelowTreeline_Checked = false;
+                        layersPane.ForestedArea_Checked = false;
                     }
                     else
                     {
@@ -403,7 +403,7 @@ namespace bagis_pro
 
                 if (! bSkipPotentialSites)
                 {
-                    if (bufferRoads || extractPublicLand || extractBelowTreeline)
+                    if (bufferRoads || extractPublicLand || extractForestedArea)
                     {
                         // if either of the underlying layers changed, we need to recalculate the
                         // potential sites layer

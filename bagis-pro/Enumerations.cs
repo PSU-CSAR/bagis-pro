@@ -34,7 +34,7 @@ namespace bagis_pro
         SNODAS_SWE,
         PRISM,
         PUBLIC_LAND_ZONES,
-        BELOW_TREELINE,
+        FORESTED_AREA,
         SITES_LOCATION,
         SITES_LOCATION_PRECIP,
         SITES_LOCATION_PRECIP_CONTRIB,
