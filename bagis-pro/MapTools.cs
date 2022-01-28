@@ -3564,29 +3564,12 @@ namespace bagis_pro
             Uri uriAoi = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi));
             int featureCount = await GeodatabaseTools.CountFeaturesAsync(uriAoi, Constants.FILE_AOI_VECTOR);
             string strClipFile = Constants.FILE_AOI_VECTOR;
-            string strTempBuffer = "tmpBuffer";
 
             await QueuedTask.Run(() =>
             {
                 Map map = Project.Current.GetItems<MapProjectItem>().FirstOrDefault(m => m.Name.Equals(Constants.MAPS_DEFAULT_MAP_NAME)).GetMap();
                 //Get the polygon to use to clip the map
                 Polygon aoiGeo = null;
-                //if (featureCount > 1)
-                //{
-                //    var parameters = ArcGIS.Desktop.Core.Geoprocessing.Geoprocessing.MakeValueArray(uriAoi.LocalPath + "\\" + Constants.FILE_AOI_VECTOR,
-                //        uriAoi.LocalPath + "\\" + strTempBuffer, "0.5 Meters", "", "", "ALL");
-                //    var gpResultBuff = ArcGIS.Desktop.Core.Geoprocessing.Geoprocessing.ExecuteToolAsync("Buffer_analysis", parameters, null,
-                //                     CancelableProgressor.None, ArcGIS.Desktop.Core.Geoprocessing.GPExecuteToolFlags.AddToHistory);
-                //    if (gpResultBuff.Result.IsFailed)
-                //    {
-                //        Module1.Current.ModuleLogManager.LogError(nameof(SetClipGeometryAsync),
-                //           "Unable to buffer " + Constants.FILE_AOI_VECTOR + ". Error code: " + gpResultBuff.Result.ErrorCode);
-                //        return;
-                //    }
-                //    strClipFile = strTempBuffer;
-                //    Module1.Current.ModuleLogManager.LogDebug(nameof(SetClipGeometryAsync), "Ran buffer tool again because clip file has > 2 features");
-                //}
-
                 using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(uriAoi)))
                 using (Table table = geodatabase.OpenDataset<Table>(strClipFile))
                 {
@@ -3640,11 +3623,6 @@ namespace bagis_pro
                 // set the map definition
                 map.SetDefinition(mapDef);
             });
-
-            if (!string.IsNullOrEmpty(strTempBuffer))
-            {
-                //BA_ReturnCode success = await GeoprocessingTools.DeleteDatasetAsync(uriAoi.LocalPath + "\\" + strTempBuffer);
-            }
         }
     }
 }
