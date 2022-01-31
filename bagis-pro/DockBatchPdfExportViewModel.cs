@@ -572,15 +572,13 @@ namespace bagis_pro
                             }
                         }
 
-                        // Clip Vegetation layer
-                        string strOutputRaster = GeodatabaseTools.GetGeodatabasePath(AoiFolder, GeodatabaseNames.Layers, true)
-                            + Constants.FILE_VEGETATION_EVT;
-                        success = await AnalysisTools.ClipRasterLayerAsync(AoiFolder, strOutputRaster, Constants.DATA_TYPE_VEGETATION,
-                            unmanagedBufferDistance, unmanagedBufferUnits);
+                        // Clip Land cover
+                        success = await AnalysisTools.ClipLandCoverAsync(AoiFolder, unmanagedBufferDistance, unmanagedBufferUnits);
                         if (success != BA_ReturnCode.Success)
                         {
                             errorCount++;
                         }
+
                         if (success == BA_ReturnCode.Success)
                         {
                             // Create area below forested area layer for potential site analysis
@@ -598,9 +596,6 @@ namespace bagis_pro
                             errorCount++;
                         }
                     }
-
-                    // Clip Land cover
-                    success = await AnalysisTools.ClipLandCoverAsync(AoiFolder, unmanagedBufferDistance, unmanagedBufferUnits);
                     
                     // Generate Elevation Precipitation Correlation layer
                     strLayer = GeodatabaseTools.GetGeodatabasePath(AoiFolder, GeodatabaseNames.Prism, true) +

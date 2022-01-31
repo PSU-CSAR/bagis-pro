@@ -79,7 +79,6 @@ namespace bagis_pro
         public const string FILE_ASPECT = "aspect";
         public const string FILE_ROADS = "fs_roads";
         public const string FILE_PUBLIC_LAND = "public_lands";
-        public const string FILE_VEGETATION_EVT = "LF_us_140evt";
         public const string FILE_LAND_COVER = "nlcd_land_cover";
         public const string FILE_WATER_BODIES = "water_bodies";
         public const string FILE_PREC_MEAN_ELEV = "precmeanelev";
@@ -263,7 +262,6 @@ namespace bagis_pro
         public const string DATA_TYPE_SNOW_COURSE = "Snow Course";
         public const string DATA_TYPE_ROADS = "Roads";
         public const string DATA_TYPE_PUBLIC_LAND = "Public Land";
-        public const string DATA_TYPE_VEGETATION = "Vegetation Type";
         public const string DATA_TYPE_SWE_DELTA = "Snotel SWE Delta";
         public const string DATA_TYPE_LAND_COVER = "Land Cover";
 
@@ -279,7 +277,7 @@ namespace bagis_pro
         public const string UNITS_METERS = "Meters";
         public const double MAP_BUFFER_FACTOR = 1.1;
         public const string TEXT_SITES_TABLE_DESCR = "See the Active Sites table for individual snow survey site descriptions";
-        public const int PDF_EXPORT_RESOLUTION = 150;
+        public const int PDF_EXPORT_RESOLUTION = 300;
 
         // States that control the map display buttons
         // JanSwe always needs to be last so that we can export the other months directly

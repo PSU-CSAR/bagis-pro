@@ -123,12 +123,12 @@
             <CheckBox x:Name="chkReclipPublicLands" Content="" HorizontalAlignment="Center"  Height="14" VerticalAlignment="Center" IsEnabled="True"
                       IsChecked="{Binding ReclipPublicLands_Checked}"/>
         </DockPanel>
-        <CheckBox x:Name="chkVegetation" Grid.Column="0"  Grid.Row="7" Content="Vegetation" HorizontalAlignment="Left"  Height="14" VerticalAlignment="Center" IsEnabled="False"
+        <!--<CheckBox x:Name="chkVegetation" Grid.Column="0"  Grid.Row="7" Content="Vegetation" HorizontalAlignment="Left"  Height="14" VerticalAlignment="Center" IsEnabled="False"
                       Margin="5,0,0,0" IsChecked="{Binding Vegetation_Checked}"/>
         <TextBox x:Name="txtVegetation" Grid.Column="1"  Grid.Row="7" HorizontalAlignment="Right" TextWrapping="NoWrap"  Width="70" Text="{Binding VegetationBufferDistance}" Height="20" TextAlignment="Right" Margin="5,0,0,0" IsEnabled="True"/>
         <Label x:Name="lblVegetation" Grid.Column="2"  Grid.Row="7" Content="{Binding VegetationBufferUnits}" HorizontalAlignment="Left"  VerticalAlignment="Center" />
         <CheckBox x:Name="chkReclipVegetation" Grid.Column="3"  Grid.Row="7" Content="" HorizontalAlignment="Center"  Height="14" VerticalAlignment="Center" IsEnabled="True"
-                      IsChecked="{Binding ReclipVegetation_Checked}"/>
+                      IsChecked="{Binding ReclipVegetation_Checked}"/> -->
         <CheckBox x:Name="chkLandCover" Grid.Column="0"  Grid.Row="8" Content="Land Cover" HorizontalAlignment="Left"  Height="14" VerticalAlignment="Center" IsEnabled="False"
                       Margin="5,0,0,0" IsChecked="{Binding LandCover_Checked}"/>
         <TextBox x:Name="txtLandCover" Grid.Column="1"  Grid.Row="8" HorizontalAlignment="Right" TextWrapping="NoWrap"  Width="70" Text="{Binding LandCoverBufferDistance}" Height="20" TextAlignment="Right" Margin="5,0,0,0" IsEnabled="True"/>

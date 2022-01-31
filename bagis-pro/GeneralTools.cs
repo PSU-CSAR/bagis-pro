@@ -270,15 +270,14 @@ namespace bagis_pro
                 IDictionary<string, BA_Objects.DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
                 string[] keys = { Constants.DATA_TYPE_SWE, Constants.DATA_TYPE_PRECIPITATION, Constants.DATA_TYPE_SNOTEL,
                                   Constants.DATA_TYPE_SNOW_COURSE, Constants.DATA_TYPE_ROADS,
-                                  Constants.DATA_TYPE_PUBLIC_LAND, Constants.DATA_TYPE_VEGETATION, Constants.DATA_TYPE_LAND_COVER};
+                                  Constants.DATA_TYPE_PUBLIC_LAND, Constants.DATA_TYPE_LAND_COVER};
                 //if (rType.Equals(ReportType.SiteAnalysis))
                 //{
-                //    Array.Resize(ref keys, 5);
+                //    Array.Resize(ref keys, 4);
                 //    keys[0] = Constants.DATA_TYPE_SNOTEL;
                 //    keys[1] = Constants.DATA_TYPE_SNOW_COURSE;
                 //    keys[2] = Constants.DATA_TYPE_ROADS;
                 //    keys[3] = Constants.DATA_TYPE_PUBLIC_LAND;
-                //    keys[4] = Constants.DATA_TYPE_VEGETATION;
                 //}
                 IList<BA_Objects.DataSource> lstDataSources = new List<BA_Objects.DataSource>();
                 foreach (string strKey in keys)
@@ -1327,17 +1326,15 @@ namespace bagis_pro
                     layersPane.RoadsBufferUnits = layersPane.UnmanagedBufferBufferUnits;
                     layersPane.PublicLandsBufferDistance = layersPane.UnmanagedBufferDistance;
                     layersPane.PublicLandsBufferUnits = layersPane.UnmanagedBufferBufferUnits;
-                    layersPane.VegetationBufferDistance = layersPane.UnmanagedBufferDistance;
-                    layersPane.VegetationBufferUnits = layersPane.UnmanagedBufferBufferUnits;
                     layersPane.LandCoverBufferDistance = layersPane.UnmanagedBufferDistance;
                     layersPane.LandCoverBufferUnits = layersPane.UnmanagedBufferBufferUnits;
 
                     // Update data status for files in layers.gdb
                     string[] arrCheckLayers = new string[] { Constants.FILE_SNODAS_SWE_APRIL, Constants.FILE_SNOTEL,
                                                              Constants.FILE_SNOW_COURSE, Constants.FILE_ROADS,
-                                                             Constants.FILE_PUBLIC_LAND, Constants.FILE_VEGETATION_EVT,
+                                                             Constants.FILE_PUBLIC_LAND,
                                                              Constants.FILE_LAND_COVER};
-                    bool[] arrLayerExists = new bool[] { false, false, false, false, false, false, false };
+                    bool[] arrLayerExists = new bool[] { false, false, false, false, false, false};
                     gdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers, false));
                     bExists = false;
                     if (gdbUri.IsFile)
@@ -1438,15 +1435,6 @@ namespace bagis_pro
                                             }
                                             if (!string.IsNullOrEmpty(bufferUnits))
                                                 layersPane.PublicLandsBufferUnits = bufferUnits;
-                                            break;
-                                        case Constants.FILE_VEGETATION_EVT:
-                                            layersPane.Vegetation_Checked = true;
-                                            if (!string.IsNullOrEmpty(bufferDistance))
-                                            {
-                                                layersPane.VegetationBufferDistance = bufferDistance;
-                                            }
-                                            if (!string.IsNullOrEmpty(bufferUnits))
-                                                layersPane.VegetationBufferUnits = bufferUnits;
                                             break;
                                         case Constants.FILE_LAND_COVER:
                                             layersPane.LandCover_Checked = true;

@@ -254,5 +254,33 @@ namespace bagis_pro
                 return BA_ReturnCode.Success;
             }
         }
+
+        public static async Task<IList<double>> GetRasterMinMaxStatsAsync(string aoiPath, string rasterPath, 
+                                                                          string maskPath, double adjustmentFactor)
+        {
+            IList<double> returnList = new List<double>();
+            try
+            {
+                double dblMin = -1;
+                var parameters = Geoprocessing.MakeValueArray(rasterPath, "MINIMUM");
+                var environments = Geoprocessing.MakeEnvironmentArray(workspace: aoiPath, mask: maskPath);
+                IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("GetRasterProperties_management", parameters, environments,
+                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                bool success = Double.TryParse(Convert.ToString(gpResult.ReturnValue), out dblMin);
+                returnList.Add(dblMin - adjustmentFactor);
+                double dblMax = -1;
+                parameters = Geoprocessing.MakeValueArray(rasterPath, "MAXIMUM");
+                gpResult = await Geoprocessing.ExecuteToolAsync("GetRasterProperties_management", parameters, environments,
+                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                success = Double.TryParse(Convert.ToString(gpResult.ReturnValue), out dblMax);
+                returnList.Add(dblMax + adjustmentFactor);
+            }
+            catch (Exception e)
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(GetRasterMinMaxStatsAsync),
+                    "Exception: " + e.Message);
+            }
+            return returnList;
+        }
     }
 }

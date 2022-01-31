@@ -76,7 +76,7 @@ bagis-pro:
      AnnualRunoffDataField: Average_kac_ft_1991_2020
      PrecipContribZones: 9
      MasterAoiList: https://services.arcgis.com/SXbDpmb7xQkk44JV/arcgis/rest/services/master_aoi_list_fs/FeatureServer
-     PdfExportResolution: 75
+     PdfExportResolution: 300
      Version: 1.0
 
 bagis-p:

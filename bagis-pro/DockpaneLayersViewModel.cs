@@ -81,10 +81,6 @@ namespace bagis_pro
         private string _publicLandsBufferDistance = "";
         private string _publicLandsBufferUnits = "";
         private bool _reclipPublicLands_Checked = false;
-        private bool _vegetation_Checked = false;
-        private string _vegetationBufferDistance = "";
-        private string _vegetationBufferUnits = "";
-        private bool _reclipVegetation_Checked = false;
         private bool _landCover_Checked = false;
         private string _landCoverBufferDistance = "";
         private string _landCoverBufferUnits = "";
@@ -311,41 +307,6 @@ namespace bagis_pro
                 SetProperty(ref _reclipPublicLands_Checked, value, () => ReclipPublicLands_Checked);
             }
         }
-        public bool Vegetation_Checked
-        {
-            get { return _vegetation_Checked; }
-            set
-            {
-                SetProperty(ref _vegetation_Checked, value, () => Vegetation_Checked);
-            }
-        }
-
-        public string VegetationBufferDistance
-        {
-            get { return _vegetationBufferDistance; }
-            set
-            {
-                SetProperty(ref _vegetationBufferDistance, value, () => VegetationBufferDistance);
-            }
-        }
-
-        public string VegetationBufferUnits
-        {
-            get { return _vegetationBufferUnits; }
-            set
-            {
-                SetProperty(ref _vegetationBufferUnits, value, () => VegetationBufferUnits);
-            }
-        }
-
-        public bool ReclipVegetation_Checked
-        {
-            get { return _reclipVegetation_Checked; }
-            set
-            {
-                SetProperty(ref _reclipVegetation_Checked, value, () => ReclipVegetation_Checked);
-            }
-        }
 
         public bool LandCover_Checked
         {
@@ -425,9 +386,6 @@ namespace bagis_pro
             PublicLands_Checked = false;
             PublicLandsBufferDistance = "";
             ReclipPublicLands_Checked = false;
-            Vegetation_Checked = false;
-            VegetationBufferDistance = "";
-            ReclipVegetation_Checked = false;
             ReclipLandCover_Checked = false;
 
         }
@@ -439,14 +397,13 @@ namespace bagis_pro
                 return new RelayCommand(async () => {
                     // Create from template
                     await ClipLayersAsync(ReclipSwe_Checked, ReclipPrism_Checked, ReclipSNOTEL_Checked, 
-                        ReclipSnowCos_Checked, ReclipRoads_Checked, _reclipPublicLands_Checked, _reclipVegetation_Checked,
-                        _reclipLandCover_Checked);
+                        ReclipSnowCos_Checked, ReclipRoads_Checked, _reclipPublicLands_Checked, _reclipLandCover_Checked);
                 });
             }
         }
 
         private async Task ClipLayersAsync(bool clipSwe, bool clipPrism, bool clipSnotel, bool clipSnowCos,
-            bool clipRoads, bool clipPublicLands, bool clipVegetation, bool clipLandcover)
+            bool clipRoads, bool clipPublicLands, bool clipLandcover)
         {
             try
             {
@@ -458,7 +415,7 @@ namespace bagis_pro
 
                 if (clipSwe == false && clipPrism == false && 
                     clipSnotel == false && clipSnowCos == false && clipRoads == false &&
-                    clipPublicLands == false && clipVegetation == false && clipLandcover == false)
+                    clipPublicLands == false && clipLandcover == false)
                 {
                     MessageBox.Show("No layers selected to clip !!", "BAGIS-PRO");
                     return;
@@ -583,23 +540,6 @@ namespace bagis_pro
                     else
                     {
                         MessageBox.Show("An error occurred while clipping the public lands. Check the log file!!", "BAGIS-PRO");
-                    }
-                }
-
-                if (clipVegetation)
-                {
-                    string strOutputRaster = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, true)
-                        + Constants.FILE_VEGETATION_EVT;
-                    success = await AnalysisTools.ClipRasterLayerAsync(Module1.Current.Aoi.FilePath, strOutputRaster, Constants.DATA_TYPE_VEGETATION,
-                        VegetationBufferDistance, VegetationBufferUnits);
-                    if (success == BA_ReturnCode.Success)
-                    {
-                        layersPane.ReclipVegetation_Checked = false;
-                        layersPane.Vegetation_Checked = true;
-                    }
-                    else
-                    {
-                        MessageBox.Show("An error occurred while clipping the vegetation layer. Check the log file!!", "BAGIS-PRO");
                     }
                 }
 

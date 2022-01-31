@@ -50,7 +50,19 @@ namespace bagis_pro
                     "START: GenerateSiteLayersAsync");
                 Module1.Current.ModuleLogManager.LogDebug(nameof(GenerateSiteLayersAsync),
                     "GetDemStatsAsync");
-                IList<double> lstResult = await GeoprocessingTools.GetDemStatsAsync(Module1.Current.Aoi.FilePath, "", 0.005);
+                IList<double> lstResult = new List<double>();
+                string sDemPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Surfaces, true) + Constants.FILE_DEM_FILLED;
+                Uri uriAnalysis = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis));
+                if (await GeodatabaseTools.RasterDatasetExistsAsync(uriAnalysis, Constants.FILE_SITES_DEM))
+                {
+                    // use the sites_dem folder in analysis.gdb because we have sites outside the AOI boundary
+                    sDemPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) + Constants.FILE_SITES_DEM;
+                    lstResult = await GeoprocessingTools.GetRasterMinMaxStatsAsync(Module1.Current.Aoi.FilePath, sDemPath, "", 0.005);
+                }
+                else
+	            {
+                    lstResult = await GeoprocessingTools.GetDemStatsAsync(Module1.Current.Aoi.FilePath, "", 0.005);
+                }
                 double demElevMinMeters = -1;
                 double demElevMaxMeters = -1;
                 if (lstResult.Count == 2)   // We expect the min and max values in that order
@@ -70,8 +82,8 @@ namespace bagis_pro
                 IList<BA_Objects.Site> lstSites = null;
                 if (bHasSnotel)
                 {
-                    lstSites = await AnalysisTools.AssembleSitesListAsync(Constants.FILE_SNOTEL, SiteType.Snotel.ToString(), siteBufferDistanceMiles);
-                    success = await AnalysisTools.CalculateRepresentedArea(demElevMinMeters, demElevMaxMeters, lstSites, siteElevRangeFeet, Constants.FILE_SNOTEL_REPRESENTED);
+                    lstSites = await AnalysisTools.AssembleSitesListAsync(SiteType.Snotel.ToString(), siteBufferDistanceMiles);
+                    success = await AnalysisTools.CalculateRepresentedArea(sDemPath, demElevMinMeters, demElevMaxMeters, lstSites, siteElevRangeFeet, Constants.FILE_SNOTEL_REPRESENTED);
                     if (success != BA_ReturnCode.Success)
                         bHasSnotel = false;
                 }
@@ -79,15 +91,15 @@ namespace bagis_pro
                 // snow course sites
                 if (bHasSnowCourse)
                 {
-                    lstSites = await AnalysisTools.AssembleSitesListAsync(Constants.FILE_SNOW_COURSE, SiteType.SnowCourse.ToString(), siteBufferDistanceMiles);
-                    success = await AnalysisTools.CalculateRepresentedArea(demElevMinMeters, demElevMaxMeters, lstSites, siteElevRangeFeet, Constants.FILE_SCOS_REPRESENTED);
+                    lstSites = await AnalysisTools.AssembleSitesListAsync(SiteType.SnowCourse.ToString(), siteBufferDistanceMiles);
+                    success = await AnalysisTools.CalculateRepresentedArea(sDemPath, demElevMinMeters, demElevMaxMeters, lstSites, siteElevRangeFeet, Constants.FILE_SCOS_REPRESENTED);
                     if (success != BA_ReturnCode.Success)
                         bHasSnowCourse = false;
                 }
 
                 if (bHasSnotel || bHasSnowCourse)
                 {
-                    // record buffer distances and units in metadata
+                    // record buffer distances, buffer units, elevation distance, and elevation units in metadata
                     string settingsPath = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAPS + "\\" +
                         Constants.FILE_SETTINGS;
                     BA_Objects.Analysis oAnalysis = new BA_Objects.Analysis();
@@ -141,20 +153,21 @@ namespace bagis_pro
 
         }
 
-        public static async Task<IList<BA_Objects.Site>> AssembleSitesListAsync(string sitesFileName, string sType,
+        public static async Task<IList<BA_Objects.Site>> AssembleSitesListAsync(string sType,
             double siteBufferDistanceMiles)
         {
             //2. Buffer point from feature class and query site information
-            Uri layersUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, false));
+            Uri layersUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false));
 
             IList<BA_Objects.Site> lstSites = new List<BA_Objects.Site>();
             // Open geodatabase for snotel sites
             await QueuedTask.Run(() =>
             {
                 using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(layersUri)))
-                using (FeatureClass fClass = geodatabase.OpenDataset<FeatureClass>(sitesFileName))
+                using (FeatureClass fClass = geodatabase.OpenDataset<FeatureClass>(Constants.FILE_MERGED_SITES))
                 {
                     QueryFilter queryFilter = new QueryFilter();
+                    queryFilter.WhereClause = Constants.FIELD_SITE_TYPE + " = '" + sType + "'";
                     using (RowCursor cursor = fClass.Search(queryFilter, false))
                     {
                         while (cursor.MoveNext())
@@ -286,7 +299,7 @@ namespace bagis_pro
             return lstSites;
         }
 
-        public static async Task<BA_ReturnCode> CalculateRepresentedArea(double demElevMinMeters,
+        public static async Task<BA_ReturnCode> CalculateRepresentedArea(string demPath, double demElevMinMeters,
                                                                          double demElevMaxMeters, IList<BA_Objects.Site> lstSites,
                                                                          double siteElevRangeFeet, string strOutputFile)
         {
@@ -358,12 +371,12 @@ namespace bagis_pro
                     reclassString = reclassString + strItem;
                 }
 
-                string inputRasterPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Surfaces, true) + Constants.FILE_DEM_FILLED;
+                //string inputRasterPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Surfaces, true) + Constants.FILE_DEM_FILLED;
                 string maskPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) + tmpBuffer;
                 string outputRasterPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) + tmpOutputFile;
 
                 //6. Execute the reclass with the mask set to the buffered point
-                parameters = Geoprocessing.MakeValueArray(inputRasterPath, "VALUE", reclassString, outputRasterPath);
+                parameters = Geoprocessing.MakeValueArray(demPath, "VALUE", reclassString, outputRasterPath);
                 environments = Geoprocessing.MakeEnvironmentArray(mask: maskPath, workspace: Module1.Current.Aoi.FilePath);
                 gpResult = await Geoprocessing.ExecuteToolAsync("Reclassify_sa", parameters, environments,
                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
@@ -4599,6 +4612,12 @@ namespace bagis_pro
             string strOutputFeatures = GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Analysis, true) +
                 "tmpBuffer";
             string strDistance = "1 Kilometers";
+            if (Module1.Current.BatchToolSettings.SnotelBufferDistance != null)
+            {
+                strDistance = (string)Module1.Current.BatchToolSettings.SnotelBufferDistance + " " +
+                    (string)Module1.Current.BatchToolSettings.SnotelBufferUnits;
+            }
+            
             var parameters = Geoprocessing.MakeValueArray(strSitesPath, strOutputFeatures, strDistance, "",
                                                               "", "ALL");
             var res = Geoprocessing.ExecuteToolAsync("Buffer_analysis", parameters, null,
