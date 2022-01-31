@@ -3151,8 +3151,18 @@ namespace bagis_pro
             try
             {
                 Uri uri = new Uri(GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Layers));
+                Uri uriAnalysis = new Uri(GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Analysis));
                 Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateSitesZonesAsync), "Get min and max elevation from DEM");
-                IList<double> lstResult = await GeoprocessingTools.GetDemStatsAsync(aoiFolderPath, "", 0.005);
+                IList<double> lstResult = new List<double>();
+                if (await GeodatabaseTools.RasterDatasetExistsAsync(uriAnalysis, Constants.FILE_SITES_DEM))
+                {
+                    string sDemPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) + Constants.FILE_SITES_DEM;
+                    lstResult = await GeoprocessingTools.GetRasterMinMaxStatsAsync(aoiFolderPath, sDemPath,"", 0.005);
+                }
+                else
+                {
+                    lstResult = await GeoprocessingTools.GetDemStatsAsync(aoiFolderPath, "", 0.005);
+                }
                 double demElevMinMeters = -1;
                 double demElevMaxMeters = -1;
                 if (lstResult.Count == 2)   // We expect the min and max values in that order
@@ -3168,7 +3178,7 @@ namespace bagis_pro
                 if (hasSnotel)
                 {
                     Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateSitesZonesAsync), "Begin create Snotel zone");
-                    lstInterval = await GeodatabaseTools.GetUniqueSortedValuesAsync(uri, Constants.FILE_SNOTEL,
+                    lstInterval = await GeodatabaseTools.GetUniqueSortedValuesAsync(uriAnalysis, SiteType.Snotel.ToString(),
                         Constants.FIELD_SITE_ELEV, Constants.FIELD_SITE_NAME, demElevMaxMeters, demElevMinMeters);
                     if (lstInterval.Count > 0)
                     {
@@ -3191,7 +3201,7 @@ namespace bagis_pro
                 if (hasSnowCourse)
                 {
                     Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateSitesZonesAsync), "Begin create Snow Course zone");
-                    lstInterval = await GeodatabaseTools.GetUniqueSortedValuesAsync(uri, Constants.FILE_SNOW_COURSE,
+                    lstInterval = await GeodatabaseTools.GetUniqueSortedValuesAsync(uriAnalysis, SiteType.SnowCourse.ToString(),
                         Constants.FIELD_SITE_ELEV, Constants.FIELD_SITE_NAME, demElevMaxMeters, demElevMinMeters);
                     if (lstInterval.Count > 0)
                     {

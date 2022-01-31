@@ -782,7 +782,7 @@ namespace bagis_pro
             return bExists;
         }
 
-        public static async Task<IList<BA_Objects.Interval>> GetUniqueSortedValuesAsync(Uri gdbUri, string featClassName, 
+        public static async Task<IList<BA_Objects.Interval>> GetUniqueSortedValuesAsync(Uri gdbUri, string sType, 
             string valueFieldName, string nameFieldName, double upperBound, double lowerBound)
         {
             IList<BA_Objects.Interval> lstInterval = new List<BA_Objects.Interval>();
@@ -797,7 +797,7 @@ namespace bagis_pro
                         IDictionary<String, String> dictElev = new Dictionary<String, String>();
 
                         using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(gdbUri)))
-                        using (FeatureClass featureClass = geodatabase.OpenDataset<FeatureClass>(featClassName))
+                        using (FeatureClass featureClass = geodatabase.OpenDataset<FeatureClass>(Constants.FILE_MERGED_SITES))
                         {
                             FeatureClassDefinition def = featureClass.GetDefinition();
                             int idxElev = def.FindField(valueFieldName);
@@ -805,10 +805,12 @@ namespace bagis_pro
                             if (idxElev < 0 || idxName < 0)
                             {
                                 Module1.Current.ModuleLogManager.LogError(nameof(GetUniqueSortedValuesAsync),
-                                    "A required field was missing from " + featClassName + ". Process failed!");
+                                    "A required field was missing from " + Constants.FILE_MERGED_SITES + ". Process failed!");
                                 return;
                             }
-                            using (RowCursor rowCursor = featureClass.Search(new QueryFilter(), false))
+                            QueryFilter queryFilter = new QueryFilter();
+                            queryFilter.WhereClause = Constants.FIELD_SITE_TYPE + " = '" + sType + "'";
+                            using (RowCursor rowCursor = featureClass.Search(queryFilter, false))
                             {
                                 while (rowCursor.MoveNext())
                                 {
