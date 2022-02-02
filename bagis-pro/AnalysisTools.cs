@@ -521,7 +521,7 @@ namespace bagis_pro
             StringBuilder sb = new StringBuilder();
             foreach (char c in site.Name)
             {
-                if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '.' || c == '_')
+                if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '_')
                 {
                     sb.Append(c);
                 }
@@ -3150,31 +3150,23 @@ namespace bagis_pro
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
             try
             {
-                Uri uri = new Uri(GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Layers));
-                Uri uriAnalysis = new Uri(GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Analysis));
-                Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateSitesZonesAsync), "Get min and max elevation from DEM");
-                IList<double> lstResult = new List<double>();
-                if (await GeodatabaseTools.RasterDatasetExistsAsync(uriAnalysis, Constants.FILE_SITES_DEM))
-                {
-                    string sDemPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) + Constants.FILE_SITES_DEM;
-                    lstResult = await GeoprocessingTools.GetRasterMinMaxStatsAsync(aoiFolderPath, sDemPath,"", 0.005);
-                }
-                else
-                {
-                    lstResult = await GeoprocessingTools.GetDemStatsAsync(aoiFolderPath, "", 0.005);
-                }
+                IList<double> lstResult = await GeoprocessingTools.GetDemStatsAsync(aoiFolderPath, "", 0.005);
+                string sDemPath = GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Surfaces, true) +
+                            Constants.FILE_DEM_FILLED;
                 double demElevMinMeters = -1;
                 double demElevMaxMeters = -1;
+                Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateSitesZonesAsync), "Get min and max elevation from " + sDemPath);
+
                 if (lstResult.Count == 2)   // We expect the min and max values in that order
                 {
                     demElevMinMeters = lstResult[0];
                     demElevMaxMeters = lstResult[1];
                 }
                 // We assume that the DEM and site elevations are both in meters
+                Uri uriAnalysis = new Uri(GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Analysis));
                 IList<BA_Objects.Interval> lstInterval = null;
-                string strLayer = null;
                 string strZonesRaster = null;
-                string strMaskPath = GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_BUFFERED_VECTOR;
+                string strMaskPath = GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Surfaces, true) + Constants.FILE_DEM_FILLED;
                 if (hasSnotel)
                 {
                     Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateSitesZonesAsync), "Begin create Snotel zone");
@@ -3182,11 +3174,9 @@ namespace bagis_pro
                         Constants.FIELD_SITE_ELEV, Constants.FIELD_SITE_NAME, demElevMaxMeters, demElevMinMeters);
                     if (lstInterval.Count > 0)
                     {
-                        strLayer = GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Surfaces, true) +
-                            Constants.FILE_DEM_FILLED;
                         strZonesRaster = GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Analysis, true) +
                             Constants.FILE_SNOTEL_ZONE;
-                        success = await AnalysisTools.CalculateZonesAsync(aoiFolderPath, strLayer,
+                        success = await AnalysisTools.CalculateZonesAsync(aoiFolderPath, sDemPath,
                             lstInterval, strZonesRaster, strMaskPath, "SNOTEL");
                         if (success == BA_ReturnCode.Success)
                         {
@@ -3207,7 +3197,7 @@ namespace bagis_pro
                     {
                         strZonesRaster = GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Analysis, true) +
                             Constants.FILE_SCOS_ZONE;
-                        success = await AnalysisTools.CalculateZonesAsync(aoiFolderPath, strLayer,
+                        success = await AnalysisTools.CalculateZonesAsync(aoiFolderPath, sDemPath,
                             lstInterval, strZonesRaster, strMaskPath, "SNOW COURSE");
                         if (success == BA_ReturnCode.Success)
                         {
