@@ -6,8 +6,8 @@
              xmlns:ui="clr-namespace:bagis_pro"
              xmlns:extensions="clr-namespace:ArcGIS.Desktop.Extensions;assembly=ArcGIS.Desktop.Extensions"
              mc:Ignorable="d" 
-             d:DesignHeight="300" d:DesignWidth="300"
-             d:DataContext="{Binding Path=ui.DockpaneLayersViewModel}">
+             d:DesignHeight="300"
+             d:DataContext="{Binding Path=ui.DockpaneLayersViewModel}" Width="259.509">
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -17,30 +17,34 @@
     </UserControl.Resources>
     <Grid x:Name="Manage_Layers">
         <Grid.RowDefinitions>
-            <RowDefinition Height="25"/>
-            <RowDefinition Height="25"/>
-            <RowDefinition Height="25"/>
-            <RowDefinition Height="25"/>
-            <RowDefinition Height="25"/>
-            <RowDefinition Height="25"/>
+            <RowDefinition Height="40"/>
             <RowDefinition Height="30"/>
-            <RowDefinition Height="25"/>
-            <RowDefinition Height="25"/>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="30"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="25"/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto"/>
-            <ColumnDefinition Width="Auto"/>
-            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="60"/>
+            <ColumnDefinition Width="80"/>
             <ColumnDefinition Width="Auto"/>
         </Grid.ColumnDefinitions>
 
         <DockPanel Grid.Row="0" Grid.Column="0"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
             <Label  Content="Present" HorizontalAlignment="Left" VerticalAlignment="Top" RenderTransformOrigin="0.418,-0.102" Padding="5,0,0,0"/>
         </DockPanel>
-        <DockPanel Grid.Row="0" Grid.Column="1"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
-            <Label x:Name="lblPrismBuffer" Content="Buffer Distance" HorizontalAlignment="Right" VerticalAlignment="Top" RenderTransformOrigin="0.418,-0.102"/>
+        <DockPanel Grid.Row="0" Grid.Column="1"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="40">
+            <Label x:Name="lblPrismBuffer"  HorizontalAlignment="Right" VerticalAlignment="Top" RenderTransformOrigin="0.418,-0.102">
+                <Label.Content>
+                    <AccessText TextWrapping="Wrap" Text="Buffer Distance"/>
+                </Label.Content>
+            </Label>
         </DockPanel>
         <DockPanel Grid.Row="0" Grid.Column="3"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
             <Label x:Name="lblClip" Content="Clip" HorizontalAlignment="Center" VerticalAlignment="Top" RenderTransformOrigin="0.418,-0.102" AllowDrop="True"/>
@@ -49,10 +53,11 @@
             <CheckBox x:Name="chkPrism" Content="PRISM" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,0,0,0" IsChecked="{Binding Prism_Checked}" IsEnabled="false"/>
         </DockPanel>
         <DockPanel Grid.Row="1" Grid.Column="1"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
-            <TextBox x:Name="txtPrismBuffer" HorizontalAlignment="Right" TextWrapping="NoWrap"  Width="70" Text="{Binding PrismBufferDistance}" Height="20" TextAlignment="Right"/>
+            <TextBox x:Name="txtPrismBuffer" HorizontalAlignment="Right" TextWrapping="NoWrap"  Width="50" Text="{Binding PrismBufferDistance}" Height="20" TextAlignment="Right"/>
         </DockPanel>
         <DockPanel Grid.Row="1" Grid.Column="2"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
-            <Label x:Name="lblPrismBufferUnits" Content="{Binding PrismBufferUnits}" HorizontalAlignment="Left"  VerticalAlignment="Center" />
+            <ComboBox Name="cboPrismBufferUnits" SelectedItem="{Binding PrismBufferUnits}" HorizontalAlignment="Center" 
+                      ItemsSource="{Binding LstUnits}" VerticalAlignment="Center" Width="75" Height="15" />
         </DockPanel>
         <DockPanel Grid.Row="1" Grid.Column="3"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
             <CheckBox x:Name="chkReclipPrism" Content="" HorizontalAlignment="Center"  Height="14" VerticalAlignment="Center"
@@ -62,10 +67,11 @@
             <CheckBox x:Name="chkSWE" Content="SWE" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,0,0,0" IsChecked="{Binding SWE_Checked}" IsEnabled="False"/>
         </DockPanel>
         <DockPanel Grid.Row="2" Grid.Column="1"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
-            <TextBox x:Name="txtSweBuffer" HorizontalAlignment="Right" TextWrapping="NoWrap"  Width="70" Text="{Binding SWEBufferDistance}" Height="20" TextAlignment="Right" Margin="5,0,0,0"/>
+            <TextBox x:Name="txtSweBuffer" HorizontalAlignment="Right" TextWrapping="NoWrap"  Width="50" Text="{Binding SWEBufferDistance}" Height="20" TextAlignment="Right" Margin="5,0,0,0"/>
         </DockPanel>
         <DockPanel Grid.Row="2" Grid.Column="2"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
-            <Label x:Name="lblSweBufferUnits" Content="{Binding SWEBufferUnits}" HorizontalAlignment="Left"  VerticalAlignment="Center" />
+            <ComboBox Name="cboSweBufferUnits" SelectedItem="{Binding SWEBufferUnits}" HorizontalAlignment="Center" 
+                      ItemsSource="{Binding LstUnits}" VerticalAlignment="Center" Width="75" Height="15" />
         </DockPanel>
         <DockPanel Grid.Row="2" Grid.Column="3"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
             <CheckBox x:Name="chkReclipSwe" Content="" HorizontalAlignment="Center"  Height="14" VerticalAlignment="Center"
@@ -75,10 +81,11 @@
             <CheckBox x:Name="chkSnotel" Content="SNOTEL" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,0,0,0" IsChecked="{Binding SNOTEL_Checked}" IsEnabled="False"/>
         </DockPanel>
         <DockPanel Grid.Row="3" Grid.Column="1"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
-            <TextBox x:Name="txtSnotelBuffer" HorizontalAlignment="Right" TextWrapping="NoWrap"  Width="70" Text="{Binding SnotelBufferDistance}" Height="20" TextAlignment="Right" Margin="5,0,0,0" IsEnabled="True"/>
+            <TextBox x:Name="txtSnotelBuffer" HorizontalAlignment="Right" TextWrapping="NoWrap"  Width="50" Text="{Binding SnotelBufferDistance}" Height="20" TextAlignment="Right" Margin="5,0,0,0" IsEnabled="True"/>
         </DockPanel>
         <DockPanel Grid.Row="3" Grid.Column="2"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
-            <Label x:Name="lblSnotelBufferUnits" Content="{Binding SnotelBufferUnits}" HorizontalAlignment="Left"  VerticalAlignment="Center" />
+             <ComboBox Name="cboSnotelBufferUnits" SelectedItem="{Binding SnotelBufferUnits}" HorizontalAlignment="Center" 
+                      ItemsSource="{Binding LstUnits}" VerticalAlignment="Center" Width="75" Height="15" />
         </DockPanel>
         <DockPanel Grid.Row="3" Grid.Column="3"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
             <CheckBox x:Name="chkReclipSnotel" Content="" HorizontalAlignment="Center"  Height="14" VerticalAlignment="Bottom" IsEnabled="True" Margin="0,0,0,8.4"
@@ -88,10 +95,11 @@
             <CheckBox x:Name="chkSnowCourse" Content="Snow Course" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,0,0,0" IsChecked="{Binding SnowCos_Checked}" IsEnabled="False" />
         </DockPanel>
         <DockPanel Grid.Row="4" Grid.Column="1"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
-            <TextBox x:Name="txtSnowCourse" HorizontalAlignment="Right" TextWrapping="NoWrap"  Width="70" Text="{Binding SnowCosBufferDistance}" Height="20" TextAlignment="Right" Margin="5,0,0,0" IsEnabled="True"/>
+            <TextBox x:Name="txtSnowCourse" HorizontalAlignment="Right" TextWrapping="NoWrap"  Width="50" Text="{Binding SnowCosBufferDistance}" TextAlignment="Right" Margin="5,5,0,0" IsEnabled="True" Height="20" VerticalAlignment="Top"/>
         </DockPanel>
         <DockPanel Grid.Row="4" Grid.Column="2"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
-            <Label x:Name="lblSnowCourseBufferUnits" Content="{Binding SnowCosBufferUnits}" HorizontalAlignment="Left"  VerticalAlignment="Center" />
+            <ComboBox Name="cboSnowCourseBufferUnits" SelectedItem="{Binding SnowCosBufferUnits}" HorizontalAlignment="Center" 
+                      ItemsSource="{Binding LstUnits}" VerticalAlignment="Center" Width="75" Height="15" />
         </DockPanel>
         <DockPanel Grid.Row="4" Grid.Column="3"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
             <CheckBox x:Name="chkReclipSnowCourse" Content="" HorizontalAlignment="Center"  Height="14" VerticalAlignment="Center" IsEnabled="True"
@@ -101,10 +109,11 @@
             <CheckBox x:Name="chkRoads" Content="Roads" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,0,0,0" IsChecked="{Binding Roads_Checked}" IsEnabled="False" />
         </DockPanel>
         <DockPanel Grid.Row="5" Grid.Column="1"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
-            <TextBox x:Name="txtRoads" HorizontalAlignment="Right" TextWrapping="NoWrap"  Width="70" Text="{Binding RoadsBufferDistance}" Height="20" TextAlignment="Right" Margin="5,0,0,0" IsEnabled="True"/>
+            <TextBox x:Name="txtRoads" HorizontalAlignment="Right" TextWrapping="NoWrap"  Width="50" Text="{Binding RoadsBufferDistance}" Height="20" TextAlignment="Right" Margin="5,0,0,0" IsEnabled="True"/>
         </DockPanel>
         <DockPanel Grid.Row="5" Grid.Column="2"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
-            <Label x:Name="lblRoadsUnits" Content="{Binding RoadsBufferUnits}" HorizontalAlignment="Left"  VerticalAlignment="Center" />
+            <ComboBox Name="cboRoadsBufferUnits" SelectedItem="{Binding RoadsBufferUnits}" HorizontalAlignment="Center" 
+                      ItemsSource="{Binding LstUnits}" VerticalAlignment="Center" Width="75" Height="15" />
         </DockPanel>
         <DockPanel Grid.Row="5" Grid.Column="3"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
             <CheckBox x:Name="chkReclipRoads" Content="" HorizontalAlignment="Center"  Height="14" VerticalAlignment="Center" IsEnabled="True"
@@ -114,10 +123,11 @@
             <CheckBox x:Name="chkPublicLands" Content="Public Lands" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,0,0,0" IsChecked="{Binding PublicLands_Checked}" IsEnabled="False" />
         </DockPanel>
         <DockPanel Grid.Row="6" Grid.Column="1"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
-            <TextBox x:Name="txtPublicLands" HorizontalAlignment="Right" TextWrapping="NoWrap"  Width="70" Text="{Binding PublicLandsBufferDistance}" Height="20" TextAlignment="Right" Margin="5,0,0,0" IsEnabled="True"/>
+            <TextBox x:Name="txtPublicLands" HorizontalAlignment="Right" TextWrapping="NoWrap"  Width="50" Text="{Binding PublicLandsBufferDistance}" Height="20" TextAlignment="Right" Margin="5,0,0,0" IsEnabled="True"/>
         </DockPanel>
         <DockPanel Grid.Row="6" Grid.Column="2"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
-            <Label x:Name="lblPublicLandsUnits" Content="{Binding PublicLandsBufferUnits}" HorizontalAlignment="Left"  VerticalAlignment="Center" />
+            <ComboBox Name="cboPublicLandsBufferUnits" SelectedItem="{Binding PublicLandsBufferUnits}" HorizontalAlignment="Center" 
+                      ItemsSource="{Binding LstUnits}" VerticalAlignment="Center" Width="75" Height="15" />
         </DockPanel>
         <DockPanel Grid.Row="6" Grid.Column="3"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
             <CheckBox x:Name="chkReclipPublicLands" Content="" HorizontalAlignment="Center"  Height="14" VerticalAlignment="Center" IsEnabled="True"
@@ -131,11 +141,12 @@
                       IsChecked="{Binding ReclipVegetation_Checked}"/> -->
         <CheckBox x:Name="chkLandCover" Grid.Column="0"  Grid.Row="8" Content="Land Cover" HorizontalAlignment="Left"  Height="14" VerticalAlignment="Center" IsEnabled="False"
                       Margin="5,0,0,0" IsChecked="{Binding LandCover_Checked}"/>
-        <TextBox x:Name="txtLandCover" Grid.Column="1"  Grid.Row="8" HorizontalAlignment="Right" TextWrapping="NoWrap"  Width="70" Text="{Binding LandCoverBufferDistance}" Height="20" TextAlignment="Right" Margin="5,0,0,0" IsEnabled="True"/>
-        <Label x:Name="lblLandCovern" Grid.Column="2"  Grid.Row="8" Content="{Binding VegetationBufferUnits}" HorizontalAlignment="Left"  VerticalAlignment="Center" />
+        <TextBox x:Name="txtLandCover" Grid.Column="1"  Grid.Row="8" HorizontalAlignment="Right" TextWrapping="NoWrap"  Width="50" Text="{Binding LandCoverBufferDistance}" Height="20" TextAlignment="Right" Margin="5,0,0,0" IsEnabled="True"/>
+        <ComboBox Name="cboLandCoverBufferUnits" Grid.Column="2"  Grid.Row="8" SelectedItem="{Binding LandCoverBufferUnits}" HorizontalAlignment="Center" 
+                      ItemsSource="{Binding LstUnits}" VerticalAlignment="Center" Width="75" Height="15" />
         <CheckBox x:Name="chkReclipLandCover" Grid.Column="3"  Grid.Row="8" Content="" HorizontalAlignment="Center"  Height="14" VerticalAlignment="Center" IsEnabled="True"
                       IsChecked="{Binding ReclipLandCover_Checked}"/>
 
-        <Button x:Name="button" Content="Clip Layers" Grid.Column="3"  Grid.Row="9" VerticalAlignment="Center" Width="75" Command="{Binding CmdClipLayers}" Margin="0,0,5,0"/>
+        <Button x:Name="button" Content="Clip Layers" Grid.Column="2"  Grid.ColumnSpan="2" Grid.Row="9" VerticalAlignment="Center" Width="75" Command="{Binding CmdClipLayers}" Margin="0,0,5,0"/>
     </Grid>
 </UserControl>

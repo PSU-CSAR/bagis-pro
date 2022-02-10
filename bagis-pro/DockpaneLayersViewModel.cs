@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -89,7 +90,7 @@ namespace bagis_pro
         // but used for default buffer distances for everything except PRISM and SWE
         private string _unmanagedBufferDistance = "";
         private string _unmanagedBufferUnits = "";
-
+        private ObservableCollection<string> _lstUnits = new ObservableCollection<string>();
 
 
         public bool ReclipSwe_Checked
@@ -360,6 +361,20 @@ namespace bagis_pro
             {
                 SetProperty(ref _unmanagedBufferUnits, value, () => UnmanagedBufferBufferUnits);
             }
+        }
+
+        public ObservableCollection<string> LstUnits
+        {
+            get
+            {
+                if (_lstUnits.Count == 0)
+                {
+                    _lstUnits.Add("Meters");
+                    _lstUnits.Add("Kilometers");
+                }
+                return _lstUnits;
+            }
+            set { _lstUnits = value; NotifyPropertyChanged("LstUnits"); }
         }
 
         public void ResetView()

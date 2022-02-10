@@ -212,8 +212,20 @@ namespace bagis_pro
                 double aoiArea = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(gdbUri, Constants.FILE_AOI_VECTOR);
                 bool hasSnotelSites = false;
                 bool hasScosSites = false;
-                string snotelSitesBufferSize = "?";
-                string snowCourseSitesBufferSize = "?";
+                string snotelSitesBufferSize = (string) Module1.Current.BatchToolSettings.SnotelBufferDistance + " " +
+                    (string)Module1.Current.BatchToolSettings.SnotelBufferUnits;
+                string snowCourseSitesBufferSize = snotelSitesBufferSize;
+                var layersPane = (DockpaneLayersViewModel)FrameworkApplication.DockPaneManager.Find("bagis_pro_DockpaneLayers");
+                if (layersPane != null)
+                {
+                    if (!string.IsNullOrEmpty(layersPane.UnmanagedBufferDistance) &&
+                        !string.IsNullOrEmpty(layersPane.UnmanagedBufferBufferUnits))
+                    {
+                        snotelSitesBufferSize = layersPane.UnmanagedBufferDistance + " " + layersPane.UnmanagedBufferBufferUnits;
+                        snowCourseSitesBufferSize = snotelSitesBufferSize;
+                    }
+                }
+
                 if (aoiArea > 0)
                 {
                     gdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false));
