@@ -148,16 +148,7 @@ namespace bagis_pro.Buttons
                             }
                             while (Module1.Current.MapFinishedLoading == false);
                             success = await GeneralTools.ExportMapToPdfAsync(Constants.PDF_EXPORT_RESOLUTION);    // export map to pdf
-                            if (success==BA_ReturnCode.Success)
-                            {
-                                // append the map and chart together for posting
-                                IList<string> lstToConcat = new List<string>();
-                                lstToConcat.Add(GeneralTools.GetFullPdfFileName(Constants.FILE_EXPORT_MAP_CRITICAL_PRECIPITATION_ZONES_PDF));
-                                lstToConcat.Add(GeneralTools.GetFullPdfFileName(Constants.FILE_EXPORT_TABLE_PRECIP_REPRESENT_PDF));
-                                success = GeneralTools.ConcatenatePagesInPdf(GeneralTools.GetFullPdfFileName(Constants.FILE_EXPORT_CRITICAL_PRECIPITATION_ZONES_PDF),
-                                    lstToConcat);
-                            }
-                            else
+                            if (success != BA_ReturnCode.Success)
                             {
                                 MessageBox.Show("Unable to generate critical precipitation zones map!!", "BAGIS-PRO");
                             }
@@ -168,7 +159,18 @@ namespace bagis_pro.Buttons
                 success = await GeneralTools.GenerateSitesTableAsync(Module1.Current.Aoi);
                 string strPublisher = (string)Module1.Current.BatchToolSettings.Publisher;
                 success = await GeneralTools.GenerateMapsTitlePageAsync(rType, strPublisher, "");
+                string[] arrPieces = Module1.Current.Aoi.StationTriplet.Split(':');
                 string outputPath = GeneralTools.GetFullPdfFileName(Constants.FILE_EXPORT_WATERSHED_REPORT_PDF);
+                if (arrPieces.Length != 3)
+                {
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(OnClick), "Unable to determine station triplet for document title!");
+
+                }
+                else
+                {
+                    string strBaseFileName = Module1.Current.Aoi.StationTriplet.Replace(':', '_') + "_Watershed-Report.pdf";
+                    outputPath = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\" + strBaseFileName;
+                }
                 //if (rType.Equals(ReportType.SiteAnalysis))
                 //{
                 //    outputPath = GeneralTools.GetFullPdfFileName(Constants.FILE_EXPORT_SITE_ANALYSIS_REPORT_PDF);

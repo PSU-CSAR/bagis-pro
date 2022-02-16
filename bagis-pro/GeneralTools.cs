@@ -1623,12 +1623,12 @@ namespace bagis_pro
             return settingsPath;
         }
 
-        public static BA_ReturnCode PublishFullPdfDocument(string outputPath, ReportType rType)
+        public static BA_ReturnCode PublishPdfDocumentChapters(string outputPath, ReportType rType)
         {
             // Initialize output document
             PdfDocument outputDocument = new PdfDocument();
             //Iterate through files
-            string[] arrAllFiles = Constants.FILES_EXPORT_WATERSHED_PDF;
+            string[] arrAllFiles = Constants.FILES_EXPORT_WATERSHED_CHAPTERS_PDF;
             //if (rType.Equals(ReportType.SiteAnalysis))
             //{
             //    arrAllFiles = Constants.FILES_EXPORT_SITE_ANALYSIS_PDF;
@@ -1858,6 +1858,54 @@ namespace bagis_pro
             }
             // Save final document
             outputDocument.Save(outputPath);
+            return BA_ReturnCode.Success;
+        }
+
+        public static BA_ReturnCode PublishFullPdfDocument(string outputPath, ReportType rType)
+        {
+            // Initialize output document
+            PdfDocument outputDocument = new PdfDocument();
+            //Iterate through files
+            string[] arrAllFiles = Constants.FILES_EXPORT_WATERSHED_PDF;
+            string blankPage = GeneralTools.GetAddInDirectory() + "\\" + Constants.FILE_BLANK_PAGE_PDF;
+            // Create intro section of report
+            int idx = 0;
+            PdfDocument combineDocument = new PdfDocument();
+            foreach (var strFileName in Constants.FILES_EXPORT_WATERSHED_PDF)
+            {
+                string fullPath = GetFullPdfFileName(strFileName);
+                PdfDocument inputDocument = null;
+                if (File.Exists(fullPath))
+                {
+                    inputDocument = PdfReader.Open(fullPath, PdfDocumentOpenMode.Import);
+                }
+                else
+                {
+                    inputDocument = PdfReader.Open(blankPage, PdfDocumentOpenMode.Import);
+                }
+                PdfPage page = inputDocument.Pages[idx];
+                combineDocument.AddPage(page);
+
+            }
+            combineDocument.Save(outputPath);
+
+            foreach (var strFileName in Constants.FILES_EXPORT_WATERSHED_PDF)
+            {
+                string strPath = GeneralTools.GetFullPdfFileName(strFileName);
+                if (File.Exists(strPath))
+                {
+                    try
+                    {
+                        File.Delete(strPath);
+                    }
+                    catch (Exception)
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(PublishFullPdfDocument),
+                            "Unable to delete " + strPath + " !!");
+                    }
+                }
+            }
+
             return BA_ReturnCode.Success;
         }
 

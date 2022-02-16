@@ -617,10 +617,6 @@ namespace bagis_pro
                     try
                     {
                         // Delete any old PDF files
-                        //string[] arrAllPdfFiles = new string[Constants.FILES_EXPORT_WATERSHED_PDF.Length + FILES_EXPORT_SITE_ANALYSIS_PDF.Length];
-                        //Array.Copy(Constants.FILES_EXPORT_WATERSHED_PDF, arrAllPdfFiles, Constants.FILES_EXPORT_WATERSHED_PDF.Length);
-                        //Array.Copy(Constants.FILES_EXPORT_SITE_ANALYSIS_PDF, 0, arrAllPdfFiles, 
-                        //    Constants.FILES_EXPORT_WATERSHED_PDF.Length, Constants.FILES_EXPORT_SITE_ANALYSIS_PDF.Length);
                         foreach (var item in Constants.FILES_EXPORT_WATERSHED_PDF)
                         {
                             string strPath = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE
@@ -749,16 +745,7 @@ namespace bagis_pro
                                     }
                                     while (Module1.Current.MapFinishedLoading == false);
                                     success = await GeneralTools.ExportMapToPdfAsync(150);    // export map to pdf
-                                if (success == BA_ReturnCode.Success)
-                                {
-                                    // append the map and chart together for posting
-                                    IList<string> lstToConcat = new List<string>();
-                                    lstToConcat.Add(GeneralTools.GetFullPdfFileName(Constants.FILE_EXPORT_MAP_CRITICAL_PRECIPITATION_ZONES_PDF));
-                                    lstToConcat.Add(GeneralTools.GetFullPdfFileName(Constants.FILE_EXPORT_TABLE_PRECIP_REPRESENT_PDF));
-                                    success = GeneralTools.ConcatenatePagesInPdf(GeneralTools.GetFullPdfFileName(Constants.FILE_EXPORT_CRITICAL_PRECIPITATION_ZONES_PDF),
-                                        lstToConcat);
-                                }
-                                else
+                                if (success != BA_ReturnCode.Success)
                                 {
                                      Module1.Current.ModuleLogManager.LogError(nameof(RunImplAsync),
                                         "Unable to generate critical precipitation zones map!!");
@@ -774,6 +761,17 @@ namespace bagis_pro
                             errorCount++;
                         }
                         string outputPath = GeneralTools.GetFullPdfFileName(Constants.FILE_EXPORT_WATERSHED_REPORT_PDF);
+                        string[] arrPieces = Module1.Current.Aoi.StationTriplet.Split(':');
+                        if (arrPieces.Length != 3)
+                        {
+                            Module1.Current.ModuleLogManager.LogDebug(nameof(RunImplAsync), "Unable to determine station triplet for document title!");
+
+                        }
+                        else
+                        {
+                            string strBaseFileName = Module1.Current.Aoi.StationTriplet.Replace(':', '_') + "_Watershed-Report.pdf";
+                            outputPath = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\" + strBaseFileName;
+                        }
                         success = GeneralTools.PublishFullPdfDocument(outputPath, ReportType.Watershed);    // Put it all together into a single pdf document
                         if (success != BA_ReturnCode.Success)
                         {
