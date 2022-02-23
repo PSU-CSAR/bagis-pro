@@ -17,6 +17,7 @@ namespace bagis_pro
         public const string MAPS_AOI_LOCATION = "AOI Location";
         public const string MAPS_AOI_LOCATION_LAYOUT = "AOI Location Layout";
         public const string MAPS_AOI_LOCATION_MAP_FRAME_NAME = "AOI Location Map Frame";
+        public const string MAPS_SNODAS_LAYOUT = "SNODAS Layout";
         public const string MAPS_AOI_BOUNDARY = "AOI Boundary";
         public const string MAPS_STREAMS = "AOI Streams";
         public const string MAPS_ACCESS_ROADS = "Access Roads";
@@ -200,6 +201,7 @@ namespace bagis_pro
         public static readonly string[] LAYER_NAMES_SNODAS_SWE = new string[] { "November 1 SWE", "December 1 SWE", "January 1 SWE", "February 1 SWE",
                                                                                 "March 1 SWE", "April 1 SWE", "May 1 SWE", "June 1 SWE",
                                                                                 "July 1 SWE"};
+        public const string MAPS_SNODAS_MEAN_SWE = "SNODAS Mean SWE";
         public static readonly string[] MAP_TITLES_SNODAS_SWE = new string[] { "SNODAS MEAN SWE, NOV 1ST", "SNODAS MEAN SWE, DEC 1ST", "SNODAS MEAN SWE, JAN 1ST", "SNODAS MEAN SWE, FEB 1ST",
                                                                                "SNODAS MEAN SWE, MAR 1ST", "SNODAS MEAN SWE, APR 1ST", "SNODAS MEAN SWE, MAY 1ST",
                                                                                "SNODAS MEAN SWE, JUN 1ST", "SNODAS MEAN SWE, JUL 1ST" };
@@ -222,6 +224,7 @@ namespace bagis_pro
         public const string URI_IMAGE_SERVER = "/ImageServer";
         public const string URI_DESKTOP_SETTINGS = "/api/rest/desktop/settings/";
         public const string LAYER_FILE_NLCD_LAND_COVER = "nlcd_land_cover.lyrx";
+        public const string LAYOUT_FILE_SNODAS_SWE = "SNODAS Layout.pagx";
 
 
         public const string FOLDER_MAP_PACKAGE = "maps_publish";

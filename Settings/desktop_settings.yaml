@@ -77,6 +77,7 @@ bagis-pro:
      PrecipContribZones: 9
      MasterAoiList: https://services.arcgis.com/SXbDpmb7xQkk44JV/arcgis/rest/services/master_aoi_list_fs/FeatureServer
      PdfExportResolution: 300
+     SnodasSweLayoutItemId: 5de950a654b14c849a25a08b3b3a9bfd
      Version: 1.0
 
 bagis-p:

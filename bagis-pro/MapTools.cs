@@ -81,7 +81,7 @@ namespace bagis_pro
                     await MapTools.RemoveLayersfromMapFrame();
 
                     //retrieve layer symbology files from portal iff needed
-                    success = await GetLayerFilesFromPortalAsync();
+                    success = await GetSystemFilesFromPortalAsync();
 
                     //retrieve Analysis object
                     BA_Objects.Analysis oAnalysis = GeneralTools.GetAnalysisSettings(Module1.Current.Aoi.FilePath);
@@ -139,24 +139,6 @@ namespace bagis_pro
                     success = await MapTools.AddPolygonLayerAsync(uri, fillColor, false, Constants.MAPS_CRITICAL_PRECIPITATION_ZONES);
                     if (success.Equals(BA_ReturnCode.Success))
                         Module1.ActivateState("MapButtonPalette_BtnCriticalPrecipZone_State");
-
-                    // add roads layer
-                    //Module1.Current.RoadsLayerLegend = "Within unknown distance of access road";
-                    //fillColor = CIMColor.CreateRGBColor(255, 0, 0, 70);    //Red with 30% transparency
-                    //strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
-                    //    Constants.FILE_ROADS_ZONE;
-                    //// Get buffer units out of the metadata so we can set the layer name
-                    //string strBagisTag = await GeneralTools.GetBagisTagAsync(strPath, Constants.META_TAG_XPATH);
-                    //if (!String.IsNullOrEmpty(strBagisTag))
-                    //{
-                    //    string strBufferDistance = GeneralTools.GetValueForKey(strBagisTag, Constants.META_TAG_BUFFER_DISTANCE, ';');
-                    //    string strBufferUnits = GeneralTools.GetValueForKey(strBagisTag, Constants.META_TAG_XUNIT_VALUE, ';');
-                    //    Module1.Current.RoadsLayerLegend = "Within " + strBufferDistance + " " + strBufferUnits + " of access road";
-                    //}
-                    //uri = new Uri(strPath);
-                    //success = await MapTools.AddPolygonLayerAsync(uri, fillColor, false, Module1.Current.RoadsLayerLegend);
-                    //if (success.Equals(BA_ReturnCode.Success))
-                    //    Module1.ActivateState("MapButtonPalette_BtnRoads_State");
 
                     //add Public Land Layer
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
@@ -257,10 +239,11 @@ namespace bagis_pro
                         Module1.ActivateState("MapButtonPalette_BtnAspect_State");
 
                     // add SNOTEL SWE zones layer
-                    int idxDefaultMonth = 8;    // Note: This needs to be the month with the lowest SWE value for symbology; In this case July
-                    success = await DisplaySWEMapAsync(idxDefaultMonth);
+                    //int idxDefaultMonth = 8;    // Note: This needs to be the month with the lowest SWE value for symbology; In this case July
+                    //success = await DisplaySWEMapAsync(idxDefaultMonth);
 
                     // add SWE delta layer
+                    int idxDefaultMonth = 8;    // Note: This needs to be the month with the lowest SWE value for symbology; In this case July
                     success = await DisplaySWEDeltaMapAsync(7, idxDefaultMonth);  // Note: this needs to be the month with the lowest delta value for symbology: June Delta
 
                     // add quarterly seasonal precipitation layer; Default is Q1
@@ -310,13 +293,16 @@ namespace bagis_pro
                     success = await MapTools.DisplayNorthArrowAsync(layout, Constants.MAPS_DEFAULT_MAP_FRAME_NAME);
                     success = await MapTools.DisplayScaleBarAsync(layout, Constants.MAPS_DEFAULT_MAP_FRAME_NAME);
 
-                    SetClipGeometryAsync(oAoi.FilePath);
-                    
+                    SetClipGeometryAsync(oAoi.FilePath, Constants.MAPS_DEFAULT_MAP_NAME);
+
                     //zoom to aoi boundary layer
-                    success = await MapTools.ZoomToExtentAsync(aoiUri, Constants.MAP_BUFFER_FACTOR);
+                    success = await MapTools.ZoomToExtentAsync(aoiUri, MapView.Active, Constants.MAP_BUFFER_FACTOR);
 
                     // load AOI location map
                     success = await DisplayLocationMapAsync(oAoi);
+
+                    // load SWE map layout
+                    success = await DisplaySWEPageLayoutAsync(oAoi.FilePath);
                     return success;
                 }
             }
@@ -711,10 +697,8 @@ namespace bagis_pro
             return success;
         }
 
-        public static async Task<BA_ReturnCode> ZoomToExtentAsync(Uri aoiUri, double bufferFactor = 1)
+        public static async Task<BA_ReturnCode> ZoomToExtentAsync(Uri aoiUri, MapView mapView, double bufferFactor = 1)
         {
-            //Get the active map view.
-            var mapView = MapView.Active;
             if (mapView == null)
                 return BA_ReturnCode.UnknownError;
             string strFileName = null;
@@ -724,23 +708,6 @@ namespace bagis_pro
                 strFileName = System.IO.Path.GetFileName(aoiUri.LocalPath);
                 strFolderPath = System.IO.Path.GetDirectoryName(aoiUri.LocalPath);
             }
-
-            Envelope zoomEnv = await QueuedTask.Run<Envelope>(() =>
-            {
-                // Opens a file geodatabase. This will open the geodatabase if the folder exists and contains a valid geodatabase.
-                using (
-                  Geodatabase geodatabase =
-                    new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(strFolderPath))))
-                {
-                    // Use the geodatabase.
-                    FeatureClassDefinition fcDefinition = geodatabase.GetDefinition<FeatureClassDefinition>(strFileName);
-                    var extent = fcDefinition.GetExtent();
-                    Module1.Current.ModuleLogManager.LogDebug(nameof(ZoomToExtentAsync), "extent XMin=" + extent.XMin);
-                    var expandedExtent = extent.Expand(bufferFactor, bufferFactor, true);
-                    Module1.Current.ModuleLogManager.LogDebug(nameof(ZoomToExtentAsync), "expandedExtent XMin=" + expandedExtent.XMin);
-                    return expandedExtent;
-                }
-            });
 
             bool bSuccess = false;
             await QueuedTask.Run(() =>
@@ -755,20 +722,9 @@ namespace bagis_pro
                     Module1.Current.ModuleLogManager.LogDebug(nameof(ZoomToExtentAsync), "extent XMin=" + extent.XMin);
                     var expandedExtent = extent.Expand(bufferFactor, bufferFactor, true);
                     Module1.Current.ModuleLogManager.LogDebug(nameof(ZoomToExtentAsync), "expandedExtent XMin=" + expandedExtent.XMin);
-                    Module1.Current.ModuleLogManager.LogDebug(nameof(ZoomToExtentAsync), "zoomEnv XMin=" + zoomEnv.XMin);
-                    bSuccess = MapView.Active.ZoomTo(expandedExtent, null);
+                    bSuccess = mapView.ZoomTo(expandedExtent, null);
                 }
             });
-
-
-            //Zoom the view to a given extent.
-            //Module1.Current.ModuleLogManager.LogDebug(nameof(ZoomToExtentAsync), "zoomEnv XMin=" + zoomEnv.XMin);
-            //await FrameworkApplication.Current.Dispatcher.Invoke(async () =>
-            //{
-            //    // Do something on the GUI thread
-            //    bSuccess = await MapView.Active.ZoomToAsync(zoomEnv, null);
-            //});
-
 
             Module1.Current.ModuleLogManager.LogDebug(nameof(ZoomToExtentAsync), "Return value from ZoomToAsync=" + bSuccess);
             if (bSuccess)
@@ -824,17 +780,26 @@ namespace bagis_pro
                 arrLayerNames[idxLayerNames] = Constants.LAYER_NAMES_SEASON_PRECIP_CONTRIB[i];
                 idxLayerNames++;
             }
-            var map = MapView.Active.Map;
+
             await QueuedTask.Run(() =>
             {
-                foreach (string strName in arrLayerNames)
+                //Finding the first project item with name matches with mapName
+                Map map = null;
+                MapProjectItem mpi =
+                    Project.Current.GetItems<MapProjectItem>()
+                        .FirstOrDefault(m => m.Name.Equals(Constants.MAPS_DEFAULT_MAP_NAME, StringComparison.CurrentCultureIgnoreCase));                
+                if (mpi != null)
                 {
-                    Layer oLayer =
-                        map.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(strName, StringComparison.CurrentCultureIgnoreCase));
-                    if (oLayer != null)
+                    map = mpi.GetMap();
+                    foreach (string strName in arrLayerNames)
                     {
+                        Layer oLayer =
+                            map.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(strName, StringComparison.CurrentCultureIgnoreCase));
+                        if (oLayer != null)
+                        {
 
-                        map.RemoveLayer(oLayer);
+                            map.RemoveLayer(oLayer);
+                        }
                     }
                 }
 
@@ -2759,30 +2724,12 @@ namespace bagis_pro
             Uri uri = new Uri(strPath);
 
             IList<BA_Objects.Interval> lstInterval = CalculateSeasonalPrecipZones();
-            //int[,] arrColors = null;
-            //if (lstInterval.Count < Constants.ARR_SWE_DELTA_COLORS.GetLength(0))
-            //{
-            //    arrColors = new int[lstInterval.Count, 4];
-            //    int idxSource = 3;
-            //    for (int i = 0; i < arrColors.GetLength(0); i++)
-            //    {
-            //        for (int j = 0; j < 4; j++)
-            //        {
-            //            arrColors[i, j] = Constants.ARR_SWE_DELTA_COLORS[idxSource, j];
-            //        }
-            //        idxSource++;
-            //    }
-            //}
-            //else
-            //{
-            //    arrColors = Constants.ARR_SWE_DELTA_COLORS;
-            //}
-            success = await MapTools.DisplayRasterWithClassifyAsync(uri, Constants.LAYER_NAMES_SEASON_PRECIP_CONTRIB[idxDefaultMonth], "",
-                "", "NAME", 30, ClassificationMethod.Manual, lstInterval.Count, lstInterval, Constants.ARR_SWE_DELTA_COLORS, false);
 
-
-            //success = await MapTools.DisplayStretchRasterWithSymbolAsync(uri, Constants.LAYER_NAMES_SEASON_PRECIP_CONTRIB[idxDefaultMonth], "ColorBrewer Schemes (RGB)",
-            //        "Yellow-Orange-Red (continuous)", 30, false, true, 0, dblMaxPercent, 0, Math.Ceiling(dblMaxPercent), false);
+            if (lstInterval != null && lstInterval.Count > 0)
+            {
+                success = await MapTools.DisplayRasterWithClassifyAsync(uri, Constants.LAYER_NAMES_SEASON_PRECIP_CONTRIB[idxDefaultMonth], "",
+                    "", "NAME", 30, ClassificationMethod.Manual, lstInterval.Count, lstInterval, Constants.ARR_SWE_DELTA_COLORS, false);
+            }
 
             IList<string> lstLayersFiles = new List<string>();
                 if (success == BA_ReturnCode.Success)
@@ -3464,11 +3411,12 @@ namespace bagis_pro
             }
         }
 
-        public static async Task<BA_ReturnCode> GetLayerFilesFromPortalAsync()
+        public static async Task<BA_ReturnCode> GetSystemFilesFromPortalAsync()
         {
-            string[] documentIds = new string[1];
+            string[] documentIds = new string[2];
             documentIds[0] = (string) Module1.Current.BatchToolSettings.NLCDLandCoverLayerItemId;
-            string[] layerFileNames = new string[] { Constants.LAYER_FILE_NLCD_LAND_COVER };
+            documentIds[1] = (string) Module1.Current.BatchToolSettings.SnodasSweLayoutItemId;
+            string[] layerFileNames = new string[] { Constants.LAYER_FILE_NLCD_LAND_COVER, Constants.LAYOUT_FILE_SNODAS_SWE };
             Webservices ws = new Webservices();
             BA_ReturnCode success = BA_ReturnCode.ReadError;
 
@@ -3478,13 +3426,13 @@ namespace bagis_pro
                 string fullPath = Module1.Current.SettingsPath + "\\" + Constants.FOLDER_SETTINGS + "\\" + fName;
                 if (! System.IO.File.Exists(fullPath))
                 {
-                    Module1.Current.ModuleLogManager.LogInfo(nameof(GetLayerFilesFromPortalAsync),
+                    Module1.Current.ModuleLogManager.LogInfo(nameof(GetSystemFilesFromPortalAsync),
                         "Retrieving layer file from portal: " + layerFileNames[i]);
                     success = await ws.GetPortalFile(BA_Objects.AGSPortalProperties.PORTAL_ORGANIZATION, documentIds[i], 
                         fullPath);
                     if (success != BA_ReturnCode.Success)
                     {
-                        Module1.Current.ModuleLogManager.LogError(nameof(GetLayerFilesFromPortalAsync),
+                        Module1.Current.ModuleLogManager.LogError(nameof(GetSystemFilesFromPortalAsync),
                             "Unable to download layer from portal: " + layerFileNames[i]);
                     }
                 }
@@ -3555,7 +3503,7 @@ namespace bagis_pro
             return new Tuple<GroupLayer, int>(null, -1);
         }
 
-        private static async void SetClipGeometryAsync(string strAoiPath)
+        private static async void SetClipGeometryAsync(string strAoiPath, string mapName)
         {
             // Get Basin Analysis map
             Project proj = Project.Current;
@@ -3567,7 +3515,7 @@ namespace bagis_pro
 
             await QueuedTask.Run(() =>
             {
-                Map map = Project.Current.GetItems<MapProjectItem>().FirstOrDefault(m => m.Name.Equals(Constants.MAPS_DEFAULT_MAP_NAME)).GetMap();
+                Map map = Project.Current.GetItems<MapProjectItem>().FirstOrDefault(m => m.Name.Equals(mapName)).GetMap();
                 //Get the polygon to use to clip the map
                 Polygon aoiGeo = null;
                 using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(uriAoi)))
@@ -3624,5 +3572,148 @@ namespace bagis_pro
                 map.SetDefinition(mapDef);
             });
         }
+
+        private static async Task<BA_ReturnCode> DisplaySWEPageLayoutAsync(string strAoiPath)
+        {
+            // Check to make sure the layers are there
+            string[] arrMapFrames = new string[] { "November", "December", "January", "February", "March", "April","May", "June", "July" };
+            bool[] arrExists = new bool[arrMapFrames.Length];
+            Uri uriLayers = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers));
+            for (int i = 0; i < arrMapFrames.Length; i++)
+            {
+                if (await GeodatabaseTools.TableExistsAsync(uriLayers, Constants.FILES_SNODAS_SWE[i]))
+                {
+                    arrExists[i] = true;
+                }
+                else
+                {
+                    arrExists[i] = false;
+                    Module1.Current.ModuleLogManager.LogError(nameof(DisplaySWEPageLayoutAsync), Constants.FILES_SNODAS_SWE[i] + " is missing. Map will not be displayed!");
+                }
+            }
+            // Get Basin Analysis map
+            Project proj = Project.Current;
+
+            //Reference a layout project item by name
+            LayoutProjectItem someLytItem = proj.GetItems<LayoutProjectItem>().FirstOrDefault(item => item.Name.Equals(Constants.MAPS_SNODAS_LAYOUT));
+            Layout layout = null;
+            if (someLytItem == null)
+            {
+                string strLytPath = Module1.Current.SettingsPath + "\\" + Constants.FOLDER_SETTINGS + "\\" + Constants.LAYOUT_FILE_SNODAS_SWE;
+                IProjectItem pagx = ItemFactory.Instance.Create(strLytPath) as IProjectItem;
+                await QueuedTask.Run(() => proj.AddItem(pagx));
+                someLytItem = proj.GetItems<LayoutProjectItem>().FirstOrDefault(item => item.Name.Equals(Constants.MAPS_SNODAS_LAYOUT));
+                layout = await QueuedTask.Run(() => someLytItem.GetLayout());  //Worker thread
+            }
+            else
+            {
+                layout = await QueuedTask.Run(() => someLytItem.GetLayout());  //Worker thread
+            }
+
+            //Get the map frame in the layout
+            for (int i = 0; i < arrMapFrames.Length; i++)
+            {
+                string mFrameName = arrMapFrames[i];
+                MapFrame mapFrame = layout.FindElement(mFrameName) as MapFrame;
+                if (mapFrame != null)
+                {
+                    Map oMap = mapFrame.Map;
+                    // AOI Boundary
+                    Layer oLayer = oMap.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(Constants.MAPS_AOI_BOUNDARY, StringComparison.CurrentCultureIgnoreCase));
+                    if (oLayer != null)
+                    {
+                        await QueuedTask.Run(() =>
+                        {
+                            string connection = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi);
+                            var dbGdbConnectionFile = new FileGeodatabaseConnectionPath(new Uri(connection, UriKind.Absolute));
+                            var workspaceConnectionString = new Geodatabase(dbGdbConnectionFile).GetConnectionString();
+                            // Update data source for Snotel SWE layer
+                            var updatedDataConnection = new CIMStandardDataConnection()
+                            {
+                                WorkspaceConnectionString = workspaceConnectionString,
+                                WorkspaceFactory = WorkspaceFactory.FileGDB,
+                                Dataset = Constants.FILE_AOI_VECTOR,
+                                DatasetType = esriDatasetType.esriDTFeatureClass
+                            };
+                            oLayer.SetDataConnection(updatedDataConnection);
+                        });
+                    }
+
+                    IList<string> lstLayerName = new List<string>();
+                    IList<string> lstGdb = new List<string>();
+                    IList<string> lstFile = new List<string>();
+                    IList<esriDatasetType> lstDatasetType = new List<esriDatasetType>();
+                    if (Module1.Current.Aoi.HasSnotel == true)
+                    {
+                        lstLayerName.Add(Constants.MAPS_SNOTEL);
+                        lstGdb.Add(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers));
+                        lstFile.Add(Constants.FILE_SNOTEL);
+                        lstDatasetType.Add(esriDatasetType.esriDTFeatureClass);
+                    }
+                    if (Module1.Current.Aoi.HasSnowCourse == true)
+                    {
+                        lstLayerName.Add(Constants.MAPS_SNOW_COURSE);
+                        lstGdb.Add(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers));
+                        lstFile.Add(Constants.FILE_SNOW_COURSE);
+                        lstDatasetType.Add(esriDatasetType.esriDTFeatureClass);
+                    }
+                    // Waterbodies
+                    lstLayerName.Add(Constants.MAPS_WATERBODIES);
+                    lstGdb.Add(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Analysis));
+                    lstFile.Add(Constants.FILE_WATER_BODIES);
+                    lstDatasetType.Add(esriDatasetType.esriDTFeatureClass);
+                    // SNODAS SWE
+                    lstLayerName.Add(Constants.MAPS_SNODAS_MEAN_SWE);
+                    lstGdb.Add(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers));
+                    lstFile.Add(Constants.FILES_SNODAS_SWE[i]);
+                    lstDatasetType.Add(esriDatasetType.esriDTRasterDataset);
+                    // Hillshade
+                    lstLayerName.Add(Constants.MAPS_HILLSHADE);
+                    lstGdb.Add(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Surfaces));
+                    lstFile.Add(Constants.FILE_HILLSHADE);
+                    lstDatasetType.Add(esriDatasetType.esriDTRasterDataset);
+
+                    int j = 0;
+                    foreach (var layerName in lstLayerName)
+                    {
+                        oLayer = oMap.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(layerName, StringComparison.CurrentCultureIgnoreCase));
+                        if (oLayer != null)
+                        {
+                            await QueuedTask.Run(() =>
+                            {
+                                // Update data source for layer
+                                var dbGdbConnectionFile = new FileGeodatabaseConnectionPath(new Uri(lstGdb[j], UriKind.Absolute));
+                                var workspaceConnectionString = new Geodatabase(dbGdbConnectionFile).GetConnectionString();
+
+                                // provide a replace data connection method
+                                CIMStandardDataConnection updatedDataConnection = new CIMStandardDataConnection()
+                                {
+                                    WorkspaceConnectionString = workspaceConnectionString,
+                                    WorkspaceFactory = WorkspaceFactory.FileGDB,
+                                    Dataset = lstFile[j],
+                                    DatasetType = lstDatasetType[j]
+                                };
+                                oLayer.SetDataConnection(updatedDataConnection);
+                            });
+                        }
+                        j++;
+                    }
+
+                    // set focus to current AOI area
+                    //Set the map frame extent to the AOI boundary
+                    //Perform on the worker thread
+                    await QueuedTask.Run(() =>
+                    {
+                        FeatureLayer lyr = oMap.FindLayers(Constants.MAPS_AOI_BOUNDARY).First() as FeatureLayer;
+                        mapFrame.SetCamera(lyr, false);
+                    });
+                    SetClipGeometryAsync(strAoiPath, mFrameName);
+
+                }
+            }
+
+            return BA_ReturnCode.Success;
+        }
+
     }
 }
