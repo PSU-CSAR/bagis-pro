@@ -293,7 +293,7 @@ namespace bagis_pro
                     success = await MapTools.DisplayNorthArrowAsync(layout, Constants.MAPS_DEFAULT_MAP_FRAME_NAME);
                     success = await MapTools.DisplayScaleBarAsync(layout, Constants.MAPS_DEFAULT_MAP_FRAME_NAME);
 
-                    SetClipGeometryAsync(oAoi.FilePath, Constants.MAPS_DEFAULT_MAP_NAME);
+                    success = await SetClipGeometryAsync(oAoi.FilePath, Constants.MAPS_DEFAULT_MAP_NAME);
 
                     //zoom to aoi boundary layer
                     success = await MapTools.ZoomToExtentAsync(aoiUri, MapView.Active, Constants.MAP_BUFFER_FACTOR);
@@ -736,6 +736,33 @@ namespace bagis_pro
                 return BA_ReturnCode.UnknownError;
             }
              
+        }
+
+        public static async Task<Envelope> QueryZoomEnvelopeAsync(Uri aoiUri, double bufferFactor = 1)
+        {
+            string strFileName = null;
+            string strFolderPath = null;
+            if (aoiUri.IsFile)
+            {
+                strFileName = System.IO.Path.GetFileName(aoiUri.LocalPath);
+                strFolderPath = System.IO.Path.GetDirectoryName(aoiUri.LocalPath);
+            }
+            Envelope expandedExtent = null;
+            await QueuedTask.Run(() =>
+            {
+                using (
+                    Geodatabase geodatabase =
+                        new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(strFolderPath))))
+                {
+                    // Use the geodatabase.
+                    FeatureClassDefinition fcDefinition = geodatabase.GetDefinition<FeatureClassDefinition>(strFileName);
+                    var extent = fcDefinition.GetExtent();
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(QueryZoomEnvelopeAsync), "extent XMin=" + extent.XMin);
+                    expandedExtent = extent.Expand(bufferFactor, bufferFactor, true);
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(QueryZoomEnvelopeAsync), "expandedExtent XMin=" + expandedExtent.XMin);
+                }
+            });
+            return expandedExtent;
         }
 
         public static async Task RemoveLayersfromMapFrame()
@@ -3503,7 +3530,7 @@ namespace bagis_pro
             return new Tuple<GroupLayer, int>(null, -1);
         }
 
-        private static async void SetClipGeometryAsync(string strAoiPath, string mapName)
+        private static async Task<BA_ReturnCode> SetClipGeometryAsync(string strAoiPath, string mapName)
         {
             // Get Basin Analysis map
             Project proj = Project.Current;
@@ -3570,7 +3597,9 @@ namespace bagis_pro
                 Module1.Current.ModuleLogManager.LogDebug(nameof(SetClipGeometryAsync), "Sites layers excluded from clipping");
                 // set the map definition
                 map.SetDefinition(mapDef);
+               
             });
+            return BA_ReturnCode.Success;
         }
 
         private static async Task<BA_ReturnCode> DisplaySWEPageLayoutAsync(string strAoiPath)
@@ -3581,7 +3610,7 @@ namespace bagis_pro
             Uri uriLayers = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers));
             for (int i = 0; i < arrMapFrames.Length; i++)
             {
-                if (await GeodatabaseTools.TableExistsAsync(uriLayers, Constants.FILES_SNODAS_SWE[i]))
+                if (await GeodatabaseTools.RasterDatasetExistsAsync(uriLayers, Constants.FILES_SNODAS_SWE[i]))
                 {
                     arrExists[i] = true;
                 }
@@ -3593,6 +3622,7 @@ namespace bagis_pro
             }
             // Get Basin Analysis map
             Project proj = Project.Current;
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
 
             //Reference a layout project item by name
             LayoutProjectItem someLytItem = proj.GetItems<LayoutProjectItem>().FirstOrDefault(item => item.Name.Equals(Constants.MAPS_SNODAS_LAYOUT));
@@ -3610,6 +3640,11 @@ namespace bagis_pro
                 layout = await QueuedTask.Run(() => someLytItem.GetLayout());  //Worker thread
             }
 
+            string strPath = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, true) +
+                Constants.FILE_AOI_VECTOR;
+            Uri aoiUri = new Uri(strPath);
+            Envelope env = await QueryZoomEnvelopeAsync(aoiUri, Constants.MAP_BUFFER_FACTOR);
+
             //Get the map frame in the layout
             for (int i = 0; i < arrMapFrames.Length; i++)
             {
@@ -3618,6 +3653,8 @@ namespace bagis_pro
                 if (mapFrame != null)
                 {
                     Map oMap = mapFrame.Map;
+                    //Opening the map in a mapview
+                    var mapPane = await ProApp.Panes.CreateMapPaneAsync(oMap);
                     // AOI Boundary
                     Layer oLayer = oMap.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(Constants.MAPS_AOI_BOUNDARY, StringComparison.CurrentCultureIgnoreCase));
                     if (oLayer != null)
@@ -3662,6 +3699,11 @@ namespace bagis_pro
                     lstGdb.Add(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Analysis));
                     lstFile.Add(Constants.FILE_WATER_BODIES);
                     lstDatasetType.Add(esriDatasetType.esriDTFeatureClass);
+                    // Streams
+                    lstLayerName.Add(Constants.MAPS_STREAMS);
+                    lstGdb.Add(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers));
+                    lstFile.Add(Constants.FILE_STREAMS);
+                    lstDatasetType.Add(esriDatasetType.esriDTFeatureClass);
                     // SNODAS SWE
                     lstLayerName.Add(Constants.MAPS_SNODAS_MEAN_SWE);
                     lstGdb.Add(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers));
@@ -3674,13 +3716,14 @@ namespace bagis_pro
                     lstDatasetType.Add(esriDatasetType.esriDTRasterDataset);
 
                     int j = 0;
-                    foreach (var layerName in lstLayerName)
+                    await QueuedTask.Run(async () =>
                     {
-                        oLayer = oMap.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(layerName, StringComparison.CurrentCultureIgnoreCase));
-                        if (oLayer != null)
-                        {
-                            await QueuedTask.Run(() =>
-                            {
+                      foreach (var layerName in lstLayerName)
+                      {
+                          oLayer = oMap.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(layerName, StringComparison.CurrentCultureIgnoreCase));
+                          if (oLayer != null)
+                          {
+
                                 // Update data source for layer
                                 var dbGdbConnectionFile = new FileGeodatabaseConnectionPath(new Uri(lstGdb[j], UriKind.Absolute));
                                 var workspaceConnectionString = new Geodatabase(dbGdbConnectionFile).GetConnectionString();
@@ -3694,25 +3737,42 @@ namespace bagis_pro
                                     DatasetType = lstDatasetType[j]
                                 };
                                 oLayer.SetDataConnection(updatedDataConnection);
-                            });
+                          }
+                          j++;
+                      }
+                        if (env != null)
+                        {
+                            mapFrame.SetCamera(env);
                         }
-                        j++;
-                    }
-
-                    // set focus to current AOI area
-                    //Set the map frame extent to the AOI boundary
-                    //Perform on the worker thread
-                    await QueuedTask.Run(() =>
-                    {
-                        FeatureLayer lyr = oMap.FindLayers(Constants.MAPS_AOI_BOUNDARY).First() as FeatureLayer;
-                        mapFrame.SetCamera(lyr, false);
+                        success = await SetClipGeometryAsync(strAoiPath, arrMapFrames[i]);
                     });
-                    SetClipGeometryAsync(strAoiPath, mFrameName);
-
                 }
             }
 
-            return BA_ReturnCode.Success;
+            //if (env != null)
+            //{
+            //    await QueuedTask.Run( async () =>
+            //    {
+            //        // set focus to current AOI area
+            //        //Set the map frame extent to the AOI boundary
+            //        //Perform on the worker thread
+            //        for (int i = 0; i < arrMapFrames.Length; i++)
+            //        {
+            //            string mFrameName = arrMapFrames[i];
+
+            //            MapFrame myFrame = layout.FindElement(mFrameName) as MapFrame;
+            //            if (myFrame != null)
+            //            {
+            //                myFrame.SetCamera(env);
+            //            }
+            //            success = await SetClipGeometryAsync(strAoiPath, mFrameName);
+            //        }
+            //    });
+                
+
+            //}
+
+            return success;
         }
 
     }
