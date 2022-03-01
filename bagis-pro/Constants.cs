@@ -31,11 +31,11 @@ namespace bagis_pro
         public const string MAPS_SNOTEL_REPRESENTED = "SNOTEL Rep Area";
         public const string MAPS_SNOW_COURSE_REPRESENTED = "Snow Courses Rep Area";
         public const string MAPS_ALL_SITES_REPRESENTED = "All Sites Rep Area";
-        public const string MAPS_FEDERAL_PUBLIC_LAND_ZONES = "Federal Non-Wilderness Land";
+        public const string MAPS_FEDERAL_LAND_ZONES = "Federal Non-Wilderness Land";
         public const string MAPS_FORESTED_LAND_COVER = "Forested Land Cover";
         public const string MAPS_SITES_LOCATION = "Meet All Criteria";
         public const string MAPS_CRITICAL_PRECIPITATION_ZONES = "Critical Precipitation";
-        public const string MAPS_PUBLIC_LAND_OWNERSHIP = "Public Land Ownership";
+        public const string MAPS_LAND_OWNERSHIP = "Land Ownership";
         public const string MAPS_PRECIPITATION_CONTRIBUTION = "Precipitation Contribution";
         public const string MAPS_WINTER_PRECIPITATION = "Winter Precipitation";
         public const string MAPS_SUBBASIN_BOUNDARY = "Subbasin Boundary";
@@ -121,7 +121,7 @@ namespace bagis_pro
                                                                                                FILE_EXPORT_MAP_PRECIPITATION_CONTRIBUTION_PDF, FILE_EXPORT_CHART_AREA_ELEV_PRECIP_SITE_PDF,
                                                                                                FILE_EXPORT_CHART_PRECIP_REPRESENT_PDF, FILE_EXPORT_CRITICAL_PRECIPITATION_ZONES_PDF };
         public static readonly string[] FILE_EXPORT_SITE_ANALYSIS_FILES = new string[] { FILE_EXPORT_MAP_SITES_LOCATION_PDF, FILE_EXPORT_MAP_SITES_LOCATION_PRECIP_PDF, FILE_EXPORT_MAP_SITES_LOCATION__PRECIP_CONTRIB_PDF,
-                                                                                          FILE_EXPORT_MAP_PUBLIC_LAND_ZONES_PDF, FILE_EXPORT_MAP_PUBLIC_LAND_OWNERSHIP_PDF,
+                                                                                          FILE_EXPORT_MAP_PUBLIC_LAND_ZONES_PDF, FILE_EXPORT_MAP_LAND_OWNERSHIP_PDF,
                                                                                           FILE_EXPORT_MAP_FORESTED_LAND_COVER_PDF};
         public const string FILE_EXPORT_MAP_PUBLIC_LAND_ZONES_PDF = "map_public_land_zones.pdf";
         public const string FILE_EXPORT_MAP_FORESTED_LAND_COVER_PDF = "map_forested_land_cover.pdf";
@@ -129,7 +129,7 @@ namespace bagis_pro
         public const string FILE_EXPORT_MAP_SITES_LOCATION_PRECIP_PDF = "map_sites_location_precip.pdf";
         public const string FILE_EXPORT_MAP_SITES_LOCATION__PRECIP_CONTRIB_PDF = "map_sites_location_precip_contrib.pdf";
         public const string FILE_EXPORT_MAP_CRITICAL_PRECIPITATION_ZONES_PDF = "map_critical_precip_zones.pdf";
-        public const string FILE_EXPORT_MAP_PUBLIC_LAND_OWNERSHIP_PDF = "map_public_land_ownership.pdf";
+        public const string FILE_EXPORT_MAP_LAND_OWNERSHIP_PDF = "map_land_ownership.pdf";
         public const string FILE_EXPORT_CHART_AREA_ELEV_PRECIP_SITE_PDF = "chart_area_elev_precip_site.pdf";
         public const string FILE_EXPORT_CHART_SLOPE_PDF = "chart_slope.pdf";
         public const string FILE_EXPORT_CHART_ASPECT_PDF = "chart_aspect.pdf";
@@ -157,7 +157,7 @@ namespace bagis_pro
           FILE_EXPORT_CHART_PRECIP_REPRESENT_PDF, FILE_EXPORT_MAP_CRITICAL_PRECIPITATION_ZONES_PDF, FILE_EXPORT_TABLE_PRECIP_REPRESENT_PDF,
           FILE_EXPORT_MAPS_SEASONAL_PRECIP_CONTRIB[0], FILE_EXPORT_SNODAS_SWE_PDF, FILE_EXPORT_MAPS_SWE_DELTA[0], FILE_EXPORT_MAP_SITES_LOCATION_PDF,
           FILE_EXPORT_MAP_SITES_LOCATION_PRECIP_PDF, FILE_EXPORT_MAP_SITES_LOCATION__PRECIP_CONTRIB_PDF, FILE_EXPORT_MAP_PUBLIC_LAND_ZONES_PDF,
-          FILE_EXPORT_MAP_PUBLIC_LAND_OWNERSHIP_PDF, FILE_EXPORT_MAP_FORESTED_LAND_COVER_PDF
+          FILE_EXPORT_MAP_LAND_OWNERSHIP_PDF, FILE_EXPORT_MAP_FORESTED_LAND_COVER_PDF
         };
         
         // List of files in the watershed chapters PDF map package and the order in which they will be assembled

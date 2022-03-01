@@ -176,11 +176,11 @@ namespace bagis_pro.Buttons
         {
             try
             {
-                await ToggleMapDisplay.ToggleAsync(BagisMapType.PUBLIC_LAND_ZONES);
+                await ToggleMapDisplay.ToggleAsync(BagisMapType.LAND_ZONES);
             }
             catch (Exception e)
             {
-                MessageBox.Show("Unable to display public land zones map!!" + e.Message, "BAGIS-PRO");
+                MessageBox.Show("Unable to display land zones map!!" + e.Message, "BAGIS-PRO");
             }
         }
     }
@@ -191,7 +191,7 @@ namespace bagis_pro.Buttons
         {
             try
             {
-                await ToggleMapDisplay.ToggleAsync(BagisMapType.PUBLIC_LAND_OWNERSHIP);
+                await ToggleMapDisplay.ToggleAsync(BagisMapType.LAND_OWNERSHIP);
             }
             catch (Exception e)
             {
