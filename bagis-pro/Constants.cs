@@ -106,9 +106,7 @@ namespace bagis_pro
         public const string FILE_EXPORT_MAP_PRECIPITATION_PDF = "map_precipitation.pdf";
         public const string FILE_EXPORT_MAP_ASPECT_PDF = "map_aspect.pdf";
         public const string FILE_EXPORT_MAP_SLOPE_PDF = "map_slope.pdf";
-        public static readonly string[] FILE_EXPORT_MAPS_SWE = new string[] { "map_snodas_swe_november.pdf", "map_snodas_swe_december.pdf", "map_snodas_swe_january.pdf",
-                                                                              "map_snodas_swe_february.pdf", "map_snodas_swe_march.pdf", "map_snodas_swe_april.pdf",
-                                                                              "map_snodas_swe_may.pdf", "map_snodas_swe_june.pdf", "map_snodas_swe_july.pdf"};
+        public const string FILE_EXPORT_MAP_SNODAS_SWE_PDF = "map_snodas_swe.pdf";
         public static readonly string[] FILE_EXPORT_MAPS_SWE_DELTA = new string[] { "map_nov_swe_delta.pdf", "map_dec_swe_delta.pdf", "map_jan_swe_delta.pdf",
                                                                                     "map_feb_swe_delta.pdf", "map_mar_swe_delta.pdf", "map_apr_swe_delta.pdf",
                                                                                     "map_may_swe_delta.pdf", "map_jun_swe_delta.pdf"};
@@ -157,7 +155,7 @@ namespace bagis_pro
           FILE_EXPORT_MAP_SNOTEL_AND_SCOS_PDF, FILE_EXPORT_MAP_PRECIPITATION_PDF, FILE_EXPORT_CHART_ELEV_PRECIP_CORR_PDF,
           FILE_EXPORT_MAP_PRECIPITATION_CONTRIBUTION_PDF, FILE_EXPORT_CHART_AREA_ELEV_PRECIP_SITE_PDF,
           FILE_EXPORT_CHART_PRECIP_REPRESENT_PDF, FILE_EXPORT_MAP_CRITICAL_PRECIPITATION_ZONES_PDF, FILE_EXPORT_TABLE_PRECIP_REPRESENT_PDF,
-          FILE_EXPORT_MAPS_SEASONAL_PRECIP_CONTRIB[0], FILE_EXPORT_MAPS_SWE[0], FILE_EXPORT_MAPS_SWE_DELTA[0], FILE_EXPORT_MAP_SITES_LOCATION_PDF,
+          FILE_EXPORT_MAPS_SEASONAL_PRECIP_CONTRIB[0], FILE_EXPORT_SNODAS_SWE_PDF, FILE_EXPORT_MAPS_SWE_DELTA[0], FILE_EXPORT_MAP_SITES_LOCATION_PDF,
           FILE_EXPORT_MAP_SITES_LOCATION_PRECIP_PDF, FILE_EXPORT_MAP_SITES_LOCATION__PRECIP_CONTRIB_PDF, FILE_EXPORT_MAP_PUBLIC_LAND_ZONES_PDF,
           FILE_EXPORT_MAP_PUBLIC_LAND_OWNERSHIP_PDF, FILE_EXPORT_MAP_FORESTED_LAND_COVER_PDF
         };
@@ -306,15 +304,7 @@ namespace bagis_pro
                                                                 "MapButtonPalette_BtnWinterPrecipitation_State",
                                                                 "MapButtonPalette_BtnPrecipContrib_State",
                                                                 "MapButtonPalette_BtnSlope_State",
-                                                                "MapButtonPalette_BtnSweJan_State",
-                                                                "MapButtonPalette_BtnSweFeb_State",
-                                                                "MapButtonPalette_BtnSweMar_State",
-                                                                "MapButtonPalette_BtnSweApr_State",
-                                                                "MapButtonPalette_BtnSweMay_State",
-                                                                "MapButtonPalette_BtnSweJun_State",
-                                                                "MapButtonPalette_BtnSweJul_State",
-                                                                "MapButtonPalette_BtnSweNov_State",
-                                                                "MapButtonPalette_BtnSweDec_State",
+                                                                "MapButtonPalette_BtnSwe_State",
                                                                 "MapButtonPalette_BtnSweNovDelta_State",
                                                                 "MapButtonPalette_BtnSweDecDelta_State",
                                                                 "MapButtonPalette_BtnSweJanDelta_State",

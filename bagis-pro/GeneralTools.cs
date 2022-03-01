@@ -68,6 +68,10 @@ namespace bagis_pro
                     {
                         layoutName = Constants.MAPS_AOI_LOCATION_LAYOUT;
                     }
+                    else if (Module1.Current.DisplayedMap.Equals(Constants.FILE_EXPORT_SNODAS_SWE_PDF))
+                    {
+                        layoutName = Constants.MAPS_SNODAS_LAYOUT;
+                    }
                     LayoutProjectItem lytItem =
                         Project.Current.GetItems<LayoutProjectItem>()
                         .FirstOrDefault(m => m.Name.Equals(layoutName, StringComparison.CurrentCultureIgnoreCase));
@@ -1768,23 +1772,14 @@ namespace bagis_pro
             // Combine SWE Delta maps into a single .pdf document
             // Initialize output document
             PdfDocument snodasOutputDocument = new PdfDocument();
-            // Combine monthly SNODAS maps into a single .pdf document
-            foreach (var strFileName in Constants.FILE_EXPORT_MAPS_SWE)
+            string swePath = GetFullPdfFileName(Constants.FILE_EXPORT_SNODAS_SWE_PDF);
+            if (File.Exists(swePath))
             {
-                string fullPath = GetFullPdfFileName(strFileName);
-                if (File.Exists(fullPath))
-                {
-                    PdfDocument inputDocument = PdfReader.Open(fullPath, PdfDocumentOpenMode.Import);
-                    // Iterate pages
-                    int count = inputDocument.PageCount;
-                    for (idx = 0; idx < count; idx++)
-                    {
-                        // Get the page from the external document...
-                        PdfPage page = inputDocument.Pages[idx];
-                        snodasOutputDocument.AddPage(page);
-                    }
-                    File.Delete(fullPath);
-                }
+                PdfDocument inputDocument = PdfReader.Open(swePath, PdfDocumentOpenMode.Import);
+                // Get the page from the external document...
+                PdfPage page = inputDocument.Pages[0];
+                snodasOutputDocument.AddPage(page);
+                File.Delete(swePath);
             }
             foreach (var strFileName in Constants.FILE_EXPORT_MAPS_SWE_DELTA)
             {

@@ -31,7 +31,6 @@ namespace bagis_pro
         SNOTEL,
         SCOS,
         SITES_ALL,
-        SNODAS_SWE,
         PRISM,
         PUBLIC_LAND_ZONES,
         FORESTED_AREA,

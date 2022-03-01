@@ -275,205 +275,33 @@ namespace bagis_pro.Buttons
         }
     }
 
-    internal class MapButtonPalette_BtnSweJan : Button
+    internal class MapButtonPalette_BtnSwe : Button
     {
         protected override async void OnClick()
         {
             try
             {
                 Module1.Current.MapFinishedLoading = false;
-                int idxJan = 2;
-                await MapTools.LoadSweMapAsync(Constants.FILES_SNODAS_SWE[idxJan],
-                    Constants.LAYER_NAMES_SNODAS_SWE[idxJan], Constants.MAP_TITLES_SNODAS_SWE[idxJan],
-                    Constants.FILE_EXPORT_MAPS_SWE[idxJan]);
+                Layout oLayout = await MapTools.GetDefaultLayoutAsync(Constants.MAPS_SNODAS_LAYOUT);
+                if (oLayout != null)
+                {
+                    foreach (var pane in FrameworkApplication.Panes)
+                    {
+                        if (!(pane is ILayoutPane layoutPane))  //if not a layout view, continue to the next pane    
+                            continue;
+                        if (layoutPane.LayoutView.Layout == oLayout) //if there is a match, activate the view  
+                        {
+                            (layoutPane as Pane).Activate();
+                        }
+                    }
+                }
                 Module1.Current.MapFinishedLoading = true;
+                Module1.Current.DisplayedMap = Constants.FILE_EXPORT_SNODAS_SWE_PDF;
             }
             catch (Exception e)
             {
                 MessageBox.Show("Unable to display SNODAS SWE map!!" + e.Message, "BAGIS-PRO");
-                Module1.Current.ModuleLogManager.LogError(nameof(MapButtonPalette_BtnSweJan),
-                    "Exception: " + e.Message);
-            }
-        }
-    }
-
-    internal class MapButtonPalette_BtnSweFeb : Button
-    {
-        protected override async void OnClick()
-        {
-            try
-            {
-                Module1.Current.MapFinishedLoading = false;
-                int idxFeb = 3;
-                await MapTools.LoadSweMapAsync(Constants.FILES_SNODAS_SWE[idxFeb],
-                    Constants.LAYER_NAMES_SNODAS_SWE[idxFeb], Constants.MAP_TITLES_SNODAS_SWE[idxFeb],
-                    Constants.FILE_EXPORT_MAPS_SWE[idxFeb]);
-                Module1.Current.MapFinishedLoading = true;
-            }
-            catch (Exception e)
-            {
-                MessageBox.Show("Unable to display SNODAS SWE map!!" + e.Message, "BAGIS-PRO");
-                Module1.Current.ModuleLogManager.LogError(nameof(MapButtonPalette_BtnSweFeb),
-                    "Exception: " + e.Message);
-            }
-        }
-    }
-
-    internal class MapButtonPalette_BtnSweMar : Button
-    {
-        protected override async void OnClick()
-        {
-            try
-            {
-                Module1.Current.MapFinishedLoading = false;
-                int idxMar = 4;
-                await MapTools.LoadSweMapAsync(Constants.FILES_SNODAS_SWE[idxMar],
-                    Constants.LAYER_NAMES_SNODAS_SWE[idxMar], Constants.MAP_TITLES_SNODAS_SWE[idxMar],
-                    Constants.FILE_EXPORT_MAPS_SWE[idxMar]);
-                Module1.Current.MapFinishedLoading = true;
-            }
-            catch (Exception e)
-            {
-                MessageBox.Show("Unable to display SNODAS SWE map!!" + e.Message, "BAGIS-PRO");
-                Module1.Current.ModuleLogManager.LogError(nameof(MapButtonPalette_BtnSweMar),
-                    "Exception: " + e.Message);
-            }
-        }
-    }
-
-    internal class MapButtonPalette_BtnSweApr : Button
-    {
-        protected override async void OnClick()
-        {
-            try
-            {
-                Module1.Current.MapFinishedLoading = false;
-                int idxApr = 5;
-                await MapTools.LoadSweMapAsync(Constants.FILES_SNODAS_SWE[idxApr],
-                    Constants.LAYER_NAMES_SNODAS_SWE[idxApr], Constants.MAP_TITLES_SNODAS_SWE[idxApr],
-                    Constants.FILE_EXPORT_MAPS_SWE[idxApr]);
-                Module1.Current.MapFinishedLoading = true;
-            }
-            catch (Exception e)
-            {
-                MessageBox.Show("Unable to display SNODAS SWE map!!" + e.Message, "BAGIS-PRO");
-                Module1.Current.ModuleLogManager.LogError(nameof(MapButtonPalette_BtnSweApr),
-                    "Exception: " + e.Message);
-
-            }
-        }
-    }
-
-    internal class MapButtonPalette_BtnSweMay : Button
-    {
-        protected override async void OnClick()
-        {
-            try
-            {
-                Module1.Current.MapFinishedLoading = false;
-                int idxMay = 6;
-                await MapTools.LoadSweMapAsync(Constants.FILES_SNODAS_SWE[idxMay],
-                    Constants.LAYER_NAMES_SNODAS_SWE[idxMay], Constants.MAP_TITLES_SNODAS_SWE[idxMay],
-                    Constants.FILE_EXPORT_MAPS_SWE[idxMay]);
-
-                Module1.Current.MapFinishedLoading = true;
-            }
-            catch (Exception e)
-            {
-                MessageBox.Show("Unable to display SNODAS SWE map!!" + e.Message, "BAGIS-PRO");
-                Module1.Current.ModuleLogManager.LogError(nameof(MapButtonPalette_BtnSweMay),
-                    "Exception: " + e.Message);
-            }
-        }
-    }
-
-    internal class MapButtonPalette_BtnSweJun : Button
-    {
-        protected override async void OnClick()
-        {
-            try
-            {
-                Module1.Current.MapFinishedLoading = false;
-                int idxJun = 7;
-                await MapTools.LoadSweMapAsync(Constants.FILES_SNODAS_SWE[idxJun],
-                    Constants.LAYER_NAMES_SNODAS_SWE[idxJun], Constants.MAP_TITLES_SNODAS_SWE[idxJun],
-                    Constants.FILE_EXPORT_MAPS_SWE[idxJun]);
-
-                Module1.Current.MapFinishedLoading = true;
-            }
-            catch (Exception e)
-            {
-                MessageBox.Show("Unable to display SNODAS SWE map!!" + e.Message, "BAGIS-PRO");
-                Module1.Current.ModuleLogManager.LogError(nameof(MapButtonPalette_BtnSweJun),
-                    "Exception: " + e.Message);
-            }
-        }
-    }
-
-    internal class MapButtonPalette_BtnSweJul : Button
-    {
-        protected override async void OnClick()
-        {
-            try
-            {
-                Module1.Current.MapFinishedLoading = false;
-                int idxJul = 8;
-                await MapTools.LoadSweMapAsync(Constants.FILES_SNODAS_SWE[idxJul],
-                    Constants.LAYER_NAMES_SNODAS_SWE[idxJul], Constants.MAP_TITLES_SNODAS_SWE[idxJul],
-                    Constants.FILE_EXPORT_MAPS_SWE[idxJul]);
-
-                Module1.Current.MapFinishedLoading = true;
-            }
-            catch (Exception e)
-            {
-                MessageBox.Show("Unable to display SNODAS SWE map!!" + e.Message, "BAGIS-PRO");
-                Module1.Current.ModuleLogManager.LogError(nameof(MapButtonPalette_BtnSweJul),
-                    "Exception: " + e.Message);
-            }
-        }
-    }
-
-    internal class MapButtonPalette_BtnSweNov : Button
-    {
-        protected override async void OnClick()
-        {
-            try
-            {
-                Module1.Current.MapFinishedLoading = false;
-                int idxNov = 0;
-                await MapTools.LoadSweMapAsync(Constants.FILES_SNODAS_SWE[idxNov],
-                    Constants.LAYER_NAMES_SNODAS_SWE[idxNov], Constants.MAP_TITLES_SNODAS_SWE[idxNov],
-                    Constants.FILE_EXPORT_MAPS_SWE[idxNov]);
-
-                Module1.Current.MapFinishedLoading = true;
-            }
-            catch (Exception e)
-            {
-                MessageBox.Show("Unable to display SNODAS SWE map!!" + e.Message, "BAGIS-PRO");
-                Module1.Current.ModuleLogManager.LogError(nameof(MapButtonPalette_BtnSweNov),
-                    "Exception: " + e.Message);
-            }
-        }
-    }
-
-    internal class MapButtonPalette_BtnSweDec : Button
-    {
-        protected override async void OnClick()
-        {
-            try
-            {
-                Module1.Current.MapFinishedLoading = false;
-                int idxDec = 1;
-                await MapTools.LoadSweMapAsync(Constants.FILES_SNODAS_SWE[idxDec],
-                    Constants.LAYER_NAMES_SNODAS_SWE[idxDec], Constants.MAP_TITLES_SNODAS_SWE[idxDec],
-                    Constants.FILE_EXPORT_MAPS_SWE[idxDec]);
-
-                Module1.Current.MapFinishedLoading = true;
-            }
-            catch (Exception e)
-            {
-                MessageBox.Show("Unable to display SNODAS SWE map!!" + e.Message, "BAGIS-PRO");
-                Module1.Current.ModuleLogManager.LogError(nameof(MapButtonPalette_BtnSweDec),
+                Module1.Current.ModuleLogManager.LogError(nameof(MapButtonPalette_BtnSwe),
                     "Exception: " + e.Message);
             }
         }
