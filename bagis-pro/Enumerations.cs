@@ -41,7 +41,9 @@ namespace bagis_pro
         LAND_OWNERSHIP,
         PRECIPITATION_CONTRIBUTION,
         WINTER_PRECIPITATION,
-        LAND_COVER
+        LAND_COVER,
+        SNODAS_SWE,
+        SNODAS_DELTA
     }
 
     public enum SiteType

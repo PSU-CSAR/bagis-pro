@@ -303,12 +303,15 @@ namespace bagis_pro
 
                     // load SWE map layout
                     idxDefaultMonth = 8;    // Note: This needs to be the month with the lowest SWE value for symbology; In this case July
-                    success = await DisplaySWEPageLayoutAsync(oAoi.FilePath, idxDefaultMonth);
-                    if (true)
-                    {
-                        Module1.ActivateState("MapButtonPalette_BtnSwe_State");
-                    }
+                    //success = await DisplaySWEPageLayoutAsync(oAoi.FilePath, idxDefaultMonth, BagisMapType.SNODAS_SWE);
+                    //if (success == BA_ReturnCode.Success)
+                    //{
+                    //    Module1.ActivateState("MapButtonPalette_BtnSwe_State");
+                    //}
+                    // load SWE Delta map layout
+                    success = await DisplaySWEPageLayoutAsync(oAoi.FilePath, idxDefaultMonth - 1, BagisMapType.SNODAS_DELTA);
                     return success;
+
                 }
             }
             
@@ -3585,22 +3588,37 @@ namespace bagis_pro
             return BA_ReturnCode.Success;
         }
 
-        private static async Task<BA_ReturnCode> DisplaySWEPageLayoutAsync(string strAoiPath, int idxDefaultMonth)
+        private static async Task<BA_ReturnCode> DisplaySWEPageLayoutAsync(string strAoiPath, int idxDefaultMonth, BagisMapType bagisMapType)
         {
             // Check to make sure the layers are there
             string[] arrMapFrames = new string[] { "November", "December", "January", "February", "March", "April","May", "June", "July" };
-            bool[] arrExists = new bool[arrMapFrames.Length];
             Uri uriLayers = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers));
+            string[] arrFiles = Constants.FILES_SNODAS_SWE;
+            string layoutName = Constants.MAPS_SNODAS_LAYOUT;
+            string layoutFile = Constants.LAYOUT_FILE_SNODAS_SWE;
+            string mapLayerName = Constants.MAPS_SNODAS_MEAN_SWE;
+            switch (bagisMapType)
+            {
+                case BagisMapType.SNODAS_DELTA:
+                    arrMapFrames = new string[] { "November", "December", "January", "February", "March", "April", "May", "June" };
+                    uriLayers = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Analysis));
+                    arrFiles = Constants.FILES_SWE_DELTA;
+                    layoutName = Constants.MAPS_SNODAS_DELTA_LAYOUT;
+                    layoutFile = Constants.LAYOUT_FILE_SNODAS_DELTA_SWE;
+                    mapLayerName = Constants.MAPS_SNODAS_SWE_DELTA;
+                    break;
+            }
+            bool[] arrExists = new bool[arrMapFrames.Length];
             for (int i = 0; i < arrMapFrames.Length; i++)
             {
-                if (await GeodatabaseTools.RasterDatasetExistsAsync(uriLayers, Constants.FILES_SNODAS_SWE[i]))
+                if (await GeodatabaseTools.RasterDatasetExistsAsync(uriLayers, arrFiles[i]))
                 {
                     arrExists[i] = true;
                 }
                 else
                 {
                     arrExists[i] = false;
-                    Module1.Current.ModuleLogManager.LogError(nameof(DisplaySWEPageLayoutAsync), Constants.FILES_SNODAS_SWE[i] + " is missing. Map will not be displayed!");
+                    Module1.Current.ModuleLogManager.LogError(nameof(DisplaySWEPageLayoutAsync), arrFiles[i] + " is missing. Map will not be displayed!");
                 }
             }
             // Get Basin Analysis map
@@ -3608,14 +3626,14 @@ namespace bagis_pro
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
 
             //Reference a layout project item by name
-            LayoutProjectItem someLytItem = proj.GetItems<LayoutProjectItem>().FirstOrDefault(item => item.Name.Equals(Constants.MAPS_SNODAS_LAYOUT));
+            LayoutProjectItem someLytItem = proj.GetItems<LayoutProjectItem>().FirstOrDefault(item => item.Name.Equals(layoutName));
             Layout layout = null;
             if (someLytItem == null)
             {
-                string strLytPath = Module1.Current.SettingsPath + "\\" + Constants.FOLDER_SETTINGS + "\\" + Constants.LAYOUT_FILE_SNODAS_SWE;
+                string strLytPath = Module1.Current.SettingsPath + "\\" + Constants.FOLDER_SETTINGS + "\\" + layoutFile;
                 IProjectItem pagx = ItemFactory.Instance.Create(strLytPath) as IProjectItem;
                 await QueuedTask.Run(() => proj.AddItem(pagx));
-                someLytItem = proj.GetItems<LayoutProjectItem>().FirstOrDefault(item => item.Name.Equals(Constants.MAPS_SNODAS_LAYOUT));
+                someLytItem = proj.GetItems<LayoutProjectItem>().FirstOrDefault(item => item.Name.Equals(layoutName));
                 layout = await QueuedTask.Run(() => someLytItem.GetLayout());  //Worker thread
             }
             else
@@ -3623,7 +3641,17 @@ namespace bagis_pro
                 layout = await QueuedTask.Run(() => someLytItem.GetLayout());  //Worker thread
             }
 
-            IList<BA_Objects.Interval> lstInterval = await CalculateSweZonesAsync(idxDefaultMonth);
+            IList<BA_Objects.Interval> lstInterval = new List<BA_Objects.Interval>();
+            switch (bagisMapType)
+            {
+                
+                case BagisMapType.SNODAS_SWE:
+                    lstInterval = await CalculateSweZonesAsync(idxDefaultMonth);
+                    break;
+                case BagisMapType.SNODAS_DELTA:
+                    lstInterval = await CalculateSweDeltaZonesAsync(idxDefaultMonth);
+                    break;
+             }
 
             //Get the map frame in the layout
             for (int i = 0; i < arrMapFrames.Length; i++)
@@ -3687,9 +3715,9 @@ namespace bagis_pro
                     lstFile.Add(Constants.FILE_STREAMS);
                     lstDatasetType.Add(esriDatasetType.esriDTFeatureClass);
                     // SNODAS SWE
-                    lstLayerName.Add(Constants.MAPS_SNODAS_MEAN_SWE);
-                    lstGdb.Add(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers));
-                    lstFile.Add(Constants.FILES_SNODAS_SWE[i]);
+                    lstLayerName.Add(mapLayerName);
+                    lstGdb.Add(uriLayers.LocalPath);
+                    lstFile.Add(arrFiles[i]);
                     lstDatasetType.Add(esriDatasetType.esriDTRasterDataset);
                     // Hillshade
                     lstLayerName.Add(Constants.MAPS_HILLSHADE);
@@ -3732,9 +3760,19 @@ namespace bagis_pro
                           mapFrame.SetCamera(env);
                       }
 
-                      // Reset the color ramp
-                      await MapTools.SetToClassifyRenderer(oMap, Constants.MAPS_SNODAS_MEAN_SWE, Constants.FIELD_NAME, lstInterval, 
-                          Constants.ARR_SWE_COLORS);
+                        // Reset the color ramp
+                        switch (bagisMapType)
+                        {
+                            case BagisMapType.SNODAS_SWE:
+                                await MapTools.SetToClassifyRenderer(oMap, mapLayerName, Constants.FIELD_NAME, lstInterval,
+                                    Constants.ARR_SWE_COLORS);
+                                break;
+                            case BagisMapType.SNODAS_DELTA:
+                                await MapTools.SetToClassifyRenderer(oMap, mapLayerName, Constants.FIELD_NAME, lstInterval,
+                                    Constants.ARR_SWE_DELTA_COLORS);
+                                break;
+                        }
+
 
                         // Reset the clip geometry
                         success = await SetClipGeometryAsync(strAoiPath, arrMapFrames[i]);
