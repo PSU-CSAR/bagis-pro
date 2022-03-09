@@ -108,9 +108,6 @@ namespace bagis_pro
         public const string FILE_EXPORT_MAP_ASPECT_PDF = "map_aspect.pdf";
         public const string FILE_EXPORT_MAP_SLOPE_PDF = "map_slope.pdf";
         public const string FILE_EXPORT_MAP_SNODAS_SWE_PDF = "map_snodas_swe.pdf";
-        public static readonly string[] FILE_EXPORT_MAPS_SWE_DELTA = new string[] { "map_nov_swe_delta.pdf", "map_dec_swe_delta.pdf", "map_jan_swe_delta.pdf",
-                                                                                    "map_feb_swe_delta.pdf", "map_mar_swe_delta.pdf", "map_apr_swe_delta.pdf",
-                                                                                    "map_may_swe_delta.pdf", "map_jun_swe_delta.pdf"};
         public static readonly string[] FILE_EXPORT_MAPS_SEASONAL_PRECIP_CONTRIB = new string[] { "map_seasonal_precip_q1.pdf", "map_seasonal_precip_q2.pdf", "map_seasonal_precip_q3.pdf",
                                                                                                   "map_seasonal_precip_q4.pdf"};
         public static readonly string[] FILE_EXPORT_OVERVIEW_FILES = new string[] { FILE_TITLE_PAGE_PDF, FILE_DATA_SOURCES_PDF, FILE_EXPORT_MAP_AOI_LOCATION_PDF, FILE_SITES_TABLE_PDF };
@@ -146,6 +143,7 @@ namespace bagis_pro
         public const string FILE_EXPORT_MAP_PRECIPITATION_CONTRIBUTION_PDF = "map_precipitation_contrib.pdf";
         public const string FILE_EXPORT_MAP_WINTER_PRECIPITATION_PDF = "map_winter_precipitation.pdf";
         public const string FILE_EXPORT_SNODAS_SWE_PDF = "snodas_swe.pdf";
+        public const string FILE_EXPORT_SNODAS_SWE_DELTA_PDF = "snodas_swe_delta.pdf";
         public const string FILE_EXPORT_SEASONAL_PRECIP_DISTRIBUTION_PDF = "seasonal_precip_distribution.pdf";
         public const string FILE_EXPORT_MAP_AOI_LOCATION_PDF = "map_aoi_location.pdf";
         public const string FILE_EXPORT_LAND_COVER_PDF = "land_cover.pdf";
@@ -156,7 +154,7 @@ namespace bagis_pro
           FILE_EXPORT_MAP_SNOTEL_AND_SCOS_PDF, FILE_EXPORT_MAP_PRECIPITATION_PDF, FILE_EXPORT_CHART_ELEV_PRECIP_CORR_PDF,
           FILE_EXPORT_MAP_PRECIPITATION_CONTRIBUTION_PDF, FILE_EXPORT_CHART_AREA_ELEV_PRECIP_SITE_PDF,
           FILE_EXPORT_CHART_PRECIP_REPRESENT_PDF, FILE_EXPORT_MAP_CRITICAL_PRECIPITATION_ZONES_PDF, FILE_EXPORT_TABLE_PRECIP_REPRESENT_PDF,
-          FILE_EXPORT_MAPS_SEASONAL_PRECIP_CONTRIB[0], FILE_EXPORT_SNODAS_SWE_PDF, FILE_EXPORT_MAPS_SWE_DELTA[0], FILE_EXPORT_MAP_SITES_LOCATION_PDF,
+          FILE_EXPORT_MAPS_SEASONAL_PRECIP_CONTRIB[0], FILE_EXPORT_SNODAS_SWE_PDF, FILE_EXPORT_SNODAS_SWE_DELTA_PDF, FILE_EXPORT_MAP_SITES_LOCATION_PDF,
           FILE_EXPORT_MAP_SITES_LOCATION_PRECIP_PDF, FILE_EXPORT_MAP_SITES_LOCATION__PRECIP_CONTRIB_PDF, FILE_EXPORT_MAP_PUBLIC_LAND_ZONES_PDF,
           FILE_EXPORT_MAP_LAND_OWNERSHIP_PDF, FILE_EXPORT_MAP_FORESTED_LAND_COVER_PDF
         };
@@ -197,23 +195,11 @@ namespace bagis_pro
         public const string FILE_SNODAS_SWE_APRIL = "swe_apr_01";
         public static readonly string[] FILES_SNODAS_SWE = new string[] { "swe_nov_01", "swe_dec_01", "swe_jan_01", "swe_feb_01", "swe_mar_01",
                                                                           FILE_SNODAS_SWE_APRIL, "swe_may_01", "swe_jun_01", "swe_jul_01"};
-        public static readonly string[] LAYER_NAMES_SNODAS_SWE = new string[] { "November 1 SWE", "December 1 SWE", "January 1 SWE", "February 1 SWE",
-                                                                                "March 1 SWE", "April 1 SWE", "May 1 SWE", "June 1 SWE",
-                                                                                "July 1 SWE"};
         public const string MAPS_SNODAS_MEAN_SWE = "SNODAS Mean SWE";
         public const string MAPS_SNODAS_SWE_DELTA = "SNODAS SWE Delta";
-        public static readonly string[] MAP_TITLES_SNODAS_SWE = new string[] { "SNODAS MEAN SWE, NOV 1ST", "SNODAS MEAN SWE, DEC 1ST", "SNODAS MEAN SWE, JAN 1ST", "SNODAS MEAN SWE, FEB 1ST",
-                                                                               "SNODAS MEAN SWE, MAR 1ST", "SNODAS MEAN SWE, APR 1ST", "SNODAS MEAN SWE, MAY 1ST",
-                                                                               "SNODAS MEAN SWE, JUN 1ST", "SNODAS MEAN SWE, JUL 1ST" };
         public static readonly string[] FILES_SWE_DELTA = new string[] { "swe_dec_minus_nov", "swe_jan_minus_dec", "swe_feb_minus_jan",
                                                                          "swe_mar_minus_feb", "swe_apr_minus_mar", "swe_may_minus_apr",
                                                                          "swe_jun_minus_may", "swe_jul_minus_jun"};
-        public static readonly string[] LAYER_NAMES_SWE_DELTA = new string[] { "November SWE Delta", "December SWE Delta", "January SWE Delta",
-                                                                              "February SWE Delta", "March SWE Delta", "April SWE Delta",
-                                                                              "May SWE Delta", "June SWE Delta"};
-        public static readonly string[] MAP_TITLES_SWE_DELTA = new string[] { "SNODAS MEAN NOVEMBER SWE DELTA", "SNODAS MEAN DECEMBER SWE DELTA", "SNODAS MEAN JANUARY SWE DELTA",
-                                                                              "SNODAS MEAN FEBRUARY SWE DELTA", "SNODAS MEAN MARCH SWE DELTA", "SNODAS MEAN APRIL SWE DELTA",
-                                                                              "SNODAS MEAN MAY SWE DELTA", "SNODAS MEAN JUNE SWE DELTA"};
         public static readonly string[] FILES_SEASON_PRECIP_CONTRIB = new string[] {"sq1_precip_contrib", "sq2_precip_contrib", "sq3_precip_contrib",
                                                                                     "sq4_precip_contrib"};
         public static readonly string[] LAYER_NAMES_SEASON_PRECIP_CONTRIB = new string[] {"SQ1 Precip Contribution", "SQ2 Precip Contribution", "SQ3 Precip Contribution",
@@ -308,14 +294,7 @@ namespace bagis_pro
                                                                 "MapButtonPalette_BtnPrecipContrib_State",
                                                                 "MapButtonPalette_BtnSlope_State",
                                                                 "MapButtonPalette_BtnSwe_State",
-                                                                "MapButtonPalette_BtnSweNovDelta_State",
-                                                                "MapButtonPalette_BtnSweDecDelta_State",
-                                                                "MapButtonPalette_BtnSweJanDelta_State",
-                                                                "MapButtonPalette_BtnSweFebDelta_State",
-                                                                "MapButtonPalette_BtnSweMarDelta_State",
-                                                                "MapButtonPalette_BtnSweAprDelta_State",
-                                                                "MapButtonPalette_BtnSweMayDelta_State",
-                                                                "MapButtonPalette_BtnSweJunDelta_State",
+                                                                "MapButtonPalette_BtnSweDelta_State",
                                                                 "MapButtonPalette_BtnSeasonalPrecipContribSQ1_State",
                                                                 "MapButtonPalette_BtnSeasonalPrecipContribSQ2_State",
                                                                 "MapButtonPalette_BtnSeasonalPrecipContribSQ3_State",

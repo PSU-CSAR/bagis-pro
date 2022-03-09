@@ -78,6 +78,7 @@ bagis-pro:
      MasterAoiList: https://services.arcgis.com/SXbDpmb7xQkk44JV/arcgis/rest/services/master_aoi_list_fs/FeatureServer
      PdfExportResolution: 300
      SnodasSweLayoutItemId: 5de950a654b14c849a25a08b3b3a9bfd
+     SnodasDeltaLayoutItemId: 1eafb8ca4b2048a2a22598d6372cf0d5
      Version: 1.0
 
 bagis-p:

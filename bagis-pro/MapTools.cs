@@ -80,7 +80,7 @@ namespace bagis_pro
                     //remove existing layers from map frame
                     await MapTools.RemoveLayersfromMapFrame();
 
-                    //retrieve layer symbology files from portal iff needed
+                    //retrieve layer symbology files from portal if needed
                     success = await GetSystemFilesFromPortalAsync();
 
                     //retrieve Analysis object
@@ -238,14 +238,6 @@ namespace bagis_pro
                     if (success == BA_ReturnCode.Success)
                         Module1.ActivateState("MapButtonPalette_BtnAspect_State");
 
-                    // add SNOTEL SWE zones layer
-                    //int idxDefaultMonth = 8;    // Note: This needs to be the month with the lowest SWE value for symbology; In this case July
-                    //success = await DisplaySWEMapAsync(idxDefaultMonth);
-
-                    // add SWE delta layer
-                    int idxDefaultMonth = 8;    // Note: This needs to be the month with the lowest SWE value for symbology; In this case July
-                    success = await DisplaySWEDeltaMapAsync(7, idxDefaultMonth);  // Note: this needs to be the month with the lowest delta value for symbology: June Delta
-
                     // add quarterly seasonal precipitation layer; Default is Q1
                     success = await DisplaySeasonalPrecipContribMapAsync(0);
 
@@ -302,14 +294,18 @@ namespace bagis_pro
                     success = await DisplayLocationMapAsync(oAoi);
 
                     // load SWE map layout
-                    idxDefaultMonth = 8;    // Note: This needs to be the month with the lowest SWE value for symbology; In this case July
-                    //success = await DisplaySWEPageLayoutAsync(oAoi.FilePath, idxDefaultMonth, BagisMapType.SNODAS_SWE);
-                    //if (success == BA_ReturnCode.Success)
-                    //{
-                    //    Module1.ActivateState("MapButtonPalette_BtnSwe_State");
-                    //}
+                    int idxDefaultMonth = 8;    // Note: This needs to be the month with the lowest SWE value for symbology; In this case July
+                    success = await DisplayMultiMapPageLayoutAsync(oAoi.FilePath, idxDefaultMonth, BagisMapType.SNODAS_SWE);
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        Module1.ActivateState("MapButtonPalette_BtnSwe_State");
+                    }
                     // load SWE Delta map layout
-                    success = await DisplaySWEPageLayoutAsync(oAoi.FilePath, idxDefaultMonth - 1, BagisMapType.SNODAS_DELTA);
+                    success = await DisplayMultiMapPageLayoutAsync(oAoi.FilePath, idxDefaultMonth - 1, BagisMapType.SNODAS_DELTA);
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        Module1.ActivateState("MapButtonPalette_BtnSweDelta_State");
+                    }
                     return success;
 
                 }
@@ -775,7 +771,7 @@ namespace bagis_pro
 
         public static async Task RemoveLayersfromMapFrame()
         {
-            string[] arrLayerNames = new string[44];
+            string[] arrLayerNames = new string[27];
             arrLayerNames[0] = Constants.MAPS_AOI_BOUNDARY;
             arrLayerNames[1] = Constants.MAPS_STREAMS;
             arrLayerNames[2] = Constants.MAPS_SNOTEL;
@@ -800,16 +796,6 @@ namespace bagis_pro
             arrLayerNames[21] = Constants.MAPS_WATERBODIES;
             arrLayerNames[22] = Constants.MAPS_ACCESS_ROADS;
             int idxLayerNames = 23;
-            for (int i = 0; i < Constants.LAYER_NAMES_SNODAS_SWE.Length; i++)
-            {
-                arrLayerNames[idxLayerNames] = Constants.LAYER_NAMES_SNODAS_SWE[i];
-                idxLayerNames++;
-            }
-            for (int i = 0; i < Constants.LAYER_NAMES_SWE_DELTA.Length; i++)
-            {
-                arrLayerNames[idxLayerNames] = Constants.LAYER_NAMES_SWE_DELTA[i];
-                idxLayerNames++;
-            }
             for (int i = 0; i < Constants.LAYER_NAMES_SEASON_PRECIP_CONTRIB.Length; i++)
             {
                 arrLayerNames[idxLayerNames] = Constants.LAYER_NAMES_SEASON_PRECIP_CONTRIB[i];
@@ -2513,76 +2499,6 @@ namespace bagis_pro
             return success;
         }
 
-
-        public static async Task<BA_ReturnCode> DisplaySWEMapAsync(int idxDefaultMonth)
-        {
-            BA_ReturnCode success = BA_ReturnCode.UnknownError;
-            string strPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, true) +
-                Constants.FILES_SNODAS_SWE[idxDefaultMonth];
-            Uri uri = new Uri(strPath);
-
-            IList<BA_Objects.Interval> lstInterval = await CalculateSweZonesAsync(idxDefaultMonth);
-            success = await MapTools.DisplayRasterWithClassifyAsync(uri, Constants.LAYER_NAMES_SNODAS_SWE[idxDefaultMonth], "",
-                "", "NAME", 30, ClassificationMethod.Manual, lstInterval.Count, lstInterval, Constants.ARR_SWE_COLORS, false);
-            IList<string> lstLayersFiles = new List<string>();
-                if (success == BA_ReturnCode.Success)
-                {
-                    await QueuedTask.Run(() =>
-                    {
-                        // Opens a file geodatabase. This will open the geodatabase if the folder exists and contains a valid geodatabase.
-                        Uri analysisUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers));
-                        using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(analysisUri)))
-                        {
-                            IReadOnlyList<RasterDatasetDefinition> definitions = geodatabase.GetDefinitions<RasterDatasetDefinition>();
-                            foreach (RasterDatasetDefinition def in definitions)
-                            {
-                                lstLayersFiles.Add(def.GetName());
-                            }
-                        }
-                    });
-                    int idx = 0;
-                    foreach (string strSweName in Constants.FILES_SNODAS_SWE)
-                    {
-                        if (lstLayersFiles.Contains(strSweName))
-                        {
-                            switch (idx)
-                            {
-                                case 0:     //November
-                                    Module1.ActivateState("MapButtonPalette_BtnSweNov_State");
-                                    break;
-                                case 1:     //December
-                                    Module1.ActivateState("MapButtonPalette_BtnSweDec_State");
-                                    break;
-                                case 2:     //January
-                                    Module1.ActivateState("MapButtonPalette_BtnSweJan_State");
-                                    break;
-                                case 3:     //February
-                                    Module1.ActivateState("MapButtonPalette_BtnSweFeb_State");
-                                    break;
-                                case 4:     //March
-                                    Module1.ActivateState("MapButtonPalette_BtnSweMar_State");
-                                    break;
-                                case 5:     //April
-                                    Module1.ActivateState("MapButtonPalette_BtnSweApr_State");
-                                    break;
-                                case 6:     //May
-                                    Module1.ActivateState("MapButtonPalette_BtnSweMay_State");
-                                    break;
-                                case 7:     //June
-                                    Module1.ActivateState("MapButtonPalette_BtnSweJun_State");
-                                    break;
-                                case 8:     //July
-                                    Module1.ActivateState("MapButtonPalette_BtnSweJul_State");
-                                    break;
-                            }
-                        }
-                        idx++;
-                    }
-                }
-                Module1.Current.DisplayedSweMap = Constants.LAYER_NAMES_SNODAS_SWE[idxDefaultMonth];
-            return success;
-        }
-
         public static async Task<double[]> SWEUnitsConversionAsync(string strDataType, int idxDefaultMonth)
         {
             double[] arrReturnValues = new double[4];
@@ -2657,76 +2573,6 @@ namespace bagis_pro
                 }                
             }
             return layerUnits;
-        }
-
-        public static async Task<BA_ReturnCode> DisplaySWEDeltaMapAsync(int idxDefaultDeltaMonth, int idxDefaultUnitsMonth)
-        {
-            BA_ReturnCode success = BA_ReturnCode.UnknownError;
-            string strPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) +
-                Constants.FILES_SWE_DELTA[idxDefaultDeltaMonth];
-            Uri uri = new Uri(strPath);
-
-            IList<BA_Objects.Interval> lstInterval = await CalculateSweDeltaZonesAsync(idxDefaultUnitsMonth);
-            success = await MapTools.DisplayRasterWithClassifyAsync(uri, Constants.LAYER_NAMES_SWE_DELTA[idxDefaultDeltaMonth], "",
-                "", "NAME", 30, ClassificationMethod.Manual, lstInterval.Count, lstInterval, Constants.ARR_SWE_DELTA_COLORS, false);
-
-            //success = await MapTools.DisplayStretchRasterWithSymbolAsync(uri, Constants.LAYER_NAMES_SWE_DELTA[idxDefaultDeltaMonth], "ColorBrewer Schemes (RGB)",
-            //    "Red-Blue (Continuous)", 30, false, true, dblStretchMin, dblStretchMax, dblLabelMin,
-            //    dblLabelMax, true);
-            IList<string> lstLayersFiles = new List<string>();
-                if (success == BA_ReturnCode.Success)
-                {
-                    await QueuedTask.Run(() =>
-                    {
-                        // Opens a file geodatabase. This will open the geodatabase if the folder exists and contains a valid geodatabase.
-                        Uri analysisUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis));
-                        using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(analysisUri)))
-                        {
-                            IReadOnlyList<RasterDatasetDefinition> definitions = geodatabase.GetDefinitions<RasterDatasetDefinition>();
-                            foreach (RasterDatasetDefinition def in definitions)
-                            {
-                                lstLayersFiles.Add(def.GetName());
-                            }
-                        }
-                    });
-                    int idx = 0;
-                    foreach (string strSweName in Constants.FILES_SWE_DELTA)
-                    {
-                        if (lstLayersFiles.Contains(strSweName))
-                        {
-                            switch (idx)
-                            {
-                                case 0:     //Dec - Nov SWE
-                                    Module1.ActivateState("MapButtonPalette_BtnSweNovDelta_State");
-                                    break;
-                                case 1:     //Jan - Dec SWE
-                                    Module1.ActivateState("MapButtonPalette_BtnSweDecDelta_State");
-                                    break;
-                                case 2:     //Feb - Jan SWE
-                                    Module1.ActivateState("MapButtonPalette_BtnSweJanDelta_State");
-                                    break;
-                                case 3:     //Mar - Feb SWE
-                                    Module1.ActivateState("MapButtonPalette_BtnSweFebDelta_State");
-                                    break;
-                                case 4:     //Apr - Mar SWE
-                                    Module1.ActivateState("MapButtonPalette_BtnSweMarDelta_State");
-                                    break;
-                                case 5:     //May - Apr SWE
-                                    Module1.ActivateState("MapButtonPalette_BtnSweAprDelta_State");
-                                    break;
-                                case 6:     //Jun - May SWE
-                                    Module1.ActivateState("MapButtonPalette_BtnSweMayDelta_State");
-                                    break;
-                                case 7:     //Jul - Jun SWE
-                                    Module1.ActivateState("MapButtonPalette_BtnSweJunDelta_State");
-                                    break;
-                            }
-                        }
-                        idx++;
-                    }
-                }
-                Module1.Current.DisplayedSweDeltaMap = Constants.LAYER_NAMES_SWE_DELTA[idxDefaultDeltaMonth];
-            return success;
         }
 
         public static async Task<BA_ReturnCode> DisplaySeasonalPrecipContribMapAsync(int idxDefaultMonth)
@@ -3426,10 +3272,12 @@ namespace bagis_pro
 
         public static async Task<BA_ReturnCode> GetSystemFilesFromPortalAsync()
         {
-            string[] documentIds = new string[2];
+            string[] documentIds = new string[3];
             documentIds[0] = (string) Module1.Current.BatchToolSettings.NLCDLandCoverLayerItemId;
             documentIds[1] = (string) Module1.Current.BatchToolSettings.SnodasSweLayoutItemId;
-            string[] layerFileNames = new string[] { Constants.LAYER_FILE_NLCD_LAND_COVER, Constants.LAYOUT_FILE_SNODAS_SWE };
+            documentIds[2] = (string)Module1.Current.BatchToolSettings.SnodasDeltaLayoutItemId;
+            string[] layerFileNames = new string[] { Constants.LAYER_FILE_NLCD_LAND_COVER, Constants.LAYOUT_FILE_SNODAS_SWE,
+                Constants.LAYOUT_FILE_SNODAS_DELTA_SWE};
             Webservices ws = new Webservices();
             BA_ReturnCode success = BA_ReturnCode.ReadError;
 
@@ -3588,7 +3436,7 @@ namespace bagis_pro
             return BA_ReturnCode.Success;
         }
 
-        private static async Task<BA_ReturnCode> DisplaySWEPageLayoutAsync(string strAoiPath, int idxDefaultMonth, BagisMapType bagisMapType)
+        private static async Task<BA_ReturnCode> DisplayMultiMapPageLayoutAsync(string strAoiPath, int idxDefaultMonth, BagisMapType bagisMapType)
         {
             // Check to make sure the layers are there
             string[] arrMapFrames = new string[] { "November", "December", "January", "February", "March", "April","May", "June", "July" };
@@ -3618,7 +3466,7 @@ namespace bagis_pro
                 else
                 {
                     arrExists[i] = false;
-                    Module1.Current.ModuleLogManager.LogError(nameof(DisplaySWEPageLayoutAsync), arrFiles[i] + " is missing. Map will not be displayed!");
+                    Module1.Current.ModuleLogManager.LogError(nameof(DisplayMultiMapPageLayoutAsync), arrFiles[i] + " is missing. Map will not be displayed!");
                 }
             }
             // Get Basin Analysis map

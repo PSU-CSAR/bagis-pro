@@ -72,6 +72,10 @@ namespace bagis_pro
                     {
                         layoutName = Constants.MAPS_SNODAS_LAYOUT;
                     }
+                    else if (Module1.Current.DisplayedMap.Equals(Constants.FILE_EXPORT_SNODAS_SWE_DELTA_PDF))
+                    {
+                        layoutName = Constants.MAPS_SNODAS_DELTA_LAYOUT;
+                    }
                     LayoutProjectItem lytItem =
                         Project.Current.GetItems<LayoutProjectItem>()
                         .FirstOrDefault(m => m.Name.Equals(layoutName, StringComparison.CurrentCultureIgnoreCase));
@@ -1773,30 +1777,25 @@ namespace bagis_pro
             // Initialize output document
             PdfDocument snodasOutputDocument = new PdfDocument();
             string swePath = GetFullPdfFileName(Constants.FILE_EXPORT_SNODAS_SWE_PDF);
+            idx = 0;
             if (File.Exists(swePath))
             {
                 PdfDocument inputDocument = PdfReader.Open(swePath, PdfDocumentOpenMode.Import);
                 // Get the page from the external document...
                 PdfPage page = inputDocument.Pages[0];
                 snodasOutputDocument.AddPage(page);
+                idx++;
                 File.Delete(swePath);
             }
-            foreach (var strFileName in Constants.FILE_EXPORT_MAPS_SWE_DELTA)
+            swePath = GetFullPdfFileName(Constants.FILE_EXPORT_SNODAS_SWE_DELTA_PDF);
+            if (File.Exists(swePath))
             {
-                string fullPath = GetFullPdfFileName(strFileName);
-                if (File.Exists(fullPath))
-                {
-                    PdfDocument inputDocument = PdfReader.Open(fullPath, PdfDocumentOpenMode.Import);
-                    // Iterate pages
-                    int count = inputDocument.PageCount;
-                    for (idx = 0; idx < count; idx++)
-                    {
-                        // Get the page from the external document...
-                        PdfPage page = inputDocument.Pages[idx];
-                        snodasOutputDocument.AddPage(page);
-                    }
-                    File.Delete(fullPath);
-                }
+                PdfDocument inputDocument = PdfReader.Open(swePath, PdfDocumentOpenMode.Import);
+                // Get the page from the external document...
+                PdfPage page = inputDocument.Pages[0];
+                snodasOutputDocument.AddPage(page);
+                idx++;
+                File.Delete(swePath);
             }
             if (idx > 0)
             {
