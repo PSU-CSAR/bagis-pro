@@ -3448,7 +3448,7 @@ namespace bagis_pro
             switch (bagisMapType)
             {
                 case BagisMapType.SNODAS_DELTA:
-                    arrMapFrames = new string[] { "November", "December", "January", "February", "March", "April", "May", "June" };
+                    arrMapFrames = new string[] { "November_1", "December_1", "January_1", "February_1", "March_1", "April_1", "May_1", "June_1" };
                     uriLayers = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Analysis));
                     arrFiles = Constants.FILES_SWE_DELTA;
                     layoutName = Constants.MAPS_SNODAS_DELTA_LAYOUT;
