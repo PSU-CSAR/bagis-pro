@@ -79,6 +79,7 @@ bagis-pro:
      PdfExportResolution: 300
      SnodasSweLayoutItemId: 5de950a654b14c849a25a08b3b3a9bfd
      SnodasDeltaLayoutItemId: 1eafb8ca4b2048a2a22598d6372cf0d5
+     SeasonalPrecipLayoutItemId: 34a1c22f75254c56918c5eb820a6810a
      Version: 1.0
 
 bagis-p:
