@@ -80,10 +80,7 @@
           <button refID="MapButtonPalette_BtnSitesLocationPrecipContrib" />
           <button refID="MapButtonPalette_BtnCriticalPrecipZone" />
           <button refID="MapButtonPalette_BtnPublicLandOwnership" />
-          <button refID="MapButtonPalette_BtnSeasonalPrecipContribSQ1" />
-          <button refID="MapButtonPalette_BtnSeasonalPrecipContribSQ2" />
-          <button refID="MapButtonPalette_BtnSeasonalPrecipContribSQ3" />
-          <button refID="MapButtonPalette_BtnSeasonalPrecipContribSQ4" />
+          <button refID="MapButtonPalette_BtnSeasonalPrecipContrib" />
           <button refID="MapButtonPalette_BtnAoiLocation" />
           <button refID="MapButtonPalette_BtnLandCover" />
         </buttonPalette>
@@ -221,22 +218,7 @@
             ToolTip<disabledText />
           </tooltip>
         </button>
-        <button id="MapButtonPalette_BtnSeasonalPrecipContribSQ1" caption="SQ1 Precip Contribution" className="bagis_pro.Buttons.MapButtonPalette_BtnSeasonalPrecipContribSQ1" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSeasonalPrecipContribSQ1_Condition" keytip="B50">
-          <tooltip heading="Display Map">
-            ToolTip<disabledText />
-          </tooltip>
-        </button>
-        <button id="MapButtonPalette_BtnSeasonalPrecipContribSQ2" caption="SQ2 Precip Contribution" className="bagis_pro.Buttons.MapButtonPalette_BtnSeasonalPrecipContribSQ2" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSeasonalPrecipContribSQ2_Condition" keytip="B51">
-          <tooltip heading="Display Map">
-            ToolTip<disabledText />
-          </tooltip>
-        </button>
-        <button id="MapButtonPalette_BtnSeasonalPrecipContribSQ3" caption="SQ3 Precip Contribution" className="bagis_pro.Buttons.MapButtonPalette_BtnSeasonalPrecipContribSQ3" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSeasonalPrecipContribSQ3_Condition" keytip="B52">
-          <tooltip heading="Display Map">
-            ToolTip<disabledText />
-          </tooltip>
-        </button>
-        <button id="MapButtonPalette_BtnSeasonalPrecipContribSQ4" caption="SQ4 Precip Contribution" className="bagis_pro.Buttons.MapButtonPalette_BtnSeasonalPrecipContribSQ4" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSeasonalPrecipContribSQ4_Condition" keytip="B53">
+        <button id="MapButtonPalette_BtnSeasonalPrecipContrib" caption="Seasonal Precipitation Contrib" className="bagis_pro.Buttons.MapButtonPalette_BtnSeasonalPrecipContrib" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSeasonalPrecipContrib_Condition" keytip="B50">
           <tooltip heading="Display Map">
             ToolTip<disabledText />
           </tooltip>
@@ -403,17 +385,8 @@
     <insertCondition id="MapButtonPalette_BtnWinterPrecipitation_Condition" caption="Map Disabled">
       <state id="MapButtonPalette_BtnWinterPrecipitation_State" />
     </insertCondition>
-    <insertCondition id="MapButtonPalette_BtnSeasonalPrecipContribSQ1_Condition" caption="Map Disabled">
-      <state id="MapButtonPalette_BtnSeasonalPrecipContribSQ1_State" />
-    </insertCondition>
-    <insertCondition id="MapButtonPalette_BtnSeasonalPrecipContribSQ2_Condition" caption="Map Disabled">
-      <state id="MapButtonPalette_BtnSeasonalPrecipContribSQ2_State" />
-    </insertCondition>
-    <insertCondition id="MapButtonPalette_BtnSeasonalPrecipContribSQ3_Condition" caption="Map Disabled">
-      <state id="MapButtonPalette_BtnSeasonalPrecipContribSQ3_State" />
-    </insertCondition>
-    <insertCondition id="MapButtonPalette_BtnSeasonalPrecipContribSQ4_Condition" caption="Map Disabled">
-      <state id="MapButtonPalette_BtnSeasonalPrecipContribSQ4_State" />
+    <insertCondition id="MapButtonPalette_BtnSeasonalPrecipContrib_Condition" caption="Map Disabled">
+      <state id="MapButtonPalette_BtnSeasonalPrecipContrib_State" />
     </insertCondition>
     <insertCondition id="MapButtonPalette_BtnAoiLocation_Condition" caption="Map Disabled">
       <state id="MapButtonPalette_BtnAoiLocation_State" />

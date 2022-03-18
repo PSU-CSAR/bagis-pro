@@ -64,18 +64,25 @@ namespace bagis_pro
                 await QueuedTask.Run(() =>
                 {
                     string layoutName = Constants.MAPS_DEFAULT_LAYOUT_NAME;
-                    if (Module1.Current.DisplayedMap.Equals(Constants.FILE_EXPORT_MAP_AOI_LOCATION_PDF))
+                    switch (Module1.Current.DisplayedMap)
                     {
-                        layoutName = Constants.MAPS_AOI_LOCATION_LAYOUT;
+                        case Constants.FILE_EXPORT_MAP_AOI_LOCATION_PDF:
+                            layoutName = Constants.MAPS_AOI_LOCATION_LAYOUT;
+                            break;
+                        case Constants.FILE_EXPORT_SNODAS_SWE_PDF:
+                            layoutName = Constants.MAPS_SNODAS_LAYOUT;
+                            break;
+                        case Constants.FILE_EXPORT_SNODAS_SWE_DELTA_PDF:
+                            layoutName = Constants.MAPS_SNODAS_DELTA_LAYOUT;
+                            break;
+                        case Constants.FILE_EXPORT_SEASONAL_PRECIP_DISTRIBUTION_PDF:
+                            layoutName = Constants.MAPS_SEASONAL_PRECIP_LAYOUT;
+                            break;
+                        default:
+                            layoutName = Constants.MAPS_DEFAULT_LAYOUT_NAME;
+                            break;
                     }
-                    else if (Module1.Current.DisplayedMap.Equals(Constants.FILE_EXPORT_SNODAS_SWE_PDF))
-                    {
-                        layoutName = Constants.MAPS_SNODAS_LAYOUT;
-                    }
-                    else if (Module1.Current.DisplayedMap.Equals(Constants.FILE_EXPORT_SNODAS_SWE_DELTA_PDF))
-                    {
-                        layoutName = Constants.MAPS_SNODAS_DELTA_LAYOUT;
-                    }
+
                     LayoutProjectItem lytItem =
                         Project.Current.GetItems<LayoutProjectItem>()
                         .FirstOrDefault(m => m.Name.Equals(layoutName, StringComparison.CurrentCultureIgnoreCase));
@@ -1811,29 +1818,15 @@ namespace bagis_pro
             PdfPage winterPage = winterDocument.Pages[0];
             seasonalPrecipOutputDocument.AddPage(winterPage);
             File.Delete(GetFullPdfFileName(Constants.FILE_EXPORT_MAP_WINTER_PRECIPITATION_PDF));
-            foreach (var strFileName in Constants.FILE_EXPORT_MAPS_SEASONAL_PRECIP_CONTRIB)
+            if (File.Exists(GetFullPdfFileName(Constants.FILE_EXPORT_SEASONAL_PRECIP_DISTRIBUTION_PDF)))
             {
-                string fullPath = GetFullPdfFileName(strFileName);
-                if (File.Exists(fullPath))
-                {
-                    PdfDocument inputDocument = PdfReader.Open(fullPath, PdfDocumentOpenMode.Import);
-                    // Iterate pages
-                    int count = inputDocument.PageCount;
-                    for (idx = 0; idx < count; idx++)
-                    {
-                        // Get the page from the external document...
-                        PdfPage page = inputDocument.Pages[idx];
-                        seasonalPrecipOutputDocument.AddPage(page);
-                    }
-                    File.Delete(fullPath);
-                }
+                PdfDocument inputDocument = PdfReader.Open(GetFullPdfFileName(Constants.FILE_EXPORT_SEASONAL_PRECIP_DISTRIBUTION_PDF),
+                    PdfDocumentOpenMode.Import);
+                PdfPage page = inputDocument.Pages[0];
+                seasonalPrecipOutputDocument.AddPage(page);
+                File.Delete(GetFullPdfFileName(Constants.FILE_EXPORT_SEASONAL_PRECIP_DISTRIBUTION_PDF));
             }
-            if (idx > 0)
-            {
-                seasonalPrecipOutputDocument.Save(GetFullPdfFileName(Constants.FILE_EXPORT_SEASONAL_PRECIP_DISTRIBUTION_PDF));
-            }
-
-            //}
+            seasonalPrecipOutputDocument.Save(GetFullPdfFileName(Constants.FILE_EXPORT_SEASONAL_PRECIP_DISTRIBUTION_PDF));
             foreach (string strFileName in arrAllFiles)
             {
                 string fullPath = GetFullPdfFileName(strFileName);

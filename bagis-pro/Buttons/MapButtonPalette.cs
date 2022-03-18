@@ -390,82 +390,33 @@ namespace bagis_pro.Buttons
         }
     }
 
-    internal class MapButtonPalette_BtnSeasonalPrecipContribSQ1 : Button
+    internal class MapButtonPalette_BtnSeasonalPrecipContrib : Button
     {
         protected override async void OnClick()
         {
             try
             {
                 Module1.Current.MapFinishedLoading = false;
-                int idxSQ1 = 0;
-                string strAnalysisGdb = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis);
-                await MapTools.UpdateMapAsync(strAnalysisGdb, Constants.FILES_SEASON_PRECIP_CONTRIB[idxSQ1], Module1.Current.DisplayedSeasonalPrecipContribMap,
-                    Constants.LAYER_NAMES_SEASON_PRECIP_CONTRIB[idxSQ1], "SEASONAL PRECIP CONTRIBUTION: DEC, JAN, & FEB", "% Annual Precipitation", true, Constants.FILE_EXPORT_MAPS_SEASONAL_PRECIP_CONTRIB[idxSQ1]);
-                Module1.Current.MapFinishedLoading = true;
-            }
-            catch (Exception e)
-            {
-                MessageBox.Show("Unable to display Seasonal Precipitation Q1 map!!" + e.Message, "BAGIS-PRO");
-            }
-        }
-    }
+                Layout oLayout = await MapTools.GetDefaultLayoutAsync(Constants.MAPS_SEASONAL_PRECIP_LAYOUT);
+                if (oLayout != null)
+                {
+                    foreach (var pane in FrameworkApplication.Panes)
+                    {
+                        if (!(pane is ILayoutPane layoutPane))  //if not a layout view, continue to the next pane    
+                            continue;
+                        if (layoutPane.LayoutView.Layout == oLayout) //if there is a match, activate the view  
+                        {
+                            (layoutPane as Pane).Activate();
+                        }
+                    }
+                }
 
-    internal class MapButtonPalette_BtnSeasonalPrecipContribSQ2 : Button
-    {
-        protected override async void OnClick()
-        {
-            try
-            {
-                Module1.Current.MapFinishedLoading = false;
-                int idxSQ2 = 1;
-                string strAnalysisGdb = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis);
-                await MapTools.UpdateMapAsync(strAnalysisGdb, Constants.FILES_SEASON_PRECIP_CONTRIB[idxSQ2], Module1.Current.DisplayedSeasonalPrecipContribMap,
-                    Constants.LAYER_NAMES_SEASON_PRECIP_CONTRIB[idxSQ2], "SEASONAL PRECIP CONTRIBUTION: MAR, APR, & MAY", "% Annual Precipitation", true, Constants.FILE_EXPORT_MAPS_SEASONAL_PRECIP_CONTRIB[idxSQ2]);
                 Module1.Current.MapFinishedLoading = true;
+                Module1.Current.DisplayedMap = Constants.FILE_EXPORT_SEASONAL_PRECIP_DISTRIBUTION_PDF;
             }
             catch (Exception e)
             {
-                MessageBox.Show("Unable to display Seasonal Precipitation Q2 map!!" + e.Message, "BAGIS-PRO");
-            }
-        }
-    }
-
-    internal class MapButtonPalette_BtnSeasonalPrecipContribSQ3 : Button
-    {
-        protected override async void OnClick()
-        {
-            try
-            {
-                Module1.Current.MapFinishedLoading = false;
-                int idxSQ3 = 2;
-                string strAnalysisGdb = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis);
-                await MapTools.UpdateMapAsync(strAnalysisGdb, Constants.FILES_SEASON_PRECIP_CONTRIB[idxSQ3], Module1.Current.DisplayedSeasonalPrecipContribMap,
-                    Constants.LAYER_NAMES_SEASON_PRECIP_CONTRIB[idxSQ3], "SEASONAL PRECIP CONTRIBUTION: JUN, JUL, & AUG", "% Annual Precipitation", true, Constants.FILE_EXPORT_MAPS_SEASONAL_PRECIP_CONTRIB[idxSQ3]);
-                Module1.Current.MapFinishedLoading = true;
-            }
-            catch (Exception e)
-            {
-                MessageBox.Show("Unable to display Seasonal Precipitation Q3 map!!" + e.Message, "BAGIS-PRO");
-            }
-        }
-    }
-
-    internal class MapButtonPalette_BtnSeasonalPrecipContribSQ4 : Button
-    {
-        protected override async void OnClick()
-        {
-            try
-            {
-                Module1.Current.MapFinishedLoading = false;
-                int idxSQ4 = 3;
-                string strAnalysisGdb = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis);
-                await MapTools.UpdateMapAsync(strAnalysisGdb, Constants.FILES_SEASON_PRECIP_CONTRIB[idxSQ4], Module1.Current.DisplayedSeasonalPrecipContribMap,
-                    Constants.LAYER_NAMES_SEASON_PRECIP_CONTRIB[idxSQ4], "SEASONAL PRECIP CONTRIBUTION: SEP, OCT, & NOV", "% Annual Precipitation", true, Constants.FILE_EXPORT_MAPS_SEASONAL_PRECIP_CONTRIB[idxSQ4]);
-                Module1.Current.MapFinishedLoading = true;
-            }
-            catch (Exception e)
-            {
-                MessageBox.Show("Unable to display Seasonal Precipitation Q4 map!!" + e.Message, "BAGIS-PRO");
+                MessageBox.Show("Unable to display Seasonal Precipitation map!!" + e.Message, "BAGIS-PRO");
             }
         }
     }

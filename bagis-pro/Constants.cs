@@ -19,6 +19,7 @@ namespace bagis_pro
         public const string MAPS_AOI_LOCATION_MAP_FRAME_NAME = "AOI Location Map Frame";
         public const string MAPS_SNODAS_LAYOUT = "SNODAS Layout";
         public const string MAPS_SNODAS_DELTA_LAYOUT = "SNODAS Delta Layout";
+        public const string MAPS_SEASONAL_PRECIP_LAYOUT = "Seasonal Precipitation Layout";
         public const string MAPS_AOI_BOUNDARY = "AOI Boundary";
         public const string MAPS_STREAMS = "AOI Streams";
         public const string MAPS_ACCESS_ROADS = "Access Roads";
@@ -108,8 +109,6 @@ namespace bagis_pro
         public const string FILE_EXPORT_MAP_ASPECT_PDF = "map_aspect.pdf";
         public const string FILE_EXPORT_MAP_SLOPE_PDF = "map_slope.pdf";
         public const string FILE_EXPORT_MAP_SNODAS_SWE_PDF = "map_snodas_swe.pdf";
-        public static readonly string[] FILE_EXPORT_MAPS_SEASONAL_PRECIP_CONTRIB = new string[] { "map_seasonal_precip_q1.pdf", "map_seasonal_precip_q2.pdf", "map_seasonal_precip_q3.pdf",
-                                                                                                  "map_seasonal_precip_q4.pdf"};
         public static readonly string[] FILE_EXPORT_OVERVIEW_FILES = new string[] { FILE_TITLE_PAGE_PDF, FILE_DATA_SOURCES_PDF, FILE_EXPORT_MAP_AOI_LOCATION_PDF, FILE_SITES_TABLE_PDF };
         public static readonly string[] FILE_EXPORT_ASPECT_FILES = new string[] { FILE_EXPORT_MAP_ASPECT_PDF, FILE_EXPORT_CHART_ASPECT_PDF };
         public static readonly string[] FILE_EXPORT_SLOPE_FILES = new string[] { FILE_EXPORT_MAP_SLOPE_PDF, FILE_EXPORT_CHART_SLOPE_PDF };
@@ -154,7 +153,7 @@ namespace bagis_pro
           FILE_EXPORT_MAP_SNOTEL_AND_SCOS_PDF, FILE_EXPORT_MAP_PRECIPITATION_PDF, FILE_EXPORT_CHART_ELEV_PRECIP_CORR_PDF,
           FILE_EXPORT_MAP_PRECIPITATION_CONTRIBUTION_PDF, FILE_EXPORT_CHART_AREA_ELEV_PRECIP_SITE_PDF,
           FILE_EXPORT_CHART_PRECIP_REPRESENT_PDF, FILE_EXPORT_MAP_CRITICAL_PRECIPITATION_ZONES_PDF, FILE_EXPORT_TABLE_PRECIP_REPRESENT_PDF,
-          FILE_EXPORT_MAPS_SEASONAL_PRECIP_CONTRIB[0], FILE_EXPORT_SNODAS_SWE_PDF, FILE_EXPORT_SNODAS_SWE_DELTA_PDF, FILE_EXPORT_MAP_SITES_LOCATION_PDF,
+          FILE_EXPORT_SEASONAL_PRECIP_DISTRIBUTION_PDF, FILE_EXPORT_SNODAS_SWE_PDF, FILE_EXPORT_SNODAS_SWE_DELTA_PDF, FILE_EXPORT_MAP_SITES_LOCATION_PDF,
           FILE_EXPORT_MAP_SITES_LOCATION_PRECIP_PDF, FILE_EXPORT_MAP_SITES_LOCATION__PRECIP_CONTRIB_PDF, FILE_EXPORT_MAP_PUBLIC_LAND_ZONES_PDF,
           FILE_EXPORT_MAP_LAND_OWNERSHIP_PDF, FILE_EXPORT_MAP_FORESTED_LAND_COVER_PDF
         };
@@ -197,6 +196,7 @@ namespace bagis_pro
                                                                           FILE_SNODAS_SWE_APRIL, "swe_may_01", "swe_jun_01", "swe_jul_01"};
         public const string MAPS_SNODAS_MEAN_SWE = "SNODAS Mean SWE";
         public const string MAPS_SNODAS_SWE_DELTA = "SNODAS SWE Delta";
+        public const string MAPS_SEASONAL_PRECIP_CONTRIB = "Precip Contribution";
         public static readonly string[] FILES_SWE_DELTA = new string[] { "swe_dec_minus_nov", "swe_jan_minus_dec", "swe_feb_minus_jan",
                                                                          "swe_mar_minus_feb", "swe_apr_minus_mar", "swe_may_minus_apr",
                                                                          "swe_jun_minus_may", "swe_jul_minus_jun"};
@@ -212,6 +212,7 @@ namespace bagis_pro
         public const string LAYER_FILE_NLCD_LAND_COVER = "nlcd_land_cover.lyrx";
         public const string LAYOUT_FILE_SNODAS_SWE = "SNODAS Layout.pagx";
         public const string LAYOUT_FILE_SNODAS_DELTA_SWE = "SNODAS Delta Layout.pagx";
+        public const string LAYOUT_FILE_SEASONAL_PRECIP_CONTRIB = "Seasonal Precipitation Layout.pagx";
 
 
         public const string FOLDER_MAP_PACKAGE = "maps_publish";
@@ -295,10 +296,7 @@ namespace bagis_pro
                                                                 "MapButtonPalette_BtnSlope_State",
                                                                 "MapButtonPalette_BtnSwe_State",
                                                                 "MapButtonPalette_BtnSweDelta_State",
-                                                                "MapButtonPalette_BtnSeasonalPrecipContribSQ1_State",
-                                                                "MapButtonPalette_BtnSeasonalPrecipContribSQ2_State",
-                                                                "MapButtonPalette_BtnSeasonalPrecipContribSQ3_State",
-                                                                "MapButtonPalette_BtnSeasonalPrecipContribSQ4_State",
+                                                                "MapButtonPalette_BtnSeasonalPrecipContrib_State",
                                                                 "MapButtonPalette_BtnPublicLandOwnership_State",
                                                                 "MapButtonPalette_BtnForestedArea_State",
                                                                 "MapButtonPalette_BtnPublicLandZones_State",

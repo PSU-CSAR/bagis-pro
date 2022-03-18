@@ -43,7 +43,8 @@ namespace bagis_pro
         WINTER_PRECIPITATION,
         LAND_COVER,
         SNODAS_SWE,
-        SNODAS_DELTA
+        SNODAS_DELTA,
+        SEASONAL_PRECIP_CONTRIB
     }
 
     public enum SiteType

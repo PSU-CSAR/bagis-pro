@@ -306,6 +306,12 @@ namespace bagis_pro
                     {
                         Module1.ActivateState("MapButtonPalette_BtnSweDelta_State");
                     }
+                    // load seasonal precipitation map layout
+                    success = await DisplayMultiMapPageLayoutAsync(oAoi.FilePath, idxDefaultMonth, BagisMapType.SEASONAL_PRECIP_CONTRIB);
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        Module1.ActivateState("MapButtonPalette_BtnSeasonalPrecipContrib_State");
+                    }
                     return success;
 
                 }
@@ -3272,12 +3278,13 @@ namespace bagis_pro
 
         public static async Task<BA_ReturnCode> GetSystemFilesFromPortalAsync()
         {
-            string[] documentIds = new string[3];
+            string[] documentIds = new string[4];
             documentIds[0] = (string) Module1.Current.BatchToolSettings.NLCDLandCoverLayerItemId;
             documentIds[1] = (string) Module1.Current.BatchToolSettings.SnodasSweLayoutItemId;
-            documentIds[2] = (string)Module1.Current.BatchToolSettings.SnodasDeltaLayoutItemId;
+            documentIds[2] = (string) Module1.Current.BatchToolSettings.SnodasDeltaLayoutItemId;
+            documentIds[3] = (string) Module1.Current.BatchToolSettings.SeasonalPrecipLayoutItemId;
             string[] layerFileNames = new string[] { Constants.LAYER_FILE_NLCD_LAND_COVER, Constants.LAYOUT_FILE_SNODAS_SWE,
-                Constants.LAYOUT_FILE_SNODAS_DELTA_SWE};
+                Constants.LAYOUT_FILE_SNODAS_DELTA_SWE, Constants.LAYOUT_FILE_SEASONAL_PRECIP_CONTRIB};
             Webservices ws = new Webservices();
             BA_ReturnCode success = BA_ReturnCode.ReadError;
 
@@ -3455,6 +3462,14 @@ namespace bagis_pro
                     layoutFile = Constants.LAYOUT_FILE_SNODAS_DELTA_SWE;
                     mapLayerName = Constants.MAPS_SNODAS_SWE_DELTA;
                     break;
+                case BagisMapType.SEASONAL_PRECIP_CONTRIB:
+                    arrMapFrames = new string[] { "Q1", "Q2", "Q3", "Q4" };
+                    uriLayers = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Analysis));
+                    arrFiles = Constants.FILES_SEASON_PRECIP_CONTRIB;
+                    layoutName = Constants.MAPS_SEASONAL_PRECIP_LAYOUT;
+                    layoutFile = Constants.LAYOUT_FILE_SEASONAL_PRECIP_CONTRIB;
+                    mapLayerName = Constants.MAPS_SEASONAL_PRECIP_CONTRIB;
+                    break;
             }
             bool[] arrExists = new bool[arrMapFrames.Length];
             for (int i = 0; i < arrMapFrames.Length; i++)
@@ -3499,7 +3514,11 @@ namespace bagis_pro
                 case BagisMapType.SNODAS_DELTA:
                     lstInterval = await CalculateSweDeltaZonesAsync(idxDefaultMonth);
                     break;
-             }
+                case BagisMapType.SEASONAL_PRECIP_CONTRIB:
+                    lstInterval = CalculateSeasonalPrecipZones();
+                    break;
+
+            }
 
             //Get the map frame in the layout
             for (int i = 0; i < arrMapFrames.Length; i++)
@@ -3619,9 +3638,11 @@ namespace bagis_pro
                                 await MapTools.SetToClassifyRenderer(oMap, mapLayerName, Constants.FIELD_NAME, lstInterval,
                                     Constants.ARR_SWE_DELTA_COLORS);
                                 break;
+                            case BagisMapType.SEASONAL_PRECIP_CONTRIB:
+                                await MapTools.SetToClassifyRenderer(oMap, mapLayerName, Constants.FIELD_NAME, lstInterval,
+                                    Constants.ARR_SWE_DELTA_COLORS);                       
+                                break;
                         }
-
-
                         // Reset the clip geometry
                         success = await SetClipGeometryAsync(strAoiPath, arrMapFrames[i]);
                     });
