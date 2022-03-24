@@ -853,7 +853,7 @@ namespace bagis_pro
                     pPRISMWorkSheet.PageSetup.PaperSize = oReqPaperSize;    // Required to print on one page
                     pPRISMWorkSheet.PageSetup.PrintGridlines = true;
                     pPRISMWorkSheet.PageSetup.CenterHeader = "&C&\"Arial,Bold\"&16 " + Module1.Current.Aoi.NwccName; ;
-                    string strTitle = "Precipitation Representation Table";
+                    string strTitle = Constants.TITLE_PRECIP_REPRESENTATION;
                     if (!String.IsNullOrEmpty(oAnalysis.PrecipZonesBegin))
                     {
                         strTitle = "Precipitation (" + LookupTables.PrismText[oAnalysis.PrecipZonesBegin] + ") Representation Table";
@@ -1854,9 +1854,9 @@ namespace bagis_pro
             PdfDocument outputDocument = new PdfDocument();
             //Iterate through files
             string[] arrAllFiles = Constants.FILES_EXPORT_WATERSHED_PDF;
-            string blankPage = GeneralTools.GetAddInDirectory() + "\\" + Constants.FILE_BLANK_PAGE_PDF;
             // Create intro section of report
             int idx = 0;
+            int i = 0;
             PdfDocument combineDocument = new PdfDocument();
             foreach (var strFileName in Constants.FILES_EXPORT_WATERSHED_PDF)
             {
@@ -1868,11 +1868,18 @@ namespace bagis_pro
                 }
                 else
                 {
-                    inputDocument = PdfReader.Open(blankPage, PdfDocumentOpenMode.Import);
+                    BA_ReturnCode success = GeneralTools.GenerateBlankPage(Constants.FILES_EXPORT_TITLES[i], fullPath);
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        inputDocument = PdfReader.Open(fullPath, PdfDocumentOpenMode.Import);
+                    }                    
                 }
-                PdfPage page = inputDocument.Pages[idx];
-                combineDocument.AddPage(page);
-
+                if (inputDocument != null)
+                {
+                    PdfPage page = inputDocument.Pages[idx];
+                    combineDocument.AddPage(page);
+                }
+                i++;
             }
             combineDocument.Save(outputPath);
 
@@ -2512,6 +2519,57 @@ namespace bagis_pro
             catch (Exception e)
             {
                 Module1.Current.ModuleLogManager.LogError(nameof(GenerateSitesTableAsync),
+                    "Exception: " + e.Message);
+                MessageBox.Show("An error occurred while trying to parse the XML!! " + e.Message, "BAGIS PRO");
+                return success;
+            }
+            return success;
+        }
+
+        public static BA_ReturnCode GenerateBlankPage(string pageContent, string outputFile)
+        {
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            try
+            {
+                // Initialize the blank page object
+                BA_Objects.BlankPage tPage = new BA_Objects.BlankPage
+                {
+                    page_content = pageContent.ToUpper()
+                };
+
+                string publishFolder = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE;
+                string myXmlFile = publishFolder + "\\" + Constants.FILE_BLANK_PAGE_XML;
+                System.Xml.Serialization.XmlSerializer writer = new System.Xml.Serialization.XmlSerializer(tPage.GetType());
+                using (FileStream fs = File.Create(myXmlFile))
+                {
+                    writer.Serialize(fs, tPage);
+                }
+
+                // Process the sites table page through the xsl template
+                string myStyleSheet = GeneralTools.GetAddInDirectory() + "\\" + Constants.FILE_BLANK_PAGE_XSL;
+                XPathDocument myXPathDoc = new XPathDocument(myXmlFile);
+                XslCompiledTransform myXslTrans = new XslCompiledTransform();
+                myXslTrans.Load(myStyleSheet);
+                string htmlFilePath = publishFolder + "\\" + Constants.FILE_BLANK_PAGE_HTML;
+                using (XmlTextWriter myWriter = new XmlTextWriter(htmlFilePath, null))
+                {
+                    myXslTrans.Transform(myXPathDoc, null, myWriter);
+                }
+
+                // Convert the sites table to PDF
+                if (File.Exists(htmlFilePath))
+                {
+                    PdfSharp.Pdf.PdfDocument sitesPageDoc = TheArtOfDev.HtmlRenderer.PdfSharp.PdfGenerator.GeneratePdf(File.ReadAllText(htmlFilePath),
+                        PdfSharp.PageSize.Letter);
+                    sitesPageDoc.Save(outputFile);
+                }
+                Module1.Current.ModuleLogManager.LogDebug(nameof(GenerateBlankPage),
+                    "Blank page " + outputFile + "  created!!");
+                success = BA_ReturnCode.Success;
+            }
+            catch (Exception e)
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(GenerateBlankPage),
                     "Exception: " + e.Message);
                 MessageBox.Show("An error occurred while trying to parse the XML!! " + e.Message, "BAGIS PRO");
                 return success;

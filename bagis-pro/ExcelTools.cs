@@ -686,7 +686,7 @@ namespace bagis_pro
             //Insert Title
             myChart.HasTitle = true;
             myChart.HasLegend = true;
-            myChart.ChartTitle.Caption = "Area-Elevation, Precipitation  and Site Distribution";
+            myChart.ChartTitle.Caption = Constants.TITLE_AREA_ELEV_PRECIP_SITE;
             myChart.ChartTitle.Font.Bold = true;
             //Set Chart Type and Data Range
             myChart.ChartType = Microsoft.Office.Interop.Excel.XlChartType.xlXYScatter;
@@ -1004,7 +1004,7 @@ namespace bagis_pro
             myChart.ClearToMatchStyle();
             // Set Title
             myChart.HasTitle = true;
-            myChart.ChartTitle.Caption = "Slope Distribution";
+            myChart.ChartTitle.Caption = Constants.TITLE_SLOPE;
             myChart.ChartTitle.Font.Bold = true;
             // Set Position and Location
             myChart.Parent.Left = leftPosition;
@@ -1165,7 +1165,7 @@ namespace bagis_pro
             myChart.ClearToMatchStyle();
             // Set Title
             myChart.HasTitle = true;
-            myChart.ChartTitle.Caption = "Aspect Distribution";
+            myChart.ChartTitle.Caption = Constants.TITLE_ASPECT;
             myChart.ChartTitle.Font.Bold = true;
             // Set Position and Location
             myChart.Parent.Left = leftPosition;

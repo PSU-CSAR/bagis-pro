@@ -146,6 +146,10 @@ namespace bagis_pro
         public const string FILE_EXPORT_SEASONAL_PRECIP_DISTRIBUTION_PDF = "seasonal_precip_distribution.pdf";
         public const string FILE_EXPORT_MAP_AOI_LOCATION_PDF = "map_aoi_location.pdf";
         public const string FILE_EXPORT_LAND_COVER_PDF = "land_cover.pdf";
+
+        // List of files in the watershed PDF map package and the order in which they will be assembled
+        // Any changes to members or order of this array need to have a corresponding update to FILES_EXPORT_TITLES
+        // FILES_EXPORT_TITLES is used to manage the content of filler pages if a document is missing
         public static string[] FILES_EXPORT_WATERSHED_PDF = new string[]
         { FILE_TITLE_PAGE_PDF, FILE_DATA_SOURCES_PDF, FILE_EXPORT_MAP_AOI_LOCATION_PDF, FILE_SITES_TABLE_PDF,
           FILE_EXPORT_MAP_ELEV_PDF, FILE_EXPORT_LAND_COVER_PDF, FILE_EXPORT_MAP_ASPECT_PDF, FILE_EXPORT_CHART_ASPECT_PDF,
@@ -153,17 +157,18 @@ namespace bagis_pro
           FILE_EXPORT_MAP_SNOTEL_AND_SCOS_PDF, FILE_EXPORT_MAP_PRECIPITATION_PDF, FILE_EXPORT_CHART_ELEV_PRECIP_CORR_PDF,
           FILE_EXPORT_MAP_PRECIPITATION_CONTRIBUTION_PDF, FILE_EXPORT_CHART_AREA_ELEV_PRECIP_SITE_PDF,
           FILE_EXPORT_CHART_PRECIP_REPRESENT_PDF, FILE_EXPORT_MAP_CRITICAL_PRECIPITATION_ZONES_PDF, FILE_EXPORT_TABLE_PRECIP_REPRESENT_PDF,
-          FILE_EXPORT_SEASONAL_PRECIP_DISTRIBUTION_PDF, FILE_EXPORT_SNODAS_SWE_PDF, FILE_EXPORT_SNODAS_SWE_DELTA_PDF, FILE_EXPORT_MAP_SITES_LOCATION_PDF,
+          FILE_EXPORT_MAP_WINTER_PRECIPITATION_PDF, FILE_EXPORT_SEASONAL_PRECIP_DISTRIBUTION_PDF, FILE_EXPORT_SNODAS_SWE_PDF,
+          FILE_EXPORT_SNODAS_SWE_DELTA_PDF, FILE_EXPORT_MAP_SITES_LOCATION_PDF,
           FILE_EXPORT_MAP_SITES_LOCATION_PRECIP_PDF, FILE_EXPORT_MAP_SITES_LOCATION__PRECIP_CONTRIB_PDF, FILE_EXPORT_MAP_PUBLIC_LAND_ZONES_PDF,
           FILE_EXPORT_MAP_LAND_OWNERSHIP_PDF, FILE_EXPORT_MAP_FORESTED_LAND_COVER_PDF
         };
-        
+
         // List of files in the watershed chapters PDF map package and the order in which they will be assembled
         public static string[] FILES_EXPORT_WATERSHED_CHAPTERS_PDF = new string[]
         { FILE_EXPORT_OVERVIEW_PDF, FILE_EXPORT_MAP_ELEV_PDF, FILE_EXPORT_LAND_COVER_PDF, FILE_EXPORT_ASPECT_DISTRIBUTION_PDF,
           FILE_EXPORT_SLOPE_DISTRIBUTION_PDF, FILE_EXPORT_SITE_REPRESENTATION_PDF, FILE_EXPORT_PRECIPITATION_DISTRIBUTION_PDF,
           FILE_EXPORT_SEASONAL_PRECIP_DISTRIBUTION_PDF, FILE_EXPORT_SNODAS_SWE_PDF, FILE_EXPORT_POTENTIAL_SITE_ANALYSIS_PDF
-        };    
+        };
         // List of files in the site analysis PDF map package and the order in which they will be assembled
         //public static string[] FILES_EXPORT_SITE_ANALYSIS_PDF = new string[] { FILE_TITLE_PAGE_PDF, FILE_SITES_TABLE_PDF,
         //    FILE_EXPORT_MAP_ROADS_PDF, FILE_EXPORT_MAP_PUBLIC_LAND_ZONES_PDF, FILE_EXPORT_MAP_PUBLIC_LAND_OWNERSHIP_PDF,
@@ -180,6 +185,9 @@ namespace bagis_pro
         public const string FILE_SITES_TABLE_XML = "sites_table.xml";
         public const string FILE_SITES_TABLE_HTML = "sites_table.html";
         public const string FILE_SITES_TABLE_PDF = "sites_table.pdf";
+        public const string FILE_BLANK_PAGE_XSL = "blank_page.xsl";
+        public const string FILE_BLANK_PAGE_XML = "blank_page.xml";
+        public const string FILE_BLANK_PAGE_HTML = "blank_page.html";
         public const string FILE_EXPORT_OVERVIEW_PDF = "overview.pdf";
         public const string FILE_EXPORT_POTENTIAL_SITE_ANALYSIS_PDF = "potential_site_analysis.pdf";
         public const string FILE_BLANK_PAGE_PDF = "blank_page.pdf";
@@ -273,7 +281,7 @@ namespace bagis_pro
         public const string VALUE_NO_DATA = "NoData";
         public const string VALUE_UNKNOWN = "Unknown";
         // BAGIS V3 allowed elevation intervals up to 5000; This tool only allows up to 1000
-        public static readonly short[] VALUES_ELEV_INTERVALS = new short[] { 50, 100, 200, 250, 500, 1000};
+        public static readonly short[] VALUES_ELEV_INTERVALS = new short[] { 50, 100, 200, 250, 500, 1000 };
 
         public const string UNITS_INCHES = "Inches";
         public const string UNITS_MILLIMETERS = "Millimeters";
@@ -327,6 +335,43 @@ namespace bagis_pro
         public static int EXCEL_CHART_DESCR_HEIGHT = 80;
         public static int EXCEL_LARGE_CHART_WIDTH = 800;
         public static int EXCEL_LARGE_CHART_HEIGHT = 500;
+
+        public static string TITLE_ELEVATION = "ELEVATION DISTRIBUTION";
+        public static string TITLE_SLOPE = "Slope Distribution";
+        public static string TITLE_ASPECT = "Aspect Distribution";
+        public static string TITLE_PRECIPITATION = "PRECIPITATION DISTRIBUTION";
+        public static string TITLE_SNOTEL_SITES = "SNOTEL SITES REPRESENTATION";
+        public static string TITLE_SCOS_SITES = "SNOW COURSE SITES REPRESENTATION";
+        public static string TITLE_SNOTEL_SCOS_SITES = "SNOTEL AND SNOW COURSE SITES REPRESENTATION";
+        public static string TITLE_ROADS_AND_TRIBAL = "ROADS, FEDERAL NON-WILDERNESS & TRIBAL LAND";
+        public static string TITLE_FORESTED_LAND_COVER = "FORESTED LAND COVER";
+        public static string TITLE_POTENTIAL_SITE_LOC = "POTENTIAL SITE LOCATIONS";
+        public static string TITLE_SUBBASIN_ANNUAL_PRECIP_CONTRIB = "SUBBASIN ANNUAL PRECIPITATION CONTRIBUTION";
+        public static string TITLE_CRITICAL_PRECIPITATION = "CRITICAL PRECIPITATION ZONES";
+        public static string TITLE_LOCATION_MAP = "LOCATION MAP";
+        public static string TITLE_PUBLIC_LAND_OWNER = "PUBLIC LAND OWNERSHIP";
+        public static string TITLE_WINTER_PRECIP = "WINTER PRECIPITATION";
+        public static string TITLE_LAND_COVER = "LAND COVER";
+        public static string TITLE_ELEV_PRECIP_CORR = "Elevation Precipitation";
+        public static string TITLE_AREA_ELEV_PRECIP_SITE = "Area-Elevation, Precipitation and Site Distribution";
+        public static string TITLE_PRECIP_REPRESENTATION = "Precipitation Representation Table";
+        // The following 3 titles are maintained in their respective layout files
+        public static string TITLE_SEASONAL_PRECIP_CONTRIB = "SEASONAL PRECIPITATION CONTRIBUTION MAPS";
+        public static string TITLE_SNODAS_MEAN_SWE = "SNODAS MEAN SWE MAPS";
+        public static string TITLE_SNODAS_MEAN_SWE_DELTA = "SNODAS MEAN SWE DELTA MAPS";
+
+        public static string[] FILES_EXPORT_TITLES = new string[]
+        { "Title Page", "Data Sources Table", TITLE_LOCATION_MAP, "Active Sites Table",
+          TITLE_ELEVATION + " MAP", TITLE_LAND_COVER + " MAP", TITLE_ASPECT + " MAP", TITLE_ASPECT + " CHART",
+          TITLE_SLOPE + " MAP", TITLE_SLOPE + " CHART", TITLE_SNOTEL_SITES + " MAP", TITLE_SCOS_SITES + " MAP",
+          TITLE_SNOTEL_SCOS_SITES + " MAP", TITLE_PRECIPITATION + " MAP", TITLE_ELEV_PRECIP_CORR + " CHART",
+          TITLE_SUBBASIN_ANNUAL_PRECIP_CONTRIB + " MAP", TITLE_AREA_ELEV_PRECIP_SITE + " CHART",
+          TITLE_AREA_ELEV_PRECIP_SITE + " (CUMULATIVE) CHART", TITLE_CRITICAL_PRECIPITATION + " MAP", TITLE_PRECIP_REPRESENTATION,
+          TITLE_WINTER_PRECIP + " MAP", TITLE_SEASONAL_PRECIP_CONTRIB, TITLE_SNODAS_MEAN_SWE, TITLE_SNODAS_MEAN_SWE_DELTA, TITLE_POTENTIAL_SITE_LOC + " MAP",
+          TITLE_POTENTIAL_SITE_LOC + " PRECIPITATION MAP", TITLE_POTENTIAL_SITE_LOC + " PRECIP CONTRIB MAP", TITLE_ROADS_AND_TRIBAL + " MAP",
+          TITLE_PUBLIC_LAND_OWNER + " MAP", TITLE_FORESTED_LAND_COVER + " MAP" };
+
+
 
         public static int[,] ARR_SWE_COLORS = new int[,] {
             {163,255,115,255},  // green

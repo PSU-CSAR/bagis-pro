@@ -8,7 +8,7 @@
 
   <xsl:template match="/ExportTitlePage">
     <html xmlns="http://www.w3.org/1999/xhtml">
-
+      <head>
       <style type="text/css">
         .style1
         {
@@ -38,9 +38,11 @@
         text-align: center;
         font-family: Arial, Helvetica, sans-serif;
         }
-
+        <title>
+          <xsl:value-of select="report_title"/>
+        </title>
       </style>
-  <head/>
+  </head>
   <body>
     <div class="style2">
       <xsl:value-of select="report_title"/>

@@ -8,7 +8,7 @@
 
   <xsl:template match="/ExportTitlePage">
     <html xmlns="http://www.w3.org/1999/xhtml">
-
+      <head>
       <style type="text/css">
         .style1
         {
@@ -40,7 +40,10 @@
         }
 
       </style>
-  <head/>
+        <title>
+          Active Sites in <xsl:value-of select="aoi_name"/>
+        </title>
+  </head>
       <body>
         <div class="style2">
           Active Sites in <xsl:value-of select="aoi_name"/>

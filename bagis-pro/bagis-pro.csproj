@@ -175,6 +175,7 @@
     <Compile Include="BA_Objects\Analysis.cs" />
     <Compile Include="BA_Objects\AnalysisLayer.cs" />
     <Compile Include="BA_Objects\DataSource.cs" />
+    <Compile Include="BA_Objects\BlankPage.cs" />
     <Compile Include="BA_Objects\Interval.cs" />
     <Compile Include="BA_Objects\LoggerManager.cs" />
     <Compile Include="BA_Objects\ExportTitlePage.cs" />
@@ -269,11 +270,11 @@
     <AddInContent Include="DarkImages\GenericButtonPurple16.png" />
     <AddInContent Include="DarkImages\GenericButtonPurple32.png" />
     <AddInContent Include="Images\Weasel.png" />
+    <Content Include="blank_page.xsl">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="NLog.config">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="blank_page.pdf">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <None Include="packages.config" />
   </ItemGroup>

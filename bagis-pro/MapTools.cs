@@ -1682,7 +1682,7 @@ namespace bagis_pro
                     lstLegendLayers.Add(Constants.MAPS_ELEV_ZONE);
 
                     string strDemDisplayUnits = (string)Module1.Current.BatchToolSettings.DemDisplayUnits;
-                    mapDefinition = new BA_Objects.MapDefinition("ELEVATION DISTRIBUTION",
+                    mapDefinition = new BA_Objects.MapDefinition(Constants.TITLE_ELEVATION,
                         "Elevation Units = " + strDemDisplayUnits, Constants.FILE_EXPORT_MAP_ELEV_PDF);
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
@@ -1704,7 +1704,7 @@ namespace bagis_pro
                     }
                     lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
                     lstLegendLayers.Add(Constants.MAPS_SLOPE_ZONE);
-                    mapDefinition = new BA_Objects.MapDefinition("SLOPE DISTRIBUTION",
+                    mapDefinition = new BA_Objects.MapDefinition(Constants.TITLE_SLOPE.ToUpper(),
                         " ", Constants.FILE_EXPORT_MAP_SLOPE_PDF);
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
@@ -1726,7 +1726,7 @@ namespace bagis_pro
                     }
                     lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
                     lstLegendLayers.Add(Constants.MAPS_ASPECT_ZONE);
-                    mapDefinition = new BA_Objects.MapDefinition("ASPECT DISTRIBUTION",
+                    mapDefinition = new BA_Objects.MapDefinition(Constants.TITLE_ASPECT.ToUpper(),
                         " ", Constants.FILE_EXPORT_MAP_ASPECT_PDF);
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
@@ -1748,7 +1748,7 @@ namespace bagis_pro
                     }
                     lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
                     lstLegendLayers.Add(Constants.MAPS_PRISM_ZONE);
-                    string strTitle = "PRECIPITATION DISTRIBUTION";
+                    string strTitle = Constants.TITLE_PRECIPITATION;
                     if (!String.IsNullOrEmpty(oAnalysis.PrecipZonesBegin))
                     {
                         string strPrefix = LookupTables.PrismText[oAnalysis.PrecipZonesBegin].ToUpper();
@@ -1771,7 +1771,7 @@ namespace bagis_pro
                     }                    
                     lstLegendLayers.Add(Constants.MAPS_SNOTEL_REPRESENTED);
                     lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
-                    mapDefinition = new BA_Objects.MapDefinition("SNOTEL SITES REPRESENTATION",
+                    mapDefinition = new BA_Objects.MapDefinition(Constants.TITLE_SNOTEL_SITES,
                         " ", Constants.FILE_EXPORT_MAP_SNOTEL_PDF);
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
@@ -1788,7 +1788,7 @@ namespace bagis_pro
                     }
                     lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE_REPRESENTED);
                     lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
-                    mapDefinition = new BA_Objects.MapDefinition("SNOW COURSE SITES REPRESENTATION",
+                    mapDefinition = new BA_Objects.MapDefinition(Constants.TITLE_SCOS_SITES,
                         " ", Constants.FILE_EXPORT_MAP_SCOS_PDF);
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
@@ -1810,7 +1810,7 @@ namespace bagis_pro
                     }
                     lstLegendLayers.Add(Constants.MAPS_ALL_SITES_REPRESENTED);
                     lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
-                    mapDefinition = new BA_Objects.MapDefinition("SNOTEL AND SNOW COURSE SITES REPRESENTATION",
+                    mapDefinition = new BA_Objects.MapDefinition(Constants.TITLE_SNOTEL_SCOS_SITES,
                         " ", Constants.FILE_EXPORT_MAP_SNOTEL_AND_SCOS_PDF);
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
@@ -1835,7 +1835,7 @@ namespace bagis_pro
                     lstLegendLayers.Add(Constants.MAPS_FEDERAL_LAND_ZONES);
                     lstLegendLayers.Add(Constants.MAPS_ACCESS_ROADS);
                     lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
-                    mapDefinition = new BA_Objects.MapDefinition("ACCESS ROADS AND FEDERAL NON-WILDERNESS LAND",
+                    mapDefinition = new BA_Objects.MapDefinition(Constants.TITLE_ROADS_AND_TRIBAL,
                         " ", Constants.FILE_EXPORT_MAP_PUBLIC_LAND_ZONES_PDF);
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
@@ -1857,7 +1857,7 @@ namespace bagis_pro
                     }
                     lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
                     lstLegendLayers.Add(Constants.MAPS_FORESTED_LAND_COVER);
-                    mapDefinition = new BA_Objects.MapDefinition("FORESTED LAND COVER",
+                    mapDefinition = new BA_Objects.MapDefinition(Constants.TITLE_FORESTED_LAND_COVER,
                         " ", Constants.FILE_EXPORT_MAP_FORESTED_LAND_COVER_PDF);
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
@@ -1880,7 +1880,7 @@ namespace bagis_pro
                     lstLegendLayers.Add(Constants.MAPS_SITES_LOCATION);
                     lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
                     lstLegendLayers.Add(Constants.MAPS_ELEV_ZONE);
-                    mapDefinition = new BA_Objects.MapDefinition("POTENTIAL SITE LOCATIONS",
+                    mapDefinition = new BA_Objects.MapDefinition(Constants.TITLE_POTENTIAL_SITE_LOC,
                         " ", Constants.FILE_EXPORT_MAP_SITES_LOCATION_PDF);
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
@@ -1903,7 +1903,7 @@ namespace bagis_pro
                     lstLegendLayers.Add(Constants.MAPS_SITES_LOCATION);
                     lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
                     lstLegendLayers.Add(Constants.MAPS_PRISM_ZONE);
-                    mapDefinition = new BA_Objects.MapDefinition("POTENTIAL SITE LOCATIONS",
+                    mapDefinition = new BA_Objects.MapDefinition(Constants.TITLE_POTENTIAL_SITE_LOC,
                         " ", Constants.FILE_EXPORT_MAP_SITES_LOCATION_PRECIP_PDF);
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
@@ -1926,7 +1926,7 @@ namespace bagis_pro
                     lstLegendLayers.Add(Constants.MAPS_SITES_LOCATION);
                     lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
                     lstLegendLayers.Add(Constants.MAPS_PRECIPITATION_CONTRIBUTION);
-                    mapDefinition = new BA_Objects.MapDefinition("POTENTIAL SITE LOCATIONS",
+                    mapDefinition = new BA_Objects.MapDefinition(Constants.TITLE_POTENTIAL_SITE_LOC,
                         " ", Constants.FILE_EXPORT_MAP_SITES_LOCATION__PRECIP_CONTRIB_PDF);
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
@@ -1948,7 +1948,7 @@ namespace bagis_pro
                     }
                     lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
                     lstLegendLayers.Add(Constants.MAPS_PRECIPITATION_CONTRIBUTION);
-                    mapDefinition = new BA_Objects.MapDefinition("SUBBASIN ANNUAL PRECIPITATION CONTRIBUTION",
+                    mapDefinition = new BA_Objects.MapDefinition(Constants.TITLE_SUBBASIN_ANNUAL_PRECIP_CONTRIB,
                         "Units = Acre Feet", Constants.FILE_EXPORT_MAP_PRECIPITATION_CONTRIBUTION_PDF);
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
@@ -1972,7 +1972,7 @@ namespace bagis_pro
                     lstLegendLayers.Add(Constants.MAPS_CRITICAL_PRECIPITATION_ZONES);
                     lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
                     lstLegendLayers.Add(Constants.MAPS_ELEV_ZONE);
-                    mapDefinition = new BA_Objects.MapDefinition("CRITICAL PRECIPITATION ZONES",
+                    mapDefinition = new BA_Objects.MapDefinition(Constants.TITLE_CRITICAL_PRECIPITATION,
                         " ", Constants.FILE_EXPORT_MAP_CRITICAL_PRECIPITATION_ZONES_PDF);
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
@@ -1995,7 +1995,7 @@ namespace bagis_pro
                     }
                     lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
                     lstLegendLayers.Add(Constants.MAPS_LAND_OWNERSHIP);
-                    mapDefinition = new BA_Objects.MapDefinition("PUBLIC LAND OWNERSHIP",
+                    mapDefinition = new BA_Objects.MapDefinition(Constants.TITLE_PUBLIC_LAND_OWNER,
                         " ", Constants.FILE_EXPORT_MAP_LAND_OWNERSHIP_PDF);
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
@@ -2017,7 +2017,7 @@ namespace bagis_pro
                     }
                     lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
                     lstLegendLayers.Add(Constants.MAPS_WINTER_PRECIPITATION);
-                    strTitle = "WINTER PRECIPITATION";
+                    strTitle = Constants.TITLE_WINTER_PRECIP;
                     if (!String.IsNullOrEmpty(oAnalysis.WinterStartMonth))
                     {
                         string strSuffix = " (" + oAnalysis.WinterStartMonth.ToUpper() + " - " + 
@@ -2046,7 +2046,7 @@ namespace bagis_pro
                     }
                     lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
                     lstLegendLayers.Add(Constants.MAPS_LAND_COVER);
-                    mapDefinition = new BA_Objects.MapDefinition("LAND COVER",
+                    mapDefinition = new BA_Objects.MapDefinition(Constants.TITLE_LAND_COVER,
                         " ", Constants.FILE_EXPORT_LAND_COVER_PDF);
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
@@ -2857,7 +2857,7 @@ namespace bagis_pro
                 if (textBox != null)
                 {
                     CIMTextGraphic graphic = (CIMTextGraphic)textBox.GetGraphic();
-                    graphic.Text = "LOCATION MAP";
+                    graphic.Text = Constants.TITLE_LOCATION_MAP;
                     textBox.SetGraphic(graphic);
                 }
 
