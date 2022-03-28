@@ -7,7 +7,7 @@
              xmlns:extensions="clr-namespace:ArcGIS.Desktop.Extensions;assembly=ArcGIS.Desktop.Extensions"
              mc:Ignorable="d" 
              d:DesignHeight="300"
-             d:DataContext="{Binding Path=ui.DockpaneLayersViewModel}" Width="259.509">
+             d:DataContext="{Binding Path=ui.DockpaneLayersViewModel}" Width="325">
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -120,18 +120,18 @@
                       IsChecked="{Binding ReclipRoads_Checked}"/>
         </DockPanel>
         <DockPanel Grid.Row="6" Grid.Column="0"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
-            <CheckBox x:Name="chkPublicLands" Content="Public Lands" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,0,0,0" IsChecked="{Binding PublicLands_Checked}" IsEnabled="False" />
+            <CheckBox x:Name="chkLandOwnership" Content="Land Ownership" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,0,0,0" IsChecked="{Binding LandOwnership_Checked}" IsEnabled="False" />
         </DockPanel>
         <DockPanel Grid.Row="6" Grid.Column="1"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
-            <TextBox x:Name="txtPublicLands" HorizontalAlignment="Right" TextWrapping="NoWrap"  Width="50" Text="{Binding PublicLandsBufferDistance}" Height="20" TextAlignment="Right" Margin="5,0,0,0" IsEnabled="True"/>
+            <TextBox x:Name="txtLandOwnership" HorizontalAlignment="Right" TextWrapping="NoWrap"  Width="50" Text="{Binding LandOwnershipBufferDistance}" Height="20" TextAlignment="Right" Margin="5,0,0,0" IsEnabled="True"/>
         </DockPanel>
         <DockPanel Grid.Row="6" Grid.Column="2"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
-            <ComboBox Name="cboPublicLandsBufferUnits" SelectedItem="{Binding PublicLandsBufferUnits}" HorizontalAlignment="Center" 
+            <ComboBox Name="cboLandOwnershipBufferUnits" SelectedItem="{Binding LandOwnershipBufferUnits}" HorizontalAlignment="Center" 
                       ItemsSource="{Binding LstUnits}" VerticalAlignment="Center" Width="75" Height="15" />
         </DockPanel>
         <DockPanel Grid.Row="6" Grid.Column="3"  LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
-            <CheckBox x:Name="chkReclipPublicLands" Content="" HorizontalAlignment="Center"  Height="14" VerticalAlignment="Center" IsEnabled="True"
-                      IsChecked="{Binding ReclipPublicLands_Checked}"/>
+            <CheckBox x:Name="chkReclipLandOwnership" Content="" HorizontalAlignment="Center"  Height="14" VerticalAlignment="Center" IsEnabled="True"
+                      IsChecked="{Binding ReclipLandOwnership_Checked}"/>
         </DockPanel>
         <!--<CheckBox x:Name="chkVegetation" Grid.Column="0"  Grid.Row="7" Content="Vegetation" HorizontalAlignment="Left"  Height="14" VerticalAlignment="Center" IsEnabled="False"
                       Margin="5,0,0,0" IsChecked="{Binding Vegetation_Checked}"/>

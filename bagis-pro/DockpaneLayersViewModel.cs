@@ -78,10 +78,10 @@ namespace bagis_pro
         private string _roadsBufferDistance = "";
         private string _roadsBufferUnits = "";
         private bool _reclipRoads_Checked = false;
-        private bool _publicLands_Checked = false;
-        private string _publicLandsBufferDistance = "";
-        private string _publicLandsBufferUnits = "";
-        private bool _reclipPublicLands_Checked = false;
+        private bool _landOwnership_Checked = false;
+        private string _landOwnershipBufferDistance = "";
+        private string _landOwnershipUnits = "";
+        private bool _reclipLandOwnership_Checked = false;
         private bool _landCover_Checked = false;
         private string _landCoverBufferDistance = "";
         private string _landCoverBufferUnits = "";
@@ -273,39 +273,39 @@ namespace bagis_pro
             }
         }
 
-        public bool PublicLands_Checked
+        public bool LandOwnership_Checked
         {
-            get { return _publicLands_Checked; }
+            get { return _landOwnership_Checked; }
             set
             {
-                SetProperty(ref _publicLands_Checked, value, () => PublicLands_Checked);
+                SetProperty(ref _landOwnership_Checked, value, () => LandOwnership_Checked);
             }
         }
 
-        public string PublicLandsBufferDistance
+        public string LandOwnershipBufferDistance
         {
-            get { return _publicLandsBufferDistance; }
+            get { return _landOwnershipBufferDistance; }
             set
             {
-                SetProperty(ref _publicLandsBufferDistance, value, () => PublicLandsBufferDistance);
+                SetProperty(ref _landOwnershipBufferDistance, value, () => LandOwnershipBufferDistance);
             }
         }
 
-        public string PublicLandsBufferUnits
+        public string LandOwnershipBufferUnits
         {
-            get { return _publicLandsBufferUnits; }
+            get { return _landOwnershipUnits; }
             set
             {
-                SetProperty(ref _publicLandsBufferUnits, value, () => PublicLandsBufferUnits);
+                SetProperty(ref _landOwnershipUnits, value, () => LandOwnershipBufferUnits);
             }
         }
 
-        public bool ReclipPublicLands_Checked
+        public bool ReclipLandOwnership_Checked
         {
-            get { return _reclipPublicLands_Checked; }
+            get { return _reclipLandOwnership_Checked; }
             set
             {
-                SetProperty(ref _reclipPublicLands_Checked, value, () => ReclipPublicLands_Checked);
+                SetProperty(ref _reclipLandOwnership_Checked, value, () => ReclipLandOwnership_Checked);
             }
         }
 
@@ -398,11 +398,12 @@ namespace bagis_pro
             Roads_Checked = false;
             RoadsBufferDistance = "";
             ReclipRoads_Checked = false;
-            PublicLands_Checked = false;
-            PublicLandsBufferDistance = "";
-            ReclipPublicLands_Checked = false;
+            LandOwnership_Checked = false;
+            LandOwnershipBufferDistance = "";
+            ReclipLandOwnership_Checked = false;
+            LandCover_Checked = false;
+            LandCoverBufferDistance = "";
             ReclipLandCover_Checked = false;
-
         }
 
         public ICommand CmdClipLayers
@@ -412,13 +413,13 @@ namespace bagis_pro
                 return new RelayCommand(async () => {
                     // Create from template
                     await ClipLayersAsync(ReclipSwe_Checked, ReclipPrism_Checked, ReclipSNOTEL_Checked, 
-                        ReclipSnowCos_Checked, ReclipRoads_Checked, _reclipPublicLands_Checked, _reclipLandCover_Checked);
+                        ReclipSnowCos_Checked, ReclipRoads_Checked, _reclipLandOwnership_Checked, _reclipLandCover_Checked);
                 });
             }
         }
 
         private async Task ClipLayersAsync(bool clipSwe, bool clipPrism, bool clipSnotel, bool clipSnowCos,
-            bool clipRoads, bool clipPublicLands, bool clipLandcover)
+            bool clipRoads, bool clipLandOwnership, bool clipLandcover)
         {
             try
             {
@@ -430,7 +431,7 @@ namespace bagis_pro
 
                 if (clipSwe == false && clipPrism == false && 
                     clipSnotel == false && clipSnowCos == false && clipRoads == false &&
-                    clipPublicLands == false && clipLandcover == false)
+                    clipLandOwnership == false && clipLandcover == false)
                 {
                     MessageBox.Show("No layers selected to clip !!", "BAGIS-PRO");
                     return;
@@ -537,24 +538,24 @@ namespace bagis_pro
                     }
                     else
                     {
-                        MessageBox.Show("An error occurred while clipping the roads. Check the log file!!", "BAGIS-PRO");
+                        Module1.Current.ModuleLogManager.LogError(nameof(ClipLayersAsync), "An error occurred while clipping the roads!");
                     }
                 }
 
-                if (clipPublicLands)
+                if (clipLandOwnership)
                 {
                     string strOutputFc = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, true)
-                        + Constants.FILE_PUBLIC_LAND;
-                    success = await AnalysisTools.ClipFeatureLayerAsync(Module1.Current.Aoi.FilePath, strOutputFc, Constants.DATA_TYPE_PUBLIC_LAND,
-                        PublicLandsBufferDistance, PublicLandsBufferUnits);
+                        + Constants.FILE_LAND_OWNERSHIP;
+                    success = await AnalysisTools.ClipFeatureLayerAsync(Module1.Current.Aoi.FilePath, strOutputFc, Constants.DATA_TYPE_LAND_OWNERSHIP,
+                        LandOwnershipBufferDistance, LandOwnershipBufferUnits);
                     if (success == BA_ReturnCode.Success)
                     {
-                        layersPane.ReclipPublicLands_Checked = false;
-                        layersPane.PublicLands_Checked = true;
+                        layersPane.ReclipLandOwnership_Checked = false;
+                        layersPane.LandOwnership_Checked = true;
                     }
                     else
                     {
-                        MessageBox.Show("An error occurred while clipping the public lands. Check the log file!!", "BAGIS-PRO");
+                        Module1.Current.ModuleLogManager.LogError(nameof(ClipLayersAsync), "An error occurred while clipping the land ownership layer!");
                     }
                 }
 
@@ -568,7 +569,7 @@ namespace bagis_pro
                     }
                     else
                     {
-                        MessageBox.Show("An error occurred while clipping the land cover layer. Check the log file!!", "BAGIS-PRO");
+                         Module1.Current.ModuleLogManager.LogError(nameof(ClipLayersAsync), "An error occurred while clipping the land cover layer!");
                     }
                 }
 

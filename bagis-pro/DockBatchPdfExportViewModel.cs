@@ -555,8 +555,8 @@ namespace bagis_pro
 
                         // Clip public lands
                         strOutputFc = GeodatabaseTools.GetGeodatabasePath(AoiFolder, GeodatabaseNames.Layers, true)
-                            + Constants.FILE_PUBLIC_LAND;
-                        success = await AnalysisTools.ClipFeatureLayerAsync(AoiFolder, strOutputFc, Constants.DATA_TYPE_PUBLIC_LAND,
+                            + Constants.FILE_LAND_OWNERSHIP;
+                        success = await AnalysisTools.ClipFeatureLayerAsync(AoiFolder, strOutputFc, Constants.DATA_TYPE_LAND_OWNERSHIP,
                             unmanagedBufferDistance, unmanagedBufferUnits);
                         if (success != BA_ReturnCode.Success)
                         {

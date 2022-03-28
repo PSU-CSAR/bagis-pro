@@ -81,7 +81,7 @@ namespace bagis_pro
         public const string FILE_SLOPE = "slope";
         public const string FILE_ASPECT = "aspect";
         public const string FILE_ROADS = "fs_roads";
-        public const string FILE_PUBLIC_LAND = "public_lands";
+        public const string FILE_LAND_OWNERSHIP = "land_ownership";
         public const string FILE_LAND_COVER = "nlcd_land_cover";
         public const string FILE_WATER_BODIES = "water_bodies";
         public const string FILE_PREC_MEAN_ELEV = "precmeanelev";
@@ -273,7 +273,7 @@ namespace bagis_pro
         public const string DATA_TYPE_SNOTEL = "SNOTEL";
         public const string DATA_TYPE_SNOW_COURSE = "Snow Course";
         public const string DATA_TYPE_ROADS = "Roads";
-        public const string DATA_TYPE_PUBLIC_LAND = "Public Land";
+        public const string DATA_TYPE_LAND_OWNERSHIP = "Land Ownership";
         public const string DATA_TYPE_SWE_DELTA = "Snotel SWE Delta";
         public const string DATA_TYPE_LAND_COVER = "Land Cover";
 
@@ -305,7 +305,7 @@ namespace bagis_pro
                                                                 "MapButtonPalette_BtnSwe_State",
                                                                 "MapButtonPalette_BtnSweDelta_State",
                                                                 "MapButtonPalette_BtnSeasonalPrecipContrib_State",
-                                                                "MapButtonPalette_BtnPublicLandOwnership_State",
+                                                                "MapButtonPalette_BtnLandOwnership_State",
                                                                 "MapButtonPalette_BtnForestedArea_State",
                                                                 "MapButtonPalette_BtnPublicLandZones_State",
                                                                 "MapButtonPalette_BtnSitesLocationZone_State",
@@ -349,7 +349,7 @@ namespace bagis_pro
         public static string TITLE_SUBBASIN_ANNUAL_PRECIP_CONTRIB = "SUBBASIN ANNUAL PRECIPITATION CONTRIBUTION";
         public static string TITLE_CRITICAL_PRECIPITATION = "CRITICAL PRECIPITATION ZONES";
         public static string TITLE_LOCATION_MAP = "LOCATION MAP";
-        public static string TITLE_PUBLIC_LAND_OWNER = "PUBLIC LAND OWNERSHIP";
+        public static string TITLE_LAND_OWNERSHIP = "LAND OWNERSHIP";
         public static string TITLE_WINTER_PRECIP = "WINTER PRECIPITATION";
         public static string TITLE_LAND_COVER = "LAND COVER";
         public static string TITLE_ELEV_PRECIP_CORR = "Elevation Precipitation";
@@ -369,7 +369,7 @@ namespace bagis_pro
           TITLE_AREA_ELEV_PRECIP_SITE + " (CUMULATIVE) CHART", TITLE_CRITICAL_PRECIPITATION + " MAP", TITLE_PRECIP_REPRESENTATION,
           TITLE_WINTER_PRECIP + " MAP", TITLE_SEASONAL_PRECIP_CONTRIB, TITLE_SNODAS_MEAN_SWE, TITLE_SNODAS_MEAN_SWE_DELTA, TITLE_POTENTIAL_SITE_LOC + " MAP",
           TITLE_POTENTIAL_SITE_LOC + " PRECIPITATION MAP", TITLE_POTENTIAL_SITE_LOC + " PRECIP CONTRIB MAP", TITLE_ROADS_AND_TRIBAL + " MAP",
-          TITLE_PUBLIC_LAND_OWNER + " MAP", TITLE_FORESTED_LAND_COVER + " MAP" };
+          TITLE_LAND_OWNERSHIP + " MAP", TITLE_FORESTED_LAND_COVER + " MAP" };
 
 
 

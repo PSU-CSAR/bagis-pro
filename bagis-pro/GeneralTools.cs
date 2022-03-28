@@ -297,7 +297,7 @@ namespace bagis_pro
                 IDictionary<string, BA_Objects.DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
                 string[] keys = { Constants.DATA_TYPE_SWE, Constants.DATA_TYPE_PRECIPITATION, Constants.DATA_TYPE_SNOTEL,
                                   Constants.DATA_TYPE_SNOW_COURSE, Constants.DATA_TYPE_ROADS,
-                                  Constants.DATA_TYPE_PUBLIC_LAND, Constants.DATA_TYPE_LAND_COVER};
+                                  Constants.DATA_TYPE_LAND_OWNERSHIP, Constants.DATA_TYPE_LAND_COVER};
                 //if (rType.Equals(ReportType.SiteAnalysis))
                 //{
                 //    Array.Resize(ref keys, 4);
@@ -1351,15 +1351,15 @@ namespace bagis_pro
                     layersPane.SnowCosBufferUnits = layersPane.UnmanagedBufferBufferUnits;
                     layersPane.RoadsBufferDistance = layersPane.UnmanagedBufferDistance;
                     layersPane.RoadsBufferUnits = layersPane.UnmanagedBufferBufferUnits;
-                    layersPane.PublicLandsBufferDistance = layersPane.UnmanagedBufferDistance;
-                    layersPane.PublicLandsBufferUnits = layersPane.UnmanagedBufferBufferUnits;
+                    layersPane.LandOwnershipBufferDistance = layersPane.UnmanagedBufferDistance;
+                    layersPane.LandOwnershipBufferUnits = layersPane.UnmanagedBufferBufferUnits;
                     layersPane.LandCoverBufferDistance = layersPane.UnmanagedBufferDistance;
                     layersPane.LandCoverBufferUnits = layersPane.UnmanagedBufferBufferUnits;
 
                     // Update data status for files in layers.gdb
                     string[] arrCheckLayers = new string[] { Constants.FILE_SNODAS_SWE_APRIL, Constants.FILE_SNOTEL,
                                                              Constants.FILE_SNOW_COURSE, Constants.FILE_ROADS,
-                                                             Constants.FILE_PUBLIC_LAND,
+                                                             Constants.FILE_LAND_OWNERSHIP,
                                                              Constants.FILE_LAND_COVER};
                     bool[] arrLayerExists = new bool[] { false, false, false, false, false, false};
                     gdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers, false));
@@ -1454,14 +1454,14 @@ namespace bagis_pro
                                             if (!string.IsNullOrEmpty(bufferUnits))
                                                 layersPane.RoadsBufferUnits = bufferUnits;
                                             break;
-                                        case Constants.FILE_PUBLIC_LAND:
-                                            layersPane.PublicLands_Checked = true;
+                                        case Constants.FILE_LAND_OWNERSHIP:
+                                            layersPane.LandOwnership_Checked = true;
                                             if (!string.IsNullOrEmpty(bufferDistance))
                                             {
-                                                layersPane.PublicLandsBufferDistance = bufferDistance;
+                                                layersPane.LandOwnershipBufferDistance = bufferDistance;
                                             }
                                             if (!string.IsNullOrEmpty(bufferUnits))
-                                                layersPane.PublicLandsBufferUnits = bufferUnits;
+                                                layersPane.LandOwnershipBufferUnits = bufferUnits;
                                             break;
                                         case Constants.FILE_LAND_COVER:
                                             layersPane.LandCover_Checked = true;

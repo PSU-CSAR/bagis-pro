@@ -185,7 +185,7 @@ namespace bagis_pro.Buttons
         }
     }
 
-    internal class MapButtonPalette_BtnPublicLandOwnership : Button
+    internal class MapButtonPalette_BtnLandOwnership : Button
     {
         protected override async void OnClick()
         {

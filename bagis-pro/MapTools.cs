@@ -88,12 +88,12 @@ namespace bagis_pro
 
                     //add Land Ownership Layer
                     string strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers, true) +
-                        Constants.FILE_PUBLIC_LAND;
+                        Constants.FILE_LAND_OWNERSHIP;
                     Uri uri = new Uri(strPath);
                     success = await MapTools.AddPolygonLayerUniqueValuesAsync(uri, "ArcGIS Colors", "Basic Random",
                         new string[] { "AGBUR" }, false, false, 30.0F, Constants.MAPS_LAND_OWNERSHIP);
                     if (success.Equals(BA_ReturnCode.Success))
-                        Module1.ActivateState("MapButtonPalette_BtnPublicLandOwnership_State");
+                        Module1.ActivateState("MapButtonPalette_BtnLandOwnership_State");
 
                     //add aoi boundary to map
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi, true) +
@@ -1995,7 +1995,7 @@ namespace bagis_pro
                     }
                     lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
                     lstLegendLayers.Add(Constants.MAPS_LAND_OWNERSHIP);
-                    mapDefinition = new BA_Objects.MapDefinition(Constants.TITLE_PUBLIC_LAND_OWNER,
+                    mapDefinition = new BA_Objects.MapDefinition(Constants.TITLE_LAND_OWNERSHIP,
                         " ", Constants.FILE_EXPORT_MAP_LAND_OWNERSHIP_PDF);
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;

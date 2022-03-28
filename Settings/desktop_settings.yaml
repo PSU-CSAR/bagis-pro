@@ -36,7 +36,7 @@ bagis-pro:
     - layerType: Roads
       description: Sample USFS roads for BAGIS-PRO development
       uri: https://services.arcgis.com/SXbDpmb7xQkk44JV/arcgis/rest/services/Sample_Forest_Service_Roads/FeatureServer/0
-    - layerType: Public Land
+    - layerType: Land Ownership
       description: Federal land GIS layer, used as an input for SNOTEL site selection model in BAGIS
       uri: https://services.arcgis.com/SXbDpmb7xQkk44JV/arcgis/rest/services/BAGIS_Public_Land/FeatureServer/0
     - layerType: Vegetation Type

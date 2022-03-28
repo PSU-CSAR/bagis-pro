@@ -2194,18 +2194,17 @@ namespace bagis_pro
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
             Uri uriLayers = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers));
-            bool bExists = await GeodatabaseTools.FeatureClassExistsAsync(uriLayers, Constants.FILE_PUBLIC_LAND);
+            bool bExists = await GeodatabaseTools.FeatureClassExistsAsync(uriLayers, Constants.FILE_LAND_OWNERSHIP);
             if (!bExists)
             {
-                MessageBox.Show("The public land layer is missing. Clip the public land layer before creating the public land analysis layer!!", "BAGIS-PRO");
                 Module1.Current.ModuleLogManager.LogDebug(nameof(GetFederalNonWildernessLandsAsync),
-                    "Unable to extract public lands because public_lands layer does not exist. Process stopped!!");
+                    "Unable to extract federal non-wilderness lands because land_ownership layer does not exist. Process stopped!!");
                 return success;
             }
-            string strInputFc = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers, true) + Constants.FILE_PUBLIC_LAND;
+            string strInputFc = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers, true) + Constants.FILE_LAND_OWNERSHIP;
             Uri uriFull = new Uri(strInputFc);
             // Check for attribute before trying to run query
-            bExists = await GeodatabaseTools.AttributeExistsAsync(uriLayers, Constants.FILE_PUBLIC_LAND, Constants.FIELD_SUITABLE_PUBLIC);
+            bExists = await GeodatabaseTools.AttributeExistsAsync(uriLayers, Constants.FILE_LAND_OWNERSHIP, Constants.FIELD_SUITABLE_PUBLIC);
             if (bExists)
             {
                 await QueuedTask.Run(() =>
@@ -2238,7 +2237,7 @@ namespace bagis_pro
             else
             {
                 Module1.Current.ModuleLogManager.LogError(nameof(GetFederalNonWildernessLandsAsync),
-                    Constants.FIELD_SUITABLE_PUBLIC + " missing from " + Constants.FILE_PUBLIC_LAND + 
+                    Constants.FIELD_SUITABLE_PUBLIC + " missing from " + Constants.FILE_LAND_OWNERSHIP + 
                     " . Federal non-wilderness lands layer cannot be created!");
                 success = BA_ReturnCode.ReadError;
             }

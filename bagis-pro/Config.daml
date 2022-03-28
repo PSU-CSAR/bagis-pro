@@ -79,7 +79,7 @@
           <button refID="MapButtonPalette_BtnSitesLocationPrecip" />
           <button refID="MapButtonPalette_BtnSitesLocationPrecipContrib" />
           <button refID="MapButtonPalette_BtnCriticalPrecipZone" />
-          <button refID="MapButtonPalette_BtnPublicLandOwnership" />
+          <button refID="MapButtonPalette_BtnLandOwnership" />
           <button refID="MapButtonPalette_BtnSeasonalPrecipContrib" />
           <button refID="MapButtonPalette_BtnAoiLocation" />
           <button refID="MapButtonPalette_BtnLandCover" />
@@ -204,7 +204,7 @@
           <tooltip heading="Display Map">
             ToolTip<disabledText /></tooltip>
         </button>
-        <button id="MapButtonPalette_BtnPublicLandOwnership" caption="Public Land Ownership" className="bagis_pro.Buttons.MapButtonPalette_BtnPublicLandOwnership" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnPublicLandOwnership_Condition" keytip="B47">
+        <button id="MapButtonPalette_BtnLandOwnership" caption="Land Ownership" className="bagis_pro.Buttons.MapButtonPalette_BtnLandOwnership" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnLandOwnership_Condition" keytip="B47">
           <tooltip heading="Display Map">
             ToolTip<disabledText /></tooltip>
         </button>
@@ -373,8 +373,8 @@
     <insertCondition id="MapButtonPalette_BtnCriticalPrecipZone_Condition" caption="Map Disabled">
       <state id="MapButtonPalette_BtnCriticalPrecipZone_State" />
     </insertCondition>
-    <insertCondition id="MapButtonPalette_BtnPublicLandOwnership_Condition" caption="Map Disabled">
-      <state id="MapButtonPalette_BtnPublicLandOwnership_State" />
+    <insertCondition id="MapButtonPalette_BtnLandOwnership_Condition" caption="Map Disabled">
+      <state id="MapButtonPalette_BtnLandOwnership_State" />
     </insertCondition>
     <insertCondition id="MapButtonPalette_BtnSweDelta_Condition" caption="Map Disabled">
       <state id="MapButtonPalette_BtnSweDelta_State" />
