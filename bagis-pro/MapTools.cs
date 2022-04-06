@@ -112,7 +112,7 @@ namespace bagis_pro
                         Constants.FILE_SNOTEL_REPRESENTED;
                     uri = new Uri(strPath);
                     CIMColor fillColor = CIMColor.CreateRGBColor(255, 0, 0, 70);    //Red with 30% transparency
-                    success = await MapTools.AddPolygonLayerAsync(uri, fillColor, false, Constants.MAPS_SNOTEL_REPRESENTED);
+                    success = await MapTools.AddPolygonLayerAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, fillColor, false, Constants.MAPS_SNOTEL_REPRESENTED);
                     if (success.Equals(BA_ReturnCode.Success))
                         Module1.ActivateState("MapButtonPalette_BtnSnotel_State");
 
@@ -120,7 +120,7 @@ namespace bagis_pro
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
                         Constants.FILE_SCOS_REPRESENTED;
                     uri = new Uri(strPath);
-                    success = await MapTools.AddPolygonLayerAsync(uri, fillColor, false, Constants.MAPS_SNOW_COURSE_REPRESENTED);
+                    success = await MapTools.AddPolygonLayerAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, fillColor, false, Constants.MAPS_SNOW_COURSE_REPRESENTED);
                     if (success.Equals(BA_ReturnCode.Success))
                         Module1.ActivateState("MapButtonPalette_BtnSnowCourse_State");
 
@@ -128,7 +128,7 @@ namespace bagis_pro
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
                         Constants.FILE_SITES_REPRESENTED;
                     uri = new Uri(strPath);
-                    success = await MapTools.AddPolygonLayerAsync(uri, fillColor, false, Constants.MAPS_ALL_SITES_REPRESENTED);
+                    success = await MapTools.AddPolygonLayerAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, fillColor, false, Constants.MAPS_ALL_SITES_REPRESENTED);
                     if (success.Equals(BA_ReturnCode.Success))
                         Module1.ActivateState("MapButtonPalette_BtnSitesAll_State");
 
@@ -136,7 +136,7 @@ namespace bagis_pro
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
                         Constants.FILE_CRITICAL_PRECIP_ZONE;
                     uri = new Uri(strPath);
-                    success = await MapTools.AddPolygonLayerAsync(uri, fillColor, false, Constants.MAPS_CRITICAL_PRECIPITATION_ZONES);
+                    success = await MapTools.AddPolygonLayerAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, fillColor, false, Constants.MAPS_CRITICAL_PRECIPITATION_ZONES);
                     if (success.Equals(BA_ReturnCode.Success))
                         Module1.ActivateState("MapButtonPalette_BtnCriticalPrecipZone_State");
 
@@ -144,7 +144,7 @@ namespace bagis_pro
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
                         Constants.FILE_PUBLIC_LAND_ZONE;
                     uri = new Uri(strPath);
-                    success = await MapTools.AddPolygonLayerAsync(uri, fillColor, false, Constants.MAPS_FEDERAL_LAND_ZONES);
+                    success = await MapTools.AddPolygonLayerAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, fillColor, false, Constants.MAPS_FEDERAL_LAND_ZONES);
                     if (success.Equals(BA_ReturnCode.Success))
                         Module1.ActivateState("MapButtonPalette_BtnPublicLandZones_State");
 
@@ -152,7 +152,7 @@ namespace bagis_pro
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
                         Constants.FILE_FORESTED_ZONE;
                     uri = new Uri(strPath);
-                    success = await MapTools.AddPolygonLayerAsync(uri, fillColor, false, Constants.MAPS_FORESTED_LAND_COVER);
+                    success = await MapTools.AddPolygonLayerAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, fillColor, false, Constants.MAPS_FORESTED_LAND_COVER);
                     if (success.Equals(BA_ReturnCode.Success))
                         Module1.ActivateState("MapButtonPalette_BtnForestedArea_State");
 
@@ -160,7 +160,7 @@ namespace bagis_pro
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
                         Constants.FILE_SITES_LOCATION_ZONE;
                     uri = new Uri(strPath);
-                    success = await MapTools.AddPolygonLayerAsync(uri, fillColor, false, Constants.MAPS_SITES_LOCATION);
+                    success = await MapTools.AddPolygonLayerAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, fillColor, false, Constants.MAPS_SITES_LOCATION);
                     if (success.Equals(BA_ReturnCode.Success))
                     {
                         Module1.ActivateState("MapButtonPalette_BtnSitesLocationZone_State");
@@ -173,7 +173,7 @@ namespace bagis_pro
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
                         Constants.FILE_WATER_BODIES;
                     uri = new Uri(strPath);
-                    success = await MapTools.AddPolygonLayerAsync(uri, fillColor, true, Constants.MAPS_WATERBODIES);
+                    success = await MapTools.AddPolygonLayerAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, fillColor, true, Constants.MAPS_WATERBODIES);
 
                     // add roads layer
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers, true) +
@@ -454,7 +454,7 @@ namespace bagis_pro
             return BA_ReturnCode.Success;
         }
 
-        public static async Task<BA_ReturnCode> AddPolygonLayerAsync(Uri uri, CIMColor fillColor, bool isVisible, string displayName = "")
+        public static async Task<BA_ReturnCode> AddPolygonLayerAsync(string strDefaultMapName, Uri uri, CIMColor fillColor, bool isVisible, string displayName = "")
         {
             // parse the uri for the folder and file
             string strFileName = null;
@@ -472,8 +472,24 @@ namespace bagis_pro
                 return BA_ReturnCode.ReadError;
             }
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
+
             await QueuedTask.Run(() =>
             {
+                // Remove any existing layers with the same name so we don't add it > once
+                MapProjectItem mpi =
+                    Project.Current.GetItems<MapProjectItem>()
+                    .FirstOrDefault(m => m.Name.Equals(strDefaultMapName, StringComparison.CurrentCultureIgnoreCase));
+                if (mpi != null)
+                {
+                    var map = mpi.GetMap();
+                    Layer oLayer =
+                        map.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(displayName, StringComparison.CurrentCultureIgnoreCase));
+                    if (oLayer != null)
+                    {
+                        map.RemoveLayer(oLayer);
+                    }
+                }
+
                 //Define a simple renderer to symbolize the feature class.
                 var simpleRender = new SimpleRendererDefinition
                 {
@@ -1441,7 +1457,8 @@ namespace bagis_pro
                         int idx = 0;
                         bool bCustomLegend = false;
                         // This flag is used to customize long legends
-                        if (lstLegendLayer.Contains(Constants.MAPS_ELEV_ZONE) || lstLegendLayer.Contains(Constants.MAPS_LAND_COVER))
+                        if (lstLegendLayer.Contains(Constants.MAPS_ELEV_ZONE) || lstLegendLayer.Contains(Constants.MAPS_LAND_COVER)
+                            || lstLegendLayer.Contains(Constants.MAPS_PRECIPITATION_CONTRIBUTION))
                         {
                             bCustomLegend = true;
                         }
@@ -1461,7 +1478,8 @@ namespace bagis_pro
                                     {
                                         legendItem.LabelSymbol.Symbol.SetSize(8);
                                         legendItem.LayerNameSymbol.Symbol.SetSize(12);
-                                        if (legendItem.Name.Equals(Constants.MAPS_LAND_COVER) || legendItem.Name.Equals(Constants.MAPS_ELEV_ZONE))
+                                        if (legendItem.Name.Equals(Constants.MAPS_LAND_COVER) || legendItem.Name.Equals(Constants.MAPS_ELEV_ZONE) ||
+                                            legendItem.Name.Equals(Constants.MAPS_PRECIPITATION_CONTRIBUTION))
                                         {
                                             legendItem.PatchHeight = 8;
                                             legendItem.PatchWidth = 14;
@@ -3340,7 +3358,7 @@ namespace bagis_pro
         {
             CIMColor fillColor = CIMColor.CreateRGBColor(255, 0, 0, 70);    //Red with 30% transparency
             string strLayerPath = uriAnalysis.LocalPath + "\\" + Constants.FILE_CRITICAL_PRECIP_ZONE;
-            BA_ReturnCode success = await MapTools.AddPolygonLayerAsync(new Uri(strLayerPath), fillColor, false, Constants.MAPS_CRITICAL_PRECIPITATION_ZONES);
+            BA_ReturnCode success = await MapTools.AddPolygonLayerAsync(Constants.MAPS_DEFAULT_MAP_NAME, new Uri(strLayerPath), fillColor, false, Constants.MAPS_CRITICAL_PRECIPITATION_ZONES);
 
             if (success == BA_ReturnCode.Success)
             {
