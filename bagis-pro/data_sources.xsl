@@ -25,6 +25,7 @@
         {
         font-family: Arial, Helvetica, sans-serif;
         padding: 1px 4px;
+        font-weight: bold;
         }
         .style4
         {
@@ -50,6 +51,11 @@
                   </td>
                 </tr>
                 <xsl:for-each select="data_sources/DataSource">
+                  <tr>
+                    <td class="style3">
+                      <xsl:value-of select="heading" />
+                    </td>
+                  </tr>
                     <tr>
                       <td class="style4">
                         <xsl:value-of select="description" />
@@ -61,10 +67,13 @@
                     </tr>
                 </xsl:for-each>
                 <tr>
+                  <td class="style3">
+                    Station Runoff Volume
+                  </td>
+                </tr>
+                <tr>
                   <td class="style4">
                     <xsl:value-of select="annual_runoff_data_descr" />
-                    <br/>
-                    Data provided by NWCC based on AWDB data in <xsl:value-of select="annual_runoff_data_year" />
                   </td>
                 </tr>
               </table>

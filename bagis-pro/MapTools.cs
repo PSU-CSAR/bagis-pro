@@ -1439,6 +1439,14 @@ namespace bagis_pro
                     {
                         CIMLegendItem[] arrTempItems = new CIMLegendItem[legend.Items.Length];
                         int idx = 0;
+                        bool bCustomLegend = false;
+                        // This flag is used to customize long legends
+                        if (lstLegendLayer.Contains(Constants.MAPS_ELEV_ZONE) || lstLegendLayer.Contains(Constants.MAPS_LAND_COVER))
+                        {
+                            bCustomLegend = true;
+                        }
+
+
                         //  Add items that we want to display to temporary array
                         foreach (var strName in lstLegendLayer)
                         {
@@ -1449,6 +1457,21 @@ namespace bagis_pro
                                 {
                                     // Set the visibility
                                     legendItem.IsVisible = true;
+                                    if (bCustomLegend)
+                                    {
+                                        legendItem.LabelSymbol.Symbol.SetSize(8);
+                                        legendItem.LayerNameSymbol.Symbol.SetSize(12);
+                                        if (legendItem.Name.Equals(Constants.MAPS_LAND_COVER) || legendItem.Name.Equals(Constants.MAPS_ELEV_ZONE))
+                                        {
+                                            legendItem.PatchHeight = 8;
+                                            legendItem.PatchWidth = 14;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        legendItem.LabelSymbol.Symbol.SetSize(10);
+                                        legendItem.LayerNameSymbol.Symbol.SetSize(14);
+                                    }
                                     // Add the item to the temporary array
                                     arrTempItems[idx] = legendItem;
                                     // Increment the index
@@ -1472,7 +1495,7 @@ namespace bagis_pro
 
                         // Set legend fitting strategy to accommodate longer classification list if elevation
                         // Otherwise adjust columns and size to make it fit
-                        if (lstLegendLayer.Contains(Constants.MAPS_ELEV_ZONE) || lstLegendLayer.Contains(Constants.MAPS_LAND_COVER))
+                        if (bCustomLegend)
                         {
                             legend.FittingStrategy = LegendFittingStrategy.AdjustFrame;
                         }

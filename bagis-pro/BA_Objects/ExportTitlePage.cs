@@ -35,8 +35,8 @@ namespace bagis_pro.BA_Objects
         public double represented_all_sites_percent;
         public string annual_runoff_ratio;
         public string annual_runoff_data_descr;
-        public string annual_runoff_data_year;
         public string report_title;
+        public string roads_buffer;
         public Site[] all_sites;
         public DataSource[] data_sources;
 

@@ -241,6 +241,7 @@ namespace bagis_pro
                     }
                 }
 
+                string strBagisTag = "";
                 if (aoiArea > 0)
                 {
                     gdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false));
@@ -250,7 +251,7 @@ namespace bagis_pro
                         pctSnotelRepresented = Math.Round(repArea / aoiArea * 100);
                         hasSnotelSites = true;
                         string strPath = sitesGdbUri.LocalPath + "\\" + Constants.FILE_SNOTEL;
-                        string strBagisTag = await GeneralTools.GetBagisTagAsync(strPath, Constants.META_TAG_XPATH);
+                        strBagisTag = await GeneralTools.GetBagisTagAsync(strPath, Constants.META_TAG_XPATH);
                         if (!String.IsNullOrEmpty(strBagisTag))
                         {
                             string strBufferDistance = GeneralTools.GetValueForKey(strBagisTag, Constants.META_TAG_BUFFER_DISTANCE, ';');
@@ -267,7 +268,7 @@ namespace bagis_pro
                         pctSnowCourseRepresented = Math.Round(repArea / aoiArea * 100);
                         hasScosSites = true;
                         string strPath = sitesGdbUri.LocalPath + "\\" + Constants.FILE_SNOW_COURSE;
-                        string strBagisTag = await GeneralTools.GetBagisTagAsync(strPath, Constants.META_TAG_XPATH);
+                        strBagisTag = await GeneralTools.GetBagisTagAsync(strPath, Constants.META_TAG_XPATH);
                         if (!String.IsNullOrEmpty(strBagisTag))
                         {
                             string strBufferDistance = GeneralTools.GetValueForKey(strBagisTag, Constants.META_TAG_BUFFER_DISTANCE, ';');
@@ -293,6 +294,20 @@ namespace bagis_pro
                     }
                 }
 
+                // Read roads buffer settings
+                string roadsBufferDistance = (string)Module1.Current.BatchToolSettings.RoadsAnalysisBufferDistance;
+                string roadsBufferUnits = (string)Module1.Current.BatchToolSettings.RoadsAnalysisBufferUnits;
+                Uri uriAnalysis = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis));
+                string strRoadsPath = uriAnalysis.LocalPath + "\\" + Constants.FILE_ROADS_ZONE;
+                if (await GeodatabaseTools.FeatureClassExistsAsync(uriAnalysis, Constants.FILE_ROADS_ZONE))
+                {
+                    strBagisTag = await GeneralTools.GetBagisTagAsync(strRoadsPath, Constants.META_TAG_XPATH);
+                    if (!string.IsNullOrEmpty(strBagisTag))
+                    {
+                        roadsBufferDistance = GeneralTools.GetValueForKey(strBagisTag, Constants.META_TAG_BUFFER_DISTANCE, ';');
+                        roadsBufferUnits = GeneralTools.GetValueForKey(strBagisTag, Constants.META_TAG_XUNIT_VALUE, ';');
+                    }
+                }
                 //Printing data sources
                 IDictionary<string, BA_Objects.DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
                 string[] keys = { Constants.DATA_TYPE_SWE, Constants.DATA_TYPE_PRECIPITATION, Constants.DATA_TYPE_SNOTEL,
@@ -355,8 +370,8 @@ namespace bagis_pro
                     represented_all_sites_percent = pctAllSitesRepresented,
                     annual_runoff_ratio = strRunoffRatio,
                     annual_runoff_data_descr = annualRunoffDataDescr,
-                    annual_runoff_data_year = annualRunoffDataYear,
                     report_title = strReportTitle,
+                    roads_buffer = roadsBufferDistance + " " + roadsBufferUnits,
                     date_created = DateTime.Now
                 };
                 if (lstDataSources.Count > 0)

@@ -2204,18 +2204,18 @@ namespace bagis_pro
             string strInputFc = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers, true) + Constants.FILE_LAND_OWNERSHIP;
             Uri uriFull = new Uri(strInputFc);
             // Check for attribute before trying to run query
-            bExists = await GeodatabaseTools.AttributeExistsAsync(uriLayers, Constants.FILE_LAND_OWNERSHIP, Constants.FIELD_SUITABLE_PUBLIC);
+            bExists = await GeodatabaseTools.AttributeExistsAsync(uriLayers, Constants.FILE_LAND_OWNERSHIP, Constants.FIELD_SUITABLE);
             if (bExists)
             {
                 await QueuedTask.Run(() =>
                 {
                     // Create feature layer so we can use definition query to select public lands
                     var slectionLayer = LayerFactory.Instance.CreateFeatureLayer(uriFull, MapView.Active.Map, 0, "Selection Layer");
-                    slectionLayer.SetDefinitionQuery(Constants.FIELD_SUITABLE_PUBLIC + " = 1");
+                    slectionLayer.SetDefinitionQuery(Constants.FIELD_SUITABLE + " = 1");
                     // Merge features into a single feature for display and analysis
                     var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath);
                     var parameters = Geoprocessing.MakeValueArray(slectionLayer, GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Analysis, true) + Constants.FILE_PUBLIC_LAND_ZONE,
-                        Constants.FIELD_SUITABLE_PUBLIC, "", "MULTI_PART", "DISSOLVE_LINES");
+                        Constants.FIELD_SUITABLE, "", "MULTI_PART", "DISSOLVE_LINES");
                     var gpResult = Geoprocessing.ExecuteToolAsync("Dissolve_management", parameters, environments,
                         CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
                     if (gpResult.Result.IsFailed)
@@ -2237,7 +2237,7 @@ namespace bagis_pro
             else
             {
                 Module1.Current.ModuleLogManager.LogError(nameof(GetFederalNonWildernessLandsAsync),
-                    Constants.FIELD_SUITABLE_PUBLIC + " missing from " + Constants.FILE_LAND_OWNERSHIP + 
+                    Constants.FIELD_SUITABLE + " missing from " + Constants.FILE_LAND_OWNERSHIP + 
                     " . Federal non-wilderness lands layer cannot be created!");
                 success = BA_ReturnCode.ReadError;
             }

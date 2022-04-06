@@ -251,7 +251,7 @@ namespace bagis_pro
         public const string FIELD_UBOUND = "UBOUND";
         public const string FIELD_COUNT = "COUNT";
         public const string FIELD_RASTERVALU = "RASTERVALU";   //Field generated when using BA_ExtractValuesToPoints to populate BA_SELEV from DEM
-        public const string FIELD_SUITABLE_PUBLIC = "Suitable_Public";   //Indicates non-wilderness federal land on the Public Lands layer
+        public const string FIELD_SUITABLE = "Suitable";   //Indicates public and tribal lands
         public const string FIELD_GRID_CODE = "gridcode";   //Value after raster is converted to polygon
         public const string FIELD_RUNOFF_STATION_TRIPLET = "stationtriplet";
         public const string FIELD_VOL_ACRE_FT = "VOL_ACRE_FT";

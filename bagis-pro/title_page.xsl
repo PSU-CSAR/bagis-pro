@@ -33,6 +33,12 @@
         padding-top: 1px;
         padding-left: 10px;
         }
+        .style5
+        {
+        font-family: Arial, Helvetica, sans-serif;
+        padding: 1px 4px;
+        font-weight: bold;
+        }
         .footer {
         width: 100%;
         text-align: center;
@@ -140,7 +146,7 @@
                   <td class="style3"/>
                 </tr>
                 <tr>
-                  <td class="style3">Network Representation And Location Analysis</td>
+                  <td class="style5">Network Representation Analysis</td>
                 </tr>
                   <tr>
                     <td class="style3">
@@ -164,6 +170,19 @@
                   <td class="style3">
                     Represented by both SNOTEL and snow course site(s): <xsl:value-of select="represented_all_sites_percent"/>%
                     <xsl:if test="has_scos_sites = 'true' and has_snotel_sites = 'true'"> (See SNOTEL AND SNOW COURSE SITES REPRESENTATION map)</xsl:if>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="style5">Potential Site Location Analysis</td>
+                </tr>
+                <tr>
+                  <td class="style3">
+                    Potential site location meets the following criteria:
+                    <ul>
+                      <li>on federal non-wilderness or tribal land, AND</li>
+                      <li>on deciduous, evergreen, and mixed forested land, AND</li>
+                      <li>within <xsl:value-of select="roads_buffer"/> of access roads</li>
+                    </ul>
                   </td>
                 </tr>
               </table>
