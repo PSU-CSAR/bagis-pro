@@ -20,30 +20,34 @@ bagis:
 bagis-pro:
   dataSources:
     - layerType: Snotel SWE
-      description: SWE Data Source - Averaged daily SNOw Data Assimilation System (SNODAS) Snow Water Equivalent (SWE) from 2004 to current water year data. See https://www.nohrsc.noaa.gov/ for more information
+      heading: Snow Water Equivalent (SWE)
+      description: SWE Data Source - Averaged daily SNOw Data Assimilation System (SNODAS) Snow Water Equivalent (SWE) from 2004 to current water year data. See https://www.nohrsc.noaa.gov/ for more information.
       uri: http://bagis.geog.pdx.edu/arcgis/services/DAILY_SWE_NORMALS/
       units: Millimeters
     - layerType: Precipitation
-      description: 30-year (1991-2020) monthly/quarterly/annual average precipitation data created by the PRISM Climate Group
+      heading: Precipitation
+      description: 30-year (1991-2020) monthly/quarterly/annual average precipitation data created by the PRISM Climate Group. See https://prism.oregonstate.edu/ for more information.
       uri: http://bagis.geog.pdx.edu/arcgis/services/BAGIS_PRISM_1991_2020/
       units: Inches
     - layerType: SNOTEL
-      description: Active SNOTEL sites
+      heading: Active SNOTEL sites
+      description: Active SNOTEL sites data hosted on Natural Resources Conservation Service (NRCS) National Water and Climate Center (NWCC) Air and Water Database (AWDB). See https://www.nrcs.usda.gov/wps/portal/wcc/home/dataAccessHelp/webService/webServiceTutorial/ for more information.
       uri: https://services.arcgis.com/SXbDpmb7xQkk44JV/arcgis/rest/services/stations_SNTL_ACTIVE/FeatureServer/0
     - layerType: Snow Course
-      description: Active Snow Course stations
+      heading: Active Snow Course sites
+      description: Active Snow Course sites hosted on Natural Resources Conservation Service (NRCS) National Water and Climate Center (NWCC) Air and Water Database (AWDB). See https://www.nrcs.usda.gov/wps/portal/wcc/home/dataAccessHelp/webService/webServiceTutorial/ for more information.
       uri: https://services.arcgis.com/SXbDpmb7xQkk44JV/arcgis/rest/services/stations_SNOW_ACTIVE/FeatureServer/0
     - layerType: Roads
-      description: Sample USFS roads for BAGIS-PRO development
+      heading: Access Roads – for Potential Site Location Analysis
+      description: USFS FSTopo Transportation Line 2020 version. See https://data.fs.usda.gov/geodata/edw/edw_resources/meta/S_USA.FSTopo_Transport_LN.xml for more information.
       uri: https://services.arcgis.com/SXbDpmb7xQkk44JV/arcgis/rest/services/Sample_Forest_Service_Roads/FeatureServer/0
     - layerType: Land Ownership
-      description: Federal land GIS layer, used as an input for SNOTEL site selection model in BAGIS
-      uri: https://services.arcgis.com/SXbDpmb7xQkk44JV/arcgis/rest/services/BAGIS_Public_Land/FeatureServer/0
-    - layerType: Vegetation Type
-      description: 30-meter Landfire Existing Vegetation Type with additional attributes of intcp_snow, intcp_srain, intcp_wrain, and root_depth
-      uri: http://bagis.geog.pdx.edu/arcgis/rest/services/BAGIS_Databin/LF_us_140evt/ImageServer
+      heading: Public Land Ownership – for Potential Site Location Analysis
+      description: Federal non-wilderness and tribal land data based on the 2020 USGS Protected Areas Data (PAD) version 2.1. See https://www.usgs.gov/programs/gap-analysis-project/science/pad-us-data-overview for more information.
+      uri: https://services.arcgis.com/SXbDpmb7xQkk44JV/arcgis/rest/services/Public_and_Tribal_Lands/FeatureServer/0
     - layerType: Land Cover
-      description: 2019 30-meter NLCD Land Cover
+      heading: Land Cover – for Potential Site Location Analysis
+      description: 2019 NLCD Land Cover. See https://www.mrlc.gov for more information.
       uri: http://bagis.geog.pdx.edu/arcgis/rest/services/BAGIS_Databin/NLCD_2019_land_cover/ImageServer
  
 
@@ -71,8 +75,7 @@ bagis-pro:
      CriticalPrecipTotalMaxVolPct: 66.6
      AnnualRunoffItemId: f641bbacceff4c1bb3f9661bd8f9de8d
      NLCDLandCoverLayerItemId: 9f61719bc5314247bda76469362c7554
-     AnnualRunoffDataDescr: Basin Average Annual Naturalized Runoff Volume (1991-2020)
-     AnnualRunoffDataYear: 2022
+     AnnualRunoffDataDescr: Average Annual Naturalized Runoff Volume (1991-2020) data retrieved from Natural Resources Conservation Service (NRCS) National Water and Climate Center (NWCC) Air and Water Database (AWDB) by NWCC in 2022.
      AnnualRunoffDataField: Average_kac_ft_1991_2020
      PrecipContribZones: 9
      MasterAoiList: https://services.arcgis.com/SXbDpmb7xQkk44JV/arcgis/rest/services/master_aoi_list_fs/FeatureServer
