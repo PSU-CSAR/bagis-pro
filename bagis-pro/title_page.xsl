@@ -143,7 +143,10 @@
               </table>
               <table>
                 <tr>
-                  <td class="style3"/>
+                  <td class="style5">&#160;</td>
+                </tr>
+                <tr>
+                  <td class="style5">&#160;</td>
                 </tr>
                 <tr>
                   <td class="style5">Network Representation Analysis</td>
@@ -173,16 +176,26 @@
                   </td>
                 </tr>
                 <tr>
+                  <td class="style5">&#160;</td>
+                </tr>
+                <tr>
+                  <td class="style5">&#160;</td>
+                </tr>
+                <tr>
                   <td class="style5">Potential Site Location Analysis</td>
                 </tr>
                 <tr>
                   <td class="style3">
                     Potential site location meets the following criteria:
-                    <ul>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="style3" style="padding-left: 20px">
                       <li>on federal non-wilderness or tribal land, AND</li>
                       <li>on deciduous, evergreen, and mixed forested land, AND</li>
-                      <li>within <xsl:value-of select="roads_buffer"/> of access roads</li>
-                    </ul>
+                      <li>
+                        within <xsl:value-of select="roads_buffer"/> of access roads
+                      </li>
                   </td>
                 </tr>
               </table>

@@ -144,7 +144,7 @@ namespace bagis_pro
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
                         Constants.FILE_PUBLIC_LAND_ZONE;
                     uri = new Uri(strPath);
-                    success = await MapTools.AddPolygonLayerAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, fillColor, false, Constants.MAPS_FEDERAL_LAND_ZONES);
+                    success = await MapTools.AddPolygonLayerAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, fillColor, false, Constants.MAPS_SUITABLE_LAND_ZONES);
                     if (success.Equals(BA_ReturnCode.Success))
                         Module1.ActivateState("MapButtonPalette_BtnPublicLandZones_State");
 
@@ -806,7 +806,7 @@ namespace bagis_pro
             arrLayerNames[9] = Constants.MAPS_ASPECT_ZONE;
             arrLayerNames[10] = Constants.MAPS_ALL_SITES_REPRESENTED;
             arrLayerNames[11] = Constants.MAPS_PRISM_ZONE;
-            arrLayerNames[12] = Constants.MAPS_FEDERAL_LAND_ZONES;
+            arrLayerNames[12] = Constants.MAPS_SUITABLE_LAND_ZONES;
             arrLayerNames[13] = Constants.MAPS_FORESTED_LAND_COVER;
             arrLayerNames[14] = Constants.MAPS_SITES_LOCATION;
             arrLayerNames[15] = Constants.MAPS_CRITICAL_PRECIPITATION_ZONES;
@@ -1859,7 +1859,7 @@ namespace bagis_pro
                 case BagisMapType.LAND_ZONES:
                     lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_ELEV_ZONE,
-                                                   Constants.MAPS_FEDERAL_LAND_ZONES, Constants.MAPS_ACCESS_ROADS,
+                                                   Constants.MAPS_SUITABLE_LAND_ZONES, Constants.MAPS_ACCESS_ROADS,
                                                    Constants.MAPS_WATERBODIES};
                     lstLegendLayers = new List<string> ();
                     
@@ -1873,7 +1873,7 @@ namespace bagis_pro
                         lstLayers.Add(Constants.MAPS_SNOW_COURSE);
                         lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE);
                     }
-                    lstLegendLayers.Add(Constants.MAPS_FEDERAL_LAND_ZONES);
+                    lstLegendLayers.Add(Constants.MAPS_SUITABLE_LAND_ZONES);
                     lstLegendLayers.Add(Constants.MAPS_ACCESS_ROADS);
                     lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
                     mapDefinition = new BA_Objects.MapDefinition(Constants.TITLE_ROADS_AND_TRIBAL,

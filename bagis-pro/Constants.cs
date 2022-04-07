@@ -33,7 +33,7 @@ namespace bagis_pro
         public const string MAPS_SNOTEL_REPRESENTED = "SNOTEL Rep Area";
         public const string MAPS_SNOW_COURSE_REPRESENTED = "Snow Courses Rep Area";
         public const string MAPS_ALL_SITES_REPRESENTED = "All Sites Rep Area";
-        public const string MAPS_FEDERAL_LAND_ZONES = "Federal Non-Wilderness Land";
+        public const string MAPS_SUITABLE_LAND_ZONES = "Suitable Land Ownership Type";
         public const string MAPS_FORESTED_LAND_COVER = "Forested Land Cover";
         public const string MAPS_SITES_LOCATION = "Meet All Criteria";
         public const string MAPS_CRITICAL_PRECIPITATION_ZONES = "Critical Precipitation";
