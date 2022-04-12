@@ -819,7 +819,6 @@ namespace bagis_pro
                     }
                     catch (Exception e)
                     {
-                        MessageBox.Show("An error occurred while running the Batch PDF Tool!! " + e.Message, "BAGIS PRO");
                         Module1.Current.ModuleLogManager.LogError(nameof(RunImplAsync),
                             e.StackTrace);
                         strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Batch PDF export failed for " +

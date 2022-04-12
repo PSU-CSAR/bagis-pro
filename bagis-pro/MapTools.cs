@@ -712,6 +712,7 @@ namespace bagis_pro
                     textSymbol.SetSize(14); //set font size 
                     lyrDefn.LabelClasses = listLabelClasses.ToArray(); //Set the labelClasses back
                     fLayer.SetDefinition(lyrDefn); //set the layer's definition
+                    success = BA_ReturnCode.Success;
                 }
                 else
                 {
@@ -719,7 +720,6 @@ namespace bagis_pro
                         "Field " + labelField + " is missing from the feature class and cannot be used as a label!");
                 }
             });
-            success = BA_ReturnCode.Success;
             return success;
         }
 
