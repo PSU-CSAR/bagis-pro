@@ -40,8 +40,18 @@ namespace bagis_pro
                 {
                     string strFullPath = strSettingsPath + @"\" + Constants.FOLDER_SETTINGS
                         + @"\" + Constants.FILE_BATCH_TOOL_SETTINGS;
-                    if (!System.IO.File.Exists(strFullPath))
+                    if (!File.Exists(strFullPath))
                     {
+                        if (!Directory.Exists(strSettingsPath + @"\" + Constants.FOLDER_SETTINGS))
+                        {
+                            var dirInfo = Directory.CreateDirectory(strSettingsPath + @"\" + Constants.FOLDER_SETTINGS);
+                            if (dirInfo == null)
+                            {
+                                MessageBox.Show("Unable to create BAGIS settings folder in " + strSettingsPath +
+                                    "! Process stopped.");
+                                return;
+                            }
+                        }
                         Webservices ws = new Webservices();
                         var success = Task.Run(() => ws.DownloadBatchSettingsAsync(Module1.Current.DefaultEbagisServer,
                             strFullPath));
@@ -846,9 +856,18 @@ namespace bagis_pro
     {
         protected override void OnClick()
         {
-            var layersPane = (DockBatchPdfExportViewModel) FrameworkApplication.DockPaneManager.Find("bagis_pro_DockBatchPdfExport");
+            try
+            {
+                DockBatchPdfExportViewModel.Show();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Unable to show batch pdf export pane! " + ex.Message, "BAGIS-PRO");
+                MessageBox.Show("Stack trace" + ex.StackTrace, "BAGIS-PRO");
+            }
 
-            DockBatchPdfExportViewModel.Show();
+
+            //DockBatchPdfExportViewModel.Show();
         }
     }
 }

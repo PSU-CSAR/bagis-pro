@@ -1498,6 +1498,9 @@ namespace bagis_pro
                         }
                     }
 
+                    // Make sure the default map frame is available, if needed
+                    Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
+
                     // Store current AOI in Module1
                     Module1.Current.Aoi = oAoi;
                 });
@@ -2601,10 +2604,16 @@ namespace bagis_pro
                 string strTempPath = strSettingsPath + @"\" + Constants.FOLDER_SETTINGS;
                 if (!Directory.Exists(strTempPath))
                 {
-                    DirectoryInfo dirInfo = Directory.CreateDirectory(Constants.FOLDER_SETTINGS);
+                    DirectoryInfo dirInfo = Directory.CreateDirectory(strTempPath);
+                    if (dirInfo == null)
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(LoadBatchToolSettings),
+                            "Unable to create BAGIS settings folder in " + strSettingsPath +
+                                    "! Process stopped.");
+                        return BA_ReturnCode.WriteError;
+                    }
                 }
                 strSettingsPath = strTempPath;
-
             }
             // Check to see if batch tool settings are already there
             if (!File.Exists(strSettingsPath + @"\" + Constants.FILE_BATCH_TOOL_SETTINGS))

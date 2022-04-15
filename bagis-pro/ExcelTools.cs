@@ -1475,7 +1475,6 @@ namespace bagis_pro
                 }
                 else
                 {
-                    MessageBox.Show("Warning: Your sites data did not contain enough sites to generate a trendline!", "BAGIS-PRO");
                     Module1.Current.ModuleLogManager.LogError(nameof(CreateRepresentPrecipChart),
                         "Your sites data did not contain enough sites to generate a trendline!");
                 }
