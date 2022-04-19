@@ -1899,6 +1899,21 @@ namespace bagis_pro
                 }
                 i++;
             }
+            // Add appendix if it exists
+            string outputFolder = Path.GetDirectoryName(outputPath);
+            if (File.Exists(outputFolder + "\\" + Constants.FILE_SITES_APPENDIX_PDF))
+            {
+                PdfDocument inputDocument = PdfReader.Open(outputFolder + "\\" + Constants.FILE_SITES_APPENDIX_PDF, 
+                    PdfDocumentOpenMode.Import);
+                int count = inputDocument.PageCount;
+                for (idx = 0; idx < count; idx++)
+                {
+                    // Get the page from the external document...
+                    PdfPage page = inputDocument.Pages[idx];
+                    combineDocument.AddPage(page);
+                }
+                File.Delete(outputFolder + "\\" + Constants.FILE_SITES_APPENDIX_PDF);
+            }
             combineDocument.Save(outputPath);
 
             foreach (var strFileName in Constants.FILES_EXPORT_WATERSHED_PDF)
@@ -2452,16 +2467,35 @@ namespace bagis_pro
                 bool bHasSnowCourse = false;
                 Uri sitesGdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers, false));
                 int intSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_SNOTEL);
+                int intTotalSites = 0;
                 if (intSites > 0)
+                {
                     bHasSnotel = true;
+                    intTotalSites = intSites;
+                }                    
                 intSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_SNOW_COURSE);
                 if (intSites > 0)
+                {
                     bHasSnowCourse = true;
+                    intTotalSites = intTotalSites + intSites;
+                }
+                string publishFolder = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE;
+                string strPublishFile = publishFolder + "\\" + Constants.FILE_SITES_TABLE_PDF;
                 if (bHasSnotel == false && bHasSnowCourse == false)
                 {
                     Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateSitesTableAsync),
                         "No sites found. Sites table will not be created!");
-                    return success;
+                    File.Copy(GeneralTools.GetAddInDirectory() + "\\" + Constants.FILE_NO_SITES, 
+                        strPublishFile, true);
+                    return BA_ReturnCode.Success;
+                }
+                else if (intTotalSites > 25)
+                {
+                    Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateSitesTableAsync),
+                        "AOI contains > 25 sites. Sites table will be generated as an appendix!");
+                    File.Copy(GeneralTools.GetAddInDirectory() + "\\" + Constants.FILE_TOO_MANY_SITES,
+                        strPublishFile, true);
+                    strPublishFile = publishFolder + "\\" + Constants.FILE_SITES_APPENDIX_PDF;
                 }
 
                 // Initialize the title page object
@@ -2504,7 +2538,6 @@ namespace bagis_pro
                 }
                 tPage.site_elev_range_units = siteElevationUnits;
 
-                string publishFolder = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE;
                 string myXmlFile = publishFolder + "\\" + Constants.FILE_SITES_TABLE_XML;
                 System.Xml.Serialization.XmlSerializer writer = new System.Xml.Serialization.XmlSerializer(tPage.GetType());
                 using (FileStream fs = System.IO.File.Create(myXmlFile))
@@ -2528,7 +2561,8 @@ namespace bagis_pro
                 {
                     PdfSharp.Pdf.PdfDocument sitesPageDoc = TheArtOfDev.HtmlRenderer.PdfSharp.PdfGenerator.GeneratePdf(System.IO.File.ReadAllText(htmlFilePath),
                         PdfSharp.PageSize.Letter);
-                    sitesPageDoc.Save(publishFolder + "\\" + Constants.FILE_SITES_TABLE_PDF);
+              
+                    sitesPageDoc.Save(strPublishFile);
                 }
                 Module1.Current.ModuleLogManager.LogDebug(nameof(GenerateSitesTableAsync),
                     "Sites table created!!");
@@ -2538,7 +2572,6 @@ namespace bagis_pro
             {
                 Module1.Current.ModuleLogManager.LogError(nameof(GenerateSitesTableAsync),
                     "Exception: " + e.Message);
-                MessageBox.Show("An error occurred while trying to parse the XML!! " + e.Message, "BAGIS PRO");
                 return success;
             }
             return success;
