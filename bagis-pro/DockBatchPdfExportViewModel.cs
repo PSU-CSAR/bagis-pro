@@ -101,7 +101,7 @@ namespace bagis_pro
         /// Text shown near the top of the DockPane.
         /// </summary>
         private string _heading = "Batch Report Export";
-        private string _aoiFolder;
+        private string _parentFolder;
         private string _settingsFile;
         private string _publisher;
         private string _comments;
@@ -120,12 +120,12 @@ namespace bagis_pro
             }
         }
 
-        public string AoiFolder
+        public string ParentFolder
         {
-            get { return _aoiFolder; }
+            get { return _parentFolder; }
             set
             {
-                SetProperty(ref _aoiFolder, value, () => AoiFolder);
+                SetProperty(ref _parentFolder, value, () => ParentFolder);
             }
         }
 
@@ -220,15 +220,15 @@ namespace bagis_pro
                     bool bOk = ok ?? false;
                     if (bOk)
                     {
-                        AoiFolder = "";
+                        ParentFolder = "";
                         var arrFileNames = aNewFilter.Items;
                         foreach (var item in arrFileNames)
                         {
-                            AoiFolder = item.Path;
+                            ParentFolder = item.Path;
                         }
                     }
 
-                    _strLogFile = AoiFolder + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\" + Constants.FILE_BATCH_LOG;
+                    _strLogFile = ParentFolder + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\" + Constants.FILE_BATCH_LOG;
                     // Make sure the maps_publish folder exists under the selected folder
                     if (!Directory.Exists(Path.GetDirectoryName(_strLogFile)))
                     {
@@ -239,7 +239,7 @@ namespace bagis_pro
                     CmdLogEnabled = File.Exists(_strLogFile);
 
                     Names.Clear();
-                    IList<BA_Objects.Aoi> lstAois = await GeneralTools.GetAoiFoldersAsync(AoiFolder, _strLogFile);
+                    IList<BA_Objects.Aoi> lstAois = await GeneralTools.GetAoiFoldersAsync(ParentFolder, _strLogFile);
                     foreach (var pAoi in lstAois)
                     {
                         Names.Add(pAoi);
@@ -313,7 +313,7 @@ namespace bagis_pro
             // Check for existing map package files and warn user
             if (ArchiveChecked)
             {
-                string[] filePaths = Directory.GetFiles(AoiFolder + "\\" + Constants.FOLDER_MAP_PACKAGE, "*.pdf",
+                string[] filePaths = Directory.GetFiles(ParentFolder + "\\" + Constants.FOLDER_MAP_PACKAGE, "*.pdf",
                              SearchOption.TopDirectoryOnly);
                 if (filePaths.Length > 0)
                 {
@@ -346,10 +346,10 @@ namespace bagis_pro
                 if (Names[idxRow].AoiBatchIsSelected)
                 {
                     int errorCount = 0; // keep track of any non-fatal errors
-                    AoiFolder = Names[idxRow].FilePath;
+                    string aoiFolder = Names[idxRow].FilePath;
                     Names[idxRow].AoiBatchStateText = AoiBatchState.Started.ToString();  // update gui
-                    string[] arrFolders = { AoiFolder + "\\" + Constants.FOLDER_MAPS, AoiFolder + "\\" + Constants.FOLDER_MAP_PACKAGE,
-                                                AoiFolder + "\\" + Constants.FOLDER_LOGS};
+                    string[] arrFolders = { aoiFolder + "\\" + Constants.FOLDER_MAPS, aoiFolder + "\\" + Constants.FOLDER_MAP_PACKAGE,
+                                                aoiFolder + "\\" + Constants.FOLDER_LOGS};
                     foreach (var directory in arrFolders)
                     {
                         if (!Directory.Exists(directory))
@@ -359,11 +359,11 @@ namespace bagis_pro
                     }
 
                     // Set logger to AOI directory
-                    string logFolderName = AoiFolder + "\\" + Constants.FOLDER_LOGS;
+                    string logFolderName = aoiFolder + "\\" + Constants.FOLDER_LOGS;
                     Module1.Current.ModuleLogManager.UpdateLogFileLocation(logFolderName);
 
                     // Set current AOI
-                    BA_Objects.Aoi oAoi = await GeneralTools.SetAoiAsync(AoiFolder);
+                    BA_Objects.Aoi oAoi = await GeneralTools.SetAoiAsync(aoiFolder);
                     if (Module1.Current.CboCurrentAoi != null)
                     {
                         FrameworkApplication.Current.Dispatcher.Invoke(() =>
@@ -397,13 +397,13 @@ namespace bagis_pro
                     }
 
                     // Slope zones
-                    string strLayer = GeodatabaseTools.GetGeodatabasePath(AoiFolder, GeodatabaseNames.Surfaces, true) +
+                    string strLayer = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Surfaces, true) +
                         Constants.FILE_SLOPE;
-                    string strZonesRaster = GeodatabaseTools.GetGeodatabasePath(AoiFolder, GeodatabaseNames.Analysis, true) +
+                    string strZonesRaster = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Analysis, true) +
                         Constants.FILE_SLOPE_ZONE;
-                    string strMaskPath = GeodatabaseTools.GetGeodatabasePath(AoiFolder, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_BUFFERED_VECTOR;
+                    string strMaskPath = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_BUFFERED_VECTOR;
                     IList<BA_Objects.Interval> lstInterval = AnalysisTools.GetSlopeClasses();
-                    success = await AnalysisTools.CalculateZonesAsync(AoiFolder, strLayer,
+                    success = await AnalysisTools.CalculateZonesAsync(aoiFolder, strLayer,
                         lstInterval, strZonesRaster, strMaskPath, "SLOPE");
                     if (success != BA_ReturnCode.Success)
                     {
@@ -411,7 +411,7 @@ namespace bagis_pro
                     }
 
                     // Check for PRISM buffer units
-                    string[] arrPrismBufferInfo = await GeneralTools.QueryBufferDistanceAsync(AoiFolder, GeodatabaseTools.GetGeodatabasePath(AoiFolder, GeodatabaseNames.Aoi),
+                    string[] arrPrismBufferInfo = await GeneralTools.QueryBufferDistanceAsync(aoiFolder, GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Aoi),
                         Constants.FILE_AOI_PRISM_VECTOR, false);
                     string pBufferDistance = arrPrismBufferInfo[0];
                     string pBufferUnits = arrPrismBufferInfo[1];
@@ -419,7 +419,7 @@ namespace bagis_pro
                     // Clip PRISM
                     string strDefaultBufferDistance = (string)Module1.Current.BatchToolSettings.PrecipBufferDistance;
                     string strDefaultBufferUnits = (string)Module1.Current.BatchToolSettings.PrecipBufferUnits;
-                    success = await AnalysisTools.ClipLayersAsync(AoiFolder, Constants.DATA_TYPE_PRECIPITATION,
+                    success = await AnalysisTools.ClipLayersAsync(aoiFolder, Constants.DATA_TYPE_PRECIPITATION,
                         pBufferDistance, pBufferUnits, strDefaultBufferDistance, strDefaultBufferUnits);
                     if (success == BA_ReturnCode.Success)
                     {
@@ -457,7 +457,7 @@ namespace bagis_pro
                     }
 
                     // Generate SWE Delta Layers
-                    success = await AnalysisTools.CalculateSWEDeltaAsync(AoiFolder);
+                    success = await AnalysisTools.CalculateSWEDeltaAsync(aoiFolder);
 
                     // Clip Snotel and Snow Course
                     double dblDistance = -1;
@@ -526,16 +526,16 @@ namespace bagis_pro
                         errorCount++;
                     }
 
-                    string[] arrUnmanagedBufferInfo = await GeneralTools.QueryBufferDistanceAsync(AoiFolder, GeodatabaseTools.GetGeodatabasePath(AoiFolder, GeodatabaseNames.Aoi),
+                    string[] arrUnmanagedBufferInfo = await GeneralTools.QueryBufferDistanceAsync(aoiFolder, GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Aoi),
                         Constants.FILE_AOI_BUFFERED_VECTOR, false);
                     string unmanagedBufferDistance = arrPrismBufferInfo[0];
                     string unmanagedBufferUnits = arrPrismBufferInfo[1];
                     if (SiteAnalysisChecked)
                     {
                         // Clip Roads
-                        string strOutputFc = GeodatabaseTools.GetGeodatabasePath(AoiFolder, GeodatabaseNames.Layers, true)
+                        string strOutputFc = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Layers, true)
                             + Constants.FILE_ROADS;
-                        success = await AnalysisTools.ClipFeatureLayerAsync(AoiFolder, strOutputFc, Constants.DATA_TYPE_ROADS,
+                        success = await AnalysisTools.ClipFeatureLayerAsync(aoiFolder, strOutputFc, Constants.DATA_TYPE_ROADS,
                             unmanagedBufferDistance, unmanagedBufferUnits);
                         if (success != BA_ReturnCode.Success)
                         {
@@ -544,7 +544,7 @@ namespace bagis_pro
                         if (success == BA_ReturnCode.Success)
                         {
                             // Buffer clipped roads for analysis
-                            Uri uri = new Uri(GeodatabaseTools.GetGeodatabasePath(AoiFolder, GeodatabaseNames.Layers));
+                            Uri uri = new Uri(GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Layers));
                             bool bExists = await GeodatabaseTools.FeatureClassExistsAsync(uri, Constants.FILE_ROADS);
                             if (!bExists)
                             {
@@ -564,9 +564,9 @@ namespace bagis_pro
                         }
 
                         // Clip public lands
-                        strOutputFc = GeodatabaseTools.GetGeodatabasePath(AoiFolder, GeodatabaseNames.Layers, true)
+                        strOutputFc = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Layers, true)
                             + Constants.FILE_LAND_OWNERSHIP;
-                        success = await AnalysisTools.ClipFeatureLayerAsync(AoiFolder, strOutputFc, Constants.DATA_TYPE_LAND_OWNERSHIP,
+                        success = await AnalysisTools.ClipFeatureLayerAsync(aoiFolder, strOutputFc, Constants.DATA_TYPE_LAND_OWNERSHIP,
                             unmanagedBufferDistance, unmanagedBufferUnits);
                         if (success != BA_ReturnCode.Success)
                         {
@@ -575,7 +575,7 @@ namespace bagis_pro
                         if (success == BA_ReturnCode.Success)
                         {
                             // Create public lands layer for potential site analysis
-                            success = await AnalysisTools.GetFederalNonWildernessLandsAsync(AoiFolder);
+                            success = await AnalysisTools.GetFederalNonWildernessLandsAsync(aoiFolder);
                             if (success != BA_ReturnCode.Success)
                             {
                                 errorCount++;
@@ -583,7 +583,7 @@ namespace bagis_pro
                         }
 
                         // Clip Land cover
-                        success = await AnalysisTools.ClipLandCoverAsync(AoiFolder, unmanagedBufferDistance, unmanagedBufferUnits);
+                        success = await AnalysisTools.ClipLandCoverAsync(aoiFolder, unmanagedBufferDistance, unmanagedBufferUnits);
                         if (success != BA_ReturnCode.Success)
                         {
                             errorCount++;
@@ -592,7 +592,7 @@ namespace bagis_pro
                         if (success == BA_ReturnCode.Success)
                         {
                             // Create area below forested area layer for potential site analysis
-                            success = await AnalysisTools.ExtractForestedAreaAsync(AoiFolder);
+                            success = await AnalysisTools.ExtractForestedAreaAsync(aoiFolder);
                             if (success != BA_ReturnCode.Success)
                             {
                                 errorCount++;
@@ -600,7 +600,7 @@ namespace bagis_pro
                         }
 
                         // Generate Potential Sites layer
-                        success = await AnalysisTools.CalculatePotentialSitesAreaAsync(AoiFolder);
+                        success = await AnalysisTools.CalculatePotentialSitesAreaAsync(aoiFolder);
                         if (success != BA_ReturnCode.Success)
                         {
                             errorCount++;
@@ -608,10 +608,10 @@ namespace bagis_pro
                     }
                     
                     // Generate Elevation Precipitation Correlation layer
-                    strLayer = GeodatabaseTools.GetGeodatabasePath(AoiFolder, GeodatabaseNames.Prism, true) +
+                    strLayer = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Prism, true) +
                         Path.GetFileName((string)Module1.Current.BatchToolSettings.AoiPrecipFile);
-                    Uri uriPrism = new Uri(GeodatabaseTools.GetGeodatabasePath(AoiFolder, GeodatabaseNames.Prism));
-                    success = await AnalysisTools.CalculateElevPrecipCorrAsync(AoiFolder, uriPrism,
+                    Uri uriPrism = new Uri(GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Prism));
+                    success = await AnalysisTools.CalculateElevPrecipCorrAsync(aoiFolder, uriPrism,
                         Path.GetFileName((string)Module1.Current.BatchToolSettings.AoiPrecipFile));
                     if (success != BA_ReturnCode.Success)
                     {
@@ -799,11 +799,18 @@ namespace bagis_pro
                         }
                         else if (ArchiveChecked)
                         {
-                            string reportName = Constants.FILE_EXPORT_WATERSHED_REPORT_PDF;
+                            string reportName = Path.GetFileName(outputPath);
                             // Copy final watershed analysis report to a central location
                             if (File.Exists(outputPath))
                             {
-                                File.Copy(outputPath, GeneralTools.GetFullPdfFileName(reportName), true);
+                                string targetPath = ParentFolder + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\" + reportName;
+                                if (!targetPath.Equals(outputPath))
+                                {
+                                    File.Copy(outputPath, targetPath, true);
+                                    strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Copied report to " +
+                                        ParentFolder + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\" + reportName + "\r\n";
+                                    File.AppendAllText(_strLogFile, strLogEntry);
+                                }
                             }
                             //if (SiteAnalysisChecked)
                             //{

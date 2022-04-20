@@ -6,7 +6,7 @@
              xmlns:ui="clr-namespace:bagis_pro"
              xmlns:extensions="clr-namespace:ArcGIS.Desktop.Extensions;assembly=ArcGIS.Desktop.Extensions"
              mc:Ignorable="d" 
-             d:DesignHeight="500" d:DesignWidth="300"
+             d:DesignHeight="500" d:DesignWidth="325"
              d:DataContext="{Binding Path=ui.DockBatchPdfExportViewModel}">
     <UserControl.Resources>
         <ResourceDictionary>
@@ -43,7 +43,7 @@
             </TextBlock>
         </DockPanel>
         <DockPanel Grid.Row="1" Grid.Column="0" LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Grid.ColumnSpan="2" Margin="2,0,2,0">
-            <TextBox x:Name="txtAoiFolder" Text="{Binding AoiFolder}" HorizontalAlignment="Left"  VerticalAlignment="Center" Width="240" IsReadOnly="True" Margin="5,0,0,0" />
+            <TextBox x:Name="txtParentFolder" Text="{Binding ParentFolder}" HorizontalAlignment="Left"  VerticalAlignment="Center" Width="240" IsReadOnly="True" Margin="5,0,0,0" />
         </DockPanel>
         <DockPanel Grid.Row="1" Grid.Column="2" Margin="2,0,2,0">
             <Button x:Name="btnAoiFolder" Content="Select" HorizontalAlignment="Left"  VerticalAlignment="Center" Width="50" Command="{Binding CmdAoiFolder}" Margin="5, 0, 0, 0"/>
@@ -94,16 +94,16 @@
         <DockPanel Grid.Row="8" Grid.ColumnSpan="3" LastChildFill="false" KeyboardNavigation.TabNavigation="Local" >
             <Button x:Name="btnLog" Content="View Log" HorizontalAlignment="Left" VerticalAlignment="Center" Width="75" IsEnabled="{Binding CmdLogEnabled}" Command="{Binding CmdLog}" Margin="5, 0, 0, 0"/>
         </DockPanel>
-        <StackPanel Grid.Row="9" Orientation="Vertical" Margin="5,2,0,2" HorizontalAlignment="Left" Grid.ColumnSpan="3">
-
-            <ListView ItemsSource="{Binding Names}" Width="300">
+        <!--<StackPanel Grid.Row="9" Orientation="Vertical" Margin="5,2,0,2" HorizontalAlignment="Left" Grid.ColumnSpan="3">-->
+        <DockPanel Grid.Row="9" Grid.ColumnSpan="3" LastChildFill="false"  Margin="5,2,0,2" HorizontalAlignment="Left">
+            <ListView ItemsSource="{Binding Names}" Width="320">
                 <ListView.View>
                     <GridView AllowsColumnReorder="true"
               ColumnHeaderToolTip="Aoi">
 
                         <GridViewColumn DisplayMemberBinding=
                           "{Binding Path=Name}" 
-                      Header="Aoi" Width="180"/>
+                      Header="Aoi" Width="195"/>
 
                         <GridViewColumn DisplayMemberBinding=
                           "{Binding Path=AoiBatchStateText}" 
@@ -127,7 +127,8 @@
 
                 </ListView.View>
             </ListView>
-        </StackPanel>
+        </DockPanel>
+        <!--</StackPanel>-->
         <DockPanel Grid.Row="10" Grid.Column="3" LastChildFill="false" KeyboardNavigation.TabNavigation="Local" >
             <Button x:Name="btnRun" Content="Run" HorizontalAlignment="Left" VerticalAlignment="Center" Width="50" IsEnabled="{Binding CmdRunEnabled}" Command="{Binding CmdRun}" Margin="5, 0, 0, 0"/>
         </DockPanel>

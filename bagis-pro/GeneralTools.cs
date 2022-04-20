@@ -704,7 +704,7 @@ namespace bagis_pro
                     IList<string> lstCriticalZoneValues = ExcelTools.CreateCriticalPrecipitationZones(pPRISMWorkSheet, lstIntervals, dblMinVolume, dblMaxPctVolume);
 
                     // Add textbox comments to worksheet
-                    if (lastRow > 10)
+                    if (lastRow > 4)
                     {
                         ChartTextBoxSettings textBoxSettings = new ChartTextBoxSettings
                         {
