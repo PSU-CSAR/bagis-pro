@@ -3459,7 +3459,7 @@ namespace bagis_pro
                 Module1.Current.ModuleLogManager.LogDebug(nameof(SetClipGeometryAsync), "Map clip geometry set to aoi polygon");
 
                 // get the uris for the sites layers
-                string[] arrSites = new string[] { Constants.MAPS_SNOTEL, Constants.MAPS_SNOW_COURSE };
+                string[] arrSites = new string[] { Constants.MAPS_SNOTEL, Constants.MAPS_SNOW_COURSE, Constants.MAPS_CRITICAL_PRECIPITATION_ZONES };
                 List<string> layerUris = new List<string>();
                 foreach (var item in arrSites)
                 {
