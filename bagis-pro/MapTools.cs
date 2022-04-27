@@ -16,6 +16,7 @@ using System.Windows;
 using ArcGIS.Desktop.Framework.Contracts;
 using ArcGIS.Desktop.Framework;
 using System.Windows.Input;
+using ArcGIS.Desktop.Core.Geoprocessing;
 
 namespace bagis_pro
 {
@@ -264,7 +265,7 @@ namespace bagis_pro
                         Constants.FILE_PRECIPITATION_CONTRIBUTION;
                     uri = new Uri(strPath);
                     success = await MapTools.DisplayRasterWithClassifyAsync(uri, Constants.MAPS_PRECIPITATION_CONTRIBUTION, "ColorBrewer Schemes (RGB)",
-                               "Yellow-Green-Blue (Continuous)", Constants.FIELD_VOL_ACRE_FT, 30, ClassificationMethod.EqualInterval, 10, null, null, false);
+                               "Yellow-Green-Blue (Continuous)", Constants.FIELD_VOL_ACRE_FT, 30, ClassificationMethod.EqualInterval, 10, null, null, null,false);
 
                     if (success == BA_ReturnCode.Success)
                         Module1.ActivateState("MapButtonPalette_BtnPrecipContrib_State");
@@ -919,7 +920,7 @@ namespace bagis_pro
 
         public static async Task<BA_ReturnCode> DisplayRasterWithClassifyAsync(Uri rasterUri, string displayName, string styleCategory, 
             string styleName, string fieldName, int transparency, ClassificationMethod classificationMethod, int numClasses, IList<BA_Objects.Interval> lstInterval,
-            int[,] arrColors, bool isVisible)
+            IList<BA_Objects.Interval> lstCustomBreaks, int[,] arrColors, bool isVisible)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
             // parse the uri for the folder and file
@@ -967,7 +968,7 @@ namespace bagis_pro
             }
             else
             {
-                await MapTools.SetToClassifyRenderer(MapView.Active.Map, displayName, fieldName, lstInterval, arrColors);
+                await MapTools.SetToClassifyRenderer(MapView.Active.Map, displayName, fieldName, lstInterval, lstCustomBreaks,arrColors);
             }
 
             success = BA_ReturnCode.Success;
@@ -1158,7 +1159,7 @@ namespace bagis_pro
         }
 
         public static async Task SetToClassifyRenderer(Map oMap, string layerName, string fieldName, IList<BA_Objects.Interval> lstInterval,
-            int[,] arrColors)
+            IList<BA_Objects.Interval> lstCustomInterval, int[,] arrColors)
         {
             // Get the layer we want to symbolize from the map
             Layer oLayer =
@@ -1188,22 +1189,35 @@ namespace bagis_pro
             await QueuedTask.Run(() =>
             {
                 basicRasterLayer.SetColorizer(newColorizer);
-                var json = newColorizer.ToJson();
-                dynamic jsonColorizer = Newtonsoft.Json.Linq.JObject.Parse(json);
-                Newtonsoft.Json.Linq.JArray arrClassBreaks = (Newtonsoft.Json.Linq.JArray)jsonColorizer["classBreaks"];
+                var arrClassBreaks = newColorizer.ClassBreaks;
                 int i = 0;
-                // Customize the upper bound and label for the class breaks
-                foreach (dynamic classBreak in arrClassBreaks)
+                // Update UpperBound and Labe for each interval
+                foreach (var classBreak in arrClassBreaks)
                 {
                     var nextInterval = lstInterval[i];
-                    classBreak.upperBound = nextInterval.UpperBound;
-                    classBreak.label = nextInterval.Name;
+                    classBreak.UpperBound = nextInterval.UpperBound;
+                    classBreak.Label = nextInterval.Name;
                     i++;
                 }
-                string stringjson = Newtonsoft.Json.JsonConvert.SerializeObject(jsonColorizer);
-                newColorizer = CIMRasterClassifyColorizer.FromJson(stringjson);
-                basicRasterLayer.SetColorizer(newColorizer);
-            });
+                // Remove intervals that aren't in the current data to keep symbology consistent
+
+                if (lstCustomInterval != null)
+                {
+                    List<CIMRasterClassBreak> lstCustomBreaks = new List<CIMRasterClassBreak>();
+                    for (int j = 0; j < newColorizer.ClassBreaks.Length; j++)
+                    {
+                        if (lstCustomInterval.Contains(lstInterval[j]))
+                        {
+                            lstCustomBreaks.Add(newColorizer.ClassBreaks[j]);
+                        }
+                    }
+                    CIMRasterClassBreak[] arrCustomBreaks = lstCustomBreaks.ToArray();
+                    newColorizer.ClassBreaks = arrCustomBreaks;
+                }
+
+                    basicRasterLayer.SetColorizer(newColorizer);
+                });
+
         }
 
         public static async Task SetToStretchValueColorizer(string layerName, string styleCategory, string styleName,
@@ -2634,7 +2648,7 @@ namespace bagis_pro
             if (lstInterval != null && lstInterval.Count > 0)
             {
                 success = await MapTools.DisplayRasterWithClassifyAsync(uri, Constants.LAYER_NAMES_SEASON_PRECIP_CONTRIB[idxDefaultMonth], "",
-                    "", "NAME", 30, ClassificationMethod.Manual, lstInterval.Count, lstInterval, Constants.ARR_SWE_DELTA_COLORS, false);
+                    "", "NAME", 30, ClassificationMethod.Manual, lstInterval.Count, lstInterval, null, Constants.ARR_SWE_DELTA_COLORS, false);
             }
 
             IList<string> lstLayersFiles = new List<string>();
@@ -3558,13 +3572,17 @@ namespace bagis_pro
                 case BagisMapType.SEASONAL_PRECIP_CONTRIB:
                     lstInterval = CalculateSeasonalPrecipZones();
                     break;
-
             }
 
             //Get the map frame in the layout
+            string legendMapFrameName = ""; // hook up the legend to the map frame with all the classifications
             for (int i = 0; i < arrMapFrames.Length; i++)
             {
                 string mFrameName = arrMapFrames[i];
+                if (string.IsNullOrEmpty(legendMapFrameName))
+                {
+                    legendMapFrameName = mFrameName;
+                }
                 MapFrame mapFrame = layout.FindElement(mFrameName) as MapFrame;
                 if (mapFrame != null)
                 {
@@ -3668,24 +3686,56 @@ namespace bagis_pro
                           mapFrame.SetCamera(env);
                       }
 
+                        // Reset the clip geometry
+                        success = await SetClipGeometryAsync(strAoiPath, arrMapFrames[i]);
+
+                        IList<BA_Objects.Interval> lstCustomInterval = new List<BA_Objects.Interval>();
+                        double dblMin = -1;
+                        int idxData = -1;
+                        for (int k = 0; k < lstLayerName.Count; k++)
+                        {
+                            if (lstLayerName[k].Equals(mapLayerName))
+                            {
+                                idxData = k;
+                                break;
+                            }
+                        }
+                        var parameters = Geoprocessing.MakeValueArray(lstGdb[idxData] + "\\" + lstFile[idxData], "MINIMUM");
+                        var environments = Geoprocessing.MakeEnvironmentArray(workspace: Module1.Current.Aoi.FilePath);
+                        IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("GetRasterProperties_management", parameters, environments,
+                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                        bool isDouble = Double.TryParse(Convert.ToString(gpResult.ReturnValue), out dblMin);
+                        for (int k = 0; k < lstInterval.Count; k++)
+                        {
+                            var interval = lstInterval[k];
+                            if (dblMin <= interval.UpperBound)
+                            {
+                                lstCustomInterval.Add(interval);
+                            }
+                        }
+
+                        if (lstCustomInterval.Count == lstInterval.Count)
+                        {
+                            // We can use this layer for the legend because it has all intervals
+                            legendMapFrameName = mFrameName;
+                        }
+
                         // Reset the color ramp
                         switch (bagisMapType)
                         {
                             case BagisMapType.SNODAS_SWE:
-                                await MapTools.SetToClassifyRenderer(oMap, mapLayerName, Constants.FIELD_NAME, lstInterval,
+                                await MapTools.SetToClassifyRenderer(oMap, mapLayerName, Constants.FIELD_NAME, lstInterval, lstCustomInterval,
                                     Constants.ARR_SWE_COLORS);
                                 break;
                             case BagisMapType.SNODAS_DELTA:
-                                await MapTools.SetToClassifyRenderer(oMap, mapLayerName, Constants.FIELD_NAME, lstInterval,
+                                await MapTools.SetToClassifyRenderer(oMap, mapLayerName, Constants.FIELD_NAME, lstInterval, lstCustomInterval,
                                     Constants.ARR_SWE_DELTA_COLORS);
                                 break;
                             case BagisMapType.SEASONAL_PRECIP_CONTRIB:
-                                await MapTools.SetToClassifyRenderer(oMap, mapLayerName, Constants.FIELD_NAME, lstInterval,
+                                await MapTools.SetToClassifyRenderer(oMap, mapLayerName, Constants.FIELD_NAME, lstInterval, lstCustomInterval,
                                     Constants.ARR_SWE_DELTA_COLORS);                       
                                 break;
                         }
-                        // Reset the clip geometry
-                        success = await SetClipGeometryAsync(strAoiPath, arrMapFrames[i]);
                     });
                 }
             }
@@ -3701,6 +3751,18 @@ namespace bagis_pro
                     textBox.SetGraphic(graphic);
                 });
             }
+
+            // Update legend map frame
+            //Construct on the worker thread
+            await QueuedTask.Run(() =>
+            {
+                var layoutDef = layout.GetDefinition();
+                var legend = layoutDef.Elements.OfType<CIMLegend>().FirstOrDefault();
+                if (legend != null)
+                {
+                    legend.MapFrame= legendMapFrameName;
+                }
+            });
 
             success = CloseMapPanes(arrMapFrames);
             return success;
