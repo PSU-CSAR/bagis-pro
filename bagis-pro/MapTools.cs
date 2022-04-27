@@ -3740,27 +3740,24 @@ namespace bagis_pro
                 }
             }
 
-            // Update AOI name
-            GraphicElement textBox = layout.FindElement(Constants.MAPS_SUBTITLE) as GraphicElement;
-            if (textBox != null)
+            await QueuedTask.Run(() =>
             {
-                await QueuedTask.Run( () =>
+                // Update AOI name
+                GraphicElement textBox = layout.FindElement(Constants.MAPS_SUBTITLE) as GraphicElement;
+                if (textBox != null)
                 {
                     CIMTextGraphic graphic = (CIMTextGraphic)textBox.GetGraphic();
                     graphic.Text = Module1.Current.Aoi.NwccName.ToUpper();
                     textBox.SetGraphic(graphic);
-                });
-            }
-
-            // Update legend map frame
-            //Construct on the worker thread
-            await QueuedTask.Run(() =>
-            {
+                }
+                // Update legend map frame
                 var layoutDef = layout.GetDefinition();
                 var legend = layoutDef.Elements.OfType<CIMLegend>().FirstOrDefault();
                 if (legend != null)
                 {
-                    legend.MapFrame= legendMapFrameName;
+                    legend.MapFrame = legendMapFrameName;
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(DisplayMultiMapPageLayoutAsync),
+                        "Set legend map frame to " + legendMapFrameName);
                 }
             });
 
