@@ -3752,15 +3752,28 @@ namespace bagis_pro
                 }
                 // Update legend map frame
                 var layoutDef = layout.GetDefinition();
-                var legend = layoutDef.Elements.OfType<CIMLegend>().FirstOrDefault();
-                if (legend != null)
+                var cimLegend = layoutDef.Elements.OfType<CIMLegend>().FirstOrDefault();
+                if (cimLegend != null)
                 {
-                    legend.MapFrame = legendMapFrameName;
+                    cimLegend.MapFrame = legendMapFrameName;
+                    string[] arrInvisible = new string[] {Constants.MAPS_STREAMS, Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_HILLSHADE};
+                    CIMLegendItem[] arrUpdatedItems = new CIMLegendItem[cimLegend.Items.Length];
+                    for (int i = 0; i < cimLegend.Items.Length; i++)
+                    {
+                        var nextItem = cimLegend.Items[i];
+                        if (arrInvisible.Contains(nextItem.Name))
+                        {
+                            nextItem.IsVisible = false;
+                        }
+                        arrUpdatedItems[i] = nextItem;
+                    }
+                    cimLegend.Items = arrUpdatedItems;
+                    //Apply the changes back to the layout; This is key!!
+                    layout.SetDefinition(layoutDef);
                     Module1.Current.ModuleLogManager.LogDebug(nameof(DisplayMultiMapPageLayoutAsync),
                         "Set legend map frame to " + legendMapFrameName);
                 }
             });
-
             success = CloseMapPanes(arrMapFrames);
             return success;
         }
