@@ -76,7 +76,7 @@ namespace bagis_pro
                 else
                 {
                     BA_ReturnCode success = await MapTools.SetDefaultMapFrameDimensionAsync(Constants.MAPS_DEFAULT_MAP_FRAME_NAME, layout, oMap,
-                        1.0, 2.0, 7.5, 9.0);
+                        1.0, 3.0, 7.5, 10.0);
 
                     //remove existing layers from map frame
                     await MapTools.RemoveLayersfromMapFrame();
