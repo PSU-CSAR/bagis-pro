@@ -1,4 +1,4 @@
-bagis:
+﻿bagis:
   terrain: BAGIS_Reference_Maps.lyr
   dem10: http://bagis.geog.pdx.edu/arcgis/services/BAGIS_GISLayers/DEM_westus_bc_30m/ImageServer
   dem30: http://bagis.geog.pdx.edu/arcgis/services/BAGIS_GISLayers/DEM_westus_bc_30m/ImageServer
@@ -40,7 +40,7 @@ bagis-pro:
     - layerType: Roads
       heading: Access Roads – for Potential Site Location Analysis
       description: USFS FSTopo Transportation Line 2020 version. See https://data.fs.usda.gov/geodata/edw/edw_resources/meta/S_USA.FSTopo_Transport_LN.xml for more information.
-      uri: https://services.arcgis.com/SXbDpmb7xQkk44JV/arcgis/rest/services/Sample_Forest_Service_Roads/FeatureServer/0
+      uri: https://services.arcgis.com/SXbDpmb7xQkk44JV/arcgis/rest/services/USFS_FSTopo_Transport_LN/FeatureServer/0
     - layerType: Land Ownership
       heading: Public Land Ownership – for Potential Site Location Analysis
       description: Federal non-wilderness and tribal land data based on the 2020 USGS Protected Areas Data (PAD) version 2.1. See https://www.usgs.gov/programs/gap-analysis-project/science/pad-us-data-overview for more information.
@@ -83,6 +83,7 @@ bagis-pro:
      SnodasSweLayoutItemId: 5de950a654b14c849a25a08b3b3a9bfd
      SnodasDeltaLayoutItemId: 1eafb8ca4b2048a2a22598d6372cf0d5
      SeasonalPrecipLayoutItemId: 34a1c22f75254c56918c5eb820a6810a
+     PublicAndTribalLandsLayerItemId: c72cf8608c644a8c90c651e1bbfe815f
      Version: 1.0
 
 bagis-p:

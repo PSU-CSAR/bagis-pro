@@ -221,6 +221,7 @@ namespace bagis_pro
         public const string URI_IMAGE_SERVER = "/ImageServer";
         public const string URI_DESKTOP_SETTINGS = "/api/rest/desktop/settings/";
         public const string LAYER_FILE_NLCD_LAND_COVER = "nlcd_land_cover.lyrx";
+        public const string LAYER_FILE_PUBLIC_TRIBAL_LANDS = "Public_and_Tribal_Lands.lyrx";
         public const string LAYOUT_FILE_SNODAS_SWE = "SNODAS Layout.pagx";
         public const string LAYOUT_FILE_SNODAS_DELTA_SWE = "SNODAS Delta Layout.pagx";
         public const string LAYOUT_FILE_SEASONAL_PRECIP_CONTRIB = "Seasonal Precipitation Layout.pagx";

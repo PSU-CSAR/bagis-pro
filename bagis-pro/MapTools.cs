@@ -93,6 +93,9 @@ namespace bagis_pro
                     Uri uri = new Uri(strPath);
                     success = await MapTools.AddPolygonLayerUniqueValuesAsync(uri, "ArcGIS Colors", "Basic Random",
                         new string[] { "AGBUR" }, false, false, 30.0F, Constants.MAPS_LAND_OWNERSHIP);
+                    string strLayerFilePath = Module1.Current.SettingsPath + "\\" + Constants.FOLDER_SETTINGS + "\\" + Constants.LAYER_FILE_PUBLIC_TRIBAL_LANDS;
+                    success = await GeoprocessingTools.ApplySymbologyFromLayerAsync(Constants.MAPS_LAND_OWNERSHIP, strLayerFilePath,
+                        "UPDATE");
                     if (success.Equals(BA_ReturnCode.Success))
                         Module1.ActivateState("MapButtonPalette_BtnLandOwnership_State");
 
@@ -271,7 +274,7 @@ namespace bagis_pro
                         Module1.ActivateState("MapButtonPalette_BtnPrecipContrib_State");
 
                     // add NLCD Land Cover layer
-                    string strLayerFilePath = Module1.Current.SettingsPath + "\\" + Constants.FOLDER_SETTINGS + "\\" + Constants.LAYER_FILE_NLCD_LAND_COVER;
+                    strLayerFilePath = Module1.Current.SettingsPath + "\\" + Constants.FOLDER_SETTINGS + "\\" + Constants.LAYER_FILE_NLCD_LAND_COVER;
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers, true) +
                         Constants.FILE_LAND_COVER;
                     uri = new Uri(strPath);
@@ -3333,13 +3336,14 @@ namespace bagis_pro
 
         public static async Task<BA_ReturnCode> GetSystemFilesFromPortalAsync()
         {
-            string[] documentIds = new string[4];
+            string[] documentIds = new string[5];
             documentIds[0] = (string) Module1.Current.BatchToolSettings.NLCDLandCoverLayerItemId;
             documentIds[1] = (string) Module1.Current.BatchToolSettings.SnodasSweLayoutItemId;
             documentIds[2] = (string) Module1.Current.BatchToolSettings.SnodasDeltaLayoutItemId;
             documentIds[3] = (string) Module1.Current.BatchToolSettings.SeasonalPrecipLayoutItemId;
+            documentIds[4] = (string) Module1.Current.BatchToolSettings.PublicAndTribalLandsLayerItemId;
             string[] layerFileNames = new string[] { Constants.LAYER_FILE_NLCD_LAND_COVER, Constants.LAYOUT_FILE_SNODAS_SWE,
-                Constants.LAYOUT_FILE_SNODAS_DELTA_SWE, Constants.LAYOUT_FILE_SEASONAL_PRECIP_CONTRIB};
+                Constants.LAYOUT_FILE_SNODAS_DELTA_SWE, Constants.LAYOUT_FILE_SEASONAL_PRECIP_CONTRIB, Constants.LAYER_FILE_PUBLIC_TRIBAL_LANDS };
             Webservices ws = new Webservices();
             BA_ReturnCode success = BA_ReturnCode.ReadError;
 

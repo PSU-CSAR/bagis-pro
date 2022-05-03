@@ -282,5 +282,23 @@ namespace bagis_pro
             }
             return returnList;
         }
+
+        public static async Task<BA_ReturnCode> ApplySymbologyFromLayerAsync(string inputLayer, string symbologyLayer, 
+            string updateSymbology)
+        {
+            var parameters = Geoprocessing.MakeValueArray(inputLayer, symbologyLayer, null, updateSymbology);
+            IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("ApplySymbologyFromLayer_management", parameters, null,
+                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+            if (gpResult.IsFailed)
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(ApplySymbologyFromLayerAsync),
+                    "Geoprocessing faile: " + gpResult.Messages);
+                return BA_ReturnCode.UnknownError;
+            }
+            else
+            {
+                return BA_ReturnCode.Success;
+            }
+        }
     }
 }
