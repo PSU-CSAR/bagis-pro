@@ -171,6 +171,7 @@ namespace bagis_pro
                         // Add parent folder
                         Array.Resize(ref folders, folders.Length + 1);
                         folders[folders.Length-1] = AoiFolder;
+                        int aoiWithGdbs = 0;
                         foreach (var item in folders)
                         {
                             FolderType fType = FolderType.FOLDER;
@@ -295,16 +296,10 @@ namespace bagis_pro
                                     IList<string> lstExistingGdb = CheckForBagisGdb(item);
                                     if (lstExistingGdb.Count > 0)
                                     {
-                                        StringBuilder sb = new StringBuilder();
-                                        sb.Append("At least one geodatabase already exists in aoi " + aoi.Name);
-                                        sb.Append(". \r\n");
-                                        sb.Append("Do you wish to overwrite them? All existing data will be lost!\r\n");
-                                        System.Windows.MessageBoxResult res = MessageBox.Show(sb.ToString(), "BAGIS-PRO",
-                                            System.Windows.MessageBoxButton.YesNo);
-                                        if (res != System.Windows.MessageBoxResult.Yes)
-                                        {
-                                            aoi.AoiBatchIsSelected = false;
-                                        }
+                                        aoi.AoiBatchIsSelected = false;
+                                        aoiWithGdbs++;
+                                        Module1.Current.ModuleLogManager.LogDebug(nameof(CmdAoiFolder),
+                                            item + " contains at least one existing geodatase.");
                                     }
                                     Names.Add(aoi);
                                     strLogEntry = item + " added to select list \r\n";
@@ -318,6 +313,17 @@ namespace bagis_pro
                             MessageBox.Show("No valid AOIs were found in the selected folder!", "BAGIS-PRO");
                             Module1.Current.ModuleLogManager.LogDebug(nameof(CmdAoiFolder), 
                                 "No AOIs containing the required files to be converted were found in the selected folder!");
+                        }
+                        else if (aoiWithGdbs > 0)
+                        {
+                            StringBuilder sb = new StringBuilder();
+                            sb.Append(aoiWithGdbs + " AOIs have at least one existing geodatabase. The 'Include' ");
+                            sb.Append("checkbox has been unchecked for these AOIs. To include these AOIs in the ");
+                            sb.Append("conversion process and overwrite the existing data, re-check the checkbox for any ");
+                            sb.Append("excluded AOIs before running the process.");
+                            System.Windows.MessageBoxResult res = MessageBox.Show(sb.ToString(), "BAGIS-PRO",
+                                System.Windows.MessageBoxButton.OK);
+
                         }
                     }
                     catch (Exception e)
