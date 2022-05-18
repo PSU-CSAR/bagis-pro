@@ -84,6 +84,7 @@ bagis-pro:
      SnodasDeltaLayoutItemId: 1eafb8ca4b2048a2a22598d6372cf0d5
      SeasonalPrecipLayoutItemId: 34a1c22f75254c56918c5eb820a6810a
      PublicAndTribalLandsLayerItemId: c72cf8608c644a8c90c651e1bbfe815f
+     MaximumSitesAllowed: 50
      Version: 1.0
 
 bagis-p:

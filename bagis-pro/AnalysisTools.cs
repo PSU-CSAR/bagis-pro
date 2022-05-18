@@ -4770,6 +4770,70 @@ namespace bagis_pro
             }
             return strUri;
         }
+
+        public static async Task<bool> TooManySitesAsync(string strAoiPath)
+        {
+            int maxSitesAllowed = (int)Module1.Current.BatchToolSettings.MaximumSitesAllowed;
+            Webservices ws = new Webservices();
+            IDictionary<string, dynamic> dictDataSources =
+                await ws.QueryDataSourcesAsync((string)Module1.Current.BatchToolSettings.EBagisServer);
+            if (dictDataSources != null)
+            {
+                if (!dictDataSources.ContainsKey(Constants.DATA_TYPE_SNOTEL) ||
+                    !dictDataSources.ContainsKey(Constants.DATA_TYPE_SNOW_COURSE))
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(TooManySitesAsync),
+                        "Unable to retrieve snotel datasource information from " + (string)Module1.Current.BatchToolSettings.EBagisServer +
+                        ". Processing cancelled!!");
+                    return true;
+                }
+            }
+            string[] arrWsUri = new string[]
+                { dictDataSources[Constants.DATA_TYPE_SNOTEL].uri, dictDataSources[Constants.DATA_TYPE_SNOW_COURSE].uri };
+            Uri uriAoi = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi));
+            string tempJoin = "tmpJoin";
+            string strAoiPoly = uriAoi.LocalPath + "\\" + Constants.FILE_AOI_BUFFERED_VECTOR;
+            string strTempOutput = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, true) + tempJoin;
+            int i = 0;
+            int totalSites = 0;
+            foreach (var strWsUri in arrWsUri)
+            {
+                var parameters = Geoprocessing.MakeValueArray(strAoiPoly, strWsUri, strTempOutput, "JOIN_ONE_TO_ONE", "KEEP_COMMON",
+                    null, "CONTAINS");
+                var res = Geoprocessing.ExecuteToolAsync("SpatialJoin_analysis", parameters, null,
+                                     CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                if (res.Result.IsFailed)
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(TooManySitesAsync),
+                       "Unable to execute spatial join with sites webservice. Error code: " + res.Result.ErrorCode);
+                }
+                else
+                {
+                    var result = await GeodatabaseTools.QueryTableForSingleValueAsync(uriAoi, tempJoin, Constants.FIELD_JOIN_COUNT, new QueryFilter());
+                    int intCount = -1;
+                    bool isInteger = Int32.TryParse(result, out intCount);
+                    if (isInteger)
+                    {
+                        string sType = Constants.DATA_TYPE_SNOTEL;
+                        if (i == 1)
+                        {
+                            sType = Constants.DATA_TYPE_SNOW_COURSE;
+                        }
+                        Module1.Current.ModuleLogManager.LogInfo(nameof(TooManySitesAsync),
+                            result + " " + sType + " sites found in AOI");
+                        totalSites = totalSites + intCount;
+                    }
+                    if (totalSites > maxSitesAllowed)
+                    {
+                        return true;
+                    }
+                }
+                i++;
+            }          
+            return false;
+        }
+
+
     }
 
 }

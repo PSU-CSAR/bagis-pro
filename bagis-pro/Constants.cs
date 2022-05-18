@@ -271,6 +271,7 @@ namespace bagis_pro
         public const string FIELD_SAMPLE_INPUT_1 = "v_raster_10";
         public const string FIELD_SAMPLE_INPUT_2 = "v_raster_20";
         public const string FIELD_SAMPLE_INPUT_3 = "v_raster_30";
+        public const string FIELD_JOIN_COUNT = "Join_Count";
 
         public const string DATA_TYPE_SWE = "Snotel SWE";
         public const string DATA_TYPE_PRECIPITATION = "Precipitation";

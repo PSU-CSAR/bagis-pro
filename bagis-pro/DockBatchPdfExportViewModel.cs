@@ -389,353 +389,353 @@ namespace bagis_pro
                     }
 
                     oAoi = Module1.Current.Aoi;
-                    // Elevation zones
-                    BA_ReturnCode success = await AnalysisTools.CalculateElevationZonesAsync(Module1.Current.Aoi.FilePath);
-                    if (success != BA_ReturnCode.Success)
-                    {
-                        errorCount++;
-                    }
 
-                    // Slope zones
-                    string strLayer = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Surfaces, true) +
-                        Constants.FILE_SLOPE;
-                    string strZonesRaster = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Analysis, true) +
-                        Constants.FILE_SLOPE_ZONE;
-                    string strMaskPath = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_BUFFERED_VECTOR;
-                    IList<BA_Objects.Interval> lstInterval = AnalysisTools.GetSlopeClasses();
-                    success = await AnalysisTools.CalculateZonesAsync(aoiFolder, strLayer,
-                        lstInterval, strZonesRaster, strMaskPath, "SLOPE");
-                    if (success != BA_ReturnCode.Success)
+                    bool tooManySites = await AnalysisTools.TooManySitesAsync(Module1.Current.Aoi.FilePath);
+                    if (tooManySites)
                     {
-                        errorCount++;
+                        strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + " Aborting batch PDF export for " +
+                            oAoi.Name + " because there are too many sites! \r\n";
+                        File.AppendAllText(_strLogFile, strLogEntry);       // append
                     }
-
-                    // Check for PRISM buffer units
-                    string[] arrPrismBufferInfo = await GeneralTools.QueryBufferDistanceAsync(aoiFolder, GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Aoi),
-                        Constants.FILE_AOI_PRISM_VECTOR, false);
-                    string pBufferDistance = arrPrismBufferInfo[0];
-                    string pBufferUnits = arrPrismBufferInfo[1];
-
-                    // Clip PRISM
-                    string strDefaultBufferDistance = (string)Module1.Current.BatchToolSettings.PrecipBufferDistance;
-                    string strDefaultBufferUnits = (string)Module1.Current.BatchToolSettings.PrecipBufferUnits;
-                    success = await AnalysisTools.ClipLayersAsync(aoiFolder, Constants.DATA_TYPE_PRECIPITATION,
-                        pBufferDistance, pBufferUnits, strDefaultBufferDistance, strDefaultBufferUnits);
-                    if (success == BA_ReturnCode.Success)
+                    else
                     {
-                        success = await AnalysisTools.UpdateSitesPropertiesAsync(Module1.Current.Aoi.FilePath, SiteProperties.Precipitation);
-                    }
-                    if (success != BA_ReturnCode.Success)
-                    {
-                        errorCount++;
-                    }
-
-                    // PRISM Zones
-                    strLayer = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Prism, true) +
-                        Path.GetFileName((string)Module1.Current.BatchToolSettings.AoiPrecipFile);
-                    strZonesRaster = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) +
-                        Constants.FILE_PRECIP_ZONE;
-                    success = await AnalysisTools.CalculatePrecipitationZonesAsync(strLayer, strZonesRaster);
-                    if (success != BA_ReturnCode.Success)
-                    {
-                        errorCount++;
-                    }
-
-                    // Winter Precipitation
-                    success = await AnalysisTools.GenerateWinterPrecipitationLayerAsync(oAoi);
-                    if (success != BA_ReturnCode.Success)
-                    {
-                        errorCount++;
-                    }
-
-                    // Clip SWE
-                    success = await AnalysisTools.ClipSweLayersAsync(pBufferDistance, pBufferUnits,
-                        strDefaultBufferDistance, strDefaultBufferUnits);
-                    if (success != BA_ReturnCode.Success)
-                    {
-                        errorCount++;
-                    }
-
-                    // Generate SWE Delta Layers
-                    success = await AnalysisTools.CalculateSWEDeltaAsync(aoiFolder);
-
-                    // Clip Snotel and Snow Course
-                    double dblDistance = -1;
-                    bool isDouble = Double.TryParse((string)Module1.Current.BatchToolSettings.SnotelBufferDistance, out dblDistance);
-                    if (!isDouble)
-                    {
-                        dblDistance = 0;
-                    }
-                    Module1.Current.ModuleLogManager.LogDebug(nameof(RunImplAsync), "Buffer distance from settings: " + dblDistance);
-                    string snoBufferDistance = dblDistance + " " + (string)Module1.Current.BatchToolSettings.SnotelBufferUnits;
-                    Module1.Current.ModuleLogManager.LogDebug(nameof(RunImplAsync), "Sites buffer distance string: " + snoBufferDistance);
-                    success = await AnalysisTools.ClipSnoLayersAsync(Module1.Current.Aoi.FilePath, true, snoBufferDistance,
-                        true, snoBufferDistance);
-                    if (success != BA_ReturnCode.Success)
-                    {
-                        errorCount++;
-                    }
-
-                    // Represented Area
-                    if (success == BA_ReturnCode.Success)
-                    {
-                        double siteBufferDistanceMiles = (double)Module1.Current.BatchToolSettings.SiteBufferDistMiles;
-                        double siteElevRangeFeet = (double)Module1.Current.BatchToolSettings.SiteElevRangeFeet;
-                        success = await AnalysisTools.GenerateSiteLayersAsync(siteBufferDistanceMiles, siteElevRangeFeet);
+                        // Elevation zones
+                        BA_ReturnCode success = await AnalysisTools.CalculateElevationZonesAsync(Module1.Current.Aoi.FilePath);
                         if (success != BA_ReturnCode.Success)
                         {
                             errorCount++;
                         }
 
-                        // Sites Zones
-                        Uri uri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers));
-                        bool hasSnotel = await GeodatabaseTools.FeatureClassExistsAsync(uri, Constants.FILE_SNOTEL);
-                        bool hasSnowCourse = await GeodatabaseTools.FeatureClassExistsAsync(uri, Constants.FILE_SNOW_COURSE);
-                        if (hasSnotel || hasSnowCourse)
+                        // Slope zones
+                        string strLayer = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Surfaces, true) +
+                            Constants.FILE_SLOPE;
+                        string strZonesRaster = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Analysis, true) +
+                            Constants.FILE_SLOPE_ZONE;
+                        string strMaskPath = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_BUFFERED_VECTOR;
+                        IList<BA_Objects.Interval> lstInterval = AnalysisTools.GetSlopeClasses();
+                        success = await AnalysisTools.CalculateZonesAsync(aoiFolder, strLayer,
+                            lstInterval, strZonesRaster, strMaskPath, "SLOPE");
+                        if (success != BA_ReturnCode.Success)
                         {
-                            success = await AnalysisTools.CalculateSitesZonesAsync(Module1.Current.Aoi.FilePath, hasSnotel, hasSnowCourse);
+                            errorCount++;
+                        }
+
+                        // Check for PRISM buffer units
+                        string[] arrPrismBufferInfo = await GeneralTools.QueryBufferDistanceAsync(aoiFolder, GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Aoi),
+                            Constants.FILE_AOI_PRISM_VECTOR, false);
+                        string pBufferDistance = arrPrismBufferInfo[0];
+                        string pBufferUnits = arrPrismBufferInfo[1];
+
+                        // Clip PRISM
+                        string strDefaultBufferDistance = (string)Module1.Current.BatchToolSettings.PrecipBufferDistance;
+                        string strDefaultBufferUnits = (string)Module1.Current.BatchToolSettings.PrecipBufferUnits;
+                        success = await AnalysisTools.ClipLayersAsync(aoiFolder, Constants.DATA_TYPE_PRECIPITATION,
+                            pBufferDistance, pBufferUnits, strDefaultBufferDistance, strDefaultBufferUnits);
+                        if (success == BA_ReturnCode.Success)
+                        {
+                            success = await AnalysisTools.UpdateSitesPropertiesAsync(Module1.Current.Aoi.FilePath, SiteProperties.Precipitation);
+                        }
+                        if (success != BA_ReturnCode.Success)
+                        {
+                            errorCount++;
+                        }
+
+                        // PRISM Zones
+                        strLayer = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Prism, true) +
+                            Path.GetFileName((string)Module1.Current.BatchToolSettings.AoiPrecipFile);
+                        strZonesRaster = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) +
+                            Constants.FILE_PRECIP_ZONE;
+                        success = await AnalysisTools.CalculatePrecipitationZonesAsync(strLayer, strZonesRaster);
+                        if (success != BA_ReturnCode.Success)
+                        {
+                            errorCount++;
+                        }
+
+                        // Winter Precipitation
+                        success = await AnalysisTools.GenerateWinterPrecipitationLayerAsync(oAoi);
+                        if (success != BA_ReturnCode.Success)
+                        {
+                            errorCount++;
+                        }
+
+                        // Clip SWE
+                        success = await AnalysisTools.ClipSweLayersAsync(pBufferDistance, pBufferUnits,
+                            strDefaultBufferDistance, strDefaultBufferUnits);
+                        if (success != BA_ReturnCode.Success)
+                        {
+                            errorCount++;
+                        }
+
+                        // Generate SWE Delta Layers
+                        success = await AnalysisTools.CalculateSWEDeltaAsync(aoiFolder);
+
+                        // Clip Snotel and Snow Course
+                        double dblDistance = -1;
+                        bool isDouble = Double.TryParse((string)Module1.Current.BatchToolSettings.SnotelBufferDistance, out dblDistance);
+                        if (!isDouble)
+                        {
+                            dblDistance = 0;
+                        }
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(RunImplAsync), "Buffer distance from settings: " + dblDistance);
+                        string snoBufferDistance = dblDistance + " " + (string)Module1.Current.BatchToolSettings.SnotelBufferUnits;
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(RunImplAsync), "Sites buffer distance string: " + snoBufferDistance);
+                        success = success = await AnalysisTools.ClipSnoLayersAsync(Module1.Current.Aoi.FilePath, true, snoBufferDistance,
+                            true, snoBufferDistance);
+                        if (success != BA_ReturnCode.Success)
+                        {
+                            errorCount++;
+                        }
+
+                        // Represented Area
+                        if (success == BA_ReturnCode.Success)
+                        {
+                            double siteBufferDistanceMiles = (double)Module1.Current.BatchToolSettings.SiteBufferDistMiles;
+                            double siteElevRangeFeet = (double)Module1.Current.BatchToolSettings.SiteElevRangeFeet;
+                            success = await AnalysisTools.GenerateSiteLayersAsync(siteBufferDistanceMiles, siteElevRangeFeet);
                             if (success != BA_ReturnCode.Success)
                             {
                                 errorCount++;
                             }
-                        }
-                        else
-                        {
-                            Module1.Current.ModuleLogManager.LogError(nameof(CmdRun),
-                                "No sites found to create sites zone layers!!");
-                        }
-                    }
-                    // Precipitation Contribution; Passing in -1 for threshold so we use STDEV
-                    success = await AnalysisTools.CalculatePrecipitationContributionAsync(Module1.Current.Aoi.FilePath, -1);
-                    if (success != BA_ReturnCode.Success)
-                    {
-                        errorCount++;
-                    }
 
-                    // Quarterly Precipitation Contribution
-                    success = await AnalysisTools.CalculateQuarterlyPrecipitationAsync(Module1.Current.Aoi);
-                    if (success != BA_ReturnCode.Success)
-                    {
-                        errorCount++;
-                    }
-
-                    // Aspect zones
-                    success = await AnalysisTools.CalculateAspectZonesAsync();
-                    if (success != BA_ReturnCode.Success)
-                    {
-                        errorCount++;
-                    }
-
-                    string[] arrUnmanagedBufferInfo = await GeneralTools.QueryBufferDistanceAsync(aoiFolder, GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Aoi),
-                        Constants.FILE_AOI_BUFFERED_VECTOR, false);
-                    string unmanagedBufferDistance = arrPrismBufferInfo[0];
-                    string unmanagedBufferUnits = arrPrismBufferInfo[1];
-                    if (SiteAnalysisChecked)
-                    {
-                        // Clip Roads
-                        string strOutputFc = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Layers, true)
-                            + Constants.FILE_ROADS;
-                        success = await AnalysisTools.ClipFeatureLayerAsync(aoiFolder, strOutputFc, Constants.DATA_TYPE_ROADS,
-                            unmanagedBufferDistance, unmanagedBufferUnits);
-                        if (success != BA_ReturnCode.Success)
-                        {
-                            errorCount++;
-                        }
-                        if (success == BA_ReturnCode.Success)
-                        {
-                            // Buffer clipped roads for analysis
-                            Uri uri = new Uri(GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Layers));
-                            bool bExists = await GeodatabaseTools.FeatureClassExistsAsync(uri, Constants.FILE_ROADS);
-                            if (!bExists)
+                            // Sites Zones
+                            Uri uri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers));
+                            bool hasSnotel = await GeodatabaseTools.FeatureClassExistsAsync(uri, Constants.FILE_SNOTEL);
+                            bool hasSnowCourse = await GeodatabaseTools.FeatureClassExistsAsync(uri, Constants.FILE_SNOW_COURSE);
+                            if (hasSnotel || hasSnowCourse)
                             {
-                                Module1.Current.ModuleLogManager.LogDebug(nameof(CmdRun),
-                                    "Unable to buffer roads because fs_roads layer does not exist. Process stopped!!");
-                            }
-                            else
-                            {
-                                string strDistance = Module1.Current.BatchToolSettings.RoadsAnalysisBufferDistance + " " +
-                                    Module1.Current.BatchToolSettings.RoadsAnalysisBufferUnits;
-                                success = await AnalysisTools.GenerateProximityRoadsLayerAsync(uri, strDistance);
+                                success = await AnalysisTools.CalculateSitesZonesAsync(Module1.Current.Aoi.FilePath, hasSnotel, hasSnowCourse);
                                 if (success != BA_ReturnCode.Success)
                                 {
                                     errorCount++;
                                 }
                             }
+                            else
+                            {
+                                Module1.Current.ModuleLogManager.LogError(nameof(CmdRun),
+                                    "No sites found to create sites zone layers!!");
+                            }
                         }
-
-                        // Clip public lands
-                        strOutputFc = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Layers, true)
-                            + Constants.FILE_LAND_OWNERSHIP;
-                        success = await AnalysisTools.ClipFeatureLayerAsync(aoiFolder, strOutputFc, Constants.DATA_TYPE_LAND_OWNERSHIP,
-                            unmanagedBufferDistance, unmanagedBufferUnits);
+                        // Precipitation Contribution; Passing in -1 for threshold so we use STDEV
+                        success = await AnalysisTools.CalculatePrecipitationContributionAsync(Module1.Current.Aoi.FilePath, -1);
                         if (success != BA_ReturnCode.Success)
                         {
                             errorCount++;
                         }
-                        if (success == BA_ReturnCode.Success)
+
+                        // Quarterly Precipitation Contribution
+                        success = await AnalysisTools.CalculateQuarterlyPrecipitationAsync(Module1.Current.Aoi);
+                        if (success != BA_ReturnCode.Success)
                         {
-                            // Create public lands layer for potential site analysis
-                            success = await AnalysisTools.GetFederalNonWildernessLandsAsync(aoiFolder);
+                            errorCount++;
+                        }
+
+                        // Aspect zones
+                        success = await AnalysisTools.CalculateAspectZonesAsync();
+                        if (success != BA_ReturnCode.Success)
+                        {
+                            errorCount++;
+                        }
+
+                        string[] arrUnmanagedBufferInfo = await GeneralTools.QueryBufferDistanceAsync(aoiFolder, GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Aoi),
+                            Constants.FILE_AOI_BUFFERED_VECTOR, false);
+                        string unmanagedBufferDistance = arrPrismBufferInfo[0];
+                        string unmanagedBufferUnits = arrPrismBufferInfo[1];
+                        if (SiteAnalysisChecked)
+                        {
+                            // Clip Roads
+                            string strOutputFc = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Layers, true)
+                                + Constants.FILE_ROADS;
+                            success = await AnalysisTools.ClipFeatureLayerAsync(aoiFolder, strOutputFc, Constants.DATA_TYPE_ROADS,
+                                unmanagedBufferDistance, unmanagedBufferUnits);
                             if (success != BA_ReturnCode.Success)
                             {
                                 errorCount++;
                             }
-                        }
-
-                        // Clip Land cover
-                        success = await AnalysisTools.ClipLandCoverAsync(aoiFolder, unmanagedBufferDistance, unmanagedBufferUnits);
-                        if (success != BA_ReturnCode.Success)
-                        {
-                            errorCount++;
-                        }
-
-                        if (success == BA_ReturnCode.Success)
-                        {
-                            // Create area below forested area layer for potential site analysis
-                            success = await AnalysisTools.ExtractForestedAreaAsync(aoiFolder);
-                            if (success != BA_ReturnCode.Success)
+                            if (success == BA_ReturnCode.Success)
                             {
-                                errorCount++;
-                            }
-                        }
-
-                        // Generate Potential Sites layer
-                        success = await AnalysisTools.CalculatePotentialSitesAreaAsync(aoiFolder);
-                        if (success != BA_ReturnCode.Success)
-                        {
-                            errorCount++;
-                        }
-                    }
-                    
-                    // Generate Elevation Precipitation Correlation layer
-                    strLayer = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Prism, true) +
-                        Path.GetFileName((string)Module1.Current.BatchToolSettings.AoiPrecipFile);
-                    Uri uriPrism = new Uri(GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Prism));
-                    success = await AnalysisTools.CalculateElevPrecipCorrAsync(aoiFolder, uriPrism,
-                        Path.GetFileName((string)Module1.Current.BatchToolSettings.AoiPrecipFile));
-                    if (success != BA_ReturnCode.Success)
-                    {
-                        errorCount++;
-                    }
-                    if (success == BA_ReturnCode.Success)
-                    {
-                        Module1.Current.ModuleLogManager.LogDebug(nameof(CmdRun),
-                            "Generated Elevation Precipitation Correlation layer");
-                    }
-
-                    // Generate complete PDF document
-                    try
-                    {
-                        // Delete any old PDF files
-                        foreach (var item in Constants.FILES_EXPORT_WATERSHED_PDF)
-                        {
-                            string strPath = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE
-                                + "\\" + item;
-                            if (System.IO.File.Exists(strPath))
-                            {
-                                try
+                                // Buffer clipped roads for analysis
+                                Uri uri = new Uri(GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Layers));
+                                bool bExists = await GeodatabaseTools.FeatureClassExistsAsync(uri, Constants.FILE_ROADS);
+                                if (!bExists)
                                 {
-                                    System.IO.File.Delete(strPath);
+                                    Module1.Current.ModuleLogManager.LogDebug(nameof(CmdRun),
+                                        "Unable to buffer roads because fs_roads layer does not exist. Process stopped!!");
                                 }
-                                catch (Exception)
+                                else
                                 {
-                                    System.Windows.MessageBoxResult res =
-                                        MessageBox.Show("Unable to delete file before creating new pdf. Do you want to close the file and try again?",
-                                        "BAGIS-PRO", System.Windows.MessageBoxButton.YesNo);
-                                    if (res == System.Windows.MessageBoxResult.Yes)
+                                    string strDistance = Module1.Current.BatchToolSettings.RoadsAnalysisBufferDistance + " " +
+                                        Module1.Current.BatchToolSettings.RoadsAnalysisBufferUnits;
+                                    success = await AnalysisTools.GenerateProximityRoadsLayerAsync(uri, strDistance);
+                                    if (success != BA_ReturnCode.Success)
                                     {
-                                        return;
+                                        errorCount++;
                                     }
                                 }
                             }
-                        }
 
-                        Layout oLayout = await MapTools.GetDefaultLayoutAsync(Constants.MAPS_DEFAULT_LAYOUT_NAME);
-
-                        // Always load the maps in case we are running through multiple Aois
-                        success = await MapTools.DisplayMaps(Module1.Current.Aoi.FilePath, oLayout, false);
-                        if (success != BA_ReturnCode.Success)
-                        {
-                            MessageBox.Show("Unable to load maps. The map package cannot be exported!!", "BAGIS-PRO");
-                            Names[idxRow].AoiBatchStateText = AoiBatchState.Failed.ToString();
-                            return;
-                        }
-                        // Legend
-                        success = await MapTools.DisplayLegendAsync(Constants.MAPS_DEFAULT_MAP_FRAME_NAME, oLayout,
-                            "ArcGIS Colors", "1.5 Point", true);
-                        if (success != BA_ReturnCode.Success)
-                        {
-                            errorCount++;
-                        }
-
-                        if (oLayout != null)
-                        {
-                            bool bFoundIt = false;
-                            //A layout view may exist but it may not be active
-                            //Iterate through each pane in the application and check to see if the layout is already open and if so, activate it
-                            foreach (var pane in FrameworkApplication.Panes)
+                            // Clip public lands
+                            strOutputFc = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Layers, true)
+                                + Constants.FILE_LAND_OWNERSHIP;
+                            success = await AnalysisTools.ClipFeatureLayerAsync(aoiFolder, strOutputFc, Constants.DATA_TYPE_LAND_OWNERSHIP,
+                                unmanagedBufferDistance, unmanagedBufferUnits);
+                            if (success != BA_ReturnCode.Success)
                             {
-                                if (!(pane is ILayoutPane layoutPane))  //if not a layout view, continue to the next pane    
-                                    continue;
-                                if (layoutPane.LayoutView != null &&
-                                    layoutPane.LayoutView.Layout == oLayout) //if there is a match, activate the view  
+                                errorCount++;
+                            }
+                            if (success == BA_ReturnCode.Success)
+                            {
+                                // Create public lands layer for potential site analysis
+                                success = await AnalysisTools.GetFederalNonWildernessLandsAsync(aoiFolder);
+                                if (success != BA_ReturnCode.Success)
                                 {
-                                    (layoutPane as Pane).Activate();
-                                    bFoundIt = true;
+                                    errorCount++;
                                 }
                             }
-                            if (!bFoundIt)
+
+                            // Clip Land cover
+                            success = await AnalysisTools.ClipLandCoverAsync(aoiFolder, unmanagedBufferDistance, unmanagedBufferUnits);
+                            if (success != BA_ReturnCode.Success)
                             {
-                                await FrameworkApplication.Current.Dispatcher.Invoke(async () =>
+                                errorCount++;
+                            }
+
+                            if (success == BA_ReturnCode.Success)
+                            {
+                                // Create area below forested area layer for potential site analysis
+                                success = await AnalysisTools.ExtractForestedAreaAsync(aoiFolder);
+                                if (success != BA_ReturnCode.Success)
                                 {
-                                    // Do something on the GUI thread
-                                    ILayoutPane iNewLayoutPane = await FrameworkApplication.Panes.CreateLayoutPaneAsync(oLayout); //GUI thread
-                                    (iNewLayoutPane as Pane).Activate();
-                                });
+                                    errorCount++;
+                                }
+                            }
+
+                            // Generate Potential Sites layer
+                            success = await AnalysisTools.CalculatePotentialSitesAreaAsync(aoiFolder);
+                            if (success != BA_ReturnCode.Success)
+                            {
+                                errorCount++;
                             }
                         }
 
-                        int pdfExportResolution = Constants.PDF_EXPORT_RESOLUTION;
-                        if (Module1.Current.BatchToolSettings.PdfExportResolution != null)
-                        {
-                            pdfExportResolution = (int)Module1.Current.BatchToolSettings.PdfExportResolution;
-                        }
-
-                        success = await MapTools.PublishMapsAsync(ReportType.Watershed, pdfExportResolution); // export the watershed maps to pdf
+                        // Generate Elevation Precipitation Correlation layer
+                        strLayer = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Prism, true) +
+                            Path.GetFileName((string)Module1.Current.BatchToolSettings.AoiPrecipFile);
+                        Uri uriPrism = new Uri(GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Prism));
+                        success = await AnalysisTools.CalculateElevPrecipCorrAsync(aoiFolder, uriPrism,
+                            Path.GetFileName((string)Module1.Current.BatchToolSettings.AoiPrecipFile));
                         if (success != BA_ReturnCode.Success)
                         {
-                            MessageBox.Show("An error occurred while generating the watershed characteristics maps!!", "BAGIS-PRO");
                             errorCount++;
+                        }
+                        if (success == BA_ReturnCode.Success)
+                        {
+                            Module1.Current.ModuleLogManager.LogDebug(nameof(CmdRun),
+                                "Generated Elevation Precipitation Correlation layer");
                         }
 
-                        //if (SiteAnalysisChecked)
-                        //{
-                        //    success = await MapTools.PublishMapsAsync(ReportType.SiteAnalysis); // export the site analysis maps to pdf
-                        //    if (success != BA_ReturnCode.Success)
-                        //    {
-                        //        MessageBox.Show("An error occurred while generating the site analysis maps!!", "BAGIS-PRO");
-                        //        errorCount++;
-                        //    }
-                        //}
- 
-                        success = await GeneralTools.GenerateTablesAsync(false);   // export the tables to pdf
-                        if (success != BA_ReturnCode.Success)
+                        // Generate complete PDF document
+                        try
                         {
-                            MessageBox.Show("An error occurred while generating the Excel tables!!", "BAGIS-PRO");
-                            errorCount++;
-                        }
-                        else
-                        {
-                           // Generate the crtical precip map; It has to follow the tables
-                           Uri uriAnalysis = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis));
-                           if (await GeodatabaseTools.FeatureClassExistsAsync(uriAnalysis, Constants.FILE_CRITICAL_PRECIP_ZONE))
-                           {
-                                success = await MapTools.DisplayCriticalPrecipitationZonesMap(uriAnalysis);
-                                string strButtonState = "MapButtonPalette_BtnCriticalPrecipZone_State";
-                                if (success.Equals(BA_ReturnCode.Success))
-                                      Module1.ActivateState(strButtonState);
-                                int foundS1 = strButtonState.IndexOf("_State");
-                                string strMapButton = strButtonState.Remove(foundS1);
+                            // Delete any old PDF files
+                            foreach (var item in Constants.FILES_EXPORT_WATERSHED_PDF)
+                            {
+                                string strPath = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE
+                                    + "\\" + item;
+                                if (System.IO.File.Exists(strPath))
+                                {
+                                    try
+                                    {
+                                        System.IO.File.Delete(strPath);
+                                    }
+                                    catch (Exception)
+                                    {
+                                        System.Windows.MessageBoxResult res =
+                                            MessageBox.Show("Unable to delete file before creating new pdf. Do you want to close the file and try again?",
+                                            "BAGIS-PRO", System.Windows.MessageBoxButton.YesNo);
+                                        if (res == System.Windows.MessageBoxResult.Yes)
+                                        {
+                                            return;
+                                        }
+                                    }
+                                }
+                            }
+
+                            Layout oLayout = await MapTools.GetDefaultLayoutAsync(Constants.MAPS_DEFAULT_LAYOUT_NAME);
+
+                            // Always load the maps in case we are running through multiple Aois
+                            success = await MapTools.DisplayMaps(Module1.Current.Aoi.FilePath, oLayout, false);
+                            if (success != BA_ReturnCode.Success)
+                            {
+                                MessageBox.Show("Unable to load maps. The map package cannot be exported!!", "BAGIS-PRO");
+                                Names[idxRow].AoiBatchStateText = AoiBatchState.Failed.ToString();
+                                return;
+                            }
+                            // Legend
+                            success = await MapTools.DisplayLegendAsync(Constants.MAPS_DEFAULT_MAP_FRAME_NAME, oLayout,
+                                "ArcGIS Colors", "1.5 Point", true);
+                            if (success != BA_ReturnCode.Success)
+                            {
+                                errorCount++;
+                            }
+
+                            if (oLayout != null)
+                            {
+                                bool bFoundIt = false;
+                                //A layout view may exist but it may not be active
+                                //Iterate through each pane in the application and check to see if the layout is already open and if so, activate it
+                                foreach (var pane in FrameworkApplication.Panes)
+                                {
+                                    if (!(pane is ILayoutPane layoutPane))  //if not a layout view, continue to the next pane    
+                                        continue;
+                                    if (layoutPane.LayoutView != null &&
+                                        layoutPane.LayoutView.Layout == oLayout) //if there is a match, activate the view  
+                                    {
+                                        (layoutPane as Pane).Activate();
+                                        bFoundIt = true;
+                                    }
+                                }
+                                if (!bFoundIt)
+                                {
+                                    await FrameworkApplication.Current.Dispatcher.Invoke(async () =>
+                                    {
+                                        // Do something on the GUI thread
+                                        ILayoutPane iNewLayoutPane = await FrameworkApplication.Panes.CreateLayoutPaneAsync(oLayout); //GUI thread
+                                        (iNewLayoutPane as Pane).Activate();
+                                    });
+                                }
+                            }
+
+                            int pdfExportResolution = Constants.PDF_EXPORT_RESOLUTION;
+                            if (Module1.Current.BatchToolSettings.PdfExportResolution != null)
+                            {
+                                pdfExportResolution = (int)Module1.Current.BatchToolSettings.PdfExportResolution;
+                            }
+
+                            success = await MapTools.PublishMapsAsync(ReportType.Watershed, pdfExportResolution); // export the watershed maps to pdf
+                            if (success != BA_ReturnCode.Success)
+                            {
+                                MessageBox.Show("An error occurred while generating the watershed characteristics maps!!", "BAGIS-PRO");
+                                errorCount++;
+                            }
+
+                            success = await GeneralTools.GenerateTablesAsync(false);   // export the tables to pdf
+                            if (success != BA_ReturnCode.Success)
+                            {
+                                MessageBox.Show("An error occurred while generating the Excel tables!!", "BAGIS-PRO");
+                                errorCount++;
+                            }
+                            else
+                            {
+                                // Generate the crtical precip map; It has to follow the tables
+                                Uri uriAnalysis = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis));
+                                if (await GeodatabaseTools.FeatureClassExistsAsync(uriAnalysis, Constants.FILE_CRITICAL_PRECIP_ZONE))
+                                {
+                                    success = await MapTools.DisplayCriticalPrecipitationZonesMap(uriAnalysis);
+                                    string strButtonState = "MapButtonPalette_BtnCriticalPrecipZone_State";
+                                    if (success.Equals(BA_ReturnCode.Success))
+                                        Module1.ActivateState(strButtonState);
+                                    int foundS1 = strButtonState.IndexOf("_State");
+                                    string strMapButton = strButtonState.Remove(foundS1);
                                     ICommand cmd = FrameworkApplication.GetPlugInWrapper(strMapButton) as ICommand;
                                     Module1.Current.ModuleLogManager.LogDebug(nameof(RunImplAsync),
                                         "About to toggle map button " + strMapButton);
@@ -755,96 +755,86 @@ namespace bagis_pro
                                     }
                                     while (Module1.Current.MapFinishedLoading == false);
                                     success = await GeneralTools.ExportMapToPdfAsync(150);    // export map to pdf
-                                if (success != BA_ReturnCode.Success)
-                                {
-                                     Module1.Current.ModuleLogManager.LogError(nameof(RunImplAsync),
-                                        "Unable to generate critical precipitation zones map!!");
+                                    if (success != BA_ReturnCode.Success)
+                                    {
+                                        Module1.Current.ModuleLogManager.LogError(nameof(RunImplAsync),
+                                           "Unable to generate critical precipitation zones map!!");
+                                    }
                                 }
                             }
-                        }
 
-                        success = await GeneralTools.GenerateSitesTableAsync(Module1.Current.Aoi);
-                        success = await GeneralTools.GenerateMapsTitlePageAsync(ReportType.Watershed, strPublisher, Comments);
-                        if (success != BA_ReturnCode.Success)
-                        {
-                            MessageBox.Show("An error occurred while generating the Title page!!", "BAGIS-PRO");
-                            errorCount++;
-                        }
-                        string outputPath = GeneralTools.GetFullPdfFileName(Constants.FILE_EXPORT_WATERSHED_REPORT_PDF);
-                        string[] arrPieces = Module1.Current.Aoi.StationTriplet.Split(':');
-                        if (arrPieces.Length != 3)
-                        {
-                            Module1.Current.ModuleLogManager.LogDebug(nameof(RunImplAsync), "Unable to determine station triplet for document title!");
-
-                        }
-                        else
-                        {
-                            string strBaseFileName = Module1.Current.Aoi.StationTriplet.Replace(':', '_') + "_Watershed-Report.pdf";
-                            outputPath = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\" + strBaseFileName;
-                        }
-                        success = GeneralTools.PublishFullPdfDocument(outputPath, ReportType.Watershed);    // Put it all together into a single pdf document
-                        if (success != BA_ReturnCode.Success)
-                        {
-                            errorCount++;
-                        }
-                        //if (SiteAnalysisChecked)
-                        //{
-                        //    success = await GeneralTools.GenerateMapsTitlePageAsync(ReportType.SiteAnalysis, strPublisher, Comments);
-                        //    outputPath = GeneralTools.GetFullPdfFileName(Constants.FILE_EXPORT_SITE_ANALYSIS_REPORT_PDF);
-                        //    success = GeneralTools.PublishFullPdfDocument(outputPath, ReportType.SiteAnalysis);    // Put it all together into a single pdf document
-                        //}
-                        if (success != BA_ReturnCode.Success)
-                        {
-                            errorCount++;
-                        }
-                        else if (ArchiveChecked)
-                        {
-                            string reportName = Path.GetFileName(outputPath);
-                            // Copy final watershed analysis report to a central location
-                            if (File.Exists(outputPath))
+                            success = await GeneralTools.GenerateSitesTableAsync(Module1.Current.Aoi);
+                            success = await GeneralTools.GenerateMapsTitlePageAsync(ReportType.Watershed, strPublisher, Comments);
+                            if (success != BA_ReturnCode.Success)
                             {
-                                string targetPath = ParentFolder + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\" + reportName;
-                                if (!targetPath.Equals(outputPath))
+                                MessageBox.Show("An error occurred while generating the Title page!!", "BAGIS-PRO");
+                                errorCount++;
+                            }
+                            string outputPath = GeneralTools.GetFullPdfFileName(Constants.FILE_EXPORT_WATERSHED_REPORT_PDF);
+                            string[] arrPieces = Module1.Current.Aoi.StationTriplet.Split(':');
+                            if (arrPieces.Length != 3)
+                            {
+                                Module1.Current.ModuleLogManager.LogDebug(nameof(RunImplAsync), "Unable to determine station triplet for document title!");
+
+                            }
+                            else
+                            {
+                                string strBaseFileName = Module1.Current.Aoi.StationTriplet.Replace(':', '_') + "_Watershed-Report.pdf";
+                                outputPath = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\" + strBaseFileName;
+                            }
+                            success = GeneralTools.PublishFullPdfDocument(outputPath, ReportType.Watershed);    // Put it all together into a single pdf document
+                            if (success != BA_ReturnCode.Success)
+                            {
+                                errorCount++;
+                            }
+                            if (success != BA_ReturnCode.Success)
+                            {
+                                errorCount++;
+                            }
+                            else if (ArchiveChecked)
+                            {
+                                string reportName = Path.GetFileName(outputPath);
+                                // Copy final watershed analysis report to a central location
+                                if (File.Exists(outputPath))
                                 {
-                                    File.Copy(outputPath, targetPath, true);
-                                    strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Copied report to " +
-                                        ParentFolder + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\" + reportName + "\r\n";
-                                    File.AppendAllText(_strLogFile, strLogEntry);
+                                    string targetPath = ParentFolder + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\" + reportName;
+                                    if (!targetPath.Equals(outputPath))
+                                    {
+                                        File.Copy(outputPath, targetPath, true);
+                                        strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Copied report to " +
+                                            ParentFolder + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\" + reportName + "\r\n";
+                                        File.AppendAllText(_strLogFile, strLogEntry);
+                                    }
                                 }
                             }
-                            //if (SiteAnalysisChecked)
-                            //{
-                            //    reportName = Constants.FILE_EXPORT_SITE_ANALYSIS_REPORT_PDF;
-                            //    File.Copy(outputPath, GeneralTools.GetFullPdfFileName(reportName), true);
-                            //}
+                            // Create closing log entry for AOI
+                            if (errorCount == 0)
+                            {
+                                strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Completed batch PDF export for " +
+                                oAoi.Name + ". The output is located at " + oAoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE + "\r\n";
+                                Names[idxRow].AoiBatchStateText = AoiBatchState.Completed.ToString();
+                            }
+                            else
+                            {
+                                strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Completed batch PDF export WITH ERRORS for " +
+                                oAoi.Name + ". The output is located at " + oAoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE + "\r\n" +
+                                "Check for errors in the logs at " + oAoi.FilePath + "\\" + Constants.FOLDER_LOGS + "! \r\n";
+                                Names[idxRow].AoiBatchStateText = AoiBatchState.Errors.ToString();
+                            }
+                            File.AppendAllText(_strLogFile, strLogEntry);
                         }
-                        // Create closing log entry for AOI
-                        if (errorCount == 0)
+                        catch (Exception e)
                         {
-                            strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Completed batch PDF export for " +
-                            oAoi.Name + ". The output is located at " + oAoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE + "\r\n";
-                            Names[idxRow].AoiBatchStateText = AoiBatchState.Completed.ToString();
+                            Module1.Current.ModuleLogManager.LogError(nameof(RunImplAsync),
+                                e.StackTrace);
+                            strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Batch PDF export failed for " +
+                                oAoi.Name + ". Check for errors in the logs at " + oAoi.FilePath + "\\" + Constants.FOLDER_LOGS + "!\r\n";
+                            File.AppendAllText(_strLogFile, strLogEntry);
+                            Names[idxRow].AoiBatchStateText = AoiBatchState.Failed.ToString();
                         }
-                        else
-                        {
-                            strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Completed batch PDF export WITH ERRORS for " +
-                            oAoi.Name + ". The output is located at " + oAoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE + "\r\n" +
-                            "Check for errors in the logs at " + oAoi.FilePath + "\\" + Constants.FOLDER_LOGS + "! \r\n";
-                            Names[idxRow].AoiBatchStateText = AoiBatchState.Errors.ToString();
-                        }
-                        File.AppendAllText(_strLogFile, strLogEntry);                        
-                    }
-                    catch (Exception e)
-                    {
-                        Module1.Current.ModuleLogManager.LogError(nameof(RunImplAsync),
-                            e.StackTrace);
-                        strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Batch PDF export failed for " +
-                            oAoi.Name + ". Check for errors in the logs at " + oAoi.FilePath + "\\" + Constants.FOLDER_LOGS + "!\r\n";
-                        File.AppendAllText(_strLogFile, strLogEntry);
-                        Names[idxRow].AoiBatchStateText = AoiBatchState.Failed.ToString();
                     }
                 }
-            }
+            }   // Move on to next AOI
             MessageBox.Show("Done!");
 
             // Concluding log entry
