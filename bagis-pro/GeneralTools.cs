@@ -2649,9 +2649,9 @@ namespace bagis_pro
                 strSettingsPath = strTempPath;
             }
             // Check to see if batch tool settings are already there
+            Webservices ws = new Webservices();
             if (!File.Exists(strSettingsPath + @"\" + Constants.FILE_BATCH_TOOL_SETTINGS))
             {
-                Webservices ws = new Webservices();
                 var success = Task.Run(() => ws.DownloadBatchSettingsAsync(Module1.Current.DefaultEbagisServer,
                     strSettingsPath + @"\" + Constants.FILE_BATCH_TOOL_SETTINGS));
                 if ((BA_ReturnCode)success.Result == BA_ReturnCode.Success)
@@ -2666,7 +2666,8 @@ namespace bagis_pro
                 }
 
             }
-            // Load batch tool settings from file
+            // Load batch tool settings from local file
+            dynamic oBatchSettings = null;
             if (File.Exists(strSettingsPath + @"\" + Constants.FILE_BATCH_TOOL_SETTINGS))
             {
                 // read JSON directly from a file
@@ -2674,13 +2675,38 @@ namespace bagis_pro
                 {
                     using (JsonTextReader reader = new JsonTextReader(new StreamReader(fs)))
                     {
-                        dynamic oBatchSettings = (JObject)JToken.ReadFrom(reader);
-                        if (oBatchSettings != null)
-                        {
-                            Module1.Current.BatchToolSettings = oBatchSettings;
-                        }
-                        string server = oBatchSettings.EBagisServer;
+                        oBatchSettings = (JObject)JToken.ReadFrom(reader);
                     }
+                }
+                // Check for most current server version
+                var result = Task.Run(() => ws.QueryBatchToolSettingsVersionAsync(Module1.Current.DefaultEbagisServer));
+                double dblServerVersion = (double)result.Result;
+                if ((oBatchSettings != null) && ((double)oBatchSettings.Version < dblServerVersion))
+                {
+                    var success = Task.Run(() => ws.DownloadBatchSettingsAsync(Module1.Current.DefaultEbagisServer,
+                        strSettingsPath + @"\" + Constants.FILE_BATCH_TOOL_SETTINGS));
+                    if ((BA_ReturnCode)success.Result == BA_ReturnCode.Success)
+                    {
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(LoadBatchToolSettings),
+                            "Downloaded updated batch tool settings to BAGIS folder");
+                    }
+                    else
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(LoadBatchToolSettings),
+                            "Unable to update batch tool settings to BAGIS folder");
+                    }
+                    // read JSON directly from the new file
+                    using (FileStream fs = File.OpenRead(strSettingsPath + @"\" + Constants.FILE_BATCH_TOOL_SETTINGS))
+                    {
+                        using (JsonTextReader reader = new JsonTextReader(new StreamReader(fs)))
+                        {
+                            oBatchSettings = (JObject)JToken.ReadFrom(reader);
+                        }
+                    }
+                }
+                if (oBatchSettings != null)
+                {
+                    Module1.Current.BatchToolSettings = oBatchSettings;
                 }
                 return BA_ReturnCode.Success;
             }

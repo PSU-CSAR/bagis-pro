@@ -548,5 +548,25 @@ namespace bagis_pro
                 string outStr = respMsg.Content.ReadAsStringAsync().Result;
             }
         }
+
+        public async Task<double> QueryBatchToolSettingsVersionAsync(string webserviceUrl)
+        {
+            try
+            {
+                IDictionary<string, dynamic> dictDataSources = new Dictionary<string, dynamic>();
+                webserviceUrl = webserviceUrl + @"/api/rest/desktop/settings/bagis-pro/";
+                EsriHttpResponseMessage response = new EsriHttpClient().Get(webserviceUrl);
+                JObject jsonVal = JObject.Parse(await response.Content.ReadAsStringAsync()) as JObject;
+                dynamic oSettings = (JObject)jsonVal["BatchSettings"];
+                return (double)oSettings.Version;
+            }
+            catch (Exception)
+            {
+                Module1.Current.ModuleLogManager.LogDebug(nameof(QueryBatchToolSettingsVersionAsync),
+                    "An error occurred while trying to retrieve the batch settings version number from the ebagis server!");
+                return -1;
+            }
+
+        }
     }
 }
