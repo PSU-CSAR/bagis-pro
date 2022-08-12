@@ -292,13 +292,38 @@ namespace bagis_pro
             if (gpResult.IsFailed)
             {
                 Module1.Current.ModuleLogManager.LogError(nameof(ApplySymbologyFromLayerAsync),
-                    "Geoprocessing faile: " + gpResult.Messages);
+                    "Geoprocessing failed: " + gpResult.Messages);
                 return BA_ReturnCode.UnknownError;
             }
             else
             {
                 return BA_ReturnCode.Success;
             }
+        }
+
+        public static async Task<BA_ReturnCode> FeaturesToSnodasGeoJsonAsync(string in_features, string out_json_file,
+            bool formatJson)
+        {
+            string strFormatJson = "NOT_FORMATTED";
+            if (formatJson)
+            {
+                strFormatJson = "FORMATTED";
+            }
+            var parameters = Geoprocessing.MakeValueArray(in_features, out_json_file, strFormatJson, null, null,
+                "GEOJSON", "WGS84");
+            IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("FeaturesToJSON_conversion", parameters, null,
+                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+            if (gpResult.IsFailed)
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(FeaturesToSnodasGeoJsonAsync),
+                    "Geoprocessing failed: " + gpResult.Messages);
+                return BA_ReturnCode.UnknownError;
+            }
+            else
+            {
+                return BA_ReturnCode.Success;
+            }
+
         }
     }
 }

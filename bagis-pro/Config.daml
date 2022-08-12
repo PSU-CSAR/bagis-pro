@@ -51,7 +51,7 @@
           <button refID="bagis_pro_DockBatchPdfExport_ShowButton" size="middle" />
           <button refID="bagis_pro_DockMigrateToFGDB_ShowButton" size="middle" />
           <button refID="bagis_pro_Buttons_BtnTest" size="middle" />
-          <button refID="bagis_pro_ExportForSnodas" size="middle" />
+          <button refID="bagis_pro_DockExportForSnodas_ShowButton" size="middle" />
         </group>
       </groups>
       <toolbars>
@@ -248,8 +248,8 @@
         <button id="bagis_pro_Buttons_BtnTest" caption="Update PDF Files" className="bagis_pro.Buttons.BtnTest" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericButtonBlue16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericButtonBlue32.png" keytip="B60">
           <tooltip heading="Tooltip Heading">Update PDF Files<disabledText /></tooltip>
         </button>
-        <button id="bagis_pro_ExportForSnodas" caption="Export For Snodas" className="bagis_pro.Buttons.BtnExportForSnodas" loadOnClick="true" smallImage="Images\snowflake.png" largeImage="Images\snowflake.png" keytip="B61">
-          <tooltip heading="Tooltip Heading">Export For Snodas<disabledText /></tooltip>
+        <button id="bagis_pro_DockExportForSnodas_ShowButton" caption="Export For Snodas" className="DockExportForSnodas_ShowButton" loadOnClick="true" smallImage="Images\snowflake.png" largeImage="Images\snowflake.png" keytip="B61">
+          <tooltip heading="Show Dockpane">Export For Snodas<disabledText /></tooltip>
         </button>
       </controls>
       <menus>
@@ -291,6 +291,9 @@
         </dockPane>
         <dockPane id="bagis_pro_DockMapPackage" caption="Map Settings" className="DockMapPackageViewModel" dock="group" dockWith="esri_core_contentsDockPane">
           <content className="DockMapPackageView" />
+        </dockPane>
+        <dockPane id="bagis_pro_DockExportForSnodas" caption="DockExportForSnodas" className="DockExportForSnodasViewModel" dock="group" dockWith="esri_core_projectDockPane">
+          <content className="DockExportForSnodasView" />
         </dockPane>
       </dockPanes>
     </insertModule>

@@ -195,6 +195,10 @@
       <DependentUpon>DockAnalysisLayers.xaml</DependentUpon>
     </Compile>
     <Compile Include="DockAnalysisLayersViewModel.cs" />
+    <Compile Include="DockExportForSnodas.xaml.cs">
+      <DependentUpon>DockExportForSnodas.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="DockExportForSnodasViewModel.cs" />
     <Compile Include="DockMapPackage.xaml.cs">
       <DependentUpon>DockMapPackage.xaml</DependentUpon>
     </Compile>
@@ -341,6 +345,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="DockAnalysisLayers.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="DockExportForSnodas.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
