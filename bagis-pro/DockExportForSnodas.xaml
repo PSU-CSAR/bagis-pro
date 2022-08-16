@@ -17,8 +17,15 @@
     </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="25"/>
+            <RowDefinition Height="25"/>
+            <RowDefinition Height="20"/>
+            <RowDefinition Height="25"/>
+            <RowDefinition Height="20"/>
+            <RowDefinition Height="25"/>
+            <RowDefinition Height="25"/>
+            <RowDefinition Height="20"/>
+            <RowDefinition Height="25"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
@@ -26,21 +33,56 @@
             <ColumnDefinition Width="Auto"/>
         </Grid.ColumnDefinitions>
 
-        <DockPanel Grid.Row="0" LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
-            <TextBlock Grid.Column="1" Text="{Binding Heading}" Style="{DynamicResource Esri_TextBlockDockPaneHeader}">
-                <TextBlock.ToolTip>
-                    <WrapPanel Orientation="Vertical" MaxWidth="300">
-                        <TextBlock Text="{Binding Heading}" TextWrapping="Wrap"/>
-                    </WrapPanel>
-                </TextBlock.ToolTip>
-      </TextBlock>
+        <DockPanel Grid.Row="0" Grid.Column="0" LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Margin="2,0,2,0">
+            <TextBlock Text="Point layer  " VerticalAlignment="Center"/>
+            <TextBox x:Name="txtPointPath" Text="{Binding PointPath}" HorizontalAlignment="Left"  VerticalAlignment="Center" Width="190" IsReadOnly="True" Margin="5,0,0,0" />
+        </DockPanel>
+        <DockPanel Grid.Row="0" Grid.Column="1" Margin="2,0,2,0">
+            <Button x:Name="btnPoint" Content="Select" HorizontalAlignment="Right"  VerticalAlignment="Center" Width="40" Command="{Binding CmdSelectPoint}" Margin="5, 0, 0, 0"/>
         </DockPanel>
         <DockPanel Grid.Row="1" Grid.Column="0" LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Margin="2,0,2,0">
-            <TextBox x:Name="txtAoiFolder" Text="{Binding AoiFolder}" HorizontalAlignment="Left"  VerticalAlignment="Center" Width="210" IsReadOnly="True" Margin="5,0,0,0" />
+            <TextBlock Text="Station triplet  " VerticalAlignment="Center"/>
+            <TextBox x:Name="txtStationTriplet" Text="{Binding StationTriplet}" HorizontalAlignment="Left"  VerticalAlignment="Center" Width="150"  Margin="5,0,0,0" />
         </DockPanel>
-        <DockPanel Grid.Row="1" Grid.Column="1" Margin="2,0,2,0">
-            <Button x:Name="btnPoint" Content="Select" HorizontalAlignment="Right"  VerticalAlignment="Center" Width="45" Command="{Binding CmdSelectPoint}" Margin="5, 0, 0, 0"/>
+        <DockPanel Grid.Row="2" Grid.Column="0" LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Margin="2,0,2,0" Grid.ColumnSpan="2">
+            <TextBlock
+                Name="tbMultiLine"
+                TextWrapping="WrapWithOverflow" MaxWidth="300" HorizontalAlignment="Left" VerticalAlignment="Top">
+                Station triplet is required. Example: 09286700:UT:USGS
+            </TextBlock>
         </DockPanel>
-
+        <DockPanel Grid.Row="3" Grid.Column="0" LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Margin="2,0,2,0" Grid.ColumnSpan="2">
+            <TextBlock Text="Watershed name  " VerticalAlignment="Center"/>
+            <TextBox x:Name="txtName" Text="{Binding StationName}" HorizontalAlignment="Left"  VerticalAlignment="Center" Width="175"  Margin="5,0,0,0" />
+        </DockPanel>
+        <DockPanel Grid.Row="4" Grid.Column="0" LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Margin="2,0,2,0" Grid.ColumnSpan="2">
+            <TextBlock
+                TextWrapping="WrapWithOverflow" MaxWidth="300" HorizontalAlignment="Left" VerticalAlignment="Top">
+                Watershed name is required.
+            </TextBlock>
+        </DockPanel>
+        <DockPanel Grid.Row="5" Grid.Column="0" LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Margin="2,0,2,0">
+            <TextBlock Text="Polygon layer  " VerticalAlignment="Center"/>
+            <TextBox x:Name="txtPolyPath" Text="{Binding PolyPath}" HorizontalAlignment="Left"  VerticalAlignment="Center" Width="190" IsReadOnly="True" Margin="5,0,0,0" />
+        </DockPanel>
+        <DockPanel Grid.Row="5" Grid.Column="1" Margin="2,0,2,0">
+            <Button x:Name="btnPoly" Content="Select" HorizontalAlignment="Right"  VerticalAlignment="Center" Width="40" Command="{Binding CmdSelectPoly}" Margin="5, 0, 0, 0"/>
+        </DockPanel>
+        <DockPanel Grid.Row="6" Grid.Column="0" LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Margin="2,0,2,0">
+            <TextBlock Text="Output path  " VerticalAlignment="Center"/>
+            <TextBox x:Name="txtOutputPath" Text="{Binding OutputPath}" HorizontalAlignment="Left"  VerticalAlignment="Center" Width="190" IsReadOnly="True" Margin="5,0,0,0" />
+        </DockPanel>
+        <DockPanel Grid.Row="6" Grid.Column="1" Margin="2,0,2,0">
+            <Button x:Name="btnOutput" Content="Select" HorizontalAlignment="Right"  VerticalAlignment="Center" Width="40" Command="{Binding CmdSelectOutput}" Margin="5, 0, 0, 0"/>
+        </DockPanel>
+        <DockPanel Grid.Row="7" Grid.Column="0" LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Margin="2,0,2,0" Grid.ColumnSpan="2">
+            <TextBlock
+                TextWrapping="WrapWithOverflow" MaxWidth="300" HorizontalAlignment="Left" VerticalAlignment="Top">
+                The output file name is basin.geojson
+            </TextBlock>
+        </DockPanel>
+        <DockPanel Grid.Row="8" Grid.Column="0" LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Margin="2,0,2,0" Grid.ColumnSpan="2">
+            <Button x:Name="btnExport" Content="Create geojson file for Snodas" HorizontalAlignment="Center"  VerticalAlignment="Center" Width="225" Command="{Binding CmdExport}" Margin="5, 0, 0, 0"/>
+        </DockPanel>
     </Grid>
 </UserControl>
