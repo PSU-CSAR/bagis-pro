@@ -616,7 +616,7 @@ namespace bagis_pro
                 pChartsWorksheet.Name = "Charts";
 
                 // Query min/max from dem
-                string sMask = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_RASTER;
+                string sMask = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_VECTOR;
                 IList<double> lstResult = await GeoprocessingTools.GetDemStatsAsync(Module1.Current.Aoi.FilePath, sMask, 0.005);
                 double elevMinMeters = -1;
                 double elevMaxMeters = -1;
@@ -679,12 +679,12 @@ namespace bagis_pro
                 }
 
                 string strPrecipPath = Module1.Current.Aoi.FilePath + "\\" + Module1.Current.BatchToolSettings.AoiPrecipFile;
-                success = await ExcelTools.CreatePrecipitationTableAsync(pPRISMWorkSheet,
+                int intZones = await ExcelTools.CreatePrecipitationTableAsync(pPRISMWorkSheet,
                    strPrecipPath, elevMinMeters);
 
                 double MaxPct = -1;
                 int lastRow = -1;
-                if (success == BA_ReturnCode.Success)
+                if (intZones > 0)
                 {
                     // copy DEM area and %_area to the PRISM table
                     success = ExcelTools.CopyCells(pAreaElvWorksheet, 3, pPRISMWorkSheet, 12);
@@ -701,7 +701,7 @@ namespace bagis_pro
                     IList<BA_Objects.Interval> lstIntervals = await GeodatabaseTools.ReadReclassRasterAttribute(uriElevZones, Constants.FILE_ELEV_ZONE);
                     double dblMinVolume = (double)Module1.Current.BatchToolSettings.CriticalPrecipMinMeanVolInches;
                     double dblMaxPctVolume = (double)Module1.Current.BatchToolSettings.CriticalPrecipTotalMaxVolPct;
-                    IList<string> lstCriticalZoneValues = ExcelTools.CreateCriticalPrecipitationZones(pPRISMWorkSheet, lstIntervals, dblMinVolume, dblMaxPctVolume);
+                    IList<string> lstCriticalZoneValues = ExcelTools.CreateCriticalPrecipitationZones(pPRISMWorkSheet, lstIntervals, dblMinVolume, dblMaxPctVolume, intZones);
 
                     // Add textbox comments to worksheet
                     if (lastRow > 4)

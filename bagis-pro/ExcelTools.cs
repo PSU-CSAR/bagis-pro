@@ -192,7 +192,21 @@ namespace bagis_pro
                                         double count = Convert.ToDouble(row[Constants.FIELD_COUNT]);
                                         percentArea = percentArea + (count / sumOfCount * 100);
                                         // Populate Excel Table
-                                        double dblUpperBound = lstInterval[i].UpperBound;
+                                        string strValue = Convert.ToString(row[Constants.FIELD_VALUE]);
+                                        BA_Objects.Interval oInterval = null;
+                                        foreach (var item in lstInterval)
+                                        {
+                                            string itemValue = Convert.ToString(item.Value);
+                                            if (itemValue.Equals(strValue))
+                                            {
+                                                oInterval = item;
+                                            }
+                                        }
+                                        double dblUpperBound = -1;
+                                        if (oInterval != null)
+                                        {
+                                            dblUpperBound = oInterval.UpperBound;
+                                        }
                                         if (!strDemDisplayUnits.Equals(strDemUnits))
                                         {
                                             if (strDemDisplayUnits.Equals("Meters") &&
@@ -217,7 +231,10 @@ namespace bagis_pro
                                         pworksheet.Cells[i + 3, 9] = row["SUM"];
                                         pworksheet.Cells[i + 3, 10] = count / sumOfCount * 100;
                                         pworksheet.Cells[i + 3, 11] = percentArea;
-                                        pworksheet.Cells[i + 3, 12] = lstInterval[i].Name;
+                                        if (oInterval != null)
+                                        {
+                                            pworksheet.Cells[i + 3, 12] = oInterval.Name;
+                                        }                                        
                                         i++;
                                     }
                                 }
@@ -380,10 +397,9 @@ namespace bagis_pro
             return success;
         }
 
-        public static async Task<BA_ReturnCode> CreatePrecipitationTableAsync(Worksheet pworksheet, string precipPath,
+        public static async Task<int> CreatePrecipitationTableAsync(Worksheet pworksheet, string precipPath,
             double aoiDemMin)
         {
-            BA_ReturnCode success = BA_ReturnCode.UnknownError;
             string strDemDisplayUnits = (string)Module1.Current.BatchToolSettings.DemDisplayUnits;
             string strDemUnits = (string)Module1.Current.BatchToolSettings.DemUnits;
             Uri uriElevZones = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false));
@@ -409,11 +425,7 @@ namespace bagis_pro
             {
                 Module1.Current.ModuleLogManager.LogError(nameof(CreatePrecipitationTableAsync), "An error occurred while creating " +
                     "the Precipitation zonal statistics table. Exception: " + gpResult.ErrorCode);
-                return BA_ReturnCode.OtherError;
-            }
-            else
-            {
-                success = BA_ReturnCode.Success;
+                return -1;
             }
 
             //=============================================
@@ -452,11 +464,12 @@ namespace bagis_pro
             // Populate Elevation and Percent Area Rows
             //============================================
             Uri analysisUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false));
+            int rasterValueCount = -1;
             await QueuedTask.Run(() => {
                 using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(analysisUri)))
                 using (Table statisticsTable = geodatabase.OpenDataset<Table>(Constants.FILE_ELEV_ZONES_TBL))
                 {
-                    long rasterValueCount = statisticsTable.GetCount();
+                    rasterValueCount = statisticsTable.GetCount();
                     long sumOfCount = 0;
                     using (RowCursor rowCursor = statisticsTable.Search(new QueryFilter(), false))
                     {
@@ -480,7 +493,21 @@ namespace bagis_pro
                                 double count = Convert.ToDouble(row[Constants.FIELD_COUNT]);
                                 percentArea = percentArea + (count / sumOfCount * 100);
                                 // Populate Excel Table
-                                double dblUpperBound = lstInterval[i].UpperBound;
+                                BA_Objects.Interval oInterval = null;
+                                string strValue = Convert.ToString(row[Constants.FIELD_VALUE]);
+                                foreach (var item in lstInterval)
+                                {
+                                    string strIntervalValue = Convert.ToString(item.Value);
+                                    if (strIntervalValue.Equals(strValue))
+                                    {
+                                        oInterval = item;
+                                    }
+                                }
+                                double dblUpperBound = -1;
+                                if (oInterval != null)
+                                {
+                                    dblUpperBound = oInterval.UpperBound;
+                                }
                                 if (!strDemDisplayUnits.Equals(strDemUnits))
                                 {
                                     if (strDemDisplayUnits.Equals("Meters") &&
@@ -504,7 +531,10 @@ namespace bagis_pro
                                 pworksheet.Cells[i + 3, 8] = row["STD"];
                                 pworksheet.Cells[i + 3, 9] = row["SUM"];
                                 pworksheet.Cells[i + 3, 10] = count / sumOfCount * 100;         //PERCENT_AREA
-                                pworksheet.Cells[i + 3, 11] = lstInterval[i].Name;              //label
+                                if (oInterval != null)
+                                {
+                                    pworksheet.Cells[i + 3, 11] = oInterval.Name;             //label
+                                }                                
                                 i++;
                             }
                         }
@@ -520,7 +550,7 @@ namespace bagis_pro
                 }
             });
 
-            return success;
+            return rasterValueCount;
         }
 
         public static BA_ReturnCode CopyCells(Worksheet pSourceWS, int SourceCol, 
@@ -1535,12 +1565,11 @@ namespace bagis_pro
         }
 
         public static IList<string> CreateCriticalPrecipitationZones(Worksheet pPRSIMWS, IList<BA_Objects.Interval> lstIntervals,
-            double dblMinVolume, double dblMaxPctVolume)
+            double dblMinVolume, double dblMaxPctVolume, int intZones)
         {
             IList<string> lstCriticalZones = new List<string>();
             Dictionary<string, double> dictPctVolume = new Dictionary<string, double>();
             Dictionary<string, double> dictMeanVolumeZones = new Dictionary<string, double>();
-            int intZones = lstIntervals.Count;
             double minVolume = 100 / (2.0F * intZones);
             int currentRow = 3;
             Range pRange = pPRSIMWS.Cells[currentRow, 1];
@@ -1548,10 +1577,25 @@ namespace bagis_pro
             int idxPctVolume = 15;
             int idxValue = 1;
             int idxMeanVolume = 7;
+            int idxLabel = 11;
             double totalSelectedPctVolume = 0;
             while (!string.IsNullOrEmpty(pRange.Text.ToString()))
             {
-                string strZone = Convert.ToString(lstIntervals[currentRow - 3].Value);
+                BA_Objects.Interval oInterval = null;
+                Range labelRange = pPRSIMWS.Cells[currentRow, idxLabel];
+                foreach (var item in lstIntervals)
+                {
+                    if (item.Name.Equals(Convert.ToString(labelRange.Value).Trim()))
+                    {
+                        oInterval = item;
+                    }
+                }
+
+                string strZone = "-1";
+                if (oInterval != null)
+                {
+                    strZone = Convert.ToString(oInterval.Value);
+                }
                 // Meets minimum mean volume criterium
                 Range meanVolumeRange = pPRSIMWS.Cells[currentRow, idxMeanVolume];
                 bool bMinMeanVolume = false;
@@ -1592,9 +1636,24 @@ namespace bagis_pro
             }
             // Add style to critical precipitation zone elevations
             currentRow = 3;
-            for (int i = 1; i < intCount +1; i++)   // start with 1 because that is the first zone value
+            for (int i = 0; i < intCount; i++)
             {
-                if (lstCriticalZones.Contains(Convert.ToString(i)))
+                BA_Objects.Interval oInterval = null;
+                Range labelRange = pPRSIMWS.Cells[currentRow, idxLabel];
+                foreach (var item in lstIntervals)
+                {
+                    if (item.Name.Equals(Convert.ToString(labelRange.Value).Trim()))
+                    {
+                        oInterval = item;
+                    }
+                }
+
+                string strZone = "-1";
+                if (oInterval != null)
+                {
+                    strZone = Convert.ToString(oInterval.Value);
+                }
+                if (lstCriticalZones.Contains(strZone))
                 {
                     Range valueRange = pPRSIMWS.Cells[currentRow, idxValue];
                     valueRange.Interior.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.Red);
