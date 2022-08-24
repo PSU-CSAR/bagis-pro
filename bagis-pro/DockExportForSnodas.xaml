@@ -25,7 +25,7 @@
             <RowDefinition Height="25"/>
             <RowDefinition Height="25"/>
             <RowDefinition Height="20"/>
-            <RowDefinition Height="25"/>
+            <RowDefinition Height="30"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
@@ -42,14 +42,16 @@
         </DockPanel>
         <DockPanel Grid.Row="1" Grid.Column="0" LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Margin="2,0,2,0">
             <TextBlock Text="Station triplet  " VerticalAlignment="Center"/>
-            <TextBox x:Name="txtStationTriplet" Text="{Binding StationTriplet}" HorizontalAlignment="Left"  VerticalAlignment="Center" Width="150"  Margin="5,0,0,0" />
+            <TextBox x:Name="txtStationTriplet" Text="{Binding StationTriplet, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}" HorizontalAlignment="Left"  VerticalAlignment="Center" Width="150"  Margin="5,0,0,0">
+            </TextBox>
         </DockPanel>
         <DockPanel Grid.Row="2" Grid.Column="0" LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Margin="2,0,2,0" Grid.ColumnSpan="2">
             <TextBlock
                 Name="tbMultiLine"
                 TextWrapping="WrapWithOverflow" MaxWidth="300" HorizontalAlignment="Left" VerticalAlignment="Top">
-                Station triplet is required. Example: 09286700:UT:USGS
+                Example: 09286700:UT:USGS
             </TextBlock>
+            
         </DockPanel>
         <DockPanel Grid.Row="3" Grid.Column="0" LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Margin="2,0,2,0" Grid.ColumnSpan="2">
             <TextBlock Text="Watershed name  " VerticalAlignment="Center"/>
@@ -83,6 +85,25 @@
         </DockPanel>
         <DockPanel Grid.Row="8" Grid.Column="0" LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Margin="2,0,2,0" Grid.ColumnSpan="2">
             <Button x:Name="btnExport" Content="Create geojson file for Snodas" HorizontalAlignment="Center"  VerticalAlignment="Center" Width="225" Command="{Binding CmdExport}" Margin="5, 0, 0, 0"/>
+        </DockPanel>
+        <DockPanel Grid.Row="9" Grid.Column="0" LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Margin="2,0,2,0" Grid.ColumnSpan="2">
+            <TextBox x:Name="txtErrorMessages" Text="{Binding ErrorMessages, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}" HorizontalAlignment="Left"  VerticalAlignment="Top" Width="1" Height="1" Margin="5,0,0,0">
+                <Validation.ErrorTemplate>
+                    <ControlTemplate>
+                        <StackPanel>
+                            <!-- Placeholder for the TextBox itself -->
+                            <AdornedElementPlaceholder x:Name="textBox"/>
+                            <ItemsControl ItemsSource="{Binding}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding ErrorContent}" Foreground="Red"/>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </ControlTemplate>
+                </Validation.ErrorTemplate>
+            </TextBox>
         </DockPanel>
     </Grid>
 </UserControl>

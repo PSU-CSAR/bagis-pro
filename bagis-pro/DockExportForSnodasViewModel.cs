@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -21,7 +22,7 @@ using ArcGIS.Desktop.Mapping;
 
 namespace bagis_pro
 {
-    internal class DockExportForSnodasViewModel : DockPane
+    internal class DockExportForSnodasViewModel : DockPane, INotifyDataErrorInfo
     {
         private const string _dockPaneID = "bagis_pro_DockExportForSnodas";
 
@@ -44,6 +45,11 @@ namespace bagis_pro
         private string _stationTriplet = "";
         private string _stationName = "";
         private string _outputPath = "";
+        private string _errorMessages = "";
+        private readonly Dictionary<string, ICollection<string>>
+            _validationErrors = new Dictionary<string, ICollection<string>>();
+        private const string _keyStationTriplet = "StationTriplet";
+        private const string _keyPointPath = "PointPath";
 
         public string PointPath
         {
@@ -83,6 +89,14 @@ namespace bagis_pro
             set
             {
                 SetProperty(ref _outputPath, value, () => OutputPath);
+            }
+        }
+        public string ErrorMessages
+        {
+            get { return _errorMessages; }
+            set
+            {
+                SetProperty(ref _errorMessages, value, () => ErrorMessages);
             }
         }
 
@@ -255,7 +269,136 @@ namespace bagis_pro
                 return new RelayCommand(() =>
                 {
                     List<string> lstRequired = new List<string> { PointPath, PolyPath, OutputPath };
+                    _validationErrors.Clear();
+                    const string keyErrorMessages = "ErrorMessages";
+                    int errors = ValidateRequiredFields();
+                    errors = errors + ValidateStationTriplet(StationTriplet);
+                    if (errors > 0)
+                    {
+                        List<string> lstAllErrors = new List<string>();
+                        foreach (var strKey in _validationErrors.Keys)
+                        {
+                            IList<string> lstErrors = (IList<string>) _validationErrors[strKey];
+                            lstAllErrors.AddRange(lstErrors);
+                        }
+                        _validationErrors[keyErrorMessages] = lstAllErrors;
+                    }
+                    /* Raise event to tell WPF to execute the GetErrors method */
+                    RaiseErrorsChanged(keyErrorMessages);
                 });
+            }
+        }
+
+        private int ValidateStationTriplet(string strValue)
+        {
+            ICollection<string> validationErrors = new List<string>();
+            if (String.IsNullOrEmpty(strValue))
+            {
+                validationErrors.Add("Station triplet is required");
+            }
+            else
+            {
+                bool bValidFormat = false;
+                string[] arrPieces = strValue.Split(':');
+                if (arrPieces.Length == 3)
+                {
+                    if (arrPieces[0].Length == 8 && arrPieces[1].Length == 2)
+                    {
+                        if (arrPieces[2].Equals("USGS"))
+                        {
+                            bValidFormat = true;
+                        }
+                    }
+                }
+                if (!bValidFormat)
+                {
+                    validationErrors.Add("The station triplet value is not formatted correctly");
+                }
+            }
+            /* Update the collection in the dictionary returned by the GetErrors method */
+            if (validationErrors.Count > 0)
+            {
+                _validationErrors[_keyStationTriplet] = validationErrors;
+            }
+            else
+            {
+                _validationErrors.Remove(_keyStationTriplet);
+            }
+            /* Raise event to tell WPF to execute the GetErrors method */
+            RaiseErrorsChanged(_keyStationTriplet);
+            return validationErrors.Count;
+        }
+
+        private int ValidateRequiredFields()
+        {
+            int errorCount = 0;
+            ICollection<string> pointPathErrors = new List<string>();
+            if (String.IsNullOrEmpty(PointPath))
+            {
+                pointPathErrors.Add("Point path is required");
+                _validationErrors[_keyPointPath] = pointPathErrors;
+                errorCount++;
+            }
+            else
+            {
+                _validationErrors.Remove(_keyPointPath);
+            }
+            /* Raise event to tell WPF to execute the GetErrors method */
+            RaiseErrorsChanged(_keyPointPath);
+            return errorCount;
+        }
+
+        #region INotifyDataErrorInfo members
+        public event EventHandler<DataErrorsChangedEventArgs> ErrorsChanged;
+        private void RaiseErrorsChanged(string propertyName)
+        {
+            if (ErrorsChanged != null)
+                ErrorsChanged(this, new DataErrorsChangedEventArgs(propertyName));
+        }
+
+        public System.Collections.IEnumerable GetErrors(string propertyName)
+        {
+            if (string.IsNullOrEmpty(propertyName)
+                || !_validationErrors.ContainsKey(propertyName))
+                return null;
+
+            return _validationErrors[propertyName];
+        }
+
+        public bool HasErrors
+        {
+            get { return _validationErrors.Count > 0; }
+        }
+        #endregion
+
+        // The following converter combines a list of ValidationErrors into a string. This makes the binding much easier. 
+        [System.Windows.Data.ValueConversion(typeof(System.Collections.ObjectModel.ReadOnlyObservableCollection<System.Windows.Controls.ValidationError>), typeof(string))]
+        public class ValidationErrorsToStringConverter : System.Windows.Markup.MarkupExtension, System.Windows.Data.IValueConverter
+        {
+            public override object ProvideValue(IServiceProvider serviceProvider)
+            {
+                return new ValidationErrorsToStringConverter();
+            }
+
+            public object Convert(object value, Type targetType, object parameter,
+                System.Globalization.CultureInfo culture)
+            {
+                System.Collections.ObjectModel.ReadOnlyObservableCollection<System.Windows.Controls.ValidationError> errors =
+                    value as System.Collections.ObjectModel.ReadOnlyObservableCollection<System.Windows.Controls.ValidationError>;
+
+                if (errors == null)
+                {
+                    return string.Empty;
+                }
+
+                return string.Join("\n", (from e in errors
+                                          select e.ErrorContent as string).ToArray());
+            }
+
+            public object ConvertBack(object value, Type targetType, object parameter,
+                System.Globalization.CultureInfo culture)
+            {
+                throw new NotImplementedException();
             }
         }
     }
