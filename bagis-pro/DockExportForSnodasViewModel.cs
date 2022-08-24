@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -18,7 +19,8 @@ using ArcGIS.Desktop.Framework.Dialogs;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
 using ArcGIS.Desktop.Layouts;
 using ArcGIS.Desktop.Mapping;
-
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace bagis_pro
 {
@@ -50,6 +52,9 @@ namespace bagis_pro
             _validationErrors = new Dictionary<string, ICollection<string>>();
         private const string _keyStationTriplet = "StationTriplet";
         private const string _keyPointPath = "PointPath";
+        private const string _keyStationName = "StationName";
+        private const string _keyPolyPath = "PolyPath";
+        private const string _keyOutputPath = "OutputPath";
 
         public string PointPath
         {
@@ -250,15 +255,15 @@ namespace bagis_pro
         {
             get
             {
-                return new RelayCommand( () =>
-                {
-                    System.Windows.Forms.FolderBrowserDialog openFileDlg = new System.Windows.Forms.FolderBrowserDialog();
-                    var result = openFileDlg.ShowDialog();
-                    if (result.ToString() != string.Empty)
-                    {
-                        OutputPath = openFileDlg.SelectedPath;
-                    }
-                });
+                return new RelayCommand(() =>
+               {
+                   System.Windows.Forms.FolderBrowserDialog openFileDlg = new System.Windows.Forms.FolderBrowserDialog();
+                   var result = openFileDlg.ShowDialog();
+                   if (result.ToString() != string.Empty)
+                   {
+                       OutputPath = openFileDlg.SelectedPath;
+                   }
+               });
             }
         }
 
@@ -266,9 +271,8 @@ namespace bagis_pro
         {
             get
             {
-                return new RelayCommand(() =>
+                return new RelayCommand( async () =>
                 {
-                    List<string> lstRequired = new List<string> { PointPath, PolyPath, OutputPath };
                     _validationErrors.Clear();
                     const string keyErrorMessages = "ErrorMessages";
                     int errors = ValidateRequiredFields();
@@ -278,14 +282,102 @@ namespace bagis_pro
                         List<string> lstAllErrors = new List<string>();
                         foreach (var strKey in _validationErrors.Keys)
                         {
-                            IList<string> lstErrors = (IList<string>) _validationErrors[strKey];
+                            IList<string> lstErrors = (IList<string>)_validationErrors[strKey];
                             lstAllErrors.AddRange(lstErrors);
                         }
                         _validationErrors[keyErrorMessages] = lstAllErrors;
                     }
                     /* Raise event to tell WPF to execute the GetErrors method */
                     RaiseErrorsChanged(keyErrorMessages);
+                    if (errors > 0)
+                    {
+                        return; // Exit without processing
+                    }
+
+                    // generate the file(s)
+                    string pointOutputPath = System.IO.Path.GetTempPath() + "pourpoint.geojson";
+                    string polygonOutputPath = System.IO.Path.GetTempPath() + "polygon.geojson";
+                    BA_ReturnCode success = await GeoprocessingTools.FeaturesToSnodasGeoJsonAsync(PointPath, pointOutputPath, true);
+                    if (success.Equals(BA_ReturnCode.Success))
+                    {
+                        success = await GeoprocessingTools.FeaturesToSnodasGeoJsonAsync(PolyPath, polygonOutputPath, true);
+                    }
+
+                    if (success.Equals(BA_ReturnCode.Success))
+                    {
+                        // Build new JObject
+                        JObject objOutput = new JObject();
+                        objOutput[Constants.FIELD_JSON_TYPE] = "GeometryCollection";
+                        JArray arrGeometries = new JArray();
+
+                        // read pourpoint JSON directly from a file
+                        JObject o2 = null;
+                        using (StreamReader file = File.OpenText(pointOutputPath))
+                        using (JsonTextReader reader = new JsonTextReader(file))
+                        {
+                            o2 = (JObject)JToken.ReadFrom(reader);
+                        }
+                        if (o2 != null)
+                        {
+                            dynamic esriDefinition = (JObject)o2;
+                            JArray arrFeatures = (JArray)esriDefinition.features;
+                            if (arrFeatures.Count > 0)
+                            {
+                                // Always take the first one
+                                dynamic firstFeature = arrFeatures[0];
+                                var properties = firstFeature.properties;
+                                var objProperties = new JObject();
+                                objOutput[Constants.FIELD_JSON_ID] = properties.stationTriplet;
+                                objProperties[Constants.FIELD_JSON_NAME] = properties.stationName;
+                                objProperties[Constants.FIELD_JSON_SOURCE] = "ref";
+                                objOutput[Constants.FIELD_JSON_PROPERTIES] = objProperties;
+                                arrGeometries.Add(firstFeature.geometry);
+                            }
+                        }
+
+                        // read polygon JSON directly from a file
+                        JObject o3 = null;
+                        using (StreamReader file = File.OpenText(polygonOutputPath))
+                        using (JsonTextReader reader = new JsonTextReader(file))
+                        {
+                            o3 = (JObject)JToken.ReadFrom(reader);
+                        }
+                        if (o3 != null)
+                        {
+                            dynamic esriDefinition = (JObject)o3;
+                            JArray arrFeatures = (JArray)esriDefinition.features;
+                            if (arrFeatures.Count == 1)
+                            {
+                                // Always take the first one
+                                dynamic firstFeature = arrFeatures[0];
+                                arrGeometries.Add(firstFeature.geometry);
+                            }
+                            else
+                            {
+                                MessageBox.Show("This file has more than one polygon. Only a single polygon is allowed!!");
+                                return;
+                            }
+                        }
+                        if (arrGeometries.Count == 2)
+                        {
+                            objOutput[Constants.FIELD_JSON_GEOMETRIES] = arrGeometries;
+                        }
+
+                        // write JSON directly to a file
+                        using (StreamWriter file = File.CreateText(OutputPath + "\\" + Constants.FILE_BASIN_GEOJSON))
+                        using (JsonTextWriter writer = new JsonTextWriter(file))
+                        {
+                            writer.Formatting = Formatting.Indented;
+                            objOutput.WriteTo(writer);
+                        }
+                    }
+                    else
+                    {
+                        MessageBox.Show("An error occurred!!", "BAGIS-PRO");
+                    }
+                    MessageBox.Show("Export Successful!!", "BAGIS-PRO");
                 });
+
             }
         }
 
@@ -332,10 +424,10 @@ namespace bagis_pro
         private int ValidateRequiredFields()
         {
             int errorCount = 0;
-            ICollection<string> pointPathErrors = new List<string>();
             if (String.IsNullOrEmpty(PointPath))
             {
-                pointPathErrors.Add("Point path is required");
+                ICollection<string> pointPathErrors = new List<string>
+                    { "Point path is required"};
                 _validationErrors[_keyPointPath] = pointPathErrors;
                 errorCount++;
             }
@@ -345,6 +437,46 @@ namespace bagis_pro
             }
             /* Raise event to tell WPF to execute the GetErrors method */
             RaiseErrorsChanged(_keyPointPath);
+            if (String.IsNullOrEmpty(StationName))
+            {
+                ICollection<string> errors = new List<string>
+                    { "Watershed name is required"};
+                _validationErrors[_keyStationName] = errors;
+                errorCount++;
+            }
+            else
+            {
+                _validationErrors.Remove(_keyStationName);
+            }
+            /* Raise event to tell WPF to execute the GetErrors method */
+            RaiseErrorsChanged(_keyStationName);
+            if (String.IsNullOrEmpty(PolyPath))
+            {
+                ICollection<string> errors = new List<string>
+                    { "Polygon layer is required"};
+                _validationErrors[_keyPolyPath] = errors;
+                errorCount++;
+            }
+            else
+            {
+                _validationErrors.Remove(_keyPolyPath);
+            }
+            /* Raise event to tell WPF to execute the GetErrors method */
+            RaiseErrorsChanged(_keyPolyPath);
+            if (String.IsNullOrEmpty(OutputPath))
+            {
+                ICollection<string> errors = new List<string>
+                    { "Output path is required"};
+                _validationErrors[_keyOutputPath] = errors;
+                errorCount++;
+            }
+            else
+            {
+                _validationErrors.Remove(_keyOutputPath);
+            }
+            /* Raise event to tell WPF to execute the GetErrors method */
+            RaiseErrorsChanged(_keyOutputPath);
+
             return errorCount;
         }
 
@@ -370,37 +502,6 @@ namespace bagis_pro
             get { return _validationErrors.Count > 0; }
         }
         #endregion
-
-        // The following converter combines a list of ValidationErrors into a string. This makes the binding much easier. 
-        [System.Windows.Data.ValueConversion(typeof(System.Collections.ObjectModel.ReadOnlyObservableCollection<System.Windows.Controls.ValidationError>), typeof(string))]
-        public class ValidationErrorsToStringConverter : System.Windows.Markup.MarkupExtension, System.Windows.Data.IValueConverter
-        {
-            public override object ProvideValue(IServiceProvider serviceProvider)
-            {
-                return new ValidationErrorsToStringConverter();
-            }
-
-            public object Convert(object value, Type targetType, object parameter,
-                System.Globalization.CultureInfo culture)
-            {
-                System.Collections.ObjectModel.ReadOnlyObservableCollection<System.Windows.Controls.ValidationError> errors =
-                    value as System.Collections.ObjectModel.ReadOnlyObservableCollection<System.Windows.Controls.ValidationError>;
-
-                if (errors == null)
-                {
-                    return string.Empty;
-                }
-
-                return string.Join("\n", (from e in errors
-                                          select e.ErrorContent as string).ToArray());
-            }
-
-            public object ConvertBack(object value, Type targetType, object parameter,
-                System.Globalization.CultureInfo culture)
-            {
-                throw new NotImplementedException();
-            }
-        }
     }
 
 
