@@ -1,4 +1,6 @@
-﻿using ArcGIS.Desktop.Core.Geoprocessing;
+﻿using ArcGIS.Core.Data;
+using ArcGIS.Core.Geometry;
+using ArcGIS.Desktop.Core.Geoprocessing;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
 using System;
 using System.Collections.Generic;
@@ -16,20 +18,58 @@ namespace bagis_pro
             IList<double> returnList = new List<double>();
             try
             {
-                string sDemPath = GeodatabaseTools.GetGeodatabasePath(aoiPath, GeodatabaseNames.Surfaces, true) + Constants.FILE_DEM_FILLED;
-                double dblMin = -1;
-                var parameters = Geoprocessing.MakeValueArray(sDemPath, "MINIMUM");
-                var environments = Geoprocessing.MakeEnvironmentArray(workspace: aoiPath, mask: maskPath);              
-                IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("GetRasterProperties_management", parameters, environments,
-                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                bool success = Double.TryParse(Convert.ToString(gpResult.ReturnValue), out dblMin);
-                returnList.Add(dblMin - adjustmentFactor);
-                double dblMax = -1;
-                parameters = Geoprocessing.MakeValueArray(sDemPath, "MAXIMUM");
-                gpResult = await Geoprocessing.ExecuteToolAsync("GetRasterProperties_management", parameters, environments,
-                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                success = Double.TryParse(Convert.ToString(gpResult.ReturnValue), out dblMax);
-                returnList.Add(dblMax + adjustmentFactor);
+                string sDemPath = GeodatabaseTools.GetGeodatabasePath(aoiPath, GeodatabaseNames.Surfaces, true) + Constants.FILE_DEM_CLIPPED;
+                IList<string> lstLayers = await GeneralTools.GetLayersInGeodatabaseAsync(GeodatabaseTools.GetGeodatabasePath(aoiPath, GeodatabaseNames.Surfaces), "RasterDatasetDefinition");
+                bool bFoundIt = false;
+                BA_ReturnCode ret1 = BA_ReturnCode.UnknownError;
+                foreach (var strLayer in lstLayers)
+                {
+                    if (strLayer.Equals(Constants.FILE_DEM_CLIPPED))
+                    {
+                        bFoundIt = true;
+                        break;
+                    }
+                }
+                if (! bFoundIt)
+                {
+                    // Need to create clipped DEM
+                    string filledDem = GeodatabaseTools.GetGeodatabasePath(aoiPath, GeodatabaseNames.Surfaces, true) + Constants.FILE_DEM_FILLED;
+                    var parameters = Geoprocessing.MakeValueArray(filledDem, null, sDemPath, maskPath, null, "ClippingGeometry");
+                    IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("Clip_management", parameters, null,
+                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                    if (!gpResult.IsFailed)
+                    {
+                        Module1.Current.ModuleLogManager.LogInfo(nameof(GetDemStatsAsync),
+                            "Successfully clipped filled_dem to largest aoi_v polygon");
+                        ret1 = BA_ReturnCode.Success;
+                    }
+                    else
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(GetDemStatsAsync),
+                            "Clipped DEM did not exist and clipping to aoi_v failed. Process aborted!");
+                        return returnList;
+                    }
+                }
+                else
+                {
+                    ret1 = BA_ReturnCode.Success;
+                }
+
+                if (ret1.Equals(BA_ReturnCode.Success))
+                {
+                    double dblMin = -1;
+                    var parameters = Geoprocessing.MakeValueArray(sDemPath, "MINIMUM");
+                    IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("GetRasterProperties_management", parameters, null,
+                        CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                    bool success = Double.TryParse(Convert.ToString(gpResult.ReturnValue), out dblMin);
+                    returnList.Add(dblMin - adjustmentFactor);
+                    double dblMax = -1;
+                    parameters = Geoprocessing.MakeValueArray(sDemPath, "MAXIMUM");
+                    gpResult = await Geoprocessing.ExecuteToolAsync("GetRasterProperties_management", parameters, null,
+                        CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                    success = Double.TryParse(Convert.ToString(gpResult.ReturnValue), out dblMax);
+                    returnList.Add(dblMax + adjustmentFactor);
+                }
             }
             catch (Exception e)
             {

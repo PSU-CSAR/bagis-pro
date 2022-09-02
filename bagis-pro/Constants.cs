@@ -60,6 +60,7 @@ namespace bagis_pro
         public const string FILE_SNOW_COURSE = "snowcourse_sites";
         public const string FILE_HILLSHADE = "hillshade";
         public const string FILE_DEM_FILLED = "dem_filled";
+        public const string FILE_DEM_CLIPPED = "dem_clipped";
         public const string FILE_DEM = "dem";
         public const string FILE_ELEV_ZONE = "elevzone";
         public const string FILE_SLOPE_ZONE = "slpzone";

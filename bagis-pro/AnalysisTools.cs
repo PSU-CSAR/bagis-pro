@@ -51,7 +51,7 @@ namespace bagis_pro
                 Module1.Current.ModuleLogManager.LogDebug(nameof(GenerateSiteLayersAsync),
                     "GetDemStatsAsync");
                 IList<double> lstResult = new List<double>();
-                string sDemPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Surfaces, true) + Constants.FILE_DEM_FILLED;
+                string sDemPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Surfaces, true) + Constants.FILE_DEM_CLIPPED;
                 Uri uriAnalysis = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis));
                 if (await GeodatabaseTools.RasterDatasetExistsAsync(uriAnalysis, Constants.FILE_SITES_DEM))
                 {
@@ -61,7 +61,8 @@ namespace bagis_pro
                 }
                 else
 	            {
-                    lstResult = await GeoprocessingTools.GetDemStatsAsync(Module1.Current.Aoi.FilePath, "", 0.005);
+                    string sMask = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_VECTOR;
+                    lstResult = await GeoprocessingTools.GetDemStatsAsync(Module1.Current.Aoi.FilePath, sMask, 0.005);
                 }
                 double demElevMinMeters = -1;
                 double demElevMaxMeters = -1;
@@ -2366,9 +2367,9 @@ namespace bagis_pro
             Uri uriSurfaces = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Surfaces));
             Uri uriAnalysis = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Analysis));
             Uri uriLayers = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers));
-            double dblDemCellSize = await GeodatabaseTools.GetCellSizeAsync(uriSurfaces, Constants.FILE_DEM_FILLED);
+            double dblDemCellSize = await GeodatabaseTools.GetCellSizeAsync(uriSurfaces, Constants.FILE_DEM_CLIPPED);
             double dblPrismCellSize = await GeodatabaseTools.GetCellSizeAsync(uriPrism, prismFile);
-            string demPath = uriSurfaces.LocalPath + "\\" + Constants.FILE_DEM_FILLED;
+            string demPath = uriSurfaces.LocalPath + "\\" + Constants.FILE_DEM_CLIPPED;
             string precipMeanPath = uriAnalysis.LocalPath + "\\" + Constants.FILE_PREC_MEAN_ELEV;
             int intCellFactor = (int)Math.Round(dblPrismCellSize / dblDemCellSize, 0);
             double cellSize = dblPrismCellSize / intCellFactor;
@@ -2852,7 +2853,8 @@ namespace bagis_pro
         {
             Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateElevationZonesAsync),
                 "Get min and max elevation from DEM");
-            IList<double> lstResult = await GeoprocessingTools.GetDemStatsAsync(aoiFilePath, "", 0.005);
+            string sMask = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_VECTOR;
+            IList<double> lstResult = await GeoprocessingTools.GetDemStatsAsync(aoiFilePath, sMask, 0.005);
             double demElevMinMeters = -1;
             double demElevMaxMeters = -1;
             if (lstResult.Count == 2)   // We expect the min and max values in that order
@@ -2914,7 +2916,7 @@ namespace bagis_pro
             IList<BA_Objects.Interval> lstInterval = AnalysisTools.GetElevationClasses(aoiElevMin, aoiElevMax,
                 bestInterval, strDemUnits, strDemDisplayUnits);
             string strLayer = GeodatabaseTools.GetGeodatabasePath(aoiFilePath, GeodatabaseNames.Surfaces, true) +
-                Constants.FILE_DEM_FILLED;
+                Constants.FILE_DEM_CLIPPED;
             string strZonesRaster = GeodatabaseTools.GetGeodatabasePath(aoiFilePath, GeodatabaseNames.Analysis, true) +
                 Constants.FILE_ELEV_ZONE;
             string strMaskPath = GeodatabaseTools.GetGeodatabasePath(aoiFilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_BUFFERED_VECTOR;
@@ -3149,9 +3151,10 @@ namespace bagis_pro
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
             try
             {
-                IList<double> lstResult = await GeoprocessingTools.GetDemStatsAsync(aoiFolderPath, "", 0.005);
+                string sMask = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_VECTOR;
+                IList<double> lstResult = await GeoprocessingTools.GetDemStatsAsync(aoiFolderPath, sMask, 0.005);
                 string sDemPath = GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Surfaces, true) +
-                            Constants.FILE_DEM_FILLED;
+                            Constants.FILE_DEM_CLIPPED;
                 double demElevMinMeters = -1;
                 double demElevMaxMeters = -1;
                 Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateSitesZonesAsync), "Get min and max elevation from " + sDemPath);
@@ -3165,7 +3168,7 @@ namespace bagis_pro
                 Uri uriAnalysis = new Uri(GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Analysis));
                 IList<BA_Objects.Interval> lstInterval = null;
                 string strZonesRaster = null;
-                string strMaskPath = GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Surfaces, true) + Constants.FILE_DEM_FILLED;
+                string strMaskPath = GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Surfaces, true) + Constants.FILE_DEM_CLIPPED;
                 if (hasSnotel)
                 {
                     Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateSitesZonesAsync), "Begin create Snotel zone");
