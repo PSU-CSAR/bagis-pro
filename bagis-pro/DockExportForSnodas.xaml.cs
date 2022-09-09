@@ -25,5 +25,12 @@ namespace bagis_pro
         {
             InitializeComponent();
         }
+
+        private void StationTripletChanged(object sender, RoutedEventArgs e)
+        {
+            // Couldn't get 2 separate controls to line up well on the form
+            string strStationTriplet = txtStationTriplet.Text.Replace(":", "_");
+            tbOutputPathLabel.Text = $@"The name of the output file is {strStationTriplet}.geojson";
+        }
     }
 }

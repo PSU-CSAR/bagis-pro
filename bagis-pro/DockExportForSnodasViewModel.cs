@@ -47,6 +47,7 @@ namespace bagis_pro
         private string _stationTriplet = "";
         private string _stationName = "";
         private string _outputPath = "";
+        private string _outputPathLabel = "The name of the output file is ";
         private string _errorMessages = "";
         private readonly Dictionary<string, ICollection<string>>
             _validationErrors = new Dictionary<string, ICollection<string>>();
@@ -94,6 +95,14 @@ namespace bagis_pro
             set
             {
                 SetProperty(ref _outputPath, value, () => OutputPath);
+            }
+        }
+        public string OutputPathLabel
+        {
+            get { return _outputPathLabel; }
+            set
+            {
+                SetProperty(ref _outputPathLabel, value, () => OutputPathLabel);
             }
         }
         public string ErrorMessages
@@ -364,7 +373,8 @@ namespace bagis_pro
                         }
 
                         // write JSON directly to a file
-                        using (StreamWriter file = File.CreateText(OutputPath + "\\" + Constants.FILE_BASIN_GEOJSON))
+                        string strFileName = StationTriplet.Replace(':', '_');
+                        using (StreamWriter file = File.CreateText($@"{OutputPath}\{StationTriplet.Replace(':', '_')}.geojson"))
                         using (JsonTextWriter writer = new JsonTextWriter(file))
                         {
                             writer.Formatting = Formatting.Indented;

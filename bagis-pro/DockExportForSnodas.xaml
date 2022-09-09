@@ -24,7 +24,7 @@
             <RowDefinition Height="20"/>
             <RowDefinition Height="25"/>
             <RowDefinition Height="25"/>
-            <RowDefinition Height="20"/>
+            <RowDefinition Height="30"/>
             <RowDefinition Height="30"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
@@ -42,7 +42,8 @@
         </DockPanel>
         <DockPanel Grid.Row="1" Grid.Column="0" LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Margin="2,0,2,0">
             <TextBlock Text="Station triplet  " VerticalAlignment="Center"/>
-            <TextBox x:Name="txtStationTriplet" Text="{Binding StationTriplet, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}" HorizontalAlignment="Left"  VerticalAlignment="Center" Width="150"  Margin="5,0,0,0">
+            <TextBox x:Name="txtStationTriplet" Text="{Binding StationTriplet, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}" 
+                     HorizontalAlignment="Left"  VerticalAlignment="Center" Width="150"  Margin="5,0,0,0" TextChanged="StationTripletChanged">
             </TextBox>
         </DockPanel>
         <DockPanel Grid.Row="2" Grid.Column="0" LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Margin="2,0,2,0" Grid.ColumnSpan="2">
@@ -77,11 +78,8 @@
         <DockPanel Grid.Row="6" Grid.Column="1" Margin="2,0,2,0">
             <Button x:Name="btnOutput" Content="Select" HorizontalAlignment="Right"  VerticalAlignment="Center" Width="40" Command="{Binding CmdSelectOutput}" Margin="5, 0, 0, 0"/>
         </DockPanel>
-        <DockPanel Grid.Row="7" Grid.Column="0" LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Margin="2,0,2,0" Grid.ColumnSpan="2">
-            <TextBlock
-                TextWrapping="WrapWithOverflow" MaxWidth="300" HorizontalAlignment="Left" VerticalAlignment="Top">
-                The output file name is basin.geojson
-            </TextBlock>
+        <DockPanel Grid.Row="7" Grid.Column="0" LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Margin="2,0,2,0">
+            <TextBlock x:Name="tbOutputPathLabel" Text="{Binding OutputPathLabel}"/>
         </DockPanel>
         <DockPanel Grid.Row="8" Grid.Column="0" LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Margin="2,0,2,0" Grid.ColumnSpan="2">
             <Button x:Name="btnExport" Content="Create geojson file for Snodas" HorizontalAlignment="Center"  VerticalAlignment="Center" Width="225" Command="{Binding CmdExport}" Margin="5, 0, 0, 0"/>
