@@ -50,20 +50,11 @@ namespace bagis_pro
                     "START: GenerateSiteLayersAsync");
                 Module1.Current.ModuleLogManager.LogDebug(nameof(GenerateSiteLayersAsync),
                     "GetDemStatsAsync");
-                IList<double> lstResult = new List<double>();
+                
                 string sDemPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Surfaces, true) + Constants.FILE_DEM_CLIPPED;
                 Uri uriAnalysis = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis));
-                if (await GeodatabaseTools.RasterDatasetExistsAsync(uriAnalysis, Constants.FILE_SITES_DEM))
-                {
-                    // use the sites_dem folder in analysis.gdb because we have sites outside the AOI boundary
-                    sDemPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) + Constants.FILE_SITES_DEM;
-                    lstResult = await GeoprocessingTools.GetRasterMinMaxStatsAsync(Module1.Current.Aoi.FilePath, sDemPath, "", 0.005);
-                }
-                else
-	            {
-                    string sMask = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_VECTOR;
-                    lstResult = await GeoprocessingTools.GetDemStatsAsync(Module1.Current.Aoi.FilePath, sMask, 0.005);
-                }
+                string sMask = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_VECTOR;
+                IList<double> lstResult = await GeoprocessingTools.GetDemStatsAsync(Module1.Current.Aoi.FilePath, sMask, 0.005);
                 double demElevMinMeters = -1;
                 double demElevMaxMeters = -1;
                 if (lstResult.Count == 2)   // We expect the min and max values in that order

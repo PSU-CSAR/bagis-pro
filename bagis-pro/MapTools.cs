@@ -76,7 +76,7 @@ namespace bagis_pro
                 else
                 {
                     BA_ReturnCode success = await MapTools.SetDefaultMapFrameDimensionAsync(Constants.MAPS_DEFAULT_MAP_FRAME_NAME, layout, oMap,
-                        1.0, 3.0, 7.5, 10.0);
+                        0.7, 2.7, 7.8, 10.3);
 
                     //remove existing layers from map frame
                     await MapTools.RemoveLayersfromMapFrame();
@@ -292,30 +292,31 @@ namespace bagis_pro
                     success = await SetClipGeometryAsync(oAoi.FilePath, Constants.MAPS_DEFAULT_MAP_NAME);
 
                     //zoom to aoi boundary layer
-                    success = await MapTools.ZoomToExtentAsync(aoiUri, MapView.Active, Constants.MAP_BUFFER_FACTOR);
+                    success = await MapTools.ZoomToExtentAsync(aoiUri, Constants.MAPS_DEFAULT_LAYOUT_NAME, Constants.MAPS_DEFAULT_MAP_FRAME_NAME, 
+                        Constants.MAP_BUFFER_FACTOR);
 
                     // load AOI location map
                     success = await DisplayLocationMapAsync(oAoi);
 
                     // load SWE map layout
-                    int idxDefaultMonth = 8;    // Note: This needs to be the month with the lowest SWE value for symbology; In this case July
-                    success = await DisplayMultiMapPageLayoutAsync(oAoi.FilePath, idxDefaultMonth, BagisMapType.SNODAS_SWE);
-                    if (success == BA_ReturnCode.Success)
-                    {
-                        Module1.ActivateState("MapButtonPalette_BtnSwe_State");
-                    }
-                    // load SWE Delta map layout
-                    success = await DisplayMultiMapPageLayoutAsync(oAoi.FilePath, idxDefaultMonth - 1, BagisMapType.SNODAS_DELTA);
-                    if (success == BA_ReturnCode.Success)
-                    {
-                        Module1.ActivateState("MapButtonPalette_BtnSweDelta_State");
-                    }
-                    // load seasonal precipitation map layout
-                    success = await DisplayMultiMapPageLayoutAsync(oAoi.FilePath, idxDefaultMonth, BagisMapType.SEASONAL_PRECIP_CONTRIB);
-                    if (success == BA_ReturnCode.Success)
-                    {
-                        Module1.ActivateState("MapButtonPalette_BtnSeasonalPrecipContrib_State");
-                    }
+                    //int idxDefaultMonth = 8;    // Note: This needs to be the month with the lowest SWE value for symbology; In this case July
+                    //success = await DisplayMultiMapPageLayoutAsync(oAoi.FilePath, idxDefaultMonth, BagisMapType.SNODAS_SWE);
+                    //if (success == BA_ReturnCode.Success)
+                    //{
+                    //    Module1.ActivateState("MapButtonPalette_BtnSwe_State");
+                    //}
+                    //// load SWE Delta map layout
+                    //success = await DisplayMultiMapPageLayoutAsync(oAoi.FilePath, idxDefaultMonth - 1, BagisMapType.SNODAS_DELTA);
+                    //if (success == BA_ReturnCode.Success)
+                    //{
+                    //    Module1.ActivateState("MapButtonPalette_BtnSweDelta_State");
+                    //}
+                    //// load seasonal precipitation map layout
+                    //success = await DisplayMultiMapPageLayoutAsync(oAoi.FilePath, idxDefaultMonth, BagisMapType.SEASONAL_PRECIP_CONTRIB);
+                    //if (success == BA_ReturnCode.Success)
+                    //{
+                    //    Module1.ActivateState("MapButtonPalette_BtnSeasonalPrecipContrib_State");
+                    //}
                     return success;
 
                 }
@@ -357,9 +358,9 @@ namespace bagis_pro
                if (!(oLayout.FindElement(mapFrameName) is MapFrame mfElm))
                {
                    //Build 2D envelope geometry
-                   Coordinate2D mf_ll = new Coordinate2D(xMin, yMin);
-                   Coordinate2D mf_ur = new Coordinate2D(xMax, yMax);
-                   Envelope mf_env = EnvelopeBuilder.CreateEnvelope(mf_ll, mf_ur);
+                   Coordinate2D mf_ll = new Coordinate2D(xMin, yMin);   //0.5, 3.0
+                   Coordinate2D mf_ur = new Coordinate2D(xMax, yMax);   //8.0, 10.0
+                   Envelope mf_env = EnvelopeBuilderEx.CreateEnvelope(mf_ll, mf_ur);
                    mfElm = LayoutElementFactory.Instance.CreateMapFrame(oLayout, mf_env, oMap);
                    mfElm.SetName(mapFrameName);
                }
@@ -727,10 +728,9 @@ namespace bagis_pro
             return success;
         }
 
-        public static async Task<BA_ReturnCode> ZoomToExtentAsync(Uri aoiUri, MapView mapView, double bufferFactor = 1)
+        public static async Task<BA_ReturnCode> ZoomToExtentAsync(Uri aoiUri, string layoutName, string mapFrameName, 
+            double bufferFactor = 1)
         {
-            if (mapView == null)
-                return BA_ReturnCode.UnknownError;
             string strFileName = null;
             string strFolderPath = null;
             if (aoiUri.IsFile)
@@ -739,7 +739,10 @@ namespace bagis_pro
                 strFolderPath = System.IO.Path.GetDirectoryName(aoiUri.LocalPath);
             }
 
-            bool bSuccess = false;
+            Layout oLayout = await GetDefaultLayoutAsync(layoutName);
+            if (oLayout == null)
+                return BA_ReturnCode.UnknownError;
+
             await QueuedTask.Run(() =>
             {
                 using (
@@ -752,20 +755,15 @@ namespace bagis_pro
                     Module1.Current.ModuleLogManager.LogDebug(nameof(ZoomToExtentAsync), "extent XMin=" + extent.XMin);
                     var expandedExtent = extent.Expand(bufferFactor, bufferFactor, true);
                     Module1.Current.ModuleLogManager.LogDebug(nameof(ZoomToExtentAsync), "expandedExtent XMin=" + expandedExtent.XMin);
-                    bSuccess = mapView.ZoomTo(expandedExtent, null);
+                    if ((oLayout.FindElement(mapFrameName) is MapFrame mfElm))
+                    {
+                        mfElm.SetCamera(expandedExtent);
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(ZoomToExtentAsync), "Camera set to expanded extent");
+                    }
                 }
             });
 
-            Module1.Current.ModuleLogManager.LogDebug(nameof(ZoomToExtentAsync), "Return value from ZoomToAsync=" + bSuccess);
-            if (bSuccess)
-            {
-                return BA_ReturnCode.Success;
-            }
-            else
-            {
-                return BA_ReturnCode.UnknownError;
-            }
-             
+            return BA_ReturnCode.Success;             
         }
 
         public static async Task<Envelope> QueryZoomEnvelopeAsync(Uri aoiUri, double bufferFactor = 1)
