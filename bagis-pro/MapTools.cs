@@ -76,7 +76,7 @@ namespace bagis_pro
                 else
                 {
                     BA_ReturnCode success = await MapTools.SetDefaultMapFrameDimensionAsync(Constants.MAPS_DEFAULT_MAP_FRAME_NAME, layout, oMap,
-                        0.7, 2.7, 7.8, 10.3);
+                        0.5, 2.5, 8.0, 10.5);
 
                     //remove existing layers from map frame
                     await MapTools.RemoveLayersfromMapFrame();
@@ -299,24 +299,24 @@ namespace bagis_pro
                     success = await DisplayLocationMapAsync(oAoi);
 
                     // load SWE map layout
-                    //int idxDefaultMonth = 8;    // Note: This needs to be the month with the lowest SWE value for symbology; In this case July
-                    //success = await DisplayMultiMapPageLayoutAsync(oAoi.FilePath, idxDefaultMonth, BagisMapType.SNODAS_SWE);
-                    //if (success == BA_ReturnCode.Success)
-                    //{
-                    //    Module1.ActivateState("MapButtonPalette_BtnSwe_State");
-                    //}
-                    //// load SWE Delta map layout
-                    //success = await DisplayMultiMapPageLayoutAsync(oAoi.FilePath, idxDefaultMonth - 1, BagisMapType.SNODAS_DELTA);
-                    //if (success == BA_ReturnCode.Success)
-                    //{
-                    //    Module1.ActivateState("MapButtonPalette_BtnSweDelta_State");
-                    //}
-                    //// load seasonal precipitation map layout
-                    //success = await DisplayMultiMapPageLayoutAsync(oAoi.FilePath, idxDefaultMonth, BagisMapType.SEASONAL_PRECIP_CONTRIB);
-                    //if (success == BA_ReturnCode.Success)
-                    //{
-                    //    Module1.ActivateState("MapButtonPalette_BtnSeasonalPrecipContrib_State");
-                    //}
+                    int idxDefaultMonth = 8;    // Note: This needs to be the month with the lowest SWE value for symbology; In this case July
+                    success = await DisplayMultiMapPageLayoutAsync(oAoi.FilePath, idxDefaultMonth, BagisMapType.SNODAS_SWE);
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        Module1.ActivateState("MapButtonPalette_BtnSwe_State");
+                    }
+                    // load SWE Delta map layout
+                    success = await DisplayMultiMapPageLayoutAsync(oAoi.FilePath, idxDefaultMonth - 1, BagisMapType.SNODAS_DELTA);
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        Module1.ActivateState("MapButtonPalette_BtnSweDelta_State");
+                    }
+                    // load seasonal precipitation map layout
+                    success = await DisplayMultiMapPageLayoutAsync(oAoi.FilePath, idxDefaultMonth, BagisMapType.SEASONAL_PRECIP_CONTRIB);
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        Module1.ActivateState("MapButtonPalette_BtnSeasonalPrecipContrib_State");
+                    }
                     return success;
 
                 }

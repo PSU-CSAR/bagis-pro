@@ -431,10 +431,6 @@ namespace bagis_pro
                         string strDefaultBufferUnits = (string)Module1.Current.BatchToolSettings.PrecipBufferUnits;
                         success = await AnalysisTools.ClipLayersAsync(aoiFolder, Constants.DATA_TYPE_PRECIPITATION,
                             pBufferDistance, pBufferUnits, strDefaultBufferDistance, strDefaultBufferUnits);
-                        if (success == BA_ReturnCode.Success)
-                        {
-                            success = await AnalysisTools.UpdateSitesPropertiesAsync(Module1.Current.Aoi.FilePath, SiteProperties.Precipitation);
-                        }
                         if (success != BA_ReturnCode.Success)
                         {
                             errorCount++;
