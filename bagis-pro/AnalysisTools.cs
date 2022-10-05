@@ -217,8 +217,18 @@ namespace bagis_pro
                 using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(uriGdb)))
                 using (FeatureClass fClass = geodatabase.OpenDataset<FeatureClass>(Constants.FILE_MERGED_SITES))
                 {
-                    QueryFilter queryFilter = new QueryFilter();
-                    using (RowCursor cursor = fClass.Search(queryFilter, false))
+                    // Create SortDescription for SiteId field
+                    FeatureClassDefinition featureClassDefinition = fClass.GetDefinition();
+                    Field idField = featureClassDefinition.GetFields()
+                        .First(x => x.Name.Equals(Constants.FIELD_SITE_ID));
+                    SortDescription sortDescription = new SortDescription(idField)
+                    {
+                        SortOrder = SortOrder.Ascending
+                    };
+
+                    // Create our TableSortDescription
+                    var tableSortDescription = new TableSortDescription(new List<SortDescription>() { sortDescription });
+                    using (RowCursor cursor = fClass.Sort(tableSortDescription))
                     {
                         while (cursor.MoveNext())
                         {
