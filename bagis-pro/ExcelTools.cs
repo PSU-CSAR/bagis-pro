@@ -266,7 +266,7 @@ namespace bagis_pro
                 long count = pWorksheet.UsedRange.Rows.Count;
                 for (int i = beginningRow; i < count; i++)
                 {
-                    var cellValue = (pWorksheet.UsedRange.Cells[i, 1] as Range).Value;
+                    var cellValue = (pWorksheet.UsedRange.Cells[i, 1] as Microsoft.Office.Interop.Excel.Range).Value;
                     string strCell = Convert.ToString(cellValue);
                     if (! String.IsNullOrEmpty(strCell))
                     {
@@ -397,7 +397,7 @@ namespace bagis_pro
             return success;
         }
 
-        public static async Task<int> CreatePrecipitationTableAsync(Worksheet pworksheet, string precipPath,
+        public static async Task<long> CreatePrecipitationTableAsync(Worksheet pworksheet, string precipPath,
             double aoiDemMin)
         {
             string strDemDisplayUnits = (string)Module1.Current.BatchToolSettings.DemDisplayUnits;
@@ -464,7 +464,7 @@ namespace bagis_pro
             // Populate Elevation and Percent Area Rows
             //============================================
             Uri analysisUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false));
-            int rasterValueCount = -1;
+            long rasterValueCount = -1;
             await QueuedTask.Run(() => {
                 using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(analysisUri)))
                 using (Table statisticsTable = geodatabase.OpenDataset<Table>(Constants.FILE_ELEV_ZONES_TBL))
@@ -557,11 +557,11 @@ namespace bagis_pro
                                               Worksheet pTargetWS, int TargetCol)
         {
             long row_index = 3;
-            Range pRange = pSourceWS.Cells[row_index, SourceCol];
+            Microsoft.Office.Interop.Excel.Range pRange = pSourceWS.Cells[row_index, SourceCol];
 
             while (! string.IsNullOrEmpty(pRange.Text.ToString()))
             {
-                Range targetRange = pTargetWS.Cells[row_index, TargetCol];
+                Microsoft.Office.Interop.Excel.Range targetRange = pTargetWS.Cells[row_index, TargetCol];
                 targetRange.Value = pRange.Value;
                 row_index = row_index + 1;
                 pRange = pSourceWS.Cells[row_index, SourceCol];
@@ -576,7 +576,7 @@ namespace bagis_pro
             int i;
 
             long row_index = 3;
-            Range pRange = pPRSIMWS.Cells[row_index, 1];
+            Microsoft.Office.Interop.Excel.Range pRange = pPRSIMWS.Cells[row_index, 1];
 
             conversionfactor = 1 / (4046.8564224 * 12); // convert sq meter-inch to acre-foot
                                                         // 1 square meter = 2.471053814671653e-4 acre
@@ -586,9 +586,9 @@ namespace bagis_pro
             int intCount = 0;
             while (!string.IsNullOrEmpty(pRange.Text.ToString()))
             {
-                Range areaRange = pPRSIMWS.Cells[row_index, AreaCol];
-                Range precipRange = pPRSIMWS.Cells[row_index, PrecipCol];
-                Range volumeRange = pPRSIMWS.Cells[row_index, VolumeCol];
+                Microsoft.Office.Interop.Excel.Range areaRange = pPRSIMWS.Cells[row_index, AreaCol];
+                Microsoft.Office.Interop.Excel.Range precipRange = pPRSIMWS.Cells[row_index, PrecipCol];
+                Microsoft.Office.Interop.Excel.Range volumeRange = pPRSIMWS.Cells[row_index, VolumeCol];
                 //VOL_ACRE_FT
                 volumeRange.Value = System.Convert.ToDouble(areaRange.Value) * Convert.ToDouble(precipRange.Value) * conversionfactor;
                 total_vol = total_vol + System.Convert.ToDouble(volumeRange.Value);
@@ -609,11 +609,11 @@ namespace bagis_pro
             string oddsString = Convert.ToString(currentLetter);
             for (i = 1; i <= intCount; i++)
             {
-                Range pctRange = pPRSIMWS.Cells[i + 2, PercentCol];
-                Range volumeRange = pPRSIMWS.Cells[i + 2, VolumeCol];
+                Microsoft.Office.Interop.Excel.Range pctRange = pPRSIMWS.Cells[i + 2, PercentCol];
+                Microsoft.Office.Interop.Excel.Range volumeRange = pPRSIMWS.Cells[i + 2, VolumeCol];
                 pctRange.Value = volumeRange.Value * 100 / total_vol;
                 string strFormula = "=" + percentString + (i+2) + "+" + cumuString + (i+1);
-                Range cumuRange = pPRSIMWS.Cells[i + 2, PercentCol + 1];    // %_VOL_CUMU
+                Microsoft.Office.Interop.Excel.Range cumuRange = pPRSIMWS.Cells[i + 2, PercentCol + 1];    // %_VOL_CUMU
                 cumuRange.Formula = strFormula;
                 // ODDS_RATIO is obsolete 11-MAR-2021
                 //Range oddsRange = pPRSIMWS.Cells[i + 2, PercentCol + 2];    // ODDS_RATIO
@@ -1565,14 +1565,14 @@ namespace bagis_pro
         }
 
         public static IList<string> CreateCriticalPrecipitationZones(Worksheet pPRSIMWS, IList<BA_Objects.Interval> lstIntervals,
-            double dblMinVolume, double dblMaxPctVolume, int intZones)
+            double dblMinVolume, double dblMaxPctVolume, long lngZones)
         {
             IList<string> lstCriticalZones = new List<string>();
             Dictionary<string, double> dictPctVolume = new Dictionary<string, double>();
             Dictionary<string, double> dictMeanVolumeZones = new Dictionary<string, double>();
-            double minVolume = 100 / (2.0F * intZones);
+            double minVolume = 100 / (2.0F * lngZones);
             int currentRow = 3;
-            Range pRange = pPRSIMWS.Cells[currentRow, 1];
+            Microsoft.Office.Interop.Excel.Range pRange = pPRSIMWS.Cells[currentRow, 1];
             int intCount = 0;
             int idxPctVolume = 15;
             int idxValue = 1;
@@ -1582,7 +1582,7 @@ namespace bagis_pro
             while (!string.IsNullOrEmpty(pRange.Text.ToString()))
             {
                 BA_Objects.Interval oInterval = null;
-                Range labelRange = pPRSIMWS.Cells[currentRow, idxLabel];
+                Microsoft.Office.Interop.Excel.Range labelRange = pPRSIMWS.Cells[currentRow, idxLabel];
                 foreach (var item in lstIntervals)
                 {
                     if (item.Name.Equals(Convert.ToString(labelRange.Value).Trim()))
@@ -1597,7 +1597,7 @@ namespace bagis_pro
                     strZone = Convert.ToString(oInterval.Value);
                 }
                 // Meets minimum mean volume criterium
-                Range meanVolumeRange = pPRSIMWS.Cells[currentRow, idxMeanVolume];
+                Microsoft.Office.Interop.Excel.Range meanVolumeRange = pPRSIMWS.Cells[currentRow, idxMeanVolume];
                 bool bMinMeanVolume = false;
                 if (Convert.ToDouble(meanVolumeRange.Value) >= dblMinVolume)
                 {
@@ -1605,7 +1605,7 @@ namespace bagis_pro
                     meanVolumeRange.Interior.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.LightBlue);
                     bMinMeanVolume = true;
                 }
-                Range pctVolumeRange = pPRSIMWS.Cells[currentRow, idxPctVolume];
+                Microsoft.Office.Interop.Excel.Range pctVolumeRange = pPRSIMWS.Cells[currentRow, idxPctVolume];
                 double pctVolume = Convert.ToDouble(pctVolumeRange.Value);
                 // Meets minimum area pct criterium
                 if (pctVolume > minVolume)
@@ -1639,7 +1639,7 @@ namespace bagis_pro
             for (int i = 0; i < intCount; i++)
             {
                 BA_Objects.Interval oInterval = null;
-                Range labelRange = pPRSIMWS.Cells[currentRow, idxLabel];
+                Microsoft.Office.Interop.Excel.Range labelRange = pPRSIMWS.Cells[currentRow, idxLabel];
                 foreach (var item in lstIntervals)
                 {
                     if (item.Name.Equals(Convert.ToString(labelRange.Value).Trim()))
@@ -1655,7 +1655,7 @@ namespace bagis_pro
                 }
                 if (lstCriticalZones.Contains(strZone))
                 {
-                    Range valueRange = pPRSIMWS.Cells[currentRow, idxValue];
+                    Microsoft.Office.Interop.Excel.Range valueRange = pPRSIMWS.Cells[currentRow, idxValue];
                     valueRange.Interior.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.Red);
                 }
                 currentRow++;

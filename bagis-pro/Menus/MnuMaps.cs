@@ -27,7 +27,7 @@ namespace bagis_pro.Menus
                 {
                     Title = "Select AOI Folder",
                     MultiSelect = false,
-                    Filter = ItemFilters.folders
+                    Filter = ItemFilters.Folders
                 };
                 if (selectAoiDialog.ShowDialog() == true)
                 {

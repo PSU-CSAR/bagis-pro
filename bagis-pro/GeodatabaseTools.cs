@@ -1,5 +1,6 @@
 ﻿using ArcGIS.Core.CIM;
 using ArcGIS.Core.Data;
+using ArcGIS.Core.Data.Exceptions;
 using ArcGIS.Core.Data.Raster;
 using ArcGIS.Core.Geometry;
 using ArcGIS.Desktop.Core;
@@ -279,9 +280,9 @@ namespace bagis_pro
             return retVal;
         }
 
-        public static async Task<int> CountFeaturesAsync(Uri gdbUri, string featureClassName)
+        public static async Task<long> CountFeaturesAsync(Uri gdbUri, string featureClassName)
         {
-            int retVal = -1;
+            long retVal = -1;
             try
             {
                 await QueuedTask.Run(() =>

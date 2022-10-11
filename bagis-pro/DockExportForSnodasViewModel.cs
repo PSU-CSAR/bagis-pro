@@ -158,8 +158,8 @@ namespace bagis_pro
                             string strGdbPath = System.IO.Path.GetDirectoryName(item.Path);
                             Uri uriGdb = new Uri(System.IO.Path.GetDirectoryName(item.Path));
                             string strFc = System.IO.Path.GetFileName(item.Path);
-                            int intPoints = await GeodatabaseTools.CountFeaturesAsync(uriGdb, strFc);
-                            if (intPoints != 1)
+                            long lngPoints = await GeodatabaseTools.CountFeaturesAsync(uriGdb, strFc);
+                            if (lngPoints != 1)
                             {
                                 strPointErrorMsg = "The point feature class must have 1 and only 1 feature!";
                             }
@@ -241,8 +241,8 @@ namespace bagis_pro
                             string strGdbPath = System.IO.Path.GetDirectoryName(item.Path);
                             Uri uriGdb = new Uri(System.IO.Path.GetDirectoryName(item.Path));
                             string strFc = System.IO.Path.GetFileName(item.Path);
-                            int intPoints = await GeodatabaseTools.CountFeaturesAsync(uriGdb, strFc);
-                            if (intPoints != 1)
+                            long lngPoints = await GeodatabaseTools.CountFeaturesAsync(uriGdb, strFc);
+                            if (lngPoints != 1)
                             {
                                 strPolyErrorMsg = "The polygon feature class must have 1 and only 1 feature!";
                             }

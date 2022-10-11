@@ -17,6 +17,11 @@ using ArcGIS.Desktop.Framework.Contracts;
 using ArcGIS.Desktop.Framework;
 using System.Windows.Input;
 using ArcGIS.Desktop.Core.Geoprocessing;
+using ArcGIS.Core.Data.Exceptions;
+using NLog.Layouts;
+using Layout = ArcGIS.Desktop.Layouts.Layout;
+using System.ComponentModel;
+using System.Security.Policy;
 
 namespace bagis_pro
 {
@@ -92,7 +97,7 @@ namespace bagis_pro
                         Constants.FILE_LAND_OWNERSHIP;
                     Uri uri = new Uri(strPath);
                     success = await MapTools.AddPolygonLayerUniqueValuesAsync(uri, "ArcGIS Colors", "Basic Random",
-                        new string[] { "AGBUR" }, false, false, 30.0F, Constants.MAPS_LAND_OWNERSHIP);
+                        new List<string> { "AGBUR" }, false, false, 30.0F, Constants.MAPS_LAND_OWNERSHIP);
                     string strLayerFilePath = Module1.Current.SettingsPath + "\\" + Constants.FOLDER_SETTINGS + "\\" + Constants.LAYER_FILE_PUBLIC_TRIBAL_LANDS;
                     success = await GeoprocessingTools.ApplySymbologyFromLayerAsync(Constants.MAPS_LAND_OWNERSHIP, strLayerFilePath,
                         "UPDATE");
@@ -359,8 +364,10 @@ namespace bagis_pro
                    //Build 2D envelope geometry
                    Coordinate2D mf_ll = new Coordinate2D(xMin, yMin);
                    Coordinate2D mf_ur = new Coordinate2D(xMax, yMax);
-                   Envelope mf_env = EnvelopeBuilder.CreateEnvelope(mf_ll, mf_ur);
-                   mfElm = LayoutElementFactory.Instance.CreateMapFrame(oLayout, mf_env, oMap);
+                   Envelope mf_env = EnvelopeBuilderEx.CreateEnvelope(mf_ll, mf_ur);
+                   //Migrate from 2.x
+                   //mfElm = LayoutElementFactory.Instance.CreateMapFrame(oLayout, mf_env, oMap);
+                   mfElm = ElementFactory.Instance.CreateMapFrameElement(oLayout, mf_env, oMap);
                    mfElm.SetName(mapFrameName);
                }
                // Remove border from map frame
@@ -520,7 +527,7 @@ namespace bagis_pro
         }
 
         public static async Task<BA_ReturnCode> AddPolygonLayerUniqueValuesAsync(Uri uri, string styleCategory, string styleName,
-                                                                                 string[] arrDisplayFields, bool isVisible, 
+                                                                                 List<string> lstDisplayFields, bool isVisible, 
                                                                                  bool bAllOtherValues, double dblTransparency, string displayName = "")
         {
             // parse the uri for the folder and file
@@ -561,7 +568,7 @@ namespace bagis_pro
                 UniqueValueRendererDefinition uvr = new
                    UniqueValueRendererDefinition()
                 {
-                    ValueFields = arrDisplayFields, //multiple fields in the array if needed.
+                    ValueFields = lstDisplayFields, //multiple fields in the array if needed.
                     ColorRamp = cimColorRamp, //Specify color ramp
                     SymbolTemplate = oSymbolReference,
                     UseDefaultSymbol = bAllOtherValues
@@ -1377,9 +1384,13 @@ namespace bagis_pro
                 //Set symbolology, create and add element to layout
                 CIMTextSymbol sym = SymbolFactory.Instance.ConstructTextSymbol(fontColor, fontSize, fontFamily, fontStyle);
                 sym.HorizontalAlignment = ArcGIS.Core.CIM.HorizontalAlignment.Left;
-                GraphicElement ptTxtElm = LayoutElementFactory.Instance.CreatePointTextGraphicElement(layout, coord2D, textBoxText, sym);
-                ptTxtElm.SetName(elementName);
+                //Migrate from 2.x
+                //GraphicElement ptTxtElm = LayoutElementFactory.Instance.CreatePointTextGraphicElement(layout, coord2D, textBoxText, sym);
+                //https://pro.arcgis.com/en/pro-app/latest/sdk/api-reference/topic11178.html
+                TextElement ptTxtElm = ElementFactory.Instance.CreateTextGraphicElement(
+                                layout, TextType.PointText, coord2D.ToMapPoint()) as TextElement;
                 ptTxtElm.SetAnchor(Anchor.CenterPoint);
+                ptTxtElm.SetTextProperties(new TextProperties(textBoxText, fontFamily, fontSize, fontStyle));
                 ptTxtElm.SetX(xPos);
                 ptTxtElm.SetY(yPos);
             });
@@ -1396,7 +1407,8 @@ namespace bagis_pro
                //Build 2D envelope geometry
                Coordinate2D leg_ll = new Coordinate2D(0.5, 0.3);
                Coordinate2D leg_ur = new Coordinate2D(2.14, 2.57);
-               Envelope leg_env = EnvelopeBuilder.CreateEnvelope(leg_ll, leg_ur);
+                //Migrate from 2.x
+                Envelope leg_env = EnvelopeBuilderEx.CreateEnvelope(leg_ll, leg_ur);
 
                //Reference MF, create legend and add to layout
                MapFrame mapFrame = layout.FindElement(mapFrameName) as MapFrame;
@@ -1404,9 +1416,15 @@ namespace bagis_pro
                var legend = layoutDef.Elements.OfType<Legend>().FirstOrDefault();
                if (legend == null)
                {
-                   legend = LayoutElementFactory.Instance.CreateLegend(layout, leg_env, mapFrame);
-               }
-               legend.SetName(Constants.MAPS_LEGEND);
+                    //Migrate from 2.x
+                    //legend = LayoutElementFactory.Instance.CreateLegend(layout, leg_env, mapFrame);
+                    var legendInfo = new LegendInfo()
+                    {
+                        MapFrameName = mapFrame.Name
+                    };
+                    legend = ElementFactory.Instance.CreateMapSurroundElement(
+                        layout, leg_env, legendInfo, Constants.MAPS_LEGEND) as Legend;
+                }
                legend.SetAnchor(Anchor.BottomLeftCorner);
 
                
@@ -1631,7 +1649,17 @@ namespace bagis_pro
                     Coordinate2D nArrow = new Coordinate2D(7.7906, 0.9906);
 
                     //Construct the north arrow
-                    NorthArrow northArrow = LayoutElementFactory.Instance.CreateNorthArrow(layout, nArrow, mapFrame, northArrowStyleItem);
+                    //Migrate from 2.x
+                    //NorthArrow northArrow = LayoutElementFactory.Instance.CreateNorthArrow(layout, nArrow, mapFrame, 
+                    //    northArrowStyleItem);
+                    var naInfo = new NorthArrowInfo()
+                    {
+                        MapFrameName = mapFrame.Name,
+                        NorthArrowStyleItem = northArrowStyleItem
+                    };
+
+                    var northArrow = ElementFactory.Instance.CreateMapSurroundElement(
+                                              layout, nArrow.ToMapPoint(), naInfo, "North Arrow") as NorthArrow;
                     northArrow.SetHeight(0.7037);
                 });
                 return BA_ReturnCode.Success;
@@ -1660,11 +1688,20 @@ namespace bagis_pro
                     Coordinate2D location = new Coordinate2D(coordX, 1.0975);
 
                     //Construct the scale bar
-                    ScaleBar scaleBar = LayoutElementFactory.Instance.CreateScaleBar(layout, location, mapFrame, scaleBarStyleItem);
+                    //Migrate from 2.x
+                    //ScaleBar scaleBar = LayoutElementFactory.Instance.CreateScaleBar(layout, location, mapFrame, scaleBarStyleItem);
+                    var sbInfo = new ScaleBarInfo()
+                    {
+                        MapFrameName = mapFrame.Name,
+                        ScaleBarStyleItem = scaleBarStyleItem
+                    };
+                    var scaleBar = ElementFactory.Instance.CreateMapSurroundElement(
+                        layout, location.ToMapPoint(), sbInfo, "Scale Bar") as ScaleBar;
                     CIMScaleBar cimScaleBar = (CIMScaleBar)scaleBar.GetDefinition();
                     cimScaleBar.MarkPosition = ScaleBarVerticalPosition.Above;
                     cimScaleBar.UnitLabelPosition = ScaleBarLabelPosition.AfterLabels;
-                    //cimScaleBar.AlignToZeroPoint = true;
+                    // Try uncommenting this out to see if bug is fixed
+                    cimScaleBar.AlignToZeroPoint = true;
                     scaleBar.SetDefinition(cimScaleBar);
 
                     // Second scale bar for kilometers
@@ -1679,12 +1716,21 @@ namespace bagis_pro
                     Coordinate2D location2 = new Coordinate2D(coordX, 0.8035);
 
                     //Construct the scale bar
-                    ScaleBar scaleBar2 = LayoutElementFactory.Instance.CreateScaleBar(layout, location2, mapFrame, scaleBarStyleItem2);
+                    //Migrate from 2.x
+                    //ScaleBar scaleBar2 = LayoutElementFactory.Instance.CreateScaleBar(layout, location2, mapFrame, scaleBarStyleItem2);
+                    var sbInfo2 = new ScaleBarInfo()
+                    {
+                        MapFrameName = mapFrame.Name,
+                        ScaleBarStyleItem = scaleBarStyleItem2
+                    };
+                    var scaleBar2 = ElementFactory.Instance.CreateMapSurroundElement(
+                        layout, location2.ToMapPoint(), sbInfo2, "Scale Bar 2") as ScaleBar;
                     CIMScaleBar cimScaleBar2 = (CIMScaleBar)scaleBar2.GetDefinition();
                     cimScaleBar2.Units = LinearUnit.Kilometers;
                     cimScaleBar2.UnitLabel = cimScaleBar2.Units.Name + "s";
                     cimScaleBar2.UnitLabelPosition = ScaleBarLabelPosition.AfterLabels;
-                    //cimScaleBar2.AlignToZeroPoint = true;
+                    // Try uncommenting this out to see if bug is fixed
+                    cimScaleBar2.AlignToZeroPoint = true;
                     scaleBar2.SetDefinition(cimScaleBar2);
 
                 });
@@ -2751,13 +2797,18 @@ namespace bagis_pro
             // Open the requested raster so we know it exists; return if it doesn't
             await QueuedTask.Run(() =>
             {
-            // Create the raster layer on the active map
-            layer = LayerFactory.Instance.CreateLayer(mapUri, oMap, LayerPosition.AutoArrange, displayName);
+                //Create the raster layer on the active map
+                //Migrate from 2.x
+                var rasterLayerCreationParams = new RasterLayerCreationParams(mapUri)
+                {
+                    Name = displayName,
+                };
+                layer = LayerFactory.Instance.CreateLayer<RasterLayer>(rasterLayerCreationParams, oMap);
 
                 // Set raster layer transparency and name
                 if (layer != null)
                 {
-                    layer?.SetVisibility(bIsVisible);
+                    layer.SetVisibility(bIsVisible);
 
                 }
             });
@@ -2801,8 +2852,17 @@ namespace bagis_pro
                     // Create a new Stretch Colorizer Definition supplying the color ramp
                     StretchColorizerDefinition stretchColorizerDef = new StretchColorizerDefinition(0, RasterStretchType.DefaultFromSource, 1.0, cimColorRamp);
                     int idxLayer = MapView.Active.Map.Layers.Count();
-                    RasterLayer rasterLayer = (RasterLayer)LayerFactory.Instance.CreateRasterLayer(rasterUri, MapView.Active.Map, idxLayer,
-                        displayName, stretchColorizerDef);
+
+                    //RasterLayer rasterLayer = (RasterLayer)LayerFactory.Instance.CreateRasterLayer(rasterUri, MapView.Active.Map, idxLayer,
+                    //    displayName, stretchColorizerDef);
+                    //Migrate from 2.x
+                    var rasterLayerCreationParams = new RasterLayerCreationParams(rasterUri)
+                    {
+                        ColorizerDefinition = stretchColorizerDef,
+                        Name = displayName,
+                        MapMemberIndex = idxLayer
+                    };
+                    RasterLayer rasterLayer = LayerFactory.Instance.CreateLayer<RasterLayer>(rasterLayerCreationParams, MapView.Active.Map);
                     rasterLayer.SetTransparency(transparency);
                 });
             }
@@ -3437,7 +3497,7 @@ namespace bagis_pro
 
             // Check to make sure the buffer file only has one feature; No dangles
             Uri uriAoi = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi));
-            int featureCount = await GeodatabaseTools.CountFeaturesAsync(uriAoi, Constants.FILE_AOI_VECTOR);
+            long featureCount = await GeodatabaseTools.CountFeaturesAsync(uriAoi, Constants.FILE_AOI_VECTOR);
             string strClipFile = Constants.FILE_AOI_VECTOR;
 
             await QueuedTask.Run(() =>

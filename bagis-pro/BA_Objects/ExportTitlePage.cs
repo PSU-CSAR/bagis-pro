@@ -19,12 +19,12 @@ namespace bagis_pro.BA_Objects
         public double elevation_min_meters;
         public double elevation_max_meters;
         public bool has_snotel_sites;
-        public int snotel_sites_in_basin;
-        public int snotel_sites_in_buffer;
+        public long snotel_sites_in_basin;
+        public long snotel_sites_in_buffer;
         public string snotel_sites_buffer_size;
         public bool has_scos_sites;
         public int scos_sites_in_basin;
-        public int scos_sites_in_buffer;
+        public long scos_sites_in_buffer;
         public string scos_sites_buffer_size;
         public double site_elev_range;
         public string site_elev_range_units;

@@ -36,7 +36,7 @@ namespace bagis_pro
             var asm = System.Reflection.Assembly.GetExecutingAssembly();
             return System.IO.Path.GetDirectoryName(
                               Uri.UnescapeDataString(
-                                      new Uri(asm.CodeBase).LocalPath));
+                                      new Uri(asm.Location).LocalPath));
         }
 
         public static async Task<BA_ReturnCode> ExportMapToPdfAsync(int intResolution)
@@ -181,10 +181,10 @@ namespace bagis_pro
                 // Counting Snotel Sites in AOI boundary
                 gdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, false));
                 Uri sitesGdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, false));
-                int snotelInBasin = await GeodatabaseTools.CountPointsWithinInFeatureAsync(sitesGdbUri, Constants.FILE_SNOTEL,
+                long snotelInBasin = await GeodatabaseTools.CountPointsWithinInFeatureAsync(sitesGdbUri, Constants.FILE_SNOTEL,
                     gdbUri, Constants.FILE_AOI_VECTOR);
-                int snotelInBuffer = 0;
-                int totalSnotelSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_SNOTEL);
+                long snotelInBuffer = 0;
+                long totalSnotelSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_SNOTEL);
                 if (totalSnotelSites > 0)
                 {
                     snotelInBuffer = totalSnotelSites - snotelInBasin;
@@ -193,8 +193,8 @@ namespace bagis_pro
                 // Counting Snow Course Sites in AOI boundary
                 int scosInBasin = await GeodatabaseTools.CountPointsWithinInFeatureAsync(sitesGdbUri, Constants.FILE_SNOW_COURSE,
                     gdbUri, Constants.FILE_AOI_VECTOR);
-                int scosInBuffer = 0;
-                int totalScosSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_SNOW_COURSE);
+                long scosInBuffer = 0;
+                long totalScosSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_SNOW_COURSE);
                 if (totalScosSites > 0)
                 {
                     scosInBuffer = totalScosSites - scosInBasin;
@@ -639,8 +639,8 @@ namespace bagis_pro
                 }
 
                 Module1.Current.Aoi.HasSnotel = true;
-                int intSites = await GeodatabaseTools.CountFeaturesAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, false)), Constants.FILE_SNOTEL);
-                if (intSites < 1)
+                long lngSites = await GeodatabaseTools.CountFeaturesAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, false)), Constants.FILE_SNOTEL);
+                if (lngSites < 1)
                 {
                     Module1.Current.Aoi.HasSnotel = false;
                 }
@@ -659,8 +659,8 @@ namespace bagis_pro
                 }
 
                 Module1.Current.Aoi.HasSnowCourse = true;
-                intSites = await GeodatabaseTools.CountFeaturesAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, false)), Constants.FILE_SNOW_COURSE);
-                if (intSites < 1)
+                lngSites = await GeodatabaseTools.CountFeaturesAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, false)), Constants.FILE_SNOW_COURSE);
+                if (lngSites < 1)
                 {
                     Module1.Current.Aoi.HasSnowCourse = false;
                 }
@@ -679,12 +679,12 @@ namespace bagis_pro
                 }
 
                 string strPrecipPath = Module1.Current.Aoi.FilePath + "\\" + Module1.Current.BatchToolSettings.AoiPrecipFile;
-                int intZones = await ExcelTools.CreatePrecipitationTableAsync(pPRISMWorkSheet,
+                long lngZones = await ExcelTools.CreatePrecipitationTableAsync(pPRISMWorkSheet,
                    strPrecipPath, elevMinMeters);
 
                 double MaxPct = -1;
                 int lastRow = -1;
-                if (intZones > 0)
+                if (lngZones > 0)
                 {
                     // copy DEM area and %_area to the PRISM table
                     success = ExcelTools.CopyCells(pAreaElvWorksheet, 3, pPRISMWorkSheet, 12);
@@ -701,7 +701,7 @@ namespace bagis_pro
                     IList<BA_Objects.Interval> lstIntervals = await GeodatabaseTools.ReadReclassRasterAttribute(uriElevZones, Constants.FILE_ELEV_ZONE);
                     double dblMinVolume = (double)Module1.Current.BatchToolSettings.CriticalPrecipMinMeanVolInches;
                     double dblMaxPctVolume = (double)Module1.Current.BatchToolSettings.CriticalPrecipTotalMaxVolPct;
-                    IList<string> lstCriticalZoneValues = ExcelTools.CreateCriticalPrecipitationZones(pPRISMWorkSheet, lstIntervals, dblMinVolume, dblMaxPctVolume, intZones);
+                    IList<string> lstCriticalZoneValues = ExcelTools.CreateCriticalPrecipitationZones(pPRISMWorkSheet, lstIntervals, dblMinVolume, dblMaxPctVolume, lngZones);
 
                     // Add textbox comments to worksheet
                     if (lastRow > 4)
@@ -2466,18 +2466,18 @@ namespace bagis_pro
                 bool bHasSnotel = false;
                 bool bHasSnowCourse = false;
                 Uri sitesGdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers, false));
-                int intSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_SNOTEL);
-                int intTotalSites = 0;
-                if (intSites > 0)
+                long lngSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_SNOTEL);
+                long lngTotalSites = 0;
+                if (lngSites > 0)
                 {
                     bHasSnotel = true;
-                    intTotalSites = intSites;
+                    lngTotalSites = lngSites;
                 }                    
-                intSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_SNOW_COURSE);
-                if (intSites > 0)
+                lngSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_SNOW_COURSE);
+                if (lngSites > 0)
                 {
                     bHasSnowCourse = true;
-                    intTotalSites = intTotalSites + intSites;
+                    lngTotalSites = lngTotalSites + lngSites;
                 }
                 string publishFolder = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE;
                 string strPublishFile = publishFolder + "\\" + Constants.FILE_SITES_TABLE_PDF;
@@ -2489,7 +2489,7 @@ namespace bagis_pro
                         strPublishFile, true);
                     return BA_ReturnCode.Success;
                 }
-                else if (intTotalSites > 25)
+                else if (lngTotalSites > 25)
                 {
                     Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateSitesTableAsync),
                         "AOI contains > 25 sites. Sites table will be generated as an appendix!");

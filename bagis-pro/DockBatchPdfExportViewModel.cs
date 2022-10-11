@@ -214,7 +214,7 @@ namespace bagis_pro
                     {
                         Title = "Select a basin, aoi, or folder",
                         MultiSelect = false,
-                        Filter = ItemFilters.folders
+                        Filter = ItemFilters.Folders
                     };
                     bool? ok = aNewFilter.ShowDialog();
                     bool bOk = ok ?? false;

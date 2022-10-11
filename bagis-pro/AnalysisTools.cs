@@ -1,4 +1,6 @@
-﻿using ArcGIS.Core.Data;
+﻿using ArcGIS.Core.CIM;
+using ArcGIS.Core.Data;
+using ArcGIS.Core.Data.Exceptions;
 using ArcGIS.Core.Data.Raster;
 using ArcGIS.Core.Geometry;
 using ArcGIS.Desktop.Core;
@@ -32,11 +34,11 @@ namespace bagis_pro
                 bool bHasSnotel = false;
                 bool bHasSnowCourse = false;
                 Uri sitesGdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, false));
-                int intSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_SNOTEL);
-                if (intSites > 0)
+                long lngSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_SNOTEL);
+                if (lngSites > 0)
                     bHasSnotel = true;
-                intSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_SNOW_COURSE);
-                if (intSites > 0)
+                lngSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_SNOW_COURSE);
+                if (lngSites > 0)
                     bHasSnowCourse = true;
                 if (!bHasSnotel && !bHasSnowCourse)
                 {
@@ -801,7 +803,7 @@ namespace bagis_pro
                             }
 
                             // Check to make sure the buffer file only has one feature; No dangles
-                            int featureCount = 0;
+                            long featureCount = 0;
                             strClipGdb = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, false);
                             using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(strClipGdb))))
                             using (Table table = geodatabase.OpenDataset<Table>(strClipFile))
@@ -1958,7 +1960,7 @@ namespace bagis_pro
                 }
 
                 // Check to make sure the buffer file only has one feature; No dangles
-                int featureCount = 0;
+                long featureCount = 0;
                 await QueuedTask.Run(async () =>
                 {
                     using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(strClipGdb))))
@@ -2059,7 +2061,7 @@ namespace bagis_pro
                         }
 
                         // Check to make sure the buffer file only has one feature; No dangles
-                        int featureCount = 0;
+                        long featureCount = 0;
                         strClipGdb = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, false);
                         using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(strClipGdb))))
                         using (Table table = geodatabase.OpenDataset<Table>(strClipFile))
@@ -2211,7 +2213,16 @@ namespace bagis_pro
                 await QueuedTask.Run(() =>
                 {
                     // Create feature layer so we can use definition query to select public lands
-                    var slectionLayer = LayerFactory.Instance.CreateFeatureLayer(uriFull, MapView.Active.Map, 0, "Selection Layer");
+                    // Migrate from 2.x
+                    //var slectionLayer = LayerFactory.Instance.CreateFeatureLayer(uriFull, MapView.Active.Map, 0, "Selection Layer");
+                    var flyrCreatnParam = new FeatureLayerCreationParams(uriFull)
+                    {
+                        Name = "Selection Layer",
+                        IsVisible = false,
+                        MapMemberIndex = 0,
+                        MapMemberPosition = 0,
+                    };
+                    var slectionLayer = LayerFactory.Instance.CreateLayer<FeatureLayer>(flyrCreatnParam, MapView.Active.Map);
                     slectionLayer.SetDefinitionQuery(Constants.FIELD_SUITABLE + " = 1");
                     // Merge features into a single feature for display and analysis
                     var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath);
@@ -2277,7 +2288,16 @@ namespace bagis_pro
 
                 // Create feature layer so we can use definition query to select public lands
                 var uriTemp = new Uri(strAnalysisGdb + "\\" + strTempVector);
-                var slectionLayer = LayerFactory.Instance.CreateFeatureLayer(uriTemp, MapView.Active.Map, 0, "Selection Layer");
+                //Migrate from 2.x
+                //var slectionLayer = LayerFactory.Instance.CreateFeatureLayer(uriTemp, MapView.Active.Map, 0, "Selection Layer");
+                var flyrCreatnParam = new FeatureLayerCreationParams(uriTemp)
+                {
+                    Name = "Selection Layer",
+                    IsVisible = false,
+                    MapMemberIndex = 0,
+                    MapMemberPosition = 0,
+                };
+                var slectionLayer = LayerFactory.Instance.CreateLayer<FeatureLayer>(flyrCreatnParam, MapView.Active.Map);
                 slectionLayer.SetDefinitionQuery(Constants.FIELD_GRID_CODE + " IN (41, 42, 43)");
                 string dissolveOutputPath = strAnalysisGdb + "\\" + Constants.FILE_FORESTED_ZONE;
                 // Copy selected features to a new, temporary feature class
@@ -2329,7 +2349,16 @@ namespace bagis_pro
             {
                 // Create feature layer so we can use definition query to select public lands
                 var uriTemp = new Uri(uriAnalysisGdb.LocalPath + "\\" + Constants.FILE_ELEV_ZONES_VECTOR);
-                var slectionLayer = LayerFactory.Instance.CreateFeatureLayer(uriTemp, MapView.Active.Map, 0, "Selection Layer");
+                //Migrate from 2.x
+                //var slectionLayer = LayerFactory.Instance.CreateFeatureLayer(uriTemp, MapView.Active.Map, 0, "Selection Layer");
+                var flyrCreatnParam = new FeatureLayerCreationParams(uriTemp)
+                {
+                    Name = "Selection Layer",
+                    IsVisible = false,
+                    MapMemberIndex = 0,
+                    MapMemberPosition = 0,
+                };
+                var slectionLayer = LayerFactory.Instance.CreateLayer<FeatureLayer>(flyrCreatnParam, MapView.Active.Map);
                 string strZones = "";
                 foreach (var sZone in lstCriticalZoneValues)
                 {
@@ -2697,7 +2726,7 @@ namespace bagis_pro
                     }
 
                     // Check to make sure the buffer file only has one feature; No dangles
-                    int featureCount = 0;
+                    long featureCount = 0;
                     strClipGdb = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, false);
                     using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(strClipGdb))))
                     using (Table table = geodatabase.OpenDataset<Table>(strClipFile))
@@ -3295,11 +3324,11 @@ namespace bagis_pro
                 bool bHasSnowCourse = false;
                 Uri sitesGdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, false));
                 Uri uriAnalysis = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis));
-                int intSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_SNOTEL);
-                if (intSites > 0)
+                long lngSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_SNOTEL);
+                if (lngSites > 0)
                     bHasSnotel = true;
-                intSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_SNOW_COURSE);
-                if (intSites > 0)
+                lngSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_SNOW_COURSE);
+                if (lngSites > 0)
                     bHasSnowCourse = true;
                 if (bHasSnotel == false && bHasSnowCourse == false)
                 {
@@ -4032,12 +4061,12 @@ namespace bagis_pro
             string featureClassToUpdate = analysisPath + "\\" + Constants.FILE_MERGED_SITES;
 
             // Check to see if all sites are within the buffered AOI. If not, need to reclip DEM and generate slope and aspect
-            int outsideCount = 0;
+            long outsideCount = 0;
             Uri gdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, false));
             Uri sitesGdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false));
             int sitesInBasin = await GeodatabaseTools.CountPointsWithinInFeatureAsync(sitesGdbUri, Constants.FILE_MERGED_SITES,
                 gdbUri, Constants.FILE_AOI_BUFFERED_VECTOR);
-            int totalSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_MERGED_SITES);
+            long totalSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_MERGED_SITES);
             if (totalSites > 0)
             {
                 outsideCount = totalSites - sitesInBasin;
@@ -4427,12 +4456,12 @@ namespace bagis_pro
             if (!String.IsNullOrEmpty(returnPath))
             {
                 // Check to see if all sites are within the buffered AOI. If not, need to reclip DEM and generate slope and aspect
-                int outsideCount = 0;
+                long outsideCount = 0;
                 Uri aoiUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, false));
                 Uri sitesGdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false));
                 int sitesInBasin = await GeodatabaseTools.CountPointsWithinInFeatureAsync(sitesGdbUri, Constants.FILE_MERGED_SITES,
                     aoiUri, Constants.FILE_AOI_BUFFERED_VECTOR);
-                int totalSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_MERGED_SITES);
+                long totalSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_MERGED_SITES);
                 if (totalSites > 0)
                 {
                     outsideCount = totalSites - sitesInBasin;
@@ -4740,11 +4769,11 @@ namespace bagis_pro
             return success;
         }
 
-        public static async Task<string> GetPrismImageUriAsync(Uri sitesGdbUri, Uri aoiUri, int totalSites)
+        public static async Task<string> GetPrismImageUriAsync(Uri sitesGdbUri, Uri aoiUri, long totalSites)
         {
             string strUri = "";
             // Check to see if all sites are with the PRISM buffered AOI. If not, need to get the correct service name
-            int outsidePrism = 0;
+            long outsidePrism = 0;
             int sitesInBasin = await GeodatabaseTools.CountPointsWithinInFeatureAsync(sitesGdbUri, Constants.FILE_MERGED_SITES,
                 aoiUri, Constants.FILE_AOI_PRISM_VECTOR);
             if (totalSites > 0)
