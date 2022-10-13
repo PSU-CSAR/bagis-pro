@@ -4,10 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Windows.Input;
 using System.Threading.Tasks;
-using ArcGIS.Core.CIM;
 using ArcGIS.Core.Data;
-using ArcGIS.Core.Geometry;
-using ArcGIS.Desktop.Catalog;
 using ArcGIS.Desktop.Core;
 using ArcGIS.Desktop.Editing;
 using ArcGIS.Desktop.Extensions;
@@ -23,6 +20,7 @@ using System.Net.Http;
 using Newtonsoft.Json;
 using System.Diagnostics;
 using System.IO;
+using ArcGIS.Core.Internal.CIM;
 
 namespace bagis_pro
 {
@@ -158,7 +156,7 @@ namespace bagis_pro
         /// <param name="fieldName"></param>
         /// <param name="queryFilter"></param>
         /// <returns></returns>
-        public async Task<string[]> QueryServiceForValuesAsync(Uri oWebServiceUri, string layerNumber, string[] fieldNames, QueryFilter queryFilter)
+        public async Task<string[]> QueryServiceForValuesAsync(Uri oWebServiceUri, string layerNumber, string[] fieldNames, ArcGIS.Core.Data.QueryFilter queryFilter)
         {
             string[] returnValues = new string[fieldNames.Length];
             await QueuedTask.Run(() =>
@@ -236,58 +234,65 @@ namespace bagis_pro
         {
             try
             {
+                PortalItem portalItem = null;
+                bool bSuccess = false;
+                BA_ReturnCode objSuccess = BA_ReturnCode.UnknownError;
                 var enumPortal = ArcGISPortalManager.Current.GetPortals();
-                ArcGISPortal myPortal = null;
-                foreach (var oPortal in enumPortal)
+                await QueuedTask.Run(async () =>
                 {
-                    var info = await oPortal.GetPortalInfoAsync();
-                    if (info.OrganizationName.Equals(portalOrganization))
+                    ArcGISPortal myPortal = null;
+                    foreach (var oPortal in enumPortal)
                     {
-                        myPortal = oPortal;
+                        var info = await oPortal.GetPortalInfoAsync();
+                        if (info.OrganizationName.Equals(portalOrganization))
+                        {
+                            myPortal = oPortal;
+                            objSuccess = BA_ReturnCode.Success;
+                            break;
+                        }
                     }
-                }
-                if (myPortal == null)
-                {
-                    Module1.Current.ModuleLogManager.LogError(nameof(GetPortalFile),
-                        "The NRCS Portal is missing from the ArcGIS Pro 'Portals' tab. The requested file cannot be downloaded! ArcGIS Pro will " +
-                        "use a previous version of the file if it exists");
-                    return BA_ReturnCode.UnknownError;
-                }
-                if (!myPortal.IsSignedOn())
-                {
-                    var result = await myPortal.SignInAsync();
-                    if (result.success == false)
+                    if (myPortal == null)
                     {
                         Module1.Current.ModuleLogManager.LogError(nameof(GetPortalFile),
-                            "Unable to signIn to the NRCS Portal. Can you connect to the portal in the ArcGIS Pro 'Portals' tab? The requested file cannot be downloaded! " +
-                            "ArcGIS Pro will use a previous version of the file if it exists");
-                        return BA_ReturnCode.UnknownError;
+                            "The NRCS Portal is missing from the ArcGIS Pro 'Portals' tab. The requested file cannot be downloaded! ArcGIS Pro will " +
+                            "use a previous version of the file if it exists");
+                        return;
                     }
-                }
+                    else if (!myPortal.IsSignedOn())
+                    {
+                        var result = await myPortal.SignInAsync();
+                        if (result.success == false)
+                        {
+                            Module1.Current.ModuleLogManager.LogError(nameof(GetPortalFile),
+                                "Unable to signIn to the NRCS Portal. Can you connect to the portal in the ArcGIS Pro 'Portals' tab? The requested file cannot be downloaded! " +
+                                "ArcGIS Pro will use a previous version of the file if it exists");
+                            return;
+                        }
+                    }
+                    //assume we query for some content
+                    var query = PortalQueryParameters.CreateForItemsWithId(itemId);
+                    var results = await myPortal.SearchForContentAsync(query);
+                    portalItem = results.Results.First();   //first item
+                    objSuccess = BA_ReturnCode.Success;
+                });
 
-                //assume we query for some content
-                var query = PortalQueryParameters.CreateForItemsWithId(itemId);
-                var results = await myPortal.SearchForContentAsync(query);
 
-                var portalItem = results.Results.First();   //first item
-
-                bool success = false;
-                if (portalItem != null)
+                if (objSuccess == BA_ReturnCode.Success && portalItem != null)
                 {
                     //rename the original, if it exists so that we get the most current copy
                     if (File.Exists(downLoadPath))
                     {
-                        string strDirectory = Path.GetDirectoryName(downLoadPath);
-                        string strFile = Path.GetFileNameWithoutExtension(downLoadPath) + "_1" + Path.GetExtension(downLoadPath);
+                        string strDirectory = System.IO.Path.GetDirectoryName(downLoadPath);
+                        string strFile = System.IO.Path.GetFileNameWithoutExtension(downLoadPath) + "_1" + System.IO.Path.GetExtension(downLoadPath);
                         File.Copy(downLoadPath, strDirectory + "\\" + strFile, true);
                         File.Delete(downLoadPath);
                         Module1.Current.ModuleLogManager.LogDebug(nameof(GetPortalFile),
                             "Renamed " + downLoadPath + " so a new copy could be downloaded");
                     }
                     //download the item
-                    success = await portalItem.GetItemDataAsync(downLoadPath);
+                    bSuccess = await portalItem.GetItemDataAsync(downLoadPath);
                 }
-                if (success == true)
+                if (bSuccess == true)
                 {
                     Module1.Current.ModuleLogManager.LogDebug(nameof(GetPortalFile),
                         "The requested file was successfully downloaded from the Portal");
