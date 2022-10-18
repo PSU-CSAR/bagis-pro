@@ -400,11 +400,20 @@ namespace bagis_pro
                 }
 
                 // Convert the title page to PDF
-                if (System.IO.File.Exists(htmlFilePath))
+                var chromePath = @"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe";
+                if (File.Exists(htmlFilePath))
                 {
-                    PdfSharp.Pdf.PdfDocument titlePageDoc = TheArtOfDev.HtmlRenderer.PdfSharp.PdfGenerator.GeneratePdf(System.IO.File.ReadAllText(htmlFilePath),
-                        PdfSharp.PageSize.Letter);
-                    titlePageDoc.Save(publishFolder + "\\" + Constants.FILE_TITLE_PAGE_PDF);
+                    //PdfSharp.Pdf.PdfDocument titlePageDoc = TheArtOfDev.HtmlRenderer.PdfSharp.PdfGenerator.GeneratePdf(System.IO.File.ReadAllText(htmlFilePath),
+                    //    PdfSharp.PageSize.Letter);
+                    //titlePageDoc.Save(publishFolder + "\\" + Constants.FILE_TITLE_PAGE_PDF);
+                    var url = $@"file:///{htmlFilePath}";
+                    using (var p = new Process())
+                    {
+                        p.StartInfo.FileName = chromePath;
+                        p.StartInfo.Arguments = $"--headless --disable-gpu --print-to-pdf-no-header --print-to-pdf={publishFolder + "\\" + Constants.FILE_TITLE_PAGE_PDF} {url}";
+                        p.Start();
+                        p.WaitForExit();
+                    }
                 }
                 Module1.Current.ModuleLogManager.LogDebug(nameof(GenerateMapsTitlePageAsync),
                     "Title page created!!");
@@ -430,9 +439,17 @@ namespace bagis_pro
                 // Convert the title page to PDF
                 if (System.IO.File.Exists(htmlFilePath))
                 {
-                    PdfSharp.Pdf.PdfDocument titlePageDoc = TheArtOfDev.HtmlRenderer.PdfSharp.PdfGenerator.GeneratePdf(System.IO.File.ReadAllText(htmlFilePath),
-                        PdfSharp.PageSize.Letter);
-                    titlePageDoc.Save(publishFolder + "\\" + Constants.FILE_DATA_SOURCES_PDF);
+                    //PdfSharp.Pdf.PdfDocument titlePageDoc = TheArtOfDev.HtmlRenderer.PdfSharp.PdfGenerator.GeneratePdf(System.IO.File.ReadAllText(htmlFilePath),
+                    //    PdfSharp.PageSize.Letter);
+                    //titlePageDoc.Save(publishFolder + "\\" + Constants.FILE_DATA_SOURCES_PDF);
+                    var url = $@"file:///{htmlFilePath}";
+                    using (var p = new Process())
+                    {
+                        p.StartInfo.FileName = chromePath;
+                        p.StartInfo.Arguments = $"--headless --disable-gpu --print-to-pdf-no-header --print-to-pdf={publishFolder + "\\" + Constants.FILE_DATA_SOURCES_PDF} {url}";
+                        p.Start();
+                        p.WaitForExit();
+                    }
                 }
                 Module1.Current.ModuleLogManager.LogDebug(nameof(GenerateMapsTitlePageAsync),
                     "Data sources page created!!");
@@ -1914,6 +1931,7 @@ namespace bagis_pro
                 }
                 File.Delete(outputFolder + "\\" + Constants.FILE_SITES_APPENDIX_PDF);
             }
+            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             combineDocument.Save(outputPath);
 
             foreach (var strFileName in Constants.FILES_EXPORT_WATERSHED_PDF)
@@ -2559,10 +2577,18 @@ namespace bagis_pro
                 // Convert the sites table to PDF
                 if (File.Exists(htmlFilePath))
                 {
-                    PdfSharp.Pdf.PdfDocument sitesPageDoc = TheArtOfDev.HtmlRenderer.PdfSharp.PdfGenerator.GeneratePdf(System.IO.File.ReadAllText(htmlFilePath),
-                        PdfSharp.PageSize.Letter);
-              
-                    sitesPageDoc.Save(strPublishFile);
+                    //PdfSharp.Pdf.PdfDocument sitesPageDoc = TheArtOfDev.HtmlRenderer.PdfSharp.PdfGenerator.GeneratePdf(System.IO.File.ReadAllText(htmlFilePath),
+                    //    PdfSharp.PageSize.Letter)              
+                    //sitesPageDoc.Save(strPublishFile);
+                    var url = $@"file:///{htmlFilePath}";
+                    var chromePath = @"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe";
+                    using (var p = new Process())
+                    {
+                        p.StartInfo.FileName = chromePath;
+                        p.StartInfo.Arguments = $"--headless --disable-gpu --print-to-pdf-no-header --print-to-pdf={strPublishFile} {url}";
+                        p.Start();
+                        p.WaitForExit();
+                    }
                 }
                 Module1.Current.ModuleLogManager.LogDebug(nameof(GenerateSitesTableAsync),
                     "Sites table created!!");
@@ -2610,9 +2636,18 @@ namespace bagis_pro
                 // Convert the sites table to PDF
                 if (File.Exists(htmlFilePath))
                 {
-                    PdfSharp.Pdf.PdfDocument sitesPageDoc = TheArtOfDev.HtmlRenderer.PdfSharp.PdfGenerator.GeneratePdf(File.ReadAllText(htmlFilePath),
-                        PdfSharp.PageSize.Letter);
-                    sitesPageDoc.Save(outputFile);
+                    //PdfSharp.Pdf.PdfDocument sitesPageDoc = TheArtOfDev.HtmlRenderer.PdfSharp.PdfGenerator.GeneratePdf(File.ReadAllText(htmlFilePath),
+                    //    PdfSharp.PageSize.Letter);
+                    //sitesPageDoc.Save(outputFile);
+                    var chromePath = @"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe";
+                    var url = $@"file:///{htmlFilePath}";
+                    using (var p = new Process())
+                    {
+                        p.StartInfo.FileName = chromePath;
+                        p.StartInfo.Arguments = $"--headless --disable-gpu --print-to-pdf-no-header --print-to-pdf={outputFile} {url}";
+                        p.Start();
+                        p.WaitForExit();
+                    }
                 }
                 Module1.Current.ModuleLogManager.LogDebug(nameof(GenerateBlankPage),
                     "Blank page " + outputFile + "  created!!");

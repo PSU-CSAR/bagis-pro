@@ -299,7 +299,7 @@ namespace bagis_pro
         public const string UNITS_MILLIMETERS = "Millimeters";
         public const string UNITS_FEET = "Feet";
         public const string UNITS_METERS = "Meters";
-        public const double MAP_BUFFER_FACTOR = 1.1;
+        public const double MAP_BUFFER_FACTOR = 1.3;
         public const string TEXT_SITES_TABLE_DESCR = "See the Active Sites table for individual snow survey site descriptions";
         public const int PDF_EXPORT_RESOLUTION = 300;
 

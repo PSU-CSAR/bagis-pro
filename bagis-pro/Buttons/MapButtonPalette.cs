@@ -42,7 +42,8 @@ namespace bagis_pro.Buttons
 
             // toggle layers according to map definition
             Module1.Current.MapFinishedLoading = false;
-            var allLayers = MapView.Active.Map.Layers.ToList();
+            Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
+            var allLayers = oMap.Layers.ToList();
             await QueuedTask.Run(() =>
             {
                 foreach (var layer in allLayers)

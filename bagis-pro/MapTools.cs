@@ -81,7 +81,7 @@ namespace bagis_pro
                 else
                 {
                     BA_ReturnCode success = await MapTools.SetDefaultMapFrameDimensionAsync(Constants.MAPS_DEFAULT_MAP_FRAME_NAME, layout, oMap,
-                        1.0, 3.0, 7.5, 10.0);
+                        0.5, 2.5, 8.0, 10.5);
 
                     //remove existing layers from map frame
                     await MapTools.RemoveLayersfromMapFrame();
@@ -97,7 +97,7 @@ namespace bagis_pro
                         Constants.FILE_LAND_OWNERSHIP;
                     Uri uri = new Uri(strPath);
                     success = await MapTools.AddPolygonLayerUniqueValuesAsync(uri, "ArcGIS Colors", "Basic Random",
-                        new List<string> { "AGBUR" }, false, false, 30.0F, Constants.MAPS_LAND_OWNERSHIP);
+                        new List<string> { "AGBUR" }, false, false, 30.0F, oMap, Constants.MAPS_LAND_OWNERSHIP);
                     string strLayerFilePath = Module1.Current.SettingsPath + "\\" + Constants.FOLDER_SETTINGS + "\\" + Constants.LAYER_FILE_PUBLIC_TRIBAL_LANDS;
                     success = await GeoprocessingTools.ApplySymbologyFromLayerAsync(Constants.MAPS_LAND_OWNERSHIP, strLayerFilePath,
                         "UPDATE");
@@ -188,20 +188,20 @@ namespace bagis_pro
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers, true) +
                         Constants.FILE_ROADS;
                     uri = new Uri(strPath);
-                    await MapTools.AddLineLayerAsync(uri, Constants.MAPS_ACCESS_ROADS, false, ColorFactory.Instance.CreateRGBColor(150, 75, 0, 100));
+                    await MapTools.AddLineLayerAsync(uri, Constants.MAPS_ACCESS_ROADS, false, ColorFactory.Instance.CreateRGBColor(150, 75, 0, 100), oMap);
 
                     // add aoi streams layer
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers, true) +
                               Constants.FILE_STREAMS;
                     uri = new Uri(strPath);
-                    await MapTools.AddLineLayerAsync(uri, Constants.MAPS_STREAMS, true, ColorFactory.Instance.BlueRGB);
+                    await MapTools.AddLineLayerAsync(uri, Constants.MAPS_STREAMS, true, ColorFactory.Instance.BlueRGB, oMap);
 
                     // add Snotel Layer
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers, true) +
                               Constants.FILE_SNOTEL;
                     uri = new Uri(strPath);
                     success = await MapTools.AddPointMarkersAsync(uri, Constants.MAPS_SNOTEL, CIMColor.CreateRGBColor(0, 255, 255),
-                        SimpleMarkerStyle.X, 10, Constants.FIELD_SITE_ID, MaplexPointPlacementMethod.NorthEastOfPoint);
+                        SimpleMarkerStyle.X, 10, Constants.FIELD_SITE_ID, MaplexPointPlacementMethod.NorthEastOfPoint, oMap);
                     if (success == BA_ReturnCode.Success)
                         Module1.Current.Aoi.HasSnotel = true;
 
@@ -210,7 +210,7 @@ namespace bagis_pro
                               Constants.FILE_SNOW_COURSE;
                     uri = new Uri(strPath);
                     success = await MapTools.AddPointMarkersAsync(uri, Constants.MAPS_SNOW_COURSE, CIMColor.CreateRGBColor(0, 255, 255),
-                        SimpleMarkerStyle.Star, 12, Constants.FIELD_SITE_ID, MaplexPointPlacementMethod.NorthWestOfPoint);
+                        SimpleMarkerStyle.Star, 12, Constants.FIELD_SITE_ID, MaplexPointPlacementMethod.NorthWestOfPoint, oMap);
                     if (success == BA_ReturnCode.Success)
                         Module1.Current.Aoi.HasSnowCourse = true;
 
@@ -297,7 +297,8 @@ namespace bagis_pro
                     success = await SetClipGeometryAsync(oAoi.FilePath, Constants.MAPS_DEFAULT_MAP_NAME);
 
                     //zoom to aoi boundary layer
-                    success = await MapTools.ZoomToExtentAsync(aoiUri, MapView.Active, Constants.MAP_BUFFER_FACTOR);
+                    success = await MapTools.ZoomToExtentAsync(aoiUri, Constants.MAPS_DEFAULT_LAYOUT_NAME, Constants.MAPS_DEFAULT_MAP_FRAME_NAME, 
+                        Constants.MAP_BUFFER_FACTOR);
 
                     // load AOI location map
                     success = await DisplayLocationMapAsync(oAoi);
@@ -484,6 +485,7 @@ namespace bagis_pro
             }
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
 
+            Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
             await QueuedTask.Run(() =>
             {
                 // Remove any existing layers with the same name so we don't add it > once
@@ -517,7 +519,7 @@ namespace bagis_pro
                     IsVisible = isVisible,
                 };
 
-                FeatureLayer fLayer = LayerFactory.Instance.CreateLayer<FeatureLayer>(flyrCreatnParam, MapView.Active.Map);
+                FeatureLayer fLayer = LayerFactory.Instance.CreateLayer<FeatureLayer>(flyrCreatnParam, oMap);
                 // Create and apply the renderer
                 CIMRenderer renderer = fLayer?.CreateRenderer(simpleRender);
                 fLayer.SetRenderer(renderer);
@@ -528,7 +530,7 @@ namespace bagis_pro
 
         public static async Task<BA_ReturnCode> AddPolygonLayerUniqueValuesAsync(Uri uri, string styleCategory, string styleName,
                                                                                  List<string> lstDisplayFields, bool isVisible, 
-                                                                                 bool bAllOtherValues, double dblTransparency, string displayName = "")
+                                                                                 bool bAllOtherValues, double dblTransparency, Map oMap, string displayName = "")
         {
             // parse the uri for the folder and file
             string strFileName = null;
@@ -580,7 +582,7 @@ namespace bagis_pro
                     Name = displayName,
                     IsVisible = isVisible,
                 };
-                FeatureLayer fLayer = LayerFactory.Instance.CreateLayer<FeatureLayer>(flyrCreatnParam, MapView.Active.Map);
+                FeatureLayer fLayer = LayerFactory.Instance.CreateLayer<FeatureLayer>(flyrCreatnParam, oMap);
                 if (dblTransparency > 0)
                 {
                     fLayer.SetTransparency(dblTransparency);
@@ -597,7 +599,7 @@ namespace bagis_pro
             return success;
         }
 
-        public static async Task AddLineLayerAsync(Uri aoiUri, string displayName, bool bIsVisible, CIMColor lineColor)
+        public static async Task AddLineLayerAsync(Uri aoiUri, string displayName, bool bIsVisible, CIMColor lineColor, Map oMap)
         {
             // parse the uri for the folder and file
             string strFileName = null;
@@ -640,13 +642,13 @@ namespace bagis_pro
                     }
                 };
 
-                FeatureLayer fLayer = LayerFactory.Instance.CreateLayer<FeatureLayer>(flyrCreatnParam, MapView.Active.Map);
+                FeatureLayer fLayer = LayerFactory.Instance.CreateLayer<FeatureLayer>(flyrCreatnParam, oMap);
             });
         }
 
         public static async Task<BA_ReturnCode> AddPointMarkersAsync(Uri aoiUri, string displayName, CIMColor markerColor,
                                     SimpleMarkerStyle markerStyle, double markerSize, string labelField, 
-                                    MaplexPointPlacementMethod mapPlacementMethod)
+                                    MaplexPointPlacementMethod mapPlacementMethod, Map oMap)
         {
             // parse the uri for the folder and file
             string strFileName = null;
@@ -694,7 +696,7 @@ namespace bagis_pro
                     }
                 };
 
-                FeatureLayer fLayer = LayerFactory.Instance.CreateLayer<FeatureLayer>(flyrCreatnParam, MapView.Active.Map);
+                FeatureLayer fLayer = LayerFactory.Instance.CreateLayer<FeatureLayer>(flyrCreatnParam, oMap);
 
                 if (fLayer != null && idxLabelField > -1)
                 {
@@ -734,10 +736,9 @@ namespace bagis_pro
             return success;
         }
 
-        public static async Task<BA_ReturnCode> ZoomToExtentAsync(Uri aoiUri, MapView mapView, double bufferFactor = 1)
+        public static async Task<BA_ReturnCode> ZoomToExtentAsync(Uri aoiUri, string layoutName, string mapFrameName, 
+            double bufferFactor = 1)
         {
-            if (mapView == null)
-                return BA_ReturnCode.UnknownError;
             string strFileName = null;
             string strFolderPath = null;
             if (aoiUri.IsFile)
@@ -746,7 +747,10 @@ namespace bagis_pro
                 strFolderPath = System.IO.Path.GetDirectoryName(aoiUri.LocalPath);
             }
 
-            bool bSuccess = false;
+            Layout oLayout = await GetDefaultLayoutAsync(layoutName);
+            if (oLayout == null)
+                return BA_ReturnCode.UnknownError;
+
             await QueuedTask.Run(() =>
             {
                 using (
@@ -759,20 +763,15 @@ namespace bagis_pro
                     Module1.Current.ModuleLogManager.LogDebug(nameof(ZoomToExtentAsync), "extent XMin=" + extent.XMin);
                     var expandedExtent = extent.Expand(bufferFactor, bufferFactor, true);
                     Module1.Current.ModuleLogManager.LogDebug(nameof(ZoomToExtentAsync), "expandedExtent XMin=" + expandedExtent.XMin);
-                    bSuccess = mapView.ZoomTo(expandedExtent, null);
+                    if ((oLayout.FindElement(mapFrameName) is MapFrame mfElm))
+                    {
+                        mfElm.SetCamera(expandedExtent);
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(ZoomToExtentAsync), "Camera set to expanded extent");
+                    }
                 }
             });
 
-            Module1.Current.ModuleLogManager.LogDebug(nameof(ZoomToExtentAsync), "Return value from ZoomToAsync=" + bSuccess);
-            if (bSuccess)
-            {
-                return BA_ReturnCode.Success;
-            }
-            else
-            {
-                return BA_ReturnCode.UnknownError;
-            }
-             
+            return BA_ReturnCode.Success;             
         }
 
         public static async Task<Envelope> QueryZoomEnvelopeAsync(Uri aoiUri, double bufferFactor = 1)
@@ -1393,6 +1392,7 @@ namespace bagis_pro
                 ptTxtElm.SetTextProperties(new TextProperties(textBoxText, fontFamily, fontSize, fontStyle));
                 ptTxtElm.SetX(xPos);
                 ptTxtElm.SetY(yPos);
+                ptTxtElm.SetName(elementName);
             });
 
             return BA_ReturnCode.Success;
@@ -1700,8 +1700,7 @@ namespace bagis_pro
                     CIMScaleBar cimScaleBar = (CIMScaleBar)scaleBar.GetDefinition();
                     cimScaleBar.MarkPosition = ScaleBarVerticalPosition.Above;
                     cimScaleBar.UnitLabelPosition = ScaleBarLabelPosition.AfterLabels;
-                    // Try uncommenting this out to see if bug is fixed
-                    cimScaleBar.AlignToZeroPoint = true;
+                    //cimScaleBar.AlignToZeroPoint = true;
                     scaleBar.SetDefinition(cimScaleBar);
 
                     // Second scale bar for kilometers
@@ -1729,8 +1728,7 @@ namespace bagis_pro
                     cimScaleBar2.Units = LinearUnit.Kilometers;
                     cimScaleBar2.UnitLabel = cimScaleBar2.Units.Name + "s";
                     cimScaleBar2.UnitLabelPosition = ScaleBarLabelPosition.AfterLabels;
-                    // Try uncommenting this out to see if bug is fixed
-                    cimScaleBar2.AlignToZeroPoint = true;
+                    //cimScaleBar2.AlignToZeroPoint = true;
                     scaleBar2.SetDefinition(cimScaleBar2);
 
                 });
@@ -3441,7 +3439,7 @@ namespace bagis_pro
             if (success == BA_ReturnCode.Success)
             {
                 Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
-                var layerToMove = MapView.Active.Map.GetLayersAsFlattenedList().OfType<FeatureLayer>().Where(f =>
+                var layerToMove = oMap.GetLayersAsFlattenedList().OfType<FeatureLayer>().Where(f =>
                 f.Name == Constants.MAPS_CRITICAL_PRECIPITATION_ZONES).FirstOrDefault();
                 if (layerToMove == null)
                 {
@@ -3451,7 +3449,7 @@ namespace bagis_pro
                 }
                 var moveBelowThisLayerName = Constants.MAPS_WATERBODIES;
                 //In order to move layerToMove, I need to know if the destination is a group layer and the zero based position it needs to move to.
-                Tuple<GroupLayer, int> moveToLayerPosition = FindLayerPosition(null, moveBelowThisLayerName);
+                Tuple<GroupLayer, int> moveToLayerPosition = FindLayerPosition(null, moveBelowThisLayerName, oMap);
                 if (moveToLayerPosition.Item2 == -1)
                 {
                     Module1.Current.ModuleLogManager.LogError(nameof(DisplayCriticalPrecipitationZonesMap), $"Layer {moveBelowThisLayerName} not found ");
@@ -3462,22 +3460,22 @@ namespace bagis_pro
                     if (moveToLayerPosition.Item1 != null) //layer gets moved into the group
                         moveToLayerPosition.Item1.MoveLayer(layerToMove, moveToLayerPosition.Item2);
                     else //Layer gets moved into the root
-                        MapView.Active.Map.MoveLayer(layerToMove, moveToLayerPosition.Item2);
+                        oMap.MoveLayer(layerToMove, moveToLayerPosition.Item2);
                 });
             }
             return success;
         }
 
-        private static Tuple<GroupLayer, int> FindLayerPosition(GroupLayer groupLayer, string moveToLayerNameBelow)
+        private static Tuple<GroupLayer, int> FindLayerPosition(GroupLayer groupLayer, string moveToLayerNameBelow, Map oMap)
         {
             int index = 0;
-            foreach (var lyr in groupLayer != null ? groupLayer.Layers : MapView.Active.Map.Layers)
+            foreach (var lyr in groupLayer != null ? groupLayer.Layers : oMap.Layers)
             {
                 index++;
                 if (lyr is GroupLayer)
                 {
                     //We descend into a group layer and search all the layers within.
-                    var result = FindLayerPosition(lyr as GroupLayer, moveToLayerNameBelow);
+                    var result = FindLayerPosition(lyr as GroupLayer, moveToLayerNameBelow, oMap);
                     if (result.Item2 >= 0)
                         return result;
                     continue;

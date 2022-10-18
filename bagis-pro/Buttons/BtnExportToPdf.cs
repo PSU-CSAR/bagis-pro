@@ -17,9 +17,6 @@ using ArcGIS.Desktop.Framework.Contracts;
 using ArcGIS.Desktop.Framework.Dialogs;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
 using ArcGIS.Desktop.Layouts;
-using ArcGIS.Desktop.Mapping;
-using PdfSharp.Pdf;
-using PdfSharp.Pdf.IO;
 
 namespace bagis_pro.Buttons
 {
