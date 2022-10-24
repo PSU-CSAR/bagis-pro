@@ -617,64 +617,6 @@ namespace bagis_pro
             return success;
         }
 
-        public static async Task<string[]> QueryAoiEnvelopeAsync(Uri clipFileGdbUri, string clipName)
-        {
-            string[] arrRetValues = new string[2];
-            Geometry aoiGeo = null;
-            int intCount = 0;
-            await QueuedTask.Run(() =>
-            {
-                using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(clipFileGdbUri)))
-                using (Table table = geodatabase.OpenDataset<Table>(clipName))
-                {
-                    //check for multiple buffer polygons and buffer AOI if we need to
-                    QueryFilter queryFilter = new QueryFilter();
-                    using (RowCursor cursor = table.Search(queryFilter, false))
-                    {
-                        while (cursor.MoveNext())
-                        {
-                            using (Feature feature = (Feature)cursor.Current)
-                            {
-                                aoiGeo = feature.GetShape();
-                            }
-                            intCount++;
-                        }
-                    }
-                }
-            });
-            if (intCount > 1)
-            {
-                string tmpClipBuffer = "tmpClipBuffer";
-                BA_ReturnCode success = await GeoprocessingTools.BufferAsync(clipFileGdbUri.LocalPath + "\\" + clipName, clipFileGdbUri.LocalPath + "\\" + tmpClipBuffer,
-                            "0.5 Meters", "ALL");
-                if (success == BA_ReturnCode.Success)
-                {
-                    await QueuedTask.Run(() =>
-                    {
-                        using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(clipFileGdbUri)))
-                        using (Table table = geodatabase.OpenDataset<Table>(tmpClipBuffer))
-                        {
-                            //check for multiple buffer polygons and buffer AOI if we need to
-                            QueryFilter queryFilter = new QueryFilter();
-                            using (RowCursor cursor = table.Search(queryFilter, false))
-                            {
-                                while (cursor.MoveNext())
-                                {
-                                    using (Feature feature = (Feature)cursor.Current)
-                                    {
-                                        aoiGeo = feature.GetShape();    // Replace unbuffered geometry with buffered
-                                        clipName = tmpClipBuffer;
-                                    }
-                                }
-                            }
-                        }
-                    });
-                }
-            }
-            arrRetValues[0] = aoiGeo.Extent.XMin + " " + aoiGeo.Extent.YMin + " " + aoiGeo.Extent.XMax + " " + aoiGeo.Extent.YMax;
-            arrRetValues[1] = clipFileGdbUri.LocalPath + "\\" + clipName;
-            return arrRetValues;
-        }
 
         public static async Task<IList<BA_Objects.Interval>> ReadReclassRasterAttribute(Uri gdbUri, string rasterName)
         {

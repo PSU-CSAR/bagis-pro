@@ -235,26 +235,27 @@ namespace bagis_pro
                     {
                         // get the item
                         var item = aNewFilter.Items.First();
-                        string strPolyErrorMsg = "";
-                        await QueuedTask.Run(async () =>
-                        {
-                            string strGdbPath = System.IO.Path.GetDirectoryName(item.Path);
-                            Uri uriGdb = new Uri(System.IO.Path.GetDirectoryName(item.Path));
-                            string strFc = System.IO.Path.GetFileName(item.Path);
-                            int intPoints = await GeodatabaseTools.CountFeaturesAsync(uriGdb, strFc);
-                            if (intPoints != 1)
-                            {
-                                strPolyErrorMsg = "The polygon feature class must have 1 and only 1 feature!";
-                            }
-                            else
-                            {
-                                PolyPath = item.Path;
-                            }
-                        });
-                        if (!String.IsNullOrEmpty(strPolyErrorMsg))
-                        {
-                            MessageBox.Show(strPolyErrorMsg, "BAGIS-PRO", System.Windows.MessageBoxButton.OK);
-                        }
+                        PolyPath = item.Path;
+                        //string strPolyErrorMsg = "";
+                        //await QueuedTask.Run(async () =>
+                        //{
+                        //    string strGdbPath = System.IO.Path.GetDirectoryName(item.Path);
+                        //    Uri uriGdb = new Uri(System.IO.Path.GetDirectoryName(item.Path));
+                        //    string strFc = System.IO.Path.GetFileName(item.Path);
+                        //    int intPoints = await GeodatabaseTools.CountFeaturesAsync(uriGdb, strFc);
+                        //    if (intPoints != 1)
+                        //    {
+                        //        strPolyErrorMsg = "The polygon feature class must have 1 and only 1 feature!";
+                        //    }
+                        //    else
+                        //    {
+                        //        PolyPath = item.Path;
+                        //    }
+                        //});
+                        //if (!String.IsNullOrEmpty(strPolyErrorMsg))
+                        //{
+                        //    MessageBox.Show(strPolyErrorMsg, "BAGIS-PRO", System.Windows.MessageBoxButton.OK);
+                        //}
                     }
                 });
             }
@@ -304,12 +305,33 @@ namespace bagis_pro
                     }
 
                     // generate the file(s)
-                    string pointOutputPath = System.IO.Path.GetTempPath() + "pourpoint.geojson";
-                    string polygonOutputPath = System.IO.Path.GetTempPath() + "polygon.geojson";
+                    string pointOutputPath = Path.GetTempPath() + "pourpoint.geojson";
+                    string polygonOutputPath = Path.GetTempPath() + "polygon.geojson";
+                    // Process the pourpoint
                     BA_ReturnCode success = await GeoprocessingTools.FeaturesToSnodasGeoJsonAsync(PointPath, pointOutputPath, true);
                     if (success.Equals(BA_ReturnCode.Success))
                     {
-                        success = await GeoprocessingTools.FeaturesToSnodasGeoJsonAsync(PolyPath, polygonOutputPath, true);
+                        // Process the feature class
+                        Uri uriGdb = new Uri(Path.GetDirectoryName(PolyPath));
+                        string strFc = Path.GetFileName(PolyPath);
+                        int intPoints = await GeodatabaseTools.CountFeaturesAsync(uriGdb, strFc);
+                        string strFcPath = PolyPath;
+                        string strTempAoiPath = null;
+                        if (intPoints > 1)
+                        {
+                            strTempAoiPath = $@"{Path.GetDirectoryName(PolyPath)}\tmpAoi";
+                            success = await GeoprocessingTools.BufferAsync(PolyPath, strTempAoiPath, "0.5 Meters", "ALL");
+                            if (success == BA_ReturnCode.Success)
+                            {
+                                strFcPath = strTempAoiPath;
+                            }
+                        }
+                        success = await GeoprocessingTools.FeaturesToSnodasGeoJsonAsync(strFcPath, polygonOutputPath, true);
+                        if (success == BA_ReturnCode.Success && !String.IsNullOrEmpty(strTempAoiPath))
+                        {
+                            // Clean up temp buffered FC
+                            success = await GeoprocessingTools.DeleteDatasetAsync(strTempAoiPath);
+                        }
                     }
 
                     if (success.Equals(BA_ReturnCode.Success))

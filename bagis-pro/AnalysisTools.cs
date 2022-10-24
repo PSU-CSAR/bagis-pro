@@ -2075,21 +2075,19 @@ namespace bagis_pro
                         if (featureCount > 1)
                         {
                             strTempBuffer2 = "tempBuffer2";
-                            var parameters = Geoprocessing.MakeValueArray(strClipGdb + "\\" + strClipFile,
-                                strClipGdb + "\\" + strTempBuffer2, "0.5 Meters", "", "", "ALL");
-                            var gpResult = Geoprocessing.ExecuteToolAsync("Buffer_analysis", parameters, null,
-                                                 CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                            if (gpResult.Result.IsFailed)
+                            success = await GeoprocessingTools.BufferAsync(strClipGdb + "\\" + strClipFile,
+                                strClipGdb + "\\" + strTempBuffer2, "0.5 Meters", "ALL");
+                            if (success != BA_ReturnCode.Success)
                             {
                                 Module1.Current.ModuleLogManager.LogError(nameof(ClipFeatureLayerAsync),
-                                   "Unable to buffer " + strClipFile + ". Error code: " + gpResult.Result.ErrorCode);
+                                   "Unable to buffer " + strClipFile + "!!");
                                 MessageBox.Show("Unable to buffer aoi_v. Clipping cancelled!!", "BAGIS-PRO");
                                 return;
                             }
                             strClipFile = strTempBuffer2;
                             arrLayersToDelete[1] = strTempBuffer;
                             Module1.Current.ModuleLogManager.LogDebug(nameof(ClipFeatureLayerAsync),
-                                "Run buffer tool again because clip file has > 2 features");
+                                "Ran buffer tool again because clip file has > 2 features");
                         }
 
                         Uri featureServiceUri = new Uri(strWsUri);

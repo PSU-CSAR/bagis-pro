@@ -146,12 +146,12 @@ namespace bagis_pro
         }
 
         public static async Task<BA_ReturnCode> BufferAsync (string strInputFeatures, string strOutputFeatures, string strDistance,
-                                                        string p_strDissolveOption)
+                                                             string p_strDissolveOption)
         {
-            string strLineSide = "";
-            string strLineEndType = "";
-            string strDissolveOption = "";
-            if (!String.IsNullOrEmpty(strDissolveOption))
+            string strLineSide = "FULL";
+            string strLineEndType = "ROUND";
+            string strDissolveOption = "NONE";
+            if (!String.IsNullOrEmpty(p_strDissolveOption))
             {
                 strDissolveOption = p_strDissolveOption;
             }

@@ -3435,7 +3435,6 @@ namespace bagis_pro
 
             // Check to make sure the buffer file only has one feature; No dangles
             Uri uriAoi = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi));
-            int featureCount = await GeodatabaseTools.CountFeaturesAsync(uriAoi, Constants.FILE_AOI_VECTOR);
             string strClipFile = Constants.FILE_AOI_VECTOR;
 
             await QueuedTask.Run(() =>
