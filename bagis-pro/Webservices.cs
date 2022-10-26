@@ -568,5 +568,77 @@ namespace bagis_pro
             }
 
         }
+
+        public string GenerateSnodasGeoJson(string pointOutputPath, string polygonOutputPath, string outputFolder)
+        {
+            // Build new JObject
+            JObject objOutput = new JObject();
+            objOutput[Constants.FIELD_JSON_TYPE] = "GeometryCollection";
+            JArray arrGeometries = new JArray();
+
+            // read pourpoint JSON directly from a file
+            JObject o2 = null;
+            using (StreamReader file = File.OpenText(pointOutputPath))
+            using (JsonTextReader reader = new JsonTextReader(file))
+            {
+                o2 = (JObject)JToken.ReadFrom(reader);
+            }
+            string stationTriplet = null;
+            if (o2 != null)
+            {
+                dynamic esriDefinition = (JObject)o2;
+                JArray arrFeatures = (JArray)esriDefinition.features;
+                if (arrFeatures.Count > 0)
+                {
+                    // Always take the first one
+                    dynamic firstFeature = arrFeatures[0];
+                    var properties = firstFeature.properties;
+                    var objProperties = new JObject();
+                    objOutput[Constants.FIELD_JSON_ID] = properties.stationTriplet;
+                    stationTriplet = properties.stationTriplet;
+                    objProperties[Constants.FIELD_JSON_NAME] = properties.stationName;
+                    objProperties[Constants.FIELD_JSON_SOURCE] = "ref";
+                    objOutput[Constants.FIELD_JSON_PROPERTIES] = objProperties;
+                    arrGeometries.Add(firstFeature.geometry);
+                }
+            }
+
+            // read polygon JSON directly from a file
+            JObject o3 = null;
+            using (StreamReader file = File.OpenText(polygonOutputPath))
+            using (JsonTextReader reader = new JsonTextReader(file))
+            {
+                o3 = (JObject)JToken.ReadFrom(reader);
+            }
+            if (o3 != null)
+            {
+                dynamic esriDefinition = (JObject)o3;
+                JArray arrFeatures = (JArray)esriDefinition.features;
+                if (arrFeatures.Count == 1)
+                {
+                    // Always take the first one
+                    dynamic firstFeature = arrFeatures[0];
+                    arrGeometries.Add(firstFeature.geometry);
+                }
+                else
+                {
+                    return "This file has more than one polygon. Only a single polygon is allowed!!";
+                }
+            }
+            if (arrGeometries.Count == 2)
+            {
+                objOutput[Constants.FIELD_JSON_GEOMETRIES] = arrGeometries;
+            }
+
+            // write JSON directly to a file
+            string strFileName = $@"{outputFolder}\{stationTriplet.Replace(':', '_')}.geojson";
+            using (StreamWriter file = File.CreateText(strFileName))
+            using (JsonTextWriter writer = new JsonTextWriter(file))
+            {
+                writer.Formatting = Formatting.Indented;
+                objOutput.WriteTo(writer);
+            }
+            return null;
+        }
     }
 }

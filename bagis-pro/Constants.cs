@@ -101,6 +101,7 @@ namespace bagis_pro
         public const string FILE_SETTINGS = "analysis.xml";
         public const string FILE_BATCH_TOOL_SETTINGS = "batch_tool_settings.json";
         public const string FILE_BATCH_LOG = "batch_tool_log.txt";
+        public const string FILE_SNODAS_GEOJSON_LOG = "snodas_log.txt";
         public const string FILE_EXPORT_MAP_ELEV_PDF = "elevation_distribution.pdf";
         public const string FILE_EXPORT_MAP_SNOTEL_PDF = "map_elevation_snotel.pdf";
         public const string FILE_EXPORT_MAP_SCOS_PDF = "map_elevation_sc.pdf";
@@ -232,6 +233,7 @@ namespace bagis_pro
         public const string FOLDER_MAPS = "maps";
         public const string FOLDER_LOGS = "logs";
         public const string FOLDER_SETTINGS = "BAGIS";
+        public const string FOLDER_SNODAS_GEOJSON = "snodas_geojson";
 
         public const string FIELD_AOI_AREA = "AOISHPAREA";
         public const string FIELD_SITE_ELEV = "BA_SELEV";
