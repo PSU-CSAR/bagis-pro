@@ -909,11 +909,22 @@ namespace bagis_pro
                     {
                         if (await GeodatabaseTools.CountFeaturesAsync(new Uri(strAoiFolder), Constants.FILE_POURPOINT) == 1)
                         {
-                            success = await GeoprocessingTools.FeaturesToSnodasGeoJsonAsync(strPointPath, pointOutputPath, true);
-                            if (success == BA_ReturnCode.Success)
+                            string stationTriplet = await GeodatabaseTools.QueryTableForSingleValueAsync(new Uri(strAoiFolder),
+                                Constants.FILE_POURPOINT, Constants.FIELD_STATION_TRIPLET, new QueryFilter());
+                            if (string.IsNullOrEmpty(stationTriplet))
                             {
-                                strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Pourpoint geoJson exported to temp directory \r\n";
+                                strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "ERROR:Pourpoint layer is missing stationTriplet. Skipping this AOI \r\n";
                                 File.AppendAllText(snodasLog, strLogEntry);       // append
+                                errorCount++;
+                            }
+                            else
+                            {
+                                success = await GeoprocessingTools.FeaturesToSnodasGeoJsonAsync(strPointPath, pointOutputPath, true);
+                                if (success == BA_ReturnCode.Success)
+                                {
+                                    strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Pourpoint geoJson exported to temp directory \r\n";
+                                    File.AppendAllText(snodasLog, strLogEntry);       // append
+                                }
                             }
                         }
                         else
@@ -992,12 +1003,20 @@ namespace bagis_pro
                             errorCount++;
                         }
                     }
+                    if (success == BA_ReturnCode.Success && errorCount == 0)
+                    {
+                        Names[idxRow].AoiBatchStateText = AoiBatchState.Completed.ToString();  // update gui
+                    }
+                    else
+                    {
+                        Names[idxRow].AoiBatchStateText = AoiBatchState.Failed.ToString();
+                    }
 
                 }
             }
             strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "GeoJson exports complete!! \r\n";
             File.AppendAllText(snodasLog, strLogEntry);       // append
-            MessageBox.Show("All GeoJson files are available in " + ParentFolder + "\\" + Constants.FOLDER_SNODAS_GEOJSON, "BAGIS-PRO");
+            MessageBox.Show("Generated GeoJson files are available in " + ParentFolder + "\\" + Constants.FOLDER_SNODAS_GEOJSON, "BAGIS-PRO");
         }
     }
 
