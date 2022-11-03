@@ -102,6 +102,8 @@ namespace bagis_pro
         public const string FILE_BATCH_TOOL_SETTINGS = "batch_tool_settings.json";
         public const string FILE_BATCH_LOG = "batch_tool_log.txt";
         public const string FILE_SNODAS_GEOJSON_LOG = "snodas_log.txt";
+        public const string FILE_SNOLITE = "snolite_sites";
+        public const string FILE_SNOW_PILLOW = "snowpillow_sites";
         public const string FILE_EXPORT_MAP_ELEV_PDF = "elevation_distribution.pdf";
         public const string FILE_EXPORT_MAP_SNOTEL_PDF = "map_elevation_snotel.pdf";
         public const string FILE_EXPORT_MAP_SCOS_PDF = "map_elevation_sc.pdf";
@@ -290,6 +292,8 @@ namespace bagis_pro
         public const string DATA_TYPE_LAND_OWNERSHIP = "Land Ownership";
         public const string DATA_TYPE_SWE_DELTA = "Snotel SWE Delta";
         public const string DATA_TYPE_LAND_COVER = "Land Cover";
+        public const string DATA_TYPE_SNOLITE = "SNOLITE";
+        public const string DATA_TYPE_SNOW_PILLOW = "Snow Pillow";
 
         public const int VALUE_NO_DATA_9999 = -9999;
         public const string VALUE_NO_DATA = "NoData";

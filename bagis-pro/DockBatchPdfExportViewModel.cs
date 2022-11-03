@@ -285,9 +285,9 @@ namespace bagis_pro
         {
             get
             {
-                if (_runCommand == null)
-                    _runCommand = new RelayCommand(RunSnodasImplAsync, () => true);
-                return _runCommand;
+                if (_runSnodasCommand == null)
+                    _runSnodasCommand = new RelayCommand(RunSnodasImplAsync, () => true);
+                return _runSnodasCommand;
             }
         }
 

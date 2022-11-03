@@ -1501,11 +1501,10 @@ namespace bagis_pro
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
             string strTempBuffer = "tmpBuffer";
-            string[] arrLayersToDelete = new string[2];
             string snotelClipLayer = "";
-            string[] strOutputFc = new string[2];
-            string[] strOutputLayer = { "tmpSno", "tmpSnowCos" };
-            string[] strFinalOutputLayer = { Constants.FILE_SNOTEL, Constants.FILE_SNOW_COURSE };
+            string[] strOutputFc = new string[4];
+            string[] strOutputLayer = { "tmpSno", "tmpSnowCos", "tmpSnoLite", "tmpSnowPil" };
+            string[] strFinalOutputLayer = { Constants.FILE_SNOTEL, Constants.FILE_SNOW_COURSE, Constants.FILE_SNOLITE, Constants.FILE_SNOW_PILLOW };
             string snowCosClipLayer = "";
             string strClipGdb = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, false);
             string strLayers = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers);
@@ -1521,7 +1520,9 @@ namespace bagis_pro
             if (dictDataSources != null)
             {
                 if (!dictDataSources.ContainsKey(Constants.DATA_TYPE_SNOTEL) || 
-                    !dictDataSources.ContainsKey(Constants.DATA_TYPE_SNOW_COURSE))
+                    !dictDataSources.ContainsKey(Constants.DATA_TYPE_SNOW_COURSE) ||
+                    !dictDataSources.ContainsKey(Constants.DATA_TYPE_SNOLITE) ||
+                    !dictDataSources.ContainsKey(Constants.DATA_TYPE_SNOW_PILLOW))
                 {
                     Module1.Current.ModuleLogManager.LogError(nameof(ClipSnoLayersAsync),
                         "Unable to retrieve snotel datasource information from " + (string) Module1.Current.BatchToolSettings.EBagisServer +
@@ -1568,7 +1569,7 @@ namespace bagis_pro
                     snotelClipLayer = await AnalysisTools.GetSnoClipLayer(strAoiPath, strClipGdb, strTempBuffer, snotelBufferDistance);
                 }
 
-                // Delete the existing snotel layer, snotel represented area, and snotel zones layers
+                // Delete the existing snotel layer, snotel represented area, snotel zones, snolite, and snow pillow layers
                 if (await GeodatabaseTools.FeatureClassExistsAsync(uriLayers, strFinalOutputLayer[0]))
                 {
                     success = await GeoprocessingTools.DeleteDatasetAsync(strLayers + "\\" + strFinalOutputLayer[0]);
@@ -1581,10 +1582,21 @@ namespace bagis_pro
                 {
                     success = await GeoprocessingTools.DeleteDatasetAsync(strAnalysis + "\\" + Constants.FILE_SNOTEL_ZONE);
                 }
+                if (await GeodatabaseTools.RasterDatasetExistsAsync(uriAnalysis, strFinalOutputLayer[2]))
+                {
+                    success = await GeoprocessingTools.DeleteDatasetAsync(strLayers + "\\" + strFinalOutputLayer[2]);
+                }
+                if (await GeodatabaseTools.RasterDatasetExistsAsync(uriAnalysis, strFinalOutputLayer[3]))
+                {
+                    success = await GeoprocessingTools.DeleteDatasetAsync(strLayers + "\\" + strFinalOutputLayer[3]);
+                }
 
                 string strWsUri = dictDataSources[Constants.DATA_TYPE_SNOTEL].uri;
                 strOutputFc[0] = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers, true) + strOutputLayer[0];
+                strOutputFc[2] = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers, true) + strOutputLayer[2];
+                strOutputFc[3] = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers, true) + strOutputLayer[3];
                 string strTemplateDataset = strClipGdb + "\\" + snotelClipLayer;
+                // SNOTEL
                 var environmentsClip = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath);
                 var parametersClip = Geoprocessing.MakeValueArray(strWsUri, strTemplateDataset, strOutputFc[0], "");
                 var gpResultClip = await Geoprocessing.ExecuteToolAsync("Clip_analysis", parametersClip, environmentsClip,
@@ -1592,13 +1604,45 @@ namespace bagis_pro
                 if (gpResultClip.IsFailed)
                 {
                     Module1.Current.ModuleLogManager.LogError(nameof(ClipSnoLayersAsync),
-                       "Unable to clip " + snotelClipLayer + ". Error code: " + gpResultClip.ErrorCode);
+                       "Unable to clip " + strOutputFc[0] + ". Error code: " + gpResultClip.ErrorCode);
                     return success;
                 }
                 else
                 {
                     Module1.Current.ModuleLogManager.LogDebug(nameof(ClipSnoLayersAsync),
-                        "Clipped " + snotelClipLayer + " layer");
+                        "Clipped " + strOutputFc[0] + " layer");
+                }
+                // SNOLITE
+                strWsUri = dictDataSources[Constants.DATA_TYPE_SNOLITE].uri;
+                parametersClip = Geoprocessing.MakeValueArray(strWsUri, strTemplateDataset, strOutputFc[2], "");
+                gpResultClip = await Geoprocessing.ExecuteToolAsync("Clip_analysis", parametersClip, environmentsClip,
+                                        CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                if (gpResultClip.IsFailed)
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(ClipSnoLayersAsync),
+                       "Unable to clip " + strOutputFc[2] + ". Error code: " + gpResultClip.ErrorCode);
+                    return success;
+                }
+                else
+                {
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(ClipSnoLayersAsync),
+                        "Clipped " + strOutputFc[2] + " layer");
+                }
+                // Snow pillow
+                strWsUri = dictDataSources[Constants.DATA_TYPE_SNOW_PILLOW].uri;
+                parametersClip = Geoprocessing.MakeValueArray(strWsUri, strTemplateDataset, strOutputFc[3], "");
+                gpResultClip = await Geoprocessing.ExecuteToolAsync("Clip_analysis", parametersClip, environmentsClip,
+                                        CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                if (gpResultClip.IsFailed)
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(ClipSnoLayersAsync),
+                       "Unable to clip " + strOutputFc[3] + ". Error code: " + gpResultClip.ErrorCode);
+                    return success;
+                }
+                else
+                {
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(ClipSnoLayersAsync),
+                        "Clipped " + strOutputFc[3] + " layer");
                 }
             }
 
@@ -1728,11 +1772,23 @@ namespace bagis_pro
                                                 {
                                                     feature[idxTarget] = feature[idxSource];
                                                 }
-                                                string siteType = SiteType.Snotel.ToString();
-                                                if (i == 1)
+                                                string siteType = SiteType.Missing.ToString();
+                                                switch (i)
                                                 {
-                                                    siteType = SiteType.SnowCourse.ToString();
+                                                    case 0:
+                                                        SiteType.Snotel.ToString();
+                                                        break;
+                                                    case 1:
+                                                        SiteType.SnowCourse.ToString();
+                                                        break;
+                                                    case 2:
+                                                        SiteType.Snolite.ToString();
+                                                        break;
+                                                    case 3:
+                                                        SiteType.SnowPillow.ToString();
+                                                        break;
                                                 }
+                                                if (i == 1)
                                                 idxTarget = feature.FindField(Constants.FIELD_SITE_TYPE);
                                                 if (idxTarget > -1)
                                                 {
@@ -1792,17 +1848,13 @@ namespace bagis_pro
                 bool bValidFc = !String.IsNullOrEmpty(strFc);
                 if (bValidFc)
                 {
-                    if (j == 0 && snotelCount == 0)
+                    string layerName = Path.GetFileName(strFc);
+                    int count = await GeodatabaseTools.CountFeaturesAsync(uriLayers, layerName);
+                    if (count == 0)
                     {
                         bValidFc = false;
                         Module1.Current.ModuleLogManager.LogDebug(nameof(ClipSnoLayersAsync),
-                            "Snotel layer has no sites. Elevation cannot be extracted");
-                    }
-                    else if (j == 1 && snowCosCount == 0)
-                    {
-                        bValidFc = false;
-                        Module1.Current.ModuleLogManager.LogDebug(nameof(ClipSnoLayersAsync),
-                            "Snow course layer has no sites. Elevation cannot be extracted");
+                            "This has no sites. Elevation cannot be extracted");
                     }
                 }
                 if (bValidFc)
@@ -1888,9 +1940,17 @@ namespace bagis_pro
                     }
                     // Update layer metadata
                     string strKey = Constants.DATA_TYPE_SNOTEL;
-                    if (j == 1)
+                    switch (j)
                     {
-                        strKey = Constants.DATA_TYPE_SNOW_COURSE;
+                        case 1:
+                            strKey = Constants.DATA_TYPE_SNOW_COURSE;
+                            break;
+                        case 2:
+                            strKey = Constants.DATA_TYPE_SNOLITE;
+                            break;
+                        case 3:
+                            strKey = Constants.DATA_TYPE_SNOW_PILLOW;
+                            break;
                     }
                     IDictionary<string, BA_Objects.DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
                     BA_Objects.DataSource updateDataSource = new BA_Objects.DataSource(dictDataSources[strKey])
@@ -1911,7 +1971,6 @@ namespace bagis_pro
                     // Delete the temporary layer
                     success = await GeoprocessingTools.DeleteDatasetAsync(strOutputFc[j]);
                 }
-
                 j++;
             }
 
