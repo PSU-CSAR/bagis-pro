@@ -1505,6 +1505,7 @@ namespace bagis_pro
             string[] strOutputFc = new string[4];
             string[] strOutputLayer = { "tmpSno", "tmpSnowCos", "tmpSnoLite", "tmpSnowPil" };
             string[] strFinalOutputLayer = { Constants.FILE_SNOTEL, Constants.FILE_SNOW_COURSE, Constants.FILE_SNOLITE, Constants.FILE_SNOW_PILLOW };
+            bool[] bHasSites = { false, false, false, false };
             string snowCosClipLayer = "";
             string strClipGdb = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, false);
             string strLayers = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers);
@@ -1611,6 +1612,11 @@ namespace bagis_pro
                 {
                     Module1.Current.ModuleLogManager.LogDebug(nameof(ClipSnoLayersAsync),
                         "Clipped " + strOutputFc[0] + " layer");
+                    int intSites = await GeodatabaseTools.CountFeaturesAsync(uriLayers, strOutputLayer[0]);
+                    if (intSites > 0)
+                    {
+                        bHasSites[0] = true;
+                    }
                 }
                 // SNOLITE
                 strWsUri = dictDataSources[Constants.DATA_TYPE_SNOLITE].uri;
@@ -1627,6 +1633,11 @@ namespace bagis_pro
                 {
                     Module1.Current.ModuleLogManager.LogDebug(nameof(ClipSnoLayersAsync),
                         "Clipped " + strOutputFc[2] + " layer");
+                    int intSites = await GeodatabaseTools.CountFeaturesAsync(uriLayers, strOutputLayer[2]);
+                    if (intSites > 0)
+                    {
+                        bHasSites[2] = true;
+                    }
                 }
                 // Snow pillow
                 strWsUri = dictDataSources[Constants.DATA_TYPE_SNOW_PILLOW].uri;
@@ -1643,6 +1654,11 @@ namespace bagis_pro
                 {
                     Module1.Current.ModuleLogManager.LogDebug(nameof(ClipSnoLayersAsync),
                         "Clipped " + strOutputFc[3] + " layer");
+                    int intSites = await GeodatabaseTools.CountFeaturesAsync(uriLayers, strOutputLayer[3]);
+                    if (intSites > 0)
+                    {
+                        bHasSites[3] = true;
+                    }
                 }
             }
 
@@ -1705,6 +1721,11 @@ namespace bagis_pro
                 {
                     Module1.Current.ModuleLogManager.LogDebug(nameof(ClipSnoLayersAsync),
                         "Clipped " + snowCosClipLayer + " layer");
+                    int intSites = await GeodatabaseTools.CountFeaturesAsync(uriLayers, strOutputLayer[1]);
+                    if (intSites > 0)
+                    {
+                        bHasSites[1] = true;
+                    }
                 }
             }
 
@@ -1714,10 +1735,10 @@ namespace bagis_pro
             // Add attribute fields
             int snotelCount = 0;
             int snowCosCount = 0;
-            int i = 0;
-            foreach (var strFc in strOutputFc)
+            for (int i = 0; i < strOutputFc.Length; i++)
             {
-                if (!String.IsNullOrEmpty(strFc))
+                string strFc = strOutputFc[i];
+                if (bHasSites[i])
                 {
                     success = await GeoprocessingTools.AddFieldAsync(strFc, Constants.FIELD_SITE_NAME, "TEXT");
                     if (success == BA_ReturnCode.Success)
@@ -1736,107 +1757,106 @@ namespace bagis_pro
                         MessageBox.Show("Unable to add fields to " + strFc + ". Clipping cancelled!!", "BAGIS-PRO");
                         return success;
                     }
-                }
+                    //}
 
-                bool modificationResult = false;
-                string errorMsg = "";
-                await QueuedTask.Run(() =>
-                {
+                    bool modificationResult = false;
+                    string errorMsg = "";
+                    await QueuedTask.Run(() =>
+                    {
                     // Copy site name into ba_sname field
                     Uri gdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers));
-                    using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(gdbUri)))
-                    {
-                        if (!String.IsNullOrEmpty(strFc))
+                        using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(gdbUri)))
                         {
-                            string sourceName = Convert.ToString(oSettings.snotelName);
-                            if (i == 1)  // This is a snow course layer
+                            if (!String.IsNullOrEmpty(strFc))
                             {
-                                sourceName = Convert.ToString(oSettings.snowCourseName);
-                            }
-                            using (Table table = geodatabase.OpenDataset<Table>(strOutputLayer[i]))
+                                string sourceName = Convert.ToString(oSettings.snotelName);
+                                if (i == 1)  // This is a snow course layer
                             {
-                                QueryFilter queryFilter = new QueryFilter();
-                                EditOperation editOperation = new EditOperation();
-                                editOperation.Callback(context =>
+                                    sourceName = Convert.ToString(oSettings.snowCourseName);
+                                }
+                                using (Table table = geodatabase.OpenDataset<Table>(strOutputLayer[i]))
                                 {
-                                    using (RowCursor aCursor = table.Search(queryFilter, false))
+                                    QueryFilter queryFilter = new QueryFilter();
+                                    EditOperation editOperation = new EditOperation();
+                                    editOperation.Callback(context =>
                                     {
-                                        while (aCursor.MoveNext())
+                                        using (RowCursor aCursor = table.Search(queryFilter, false))
                                         {
-                                            using (Feature feature = (Feature)aCursor.Current)
+                                            while (aCursor.MoveNext())
                                             {
+                                                using (Feature feature = (Feature)aCursor.Current)
+                                                {
                                                 // name
                                                 int idxSource = feature.FindField(sourceName);
-                                                int idxTarget = feature.FindField(Constants.FIELD_SITE_NAME);
-                                                if (idxSource > -1 && idxTarget > -1)
-                                                {
-                                                    feature[idxTarget] = feature[idxSource];
-                                                }
-                                                string siteType = SiteType.Missing.ToString();
-                                                switch (i)
-                                                {
-                                                    case 0:
-                                                        SiteType.Snotel.ToString();
-                                                        break;
-                                                    case 1:
-                                                        SiteType.SnowCourse.ToString();
-                                                        break;
-                                                    case 2:
-                                                        SiteType.Snolite.ToString();
-                                                        break;
-                                                    case 3:
-                                                        SiteType.SnowPillow.ToString();
-                                                        break;
-                                                }
-                                                if (i == 1)
-                                                idxTarget = feature.FindField(Constants.FIELD_SITE_TYPE);
-                                                if (idxTarget > -1)
-                                                {
-                                                    feature[idxTarget] = siteType;
-                                                }
-                                                feature.Store();
+                                                    int idxTarget = feature.FindField(Constants.FIELD_SITE_NAME);
+                                                    if (idxSource > -1 && idxTarget > -1)
+                                                    {
+                                                        feature[idxTarget] = feature[idxSource];
+                                                    }
+                                                    string siteType = SiteType.Missing.ToString();
+                                                    switch (i)
+                                                    {
+                                                        case 0:
+                                                            siteType = SiteType.Snotel.ToString();
+                                                            break;
+                                                        case 1:
+                                                            siteType = SiteType.SnowCourse.ToString();
+                                                            break;
+                                                        case 2:
+                                                            siteType = SiteType.Snolite.ToString();
+                                                            break;
+                                                        case 3:
+                                                            siteType = SiteType.SnowPillow.ToString();
+                                                            break;
+                                                    }
+                                                    idxTarget = feature.FindField(Constants.FIELD_SITE_TYPE);
+                                                    if (idxTarget > -1)
+                                                    {
+                                                        feature[idxTarget] = siteType;
+                                                    }
+                                                    feature.Store();
                                                 // Has to be called after the store too
                                                 context.Invalidate(feature);
-                                            }
-                                            if (i == 0)
-                                            {
-                                                snotelCount++;
-                                            }
-                                            else
-                                            {
-                                                snowCosCount++;
+                                                }
+                                                if (i == 0)
+                                                {
+                                                    snotelCount++;
+                                                }
+                                                else
+                                                {
+                                                    snowCosCount++;
+                                                }
                                             }
                                         }
-                                    }
-                                }, table);
-                                try
-                                {
-                                    modificationResult = editOperation.Execute();
-                                    if (!modificationResult) errorMsg = editOperation.ErrorMessage;
+                                    }, table);
+                                    try
+                                    {
+                                        modificationResult = editOperation.Execute();
+                                        if (!modificationResult) errorMsg = editOperation.ErrorMessage;
                                     // increment feature counter
                                 }
-                                catch (GeodatabaseException exObj)
-                                {
-                                    errorMsg = exObj.Message;
+                                    catch (GeodatabaseException exObj)
+                                    {
+                                        errorMsg = exObj.Message;
+                                    }
                                 }
                             }
                         }
-                    }
-                });
+                    });
 
-                if (String.IsNullOrEmpty(errorMsg))
-                {
-                    await Project.Current.SaveEditsAsync();
+                    if (String.IsNullOrEmpty(errorMsg))
+                    {
+                        await Project.Current.SaveEditsAsync();
+                    }
+                    else
+                    {
+                        if (Project.Current.HasEdits)
+                            await Project.Current.DiscardEditsAsync();
+                        Module1.Current.ModuleLogManager.LogError(nameof(ClipSnoLayersAsync),
+                            "Exception: " + errorMsg);
+                        return BA_ReturnCode.UnknownError;
+                    }
                 }
-                else
-                {
-                    if (Project.Current.HasEdits)
-                        await Project.Current.DiscardEditsAsync();
-                    Module1.Current.ModuleLogManager.LogError(nameof(ClipSnoLayersAsync),
-                        "Exception: " + errorMsg);
-                    return BA_ReturnCode.UnknownError;
-                }
-                i++;
             }
 
             // Extract the elevation from the DEM for the sites
@@ -1845,19 +1865,12 @@ namespace bagis_pro
             foreach (var strFc in strOutputFc)
             {
                 // Make sure the feature class has sites before trying to extract the elevation
-                bool bValidFc = !String.IsNullOrEmpty(strFc);
-                if (bValidFc)
+                if (bHasSites[j] == false)
                 {
-                    string layerName = Path.GetFileName(strFc);
-                    int count = await GeodatabaseTools.CountFeaturesAsync(uriLayers, layerName);
-                    if (count == 0)
-                    {
-                        bValidFc = false;
-                        Module1.Current.ModuleLogManager.LogDebug(nameof(ClipSnoLayersAsync),
-                            "This has no sites. Elevation cannot be extracted");
-                    }
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(ClipSnoLayersAsync),
+                    "This has no sites. Elevation cannot be extracted");
                 }
-                if (bValidFc)
+                else
                 {
                     finalOutputPath = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers, true) + strFinalOutputLayer[j];
                     var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath);

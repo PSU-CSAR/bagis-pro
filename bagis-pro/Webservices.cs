@@ -613,17 +613,38 @@ namespace bagis_pro
             if (o3 != null)
             {
                 dynamic esriDefinition = (JObject)o3;
+                
                 JArray arrFeatures = (JArray)esriDefinition.features;
-                if (arrFeatures.Count == 1)
+                int idx = 0;
+                if (arrFeatures.Count > 0)
                 {
-                    // Always take the first one
-                    dynamic firstFeature = arrFeatures[0];
+                    dynamic firstFeature = arrFeatures[idx];
+                    firstFeature.geometry.type = "Multipolygon";
+                    idx++;
+                    for (int i = idx; i < arrFeatures.Count; i++)
+                    {
+                        dynamic nextFeature = arrFeatures[i];
+                        JArray arrCoordinates = (JArray) nextFeature.geometry.coordinates;
+                        for (int j = 0; j < arrCoordinates.Count(); j++)
+                        {
+                            firstFeature.geometry.coordinates.Add(arrCoordinates[j]);
+                        }
+                        
+                    }
                     arrGeometries.Add(firstFeature.geometry);
                 }
-                else
-                {
-                    return "This file has more than one polygon. Only a single polygon is allowed!!";
-                }
+
+                //if (arrFeatures.Count > 1)
+                //{
+                //    // Always take the first one
+                //    dynamic firstFeature = arrFeatures[0];
+                //    arrGeometries.Add(firstFeature.geometry);
+                //}
+                //else
+                //{
+                //    return "This file has more than one polygon. Only a single polygon is allowed!!";
+                //}
+
             }
             if (arrGeometries.Count == 2)
             {

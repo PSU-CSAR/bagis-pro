@@ -314,24 +314,24 @@ namespace bagis_pro
                         // Process the feature class
                         Uri uriGdb = new Uri(Path.GetDirectoryName(PolyPath));
                         string strFc = Path.GetFileName(PolyPath);
-                        int intFeatures = await GeodatabaseTools.CountFeaturesAsync(uriGdb, strFc);
+                        //int intFeatures = await GeodatabaseTools.CountFeaturesAsync(uriGdb, strFc);
                         string strFcPath = PolyPath;
-                        string strTempAoiPath = null;
-                        if (intFeatures > 1)
-                        {
-                            strTempAoiPath = $@"{Path.GetDirectoryName(PolyPath)}\tmpAoi";
-                            success = await GeoprocessingTools.BufferAsync(PolyPath, strTempAoiPath, "0.5 Meters", "ALL");
-                            if (success == BA_ReturnCode.Success)
-                            {
-                                strFcPath = strTempAoiPath;
-                            }
-                        }
+                        //string strTempAoiPath = null;
+                        //if (intFeatures > 1)
+                        //{
+                        //    strTempAoiPath = $@"{Path.GetDirectoryName(PolyPath)}\tmpAoi";
+                        //    success = await GeoprocessingTools.BufferAsync(PolyPath, strTempAoiPath, "0.5 Meters", "ALL");
+                        //    if (success == BA_ReturnCode.Success)
+                        //    {
+                        //        strFcPath = strTempAoiPath;
+                        //    }
+                        //}
                         success = await GeoprocessingTools.FeaturesToSnodasGeoJsonAsync(strFcPath, polygonOutputPath, true);
-                        if (success == BA_ReturnCode.Success && !String.IsNullOrEmpty(strTempAoiPath))
-                        {
-                            // Clean up temp buffered FC
-                            success = await GeoprocessingTools.DeleteDatasetAsync(strTempAoiPath);
-                        }
+                        //if (success == BA_ReturnCode.Success && !String.IsNullOrEmpty(strTempAoiPath))
+                        //{
+                        //    // Clean up temp buffered FC
+                        //    success = await GeoprocessingTools.DeleteDatasetAsync(strTempAoiPath);
+                        //}
                     }
 
                     if (success.Equals(BA_ReturnCode.Success))
