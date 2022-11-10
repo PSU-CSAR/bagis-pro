@@ -619,7 +619,7 @@ namespace bagis_pro
                 if (arrFeatures.Count > 0)
                 {
                     dynamic firstFeature = arrFeatures[idx];
-                    firstFeature.geometry.type = "Multipolygon";
+                    firstFeature.geometry.type = "MultiPolygon";
                     idx++;
                     for (int i = idx; i < arrFeatures.Count; i++)
                     {
