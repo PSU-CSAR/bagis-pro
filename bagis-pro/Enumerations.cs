@@ -54,7 +54,7 @@ namespace bagis_pro
         SnowCourse,
         Pseudo,
         Snolite,
-        SnowPillow,
+        CoopPillow,
         SitesAll
     }
 
