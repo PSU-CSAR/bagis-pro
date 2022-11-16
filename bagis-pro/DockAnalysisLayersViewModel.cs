@@ -329,8 +329,30 @@ namespace bagis_pro
                 if (calculateSitesZones)
                 {
                     Uri uri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers));
-                    bool hasSnotel = await GeodatabaseTools.FeatureClassExistsAsync(uri, Constants.FILE_SNOTEL);
-                    bool hasSnowCourse = await GeodatabaseTools.FeatureClassExistsAsync(uri, Constants.FILE_SNOW_COURSE);
+                    string[] arrSitesLayers = new string[] { Constants.FILE_SNOTEL, Constants.FILE_SNOW_COURSE, Constants.FILE_SNOLITE, Constants.FILE_COOP_PILLOW };
+                    bool hasSnotel = false;
+                    bool hasSnowCourse = false;
+                    for (int i = 0; i < arrSitesLayers.Length; i++)
+                    {
+                        if (await GeodatabaseTools.CountFeaturesAsync(uri, arrSitesLayers[i]) > 0)
+                        {
+                            switch (i)
+                            {
+                                case 0:
+                                    hasSnotel = true;
+                                    break;
+                                case 1:
+                                    hasSnowCourse = true;
+                                    break;
+                                case 2:
+                                    hasSnotel = true;
+                                    break;
+                                case 3:
+                                    hasSnotel = true;
+                                    break;
+                            }
+                        }
+                    }
                     if (hasSnotel || hasSnowCourse)
                     {
                         success = await AnalysisTools.CalculateSitesZonesAsync(Module1.Current.Aoi.FilePath, hasSnotel, hasSnowCourse);

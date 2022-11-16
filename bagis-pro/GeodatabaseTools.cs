@@ -724,7 +724,7 @@ namespace bagis_pro
             return bExists;
         }
 
-        public static async Task<IList<BA_Objects.Interval>> GetUniqueSortedValuesAsync(Uri gdbUri, string sType, 
+        public static async Task<IList<BA_Objects.Interval>> GetUniqueSortedValuesAsync(Uri gdbUri, SiteType sType, 
             string valueFieldName, string nameFieldName, double upperBound, double lowerBound)
         {
             IList<BA_Objects.Interval> lstInterval = new List<BA_Objects.Interval>();
@@ -751,7 +751,15 @@ namespace bagis_pro
                                 return;
                             }
                             QueryFilter queryFilter = new QueryFilter();
-                            queryFilter.WhereClause = Constants.FIELD_SITE_TYPE + " = '" + sType + "'";
+                            if (sType == SiteType.Snotel)
+                            {
+                                string strInClause = $@" IN ('{SiteType.Snotel.ToString()}', '{SiteType.CoopPillow.ToString()}', '{SiteType.Snolite.ToString()}')";
+                                queryFilter.WhereClause = Constants.FIELD_SITE_TYPE + strInClause;
+                            }
+                            else
+                            {
+                                queryFilter.WhereClause = Constants.FIELD_SITE_TYPE + " = '" + sType + "'";
+                            }                            
                             using (RowCursor rowCursor = featureClass.Search(queryFilter, false))
                             {
                                 while (rowCursor.MoveNext())
@@ -782,9 +790,7 @@ namespace bagis_pro
                                             dictElev.Add(strElev, strName);
                                         }
                                     }
-
                                 }
-
                             }
                         }
                             List<double> lstValidValues = new List<double>();

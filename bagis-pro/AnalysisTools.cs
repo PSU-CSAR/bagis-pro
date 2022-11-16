@@ -35,6 +35,16 @@ namespace bagis_pro
                 int intSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_SNOTEL);
                 if (intSites > 0)
                     bHasSnotel = true;
+                intSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_SNOLITE);
+                if (intSites > 0)
+                {
+                    bHasSnotel = true;
+                }
+                intSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_COOP_PILLOW);
+                if (intSites > 0)
+                {
+                    bHasSnotel = true;
+                }
                 intSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_SNOW_COURSE);
                 if (intSites > 0)
                     bHasSnowCourse = true;
@@ -74,7 +84,7 @@ namespace bagis_pro
                 IList<BA_Objects.Site> lstSites = null;
                 if (bHasSnotel)
                 {
-                    lstSites = await AnalysisTools.AssembleSitesListAsync(SiteType.Snotel.ToString(), siteBufferDistanceMiles);
+                    lstSites = await AnalysisTools.AssembleSitesListAsync(SiteType.Snotel, siteBufferDistanceMiles);
                     success = await AnalysisTools.CalculateRepresentedArea(sDemPath, demElevMinMeters, demElevMaxMeters, lstSites, siteElevRangeFeet, Constants.FILE_SNOTEL_REPRESENTED);
                     if (success != BA_ReturnCode.Success)
                         bHasSnotel = false;
@@ -83,7 +93,7 @@ namespace bagis_pro
                 // snow course sites
                 if (bHasSnowCourse)
                 {
-                    lstSites = await AnalysisTools.AssembleSitesListAsync(SiteType.SnowCourse.ToString(), siteBufferDistanceMiles);
+                    lstSites = await AnalysisTools.AssembleSitesListAsync(SiteType.SnowCourse, siteBufferDistanceMiles);
                     success = await AnalysisTools.CalculateRepresentedArea(sDemPath, demElevMinMeters, demElevMaxMeters, lstSites, siteElevRangeFeet, Constants.FILE_SCOS_REPRESENTED);
                     if (success != BA_ReturnCode.Success)
                         bHasSnowCourse = false;
@@ -145,7 +155,7 @@ namespace bagis_pro
 
         }
 
-        public static async Task<IList<BA_Objects.Site>> AssembleSitesListAsync(string sType,
+        public static async Task<IList<BA_Objects.Site>> AssembleSitesListAsync(SiteType sType,
             double siteBufferDistanceMiles)
         {
             //2. Buffer point from feature class and query site information
@@ -159,7 +169,15 @@ namespace bagis_pro
                 using (FeatureClass fClass = geodatabase.OpenDataset<FeatureClass>(Constants.FILE_MERGED_SITES))
                 {
                     QueryFilter queryFilter = new QueryFilter();
-                    queryFilter.WhereClause = Constants.FIELD_SITE_TYPE + " = '" + sType + "'";
+                    if (sType == SiteType.Snotel)
+                    {
+                        string strInClause = $@" IN ('{SiteType.Snotel.ToString()}', '{SiteType.CoopPillow.ToString()}', '{SiteType.Snolite.ToString()}')";
+                        queryFilter.WhereClause = Constants.FIELD_SITE_TYPE + strInClause;
+                    }
+                    else
+                    {
+                        queryFilter.WhereClause = Constants.FIELD_SITE_TYPE + " = '" + sType.ToString() + "'";
+                    }                    
                     using (RowCursor cursor = fClass.Search(queryFilter, false))
                     {
                         while (cursor.MoveNext())
@@ -197,7 +215,7 @@ namespace bagis_pro
                                 aSite.Latitude = Convert.ToDouble(nextFeature[idx]);
                             }
 
-                            aSite.SiteTypeText = sType;
+                            aSite.SiteTypeText = sType.ToString();
                             lstSites.Add(aSite);
                             Module1.Current.ModuleLogManager.LogDebug(nameof(AssembleSitesListAsync),
                                 "Added site " + aSite.Name + " to list");
@@ -3244,7 +3262,7 @@ namespace bagis_pro
                 if (hasSnotel)
                 {
                     Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateSitesZonesAsync), "Begin create Snotel zone");
-                    lstInterval = await GeodatabaseTools.GetUniqueSortedValuesAsync(uriAnalysis, SiteType.Snotel.ToString(),
+                    lstInterval = await GeodatabaseTools.GetUniqueSortedValuesAsync(uriAnalysis, SiteType.Snotel,
                         Constants.FIELD_SITE_ELEV, Constants.FIELD_SITE_NAME, demElevMaxMeters, demElevMinMeters);
                     if (lstInterval.Count > 0)
                     {
@@ -3265,7 +3283,7 @@ namespace bagis_pro
                 if (hasSnowCourse)
                 {
                     Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateSitesZonesAsync), "Begin create Snow Course zone");
-                    lstInterval = await GeodatabaseTools.GetUniqueSortedValuesAsync(uriAnalysis, SiteType.SnowCourse.ToString(),
+                    lstInterval = await GeodatabaseTools.GetUniqueSortedValuesAsync(uriAnalysis, SiteType.SnowCourse,
                         Constants.FIELD_SITE_ELEV, Constants.FIELD_SITE_NAME, demElevMaxMeters, demElevMinMeters);
                     if (lstInterval.Count > 0)
                     {
