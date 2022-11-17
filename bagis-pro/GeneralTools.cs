@@ -183,8 +183,17 @@ namespace bagis_pro
                 Uri sitesGdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, false));
                 int snotelInBasin = await GeodatabaseTools.CountPointsWithinInFeatureAsync(sitesGdbUri, Constants.FILE_SNOTEL,
                     gdbUri, Constants.FILE_AOI_VECTOR);
+                int snoliteInBasin = await GeodatabaseTools.CountPointsWithinInFeatureAsync(sitesGdbUri, Constants.FILE_SNOLITE,
+                    gdbUri, Constants.FILE_AOI_VECTOR);
+                int coopPillowInBasin = await GeodatabaseTools.CountPointsWithinInFeatureAsync(sitesGdbUri, Constants.FILE_COOP_PILLOW,
+                    gdbUri, Constants.FILE_AOI_VECTOR);
+                snotelInBasin = snotelInBasin + snoliteInBasin + coopPillowInBasin;
+
                 int snotelInBuffer = 0;
                 int totalSnotelSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_SNOTEL);
+                int totalSnoliteSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_SNOLITE);
+                int totalCoopPillowSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_COOP_PILLOW);
+                totalSnotelSites = totalSnotelSites + totalSnotelSites + totalCoopPillowSites;
                 if (totalSnotelSites > 0)
                 {
                     snotelInBuffer = totalSnotelSites - snotelInBasin;
@@ -311,7 +320,8 @@ namespace bagis_pro
                 //Printing data sources
                 IDictionary<string, BA_Objects.DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
                 string[] keys = { Constants.DATA_TYPE_SWE, Constants.DATA_TYPE_PRECIPITATION, Constants.DATA_TYPE_SNOTEL,
-                                  Constants.DATA_TYPE_SNOW_COURSE, Constants.DATA_TYPE_ROADS,
+                                  Constants.DATA_TYPE_SNOW_COURSE, Constants.DATA_TYPE_SNOLITE, Constants.DATA_TYPE_COOP_PILLOW,
+                                  Constants.DATA_TYPE_ROADS,
                                   Constants.DATA_TYPE_LAND_OWNERSHIP, Constants.DATA_TYPE_LAND_COVER};
                 //if (rType.Equals(ReportType.SiteAnalysis))
                 //{
@@ -561,7 +571,7 @@ namespace bagis_pro
                     Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), Constants.FILE_MERGED_SITES +
                         " is missing. Creating it now...");
                     // Create the merged sites layer if it doesn't exist
-                    string returnPath = await AnalysisTools.CreateSitesLayerAsync(uriAnalysis);
+                    string returnPath = await AnalysisTools.CreateSitesLayerAsync(uriLayers);
                     if (string.IsNullOrEmpty(returnPath))
                     {
                         bMergedSitesExists = true;

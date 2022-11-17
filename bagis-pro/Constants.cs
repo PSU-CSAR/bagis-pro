@@ -295,7 +295,7 @@ namespace bagis_pro
         public const string DATA_TYPE_SWE_DELTA = "Snotel SWE Delta";
         public const string DATA_TYPE_LAND_COVER = "Land Cover";
         public const string DATA_TYPE_SNOLITE = "SNOLITE";
-        public const string DATA_TYPE_SNOW_PILLOW = "Snow Pillow";
+        public const string DATA_TYPE_COOP_PILLOW = "Coop Pillow";
 
         public const int VALUE_NO_DATA_9999 = -9999;
         public const string VALUE_NO_DATA = "NoData";

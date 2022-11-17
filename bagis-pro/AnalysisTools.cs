@@ -1541,7 +1541,7 @@ namespace bagis_pro
                 if (!dictDataSources.ContainsKey(Constants.DATA_TYPE_SNOTEL) || 
                     !dictDataSources.ContainsKey(Constants.DATA_TYPE_SNOW_COURSE) ||
                     !dictDataSources.ContainsKey(Constants.DATA_TYPE_SNOLITE) ||
-                    !dictDataSources.ContainsKey(Constants.DATA_TYPE_SNOW_PILLOW))
+                    !dictDataSources.ContainsKey(Constants.DATA_TYPE_COOP_PILLOW))
                 {
                     Module1.Current.ModuleLogManager.LogError(nameof(ClipSnoLayersAsync),
                         "Unable to retrieve snotel datasource information from " + (string) Module1.Current.BatchToolSettings.EBagisServer +
@@ -1658,7 +1658,7 @@ namespace bagis_pro
                     }
                 }
                 // Snow pillow
-                strWsUri = dictDataSources[Constants.DATA_TYPE_SNOW_PILLOW].uri;
+                strWsUri = dictDataSources[Constants.DATA_TYPE_COOP_PILLOW].uri;
                 parametersClip = Geoprocessing.MakeValueArray(strWsUri, strTemplateDataset, strOutputFc[3], "");
                 gpResultClip = await Geoprocessing.ExecuteToolAsync("Clip_analysis", parametersClip, environmentsClip,
                                         CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
@@ -1980,7 +1980,7 @@ namespace bagis_pro
                             strKey = Constants.DATA_TYPE_SNOLITE;
                             break;
                         case 3:
-                            strKey = Constants.DATA_TYPE_SNOW_PILLOW;
+                            strKey = Constants.DATA_TYPE_COOP_PILLOW;
                             break;
                     }
                     IDictionary<string, BA_Objects.DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
