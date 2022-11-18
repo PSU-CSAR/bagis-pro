@@ -149,7 +149,7 @@
           <tooltip heading="Palette Button 3">
             ToolTip<disabledText /></tooltip>
         </button>
-        <button id="MapButtonPalette_BtnSnotel" caption="Snotel Sites Distribution" className="bagis_pro.Buttons.MapButtonPalette_BtnSnotel" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSnotel_Condition" keytip="B19">
+        <button id="MapButtonPalette_BtnSnotel" caption="Automated Sites Distribution" className="bagis_pro.Buttons.MapButtonPalette_BtnSnotel" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSnotel_Condition" keytip="B19">
           <tooltip heading="Palette Button 4">
             ToolTip<disabledText /></tooltip>
         </button>

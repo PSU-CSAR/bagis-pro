@@ -665,7 +665,9 @@ namespace bagis_pro
             // Set SNOTEL Ranges
             string vSNOTELValueRange = "";
             string xSNOTELValueRange = "";
-            if (Module1.Current.Aoi.HasSnotel)
+            if (Module1.Current.Aoi.HasSnotel ||
+                Module1.Current.Aoi.HasSnolite ||
+                Module1.Current.Aoi.HasCoopPillow)
             {
                 xSNOTELValueRange = "A2:A" + SNOTELReturn;
                 vSNOTELValueRange = "K2:K" + SNOTELReturn;
@@ -756,10 +758,17 @@ namespace bagis_pro
 
             // SNOTEL Series
             Series SNOTELSeries;
-            if (Module1.Current.Aoi.HasSnotel && SNOTELReturn > 0)
+            bool bHasSnotel = false;
+            if (Module1.Current.Aoi.HasSnotel ||
+                Module1.Current.Aoi.HasSnolite ||
+                Module1.Current.Aoi.HasCoopPillow)
+            {
+                bHasSnotel = true;
+            }
+            if (bHasSnotel && SNOTELReturn > 0)
             {
                 SNOTELSeries = myChart.SeriesCollection().NewSeries;
-                SNOTELSeries.Name = "SNOTEL";
+                SNOTELSeries.Name = "Automated Sites";
                 //Set Series Values
                 SNOTELSeries.Values = pSNOTELWorksheet.Range[xSNOTELValueRange];
                 SNOTELSeries.XValues = pSNOTELWorksheet.Range[vSNOTELValueRange];

@@ -32,7 +32,7 @@ namespace bagis_pro
         public const string MAPS_SLOPE_ZONE = "Slope Zones";
         public const string MAPS_ASPECT_ZONE = "Aspect Zones";
         public const string MAPS_PRISM_ZONE = "Precipitation Zones";
-        public const string MAPS_SNOTEL_REPRESENTED = "SNOTEL Rep Area";
+        public const string MAPS_AUTOMATED_SITES_REPRESENTED = "Automated Sites Rep Area";
         public const string MAPS_SNOW_COURSE_REPRESENTED = "Snow Course Rep Area";
         public const string MAPS_ALL_SITES_REPRESENTED = "All Sites Rep Area";
         public const string MAPS_SUITABLE_LAND_ZONES = "Suitable Land Ownership Type";
@@ -360,9 +360,9 @@ namespace bagis_pro
         public static string TITLE_SLOPE = "Slope Distribution";
         public static string TITLE_ASPECT = "Aspect Distribution";
         public static string TITLE_PRECIPITATION = "PRECIPITATION DISTRIBUTION";
-        public static string TITLE_SNOTEL_SITES = "SNOTEL SITES REPRESENTATION";
+        public static string TITLE_AUTOMATED_SITES = "AUTOMATED SITES REPRESENTATION";
         public static string TITLE_SCOS_SITES = "SNOW COURSE SITES REPRESENTATION";
-        public static string TITLE_SNOTEL_SCOS_SITES = "SNOTEL AND SNOW COURSE SITES REPRESENTATION";
+        public static string TITLE_SNOTEL_AUTO_SITES = "SNOTEL AND AUTOMATED SITES REPRESENTATION";
         public static string TITLE_ROADS_AND_TRIBAL = "ROADS, FEDERAL NON-WILDERNESS & TRIBAL LAND";
         public static string TITLE_FORESTED_LAND_COVER = "FORESTED LAND COVER";
         public static string TITLE_POTENTIAL_SITE_LOC = "POTENTIAL SITE LOCATIONS";
@@ -383,8 +383,8 @@ namespace bagis_pro
         public static string[] FILES_EXPORT_TITLES = new string[]
         { "Title Page", "Data Sources Table", TITLE_LOCATION_MAP, "Active Sites Table",
           TITLE_ELEVATION + " MAP", TITLE_LAND_COVER + " MAP", TITLE_ASPECT + " MAP", TITLE_ASPECT + " CHART",
-          TITLE_SLOPE + " MAP", TITLE_SLOPE + " CHART", TITLE_SNOTEL_SITES + " MAP", TITLE_SCOS_SITES + " MAP",
-          TITLE_SNOTEL_SCOS_SITES + " MAP", TITLE_PRECIPITATION + " MAP", TITLE_ELEV_PRECIP_CORR + " CHART",
+          TITLE_SLOPE + " MAP", TITLE_SLOPE + " CHART", TITLE_AUTOMATED_SITES + " MAP", TITLE_SCOS_SITES + " MAP",
+          TITLE_SNOTEL_AUTO_SITES + " MAP", TITLE_PRECIPITATION + " MAP", TITLE_ELEV_PRECIP_CORR + " CHART",
           TITLE_SUBBASIN_ANNUAL_PRECIP_CONTRIB + " MAP", TITLE_AREA_ELEV_PRECIP_SITE + " CHART",
           TITLE_AREA_ELEV_PRECIP_SITE + " (CUMULATIVE) CHART", TITLE_CRITICAL_PRECIPITATION + " MAP", TITLE_PRECIP_REPRESENTATION,
           TITLE_WINTER_PRECIP + " MAP", TITLE_SEASONAL_PRECIP_CONTRIB, TITLE_SNODAS_MEAN_SWE, TITLE_SNODAS_MEAN_SWE_DELTA, TITLE_POTENTIAL_SITE_LOC + " MAP",

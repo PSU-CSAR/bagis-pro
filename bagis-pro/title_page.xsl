@@ -128,9 +128,9 @@
                 </tr>
                 <tr>
                   <td class="style3">
-                    SNOTEL Sites: within basin – <xsl:value-of select="snotel_sites_in_basin"/>, within a <xsl:value-of select="snotel_sites_buffer_size"/> buffer distance outside 
+                    Automated Sites: within basin – <xsl:value-of select="snotel_sites_in_basin"/>, within a <xsl:value-of select="snotel_sites_buffer_size"/> buffer distance outside 
                     basin – <xsl:value-of select="snotel_sites_in_buffer"/>
-                    <xsl:if test="has_snotel_sites = 'true'"> (See SNOTEL SITES REPRESENTATION map)</xsl:if>
+                    <xsl:if test="has_snotel_sites = 'true'"> (See AUTOMATED SITES REPRESENTATION map)</xsl:if>
                   </td>
                 </tr>
                 <tr>
@@ -159,8 +159,8 @@
                   </tr>
                 <tr>
                   <td class="style3">
-                    Represented by SNOTEL site(s): <xsl:value-of select="represented_snotel_percent"/>% 
-                    <xsl:if test="has_snotel_sites = 'true'"> (See SNOTEL SITES REPRESENTATION map)</xsl:if>
+                    Represented by automated site(s): <xsl:value-of select="represented_snotel_percent"/>% 
+                    <xsl:if test="has_snotel_sites = 'true'"> (See AUTOMATED SITES REPRESENTATION map)</xsl:if>
                   </td>
                 </tr>
                 <tr>
@@ -171,8 +171,8 @@
                 </tr>                
                 <tr>
                   <td class="style3">
-                    Represented by both SNOTEL and snow course site(s): <xsl:value-of select="represented_all_sites_percent"/>%
-                    <xsl:if test="has_scos_sites = 'true' and has_snotel_sites = 'true'"> (See SNOTEL AND SNOW COURSE SITES REPRESENTATION map)</xsl:if>
+                    Represented by both automated and snow course site(s): <xsl:value-of select="represented_all_sites_percent"/>%
+                    <xsl:if test="has_scos_sites = 'true' and has_snotel_sites = 'true'"> (See AUTOMATED AND SNOW COURSE SITES REPRESENTATION map)</xsl:if>
                   </td>
                 </tr>
                 <tr>

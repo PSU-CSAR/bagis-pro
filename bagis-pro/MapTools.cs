@@ -116,7 +116,7 @@ namespace bagis_pro
                         Constants.FILE_SNOTEL_REPRESENTED;
                     uri = new Uri(strPath);
                     CIMColor fillColor = CIMColor.CreateRGBColor(255, 0, 0, 70);    //Red with 30% transparency
-                    success = await MapTools.AddPolygonLayerAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, fillColor, false, Constants.MAPS_SNOTEL_REPRESENTED);
+                    success = await MapTools.AddPolygonLayerAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, fillColor, false, Constants.MAPS_AUTOMATED_SITES_REPRESENTED);
                     if (success.Equals(BA_ReturnCode.Success))
                         Module1.ActivateState("MapButtonPalette_BtnSnotel_State");
 
@@ -821,7 +821,7 @@ namespace bagis_pro
             arrLayerNames[4] = Constants.MAPS_HILLSHADE;
             arrLayerNames[5] = Constants.MAPS_ELEV_ZONE;
             arrLayerNames[6] = Constants.MAPS_SNOW_COURSE_REPRESENTED;
-            arrLayerNames[7] = Constants.MAPS_SNOTEL_REPRESENTED;
+            arrLayerNames[7] = Constants.MAPS_AUTOMATED_SITES_REPRESENTED;
             arrLayerNames[8] = Constants.MAPS_SLOPE_ZONE;
             arrLayerNames[9] = Constants.MAPS_ASPECT_ZONE;
             arrLayerNames[10] = Constants.MAPS_ALL_SITES_REPRESENTED;
@@ -1878,7 +1878,7 @@ namespace bagis_pro
                 case BagisMapType.SNOTEL:
                     lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_ELEV_ZONE,
-                                                   Constants.MAPS_WATERBODIES, Constants.MAPS_SNOTEL_REPRESENTED};
+                                                   Constants.MAPS_WATERBODIES, Constants.MAPS_AUTOMATED_SITES_REPRESENTED};
                     lstLegendLayers = new List<string>();
                     if (Module1.Current.Aoi.HasSnotel == true)
                     {
@@ -1895,9 +1895,9 @@ namespace bagis_pro
                         lstLayers.Add(Constants.MAPS_COOP_PILLOW);
                         lstLegendLayers.Add(Constants.MAPS_COOP_PILLOW);
                     }
-                    lstLegendLayers.Add(Constants.MAPS_SNOTEL_REPRESENTED);
+                    lstLegendLayers.Add(Constants.MAPS_AUTOMATED_SITES_REPRESENTED);
                     lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
-                    mapDefinition = new BA_Objects.MapDefinition(Constants.TITLE_SNOTEL_SITES,
+                    mapDefinition = new BA_Objects.MapDefinition(Constants.TITLE_AUTOMATED_SITES,
                         " ", Constants.FILE_EXPORT_MAP_SNOTEL_PDF);
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
@@ -1946,7 +1946,7 @@ namespace bagis_pro
                     }
                     lstLegendLayers.Add(Constants.MAPS_ALL_SITES_REPRESENTED);
                     lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
-                    mapDefinition = new BA_Objects.MapDefinition(Constants.TITLE_SNOTEL_SCOS_SITES,
+                    mapDefinition = new BA_Objects.MapDefinition(Constants.TITLE_SNOTEL_AUTO_SITES,
                         " ", Constants.FILE_EXPORT_MAP_SNOTEL_AND_SCOS_PDF);
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
@@ -2332,7 +2332,7 @@ namespace bagis_pro
                 }
                 else
                 {
-                    Module1.Current.ModuleLogManager.LogError(nameof(LoadSweMapAsync),
+                    Module1.Current.ModuleLogManager.LogError(nameof(UpdateMapAsync),
                         "Unable to find default layout!!");
                     MessageBox.Show("Unable to find default layout. Cannot display maps!");
                     return;
@@ -2349,9 +2349,9 @@ namespace bagis_pro
                     }
                     catch (GeodatabaseTableException e)
                     {
-                        Module1.Current.ModuleLogManager.LogError(nameof(LoadSweMapAsync),
+                        Module1.Current.ModuleLogManager.LogError(nameof(UpdateMapAsync),
                            "Unable to open raster " + strRaster);
-                        Module1.Current.ModuleLogManager.LogError(nameof(LoadSweMapAsync),
+                        Module1.Current.ModuleLogManager.LogError(nameof(UpdateMapAsync),
                             "Exception: " + e.Message);
                         return;
                     }

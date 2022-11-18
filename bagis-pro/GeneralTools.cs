@@ -535,7 +535,7 @@ namespace bagis_pro
             {
                 // Create SNOTEL Distribution Worksheet
                 Worksheet pSNOTELWorksheet = bkWorkBook.Sheets.Add();
-                pSNOTELWorksheet.Name = "SNOTEL";
+                pSNOTELWorksheet.Name = "Automated Sites";
 
                 // Create Snow Course Distribution Worksheet
                 Worksheet pSnowCourseWorksheet = bkWorkBook.Sheets.Add();
