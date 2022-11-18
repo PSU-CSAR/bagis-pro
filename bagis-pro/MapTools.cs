@@ -200,6 +200,24 @@ namespace bagis_pro
                     if (success == BA_ReturnCode.Success)
                         Module1.Current.Aoi.HasSnotel = true;
 
+                    // add Snolite Layer
+                    strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers, true) +
+                              Constants.FILE_SNOLITE;
+                    uri = new Uri(strPath);
+                    success = await MapTools.AddPointMarkersAsync(uri, Constants.MAPS_SNOLITE, CIMColor.CreateRGBColor(0, 255, 255),
+                        SimpleMarkerStyle.Cross, 12, Constants.FIELD_SITE_ID, MaplexPointPlacementMethod.NorthWestOfPoint);
+                    if (success == BA_ReturnCode.Success)
+                        Module1.Current.Aoi.HasSnolite = true;
+
+                    // add Coop Pillow Layer
+                    strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers, true) +
+                              Constants.FILE_COOP_PILLOW;
+                    uri = new Uri(strPath);
+                    success = await MapTools.AddPointMarkersAsync(uri, Constants.MAPS_COOP_PILLOW, CIMColor.CreateRGBColor(0, 255, 255),
+                        SimpleMarkerStyle.Rectangle, 8, Constants.FIELD_SITE_ID, MaplexPointPlacementMethod.NorthWestOfPoint);
+                    if (success == BA_ReturnCode.Success)
+                        Module1.Current.Aoi.HasCoopPillow = true;
+
                     // add Snow Course Layer
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers, true) +
                               Constants.FILE_SNOW_COURSE;
@@ -795,7 +813,7 @@ namespace bagis_pro
 
         public static async Task RemoveLayersfromMapFrame()
         {
-            string[] arrLayerNames = new string[27];
+            string[] arrLayerNames = new string[29];
             arrLayerNames[0] = Constants.MAPS_AOI_BOUNDARY;
             arrLayerNames[1] = Constants.MAPS_STREAMS;
             arrLayerNames[2] = Constants.MAPS_SNOTEL;
@@ -819,7 +837,9 @@ namespace bagis_pro
             arrLayerNames[20] = Constants.MAPS_LAND_COVER;
             arrLayerNames[21] = Constants.MAPS_WATERBODIES;
             arrLayerNames[22] = Constants.MAPS_ACCESS_ROADS;
-            int idxLayerNames = 23;
+            arrLayerNames[23] = Constants.MAPS_SNOLITE;
+            arrLayerNames[24] = Constants.MAPS_COOP_PILLOW;
+            int idxLayerNames = 25;
             for (int i = 0; i < Constants.LAYER_NAMES_SEASON_PRECIP_CONTRIB.Length; i++)
             {
                 arrLayerNames[idxLayerNames] = Constants.LAYER_NAMES_SEASON_PRECIP_CONTRIB[i];
@@ -1729,6 +1749,16 @@ namespace bagis_pro
                         lstLayers.Add(Constants.MAPS_SNOTEL);
                         lstLegendLayers.Add(Constants.MAPS_SNOTEL);
                     }
+                    if (Module1.Current.Aoi.HasSnolite == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOLITE);
+                        lstLegendLayers.Add(Constants.MAPS_SNOLITE);
+                    }
+                    if (Module1.Current.Aoi.HasCoopPillow == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_COOP_PILLOW);
+                        lstLegendLayers.Add(Constants.MAPS_COOP_PILLOW);
+                    }
                     if (Module1.Current.Aoi.HasSnowCourse == true)
                     {
                         lstLayers.Add(Constants.MAPS_SNOW_COURSE);
@@ -1753,6 +1783,16 @@ namespace bagis_pro
                         lstLayers.Add(Constants.MAPS_SNOTEL);
                         lstLegendLayers.Add(Constants.MAPS_SNOTEL);
                     }
+                    if (Module1.Current.Aoi.HasSnolite == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOLITE);
+                        lstLegendLayers.Add(Constants.MAPS_SNOLITE);
+                    }
+                    if (Module1.Current.Aoi.HasCoopPillow == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_COOP_PILLOW);
+                        lstLegendLayers.Add(Constants.MAPS_COOP_PILLOW);
+                    }
                     if (Module1.Current.Aoi.HasSnowCourse == true)
                     {
                         lstLayers.Add(Constants.MAPS_SNOW_COURSE);
@@ -1775,6 +1815,16 @@ namespace bagis_pro
                         lstLayers.Add(Constants.MAPS_SNOTEL);
                         lstLegendLayers.Add(Constants.MAPS_SNOTEL);
                     }
+                    if (Module1.Current.Aoi.HasSnolite == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOLITE);
+                        lstLegendLayers.Add(Constants.MAPS_SNOLITE);
+                    }
+                    if (Module1.Current.Aoi.HasCoopPillow == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_COOP_PILLOW);
+                        lstLegendLayers.Add(Constants.MAPS_COOP_PILLOW);
+                    }
                     if (Module1.Current.Aoi.HasSnowCourse == true)
                     {
                         lstLayers.Add(Constants.MAPS_SNOW_COURSE);
@@ -1796,6 +1846,16 @@ namespace bagis_pro
                     {
                         lstLayers.Add(Constants.MAPS_SNOTEL);
                         lstLegendLayers.Add(Constants.MAPS_SNOTEL);
+                    }
+                    if (Module1.Current.Aoi.HasSnolite == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOLITE);
+                        lstLegendLayers.Add(Constants.MAPS_SNOLITE);
+                    }
+                    if (Module1.Current.Aoi.HasCoopPillow == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_COOP_PILLOW);
+                        lstLegendLayers.Add(Constants.MAPS_COOP_PILLOW);
                     }
                     if (Module1.Current.Aoi.HasSnowCourse == true)
                     {
@@ -1824,7 +1884,17 @@ namespace bagis_pro
                     {
                         lstLayers.Add(Constants.MAPS_SNOTEL);
                         lstLegendLayers.Add(Constants.MAPS_SNOTEL);
-                    }                    
+                    }
+                    if (Module1.Current.Aoi.HasSnolite == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOLITE);
+                        lstLegendLayers.Add(Constants.MAPS_SNOLITE);
+                    }
+                    if (Module1.Current.Aoi.HasCoopPillow == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_COOP_PILLOW);
+                        lstLegendLayers.Add(Constants.MAPS_COOP_PILLOW);
+                    }
                     lstLegendLayers.Add(Constants.MAPS_SNOTEL_REPRESENTED);
                     lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
                     mapDefinition = new BA_Objects.MapDefinition(Constants.TITLE_SNOTEL_SITES,
@@ -1864,6 +1934,16 @@ namespace bagis_pro
                         lstLayers.Add(Constants.MAPS_SNOTEL);
                         lstLegendLayers.Add(Constants.MAPS_SNOTEL);
                     }
+                    if (Module1.Current.Aoi.HasSnolite == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOLITE);
+                        lstLegendLayers.Add(Constants.MAPS_SNOLITE);
+                    }
+                    if (Module1.Current.Aoi.HasCoopPillow == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_COOP_PILLOW);
+                        lstLegendLayers.Add(Constants.MAPS_COOP_PILLOW);
+                    }
                     lstLegendLayers.Add(Constants.MAPS_ALL_SITES_REPRESENTED);
                     lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
                     mapDefinition = new BA_Objects.MapDefinition(Constants.TITLE_SNOTEL_SCOS_SITES,
@@ -1882,6 +1962,16 @@ namespace bagis_pro
                     {
                         lstLayers.Add(Constants.MAPS_SNOTEL);
                         lstLegendLayers.Add(Constants.MAPS_SNOTEL);
+                    }
+                    if (Module1.Current.Aoi.HasSnolite == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOLITE);
+                        lstLegendLayers.Add(Constants.MAPS_SNOLITE);
+                    }
+                    if (Module1.Current.Aoi.HasCoopPillow == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_COOP_PILLOW);
+                        lstLegendLayers.Add(Constants.MAPS_COOP_PILLOW);
                     }
                     if (Module1.Current.Aoi.HasSnowCourse == true)
                     {
@@ -1905,6 +1995,16 @@ namespace bagis_pro
                     {
                         lstLayers.Add(Constants.MAPS_SNOTEL);
                         lstLegendLayers.Add(Constants.MAPS_SNOTEL);
+                    }
+                    if (Module1.Current.Aoi.HasSnolite == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOLITE);
+                        lstLegendLayers.Add(Constants.MAPS_SNOLITE);
+                    }
+                    if (Module1.Current.Aoi.HasCoopPillow == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_COOP_PILLOW);
+                        lstLegendLayers.Add(Constants.MAPS_COOP_PILLOW);
                     }
                     if (Module1.Current.Aoi.HasSnowCourse == true)
                     {
@@ -1933,6 +2033,16 @@ namespace bagis_pro
                         lstLayers.Add(Constants.MAPS_SNOTEL);
                         lstLegendLayers.Add(Constants.MAPS_SNOTEL);
                     }
+                    if (Module1.Current.Aoi.HasSnolite == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOLITE);
+                        lstLegendLayers.Add(Constants.MAPS_SNOLITE);
+                    }
+                    if (Module1.Current.Aoi.HasCoopPillow == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_COOP_PILLOW);
+                        lstLegendLayers.Add(Constants.MAPS_COOP_PILLOW);
+                    }
                     lstLegendLayers.Add(Constants.MAPS_SITES_LOCATION);
                     lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
                     lstLegendLayers.Add(Constants.MAPS_ELEV_ZONE);
@@ -1955,6 +2065,16 @@ namespace bagis_pro
                     {
                         lstLayers.Add(Constants.MAPS_SNOTEL);
                         lstLegendLayers.Add(Constants.MAPS_SNOTEL);
+                    }
+                    if (Module1.Current.Aoi.HasSnolite == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOLITE);
+                        lstLegendLayers.Add(Constants.MAPS_SNOLITE);
+                    }
+                    if (Module1.Current.Aoi.HasCoopPillow == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_COOP_PILLOW);
+                        lstLegendLayers.Add(Constants.MAPS_COOP_PILLOW);
                     }
                     lstLegendLayers.Add(Constants.MAPS_SITES_LOCATION);
                     lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
@@ -1979,6 +2099,16 @@ namespace bagis_pro
                         lstLayers.Add(Constants.MAPS_SNOTEL);
                         lstLegendLayers.Add(Constants.MAPS_SNOTEL);
                     }
+                    if (Module1.Current.Aoi.HasSnolite == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOLITE);
+                        lstLegendLayers.Add(Constants.MAPS_SNOLITE);
+                    }
+                    if (Module1.Current.Aoi.HasCoopPillow == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_COOP_PILLOW);
+                        lstLegendLayers.Add(Constants.MAPS_COOP_PILLOW);
+                    }
                     lstLegendLayers.Add(Constants.MAPS_SITES_LOCATION);
                     lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
                     lstLegendLayers.Add(Constants.MAPS_PRECIPITATION_CONTRIBUTION);
@@ -2002,6 +2132,16 @@ namespace bagis_pro
                         lstLayers.Add(Constants.MAPS_SNOTEL);
                         lstLegendLayers.Add(Constants.MAPS_SNOTEL);
                     }
+                    if (Module1.Current.Aoi.HasSnolite == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOLITE);
+                        lstLegendLayers.Add(Constants.MAPS_SNOLITE);
+                    }
+                    if (Module1.Current.Aoi.HasCoopPillow == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_COOP_PILLOW);
+                        lstLegendLayers.Add(Constants.MAPS_COOP_PILLOW);
+                    }
                     lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
                     lstLegendLayers.Add(Constants.MAPS_PRECIPITATION_CONTRIBUTION);
                     mapDefinition = new BA_Objects.MapDefinition(Constants.TITLE_SUBBASIN_ANNUAL_PRECIP_CONTRIB,
@@ -2019,6 +2159,16 @@ namespace bagis_pro
                     {
                         lstLayers.Add(Constants.MAPS_SNOTEL);
                         lstLegendLayers.Add(Constants.MAPS_SNOTEL);
+                    }
+                    if (Module1.Current.Aoi.HasSnolite == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOLITE);
+                        lstLegendLayers.Add(Constants.MAPS_SNOLITE);
+                    }
+                    if (Module1.Current.Aoi.HasCoopPillow == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_COOP_PILLOW);
+                        lstLegendLayers.Add(Constants.MAPS_COOP_PILLOW);
                     }
                     if (Module1.Current.Aoi.HasSnowCourse == true)
                     {
@@ -2044,6 +2194,16 @@ namespace bagis_pro
                         lstLayers.Add(Constants.MAPS_SNOTEL);
                         lstLegendLayers.Add(Constants.MAPS_SNOTEL);
                     }
+                    if (Module1.Current.Aoi.HasSnolite == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOLITE);
+                        lstLegendLayers.Add(Constants.MAPS_SNOLITE);
+                    }
+                    if (Module1.Current.Aoi.HasCoopPillow == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_COOP_PILLOW);
+                        lstLegendLayers.Add(Constants.MAPS_COOP_PILLOW);
+                    }
                     if (Module1.Current.Aoi.HasSnowCourse == true)
                     {
                         lstLayers.Add(Constants.MAPS_SNOW_COURSE);
@@ -2065,6 +2225,16 @@ namespace bagis_pro
                     {
                         lstLayers.Add(Constants.MAPS_SNOTEL);
                         lstLegendLayers.Add(Constants.MAPS_SNOTEL);
+                    }
+                    if (Module1.Current.Aoi.HasSnolite == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOLITE);
+                        lstLegendLayers.Add(Constants.MAPS_SNOLITE);
+                    }
+                    if (Module1.Current.Aoi.HasCoopPillow == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_COOP_PILLOW);
+                        lstLegendLayers.Add(Constants.MAPS_COOP_PILLOW);
                     }
                     if (Module1.Current.Aoi.HasSnowCourse == true)
                     {
@@ -2095,6 +2265,16 @@ namespace bagis_pro
                         lstLayers.Add(Constants.MAPS_SNOTEL);
                         lstLegendLayers.Add(Constants.MAPS_SNOTEL);
                     }
+                    if (Module1.Current.Aoi.HasSnolite == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOLITE);
+                        lstLegendLayers.Add(Constants.MAPS_SNOLITE);
+                    }
+                    if (Module1.Current.Aoi.HasCoopPillow == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_COOP_PILLOW);
+                        lstLegendLayers.Add(Constants.MAPS_COOP_PILLOW);
+                    }
                     if (Module1.Current.Aoi.HasSnowCourse == true)
                     {
                         lstLayers.Add(Constants.MAPS_SNOW_COURSE);
@@ -2123,298 +2303,6 @@ namespace bagis_pro
             //}
             // if you can't use the maps, you can't export to pdf
             Module1.DeactivateState("BtnMapLoad_State");
-        }
-
-        public static async Task<BA_ReturnCode> LoadSweMapAsync(string strRaster, string strNewLayerName,
-                                                                string strTitle, string strFileMapExport)
-        {
-            RasterDataset rDataset = null;
-            Layer oLayer = null;
-            Map map = null;
-            BA_ReturnCode success = BA_ReturnCode.UnknownError;
-            Uri uriSweGdb = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers));
-            Layout layout = null;
-            await QueuedTask.Run(() =>
-            {
-                Project proj = Project.Current;
-
-                // Set map to Basin Analysis map
-                map = Project.Current.GetItems<MapProjectItem>().FirstOrDefault(m => m.Name.Equals(Constants.MAPS_DEFAULT_MAP_NAME)).GetMap();
-
-                //Get the default map layout
-                LayoutProjectItem lytItem =
-                   proj.GetItems<LayoutProjectItem>()
-                       .FirstOrDefault(m => m.Name.Equals(Constants.MAPS_DEFAULT_LAYOUT_NAME,
-                       StringComparison.CurrentCultureIgnoreCase));
-                if (lytItem != null)
-                {
-                    layout = lytItem.GetLayout();
-                }
-                else
-                {
-                    Module1.Current.ModuleLogManager.LogError(nameof(LoadSweMapAsync),
-                        "Unable to find default layout!!");
-                    MessageBox.Show("Unable to find default layout. Cannot display maps!");
-                    return;
-                }
-
-                // Opens a file geodatabase. This will open the geodatabase if the folder exists and contains a valid geodatabase.
-                using (Geodatabase geodatabase =
-                    new Geodatabase(new FileGeodatabaseConnectionPath(uriSweGdb)))
-                {
-                    // Use the geodatabase.
-                    try
-                    {
-                        rDataset = geodatabase.OpenDataset<RasterDataset>(strRaster);
-                    }
-                    catch (GeodatabaseTableException e)
-                    {
-                        Module1.Current.ModuleLogManager.LogError(nameof(LoadSweMapAsync),
-                           "Unable to open raster " + strRaster);
-                        Module1.Current.ModuleLogManager.LogError(nameof(LoadSweMapAsync),
-                            "Exception: " + e.Message);
-                        return;
-                    }
-                }
-                oLayer = map.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(Module1.Current.DisplayedSweMap, StringComparison.CurrentCultureIgnoreCase));
-            });
-
-            await QueuedTask.Run(() =>
-            {
-                if (oLayer.CanReplaceDataSource(rDataset))
-                {
-                    oLayer.ReplaceDataSource(rDataset);
-                    oLayer.SetName(strNewLayerName);
-                }
-                GraphicElement textBox = layout.FindElement(Constants.MAPS_TITLE) as GraphicElement;
-                if (textBox != null)
-                {
-                    CIMTextGraphic graphic = (CIMTextGraphic)textBox.GetGraphic();
-                    graphic.Text = strTitle;
-                    textBox.SetGraphic(graphic);
-                }
-                textBox = layout.FindElement(Constants.MAPS_SUBTITLE) as GraphicElement;
-                if (textBox != null)
-                {
-                    CIMTextGraphic graphic = (CIMTextGraphic)textBox.GetGraphic();
-                    graphic.Text = Module1.Current.Aoi.NwccName.ToUpper();
-                    textBox.SetGraphic(graphic);
-                    success = BA_ReturnCode.Success;
-                }
-
-                textBox = layout.FindElement(Constants.MAPS_TEXTBOX1) as GraphicElement;
-                if (textBox != null)
-                {
-                    CIMTextGraphic graphic = (CIMTextGraphic)textBox.GetGraphic();
-                    if (graphic != null)
-                    {        
-                        graphic.Text = "Depth Units = " + Module1.Current.BatchToolSettings.SweDisplayUnits;
-                    }
-                    textBox.SetGraphic(graphic);
-                 }
-            });
-
-            // toggle layers according to map definition
-            var allLayers = map.Layers.ToList();
-            IList<string> lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
-                                                         Constants.MAPS_HILLSHADE, Constants.MAPS_WATERBODIES, strNewLayerName};
-            IList<string> lstLegend = new List<string>();
-
-            if (Module1.Current.Aoi.HasSnotel)
-            {
-                lstLayers.Add(Constants.MAPS_SNOTEL);
-                lstLegend.Add(Constants.MAPS_SNOTEL);
-            }
-            if (Module1.Current.Aoi.HasSnowCourse)
-            {
-                lstLayers.Add(Constants.MAPS_SNOW_COURSE);
-                lstLegend.Add(Constants.MAPS_SNOW_COURSE);
-            }
-            lstLegend.Add(Constants.MAPS_WATERBODIES);
-            lstLegend.Add(strNewLayerName);
-            await QueuedTask.Run(() =>
-            {
-                foreach (var layer in allLayers)
-                {
-                    if (lstLayers.Contains(layer.Name))
-                    {
-                        layer.SetVisibility(true);
-                    }
-                    else
-                    {
-                        layer.SetVisibility(false);
-                    }
-                }
-            });
-
-            success = await MapTools.UpdateLegendAsync(layout, lstLegend);
-
-            if (layout != null)
-            {
-                foreach (var pane in FrameworkApplication.Panes)
-                {
-                    if (!(pane is ILayoutPane layoutPane))  //if not a layout view, continue to the next pane    
-                        continue;
-                    if (layoutPane.LayoutView.Layout == layout) //if there is a match, activate the view  
-                    {
-                        (layoutPane as Pane).Activate();
-                    }
-                }
-            }
-
-            if (success == BA_ReturnCode.Success)
-            {
-                Module1.Current.DisplayedMap = strFileMapExport;
-                Module1.Current.DisplayedSweMap = strNewLayerName;                
-            }
-            return success;
-        }
-
-        public static async Task<BA_ReturnCode> LoadSweDeltaMapAsync(string strRaster, string strNewLayerName,
-                                                                     string strTitle, string strFileMapExport)
-        {
-            RasterDataset rDataset = null;
-            Layer oLayer = null;
-            Map map = null;
-            BA_ReturnCode success = BA_ReturnCode.UnknownError;
-            Uri uriSweGdb = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis));
-            Layout layout = null;
-            await QueuedTask.Run(() =>
-            {
-                Project proj = Project.Current;
-
-                // Set map to Basin Analysis map
-                map = Project.Current.GetItems<MapProjectItem>().FirstOrDefault(m => m.Name.Equals(Constants.MAPS_DEFAULT_MAP_NAME)).GetMap();
-
-                //Get the default map layout
-                LayoutProjectItem lytItem =
-                   proj.GetItems<LayoutProjectItem>()
-                       .FirstOrDefault(m => m.Name.Equals(Constants.MAPS_DEFAULT_LAYOUT_NAME,
-                       StringComparison.CurrentCultureIgnoreCase));
-                if (lytItem != null)
-                {
-                    layout = lytItem.GetLayout();
-                }
-                else
-                {
-                    Module1.Current.ModuleLogManager.LogError(nameof(LoadSweMapAsync),
-                        "Unable to find default layout!!");
-                    MessageBox.Show("Unable to find default layout. Cannot display maps!");
-                    return;
-                }
-
-                // Opens a file geodatabase. This will open the geodatabase if the folder exists and contains a valid geodatabase.
-                using (Geodatabase geodatabase =
-                    new Geodatabase(new FileGeodatabaseConnectionPath(uriSweGdb)))
-                {
-                    // Use the geodatabase.
-                    try
-                    {
-                        rDataset = geodatabase.OpenDataset<RasterDataset>(strRaster);
-                    }
-                    catch (GeodatabaseTableException e)
-                    {
-                        Module1.Current.ModuleLogManager.LogError(nameof(LoadSweMapAsync),
-                           "Unable to open raster " + strRaster);
-                        Module1.Current.ModuleLogManager.LogError(nameof(LoadSweMapAsync),
-                            "Exception: " + e.Message);
-                        return;
-                    }
-                }
-
-                oLayer = map.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(Module1.Current.DisplayedSweDeltaMap, StringComparison.CurrentCultureIgnoreCase));
-            });
-
-            await QueuedTask.Run(() =>
-            {
-                if (oLayer.CanReplaceDataSource(rDataset))
-                {
-                    oLayer.ReplaceDataSource(rDataset);
-                    oLayer.SetName(strNewLayerName);
-                }
-                GraphicElement textBox = layout.FindElement(Constants.MAPS_TITLE) as GraphicElement;
-                if (textBox != null)
-                {
-                    CIMTextGraphic graphic = (CIMTextGraphic)textBox.GetGraphic();
-                    graphic.Text = strTitle;
-                    textBox.SetGraphic(graphic);
-                }
-                textBox = layout.FindElement(Constants.MAPS_SUBTITLE) as GraphicElement;
-                if (textBox != null)
-                {
-                    CIMTextGraphic graphic = (CIMTextGraphic)textBox.GetGraphic();
-                    graphic.Text = Module1.Current.Aoi.NwccName.ToUpper();
-                    textBox.SetGraphic(graphic);
-                    success = BA_ReturnCode.Success;
-                }
-
-                textBox = layout.FindElement(Constants.MAPS_TEXTBOX1) as GraphicElement;
-                if (textBox != null)
-                {
-                    CIMTextGraphic graphic = (CIMTextGraphic)textBox.GetGraphic();
-                    if (graphic != null)
-                    {
-                        graphic.Text = "Depth Units = " + Module1.Current.BatchToolSettings.SweDisplayUnits +
-                                       "\r\nSource = SNODAS";
-                    }
-                    textBox.SetGraphic(graphic);
-                }
-            });
-
-            // toggle layers according to map definition
-            var allLayers = map.Layers.ToList();
-            IList<string> lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
-                                                         Constants.MAPS_HILLSHADE, Constants.MAPS_WATERBODIES, strNewLayerName};
-            IList<string> lstLegend = new List<string>();
-
-            if (Module1.Current.Aoi.HasSnotel)
-            {
-                lstLayers.Add(Constants.MAPS_SNOTEL);
-                lstLegend.Add(Constants.MAPS_SNOTEL);
-            }
-            if (Module1.Current.Aoi.HasSnowCourse)
-            {
-                lstLayers.Add(Constants.MAPS_SNOW_COURSE);
-                lstLegend.Add(Constants.MAPS_SNOW_COURSE);
-            }
-            lstLegend.Add(Constants.MAPS_WATERBODIES);
-            lstLegend.Add(strNewLayerName);
-            await QueuedTask.Run(() =>
-            {
-                foreach (var layer in allLayers)
-                {
-                    if (lstLayers.Contains(layer.Name))
-                    {
-                        layer.SetVisibility(true);
-                    }
-                    else
-                    {
-                        layer.SetVisibility(false);
-                    }
-                }
-            });
-
-            success = await MapTools.UpdateLegendAsync(layout, lstLegend);
-
-            if (layout != null)
-            {
-                foreach (var pane in FrameworkApplication.Panes)
-                {
-                    if (!(pane is ILayoutPane layoutPane))  //if not a layout view, continue to the next pane    
-                        continue;
-                    if (layoutPane.LayoutView.Layout == layout) //if there is a match, activate the view  
-                    {
-                        (layoutPane as Pane).Activate();
-                    }
-                }
-            }
-
-            if (success == BA_ReturnCode.Success)
-            {
-                Module1.Current.DisplayedMap = strFileMapExport;
-                Module1.Current.DisplayedSweDeltaMap = strNewLayerName;
-            }
-            return success;
         }
 
         public static async Task<BA_ReturnCode> UpdateMapAsync(string strGeodatabasePath, string strRaster, string strOldLayerName,
@@ -2516,6 +2404,16 @@ namespace bagis_pro
             {
                 lstLayers.Add(Constants.MAPS_SNOTEL);
                 lstLegend.Add(Constants.MAPS_SNOTEL);
+            }
+            if (Module1.Current.Aoi.HasSnolite == true && bDisplaySites)
+            {
+                lstLayers.Add(Constants.MAPS_SNOLITE);
+                lstLegend.Add(Constants.MAPS_SNOLITE);
+            }
+            if (Module1.Current.Aoi.HasCoopPillow == true && bDisplaySites)
+            {
+                lstLayers.Add(Constants.MAPS_COOP_PILLOW);
+                lstLegend.Add(Constants.MAPS_COOP_PILLOW);
             }
             if (Module1.Current.Aoi.HasSnowCourse == true && bDisplaySites)
             {
@@ -3474,7 +3372,8 @@ namespace bagis_pro
                 Module1.Current.ModuleLogManager.LogDebug(nameof(SetClipGeometryAsync), "Map clip geometry set to aoi polygon");
 
                 // get the uris for the sites layers
-                string[] arrSites = new string[] { Constants.MAPS_SNOTEL, Constants.MAPS_SNOW_COURSE };
+                string[] arrSites = new string[] { Constants.MAPS_SNOTEL, Constants.MAPS_SNOLITE, Constants.MAPS_COOP_PILLOW,
+                    Constants.MAPS_SNOW_COURSE };
                 List<string> layerUris = new List<string>();
                 foreach (var item in arrSites)
                 {
@@ -3622,6 +3521,20 @@ namespace bagis_pro
                         lstLayerName.Add(Constants.MAPS_SNOTEL);
                         lstGdb.Add(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers));
                         lstFile.Add(Constants.FILE_SNOTEL);
+                        lstDatasetType.Add(esriDatasetType.esriDTFeatureClass);
+                    }
+                    if (Module1.Current.Aoi.HasSnolite == true)
+                    {
+                        lstLayerName.Add(Constants.MAPS_SNOLITE);
+                        lstGdb.Add(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers));
+                        lstFile.Add(Constants.FILE_SNOLITE);
+                        lstDatasetType.Add(esriDatasetType.esriDTFeatureClass);
+                    }
+                    if (Module1.Current.Aoi.HasCoopPillow == true)
+                    {
+                        lstLayerName.Add(Constants.MAPS_COOP_PILLOW);
+                        lstGdb.Add(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers));
+                        lstFile.Add(Constants.FILE_COOP_PILLOW);
                         lstDatasetType.Add(esriDatasetType.esriDTFeatureClass);
                     }
                     if (Module1.Current.Aoi.HasSnowCourse == true)

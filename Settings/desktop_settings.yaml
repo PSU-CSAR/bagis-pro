@@ -41,9 +41,9 @@ bagis-pro:
       heading: Active SNOLITE sites
       description: Active SNOLITE sites hosted on Natural Resources Conservation Service (NRCS) National Water and Climate Center (NWCC) Air and Water Database (AWDB). See https://www.nrcs.usda.gov/wps/portal/wcc/home/dataAccessHelp/webService/webServiceTutorial/ for more information.
       uri: https://services.arcgis.com/SXbDpmb7xQkk44JV/arcgis/rest/services/stations_SNTLT_ACTIVE/FeatureServer/0
-    - layerType: Snow Pillow
-      heading: Active Snow Pillow sites
-      description: Active Snow Pillow sites hosted on Natural Resources Conservation Service (NRCS) National Water and Climate Center (NWCC) Air and Water Database (AWDB). See https://www.nrcs.usda.gov/wps/portal/wcc/home/dataAccessHelp/webService/webServiceTutorial/ for more information.
+    - layerType: Coop Pillow
+      heading: Active Coop Pillow sites
+      description: Active Coop Pillow sites hosted on Natural Resources Conservation Service (NRCS) National Water and Climate Center (NWCC) Air and Water Database (AWDB). See https://www.nrcs.usda.gov/wps/portal/wcc/home/dataAccessHelp/webService/webServiceTutorial/ for more information.
       uri: https://services.arcgis.com/SXbDpmb7xQkk44JV/arcgis/rest/services/stations_MSNT_ACTIVE/FeatureServer/0
     - layerType: Roads
       heading: Access Roads – for Potential Site Location Analysis

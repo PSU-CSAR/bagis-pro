@@ -4995,88 +4995,91 @@ namespace bagis_pro
                 string errorMsg = "";
                 for (int i = 0; i < arrSiteFiles.Length; i++)
                 {
-                    string sType = SiteType.Missing.ToString();
-                    switch (i)
+                    if (arrHasSites[i])
                     {
-                        case 0:
-                            sType = SiteType.Snotel.ToString();
-                            break;
-                        case 1:
-                            sType = SiteType.SnowCourse.ToString();
-                            break;
-                        case 2:
-                            sType = SiteType.Snolite.ToString();
-                            break;
-                        case 3:
-                            sType = SiteType.CoopPillow.ToString();
-                            break;
-                    }
 
-                    using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(uriLayers)))
-                    {
-                        using (FeatureClass featureClass = geodatabase.OpenDataset<FeatureClass>(arrSiteFiles[i]))
+                        string sType = SiteType.Missing.ToString();
+                        switch (i)
                         {
-                            FeatureClassDefinition featureClassDefinition = featureClass.GetDefinition();
-                            int idxSiteId = featureClassDefinition.FindField(Constants.FIELD_SITE_ID);
-                            int idxSiteName = featureClassDefinition.FindField(Constants.FIELD_SITE_NAME);
-                            EditOperation editOperation = new EditOperation();
-                            editOperation.Callback(context =>
+                            case 0:
+                                sType = SiteType.Snotel.ToString();
+                                break;
+                            case 1:
+                                sType = SiteType.SnowCourse.ToString();
+                                break;
+                            case 2:
+                                sType = SiteType.Snolite.ToString();
+                                break;
+                            case 3:
+                                sType = SiteType.CoopPillow.ToString();
+                                break;
+                        }
+
+                        using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(uriLayers)))
+                        {
+                            using (FeatureClass featureClass = geodatabase.OpenDataset<FeatureClass>(arrSiteFiles[i]))
                             {
-                                using (RowCursor rowCursor = featureClass.Search(new QueryFilter(), false))
+                                FeatureClassDefinition featureClassDefinition = featureClass.GetDefinition();
+                                int idxSiteId = featureClassDefinition.FindField(Constants.FIELD_SITE_ID);
+                                int idxSiteName = featureClassDefinition.FindField(Constants.FIELD_SITE_NAME);
+                                EditOperation editOperation = new EditOperation();
+                                editOperation.Callback(context =>
                                 {
-                                    while (rowCursor.MoveNext())
+                                    using (RowCursor rowCursor = featureClass.Search(new QueryFilter(), false))
                                     {
-                                        using (Feature feature = (Feature)rowCursor.Current)
+                                        while (rowCursor.MoveNext())
                                         {
+                                            using (Feature feature = (Feature)rowCursor.Current)
+                                            {
                                             // In order to update the the attribute table has to be called before any changes are made to the row
                                             context.Invalidate(feature);
                                             // Find the site
                                             string sName = Convert.ToString(feature[idxSiteName]);
-                                            int intNewSiteId = -1;
-                                            foreach (var aSite in lstSites)
-                                            {
-                                                if (aSite.SiteTypeText.Equals(sType) && sName.Equals(aSite.Name))
+                                                int intNewSiteId = -1;
+                                                foreach (var aSite in lstSites)
                                                 {
-                                                    intNewSiteId = aSite.SiteId;
-                                                    break;
+                                                    if (aSite.SiteTypeText.Equals(sType) && sName.Equals(aSite.Name))
+                                                    {
+                                                        intNewSiteId = aSite.SiteId;
+                                                        break;
+                                                    }
                                                 }
-                                            }
-                                            feature[idxSiteId] = intNewSiteId;
-                                            feature.Store();
+                                                feature[idxSiteId] = intNewSiteId;
+                                                feature.Store();
                                             // Has to be called after the store too
                                             context.Invalidate(feature);
+                                            }
                                         }
                                     }
+                                }, featureClass);
+                                try
+                                {
+                                    bool modificationResult = editOperation.Execute();
+                                    if (!modificationResult) errorMsg = editOperation.ErrorMessage;
                                 }
-                            }, featureClass);
-                            try
-                            {
-                                bool modificationResult = editOperation.Execute();
-                                if (!modificationResult) errorMsg = editOperation.ErrorMessage;
-                            }
-                            catch (GeodatabaseException exObj)
-                            {
-                                errorMsg = exObj.Message;
-                            }
+                                catch (GeodatabaseException exObj)
+                                {
+                                    errorMsg = exObj.Message;
+                                }
 
+                            }
                         }
                     }
-                    i++;
-                }
-                if (String.IsNullOrEmpty(errorMsg))
-                {
-                    Project.Current.SaveEditsAsync();
-                    Module1.Current.ModuleLogManager.LogDebug(nameof(CreateSitesLayerAsync),
-                        "ba_site_id edits saved");
-                    success =  BA_ReturnCode.Success;
-                }
-                else
-                {
-                    if (Project.Current.HasEdits)
-                        Project.Current.DiscardEditsAsync();
-                    Module1.Current.ModuleLogManager.LogError(nameof(CreateSitesLayerAsync),
-                        "Edit Exception: " + errorMsg);
-                    success = BA_ReturnCode.UnknownError;
+                    if (String.IsNullOrEmpty(errorMsg))
+                    {
+                        Project.Current.SaveEditsAsync();
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(CreateSitesLayerAsync),
+                            "ba_site_id edits saved");
+                        success = BA_ReturnCode.Success;
+                    }
+                    else
+                    {
+                        if (Project.Current.HasEdits)
+                            Project.Current.DiscardEditsAsync();
+                        Module1.Current.ModuleLogManager.LogError(nameof(CreateSitesLayerAsync),
+                            "Edit Exception: " + errorMsg);
+                        success = BA_ReturnCode.UnknownError;
+                    }
                 }
             });
             return success;

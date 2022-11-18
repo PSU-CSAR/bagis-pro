@@ -193,7 +193,7 @@ namespace bagis_pro
                 int totalSnotelSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_SNOTEL);
                 int totalSnoliteSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_SNOLITE);
                 int totalCoopPillowSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_COOP_PILLOW);
-                totalSnotelSites = totalSnotelSites + totalSnotelSites + totalCoopPillowSites;
+                totalSnotelSites = totalSnotelSites + totalSnoliteSites + totalCoopPillowSites;
                 if (totalSnotelSites > 0)
                 {
                     snotelInBuffer = totalSnotelSites - snotelInBasin;

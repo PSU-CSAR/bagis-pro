@@ -17,6 +17,8 @@ namespace bagis_pro.BA_Objects
         LinearUnit m_elevationUnits;
         public bool HasSnowCourse;
         public bool HasSnotel;
+        public bool HasSnolite;
+        public bool HasCoopPillow;
         string m_aoiBatchState;
         bool m_aoiBatchIsSelected;
         string m_stationTriplet = "";
