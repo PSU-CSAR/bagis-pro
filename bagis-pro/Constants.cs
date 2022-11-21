@@ -32,7 +32,7 @@ namespace bagis_pro
         public const string MAPS_SLOPE_ZONE = "Slope Zones";
         public const string MAPS_ASPECT_ZONE = "Aspect Zones";
         public const string MAPS_PRISM_ZONE = "Precipitation Zones";
-        public const string MAPS_AUTOMATED_SITES_REPRESENTED = "Automated Sites Rep Area";
+        public const string MAPS_AUTOMATED_SITES_REPRESENTED = "Auto Sites Rep Area";
         public const string MAPS_SNOW_COURSE_REPRESENTED = "Snow Course Rep Area";
         public const string MAPS_ALL_SITES_REPRESENTED = "All Sites Rep Area";
         public const string MAPS_SUITABLE_LAND_ZONES = "Suitable Land Ownership Type";
