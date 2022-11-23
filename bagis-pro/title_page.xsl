@@ -102,6 +102,8 @@
                 <xsl:if test="streamgage_station != ''">
                   <tr>
                     <td class="style3">
+                      The boundary of a basin is the watershed delineated upstream of the stream gage station listed below:
+                      <br/>
                       Streamgage station: <xsl:value-of select="streamgage_station"/>
                     </td>
                   </tr>
@@ -118,7 +120,8 @@
                 </tr>
                   <tr>
                     <td class="style3">
-                      Annual runoff ratio: <xsl:value-of select="annual_runoff_ratio"/>
+                      Annual runoff ratio: <xsl:value-of select="annual_runoff_ratio"/> (Annual runoff ratio is calculated as the volume of potential annual runoff from
+                      precipitation divided by the normal annual runoff observed at the stream gage.)
                     </td>
                   </tr>
                 <tr>
@@ -128,16 +131,16 @@
                 </tr>
                 <tr>
                   <td class="style3">
-                    Automated Sites: within basin – <xsl:value-of select="snotel_sites_in_basin"/>, within a <xsl:value-of select="snotel_sites_buffer_size"/> buffer distance outside 
-                    basin – <xsl:value-of select="snotel_sites_in_buffer"/>
-                    <xsl:if test="has_snotel_sites = 'true'"> (See AUTOMATED SITES REPRESENTATION map)</xsl:if>
+                    Automated Sites: within basin – <xsl:value-of select="snotel_sites_in_basin"/>; within a <xsl:value-of select="snotel_sites_buffer_size"/> buffer distance outside 
+                    of basin – <xsl:value-of select="snotel_sites_in_buffer"/>
+                    <xsl:if test="has_snotel_sites = 'true'"> (See AUTOMATED SITE REPRESENTATION map)</xsl:if>
                   </td>
                 </tr>
                 <tr>
                   <td class="style3">
-                    Snow Courses: within basin – <xsl:value-of select="scos_sites_in_basin"/>, within a <xsl:value-of select="scos_sites_buffer_size"/> buffer distance outside 
-                    basin – <xsl:value-of select="scos_sites_in_buffer"/> 
-                    <xsl:if test="has_scos_sites = 'true'"> (See SNOW COURSE SITES REPRESENTATION map)</xsl:if>
+                    Snow Courses: within basin – <xsl:value-of select="scos_sites_in_basin"/>; within a <xsl:value-of select="scos_sites_buffer_size"/> buffer distance outside 
+                    of basin – <xsl:value-of select="scos_sites_in_buffer"/> 
+                    <xsl:if test="has_scos_sites = 'true'"> (See SNOW COURSE SITE REPRESENTATION map)</xsl:if>
                   </td>
                 </tr>
               </table>
@@ -159,20 +162,21 @@
                   </tr>
                 <tr>
                   <td class="style3">
-                    Represented by automated site(s): <xsl:value-of select="represented_snotel_percent"/>% 
-                    <xsl:if test="has_snotel_sites = 'true'"> (See AUTOMATED SITES REPRESENTATION map)</xsl:if>
+                    Percent of total basin represented by automated site(s): <xsl:value-of select="represented_snotel_percent"/>% 
+                    <xsl:if test="has_snotel_sites = 'true'"> (See AUTOMATED SITE REPRESENTATION map)</xsl:if>
                   </td>
                 </tr>
                 <tr>
                   <td class="style3">
-                    Represented by snow course site(s): <xsl:value-of select="represented_snow_course_percent"/>%
-                    <xsl:if test="has_scos_sites = 'true'"> (See SNOW COURSE SITES REPRESENTATION map)</xsl:if>
+                    Percent of total basin area represented by snow course site(s): <xsl:value-of select="represented_snow_course_percent"/>%
+                    <xsl:if test="has_scos_sites = 'true'"> (See SNOW COURSE SITE REPRESENTATION map)</xsl:if>
                   </td>
                 </tr>                
                 <tr>
                   <td class="style3">
-                    Represented by both automated and snow course site(s): <xsl:value-of select="represented_all_sites_percent"/>%
-                    <xsl:if test="has_scos_sites = 'true' and has_snotel_sites = 'true'"> (See AUTOMATED AND SNOW COURSE SITES REPRESENTATION map)</xsl:if>
+                    Percent of total basin area represented by both automated and
+                    snow course site(s): <xsl:value-of select="represented_all_sites_percent"/>%
+                    <xsl:if test="has_scos_sites = 'true' and has_snotel_sites = 'true'"> (See ALL SITE REPRESENTATION map)</xsl:if>
                   </td>
                 </tr>
                 <tr>

@@ -296,6 +296,7 @@ namespace bagis_pro
         public const string DATA_TYPE_LAND_COVER = "Land Cover";
         public const string DATA_TYPE_SNOLITE = "SNOLITE";
         public const string DATA_TYPE_COOP_PILLOW = "Coop Pillow";
+        public const string DATA_TYPE_DEM = "DEM";
 
         public const int VALUE_NO_DATA_9999 = -9999;
         public const string VALUE_NO_DATA = "NoData";
@@ -360,9 +361,9 @@ namespace bagis_pro
         public static string TITLE_SLOPE = "Slope Distribution";
         public static string TITLE_ASPECT = "Aspect Distribution";
         public static string TITLE_PRECIPITATION = "PRECIPITATION DISTRIBUTION";
-        public static string TITLE_AUTOMATED_SITES = "AUTOMATED SITES REPRESENTATION";
-        public static string TITLE_SCOS_SITES = "SNOW COURSE SITES REPRESENTATION";
-        public static string TITLE_SNOTEL_AUTO_SITES = "SNOTEL AND AUTOMATED SITES REPRESENTATION";
+        public static string TITLE_AUTOMATED_SITES = "AUTOMATED SITE REPRESENTATION";
+        public static string TITLE_SCOS_SITES = "SNOW COURSE SITE REPRESENTATION";
+        public static string TITLE_SNOTEL_AUTO_SITES = "ALL SITE REPRESENTATION";
         public static string TITLE_ROADS_AND_TRIBAL = "ROADS, FEDERAL NON-WILDERNESS & TRIBAL LAND";
         public static string TITLE_FORESTED_LAND_COVER = "FORESTED LAND COVER";
         public static string TITLE_POTENTIAL_SITE_LOC = "POTENTIAL SITE LOCATIONS";

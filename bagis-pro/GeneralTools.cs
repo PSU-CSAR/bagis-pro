@@ -321,16 +321,8 @@ namespace bagis_pro
                 IDictionary<string, BA_Objects.DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
                 string[] keys = { Constants.DATA_TYPE_SWE, Constants.DATA_TYPE_PRECIPITATION, Constants.DATA_TYPE_SNOTEL,
                                   Constants.DATA_TYPE_SNOW_COURSE, Constants.DATA_TYPE_SNOLITE, Constants.DATA_TYPE_COOP_PILLOW,
-                                  Constants.DATA_TYPE_ROADS,
+                                  Constants.DATA_TYPE_ROADS, Constants.DATA_TYPE_DEM,
                                   Constants.DATA_TYPE_LAND_OWNERSHIP, Constants.DATA_TYPE_LAND_COVER};
-                //if (rType.Equals(ReportType.SiteAnalysis))
-                //{
-                //    Array.Resize(ref keys, 4);
-                //    keys[0] = Constants.DATA_TYPE_SNOTEL;
-                //    keys[1] = Constants.DATA_TYPE_SNOW_COURSE;
-                //    keys[2] = Constants.DATA_TYPE_ROADS;
-                //    keys[3] = Constants.DATA_TYPE_PUBLIC_LAND;
-                //}
                 IList<BA_Objects.DataSource> lstDataSources = new List<BA_Objects.DataSource>();
                 foreach (string strKey in keys)
                 {
@@ -338,6 +330,19 @@ namespace bagis_pro
                     {
                         BA_Objects.DataSource newSource = dictLocalDataSources[strKey];
                         lstDataSources.Add(newSource);
+                    }
+                }
+                // Add the DEM if it isn't there
+                if (!dictLocalDataSources.ContainsKey(Constants.DATA_TYPE_DEM))
+                {
+                    IDictionary<string, dynamic> dictDatasources = await ws.QueryDataSourcesAsync((string)Module1.Current.BatchToolSettings.EBagisServer);
+                    if (dictDatasources != null)
+                    {
+                        BA_Objects.DataSource dsDem = new BA_Objects.DataSource(dictDatasources[Constants.DATA_TYPE_DEM]);
+                        if (dsDem != null)
+                        {
+                            lstDataSources.Add(dsDem);
+                        }
                     }
                 }
 

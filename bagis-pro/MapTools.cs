@@ -205,7 +205,7 @@ namespace bagis_pro
                               Constants.FILE_SNOLITE;
                     uri = new Uri(strPath);
                     success = await MapTools.AddPointMarkersAsync(uri, Constants.MAPS_SNOLITE, CIMColor.CreateRGBColor(0, 255, 255),
-                        SimpleMarkerStyle.Cross, 12, Constants.FIELD_SITE_ID, MaplexPointPlacementMethod.NorthWestOfPoint);
+                        SimpleMarkerStyle.Cross, 12, Constants.FIELD_SITE_ID, MaplexPointPlacementMethod.NorthEastOfPoint);
                     if (success == BA_ReturnCode.Success)
                         Module1.Current.Aoi.HasSnolite = true;
 
@@ -214,7 +214,7 @@ namespace bagis_pro
                               Constants.FILE_COOP_PILLOW;
                     uri = new Uri(strPath);
                     success = await MapTools.AddPointMarkersAsync(uri, Constants.MAPS_COOP_PILLOW, CIMColor.CreateRGBColor(0, 255, 255),
-                        SimpleMarkerStyle.Rectangle, 8, Constants.FIELD_SITE_ID, MaplexPointPlacementMethod.NorthWestOfPoint);
+                        SimpleMarkerStyle.Rectangle, 8, Constants.FIELD_SITE_ID, MaplexPointPlacementMethod.NorthEastOfPoint);
                     if (success == BA_ReturnCode.Success)
                         Module1.Current.Aoi.HasCoopPillow = true;
 

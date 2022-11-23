@@ -16,6 +16,7 @@ namespace bagis_pro.BA_Objects
         public double maxValue;
         public string layerType;
         public string heading;
+        public string shortDescription;
 
         public DataSource()
         {
@@ -29,6 +30,7 @@ namespace bagis_pro.BA_Objects
             units = dynSource.units;
             layerType = dynSource.layerType;
             heading = dynSource.heading;
+            shortDescription = dynSource.shortDescription;
         }
 
         public string DateClippedText
