@@ -37,6 +37,11 @@ namespace bagis_pro.BA_Objects
         public string annual_runoff_data_descr;
         public string report_title;
         public string roads_buffer;
+        public int snolite_sites_in_basin;
+        public int snolite_sites_in_buffer;
+        public int coop_pillow_sites_in_basin;
+        public int coop_pillow_sites_in_buffer;
+
         public Site[] all_sites;
         public DataSource[] data_sources;
 

@@ -131,9 +131,23 @@
                 </tr>
                 <tr>
                   <td class="style3">
-                    Automated Sites: within basin – <xsl:value-of select="snotel_sites_in_basin"/>; within a <xsl:value-of select="snotel_sites_buffer_size"/> buffer distance outside 
+                    SNOTEL Sites: within basin – <xsl:value-of select="snotel_sites_in_basin"/>; within a <xsl:value-of select="snotel_sites_buffer_size"/> buffer distance outside 
                     of basin – <xsl:value-of select="snotel_sites_in_buffer"/>
                     <xsl:if test="has_snotel_sites = 'true'"> (See AUTOMATED SITE REPRESENTATION map)</xsl:if>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="style3">
+                    SNOLITE Sites: within basin – <xsl:value-of select="snolite_sites_in_basin"/>; within a <xsl:value-of select="snotel_sites_buffer_size"/> buffer distance outside 
+                    of basin – <xsl:value-of select="snolite_sites_in_buffer"/>
+                    <xsl:if test="snolite_sites_in_basin + snolite_sites_in_buffer > 0"> (See AUTOMATED SITE REPRESENTATION map)</xsl:if>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="style3">
+                    Coop Pillow Sites: within basin – <xsl:value-of select="coop_pillow_sites_in_basin"/>; within a <xsl:value-of select="snotel_sites_buffer_size"/> buffer distance outside 
+                    of basin – <xsl:value-of select="coop_pillow_sites_in_buffer"/>
+                    <xsl:if test="coop_pillow_sites_in_basin + coop_pillow_sites_in_buffer > 0"> (See AUTOMATED SITE REPRESENTATION map)</xsl:if>
                   </td>
                 </tr>
                 <tr>
@@ -206,7 +220,7 @@
             </div>
                    
             <div class="footer">
-            Report generated using BAGIS V3 – A tool <br />
+            Report generated using BAGIS Pro – A tool <br />
             maintained by the NRCS National Water and Climate Center (NWCC)<br />
             and Center for Spatial Analysis &#38; Research (CSAR), <br />
             Geography, Portland State University <br />

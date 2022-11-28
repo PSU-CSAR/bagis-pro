@@ -178,7 +178,7 @@ namespace bagis_pro
                     elevMaxMeters = lstResult[1];
                 }
 
-                // Counting Snotel Sites in AOI boundary
+                // Counting Automated Sites in AOI boundary
                 gdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, false));
                 Uri sitesGdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, false));
                 int snotelInBasin = await GeodatabaseTools.CountPointsWithinInFeatureAsync(sitesGdbUri, Constants.FILE_SNOTEL,
@@ -187,16 +187,24 @@ namespace bagis_pro
                     gdbUri, Constants.FILE_AOI_VECTOR);
                 int coopPillowInBasin = await GeodatabaseTools.CountPointsWithinInFeatureAsync(sitesGdbUri, Constants.FILE_COOP_PILLOW,
                     gdbUri, Constants.FILE_AOI_VECTOR);
-                snotelInBasin = snotelInBasin + snoliteInBasin + coopPillowInBasin;
 
                 int snotelInBuffer = 0;
+                int snoliteInBuffer = 0;
+                int coopPillowInBuffer = 0;
                 int totalSnotelSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_SNOTEL);
                 int totalSnoliteSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_SNOLITE);
                 int totalCoopPillowSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_COOP_PILLOW);
-                totalSnotelSites = totalSnotelSites + totalSnoliteSites + totalCoopPillowSites;
                 if (totalSnotelSites > 0)
                 {
                     snotelInBuffer = totalSnotelSites - snotelInBasin;
+                }
+                if (totalSnoliteSites > 0)
+                {
+                    snoliteInBuffer = totalSnoliteSites - snoliteInBasin;
+                }
+                if (totalCoopPillowSites > 0)
+                {
+                    coopPillowInBuffer = totalCoopPillowSites - coopPillowInBasin;
                 }
 
                 // Counting Snow Course Sites in AOI boundary
@@ -372,6 +380,10 @@ namespace bagis_pro
                     snotel_sites_in_basin = snotelInBasin,
                     snotel_sites_in_buffer = snotelInBuffer,
                     snotel_sites_buffer_size = snotelSitesBufferSize,
+                    snolite_sites_in_basin = snoliteInBasin,
+                    snolite_sites_in_buffer = snoliteInBuffer,
+                    coop_pillow_sites_in_basin = coopPillowInBasin,
+                    coop_pillow_sites_in_buffer = coopPillowInBuffer,
                     has_scos_sites = hasScosSites,
                     scos_sites_in_basin = scosInBasin,
                     scos_sites_in_buffer = scosInBuffer,
