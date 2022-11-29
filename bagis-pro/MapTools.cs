@@ -103,7 +103,7 @@ namespace bagis_pro
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi, true) +
                                      Constants.FILE_AOI_VECTOR;
                     Uri aoiUri = new Uri(strPath);
-                    success = await MapTools.AddAoiBoundaryToMapAsync(aoiUri, ColorFactory.Instance.BlackRGB, Constants.MAPS_DEFAULT_MAP_NAME, Constants.MAPS_AOI_BOUNDARY);
+                    success = await MapTools.AddAoiBoundaryToMapAsync(aoiUri, ColorFactory.Instance.BlackRGB, Constants.MAPS_DEFAULT_MAP_NAME, Constants.MAPS_BASIN_BOUNDARY);
 
                     //add subbasin contribution layer to map                    
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
@@ -318,23 +318,23 @@ namespace bagis_pro
 
                     // load SWE map layout
                     int idxDefaultMonth = 8;    // Note: This needs to be the month with the lowest SWE value for symbology; In this case July
-                    success = await DisplayMultiMapPageLayoutAsync(oAoi.FilePath, idxDefaultMonth, BagisMapType.SNODAS_SWE);
-                    if (success == BA_ReturnCode.Success)
-                    {
-                        Module1.ActivateState("MapButtonPalette_BtnSwe_State");
-                    }
-                    // load SWE Delta map layout
-                    success = await DisplayMultiMapPageLayoutAsync(oAoi.FilePath, idxDefaultMonth - 1, BagisMapType.SNODAS_DELTA);
-                    if (success == BA_ReturnCode.Success)
-                    {
-                        Module1.ActivateState("MapButtonPalette_BtnSweDelta_State");
-                    }
-                    // load seasonal precipitation map layout
-                    success = await DisplayMultiMapPageLayoutAsync(oAoi.FilePath, idxDefaultMonth, BagisMapType.SEASONAL_PRECIP_CONTRIB);
-                    if (success == BA_ReturnCode.Success)
-                    {
-                        Module1.ActivateState("MapButtonPalette_BtnSeasonalPrecipContrib_State");
-                    }
+                    //success = await DisplayMultiMapPageLayoutAsync(oAoi.FilePath, idxDefaultMonth, BagisMapType.SNODAS_SWE);
+                    //if (success == BA_ReturnCode.Success)
+                    //{
+                    //    Module1.ActivateState("MapButtonPalette_BtnSwe_State");
+                    //}
+                    //// load SWE Delta map layout
+                    //success = await DisplayMultiMapPageLayoutAsync(oAoi.FilePath, idxDefaultMonth - 1, BagisMapType.SNODAS_DELTA);
+                    //if (success == BA_ReturnCode.Success)
+                    //{
+                    //    Module1.ActivateState("MapButtonPalette_BtnSweDelta_State");
+                    //}
+                    //// load seasonal precipitation map layout
+                    //success = await DisplayMultiMapPageLayoutAsync(oAoi.FilePath, idxDefaultMonth, BagisMapType.SEASONAL_PRECIP_CONTRIB);
+                    //if (success == BA_ReturnCode.Success)
+                    //{
+                    //    Module1.ActivateState("MapButtonPalette_BtnSeasonalPrecipContrib_State");
+                    //}
                     return success;
 
                 }
@@ -814,7 +814,7 @@ namespace bagis_pro
         public static async Task RemoveLayersfromMapFrame()
         {
             string[] arrLayerNames = new string[29];
-            arrLayerNames[0] = Constants.MAPS_AOI_BOUNDARY;
+            arrLayerNames[0] = Constants.MAPS_BASIN_BOUNDARY;
             arrLayerNames[1] = Constants.MAPS_STREAMS;
             arrLayerNames[2] = Constants.MAPS_SNOTEL;
             arrLayerNames[3] = Constants.MAPS_SNOW_COURSE;
@@ -1740,7 +1740,7 @@ namespace bagis_pro
             switch (mapType)
             {
                 case BagisMapType.ELEVATION:
-                    lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
+                    lstLayers = new List<string> { Constants.MAPS_BASIN_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_ELEV_ZONE,
                                                    Constants.MAPS_WATERBODIES};
                     lstLegendLayers = new List<string>();
@@ -1768,13 +1768,13 @@ namespace bagis_pro
                     lstLegendLayers.Add(Constants.MAPS_ELEV_ZONE);
 
                     string strDemDisplayUnits = (string)Module1.Current.BatchToolSettings.DemDisplayUnits;
-                    mapDefinition = new BA_Objects.MapDefinition(Constants.TITLE_ELEVATION,
+                    mapDefinition = new BA_Objects.MapDefinition(Constants.TITLE_BASIN_ELEVATION,
                         "Elevation Units = " + strDemDisplayUnits, Constants.FILE_EXPORT_MAP_ELEV_PDF);
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;
                 case BagisMapType.SLOPE:
-                    lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
+                    lstLayers = new List<string> { Constants.MAPS_BASIN_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_SLOPE_ZONE,
                                                    Constants.MAPS_WATERBODIES};
                     lstLegendLayers = new List<string>();
@@ -1806,7 +1806,7 @@ namespace bagis_pro
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;
                 case BagisMapType.ASPECT:
-                    lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
+                    lstLayers = new List<string> { Constants.MAPS_BASIN_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_ASPECT_ZONE,
                                                    Constants.MAPS_WATERBODIES};
                     lstLegendLayers = new List<string>();
@@ -1838,7 +1838,7 @@ namespace bagis_pro
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;
                 case BagisMapType.PRISM:
-                    lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
+                    lstLayers = new List<string> { Constants.MAPS_BASIN_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_PRISM_ZONE,
                                                    Constants.MAPS_WATERBODIES};
                     lstLegendLayers = new List<string>();
@@ -1876,7 +1876,7 @@ namespace bagis_pro
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;
                 case BagisMapType.SNOTEL:
-                    lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
+                    lstLayers = new List<string> { Constants.MAPS_BASIN_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_ELEV_ZONE,
                                                    Constants.MAPS_WATERBODIES, Constants.MAPS_AUTOMATED_SITES_REPRESENTED};
                     lstLegendLayers = new List<string>();
@@ -1897,13 +1897,15 @@ namespace bagis_pro
                     }
                     lstLegendLayers.Add(Constants.MAPS_AUTOMATED_SITES_REPRESENTED);
                     lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
+                    lstLegendLayers.Add(Constants.MAPS_ELEV_ZONE);
+                    strDemDisplayUnits = (string)Module1.Current.BatchToolSettings.DemDisplayUnits;
                     mapDefinition = new BA_Objects.MapDefinition(Constants.TITLE_AUTOMATED_SITES,
-                        " ", Constants.FILE_EXPORT_MAP_SNOTEL_PDF);
+                        "Elevation Units = " + strDemDisplayUnits, Constants.FILE_EXPORT_MAP_SNOTEL_PDF);
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;
                 case BagisMapType.SCOS:
-                    lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
+                    lstLayers = new List<string> { Constants.MAPS_BASIN_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_ELEV_ZONE,
                                                    Constants.MAPS_WATERBODIES, Constants.MAPS_SNOW_COURSE_REPRESENTED};
                     lstLegendLayers = new List<string>();
@@ -1920,7 +1922,7 @@ namespace bagis_pro
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;
                 case BagisMapType.SITES_ALL:
-                    lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
+                    lstLayers = new List<string> { Constants.MAPS_BASIN_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_ELEV_ZONE,
                                                    Constants.MAPS_WATERBODIES, Constants.MAPS_ALL_SITES_REPRESENTED};
                     lstLegendLayers = new List<string>();
@@ -1952,7 +1954,7 @@ namespace bagis_pro
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;
                 case BagisMapType.LAND_ZONES:
-                    lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
+                    lstLayers = new List<string> { Constants.MAPS_BASIN_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_ELEV_ZONE,
                                                    Constants.MAPS_SUITABLE_LAND_ZONES, Constants.MAPS_ACCESS_ROADS,
                                                    Constants.MAPS_WATERBODIES};
@@ -1987,7 +1989,7 @@ namespace bagis_pro
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;
                 case BagisMapType.FORESTED_AREA:
-                    lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
+                    lstLayers = new List<string> { Constants.MAPS_BASIN_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_ELEV_ZONE,
                                                    Constants.MAPS_WATERBODIES, Constants.MAPS_FORESTED_LAND_COVER};
                     lstLegendLayers = new List<string> ();
@@ -2019,7 +2021,7 @@ namespace bagis_pro
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;
                 case BagisMapType.SITES_LOCATION:
-                    lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
+                    lstLayers = new List<string> { Constants.MAPS_BASIN_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_ELEV_ZONE,
                                                    Constants.MAPS_WATERBODIES, Constants.MAPS_SITES_LOCATION};
                     lstLegendLayers = new List<string>();
@@ -2052,7 +2054,7 @@ namespace bagis_pro
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;
                 case BagisMapType.SITES_LOCATION_PRECIP:
-                    lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
+                    lstLayers = new List<string> { Constants.MAPS_BASIN_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_PRISM_ZONE,
                                                    Constants.MAPS_WATERBODIES, Constants.MAPS_SITES_LOCATION};
                     lstLegendLayers = new List<string>();
@@ -2087,7 +2089,7 @@ namespace bagis_pro
                 case BagisMapType.SITES_LOCATION_PRECIP_CONTRIB:
                     lstLayers = new List<string> { Constants.MAPS_SUBBASIN_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_PRECIPITATION_CONTRIBUTION,
-                                                   Constants.MAPS_SITES_LOCATION, Constants.MAPS_WATERBODIES, Constants.MAPS_AOI_BOUNDARY};
+                                                   Constants.MAPS_SITES_LOCATION, Constants.MAPS_WATERBODIES, Constants.MAPS_BASIN_BOUNDARY};
                     lstLegendLayers = new List<string>();
                     if (Module1.Current.Aoi.HasSnowCourse == true)
                     {
@@ -2120,7 +2122,7 @@ namespace bagis_pro
                 case BagisMapType.PRECIPITATION_CONTRIBUTION:
                     lstLayers = new List<string> { Constants.MAPS_SUBBASIN_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_PRECIPITATION_CONTRIBUTION,
-                                                   Constants.MAPS_WATERBODIES, Constants.MAPS_AOI_BOUNDARY};
+                                                   Constants.MAPS_WATERBODIES, Constants.MAPS_BASIN_BOUNDARY};
                     lstLegendLayers = new List<string>();
                     if (Module1.Current.Aoi.HasSnowCourse == true)
                     {
@@ -2150,7 +2152,7 @@ namespace bagis_pro
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;
                 case BagisMapType.CRITICAL_PRECIP:
-                    lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
+                    lstLayers = new List<string> { Constants.MAPS_BASIN_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_ELEV_ZONE,
                                                    Constants.MAPS_WATERBODIES, Constants.MAPS_CRITICAL_PRECIPITATION_ZONES};
 
@@ -2185,7 +2187,7 @@ namespace bagis_pro
                     break;
 
                 case BagisMapType.LAND_OWNERSHIP:
-                    lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
+                    lstLayers = new List<string> { Constants.MAPS_BASIN_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_LAND_OWNERSHIP,
                                                    Constants.MAPS_WATERBODIES};
                     lstLegendLayers = new List<string> ();
@@ -2217,7 +2219,7 @@ namespace bagis_pro
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;
                 case BagisMapType.WINTER_PRECIPITATION:
-                    lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
+                    lstLayers = new List<string> { Constants.MAPS_BASIN_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_WATERBODIES,
                                                    Constants.MAPS_WINTER_PRECIPITATION};
                     lstLegendLayers = new List<string>();
@@ -2256,7 +2258,7 @@ namespace bagis_pro
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;
                 case BagisMapType.LAND_COVER:
-                    lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
+                    lstLayers = new List<string> { Constants.MAPS_BASIN_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_LAND_COVER,
                                                    Constants.MAPS_WATERBODIES};
                     lstLegendLayers = new List<string> ();
@@ -2396,7 +2398,7 @@ namespace bagis_pro
 
             // toggle layers according to map definition
             var allLayers = map.Layers.ToList();
-            IList<string> lstLayers = new List<string> { Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_STREAMS,
+            IList<string> lstLayers = new List<string> { Constants.MAPS_BASIN_BOUNDARY, Constants.MAPS_STREAMS,
                                                          Constants.MAPS_HILLSHADE, Constants.MAPS_WATERBODIES, strNewLayerName};
             IList<string> lstLegend = new List<string>();
 
@@ -2772,7 +2774,7 @@ namespace bagis_pro
 
                 // Remove existing layers from map frame
                 string[] arrLayerNames = new string[2];
-                arrLayerNames[0] = Constants.MAPS_AOI_BOUNDARY;
+                arrLayerNames[0] = Constants.MAPS_BASIN_BOUNDARY;
                 arrLayerNames[1] = Constants.MAPS_WESTERN_STATES_BOUNDARY;
                 foreach (string strName in arrLayerNames)
                 {
@@ -2800,7 +2802,7 @@ namespace bagis_pro
                                  Constants.FILE_AOI_VECTOR;
                 uri = new Uri(strPath);
                 success = await MapTools.AddAoiBoundaryToMapAsync(uri, ColorFactory.Instance.RedRGB, Constants.MAPS_AOI_LOCATION, 
-                    Constants.MAPS_AOI_BOUNDARY, true, 3);
+                    Constants.MAPS_BASIN_BOUNDARY, true, 3);
 
                 // create map elements
                 success = await MapTools.AddMapElements(Constants.MAPS_AOI_LOCATION_MAP_FRAME_NAME, Constants.MAPS_AOI_LOCATION_LAYOUT, false);
@@ -3490,7 +3492,7 @@ namespace bagis_pro
                     //Opening the map in a mapview
                     var mapPane = await ProApp.Panes.CreateMapPaneAsync(oMap);
                     // AOI Boundary
-                    Layer oLayer = oMap.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(Constants.MAPS_AOI_BOUNDARY, StringComparison.CurrentCultureIgnoreCase));
+                    Layer oLayer = oMap.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(Constants.MAPS_BASIN_BOUNDARY, StringComparison.CurrentCultureIgnoreCase));
                     if (oLayer != null)
                     {
                         await QueuedTask.Run(() =>
@@ -3670,7 +3672,7 @@ namespace bagis_pro
                 if (cimLegend != null)
                 {
                     cimLegend.MapFrame = legendMapFrameName;
-                    string[] arrInvisible = new string[] {Constants.MAPS_STREAMS, Constants.MAPS_AOI_BOUNDARY, Constants.MAPS_HILLSHADE};
+                    string[] arrInvisible = new string[] {Constants.MAPS_STREAMS, Constants.MAPS_BASIN_BOUNDARY, Constants.MAPS_HILLSHADE};
                     CIMLegendItem[] arrUpdatedItems = new CIMLegendItem[cimLegend.Items.Length];
                     for (int i = 0; i < cimLegend.Items.Length; i++)
                     {

@@ -20,7 +20,7 @@ namespace bagis_pro
         public const string MAPS_SNODAS_LAYOUT = "SNODAS Layout";
         public const string MAPS_SNODAS_DELTA_LAYOUT = "SNODAS Delta Layout";
         public const string MAPS_SEASONAL_PRECIP_LAYOUT = "Seasonal Precipitation Layout";
-        public const string MAPS_AOI_BOUNDARY = "AOI Boundary";
+        public const string MAPS_BASIN_BOUNDARY = "Basin Boundary";
         public const string MAPS_STREAMS = "AOI Streams";
         public const string MAPS_ACCESS_ROADS = "Access Roads";
         public const string MAPS_SNOTEL = "Snotel";
@@ -309,7 +309,7 @@ namespace bagis_pro
         public const string UNITS_FEET = "Feet";
         public const string UNITS_METERS = "Meters";
         public const double MAP_BUFFER_FACTOR = 1.3;
-        public const string TEXT_SITES_TABLE_DESCR = "See the Active Sites table for individual snow survey site descriptions";
+        public const string TEXT_SITES_TABLE_DESCR = "See Active Sites Table for characteristics of each snow monitoring site";
         public const int PDF_EXPORT_RESOLUTION = 300;
 
         // States that control the map display buttons
@@ -357,7 +357,7 @@ namespace bagis_pro
         public static int EXCEL_LARGE_CHART_WIDTH = 800;
         public static int EXCEL_LARGE_CHART_HEIGHT = 500;
 
-        public static string TITLE_ELEVATION = "ELEVATION DISTRIBUTION";
+        public static string TITLE_BASIN_ELEVATION = "BASIN ELEVATION";
         public static string TITLE_SLOPE = "Slope Distribution";
         public static string TITLE_ASPECT = "Aspect Distribution";
         public static string TITLE_PRECIPITATION = "PRECIPITATION DISTRIBUTION";
@@ -383,7 +383,7 @@ namespace bagis_pro
 
         public static string[] FILES_EXPORT_TITLES = new string[]
         { "Title Page", "Data Sources Table", TITLE_LOCATION_MAP, "Active Sites Table",
-          TITLE_ELEVATION + " MAP", TITLE_LAND_COVER + " MAP", TITLE_ASPECT + " MAP", TITLE_ASPECT + " CHART",
+          TITLE_BASIN_ELEVATION + " MAP", TITLE_LAND_COVER + " MAP", TITLE_ASPECT + " MAP", TITLE_ASPECT + " CHART",
           TITLE_SLOPE + " MAP", TITLE_SLOPE + " CHART", TITLE_AUTOMATED_SITES + " MAP", TITLE_SCOS_SITES + " MAP",
           TITLE_SNOTEL_AUTO_SITES + " MAP", TITLE_PRECIPITATION + " MAP", TITLE_ELEV_PRECIP_CORR + " CHART",
           TITLE_SUBBASIN_ANNUAL_PRECIP_CONTRIB + " MAP", TITLE_AREA_ELEV_PRECIP_SITE + " CHART",

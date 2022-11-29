@@ -642,6 +642,24 @@ namespace bagis_pro
                 Worksheet pChartsWorksheet = bkWorkBook.Sheets.Add();
                 pChartsWorksheet.Name = "Charts";
 
+                // Load local data sources for the short descriptions
+                Webservices ws = new Webservices();
+                IDictionary<string, BA_Objects.DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
+                BA_Objects.DataSource demDataSource = null;
+                if (dictLocalDataSources.Keys.Contains(Constants.DATA_TYPE_DEM))
+                {
+                    demDataSource = dictLocalDataSources[Constants.DATA_TYPE_DEM];
+                }
+                else
+                {
+                    IDictionary<string, dynamic> dictDatasources = await ws.QueryDataSourcesAsync((string)Module1.Current.BatchToolSettings.EBagisServer);
+                    if (dictDatasources != null)
+                    {
+                        demDataSource = new BA_Objects.DataSource(dictDatasources[Constants.DATA_TYPE_DEM]);
+                    }
+                }
+
+
                 // Query min/max from dem
                 string sMask = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_VECTOR;
                 IList<double> lstResult = await GeoprocessingTools.GetDemStatsAsync(Module1.Current.Aoi.FilePath, sMask, 0.005);
@@ -805,7 +823,7 @@ namespace bagis_pro
                 if (success == BA_ReturnCode.Success)
                 {
                     success = ExcelTools.CreateSlopeChart(pSlopeWorksheet, pChartsWorksheet,
-                        Constants.EXCEL_CHART_SPACING, leftPosition);
+                        Constants.EXCEL_CHART_SPACING, leftPosition, demDataSource);
                     Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Created Slope Chart");
                 }
 
@@ -815,7 +833,7 @@ namespace bagis_pro
                 if (success == BA_ReturnCode.Success)
                 {
                     success = ExcelTools.CreateAspectChart(pAspectWorksheet, pChartsWorksheet,
-                        topPosition, Constants.EXCEL_CHART_SPACING);
+                        topPosition, Constants.EXCEL_CHART_SPACING, demDataSource);
                     Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Created Aspect Chart");
                 }
 

@@ -21,10 +21,10 @@ bagis-pro:
   dataSources:
     - layerType: Snotel SWE
       heading: Snow Water Equivalent (SWE)
-      description: SWE Data Source - Averaged daily SNOw Data Assimilation System (SNODAS) Snow Water Equivalent (SWE) from 2004 to current water year data. See https://www.nohrsc.noaa.gov/ for more information.
+      description: SWE Data Source - Averaged daily SNOw Data Assimilation System (SNODAS) Snow Water Equivalent (SWE) from 2004 to 2022 water year data. See https://www.nohrsc.noaa.gov/ for more information.
       uri: http://bagis.geog.pdx.edu/arcgis/services/DAILY_SWE_NORMALS/
       units: Millimeters
-      shortDescription: 2004-2020 SNODAS daily data
+      shortDescription: 2004-2022 SNODAS daily data
     - layerType: Precipitation
       heading: Precipitation
       description: 30-year (1991-2020) monthly/quarterly/annual average precipitation data created by the PRISM Climate Group. See https://prism.oregonstate.edu/ for more information.

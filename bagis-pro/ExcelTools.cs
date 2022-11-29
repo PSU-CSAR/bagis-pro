@@ -1026,7 +1026,7 @@ namespace bagis_pro
         }
 
         public static BA_ReturnCode CreateSlopeChart(Worksheet pSlopeWorksheet, Worksheet pChartsWorksheet,
-            int topPosition, int leftPosition)
+            int topPosition, int leftPosition, BA_Objects.DataSource oDataSource)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
             long nrecords = ExcelTools.CountRecords(pSlopeWorksheet, 1);
@@ -1064,7 +1064,7 @@ namespace bagis_pro
             categoryAxis.AxisTitle.Font.Bold = true;
             valueAxis.HasTitle = true;
             valueAxis.AxisTitle.Font.Bold = true;
-            valueAxis.AxisTitle.Characters.Text = "% AOI Area";
+            valueAxis.AxisTitle.Characters.Text = "Percent Basin Area";
             valueAxis.MinimumScale = 0;
             // Set Element Positions
             myChart.SetElement(MsoChartElementType.msoElementChartTitleAboveChart);
@@ -1073,7 +1073,13 @@ namespace bagis_pro
             // Descriptive textbox
             StringBuilder sb = new StringBuilder();
             sb.Append("Slope Distribution chart \r\n");
-            sb.Append("The chart shows the percentage of AOI area in each slope interval.");
+            sb.Append("Percentage of the basin area in slope classes ranging from flat to 100%.");
+            if (oDataSource != null)
+            {
+                sb.Append(" Slope is derived from the ");
+                sb.Append(oDataSource.shortDescription);
+                sb.Append(".");
+            }
             ChartTextBoxSettings textBoxSettings = new ChartTextBoxSettings
             {
                 Left = leftPosition,
@@ -1188,7 +1194,7 @@ namespace bagis_pro
         }
 
         public static BA_ReturnCode CreateAspectChart(Worksheet pAspectWorksheet, Worksheet pChartsWorksheet,
-            int topPosition, int leftPosition)
+            int topPosition, int leftPosition, BA_Objects.DataSource oDataSource)
         {
             long nrecords = ExcelTools.CountRecords(pAspectWorksheet, 1);
 
@@ -1224,7 +1230,7 @@ namespace bagis_pro
             categoryAxis.AxisTitle.Font.Bold = true;
             valueAxis.HasTitle = true;
             valueAxis.AxisTitle.Font.Bold = true;
-            valueAxis.AxisTitle.Characters.Text = "% AOI Area";
+            valueAxis.AxisTitle.Characters.Text = "Percent Basin Area";
             valueAxis.MinimumScale = 0;
             // Set Element Positions
             myChart.SetElement(MsoChartElementType.msoElementChartTitleAboveChart);
@@ -1233,7 +1239,13 @@ namespace bagis_pro
             // Descriptive textbox
             StringBuilder sb = new StringBuilder();
             sb.Append("Aspect Distribution chart \r\n");
-            sb.Append("The chart shows the percentage of AOI area in each aspect direction.");
+            sb.Append("Percentage of the basin area in each of the primary aspect directions.");
+            if (oDataSource != null)
+            {
+                sb.Append(" Aspect is derived from the ");
+                sb.Append(oDataSource.shortDescription);
+                sb.Append(".");
+            }
             ChartTextBoxSettings textBoxSettings = new ChartTextBoxSettings
             {
                 Left = leftPosition,
