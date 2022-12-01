@@ -14,12 +14,14 @@ namespace bagis_pro.BA_Objects
         private readonly string m_Title;
         private readonly string m_unitsText;
         private readonly string m_pdfFileName;
+        private readonly string m_lowerRightTextbox;
 
-        public MapDefinition(string title, string unitsText, string pdfFileName)
+        public MapDefinition(string title, string unitsText, string pdfFileName, string lowerRightText)
         {
             m_Title = title;
             m_unitsText = unitsText;
             m_pdfFileName = pdfFileName;
+            m_lowerRightTextbox = lowerRightText;
         }
 
         public string Title
@@ -30,6 +32,11 @@ namespace bagis_pro.BA_Objects
         public string UnitsText
         {
             get { return m_unitsText; }
+        }
+
+        public string LowerRightTextbox
+        {
+            get { return m_lowerRightTextbox; }
         }
 
         public string PdfFileName
