@@ -1374,10 +1374,10 @@ namespace bagis_pro
                 if (bSitesTableDescr)
                 {
                     // (optional) textbox
-                    success = await MapTools.DisplayTextBoxAsync(layout, Constants.MAPS_TEXTBOX1, 5.0, 1.6, ColorFactory.Instance.BlackRGB, 12, "Times New Roman",
+                    success = await MapTools.DisplayTextBoxAsync(layout, Constants.MAPS_TEXTBOX1, 5.0, 1.7, ColorFactory.Instance.BlackRGB, 12, "Times New Roman",
                         "Regular", "Text Box 1");
                     // sites textbox
-                    success = await MapTools.DisplayTextBoxAsync(layout, Constants.MAPS_TEXTBOX2, 5.6, 0.35, ColorFactory.Instance.BlackRGB, 12, "Times New Roman",
+                    success = await MapTools.DisplayTextBoxAsync(layout, Constants.MAPS_TEXTBOX2, 5.6, 0.5, ColorFactory.Instance.BlackRGB, 12, "Times New Roman",
                         "Regular", Constants.TEXT_SITES_TABLE_DESCR);
                 }
             }
@@ -1657,7 +1657,7 @@ namespace bagis_pro
 
                     //Reference the map frame and define the location
                     MapFrame mapFrame = layout.FindElement(mapFrameName) as MapFrame;
-                    Coordinate2D nArrow = new Coordinate2D(7.7906, 0.9906);
+                    Coordinate2D nArrow = new Coordinate2D(7.7906, 1.2);
 
                     //Construct the north arrow
                     NorthArrow northArrow = LayoutElementFactory.Instance.CreateNorthArrow(layout, nArrow, mapFrame, northArrowStyleItem);
@@ -1686,7 +1686,7 @@ namespace bagis_pro
                     //Reference the map frame and define the location
                     MapFrame mapFrame = layout.FindElement(mapFrameName) as MapFrame;
                     double coordX = 3.7732;
-                    Coordinate2D location = new Coordinate2D(coordX, 1.0975);
+                    Coordinate2D location = new Coordinate2D(coordX, 1.2);
 
                     //Construct the scale bar
                     ScaleBar scaleBar = LayoutElementFactory.Instance.CreateScaleBar(layout, location, mapFrame, scaleBarStyleItem);
@@ -1705,7 +1705,7 @@ namespace bagis_pro
                     ScaleBarStyleItem scaleBarStyleItem2 = scaleBars2[0];
 
                     //Define the location
-                    Coordinate2D location2 = new Coordinate2D(coordX, 0.8035);
+                    Coordinate2D location2 = new Coordinate2D(coordX, 0.9);
 
                     //Construct the scale bar
                     ScaleBar scaleBar2 = LayoutElementFactory.Instance.CreateScaleBar(layout, location2, mapFrame, scaleBarStyleItem2);
@@ -1752,8 +1752,13 @@ namespace bagis_pro
             }
 
             // Get the local data sources for maps that need it
-            IDictionary<string, BA_Objects.DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
-
+            IList<BagisMapType> lstDataSourceMaps = new List<BagisMapType>()
+                { BagisMapType.LAND_COVER};
+            IDictionary<string, BA_Objects.DataSource> dictLocalDataSources = new Dictionary<string, BA_Objects.DataSource>();
+            if (lstDataSourceMaps.Contains(mapType))
+            {
+                dictLocalDataSources = GeneralTools.QueryLocalDataSources();
+            }
             switch (mapType)
             {
                 case BagisMapType.ELEVATION:
@@ -1935,7 +1940,7 @@ namespace bagis_pro
                         {
                             siteBufferDistanceUnits = oAnalysis.BufferUnitsText.ToLower();
                         }
-                        strBufferParams = $@"{siteBufferDistance} planar {siteBufferDistanceUnits} and {siteElevRange} {siteElevRangeUnits} above and below elevation from existing sites.";
+                        strBufferParams = $@"{siteBufferDistance} planar {siteBufferDistanceUnits} and {Environment.NewLine}{siteElevRange} {siteElevRangeUnits} above and below elevation from existing sites.";
                     }
                     mapDefinition = new BA_Objects.MapDefinition(Constants.TITLE_AUTOMATED_SITES,
                         "Elevation Units = " + strDemDisplayUnits, Constants.FILE_EXPORT_MAP_SNOTEL_PDF,
@@ -1955,8 +1960,29 @@ namespace bagis_pro
                     }
                     lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE_REPRESENTED);
                     lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
+                    lstLegendLayers.Add(Constants.MAPS_ELEV_ZONE);
+                    strDemDisplayUnits = (string)Module1.Current.BatchToolSettings.DemDisplayUnits;
+                    strBufferParams = "";
+                    if (oAnalysis != null)
+                    {
+                        double siteBufferDistance = 0;
+                        string siteBufferDistanceUnits = "";
+                        double siteElevRange = 0;
+                        string siteElevRangeUnits = "";
+                        siteElevRange = oAnalysis.UpperRange;
+                        if (!string.IsNullOrEmpty(oAnalysis.ElevUnitsText))
+                        {
+                            siteElevRangeUnits = oAnalysis.ElevUnitsText.ToLower();
+                        }
+                        siteBufferDistance = oAnalysis.BufferDistance;
+                        if (!string.IsNullOrEmpty(oAnalysis.BufferUnitsText))
+                        {
+                            siteBufferDistanceUnits = oAnalysis.BufferUnitsText.ToLower();
+                        }
+                        strBufferParams = $@"{siteBufferDistance} planar {siteBufferDistanceUnits} and {Environment.NewLine}{siteElevRange} {siteElevRangeUnits} above and below elevation from existing sites.";
+                    }
                     mapDefinition = new BA_Objects.MapDefinition(Constants.TITLE_SCOS_SITES,
-                        " ", Constants.FILE_EXPORT_MAP_SCOS_PDF, "Represented area includes a buffer of ");
+                        "Elevation Units = " + strDemDisplayUnits, Constants.FILE_EXPORT_MAP_SCOS_PDF, "Represented area includes a buffer of " + strBufferParams);
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;
@@ -1987,8 +2013,29 @@ namespace bagis_pro
                     }
                     lstLegendLayers.Add(Constants.MAPS_ALL_SITES_REPRESENTED);
                     lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
+                    lstLegendLayers.Add(Constants.MAPS_ELEV_ZONE);
+                    strDemDisplayUnits = (string)Module1.Current.BatchToolSettings.DemDisplayUnits;
+                    strBufferParams = "";
+                    if (oAnalysis != null)
+                    {
+                        double siteBufferDistance = 0;
+                        string siteBufferDistanceUnits = "";
+                        double siteElevRange = 0;
+                        string siteElevRangeUnits = "";
+                        siteElevRange = oAnalysis.UpperRange;
+                        if (!string.IsNullOrEmpty(oAnalysis.ElevUnitsText))
+                        {
+                            siteElevRangeUnits = oAnalysis.ElevUnitsText.ToLower();
+                        }
+                        siteBufferDistance = oAnalysis.BufferDistance;
+                        if (!string.IsNullOrEmpty(oAnalysis.BufferUnitsText))
+                        {
+                            siteBufferDistanceUnits = oAnalysis.BufferUnitsText.ToLower();
+                        }
+                        strBufferParams = $@"{siteBufferDistance} planar {siteBufferDistanceUnits} and {Environment.NewLine}{siteElevRange} {siteElevRangeUnits} above and below elevation from existing sites.";
+                    }
                     mapDefinition = new BA_Objects.MapDefinition(Constants.TITLE_SNOTEL_AUTO_SITES,
-                        " ", Constants.FILE_EXPORT_MAP_SNOTEL_AND_SCOS_PDF, "Represented area includes a buffer of ");
+                        "Elevation Units = " + strDemDisplayUnits, Constants.FILE_EXPORT_MAP_SNOTEL_AND_SCOS_PDF, "Represented area includes a buffer of " + strBufferParams);
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;
