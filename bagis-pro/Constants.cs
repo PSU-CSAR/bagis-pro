@@ -22,7 +22,7 @@ namespace bagis_pro
         public const string MAPS_SEASONAL_PRECIP_LAYOUT = "Seasonal Precipitation Layout";
         public const string MAPS_BASIN_BOUNDARY = "Basin Boundary";
         public const string MAPS_STREAMS = "AOI Streams";
-        public const string MAPS_ACCESS_ROADS = "Access Roads";
+        public const string MAPS_ROADS = "Roads";
         public const string MAPS_SNOTEL = "Snotel";
         public const string MAPS_SNOW_COURSE = "Snow Course";
         public const string MAPS_COOP_PILLOW = "Coop Pillow";
@@ -35,9 +35,9 @@ namespace bagis_pro
         public const string MAPS_AUTOMATED_SITES_REPRESENTED = "Auto Sites Rep Area";
         public const string MAPS_SNOW_COURSE_REPRESENTED = "Snow Course Rep Area";
         public const string MAPS_ALL_SITES_REPRESENTED = "All Sites Rep Area";
-        public const string MAPS_SUITABLE_LAND_ZONES = "Suitable Land Ownership Type";
+        public const string MAPS_SUITABLE_LAND_ZONES = "Suitable Land Ownership";
         public const string MAPS_FORESTED_LAND_COVER = "Forested Land Cover";
-        public const string MAPS_SITES_LOCATION = "Meet All Criteria";
+        public const string MAPS_POTENTIAL_LOCATIONS = "Potential Locations";
         public const string MAPS_CRITICAL_PRECIPITATION_ZONES = "Critical Precipitation";
         public const string MAPS_LAND_OWNERSHIP = "Land Ownership";
         public const string MAPS_PRECIPITATION_CONTRIBUTION = "Precipitation Contribution";

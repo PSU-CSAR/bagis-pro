@@ -860,17 +860,15 @@ namespace bagis_pro
             {
                 topAxis.AxisTitle.Characters.Text = "Precipitation Distribution (% contribution by elevation zone)";
                 sb.Append("Precipitation Distribution - % contribution by elevation zone \r\n");
-                sb.Append("The chart shows the percentage of the precipitation contributed by the user-specified elevation intervals and the snow monitoring ");
-                sb.Append("sites plotted on the Area-Elevation Distribution curve according to the sites' elevation. The chart tells if the snow monitoring sites ");
-                sb.Append("record the major precipitation in the AOI.");
+                sb.Append("The percent of precipitation contribution by elevation zone (red) and the area-elevation curve (blue) are plotted with snow monitoring sites at their corresponding elevations. ");
+                sb.Append("The position of the sites on the chart shows the range of elevation covered by the monitoring network and the percent of the basin's precipitation contribution occurring at each site's corresponding elevation.");
             }
             else
             {
                 topAxis.AxisTitle.Characters.Text = "Cumulative Precipitation Distribution (cumulative % contribution by elevation zone)";
                 sb.Append("Area-Elevation, Precipitation and Site Distribution chart - Cumulative precipitation Distribution (cumulative % contribution by elevation zone) \r\n");
-                sb.Append("The chart shows the cumulative percentage from low elevation to high elevation of the precipitation contributed by the ");
-                sb.Append("user-specified elevation intervals and the snow monitoring sites plotted on the Area-Elevation Distribution curve according to ");
-                sb.Append("the sites' elevation. The chart tells if the snow monitoring sites record the major precipitation in the AOI.");
+                sb.Append("The cumulative precipitation distribution for each elevation zone (red) and the area-elevation distribution chart (blue) are plotted with the snow monitoring sites at their corresponding elevations. ");
+                sb.Append("The position of the sites on the chart shows the range of elevations covered by the monitoring network and the cumulative precipitation that occurs within that range.");
             }
             
             topAxis.AxisTitle.Font.Bold = true;
@@ -1455,7 +1453,7 @@ namespace bagis_pro
             // Set Title
             myChart.HasTitle = true;
             myChart.HasLegend = true;
-            myChart.ChartTitle.Caption = "Elevation Precipitation";
+            myChart.ChartTitle.Caption = "Basin and Site Elevation vs. Precipitation";
             myChart.ChartTitle.Font.Bold = true;
             // Set Chart Type and Data Range
             myChart.ChartType = Microsoft.Office.Interop.Excel.XlChartType.xlXYScatter;
@@ -1472,7 +1470,7 @@ namespace bagis_pro
 
             // precip/elevation values scatterplot for each cell
             Series series = myChart.SeriesCollection().NewSeries;
-            series.Name = "AOI";
+            series.Name = "Basin";
             //Set Series Values
             series.Values = pPrecipElvWorksheet.Range[precipValueRange];
             series.XValues = pPrecipElvWorksheet.Range[xDemValueRange];
@@ -1484,7 +1482,7 @@ namespace bagis_pro
             Microsoft.Office.Interop.Excel.Trendlines trendlines = series.Trendlines();
             Trendline trendline = trendlines.Add(Microsoft.Office.Interop.Excel.XlTrendlineType.xlLinear, Type.Missing,
                 Type.Missing, Type.Missing, Type.Missing, Type.Missing,
-                true, true, "Linear (AOI)");
+                true, true, "Linear (Basin)");
             trendline.DataLabel.Left = 710;
             trendline.DataLabel.Top = legendTop + 100;
             trendline.DataLabel.Font.Size = 20;
@@ -1542,7 +1540,7 @@ namespace bagis_pro
             Axis yAxis = (Axis)myChart.Axes(Microsoft.Office.Interop.Excel.XlAxisType.xlValue,
                 Microsoft.Office.Interop.Excel.XlAxisGroup.xlPrimary);
             yAxis.HasTitle = true;
-            yAxis.AxisTitle.Text = "Precipitation (" + Constants.UNITS_INCHES + ")";
+            yAxis.AxisTitle.Text = "Annual Precipitation (" + Constants.UNITS_INCHES + ")";
             yAxis.AxisTitle.Orientation = 90;
             yAxis.AxisTitle.Font.Bold = true;
             yAxis.MinimumScale = intMinPrecip - 1;
@@ -1568,9 +1566,9 @@ namespace bagis_pro
             // Descriptive textbox
             StringBuilder sb = new StringBuilder();
             sb.Append("Elevation Precipitation Correlation chart \r\n");
-            sb.Append("Precipitation value for each data location (blue) and snow monitoring site (red) within the AOI is plotted against the elevation at the location. ");
-            sb.Append("The chart indicates if elevation is a good predictor of precipitation and ");
-            sb.Append("if the precipitation observed on snow monitoring sites are showing similar relationship.");
+            sb.Append("The average annual precipitation values from PRISM are plotted for each DEM elevation value (blue) for the entire basin. ");
+            sb.Append("Snow monitoring site elevations and corresponding PRISM precipitation values are indicated with red squares and orange line of best fit. ");
+            sb.Append("The strength of the elevation-precipitation relationship for both the basin and individual sites are indicated in corresponding equations.");
             ChartTextBoxSettings textBoxSettings = new ChartTextBoxSettings
             {
                 Left = Constants.EXCEL_CHART_SPACING,

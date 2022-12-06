@@ -164,13 +164,30 @@ namespace bagis_pro
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
                         Constants.FILE_SITES_LOCATION_ZONE;
                     uri = new Uri(strPath);
-                    success = await MapTools.AddPolygonLayerAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, fillColor, false, Constants.MAPS_SITES_LOCATION);
+                    success = await MapTools.AddPolygonLayerAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, fillColor, false, Constants.MAPS_POTENTIAL_LOCATIONS);
                     if (success.Equals(BA_ReturnCode.Success))
                     {
                         Module1.ActivateState("MapButtonPalette_BtnSitesLocationZone_State");
                         Module1.ActivateState("MapButtonPalette_BtnSitesLocationPrecip_State");
                         Module1.ActivateState("MapButtonPalette_BtnSitesLocationPrecipContrib_State");
                     }
+
+                    //Put roads buffer distance into session variable; Needed for Site Locations maps
+                    string roadsBufferDistance = (string)Module1.Current.BatchToolSettings.RoadsAnalysisBufferDistance;
+                    string roadsBufferUnits = (string)Module1.Current.BatchToolSettings.RoadsAnalysisBufferUnits;
+                    Uri uriAnalysis = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis));
+                    string strRoadsPath = uriAnalysis.LocalPath + "\\" + Constants.FILE_ROADS_ZONE;
+                    if (await GeodatabaseTools.FeatureClassExistsAsync(uriAnalysis, Constants.FILE_ROADS_ZONE))
+                    {
+                        string strBagisTag = await GeneralTools.GetBagisTagAsync(strRoadsPath, Constants.META_TAG_XPATH);
+                        if (!string.IsNullOrEmpty(strBagisTag))
+                        {
+                            roadsBufferDistance = GeneralTools.GetValueForKey(strBagisTag, Constants.META_TAG_BUFFER_DISTANCE, ';');
+                            roadsBufferUnits = GeneralTools.GetValueForKey(strBagisTag, Constants.META_TAG_XUNIT_VALUE, ';');
+                            Module1.Current.RoadsBufferDistance = $@"{roadsBufferDistance} {roadsBufferUnits}";
+                        }
+                    }
+
 
                     //add waterbodies layer Layer; Adding it last so it shows up on top
                     fillColor = CIMColor.CreateRGBColor(0, 0, 255, 100);    //Blue with 0% transparency
@@ -183,7 +200,7 @@ namespace bagis_pro
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers, true) +
                         Constants.FILE_ROADS;
                     uri = new Uri(strPath);
-                    await MapTools.AddLineLayerAsync(uri, Constants.MAPS_ACCESS_ROADS, false, ColorFactory.Instance.CreateRGBColor(150, 75, 0, 100));
+                    await MapTools.AddLineLayerAsync(uri, Constants.MAPS_ROADS, false, ColorFactory.Instance.CreateRGBColor(150, 75, 0, 100));
 
                     // add aoi streams layer
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers, true) +
@@ -318,23 +335,23 @@ namespace bagis_pro
 
                     // load SWE map layout
                     int idxDefaultMonth = 8;    // Note: This needs to be the month with the lowest SWE value for symbology; In this case July
-                    //success = await DisplayMultiMapPageLayoutAsync(oAoi.FilePath, idxDefaultMonth, BagisMapType.SNODAS_SWE);
-                    //if (success == BA_ReturnCode.Success)
-                    //{
-                    //    Module1.ActivateState("MapButtonPalette_BtnSwe_State");
-                    //}
-                    //// load SWE Delta map layout
-                    //success = await DisplayMultiMapPageLayoutAsync(oAoi.FilePath, idxDefaultMonth - 1, BagisMapType.SNODAS_DELTA);
-                    //if (success == BA_ReturnCode.Success)
-                    //{
-                    //    Module1.ActivateState("MapButtonPalette_BtnSweDelta_State");
-                    //}
-                    //// load seasonal precipitation map layout
-                    //success = await DisplayMultiMapPageLayoutAsync(oAoi.FilePath, idxDefaultMonth, BagisMapType.SEASONAL_PRECIP_CONTRIB);
-                    //if (success == BA_ReturnCode.Success)
-                    //{
-                    //    Module1.ActivateState("MapButtonPalette_BtnSeasonalPrecipContrib_State");
-                    //}
+                    success = await DisplayMultiMapPageLayoutAsync(oAoi.FilePath, idxDefaultMonth, BagisMapType.SNODAS_SWE);
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        Module1.ActivateState("MapButtonPalette_BtnSwe_State");
+                    }
+                    // load SWE Delta map layout
+                    success = await DisplayMultiMapPageLayoutAsync(oAoi.FilePath, idxDefaultMonth - 1, BagisMapType.SNODAS_DELTA);
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        Module1.ActivateState("MapButtonPalette_BtnSweDelta_State");
+                    }
+                    // load seasonal precipitation map layout
+                    success = await DisplayMultiMapPageLayoutAsync(oAoi.FilePath, idxDefaultMonth, BagisMapType.SEASONAL_PRECIP_CONTRIB);
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        Module1.ActivateState("MapButtonPalette_BtnSeasonalPrecipContrib_State");
+                    }
                     return success;
 
                 }
@@ -828,7 +845,7 @@ namespace bagis_pro
             arrLayerNames[11] = Constants.MAPS_PRISM_ZONE;
             arrLayerNames[12] = Constants.MAPS_SUITABLE_LAND_ZONES;
             arrLayerNames[13] = Constants.MAPS_FORESTED_LAND_COVER;
-            arrLayerNames[14] = Constants.MAPS_SITES_LOCATION;
+            arrLayerNames[14] = Constants.MAPS_POTENTIAL_LOCATIONS;
             arrLayerNames[15] = Constants.MAPS_CRITICAL_PRECIPITATION_ZONES;
             arrLayerNames[16] = Constants.MAPS_LAND_OWNERSHIP;
             arrLayerNames[17] = Constants.MAPS_PRECIPITATION_CONTRIBUTION;
@@ -836,7 +853,7 @@ namespace bagis_pro
             arrLayerNames[19] = Constants.MAPS_SUBBASIN_BOUNDARY;
             arrLayerNames[20] = Constants.MAPS_LAND_COVER;
             arrLayerNames[21] = Constants.MAPS_WATERBODIES;
-            arrLayerNames[22] = Constants.MAPS_ACCESS_ROADS;
+            arrLayerNames[22] = Constants.MAPS_ROADS;
             arrLayerNames[23] = Constants.MAPS_SNOLITE;
             arrLayerNames[24] = Constants.MAPS_COOP_PILLOW;
             int idxLayerNames = 25;
@@ -1753,12 +1770,13 @@ namespace bagis_pro
 
             // Get the local data sources for maps that need it
             IList<BagisMapType> lstDataSourceMaps = new List<BagisMapType>()
-                { BagisMapType.LAND_COVER};
+                { BagisMapType.LAND_COVER, BagisMapType.PRISM, BagisMapType.WINTER_PRECIPITATION, BagisMapType.FORESTED_LAND_COVER};
             IDictionary<string, BA_Objects.DataSource> dictLocalDataSources = new Dictionary<string, BA_Objects.DataSource>();
             if (lstDataSourceMaps.Contains(mapType))
             {
                 dictLocalDataSources = GeneralTools.QueryLocalDataSources();
             }
+
             switch (mapType)
             {
                 case BagisMapType.ELEVATION:
@@ -1893,9 +1911,16 @@ namespace bagis_pro
                         string strPrefix = LookupTables.PrismText[oAnalysis.PrecipZonesBegin].ToUpper();
                         strTitle = strPrefix + " " + strTitle;
                     }
+                    string dataSourceDesc = "";
+                    if (dictLocalDataSources.Keys.Contains(Constants.DATA_TYPE_PRECIPITATION))
+                    {
+                        BA_Objects.DataSource oDs = new BA_Objects.DataSource();
+                        oDs = dictLocalDataSources[Constants.DATA_TYPE_PRECIPITATION];
+                        dataSourceDesc = oDs.shortDescription;
+                    }
                     mapDefinition = new BA_Objects.MapDefinition(strTitle,
                         "Precipitation Units = Inches", Constants.FILE_EXPORT_MAP_PRECIPITATION_PDF,
-                        "Annual precipitation based on the ");
+                        "Annual precipitation based on the " + dataSourceDesc);
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;
@@ -2042,7 +2067,7 @@ namespace bagis_pro
                 case BagisMapType.LAND_ZONES:
                     lstLayers = new List<string> { Constants.MAPS_BASIN_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_ELEV_ZONE,
-                                                   Constants.MAPS_SUITABLE_LAND_ZONES, Constants.MAPS_ACCESS_ROADS,
+                                                   Constants.MAPS_SUITABLE_LAND_ZONES, Constants.MAPS_ROADS,
                                                    Constants.MAPS_WATERBODIES};
                     lstLegendLayers = new List<string> ();
                     
@@ -2067,15 +2092,17 @@ namespace bagis_pro
                         lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE);
                     }
                     lstLegendLayers.Add(Constants.MAPS_SUITABLE_LAND_ZONES);
-                    lstLegendLayers.Add(Constants.MAPS_ACCESS_ROADS);
+                    lstLegendLayers.Add(Constants.MAPS_ROADS);
                     lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
+                    lstLegendLayers.Add(Constants.MAPS_ELEV_ZONE);
+                    strDemDisplayUnits = (string)Module1.Current.BatchToolSettings.DemDisplayUnits;
                     mapDefinition = new BA_Objects.MapDefinition(Constants.TITLE_ROADS_AND_TRIBAL,
-                        " ", Constants.FILE_EXPORT_MAP_PUBLIC_LAND_ZONES_PDF, 
-                        "See user guide for land ownership definitions");
+                        "Elevation Units = " + strDemDisplayUnits, Constants.FILE_EXPORT_MAP_PUBLIC_LAND_ZONES_PDF,
+                        "Suitable land ownership includes federal non-wilderness and tribal lands.");
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;
-                case BagisMapType.FORESTED_AREA:
+                case BagisMapType.FORESTED_LAND_COVER:
                     lstLayers = new List<string> { Constants.MAPS_BASIN_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_ELEV_ZONE,
                                                    Constants.MAPS_WATERBODIES, Constants.MAPS_FORESTED_LAND_COVER};
@@ -2102,16 +2129,26 @@ namespace bagis_pro
                     }
                     lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
                     lstLegendLayers.Add(Constants.MAPS_FORESTED_LAND_COVER);
+                    lstLegendLayers.Add(Constants.MAPS_ELEV_ZONE);
+                    strDemDisplayUnits = (string)Module1.Current.BatchToolSettings.DemDisplayUnits;
+                    dataSourceDesc = "";
+                    if (dictLocalDataSources.Keys.Contains(Constants.DATA_TYPE_LAND_COVER))
+                    {
+                        BA_Objects.DataSource oDs = new BA_Objects.DataSource();
+                        oDs = dictLocalDataSources[Constants.DATA_TYPE_LAND_COVER];
+                        dataSourceDesc = oDs.shortDescription;
+                    }
+                    string strDescr = $@"Forested land cover includes areas with forest classifications {Environment.NewLine}from the {dataSourceDesc}";
                     mapDefinition = new BA_Objects.MapDefinition(Constants.TITLE_FORESTED_LAND_COVER,
-                        " ", Constants.FILE_EXPORT_MAP_FORESTED_LAND_COVER_PDF, 
-                        "Forested land cover includes areas with forest classifications from the ");
+                        "Elevation Units = " + strDemDisplayUnits, Constants.FILE_EXPORT_MAP_FORESTED_LAND_COVER_PDF, 
+                        strDescr);
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;
                 case BagisMapType.SITES_LOCATION:
                     lstLayers = new List<string> { Constants.MAPS_BASIN_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_ELEV_ZONE,
-                                                   Constants.MAPS_WATERBODIES, Constants.MAPS_SITES_LOCATION};
+                                                   Constants.MAPS_WATERBODIES, Constants.MAPS_POTENTIAL_LOCATIONS};
                     lstLegendLayers = new List<string>();
                     if (Module1.Current.Aoi.HasSnowCourse == true)
                     {
@@ -2133,19 +2170,21 @@ namespace bagis_pro
                         lstLayers.Add(Constants.MAPS_COOP_PILLOW);
                         lstLegendLayers.Add(Constants.MAPS_COOP_PILLOW);
                     }
-                    lstLegendLayers.Add(Constants.MAPS_SITES_LOCATION);
+                    lstLegendLayers.Add(Constants.MAPS_POTENTIAL_LOCATIONS);
                     lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
                     lstLegendLayers.Add(Constants.MAPS_ELEV_ZONE);
+                    strDemDisplayUnits = (string)Module1.Current.BatchToolSettings.DemDisplayUnits;
+                    strDescr = $@"Potential new sites locations are on federal non-wilderness and {Environment.NewLine}tribal lands, forested land types, and within {Module1.Current.RoadsBufferDistance} of access roads.";
                     mapDefinition = new BA_Objects.MapDefinition(Constants.TITLE_POTENTIAL_SITE_LOC,
-                        " ", Constants.FILE_EXPORT_MAP_SITES_LOCATION_PDF,
-                        "Potential site locations are on federal non-wilderness and tribal lands, forested land types, and within ");
+                        "Elevation Units = " + strDemDisplayUnits, Constants.FILE_EXPORT_MAP_SITES_LOCATION_PDF,
+                        strDescr);
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;
                 case BagisMapType.SITES_LOCATION_PRECIP:
                     lstLayers = new List<string> { Constants.MAPS_BASIN_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_PRISM_ZONE,
-                                                   Constants.MAPS_WATERBODIES, Constants.MAPS_SITES_LOCATION};
+                                                   Constants.MAPS_WATERBODIES, Constants.MAPS_POTENTIAL_LOCATIONS};
                     lstLegendLayers = new List<string>();
                     if (Module1.Current.Aoi.HasSnowCourse == true)
                     {
@@ -2167,19 +2206,19 @@ namespace bagis_pro
                         lstLayers.Add(Constants.MAPS_COOP_PILLOW);
                         lstLegendLayers.Add(Constants.MAPS_COOP_PILLOW);
                     }
-                    lstLegendLayers.Add(Constants.MAPS_SITES_LOCATION);
+                    lstLegendLayers.Add(Constants.MAPS_POTENTIAL_LOCATIONS);
                     lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
                     lstLegendLayers.Add(Constants.MAPS_PRISM_ZONE);
+                    strDescr = $@"Potential new sites locations are on federal non-wilderness and {Environment.NewLine}tribal lands, forested land types, and within {Module1.Current.RoadsBufferDistance} of access roads.";
                     mapDefinition = new BA_Objects.MapDefinition(Constants.TITLE_POTENTIAL_SITE_LOC,
-                        " ", Constants.FILE_EXPORT_MAP_SITES_LOCATION_PRECIP_PDF,
-                        "Potential site locations are on federal non-wilderness and tribal lands, forested land types, and within ");
+                        "Precipitation Units = Inches", Constants.FILE_EXPORT_MAP_SITES_LOCATION_PRECIP_PDF, strDescr);
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;
                 case BagisMapType.SITES_LOCATION_PRECIP_CONTRIB:
                     lstLayers = new List<string> { Constants.MAPS_SUBBASIN_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_PRECIPITATION_CONTRIBUTION,
-                                                   Constants.MAPS_SITES_LOCATION, Constants.MAPS_WATERBODIES, Constants.MAPS_BASIN_BOUNDARY};
+                                                   Constants.MAPS_POTENTIAL_LOCATIONS, Constants.MAPS_WATERBODIES, Constants.MAPS_BASIN_BOUNDARY};
                     lstLegendLayers = new List<string>();
                     if (Module1.Current.Aoi.HasSnowCourse == true)
                     {
@@ -2201,12 +2240,12 @@ namespace bagis_pro
                         lstLayers.Add(Constants.MAPS_COOP_PILLOW);
                         lstLegendLayers.Add(Constants.MAPS_COOP_PILLOW);
                     }
-                    lstLegendLayers.Add(Constants.MAPS_SITES_LOCATION);
+                    lstLegendLayers.Add(Constants.MAPS_POTENTIAL_LOCATIONS);
                     lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
                     lstLegendLayers.Add(Constants.MAPS_PRECIPITATION_CONTRIBUTION);
+                    strDescr = $@"Potential new sites locations are on federal non-wilderness and {Environment.NewLine}tribal lands, forested land types, and within {Module1.Current.RoadsBufferDistance} of access roads.";
                     mapDefinition = new BA_Objects.MapDefinition(Constants.TITLE_POTENTIAL_SITE_LOC,
-                        " ", Constants.FILE_EXPORT_MAP_SITES_LOCATION__PRECIP_CONTRIB_PDF,
-                        "Potential site locations are on federal non-wilderness and tribal lands, forested land types, and within ");
+                        "Precipitation Contribution Units = Acre-Feet", Constants.FILE_EXPORT_MAP_SITES_LOCATION__PRECIP_CONTRIB_PDF, strDescr);
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;
@@ -2237,9 +2276,10 @@ namespace bagis_pro
                     }
                     lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
                     lstLegendLayers.Add(Constants.MAPS_PRECIPITATION_CONTRIBUTION);
+                    strDescr = $@"Potential runoff for each sub-basin calculated as the average {Environment.NewLine}annual precipitation multiplied by basin area.";
                     mapDefinition = new BA_Objects.MapDefinition(Constants.TITLE_SUBBASIN_ANNUAL_PRECIP_CONTRIB,
                         "Units = Acre-Feet", Constants.FILE_EXPORT_MAP_PRECIPITATION_CONTRIBUTION_PDF,
-                        "Potential runoff for each sub-basin calculated as the average annual precipitation multiplied by basin area");
+                        strDescr);
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;
@@ -2272,9 +2312,11 @@ namespace bagis_pro
                     lstLegendLayers.Add(Constants.MAPS_CRITICAL_PRECIPITATION_ZONES);
                     lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
                     lstLegendLayers.Add(Constants.MAPS_ELEV_ZONE);
+                    strDemDisplayUnits = (string)Module1.Current.BatchToolSettings.DemDisplayUnits;
+                    strDescr = $@"The critical precipitation zone indicates the basin area that {Environment.NewLine}has the potential for delivering the most significant runoff.";
                     mapDefinition = new BA_Objects.MapDefinition(Constants.TITLE_CRITICAL_PRECIPITATION,
-                        " ", Constants.FILE_EXPORT_MAP_CRITICAL_PRECIPITATION_ZONES_PDF,
-                        "The critical precipitation zone indicates the basin area that has the potential for delivering the most significant runoff");
+                        "Elevation Units = " + strDemDisplayUnits, Constants.FILE_EXPORT_MAP_CRITICAL_PRECIPITATION_ZONES_PDF,
+                        strDescr);
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;
@@ -2308,7 +2350,7 @@ namespace bagis_pro
                     lstLegendLayers.Add(Constants.MAPS_LAND_OWNERSHIP);
                     mapDefinition = new BA_Objects.MapDefinition(Constants.TITLE_LAND_OWNERSHIP,
                         " ", Constants.FILE_EXPORT_MAP_LAND_OWNERSHIP_PDF,
-                        "See user guide for land ownership definitions");
+                        "See user guide for land ownership definitions.");
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;
@@ -2346,9 +2388,22 @@ namespace bagis_pro
                             oAnalysis.WinterEndMonth.ToUpper() + ")";
                         strTitle = strTitle + strSuffix;
                     }
+                    dataSourceDesc = "";
+                    if (dictLocalDataSources.Keys.Contains(Constants.DATA_TYPE_PRECIPITATION))
+                    {
+                        BA_Objects.DataSource oDs = new BA_Objects.DataSource();
+                        oDs = dictLocalDataSources[Constants.DATA_TYPE_PRECIPITATION];
+                        string tempDescr = oDs.shortDescription;
+                        int pos = tempDescr.IndexOf("annual");
+                        if (pos > 0)
+                        {
+                            dataSourceDesc = tempDescr.Substring(0, pos) + "monthly" + tempDescr.Substring(pos + "annual".Length);
+                        }
+                    }
+                    strDescr = $@"Precipitation of the winter months ({oAnalysis.WinterStartMonth} - {oAnalysis.WinterEndMonth}) determined from {Environment.NewLine}the {dataSourceDesc}";
+
                     mapDefinition = new BA_Objects.MapDefinition(strTitle,
-                        "Precipitation Units = Inches", Constants.FILE_EXPORT_MAP_WINTER_PRECIPITATION_PDF,
-                                                "Precipitation from XX");
+                        "Precipitation Units = Inches", Constants.FILE_EXPORT_MAP_WINTER_PRECIPITATION_PDF, strDescr);
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;
@@ -2379,7 +2434,7 @@ namespace bagis_pro
                     }
                     lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
                     lstLegendLayers.Add(Constants.MAPS_LAND_COVER);
-                    string dataSourceDesc = "";
+                    dataSourceDesc = "";
                     if (dictLocalDataSources.Keys.Contains(Constants.DATA_TYPE_LAND_COVER))
                     {
                         BA_Objects.DataSource oDs = new BA_Objects.DataSource();
@@ -3512,6 +3567,14 @@ namespace bagis_pro
             string layoutName = Constants.MAPS_SNODAS_LAYOUT;
             string layoutFile = Constants.LAYOUT_FILE_SNODAS_SWE;
             string mapLayerName = Constants.MAPS_SNODAS_MEAN_SWE;
+            string strDescr = "";
+            IDictionary<string, BA_Objects.DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
+            string dataSourceDesc = "";
+            if (dictLocalDataSources != null && dictLocalDataSources.Keys.Contains(Constants.DATA_TYPE_SWE))
+            {
+                dataSourceDesc = dictLocalDataSources[Constants.DATA_TYPE_SWE].shortDescription;
+            }
+            strDescr = $@"The mean SWE calculated from the {dataSourceDesc}";
             switch (bagisMapType)
             {
                 case BagisMapType.SNODAS_DELTA:
@@ -3521,6 +3584,7 @@ namespace bagis_pro
                     layoutName = Constants.MAPS_SNODAS_DELTA_LAYOUT;
                     layoutFile = Constants.LAYOUT_FILE_SNODAS_DELTA_SWE;
                     mapLayerName = Constants.MAPS_SNODAS_SWE_DELTA;
+                    strDescr = "The change in SNODAS Mean SWE during the indicated month.";
                     break;
                 case BagisMapType.SEASONAL_PRECIP_CONTRIB:
                     arrMapFrames = new string[] { "Q1", "Q2", "Q3", "Q4" };
@@ -3529,6 +3593,17 @@ namespace bagis_pro
                     layoutName = Constants.MAPS_SEASONAL_PRECIP_LAYOUT;
                     layoutFile = Constants.LAYOUT_FILE_SEASONAL_PRECIP_CONTRIB;
                     mapLayerName = Constants.MAPS_SEASONAL_PRECIP_CONTRIB;
+                    dataSourceDesc = "";
+                    if (dictLocalDataSources != null && dictLocalDataSources.Keys.Contains(Constants.DATA_TYPE_PRECIPITATION))
+                    {
+                        string tempDescr = dictLocalDataSources[Constants.DATA_TYPE_PRECIPITATION].shortDescription;
+                        int pos = tempDescr.IndexOf("annual");
+                        if (pos > 0)
+                        {
+                            dataSourceDesc = tempDescr.Substring(0, pos) + "monthly" + tempDescr.Substring(pos + "annual".Length);
+                        }
+                    }
+                    strDescr = $@"Mean seasonal precipitation accumulation, as a percent of total annual {Environment.NewLine}precipitation, based on the {dataSourceDesc}";
                     break;
             }
             bool[] arrExists = new bool[arrMapFrames.Length];
@@ -3791,6 +3866,15 @@ namespace bagis_pro
                     layout.SetDefinition(layoutDef);
                     Module1.Current.ModuleLogManager.LogDebug(nameof(DisplayMultiMapPageLayoutAsync),
                         "Set legend map frame to " + legendMapFrameName);
+                }
+
+                // Update textBox2
+                textBox = layout.FindElement(Constants.MAPS_TEXTBOX2) as GraphicElement;
+                if (textBox != null)
+                {
+                    CIMTextGraphic graphic = (CIMTextGraphic)textBox.GetGraphic();
+                    graphic.Text = strDescr;
+                    textBox.SetGraphic(graphic);
                 }
             });
             success = CloseMapPanes(arrMapFrames);

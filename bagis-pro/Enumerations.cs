@@ -33,7 +33,7 @@ namespace bagis_pro
         SITES_ALL,
         PRISM,
         LAND_ZONES,
-        FORESTED_AREA,
+        FORESTED_LAND_COVER,
         SITES_LOCATION,
         SITES_LOCATION_PRECIP,
         SITES_LOCATION_PRECIP_CONTRIB,

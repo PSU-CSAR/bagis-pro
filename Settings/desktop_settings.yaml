@@ -30,7 +30,7 @@ bagis-pro:
       description: 30-year (1991-2020) monthly/quarterly/annual average precipitation data created by the PRISM Climate Group. See https://prism.oregonstate.edu/ for more information.
       uri: http://bagis.geog.pdx.edu/arcgis/services/BAGIS_PRISM_1991_2020/
       units: Inches
-      shortDescription: PRISM 1991-2020 precipitation averages
+      shortDescription: PRISM 1991-2020 annual precipitation averages
     - layerType: SNOTEL
       heading: Active SNOTEL sites
       description: Active SNOTEL sites data hosted on Natural Resources Conservation Service (NRCS) National Water and Climate Center (NWCC) Air and Water Database (AWDB). See https://www.nrcs.usda.gov/wps/portal/wcc/home/dataAccessHelp/webService/webServiceTutorial/ for more information.

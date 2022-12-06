@@ -206,7 +206,7 @@ namespace bagis_pro.Buttons
         {
             try
             {
-                await ToggleMapDisplay.ToggleAsync(BagisMapType.FORESTED_AREA);
+                await ToggleMapDisplay.ToggleAsync(BagisMapType.FORESTED_LAND_COVER);
             }
             catch (Exception e)
             {

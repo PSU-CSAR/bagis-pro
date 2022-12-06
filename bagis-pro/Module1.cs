@@ -112,12 +112,12 @@ namespace bagis_pro
         internal string DisplayedSweMap { get; set; } = "";
         internal string DisplayedSweDeltaMap { get; set; } = "";
         internal string DisplayedSeasonalPrecipContribMap { get; set; } = "";
-        internal string RoadsLayerLegend { get; set; } = "";
         internal string SettingsPath { get; set; } = "";
         internal string DefaultEbagisServer { get; } = "https://ebagis.geog.pdx.edu";
         internal dynamic BatchToolSettings { get; set; } = "";
         internal double PrismZonesInterval { get; set; } = 999;
         internal string WesternStateBoundariesUri { get; } = "";
         internal string Dem30Uri { get; } = "";
+        internal string RoadsBufferDistance { get; set; } = "";
     }
 }
