@@ -1453,6 +1453,11 @@ namespace bagis_pro
                     {
                         legItem.ShowHeading = false;
                         legItem.IsVisible = false;
+                        // Does this fix our legend display problem?
+                        legItem.LabelSymbol.Symbol.SetSize(8);
+                        legItem.LayerNameSymbol.Symbol.SetSize(12);
+                        legItem.PatchHeight = 8;
+                        legItem.PatchWidth = 14;
                     }
                 }
 
@@ -1463,7 +1468,7 @@ namespace bagis_pro
                };
                cimLeg.GraphicFrame.BorderGapX = 3;
                cimLeg.GraphicFrame.BorderGapY = 3;
-                //cimLeg.FittingStrategy = LegendFittingStrategy.AdjustFrame;
+               cimLeg.FittingStrategy = LegendFittingStrategy.AdjustFrame;
 
                 // Apply the changes
                 legend.SetDefinition(cimLeg);
@@ -1507,13 +1512,13 @@ namespace bagis_pro
                     {
                         CIMLegendItem[] arrTempItems = new CIMLegendItem[legend.Items.Length];
                         int idx = 0;
-                        bool bCustomLegend = false;
-                        // This flag is used to customize long legends
-                        if (lstLegendLayer.Contains(Constants.MAPS_ELEV_ZONE) || lstLegendLayer.Contains(Constants.MAPS_LAND_COVER)
-                            || lstLegendLayer.Contains(Constants.MAPS_PRECIPITATION_CONTRIBUTION))
-                        {
-                            bCustomLegend = true;
-                        }
+                        //bool bCustomLegend = false;
+                        //// This flag is used to customize long legends
+                        //if (lstLegendLayer.Contains(Constants.MAPS_ELEV_ZONE) || lstLegendLayer.Contains(Constants.MAPS_LAND_COVER)
+                        //    || lstLegendLayer.Contains(Constants.MAPS_PRECIPITATION_CONTRIBUTION))
+                        //{
+                        //    bCustomLegend = true;
+                        //}
 
 
                         //  Add items that we want to display to temporary array
@@ -1526,21 +1531,29 @@ namespace bagis_pro
                                 {
                                     // Set the visibility
                                     legendItem.IsVisible = true;
-                                    if (bCustomLegend)
+                                    //if (bCustomLegend)
+                                    //{
+                                    //    legendItem.LabelSymbol.Symbol.SetSize(8);
+                                    //    legendItem.LayerNameSymbol.Symbol.SetSize(12);
+                                    //    if (legendItem.Name.Equals(Constants.MAPS_LAND_COVER) || legendItem.Name.Equals(Constants.MAPS_ELEV_ZONE) ||
+                                    //        legendItem.Name.Equals(Constants.MAPS_PRECIPITATION_CONTRIBUTION))
+                                    //    {
+                                    //        legendItem.PatchHeight = 8;
+                                    //        legendItem.PatchWidth = 14;
+                                    //    }
+                                    //}
+                                    //else
+                                    //{
+                                    //    legendItem.LabelSymbol.Symbol.SetSize(10);
+                                    //    legendItem.LayerNameSymbol.Symbol.SetSize(14);
+                                    //}
+                                    // Special handling for critical precip zones because it isn't on map when legend is created
+                                    if (legendItem.Name.Equals(Constants.MAPS_CRITICAL_PRECIPITATION_ZONES))
                                     {
                                         legendItem.LabelSymbol.Symbol.SetSize(8);
                                         legendItem.LayerNameSymbol.Symbol.SetSize(12);
-                                        if (legendItem.Name.Equals(Constants.MAPS_LAND_COVER) || legendItem.Name.Equals(Constants.MAPS_ELEV_ZONE) ||
-                                            legendItem.Name.Equals(Constants.MAPS_PRECIPITATION_CONTRIBUTION))
-                                        {
-                                            legendItem.PatchHeight = 8;
-                                            legendItem.PatchWidth = 14;
-                                        }
-                                    }
-                                    else
-                                    {
-                                        legendItem.LabelSymbol.Symbol.SetSize(10);
-                                        legendItem.LayerNameSymbol.Symbol.SetSize(14);
+                                        legendItem.PatchHeight = 8;
+                                        legendItem.PatchWidth = 14;
                                     }
                                     // Add the item to the temporary array
                                     arrTempItems[idx] = legendItem;
@@ -1565,14 +1578,14 @@ namespace bagis_pro
 
                         // Set legend fitting strategy to accommodate longer classification list if elevation
                         // Otherwise adjust columns and size to make it fit
-                        if (bCustomLegend)
-                        {
-                            legend.FittingStrategy = LegendFittingStrategy.AdjustFrame;
-                        }
-                        else
-                        {
-                            legend.FittingStrategy = LegendFittingStrategy.AdjustColumnsAndSize;
-                        }
+                        //if (bCustomLegend)
+                        //{
+                        //    legend.FittingStrategy = LegendFittingStrategy.AdjustFrame;
+                        //}
+                        //else
+                        //{
+                        //    legend.FittingStrategy = LegendFittingStrategy.AdjustColumnsAndSize;
+                        //}
                         legend.Visible = true;
                     }
                     else
@@ -3458,7 +3471,7 @@ namespace bagis_pro
                     if (moveToLayerPosition.Item1 != null) //layer gets moved into the group
                         moveToLayerPosition.Item1.MoveLayer(layerToMove, moveToLayerPosition.Item2);
                     else //Layer gets moved into the root
-                        MapView.Active.Map.MoveLayer(layerToMove, moveToLayerPosition.Item2);
+                        oMap.MoveLayer(layerToMove, moveToLayerPosition.Item2);
                 });
             }
             return success;

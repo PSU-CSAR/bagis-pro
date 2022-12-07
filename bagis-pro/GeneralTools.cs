@@ -755,15 +755,13 @@ namespace bagis_pro
                         {
                             Left = 10,
                             Top = lastRow * 15,
-                            Height = 80,
-                            Width = 725,
-                            Message = "Critical precipitation elevation zone selection criteria: \r\n" +
-                            "Criterion #1. mean annual precipitation > 20 inches \r\n" +
-                            "Criterion #2. %_VOL > 100% / (2 x zone#) \r\n" +
-                            "Criterion #3. higher %_VOL, but the total %_VOL of the selected zones must not exceed 66.67% (i.e., 2/3) \r\n" +
-                            "Red cells are zones meeting all criteria \r\n" +
-                            "Blue cells are zones meeting criterion #1 \r\n" +
-                            "Orange cells are zones meeting criteria #1 and #2"
+                            Height = 160,
+                            Width = 600,
+                            Message = "Precipitation amount, summary statistics, and resulting volume are indicated for each elevation zone. Critical precipitation zones (red cells) are the elevations that have the potential for delivering the most significant runoff. These areas are determined by the following steps:\r\n" +
+                            "1. Eliminate the zones that in general do not receive sufficient precipitation (annual precipitation <= 20 inches) to contribute significant basin runoff (blue cells).\r\n" +
+                            "2. From the remaining elevation zones, eliminate the elevations that do not produce a significant proportion of basin runoff (orange cells).\r\n" +
+                            "3. Of these zones, select the elevations with the highest runoff, up to a threshold (2/3 of the total runoff), to indicate the elevation zones most important for producing runoff (red cells).\r\n" +
+                            "\r\nSee the user manual for calculation specifics."
                         };
                         pPRISMWorkSheet.Shapes.AddTextbox(Microsoft.Office.Core.MsoTextOrientation.msoTextOrientationHorizontal,
                                                            textBoxSettings.Left,

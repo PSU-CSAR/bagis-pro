@@ -119,7 +119,7 @@ namespace bagis_pro.Buttons
                     }
                     else
                     {
-                        // Generate the crtical precip map; It has to follow the tables
+                        // Generate the critical precip map; It has to follow the tables
                         Uri uriAnalysis = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis));
                         if (await GeodatabaseTools.FeatureClassExistsAsync(uriAnalysis, Constants.FILE_CRITICAL_PRECIP_ZONE))
                         {

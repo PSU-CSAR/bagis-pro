@@ -432,7 +432,7 @@ namespace bagis_pro
             // Create Field Titles
             //=============================================
             string strNumberFormat = "#######0.00";     // Format to be applied to float values
-            pworksheet.Cells[1, 1] = "VALUE";
+            pworksheet.Cells[1, 1] = "Elevation";
             pworksheet.Cells[1, 2] = "COUNT";
             pworksheet.Cells[1, 3] = "AREA";
             pworksheet.Cells[1, 4] = "MIN";
@@ -449,9 +449,9 @@ namespace bagis_pro
             pworksheet.Columns[9].NumberFormat = strNumberFormat;
             pworksheet.Cells[1, 10] = "%_AREA";
             pworksheet.Columns[10].NumberFormat = strNumberFormat;
-            pworksheet.Cells[1, 11] = "Label";
-            pworksheet.Cells[1, 12] = "AREA_DEM";
-            pworksheet.Cells[1, 13] = "%_AREA_DEM";
+            pworksheet.Cells[1, 11] = "Elevation Zone";
+            pworksheet.Cells[1, 12] = "Zone Area";
+            pworksheet.Cells[1, 13] = "% Zone Area";
             pworksheet.Columns[13].NumberFormat = strNumberFormat;
             pworksheet.Cells[1, 14] = "VOL_ACRE_FT";
             pworksheet.Columns[14].NumberFormat = strNumberFormat;
@@ -1596,7 +1596,10 @@ namespace bagis_pro
             int idxPctVolume = 15;
             int idxValue = 1;
             int idxMeanVolume = 7;
+            int idxSum = 9;
+            int idxPctArea = 10;
             int idxLabel = 11;
+            int idxVolAcreFt = 14;
             double totalSelectedPctVolume = 0;
             while (!string.IsNullOrEmpty(pRange.Text.ToString()))
             {
@@ -1678,6 +1681,13 @@ namespace bagis_pro
                     valueRange.Interior.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.Red);
                 }
                 currentRow++;
+            }
+            // Hide columns we don't want
+            int[] arrHiddenColumns = new int[] { idxSum, idxVolAcreFt};
+            foreach (var idx in arrHiddenColumns)
+            {
+                Range hiddenRange = pPRSIMWS.Cells[1, idx];
+                hiddenRange.EntireColumn.Hidden = true;
             }
             return lstCriticalZones;
         }
