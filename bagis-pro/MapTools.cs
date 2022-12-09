@@ -1446,6 +1446,7 @@ namespace bagis_pro
 
                
                CIMLegend cimLeg = legend.GetDefinition() as CIMLegend;
+                
                 // Turn off all of the layers to start
                 if (bHideAllLayers)
                 {
@@ -1456,8 +1457,6 @@ namespace bagis_pro
                         // Does this fix our legend display problem?
                         legItem.LabelSymbol.Symbol.SetSize(8);
                         legItem.LayerNameSymbol.Symbol.SetSize(12);
-                        legItem.PatchHeight = 8;
-                        legItem.PatchWidth = 14;
                     }
                 }
 
@@ -1469,6 +1468,10 @@ namespace bagis_pro
                cimLeg.GraphicFrame.BorderGapX = 3;
                cimLeg.GraphicFrame.BorderGapY = 3;
                cimLeg.FittingStrategy = LegendFittingStrategy.AdjustFrame;
+                cimLeg.DefaultPatchHeight = 8;
+                cimLeg.DefaultPatchWidth = 14;
+                cimLeg.VerticalItemGap = 3;
+                cimLeg.VerticalPatchGap = 4;
 
                 // Apply the changes
                 legend.SetDefinition(cimLeg);
@@ -3864,7 +3867,6 @@ namespace bagis_pro
                 {
                     cimLegend.MapFrame = legendMapFrameName;
                     string[] arrInvisible = new string[] {Constants.MAPS_STREAMS, Constants.MAPS_BASIN_BOUNDARY, Constants.MAPS_HILLSHADE};
-                    CIMLegendItem[] arrUpdatedItems = new CIMLegendItem[cimLegend.Items.Length];
                     for (int i = 0; i < cimLegend.Items.Length; i++)
                     {
                         var nextItem = cimLegend.Items[i];
@@ -3872,9 +3874,58 @@ namespace bagis_pro
                         {
                             nextItem.IsVisible = false;
                         }
-                        arrUpdatedItems[i] = nextItem;
                     }
-                    cimLegend.Items = arrUpdatedItems;
+
+                    foreach (var legendItem in cimLegend.Items)
+                    {
+                        // Find the item in the existing array
+                        switch (legendItem.Name)
+                        {
+                            case Constants.MAPS_SNOTEL:
+                                if (Module1.Current.Aoi.HasSnotel)
+                                {
+                                    legendItem.IsVisible = true;
+                                }
+                                else
+                                {
+                                    legendItem.IsVisible = false;
+                                }
+                                break;
+                            case Constants.MAPS_COOP_PILLOW:
+                                if (Module1.Current.Aoi.HasCoopPillow)
+                                {
+                                    legendItem.IsVisible = true;
+                                }
+                                else
+                                {
+                                    legendItem.IsVisible = false;
+                                }
+                                break;
+                            case Constants.MAPS_SNOLITE:
+                                if (Module1.Current.Aoi.HasSnolite)
+                                {
+                                    legendItem.IsVisible = true;
+                                }
+                                else
+                                {
+                                    legendItem.IsVisible = false;
+                                }
+                                break;
+                            case Constants.MAPS_SNOW_COURSE:
+                                if (Module1.Current.Aoi.HasSnowCourse)
+                                {
+                                    legendItem.IsVisible = true;
+                                }
+                                else
+                                {
+                                    legendItem.IsVisible = false;
+                                }
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+
                     //Apply the changes back to the layout; This is key!!
                     layout.SetDefinition(layoutDef);
                     Module1.Current.ModuleLogManager.LogDebug(nameof(DisplayMultiMapPageLayoutAsync),

@@ -905,8 +905,8 @@ namespace bagis_pro
 
                     //Cumulative precip table
                     pathToSave = GetFullPdfFileName(Constants.FILE_EXPORT_TABLE_PRECIP_REPRESENT_PDF);
-                    pPRISMWorkSheet.PageSetup.PrintArea = "$A$1:$P$" + (lastRow + 7);  // Extend print area for comment textbox
-                    pPRISMWorkSheet.PageSetup.Orientation = XlPageOrientation.xlLandscape;
+                    pPRISMWorkSheet.PageSetup.PrintArea = "$A$1:$P$" + (lastRow + 12);  // Extend print area for comment textbox
+                    pPRISMWorkSheet.PageSetup.Orientation = XlPageOrientation.xlPortrait;
                     pPRISMWorkSheet.PageSetup.Zoom = false;     // Required to print on one page
                     pPRISMWorkSheet.PageSetup.PaperSize = oReqPaperSize;    // Required to print on one page
                     pPRISMWorkSheet.PageSetup.PrintGridlines = true;
