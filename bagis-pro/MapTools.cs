@@ -3866,63 +3866,29 @@ namespace bagis_pro
                 if (cimLegend != null)
                 {
                     cimLegend.MapFrame = legendMapFrameName;
-                    string[] arrInvisible = new string[] {Constants.MAPS_STREAMS, Constants.MAPS_BASIN_BOUNDARY, Constants.MAPS_HILLSHADE};
+                    IList<string> lstInvisible = new List<string> {Constants.MAPS_STREAMS, Constants.MAPS_BASIN_BOUNDARY, Constants.MAPS_HILLSHADE};
+                    if (! Module1.Current.Aoi.HasSnotel)
+                    {
+                        lstInvisible.Add(Constants.MAPS_SNOTEL);
+                    }
+                    if (!Module1.Current.Aoi.HasSnolite)
+                    {
+                        lstInvisible.Add(Constants.MAPS_SNOLITE);
+                    }
+                    if (!Module1.Current.Aoi.HasCoopPillow)
+                    {
+                        lstInvisible.Add(Constants.MAPS_COOP_PILLOW);
+                    }
+                    if (!Module1.Current.Aoi.HasSnowCourse)
+                    {
+                        lstInvisible.Add(Constants.MAPS_SNOW_COURSE);
+                    }
                     for (int i = 0; i < cimLegend.Items.Length; i++)
                     {
                         var nextItem = cimLegend.Items[i];
-                        if (arrInvisible.Contains(nextItem.Name))
+                        if (lstInvisible.Contains(nextItem.Name))
                         {
                             nextItem.IsVisible = false;
-                        }
-                    }
-
-                    foreach (var legendItem in cimLegend.Items)
-                    {
-                        // Find the item in the existing array
-                        switch (legendItem.Name)
-                        {
-                            case Constants.MAPS_SNOTEL:
-                                if (Module1.Current.Aoi.HasSnotel)
-                                {
-                                    legendItem.IsVisible = true;
-                                }
-                                else
-                                {
-                                    legendItem.IsVisible = false;
-                                }
-                                break;
-                            case Constants.MAPS_COOP_PILLOW:
-                                if (Module1.Current.Aoi.HasCoopPillow)
-                                {
-                                    legendItem.IsVisible = true;
-                                }
-                                else
-                                {
-                                    legendItem.IsVisible = false;
-                                }
-                                break;
-                            case Constants.MAPS_SNOLITE:
-                                if (Module1.Current.Aoi.HasSnolite)
-                                {
-                                    legendItem.IsVisible = true;
-                                }
-                                else
-                                {
-                                    legendItem.IsVisible = false;
-                                }
-                                break;
-                            case Constants.MAPS_SNOW_COURSE:
-                                if (Module1.Current.Aoi.HasSnowCourse)
-                                {
-                                    legendItem.IsVisible = true;
-                                }
-                                else
-                                {
-                                    legendItem.IsVisible = false;
-                                }
-                                break;
-                            default:
-                                break;
                         }
                     }
 

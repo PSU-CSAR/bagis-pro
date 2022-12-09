@@ -916,9 +916,9 @@ namespace bagis_pro
                     {
                         strTitle = "Precipitation (" + LookupTables.PrismText[oAnalysis.PrecipZonesBegin] + ") Representation Table";
                     }
-                    pPRISMWorkSheet.PageSetup.LeftHeader = ((char)13).ToString() + "&\"Arial,Bold\"&12 " +
+                    pPRISMWorkSheet.PageSetup.LeftHeader = ((char)13).ToString() + ((char)13).ToString() + "&\"Arial,Bold\"&12 " +
                         strTitle;
-                    pPRISMWorkSheet.PageSetup.TopMargin = 0.8 * 72;   // Convert inches to points
+                    pPRISMWorkSheet.PageSetup.TopMargin = 1.0 * 72;   // Convert inches to points
                     pPRISMWorkSheet.get_Range("B:C").EntireColumn.Hidden = true;
                     pPRISMWorkSheet.PageSetup.FitToPagesTall = 1;   // Required to print on one page
                     pPRISMWorkSheet.PageSetup.FitToPagesWide = 1;   // Required to print on one page
