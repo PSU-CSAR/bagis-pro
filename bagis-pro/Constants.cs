@@ -46,6 +46,7 @@ namespace bagis_pro
         public const string MAPS_WESTERN_STATES_BOUNDARY = "Western States Boundary";
         public const string MAPS_LAND_COVER = "Land Cover";
         public const string MAPS_WATERBODIES = "Waterbodies";
+        public const string MAPS_STREAM_GAGE = "Stream Gage";
 
         public const string MAPS_LEGEND = "Legend";
         public const string MAPS_TITLE = "Title";
@@ -219,8 +220,6 @@ namespace bagis_pro
                                                                          "swe_jun_minus_may", "swe_jul_minus_jun"};
         public static readonly string[] FILES_SEASON_PRECIP_CONTRIB = new string[] {"sq1_precip_contrib", "sq2_precip_contrib", "sq3_precip_contrib",
                                                                                     "sq4_precip_contrib"};
-        public static readonly string[] LAYER_NAMES_SEASON_PRECIP_CONTRIB = new string[] {"SQ1 Precip Contribution", "SQ2 Precip Contribution", "SQ3 Precip Contribution",
-                                                                                          "SQ4 Precip Contribution"};
         public static readonly string[] MAP_NAMES_SEASON_PRECIP_CONTRIB = new string[] {"SQ1 PRECIPITATION CONTRIBUTION", "SQ2 PRECIPITATION CONTRIBUTION", "SQ3 PRECIPITATION CONTRIBUTION",
                                                                                         "SQ4 PRECIPITATION CONTRIBUTION"};
         public const string FILE_BAGIS_MAP_PARAMETERS = "map_parameters.txt";
