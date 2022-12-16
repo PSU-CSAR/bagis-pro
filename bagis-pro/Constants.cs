@@ -46,7 +46,7 @@ namespace bagis_pro
         public const string MAPS_WESTERN_STATES_BOUNDARY = "Western States Boundary";
         public const string MAPS_LAND_COVER = "Land Cover";
         public const string MAPS_WATERBODIES = "Waterbodies";
-        public const string MAPS_STREAM_GAGE = "Stream Gage";
+        public const string MAPS_STREAM_GAGE = "Streamgage";
 
         public const string MAPS_LEGEND = "Legend";
         public const string MAPS_TITLE = "Title";

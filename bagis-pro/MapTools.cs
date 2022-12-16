@@ -255,13 +255,13 @@ namespace bagis_pro
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Surfaces, true) +
                         Constants.FILE_HILLSHADE;
                     uri = new Uri(strPath);
-                    await MapTools.DisplayRasterStretchSymbolAsync(uri, Constants.MAPS_HILLSHADE, "ArcGIS Colors", "Black to White", 0);
+                    await MapTools.DisplayRasterStretchSymbolAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, Constants.MAPS_HILLSHADE, "ArcGIS Colors", "Black to White", 0);
                     
                     // add elev zones layer
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
                         Constants.FILE_ELEV_ZONE;
                     uri = new Uri(strPath);
-                    success = await MapTools.DisplayRasterWithSymbolAsync(uri, Constants.MAPS_ELEV_ZONE, "ArcGIS Colors",
+                    success = await MapTools.DisplayRasterWithSymbolAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, Constants.MAPS_ELEV_ZONE, "ArcGIS Colors",
                                 "Elevation #2", "NAME", 30, true);
                     if (success == BA_ReturnCode.Success)
                         Module1.ActivateState("MapButtonPalette_BtnElevation_State");
@@ -270,7 +270,7 @@ namespace bagis_pro
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
                         Constants.FILE_SLOPE_ZONE;
                     uri = new Uri(strPath);
-                    success = await MapTools.DisplayRasterWithSymbolAsync(uri, Constants.MAPS_SLOPE_ZONE, "ArcGIS Colors",
+                    success = await MapTools.DisplayRasterWithSymbolAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, Constants.MAPS_SLOPE_ZONE, "ArcGIS Colors",
                                 "Slope", "NAME", 30, false);
                     if (success == BA_ReturnCode.Success)
                         Module1.ActivateState("MapButtonPalette_BtnSlope_State");
@@ -279,7 +279,7 @@ namespace bagis_pro
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
                         Constants.FILE_ASPECT_ZONE;
                     uri = new Uri(strPath);
-                    success = await MapTools.DisplayRasterWithSymbolAsync(uri, Constants.MAPS_ASPECT_ZONE, "ArcGIS Colors",
+                    success = await MapTools.DisplayRasterWithSymbolAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, Constants.MAPS_ASPECT_ZONE, "ArcGIS Colors",
                                 "Aspect", "NAME", 30, false);
                     if (success == BA_ReturnCode.Success)
                         Module1.ActivateState("MapButtonPalette_BtnAspect_State");
@@ -288,7 +288,7 @@ namespace bagis_pro
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
                         Constants.FILE_PRECIP_ZONE;
                     uri = new Uri(strPath);
-                    success = await MapTools.DisplayRasterWithSymbolAsync(uri, Constants.MAPS_PRISM_ZONE, "ArcGIS Colors",
+                    success = await MapTools.DisplayRasterWithSymbolAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, Constants.MAPS_PRISM_ZONE, "ArcGIS Colors",
                                "Precipitation", "NAME", 30, false);
                     if (success == BA_ReturnCode.Success)
                         Module1.ActivateState("MapButtonPalette_BtnPrism_State");
@@ -297,7 +297,7 @@ namespace bagis_pro
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
                         Constants.FILE_WINTER_PRECIPITATION_ZONE;
                     uri = new Uri(strPath);
-                    success = await MapTools.DisplayRasterWithSymbolAsync(uri, Constants.MAPS_WINTER_PRECIPITATION, "ArcGIS Colors",
+                    success = await MapTools.DisplayRasterWithSymbolAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, Constants.MAPS_WINTER_PRECIPITATION, "ArcGIS Colors",
                         "Precipitation", "NAME", 30, false);
                     if (success == BA_ReturnCode.Success)
                         Module1.ActivateState("MapButtonPalette_BtnWinterPrecipitation_State");
@@ -306,7 +306,7 @@ namespace bagis_pro
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
                         Constants.FILE_PRECIPITATION_CONTRIBUTION;
                     uri = new Uri(strPath);
-                    success = await MapTools.DisplayRasterWithClassifyAsync(uri, Constants.MAPS_PRECIPITATION_CONTRIBUTION, "ColorBrewer Schemes (RGB)",
+                    success = await MapTools.DisplayRasterWithClassifyAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, Constants.MAPS_PRECIPITATION_CONTRIBUTION, "ColorBrewer Schemes (RGB)",
                                "Yellow-Green-Blue (Continuous)", Constants.FIELD_VOL_ACRE_FT, 30, ClassificationMethod.EqualInterval, 10, null, null, null,false);
 
                     if (success == BA_ReturnCode.Success)
@@ -317,7 +317,7 @@ namespace bagis_pro
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers, true) +
                         Constants.FILE_LAND_COVER;
                     uri = new Uri(strPath);
-                    success = await MapTools.DisplayUniqueValuesRasterFromLayerFileAsync(uri, Constants.MAPS_LAND_COVER, strLayerFilePath, 30, false);
+                    success = await MapTools.DisplayUniqueValuesRasterFromLayerFileAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, Constants.MAPS_LAND_COVER, strLayerFilePath, 30, false);
 
                     if (success == BA_ReturnCode.Success)
                         Module1.ActivateState("MapButtonPalette_BtnLandCover_State");
@@ -339,11 +339,11 @@ namespace bagis_pro
 
                     // load SWE map layout
                     int idxDefaultMonth = 8;    // Note: This needs to be the month with the lowest SWE value for symbology; In this case July
-                    //success = await DisplayMultiMapPageLayoutAsync(oAoi.FilePath, idxDefaultMonth, BagisMapType.SNODAS_SWE);
-                    //if (success == BA_ReturnCode.Success)
-                    //{
-                    //    Module1.ActivateState("MapButtonPalette_BtnSwe_State");
-                    //}
+                    success = await DisplayMultiMapPageLayoutAsync(oAoi.FilePath, idxDefaultMonth, BagisMapType.SNODAS_SWE);
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        Module1.ActivateState("MapButtonPalette_BtnSwe_State");
+                    }
                     // load SWE Delta map layout
                     success = await DisplayMultiMapPageLayoutAsync(oAoi.FilePath, idxDefaultMonth - 1, BagisMapType.SNODAS_DELTA);
                     if (success == BA_ReturnCode.Success)
@@ -351,11 +351,11 @@ namespace bagis_pro
                         Module1.ActivateState("MapButtonPalette_BtnSweDelta_State");
                     }
                     // load seasonal precipitation map layout
-                    //success = await DisplayMultiMapPageLayoutAsync(oAoi.FilePath, idxDefaultMonth, BagisMapType.SEASONAL_PRECIP_CONTRIB);
-                    //if (success == BA_ReturnCode.Success)
-                    //{
-                    //    Module1.ActivateState("MapButtonPalette_BtnSeasonalPrecipContrib_State");
-                    //}
+                    success = await DisplayMultiMapPageLayoutAsync(oAoi.FilePath, idxDefaultMonth, BagisMapType.SEASONAL_PRECIP_CONTRIB);
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        Module1.ActivateState("MapButtonPalette_BtnSeasonalPrecipContrib_State");
+                    }
                     return success;
 
                 }
@@ -437,7 +437,7 @@ namespace bagis_pro
             });
             if (bCreateMapPane)
             {
-                await ProApp.Panes.CreateMapPaneAsync(oMap);
+                IMapPane activePane = await ProApp.Panes.CreateMapPaneAsync(oMap);
             }
             return oMap;
         }
@@ -913,8 +913,8 @@ namespace bagis_pro
             });
         }
 
-        public static async Task<BA_ReturnCode> DisplayRasterWithSymbolAsync(Uri rasterUri, string displayName, string styleCategory, string styleName,
-            string fieldName, int transparency, bool isVisible)
+        public static async Task<BA_ReturnCode> DisplayRasterWithSymbolAsync(string strMapName, Uri rasterUri, string displayName, 
+            string styleCategory, string styleName, string fieldName, int transparency, bool isVisible)
         {
             // parse the uri for the folder and file
             string strFileName = null;
@@ -935,13 +935,14 @@ namespace bagis_pro
             // Open the requested raster so we know it exists; return if it doesn't
             await QueuedTask.Run(async () =>
             {
+                Map oMap = await MapTools.SetDefaultMapNameAsync(strMapName);
                 RasterLayer rasterLayer = null;
                 // Create the raster layer on the active map
                 await QueuedTask.Run(() =>
                 {
                     try
                     {
-                        rasterLayer = (RasterLayer)LayerFactory.Instance.CreateLayer(rasterUri, MapView.Active.Map);
+                        rasterLayer = (RasterLayer)LayerFactory.Instance.CreateLayer(rasterUri, oMap);
                     }
                     catch (Exception e)
                     {
@@ -957,13 +958,13 @@ namespace bagis_pro
                     rasterLayer.SetName(displayName);
                     rasterLayer.SetVisibility(isVisible);
                     // Create and deploy the unique values renderer
-                    await MapTools.SetToUniqueValueColorizer(displayName, styleCategory, styleName, fieldName);
+                    await MapTools.SetToUniqueValueColorizer(oMap, displayName, styleCategory, styleName, fieldName);
                 }
             });
             return BA_ReturnCode.Success;
         }
 
-        public static async Task<BA_ReturnCode> DisplayRasterWithClassifyAsync(Uri rasterUri, string displayName, string styleCategory, 
+        public static async Task<BA_ReturnCode> DisplayRasterWithClassifyAsync(string strMapName, Uri rasterUri, string displayName, string styleCategory, 
             string styleName, string fieldName, int transparency, ClassificationMethod classificationMethod, int numClasses, IList<BA_Objects.Interval> lstInterval,
             IList<BA_Objects.Interval> lstCustomBreaks, int[,] arrColors, bool isVisible)
         {
@@ -984,12 +985,13 @@ namespace bagis_pro
                     "Unable to add locate raster!!");
                 return BA_ReturnCode.ReadError;
             }
-            // Create the raster layer on the active map
+            // Create the raster layer on the map
+            Map oMap = await MapTools.SetDefaultMapNameAsync(strMapName);
             await QueuedTask.Run(() =>
             {
                 try
                 {
-                    RasterLayer rasterLayer = (RasterLayer)LayerFactory.Instance.CreateLayer(rasterUri, MapView.Active.Map);
+                    RasterLayer rasterLayer = (RasterLayer)LayerFactory.Instance.CreateLayer(rasterUri, oMap);
                     // Set raster layer transparency and name
                     if (rasterLayer != null)
                     {
@@ -1074,8 +1076,8 @@ namespace bagis_pro
             return success;
         }
 
-        public static async Task<BA_ReturnCode> DisplayUniqueValuesRasterFromLayerFileAsync(Uri rasterUri, string displayName,
-            string layerFilePath, int transparency, bool bIsVisible)
+        public static async Task<BA_ReturnCode> DisplayUniqueValuesRasterFromLayerFileAsync(string strMapName, Uri rasterUri, 
+            string displayName, string layerFilePath, int transparency, bool bIsVisible)
         {
             // Make sure the layer file exists before trying to display
             if (!System.IO.File.Exists(layerFilePath))
@@ -1101,6 +1103,7 @@ namespace bagis_pro
                     "Unable to add locate raster!!");
                 return BA_ReturnCode.ReadError;
             }
+            Map oMap = await MapTools.SetDefaultMapNameAsync(strMapName);
             // Open the requested raster so we know it exists; return if it doesn't
             await QueuedTask.Run(async () =>
             {
@@ -1108,7 +1111,7 @@ namespace bagis_pro
                 // Create the raster layer on the active map
                 await QueuedTask.Run(() =>
                 {
-                    rasterLayer = (RasterLayer)LayerFactory.Instance.CreateLayer(rasterUri, MapView.Active.Map);
+                    rasterLayer = (RasterLayer)LayerFactory.Instance.CreateLayer(rasterUri, oMap);
                 });
 
                 // Set raster layer transparency and name
@@ -1134,12 +1137,12 @@ namespace bagis_pro
             return BA_ReturnCode.Success;
         }
 
-        public static async Task SetToUniqueValueColorizer(string layerName, string styleCategory,
+        public static async Task SetToUniqueValueColorizer(Map oMap, string layerName, string styleCategory,
             string styleName, string fieldName)
         {
             // Get the layer we want to symbolize from the map
             Layer oLayer =
-                MapView.Active.Map.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(layerName, StringComparison.CurrentCultureIgnoreCase));
+                oMap.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(layerName, StringComparison.CurrentCultureIgnoreCase));
             if (oLayer == null)
                 return;
             RasterLayer rasterLayer = (RasterLayer)oLayer;
@@ -2792,7 +2795,7 @@ namespace bagis_pro
             return BA_ReturnCode.Success;
         }
 
-        public static async Task DisplayRasterStretchSymbolAsync(Uri rasterUri, string displayName, string styleCategory,
+        public static async Task DisplayRasterStretchSymbolAsync(string strMapName, Uri rasterUri, string displayName, string styleCategory,
      string styleName, int transparency)
         {
             // parse the uri for the folder and file
@@ -2805,6 +2808,7 @@ namespace bagis_pro
             }
             if (await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(strFolderPath), strFileName))
             {
+                Map oMap = await MapTools.SetDefaultMapNameAsync(strMapName);
                 await QueuedTask.Run(() =>
                 {
                     // Find the color ramp
@@ -2828,8 +2832,8 @@ namespace bagis_pro
 
                     // Create a new Stretch Colorizer Definition supplying the color ramp
                     StretchColorizerDefinition stretchColorizerDef = new StretchColorizerDefinition(0, RasterStretchType.DefaultFromSource, 1.0, cimColorRamp);
-                    int idxLayer = MapView.Active.Map.Layers.Count();
-                    RasterLayer rasterLayer = (RasterLayer)LayerFactory.Instance.CreateRasterLayer(rasterUri, MapView.Active.Map, idxLayer,
+                    int idxLayer = oMap.Layers.Count();
+                    RasterLayer rasterLayer = (RasterLayer)LayerFactory.Instance.CreateRasterLayer(rasterUri, oMap, idxLayer,
                         displayName, stretchColorizerDef);
                     rasterLayer.SetTransparency(transparency);
                 });
@@ -3546,7 +3550,7 @@ namespace bagis_pro
             {
                 dataSourceDesc = dictLocalDataSources[Constants.DATA_TYPE_SWE].shortDescription;
             }
-            strDescr = $@"The mean SWE calculated from the {dataSourceDesc}";
+            strDescr = $@"The mean SWE calculated from the {dataSourceDesc}.";
             switch (bagisMapType)
             {
                 case BagisMapType.SNODAS_DELTA:
@@ -3575,7 +3579,7 @@ namespace bagis_pro
                             dataSourceDesc = tempDescr.Substring(0, pos) + "monthly" + tempDescr.Substring(pos + "annual".Length);
                         }
                     }
-                    strDescr = $@"Mean seasonal precipitation accumulation, as a percent of total annual {Environment.NewLine}precipitation, based on the {dataSourceDesc}";
+                    strDescr = $@"Mean seasonal precipitation accumulation, as a percent of total annual {Environment.NewLine}precipitation, based on the {dataSourceDesc}.";
                     break;
             }
             bool[] arrExists = new bool[arrMapFrames.Length];
@@ -3721,6 +3725,12 @@ namespace bagis_pro
                     lstGdb.Add(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi));
                     lstFile.Add(Constants.FILE_POURPOINT);
                     lstDatasetType.Add(esriDatasetType.esriDTFeatureClass);
+                    // AOI_V
+                    lstLayerName.Add(Constants.MAPS_BASIN_BOUNDARY);
+                    lstGdb.Add(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi));
+                    lstFile.Add(Constants.FILE_AOI_VECTOR);
+                    lstDatasetType.Add(esriDatasetType.esriDTFeatureClass);
+
 
 
                     int j = 0;
