@@ -102,7 +102,7 @@
                 <xsl:if test="streamgage_station != ''">
                   <tr>
                     <td class="style3">
-                      The boundary of a basin is the watershed delineated upstream of the stream gage station listed below:
+                      The boundary of a basin is the watershed delineated upstream of the streamgage station listed below:
                       <br/>
                       Streamgage station: <xsl:value-of select="streamgage_station"/>
                     </td>
@@ -131,28 +131,28 @@
                 </tr>
                 <tr>
                   <td class="style3">
-                    SNOTEL Sites: within basin – <xsl:value-of select="snotel_sites_in_basin"/>; within a <xsl:value-of select="snotel_sites_buffer_size"/> buffer distance outside 
+                    SNOTEL Sites: <xsl:value-of select="snotel_sites_in_basin + snotel_sites_in_buffer"/>; within basin – <xsl:value-of select="snotel_sites_in_basin"/>; within a <xsl:value-of select="snotel_sites_buffer_size"/> buffer distance outside 
                     of basin – <xsl:value-of select="snotel_sites_in_buffer"/>
                     <xsl:if test="has_snotel_sites = 'true'"> (See AUTOMATED SITE REPRESENTATION map)</xsl:if>
                   </td>
                 </tr>
                 <tr>
                   <td class="style3">
-                    SNOLITE Sites: within basin – <xsl:value-of select="snolite_sites_in_basin"/>; within a <xsl:value-of select="snotel_sites_buffer_size"/> buffer distance outside 
+                    SNOLITE Sites: <xsl:value-of select="snolite_sites_in_basin + snolite_sites_in_buffer"/>; within basin – <xsl:value-of select="snolite_sites_in_basin"/>; within a <xsl:value-of select="snotel_sites_buffer_size"/> buffer distance outside 
                     of basin – <xsl:value-of select="snolite_sites_in_buffer"/>
                     <xsl:if test="snolite_sites_in_basin + snolite_sites_in_buffer > 0"> (See AUTOMATED SITE REPRESENTATION map)</xsl:if>
                   </td>
                 </tr>
                 <tr>
                   <td class="style3">
-                    Coop Pillow Sites: within basin – <xsl:value-of select="coop_pillow_sites_in_basin"/>; within a <xsl:value-of select="snotel_sites_buffer_size"/> buffer distance outside 
+                    Coop Pillow Sites: <xsl:value-of select="coop_pillow_sites_in_basin + coop_pillow_sites_in_buffer"/>; within basin – <xsl:value-of select="coop_pillow_sites_in_basin"/>; within a <xsl:value-of select="snotel_sites_buffer_size"/> buffer distance outside 
                     of basin – <xsl:value-of select="coop_pillow_sites_in_buffer"/>
                     <xsl:if test="coop_pillow_sites_in_basin + coop_pillow_sites_in_buffer > 0"> (See AUTOMATED SITE REPRESENTATION map)</xsl:if>
                   </td>
                 </tr>
                 <tr>
                   <td class="style3">
-                    Snow Courses: within basin – <xsl:value-of select="scos_sites_in_basin"/>; within a <xsl:value-of select="scos_sites_buffer_size"/> buffer distance outside 
+                    Snow Courses: <xsl:value-of select="scos_sites_in_basin + scos_sites_in_buffer"/>; within basin – <xsl:value-of select="scos_sites_in_basin"/>; within a <xsl:value-of select="scos_sites_buffer_size"/> buffer distance outside 
                     of basin – <xsl:value-of select="scos_sites_in_buffer"/> 
                     <xsl:if test="has_scos_sites = 'true'"> (See SNOW COURSE SITE REPRESENTATION map)</xsl:if>
                   </td>

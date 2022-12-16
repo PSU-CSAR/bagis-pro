@@ -14,7 +14,7 @@
   snowCourse: https://services.arcgis.com/SXbDpmb7xQkk44JV/arcgis/rest/services/stations_SNOW_ACTIVE/FeatureServer/0
   snowCourseElev: elevation
   snowCourseName: name
-  prism: http://bagis.geog.pdx.edu/arcgis/services/BAGIS_PRISM_1981_2010
+  prism: http://bagis.geog.pdx.edu/arcgis/services/BAGIS_PRISM_1991_2020
   westernStateBoundaries: http://bagis.geog.pdx.edu/arcgis/rest/services/BAGIS_GISLayers/AOI_Location_Maps/MapServer
 
 bagis-pro:
@@ -27,7 +27,7 @@ bagis-pro:
       shortDescription: 2004-2022 SNODAS daily data
     - layerType: Precipitation
       heading: Precipitation
-      description: 30-year (1991-2020) monthly/quarterly/annual average precipitation data created by the PRISM Climate Group. See https://prism.oregonstate.edu/ for more information.
+      description: 30-year (1991-2020, Version M4, released in December 2022) monthly/quarterly/annual average precipitation data created by the PRISM Climate Group. See https://prism.oregonstate.edu/ for more information.
       uri: http://bagis.geog.pdx.edu/arcgis/services/BAGIS_PRISM_1991_2020/
       units: Inches
       shortDescription: PRISM 1991-2020 annual precipitation averages

@@ -759,7 +759,7 @@ namespace bagis_pro
                     //Gets the text symbol of the label class            
                     var textSymbol = listLabelClasses.FirstOrDefault().TextSymbol.Symbol as CIMTextSymbol; 
                     textSymbol.FontStyleName = "Bold"; //set font as bold
-                    textSymbol.SetSize(14); //set font size 
+                    textSymbol.SetSize(10); //set font size 
                     lyrDefn.LabelClasses = listLabelClasses.ToArray(); //Set the labelClasses back
                     fLayer.SetDefinition(lyrDefn); //set the layer's definition
                     success = BA_ReturnCode.Success;
@@ -1946,7 +1946,7 @@ namespace bagis_pro
                     }
                     mapDefinition = new BA_Objects.MapDefinition(strTitle,
                         "Precipitation Units = Inches", Constants.FILE_EXPORT_MAP_PRECIPITATION_PDF,
-                        "Annual precipitation based on the " + dataSourceDesc);
+                        "Annual precipitation based on the " + dataSourceDesc + ".");
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;
@@ -2168,7 +2168,7 @@ namespace bagis_pro
                         oDs = dictLocalDataSources[Constants.DATA_TYPE_LAND_COVER];
                         dataSourceDesc = oDs.shortDescription;
                     }
-                    string strDescr = $@"Forested land cover includes areas with forest classifications {Environment.NewLine}from the {dataSourceDesc}";
+                    string strDescr = $@"Forested land cover includes areas with forest classifications {Environment.NewLine}from the {dataSourceDesc}.";
                     mapDefinition = new BA_Objects.MapDefinition(Constants.TITLE_FORESTED_LAND_COVER,
                         "Elevation Units = " + strDemDisplayUnits, Constants.FILE_EXPORT_MAP_FORESTED_LAND_COVER_PDF, 
                         strDescr);
@@ -2434,7 +2434,7 @@ namespace bagis_pro
                             dataSourceDesc = tempDescr.Substring(0, pos) + "monthly" + tempDescr.Substring(pos + "annual".Length);
                         }
                     }
-                    strDescr = $@"Precipitation of the winter months ({oAnalysis.WinterStartMonth} - {oAnalysis.WinterEndMonth}) determined from {Environment.NewLine}the {dataSourceDesc}";
+                    strDescr = $@"Precipitation {oAnalysis.WinterStartMonth} through {oAnalysis.WinterEndMonth} determined from {Environment.NewLine}{dataSourceDesc}.";
 
                     mapDefinition = new BA_Objects.MapDefinition(strTitle,
                         "Precipitation Units = Inches", Constants.FILE_EXPORT_MAP_WINTER_PRECIPITATION_PDF, strDescr);
@@ -2477,7 +2477,7 @@ namespace bagis_pro
                     }
                     mapDefinition = new BA_Objects.MapDefinition(Constants.TITLE_LAND_COVER,
                         " ", Constants.FILE_EXPORT_LAND_COVER_PDF, 
-                        "Land cover classification from the " + dataSourceDesc);
+                        "Land cover classification from the " + dataSourceDesc + ".");
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;

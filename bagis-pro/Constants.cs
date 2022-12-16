@@ -308,7 +308,7 @@ namespace bagis_pro
         public const string UNITS_FEET = "Feet";
         public const string UNITS_METERS = "Meters";
         public const double MAP_BUFFER_FACTOR = 1.3;
-        public const string TEXT_SITES_TABLE_DESCR = "See Active Sites Table for characteristics of each snow monitoring site";
+        public const string TEXT_SITES_TABLE_DESCR = "See Active Sites Table for characteristics of each snow monitoring site.";
         public const int PDF_EXPORT_RESOLUTION = 300;
 
         // States that control the map display buttons
