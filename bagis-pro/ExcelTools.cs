@@ -1071,10 +1071,10 @@ namespace bagis_pro
             // Descriptive textbox
             StringBuilder sb = new StringBuilder();
             sb.Append("Slope Distribution chart \r\n");
-            sb.Append("Percentage of the basin area in slope classes ranging from flat to 100%.");
+            sb.Append("Percentage of the basin area in slope classes ranging from flat to 100%.\r\n");
             if (oDataSource != null)
             {
-                sb.Append(" Slope is derived from the ");
+                sb.Append("Slope is derived from the ");
                 sb.Append(oDataSource.shortDescription);
                 sb.Append(".");
             }
