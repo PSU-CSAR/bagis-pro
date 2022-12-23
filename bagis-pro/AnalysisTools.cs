@@ -3880,7 +3880,7 @@ namespace bagis_pro
                     // define the map algebra expression
                     string quarterlyRaster = strPrismGdb + "\\" + fName;
                     string maExpression = String.Format("\"{1}\" / \"{0}\" * 100", annualRaster, quarterlyRaster);
-                    string outRaster = strAnalysisGdb + "\\" + Constants.FILES_SEASON_PRECIP_CONTRIB[i];
+                    string outRaster = $@"{strAnalysisGdb}\temp{i}";
                     // make the input parameter values array
                     var valueArray = Geoprocessing.MakeValueArray(maExpression, outRaster);
                     var environments = Geoprocessing.MakeEnvironmentArray(workspace:strPrismGdb);
@@ -3968,8 +3968,9 @@ namespace bagis_pro
                 }
                 bIsDouble = Double.TryParse(Convert.ToString(gpResult.ReturnValue), out dblMin);
 
-                    if (dblMax > -1 && dblMin > -1)
-                    {
+                IList<BA_Objects.Interval> lstInterval = new List<BA_Objects.Interval>();
+                if (dblMax > -1 && dblMin > -1)
+                {
                         // save the min/max values to the configuration file
                         dblMin = Math.Round(dblMin, 2) + 0.05;
                         dblMax = Math.Round(dblMax, 2) + 0.05;
@@ -3985,12 +3986,141 @@ namespace bagis_pro
                                     "Unable to save min/max values for quarterly precip to analysis settings!");
                             }
                         }
-                    }
+                    lstInterval = CalculateSeasonalPrecipZones(dblMin, dblMax);
+                }
                     // Delete results of cell statistics
                     success = await GeoprocessingTools.DeleteDatasetAsync(strMaxPath);
                     success = await GeoprocessingTools.DeleteDatasetAsync(strMinPath);
+
+                //Reclassify into 7 classes for map
+                if (lstInterval.Count > 0)
+                {
+                    for (int j = 0; j < Constants.FILES_SEASON_PRECIP_CONTRIB.Length; j++)
+                    {
+                        string strInput = $@"{strAnalysisGdb}\temp{j}";
+                        string strOutput = strAnalysisGdb + "\\" + Constants.FILES_SEASON_PRECIP_CONTRIB[j];
+                        string strMaskPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_BUFFERED_VECTOR;
+                        success = await AnalysisTools.CalculateZonesAsync(oAoi.FilePath, strInput, lstInterval,
+                            strOutput, strMaskPath, "QUARTERLY PRECIPITATION");
+                        if (success == BA_ReturnCode.Success)
+                        {
+                            success = await GeoprocessingTools.DeleteDatasetAsync(strInput);
+                        }
+                    }
+                }
+                else
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(CalculateQuarterlyPrecipitationAsync),
+                        "Unable to calculate interval list and publish classified quarterly precipitation layers!");
+                    return BA_ReturnCode.UnknownError;
+                }
             }
             return success;
+        }
+
+        private static IList<BA_Objects.Interval> CalculateSeasonalPrecipZones(double SeasonalPrecipMin, double SeasonalPrecipMax)
+        {
+            // Calculate interval list
+            int intZones = 7;
+            intZones = intZones - 1;  //Subtract the zones in the middle that we create
+            int halfZones = intZones / 2;
+            if (SeasonalPrecipMin > 0 && SeasonalPrecipMax > 0)
+            {
+                // Calculate interval list for lower-range values
+                double lBound = 23.0F;
+                double uBound = 27.0F;
+                IList<BA_Objects.Interval> lstNegInterval = new List<BA_Objects.Interval>();
+                double dblRange = -1.0F;
+                double dblInterval = -1.0F;
+                int zones = -1;
+                if (SeasonalPrecipMin >= lBound)
+                {
+                    lBound = SeasonalPrecipMin;
+                    // Manually build middle intervals; Spec is defined
+                    BA_Objects.Interval oInterval = new BA_Objects.Interval
+                    {
+                        LowerBound = lBound,
+                        UpperBound = uBound,
+                        Value = 1
+                    };
+                    lstNegInterval.Add(oInterval);
+                }
+                else
+                {
+                    dblRange = lBound - SeasonalPrecipMin;
+                    dblInterval = Math.Round(dblRange / halfZones, 2);
+                    //determine the interval decimal place to add an increment value to the lower bound
+                    zones = GeneralTools.CreateRangeArray(SeasonalPrecipMin, lBound, dblInterval, out lstNegInterval);
+                    // Make sure we don't have > than intzones / 2
+                    if (zones > halfZones)
+                    {
+                        // Merge 2 lower zones
+                        if (lstNegInterval.Count > halfZones)
+                        {
+                            Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateSeasonalPrecipZones),
+                                "Merging 2 lowest intervals. Too many intervals created.");
+                            var interval = lstNegInterval[0];
+                            interval.UpperBound = lstNegInterval[1].UpperBound;
+                            lstNegInterval.RemoveAt(1);
+                        }
+                    }
+                    // Reset upper interval to mesh with middle interval
+                    lstNegInterval[halfZones - 1].UpperBound = lBound;
+                    // Manually build middle intervals; Spec is defined
+                    BA_Objects.Interval oInterval = new BA_Objects.Interval
+                    {
+                        LowerBound = lstNegInterval[halfZones - 1].UpperBound,
+                        UpperBound = uBound,
+                        Value = halfZones + 1
+                    };
+                    lstNegInterval.Add(oInterval);
+                }
+
+                // Calculate interval list for positive values
+                dblRange = SeasonalPrecipMax - uBound;
+                dblInterval = Math.Round(dblRange / halfZones, 2);
+                IList<BA_Objects.Interval> lstPosInterval = new List<BA_Objects.Interval>();
+                zones = GeneralTools.CreateRangeArray(uBound, SeasonalPrecipMax, dblInterval, out lstPosInterval);
+                // Make sure we don't have > than half zones
+                if (zones > halfZones)
+                {
+                    // Merge 2 upper zones
+                    if (lstPosInterval.Count > halfZones)
+                    {
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateSeasonalPrecipZones),
+                            "Merging 2 highest intervals. Too many intervals created.");
+                        var interval = lstPosInterval[halfZones - 1];
+                        interval.UpperBound = lstPosInterval[halfZones].UpperBound;
+                        lstPosInterval.RemoveAt(halfZones);
+                    }
+                }
+                // Reset lower interval to mesh with middle interval
+                lstPosInterval[0].LowerBound = lstNegInterval.Last().UpperBound;
+
+                // Merge intervals to create 1 list
+                foreach (var item in lstPosInterval)
+                {
+                    lstNegInterval.Add(item);
+                }
+
+                // Reset values in calculated interval list
+                int idx = 1;
+                foreach (var item in lstNegInterval)
+                {
+                    item.Value = idx;
+                    // Format name property
+                    item.Name = String.Format("{0:0.0}", item.LowerBound) + " - " +
+                            String.Format("{0:0.0}", item.UpperBound);
+                    idx++;
+                }
+                return lstNegInterval;
+            }
+            else
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(CalculateSeasonalPrecipZones),
+                    "Unable to retrieve min/max seasonal precip values from analysis.xml. Calculation halted!");
+                return null;
+            }
         }
 
         public static async Task<BA_ReturnCode> GenerateWinterPrecipitationLayerAsync(BA_Objects.Aoi oAoi)

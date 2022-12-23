@@ -339,17 +339,17 @@ namespace bagis_pro
 
                     // load SWE map layout
                     int idxDefaultMonth = 8;    // Note: This needs to be the month with the lowest SWE value for symbology; In this case July
-                    success = await DisplayMultiMapPageLayoutAsync(oAoi.FilePath, idxDefaultMonth, BagisMapType.SNODAS_SWE);
-                    if (success == BA_ReturnCode.Success)
-                    {
-                        Module1.ActivateState("MapButtonPalette_BtnSwe_State");
-                    }
+                    //success = await DisplayMultiMapPageLayoutAsync(oAoi.FilePath, idxDefaultMonth, BagisMapType.SNODAS_SWE);
+                    //if (success == BA_ReturnCode.Success)
+                    //{
+                    //    Module1.ActivateState("MapButtonPalette_BtnSwe_State");
+                    //}
                     // load SWE Delta map layout
-                    success = await DisplayMultiMapPageLayoutAsync(oAoi.FilePath, idxDefaultMonth - 1, BagisMapType.SNODAS_DELTA);
-                    if (success == BA_ReturnCode.Success)
-                    {
-                        Module1.ActivateState("MapButtonPalette_BtnSweDelta_State");
-                    }
+                    //success = await DisplayMultiMapPageLayoutAsync(oAoi.FilePath, idxDefaultMonth - 1, BagisMapType.SNODAS_DELTA);
+                    //if (success == BA_ReturnCode.Success)
+                    //{
+                    //    Module1.ActivateState("MapButtonPalette_BtnSweDelta_State");
+                    //}
                     // load seasonal precipitation map layout
                     success = await DisplayMultiMapPageLayoutAsync(oAoi.FilePath, idxDefaultMonth, BagisMapType.SEASONAL_PRECIP_CONTRIB);
                     if (success == BA_ReturnCode.Success)
@@ -1239,7 +1239,7 @@ namespace bagis_pro
                 basicRasterLayer.SetColorizer(newColorizer);
                 var arrClassBreaks = newColorizer.ClassBreaks;
                 int i = 0;
-                // Update UpperBound and Labe for each interval
+                // Update UpperBound and Label for each interval
                 foreach (var classBreak in arrClassBreaks)
                 {
                     var nextInterval = lstInterval[i];
@@ -3260,112 +3260,6 @@ namespace bagis_pro
             }
         }
 
-        private static IList<BA_Objects.Interval> CalculateSeasonalPrecipZones()
-        {
-            // Calculate interval list
-            int intZones = 7;
-            intZones = intZones - 1;  //Subtract the zones in the middle that we create
-            int halfZones = intZones / 2;
-            BA_Objects.Analysis oAnalysis = GeneralTools.GetAnalysisSettings(Module1.Current.Aoi.FilePath);
-            if (oAnalysis != null && oAnalysis.SeasonalPrecipMin > 0 && oAnalysis.SeasonalPrecipMax > 0)
-            {
-                // Calculate interval list for lower-range values
-                double lBound = 23.0F;
-                double uBound = 27.0F;
-                IList<BA_Objects.Interval> lstNegInterval = new List<BA_Objects.Interval>();
-                double dblRange = -1.0F;
-                double dblInterval = -1.0F;
-                int zones = -1;
-                if (oAnalysis.SeasonalPrecipMin >= lBound)
-                {
-                    lBound = oAnalysis.SeasonalPrecipMin;
-                    // Manually build middle intervals; Spec is defined
-                    BA_Objects.Interval oInterval = new BA_Objects.Interval
-                    {
-                        LowerBound = lBound,
-                        UpperBound = uBound,
-                        Value = 1
-                    };
-                    lstNegInterval.Add(oInterval);
-                }
-                else
-                {
-                    dblRange = lBound - oAnalysis.SeasonalPrecipMin;
-                    dblInterval = Math.Round(dblRange / halfZones, 2);
-                    //determine the interval decimal place to add an increment value to the lower bound
-                    zones = GeneralTools.CreateRangeArray(oAnalysis.SeasonalPrecipMin, lBound, dblInterval, out lstNegInterval);
-                    // Make sure we don't have > than intzones / 2
-                    if (zones > halfZones)
-                    {
-                        // Merge 2 lower zones
-                        if (lstNegInterval.Count > halfZones)
-                        {
-                            Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateSweDeltaZonesAsync),
-                                "Merging 2 lowest intervals. Too many intervals created.");
-                            var interval = lstNegInterval[0];
-                            interval.LowerBound = lstNegInterval[1].LowerBound;
-                            lstNegInterval.RemoveAt(0);
-                        }
-                    }
-                    // Reset upper interval to mesh with middle interval
-                    lstNegInterval[halfZones - 1].UpperBound = lBound;
-                    // Manually build middle intervals; Spec is defined
-                    BA_Objects.Interval oInterval = new BA_Objects.Interval
-                    {
-                        LowerBound = lstNegInterval[halfZones - 1].UpperBound,
-                        UpperBound = uBound,
-                        Value = halfZones + 1
-                    };
-                    lstNegInterval.Add(oInterval);
-                }
-
-                // Calculate interval list for positive values
-                dblRange = oAnalysis.SeasonalPrecipMax - uBound;
-                dblInterval = Math.Round(dblRange / halfZones, 2);
-                IList<BA_Objects.Interval> lstPosInterval = new List<BA_Objects.Interval>();
-                zones = GeneralTools.CreateRangeArray(uBound, oAnalysis.SeasonalPrecipMax, dblInterval, out lstPosInterval);
-                // Make sure we don't have > than half zones
-                if (zones > halfZones)
-                {
-                    // Merge 2 upper zones
-                    if (lstPosInterval.Count > halfZones)
-                    {
-                        Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateSweDeltaZonesAsync),
-                            "Merging 2 highest intervals. Too many intervals created.");
-                        var interval = lstPosInterval[zones - 1];
-                        interval.UpperBound = lstPosInterval[halfZones].UpperBound;
-                        lstPosInterval.RemoveAt(halfZones);
-                    }
-                }
-                // Reset lower interval to mesh with middle interval
-                lstPosInterval[0].LowerBound = lstNegInterval.Last().UpperBound;
-
-                // Merge intervals to create 1 list
-                foreach (var item in lstPosInterval)
-                {
-                    lstNegInterval.Add(item);
-                }
-
-                // Reset values in calculated interval list
-                int idx = 1;
-                foreach (var item in lstNegInterval)
-                {
-                    item.Value = idx;
-                    // Format name property
-                    item.Name = String.Format("{0:0.0}", item.LowerBound) + " - " +
-                            String.Format("{0:0.0}", item.UpperBound);
-                    idx++;
-                }
-                return lstNegInterval;
-            }
-            else
-            {
-                Module1.Current.ModuleLogManager.LogError(nameof(CalculateSweDeltaZonesAsync),
-                    "Unable to retrieve min/max seasonal precip values from analysis.xml. Calculation halted!");
-                return null;
-            }
-        }
-
         public static async Task<BA_ReturnCode> GetSystemFilesFromPortalAsync()
         {
             string[] documentIds = new string[5];
@@ -3573,10 +3467,13 @@ namespace bagis_pro
                     if (dictLocalDataSources != null && dictLocalDataSources.Keys.Contains(Constants.DATA_TYPE_PRECIPITATION))
                     {
                         string tempDescr = dictLocalDataSources[Constants.DATA_TYPE_PRECIPITATION].shortDescription;
-                        int pos = tempDescr.IndexOf("annual");
-                        if (pos > 0)
+                        if (!string.IsNullOrEmpty(tempDescr))
                         {
-                            dataSourceDesc = tempDescr.Substring(0, pos) + "monthly" + tempDescr.Substring(pos + "annual".Length);
+                            int pos = tempDescr.IndexOf("annual");
+                            if (pos > 0)
+                            {
+                                dataSourceDesc = tempDescr.Substring(0, pos) + "monthly" + tempDescr.Substring(pos + "annual".Length);
+                            }
                         }
                     }
                     strDescr = $@"Mean seasonal precipitation accumulation, as a percent of total annual {Environment.NewLine}precipitation, based on the {dataSourceDesc}.";
@@ -3626,7 +3523,7 @@ namespace bagis_pro
                     lstInterval = await CalculateSweDeltaZonesAsync(idxDefaultMonth);
                     break;
                 case BagisMapType.SEASONAL_PRECIP_CONTRIB:
-                    lstInterval = CalculateSeasonalPrecipZones();
+                    //lstInterval = CalculateSeasonalPrecipZones();
                     break;
             }
 
@@ -3663,8 +3560,6 @@ namespace bagis_pro
                                 DatasetType = esriDatasetType.esriDTFeatureClass
                             };
                             oLayer.SetDataConnection(updatedDataConnection);
-
-
                         });
                     }
 
@@ -3672,66 +3567,75 @@ namespace bagis_pro
                     IList<string> lstGdb = new List<string>();
                     IList<string> lstFile = new List<string>();
                     IList<esriDatasetType> lstDatasetType = new List<esriDatasetType>();
-                    if (Module1.Current.Aoi.HasSnotel == true)
+                    if (mFrameName.IndexOf("Legend") < 1)
                     {
-                        lstLayerName.Add(Constants.MAPS_SNOTEL);
+                        if (Module1.Current.Aoi.HasSnotel == true)
+                        {
+                            lstLayerName.Add(Constants.MAPS_SNOTEL);
+                            lstGdb.Add(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers));
+                            lstFile.Add(Constants.FILE_SNOTEL);
+                            lstDatasetType.Add(esriDatasetType.esriDTFeatureClass);
+                        }
+                        if (Module1.Current.Aoi.HasSnolite == true)
+                        {
+                            lstLayerName.Add(Constants.MAPS_SNOLITE);
+                            lstGdb.Add(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers));
+                            lstFile.Add(Constants.FILE_SNOLITE);
+                            lstDatasetType.Add(esriDatasetType.esriDTFeatureClass);
+                        }
+                        if (Module1.Current.Aoi.HasCoopPillow == true)
+                        {
+                            lstLayerName.Add(Constants.MAPS_COOP_PILLOW);
+                            lstGdb.Add(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers));
+                            lstFile.Add(Constants.FILE_COOP_PILLOW);
+                            lstDatasetType.Add(esriDatasetType.esriDTFeatureClass);
+                        }
+                        if (Module1.Current.Aoi.HasSnowCourse == true)
+                        {
+                            lstLayerName.Add(Constants.MAPS_SNOW_COURSE);
+                            lstGdb.Add(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers));
+                            lstFile.Add(Constants.FILE_SNOW_COURSE);
+                            lstDatasetType.Add(esriDatasetType.esriDTFeatureClass);
+                        }
+                        // Waterbodies
+                        lstLayerName.Add(Constants.MAPS_WATERBODIES);
+                        lstGdb.Add(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Analysis));
+                        lstFile.Add(Constants.FILE_WATER_BODIES);
+                        lstDatasetType.Add(esriDatasetType.esriDTFeatureClass);
+                        // Streams
+                        lstLayerName.Add(Constants.MAPS_STREAMS);
                         lstGdb.Add(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers));
-                        lstFile.Add(Constants.FILE_SNOTEL);
+                        lstFile.Add(Constants.FILE_STREAMS);
+                        lstDatasetType.Add(esriDatasetType.esriDTFeatureClass);
+                        // SNODAS SWE
+                        lstLayerName.Add(mapLayerName);
+                        lstGdb.Add(uriLayers.LocalPath);
+                        lstFile.Add(arrFiles[i]);
+                        lstDatasetType.Add(esriDatasetType.esriDTRasterDataset);
+                        // Hillshade
+                        lstLayerName.Add(Constants.MAPS_HILLSHADE);
+                        lstGdb.Add(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Surfaces));
+                        lstFile.Add(Constants.FILE_HILLSHADE);
+                        lstDatasetType.Add(esriDatasetType.esriDTRasterDataset);
+                        // Gage Stations
+                        lstLayerName.Add(Constants.MAPS_STREAM_GAGE);
+                        lstGdb.Add(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi));
+                        lstFile.Add(Constants.FILE_POURPOINT);
+                        lstDatasetType.Add(esriDatasetType.esriDTFeatureClass);
+                        // AOI_V
+                        lstLayerName.Add(Constants.MAPS_BASIN_BOUNDARY);
+                        lstGdb.Add(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi));
+                        lstFile.Add(Constants.FILE_AOI_VECTOR);
                         lstDatasetType.Add(esriDatasetType.esriDTFeatureClass);
                     }
-                    if (Module1.Current.Aoi.HasSnolite == true)
+                    else
                     {
-                        lstLayerName.Add(Constants.MAPS_SNOLITE);
+                        // Legend
+                        lstLayerName.Add("Legend");
                         lstGdb.Add(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers));
-                        lstFile.Add(Constants.FILE_SNOLITE);
-                        lstDatasetType.Add(esriDatasetType.esriDTFeatureClass);
+                        lstFile.Add("legend");
+                        lstDatasetType.Add(esriDatasetType.esriDTRasterDataset);
                     }
-                    if (Module1.Current.Aoi.HasCoopPillow == true)
-                    {
-                        lstLayerName.Add(Constants.MAPS_COOP_PILLOW);
-                        lstGdb.Add(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers));
-                        lstFile.Add(Constants.FILE_COOP_PILLOW);
-                        lstDatasetType.Add(esriDatasetType.esriDTFeatureClass);
-                    }
-                    if (Module1.Current.Aoi.HasSnowCourse == true)
-                    {
-                        lstLayerName.Add(Constants.MAPS_SNOW_COURSE);
-                        lstGdb.Add(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers));
-                        lstFile.Add(Constants.FILE_SNOW_COURSE);
-                        lstDatasetType.Add(esriDatasetType.esriDTFeatureClass);
-                    }
-                    // Waterbodies
-                    lstLayerName.Add(Constants.MAPS_WATERBODIES);
-                    lstGdb.Add(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Analysis));
-                    lstFile.Add(Constants.FILE_WATER_BODIES);
-                    lstDatasetType.Add(esriDatasetType.esriDTFeatureClass);
-                    // Streams
-                    lstLayerName.Add(Constants.MAPS_STREAMS);
-                    lstGdb.Add(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers));
-                    lstFile.Add(Constants.FILE_STREAMS);
-                    lstDatasetType.Add(esriDatasetType.esriDTFeatureClass);
-                    // SNODAS SWE
-                    lstLayerName.Add(mapLayerName);
-                    lstGdb.Add(uriLayers.LocalPath);
-                    lstFile.Add(arrFiles[i]);
-                    lstDatasetType.Add(esriDatasetType.esriDTRasterDataset);
-                    // Hillshade
-                    lstLayerName.Add(Constants.MAPS_HILLSHADE);
-                    lstGdb.Add(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Surfaces));
-                    lstFile.Add(Constants.FILE_HILLSHADE);
-                    lstDatasetType.Add(esriDatasetType.esriDTRasterDataset);
-                    // Gage Stations
-                    lstLayerName.Add(Constants.MAPS_STREAM_GAGE);
-                    lstGdb.Add(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi));
-                    lstFile.Add(Constants.FILE_POURPOINT);
-                    lstDatasetType.Add(esriDatasetType.esriDTFeatureClass);
-                    // AOI_V
-                    lstLayerName.Add(Constants.MAPS_BASIN_BOUNDARY);
-                    lstGdb.Add(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi));
-                    lstFile.Add(Constants.FILE_AOI_VECTOR);
-                    lstDatasetType.Add(esriDatasetType.esriDTFeatureClass);
-
-
 
                     int j = 0;
                     await QueuedTask.Run(async () =>
@@ -3773,6 +3677,7 @@ namespace bagis_pro
 
                         IList<BA_Objects.Interval> lstCustomInterval = new List<BA_Objects.Interval>();
                         double dblMin = -1;
+                        double dblMax = -1;
                         int idxData = -1;
                         for (int k = 0; k < lstLayerName.Count; k++)
                         {
@@ -3781,18 +3686,48 @@ namespace bagis_pro
                                 idxData = k;
                                 break;
                             }
+                            else if (lstLayerName[k].Equals("Legend"))
+                            {
+                                idxData = k;
+                            }
                         }
                         var parameters = Geoprocessing.MakeValueArray(lstGdb[idxData] + "\\" + lstFile[idxData], "MINIMUM");
                         var environments = Geoprocessing.MakeEnvironmentArray(workspace: Module1.Current.Aoi.FilePath);
                         IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("GetRasterProperties_management", parameters, environments,
                             CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
                         bool isDouble = Double.TryParse(Convert.ToString(gpResult.ReturnValue), out dblMin);
+                        parameters = Geoprocessing.MakeValueArray(lstGdb[idxData] + "\\" + lstFile[idxData], "MAXIMUM");
+                        environments = Geoprocessing.MakeEnvironmentArray(workspace: Module1.Current.Aoi.FilePath);
+                        gpResult = await Geoprocessing.ExecuteToolAsync("GetRasterProperties_management", parameters, environments,
+                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                        isDouble = Double.TryParse(Convert.ToString(gpResult.ReturnValue), out dblMax);
+
+                        BA_Objects.Interval[] arrInterval = new BA_Objects.Interval[lstInterval.Count];
                         for (int k = 0; k < lstInterval.Count; k++)
                         {
                             var interval = lstInterval[k];
                             if (dblMin <= interval.UpperBound)
                             {
-                                lstCustomInterval.Add(interval);
+                                arrInterval[k] = interval;
+                                //lstCustomInterval.Add(interval);
+                            }
+                        }
+                        for (int m = 0; m < arrInterval.Length; m++)
+                        {
+                            var interval = arrInterval[m];
+                            if (interval != null)
+                            {
+                                if (dblMax < interval.LowerBound)
+                                {
+                                    arrInterval[m] = null;
+                                }
+                            }
+                        }
+                        for (int m = 0; m < arrInterval.Length; m++)
+                        {
+                            if (arrInterval[m] != null)
+                            {
+                                lstCustomInterval.Add(arrInterval[m]);
                             }
                         }
 
@@ -3814,11 +3749,12 @@ namespace bagis_pro
                                     Constants.ARR_SWE_DELTA_COLORS);
                                 break;
                             case BagisMapType.SEASONAL_PRECIP_CONTRIB:
-                                await MapTools.SetToClassifyRenderer(oMap, mapLayerName, Constants.FIELD_NAME, lstInterval, lstCustomInterval,
-                                    Constants.ARR_SWE_DELTA_COLORS);                       
+                                //await MapTools.SetToClassifyRenderer(oMap, mapLayerName, Constants.FIELD_NAME, lstInterval, lstCustomInterval,
+                                //    Constants.ARR_SWE_DELTA_COLORS);
                                 break;
                         }
-                    });
+                     });
+
                 }
             }
 
@@ -3829,7 +3765,14 @@ namespace bagis_pro
                 if (textBox != null)
                 {
                     CIMTextGraphic graphic = (CIMTextGraphic)textBox.GetGraphic();
-                    graphic.Text = Module1.Current.Aoi.NwccName.ToUpper();
+                    if (Module1.Current.Aoi.NwccName != null)
+                    {
+                        graphic.Text = Module1.Current.Aoi.NwccName.ToUpper();
+                    }
+                    else
+                    {
+                        graphic.Text = "BASIN NAME UNKNOWN";
+                    }                    
                     textBox.SetGraphic(graphic);
                 }
                 // Update legend map frame
