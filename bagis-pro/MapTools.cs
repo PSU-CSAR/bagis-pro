@@ -3512,6 +3512,7 @@ namespace bagis_pro
                 layout = await QueuedTask.Run(() => someLytItem.GetLayout());  //Worker thread
             }
 
+            BA_Objects.Analysis oAnalysis = GeneralTools.GetAnalysisSettings(strAoiPath);
             IList<BA_Objects.Interval> lstInterval = new List<BA_Objects.Interval>();
             switch (bagisMapType)
             {
@@ -3523,7 +3524,14 @@ namespace bagis_pro
                     lstInterval = await CalculateSweDeltaZonesAsync(idxDefaultMonth);
                     break;
                 case BagisMapType.SEASONAL_PRECIP_CONTRIB:
-                    //lstInterval = CalculateSeasonalPrecipZones();
+                    double dblMin = -1;
+                    double dblMax = 9999;
+                    if (oAnalysis != null)
+                    {
+                        dblMin = oAnalysis.SeasonalPrecipMin;
+                        dblMax = oAnalysis.SeasonalPrecipMax;
+                    }
+                    lstInterval = AnalysisTools.CalculateQuarterlyPrecipIntervals(dblMin, dblMax);
                     break;
             }
 
@@ -3567,8 +3575,7 @@ namespace bagis_pro
                     IList<string> lstGdb = new List<string>();
                     IList<string> lstFile = new List<string>();
                     IList<esriDatasetType> lstDatasetType = new List<esriDatasetType>();
-                    if (mFrameName.IndexOf("Legend") < 1)
-                    {
+
                         if (Module1.Current.Aoi.HasSnotel == true)
                         {
                             lstLayerName.Add(Constants.MAPS_SNOTEL);
@@ -3627,15 +3634,6 @@ namespace bagis_pro
                         lstGdb.Add(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi));
                         lstFile.Add(Constants.FILE_AOI_VECTOR);
                         lstDatasetType.Add(esriDatasetType.esriDTFeatureClass);
-                    }
-                    else
-                    {
-                        // Legend
-                        lstLayerName.Add("Legend");
-                        lstGdb.Add(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers));
-                        lstFile.Add("legend");
-                        lstDatasetType.Add(esriDatasetType.esriDTRasterDataset);
-                    }
 
                     int j = 0;
                     await QueuedTask.Run(async () =>
@@ -3676,65 +3674,42 @@ namespace bagis_pro
                         success = await SetClipGeometryAsync(strAoiPath, arrMapFrames[i]);
 
                         IList<BA_Objects.Interval> lstCustomInterval = new List<BA_Objects.Interval>();
-                        double dblMin = -1;
-                        double dblMax = -1;
                         int idxData = -1;
                         for (int k = 0; k < lstLayerName.Count; k++)
                         {
                             if (lstLayerName[k].Equals(mapLayerName))
                             {
-                                idxData = k;
+                                idxData = k;                
                                 break;
                             }
-                            else if (lstLayerName[k].Equals("Legend"))
-                            {
-                                idxData = k;
-                            }
                         }
-                        var parameters = Geoprocessing.MakeValueArray(lstGdb[idxData] + "\\" + lstFile[idxData], "MINIMUM");
-                        var environments = Geoprocessing.MakeEnvironmentArray(workspace: Module1.Current.Aoi.FilePath);
-                        IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("GetRasterProperties_management", parameters, environments,
-                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                        bool isDouble = Double.TryParse(Convert.ToString(gpResult.ReturnValue), out dblMin);
-                        parameters = Geoprocessing.MakeValueArray(lstGdb[idxData] + "\\" + lstFile[idxData], "MAXIMUM");
-                        environments = Geoprocessing.MakeEnvironmentArray(workspace: Module1.Current.Aoi.FilePath);
-                        gpResult = await Geoprocessing.ExecuteToolAsync("GetRasterProperties_management", parameters, environments,
-                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                        isDouble = Double.TryParse(Convert.ToString(gpResult.ReturnValue), out dblMax);
 
-                        BA_Objects.Interval[] arrInterval = new BA_Objects.Interval[lstInterval.Count];
-                        for (int k = 0; k < lstInterval.Count; k++)
+                        // Update labels on data layer for this AOI
+                        oLayer = oMap.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(mapLayerName, StringComparison.CurrentCultureIgnoreCase));
+                        if (oLayer != null)
                         {
-                            var interval = lstInterval[k];
-                            if (dblMin <= interval.UpperBound)
+                            BasicRasterLayer bLayer = (BasicRasterLayer)oLayer;
+                            //CIMRasterLayer rLayer = (CIMRasterLayer)oLayer.GetDefinition();
+                            var colorizer = bLayer.GetColorizer();
+                            if (colorizer is CIMRasterUniqueValueColorizer uvrColorizer)
                             {
-                                arrInterval[k] = interval;
-                                //lstCustomInterval.Add(interval);
-                            }
-                        }
-                        for (int m = 0; m < arrInterval.Length; m++)
-                        {
-                            var interval = arrInterval[m];
-                            if (interval != null)
-                            {
-                                if (dblMax < interval.LowerBound)
+                                for (var idxGrp = 0; idxGrp < uvrColorizer.Groups[0].Classes.Length; idxGrp++)
                                 {
-                                    arrInterval[m] = null;
+                                    var grpClass = uvrColorizer.Groups[0].Classes[idxGrp];
+                                    int oldValue = Convert.ToInt32(grpClass.Values[0]);
+                                    var correctField = "";
+                                    foreach (var item in lstInterval)
+                                    {
+                                        if (item.Value == oldValue)
+                                        {
+                                            correctField = item.Name;
+                                            break;
+                                        }
+                                    }
+                                    grpClass.Label = $@"{correctField}";
                                 }
+                                bLayer.SetColorizer(uvrColorizer);
                             }
-                        }
-                        for (int m = 0; m < arrInterval.Length; m++)
-                        {
-                            if (arrInterval[m] != null)
-                            {
-                                lstCustomInterval.Add(arrInterval[m]);
-                            }
-                        }
-
-                        if (lstCustomInterval.Count == lstInterval.Count)
-                        {
-                            // We can use this layer for the legend because it has all intervals
-                            legendMapFrameName = mFrameName;
                         }
 
                         // Reset the color ramp

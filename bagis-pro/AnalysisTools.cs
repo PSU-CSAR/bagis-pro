@@ -3986,7 +3986,7 @@ namespace bagis_pro
                                     "Unable to save min/max values for quarterly precip to analysis settings!");
                             }
                         }
-                    lstInterval = CalculateSeasonalPrecipZones(dblMin, dblMax);
+                    lstInterval = CalculateQuarterlyPrecipIntervals(dblMin, dblMax);
                 }
                     // Delete results of cell statistics
                     success = await GeoprocessingTools.DeleteDatasetAsync(strMaxPath);
@@ -4018,7 +4018,7 @@ namespace bagis_pro
             return success;
         }
 
-        private static IList<BA_Objects.Interval> CalculateSeasonalPrecipZones(double SeasonalPrecipMin, double SeasonalPrecipMax)
+        public static IList<BA_Objects.Interval> CalculateQuarterlyPrecipIntervals(double SeasonalPrecipMin, double SeasonalPrecipMax)
         {
             // Calculate interval list
             int intZones = 7;
@@ -4057,7 +4057,7 @@ namespace bagis_pro
                         // Merge 2 lower zones
                         if (lstNegInterval.Count > halfZones)
                         {
-                            Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateSeasonalPrecipZones),
+                            Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateQuarterlyPrecipIntervals),
                                 "Merging 2 lowest intervals. Too many intervals created.");
                             var interval = lstNegInterval[0];
                             interval.UpperBound = lstNegInterval[1].UpperBound;
@@ -4087,7 +4087,7 @@ namespace bagis_pro
                     // Merge 2 upper zones
                     if (lstPosInterval.Count > halfZones)
                     {
-                        Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateSeasonalPrecipZones),
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateQuarterlyPrecipIntervals),
                             "Merging 2 highest intervals. Too many intervals created.");
                         var interval = lstPosInterval[halfZones - 1];
                         interval.UpperBound = lstPosInterval[halfZones].UpperBound;
@@ -4117,8 +4117,8 @@ namespace bagis_pro
             }
             else
             {
-                Module1.Current.ModuleLogManager.LogError(nameof(CalculateSeasonalPrecipZones),
-                    "Unable to retrieve min/max seasonal precip values from analysis.xml. Calculation halted!");
+                Module1.Current.ModuleLogManager.LogError(nameof(CalculateQuarterlyPrecipIntervals),
+                    "Invalid min/max precip values. Calculation halted!");
                 return null;
             }
         }
