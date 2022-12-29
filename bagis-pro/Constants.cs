@@ -211,7 +211,9 @@ namespace bagis_pro
                                                                          "daily_swe_normal_may_01", "daily_swe_normal_jun_01", "daily_swe_normal_jul_01"};
         public const string FILE_SNODAS_SWE_APRIL = "swe_apr_01";
         public static readonly string[] FILES_SNODAS_SWE = new string[] { "swe_nov_01", "swe_dec_01", "swe_jan_01", "swe_feb_01", "swe_mar_01",
-                                                                          FILE_SNODAS_SWE_APRIL, "swe_may_01", "swe_jun_01", "swe_jul_01", "legend"};
+                                                                          FILE_SNODAS_SWE_APRIL, "swe_may_01", "swe_jun_01", "swe_jul_01"};
+        public static readonly string[] FILES_SWE_ZONES = new string[] { "swe_nov_zone", "swe_dec_zone", "swe_jan_zone", "swe_feb_zone", "swe_mar_zone",
+                                                                         "swe_apr_zone", "swe_may_zone", "swe_jun_zone", "swe_jul_zone"};
         public const string MAPS_SNODAS_MEAN_SWE = "SNODAS Mean SWE";
         public const string MAPS_SNODAS_SWE_DELTA = "SNODAS SWE Delta";
         public const string MAPS_SEASONAL_PRECIP_CONTRIB = "Precip Contribution";

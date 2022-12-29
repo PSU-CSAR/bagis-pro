@@ -3067,7 +3067,7 @@ namespace bagis_pro
             {
                 success = await AnalysisTools.ClipLayersAsync(Module1.Current.Aoi.FilePath, Constants.DATA_TYPE_SWE,
                     precipBufferDistance, precipBufferUnits, sweBufferDistance, sweBufferUnits);
-                // Calculate and record overall min and max for symbology
+                //Calculate and record overall min and max for symbology
                 if (success == BA_ReturnCode.Success)
                 {
                     double dblOverallMin = 9999;
@@ -3124,6 +3124,22 @@ namespace bagis_pro
                                 "Unable to locate SWE metadata entry to update");
                         }
                         success = GeneralTools.SaveDataSourcesToFile(dictLocalDataSources);
+
+                        // Create classifed layers
+                        int idxDefaultMonth = 8;
+                        IList<BA_Objects.Interval> lstInterval = await MapTools.CalculateSweZonesAsync(idxDefaultMonth);
+                        if (lstInterval.Count > 0)
+                        {
+                            string strAnalysisGdb = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis);
+                            for (int j = 0; j < Constants.FILES_SNODAS_SWE.Length; j++)
+                            {
+                                string strInput = $@"{GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers)}\{Constants.FILES_SNODAS_SWE[j]}";
+                                string strOutput = strAnalysisGdb + "\\" + Constants.FILES_SWE_ZONES[j];
+                                string strMaskPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_PRISM_VECTOR;
+                                success = await AnalysisTools.CalculateZonesAsync(Module1.Current.Aoi.FilePath, strInput, lstInterval,
+                                    strOutput, strMaskPath, "SWE SNODAS");
+                            }
+                        }
                     }
                 }
             }
@@ -3449,14 +3465,15 @@ namespace bagis_pro
 
         public static async Task<BA_ReturnCode> CalculateSWEDeltaAsync(string strAoiPath)
         {
+            string strAnalysisGdb = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Analysis, true);
+
             for (int idx = 0; idx < Constants.FILES_SWE_DELTA.Length; idx++)
             {
-                string strLayer1 = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, true) +
+                string strLayer1 = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers, true) +
                     Constants.FILES_SNODAS_SWE[idx + 1];
-                string strLayer2 = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, true) +
+                string strLayer2 = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers, true) +
                     Constants.FILES_SNODAS_SWE[idx];
-                string strOutputRaster = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) +
-                    Constants.FILES_SWE_DELTA[idx];
+                string strOutputRaster = $@"{strAnalysisGdb}\temp{idx}";
                 IGPResult gpResult = await QueuedTask.Run(() =>
                 {
                     var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath);
@@ -3485,16 +3502,15 @@ namespace bagis_pro
             // Calculate and record overall min and max for symbology
             double dblOverallMin = 9999;
             double dblOverallMax = -9999;
-            string strAnalysisGdb = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true);
-            foreach (var fName in Constants.FILES_SWE_DELTA)
+            for (int idx = 0; idx < Constants.FILES_SWE_DELTA.Length; idx++)
             {
-                string strOutputPath = strAnalysisGdb + fName;
-                bool bExists = await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis)), fName);
+                string strOutputPath = $@"{strAnalysisGdb}\temp{idx}";
+                bool bExists = await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Analysis)), $@"temp{idx}");
                 if (bExists)
                 {
                     double dblMin = -1;
                     var parameters = Geoprocessing.MakeValueArray(strOutputPath, "MINIMUM");
-                    var environments = Geoprocessing.MakeEnvironmentArray(workspace: Module1.Current.Aoi.FilePath);
+                    var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath);
                     IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("GetRasterProperties_management", parameters, environments,
                         CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
                     bool isDouble = Double.TryParse(Convert.ToString(gpResult.ReturnValue), out dblMin);
@@ -3545,6 +3561,31 @@ namespace bagis_pro
                 Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateSWEDeltaAsync),
                         "Updated settings overall min and max metadata for SWE Delta");
             }
+            int intDefaultMonth = 8;
+            IList<BA_Objects.Interval> lstInterval = await MapTools.CalculateSweDeltaZonesAsync(intDefaultMonth);
+            //Reclassify into 7 classes for map
+            if (lstInterval.Count > 0)
+            {
+                for (int j = 0; j < Constants.FILES_SWE_DELTA.Length; j++)
+                {
+                    string strInput = $@"{strAnalysisGdb}\temp{j}";
+                    string strOutput = strAnalysisGdb + "\\" + Constants.FILES_SWE_DELTA[j];
+                    string strMaskPath = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_PRISM_VECTOR;
+                    success = await AnalysisTools.CalculateZonesAsync(strAoiPath, strInput, lstInterval,
+                        strOutput, strMaskPath, "SWE DELTA");
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        success = await GeoprocessingTools.DeleteDatasetAsync(strInput);
+                    }
+                }
+            }
+            else
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(CalculateQuarterlyPrecipitationAsync),
+                    "Unable to calculate interval list and publish classified quarterly precipitation layers!");
+                return BA_ReturnCode.UnknownError;
+            }
+
             return success;
         }
 
@@ -3999,7 +4040,7 @@ namespace bagis_pro
                     {
                         string strInput = $@"{strAnalysisGdb}\temp{j}";
                         string strOutput = strAnalysisGdb + "\\" + Constants.FILES_SEASON_PRECIP_CONTRIB[j];
-                        string strMaskPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_BUFFERED_VECTOR;
+                        string strMaskPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_PRISM_VECTOR;
                         success = await AnalysisTools.CalculateZonesAsync(oAoi.FilePath, strInput, lstInterval,
                             strOutput, strMaskPath, "QUARTERLY PRECIPITATION");
                         if (success == BA_ReturnCode.Success)

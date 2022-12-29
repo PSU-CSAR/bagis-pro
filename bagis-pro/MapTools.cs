@@ -339,17 +339,17 @@ namespace bagis_pro
 
                     // load SWE map layout
                     int idxDefaultMonth = 8;    // Note: This needs to be the month with the lowest SWE value for symbology; In this case July
-                    //success = await DisplayMultiMapPageLayoutAsync(oAoi.FilePath, idxDefaultMonth, BagisMapType.SNODAS_SWE);
-                    //if (success == BA_ReturnCode.Success)
-                    //{
-                    //    Module1.ActivateState("MapButtonPalette_BtnSwe_State");
-                    //}
+                    success = await DisplayMultiMapPageLayoutAsync(oAoi.FilePath, idxDefaultMonth, BagisMapType.SNODAS_SWE);
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        Module1.ActivateState("MapButtonPalette_BtnSwe_State");
+                    }
                     // load SWE Delta map layout
-                    //success = await DisplayMultiMapPageLayoutAsync(oAoi.FilePath, idxDefaultMonth - 1, BagisMapType.SNODAS_DELTA);
-                    //if (success == BA_ReturnCode.Success)
-                    //{
-                    //    Module1.ActivateState("MapButtonPalette_BtnSweDelta_State");
-                    //}
+                    success = await DisplayMultiMapPageLayoutAsync(oAoi.FilePath, idxDefaultMonth - 1, BagisMapType.SNODAS_DELTA);
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        Module1.ActivateState("MapButtonPalette_BtnSweDelta_State");
+                    }
                     // load seasonal precipitation map layout
                     success = await DisplayMultiMapPageLayoutAsync(oAoi.FilePath, idxDefaultMonth, BagisMapType.SEASONAL_PRECIP_CONTRIB);
                     if (success == BA_ReturnCode.Success)
@@ -3007,7 +3007,7 @@ namespace bagis_pro
             return multiPartRamp;
         }
 
-        private static async Task<IList<BA_Objects.Interval>> CalculateSweZonesAsync(int idxDefaultMonth)
+        public static async Task<IList<BA_Objects.Interval>> CalculateSweZonesAsync(int idxDefaultMonth)
         {
             // Calculate interval list
             List<BA_Objects.Interval> lstIntervals = new List<BA_Objects.Interval>();
@@ -3139,7 +3139,7 @@ namespace bagis_pro
             }
         }
 
-        private static async Task<IList<BA_Objects.Interval>> CalculateSweDeltaZonesAsync(int idxDefaultMonth)
+        public static async Task<IList<BA_Objects.Interval>> CalculateSweDeltaZonesAsync(int idxDefaultMonth)
         {
             // Calculate interval list
             int intZones = 7;
@@ -3432,8 +3432,8 @@ namespace bagis_pro
         {
             // Check to make sure the layers are there
             string[] arrMapFrames = new string[] { "November", "December", "January", "February", "March", "April","May", "June", "July" };
-            Uri uriLayers = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers));
-            string[] arrFiles = Constants.FILES_SNODAS_SWE;
+            Uri uriLayers = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Analysis));
+            string[] arrFiles = Constants.FILES_SWE_ZONES;
             string layoutName = Constants.MAPS_SNODAS_LAYOUT;
             string layoutFile = Constants.LAYOUT_FILE_SNODAS_SWE;
             string mapLayerName = Constants.MAPS_SNODAS_MEAN_SWE;
@@ -3689,7 +3689,6 @@ namespace bagis_pro
                         if (oLayer != null)
                         {
                             BasicRasterLayer bLayer = (BasicRasterLayer)oLayer;
-                            //CIMRasterLayer rLayer = (CIMRasterLayer)oLayer.GetDefinition();
                             var colorizer = bLayer.GetColorizer();
                             if (colorizer is CIMRasterUniqueValueColorizer uvrColorizer)
                             {
@@ -3711,25 +3710,7 @@ namespace bagis_pro
                                 bLayer.SetColorizer(uvrColorizer);
                             }
                         }
-
-                        // Reset the color ramp
-                        switch (bagisMapType)
-                        {
-                            case BagisMapType.SNODAS_SWE:
-                                await MapTools.SetToClassifyRenderer(oMap, mapLayerName, Constants.FIELD_NAME, lstInterval, lstCustomInterval,
-                                    Constants.ARR_SWE_COLORS);
-                                break;
-                            case BagisMapType.SNODAS_DELTA:
-                                await MapTools.SetToClassifyRenderer(oMap, mapLayerName, Constants.FIELD_NAME, lstInterval, lstCustomInterval,
-                                    Constants.ARR_SWE_DELTA_COLORS);
-                                break;
-                            case BagisMapType.SEASONAL_PRECIP_CONTRIB:
-                                //await MapTools.SetToClassifyRenderer(oMap, mapLayerName, Constants.FIELD_NAME, lstInterval, lstCustomInterval,
-                                //    Constants.ARR_SWE_DELTA_COLORS);
-                                break;
-                        }
                      });
-
                 }
             }
 
