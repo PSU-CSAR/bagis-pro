@@ -53,7 +53,7 @@ bagis-pro:
       uri: https://services.arcgis.com/SXbDpmb7xQkk44JV/arcgis/rest/services/USFS_FSTopo_Transport_LN/FeatureServer/0
     - layerType: Land Ownership
       heading: Public Land Ownership – for Potential Site Location Analysis
-      description: Federal non-wilderness and tribal land data based on the 2020 USGS Protected Areas Data (PAD) version 2.1. See https://www.usgs.gov/programs/gap-analysis-project/science/pad-us-data-overview for more information.
+      description: Federal non-wilderness and tribal land data based on the 2020 USGS Protected Areas Data (PAD) version 2.1 and the 2010 USA Indian Reservations dataset. See https://www.usgs.gov/programs/gap-analysis-project/science/pad-us-data-overview and https://www.sciencebase.gov/catalog/item/4f4e4a2ee4b07f02db61576c for more information.
       uri: https://services.arcgis.com/SXbDpmb7xQkk44JV/arcgis/rest/services/Public_and_Tribal_Lands/FeatureServer/0
     - layerType: Land Cover
       heading: Land Cover – for Potential Site Location Analysis
