@@ -1909,7 +1909,7 @@ namespace bagis_pro
             return BA_ReturnCode.Success;
         }
 
-        public static BA_ReturnCode PublishFullPdfDocument(string outputPath, ReportType rType)
+        public static BA_ReturnCode PublishFullPdfDocument(string outputPath, ReportType rType, int sitesAppendixCount)
         {
             // Initialize output document
             PdfDocument outputDocument = new PdfDocument();
@@ -1944,18 +1944,18 @@ namespace bagis_pro
             }
             // Add appendix if it exists
             string outputFolder = Path.GetDirectoryName(outputPath);
-            if (File.Exists(outputFolder + "\\" + Constants.FILE_SITES_APPENDIX_PDF))
+            if (sitesAppendixCount > 0)
             {
-                PdfDocument inputDocument = PdfReader.Open(outputFolder + "\\" + Constants.FILE_SITES_APPENDIX_PDF, 
-                    PdfDocumentOpenMode.Import);
-                int count = inputDocument.PageCount;
-                for (idx = 0; idx < count; idx++)
+                for (int j = 0; j < sitesAppendixCount; j++)
                 {
+                    string strPublishFile = $@"{outputFolder}\{Path.GetFileNameWithoutExtension(Constants.FILE_SITES_APPENDIX_PDF)}{j+1}{Path.GetExtension(Constants.FILE_SITES_APPENDIX_PDF)}";
+                    PdfDocument inputDocument = PdfReader.Open(strPublishFile,
+                        PdfDocumentOpenMode.Import);
                     // Get the page from the external document...
-                    PdfPage page = inputDocument.Pages[idx];
+                    PdfPage page = inputDocument.Pages[0];
                     combineDocument.AddPage(page);
+                    File.Delete(strPublishFile);
                 }
-                File.Delete(outputFolder + "\\" + Constants.FILE_SITES_APPENDIX_PDF);
             }
             combineDocument.Save(outputPath);
 
@@ -2501,9 +2501,10 @@ namespace bagis_pro
             return arrResults;
         }
 
-        public static async Task<BA_ReturnCode> GenerateSitesTableAsync(BA_Objects.Aoi oAoi)
+        public static async Task<int> GenerateSitesTableAsync(BA_Objects.Aoi oAoi)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            int appendixCount = 0;
             try
             {
                 bool bHasSnotel = false;
@@ -2524,15 +2525,16 @@ namespace bagis_pro
                 }
                 string publishFolder = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE;
                 string strPublishFile = publishFolder + "\\" + Constants.FILE_SITES_TABLE_PDF;
+                int sitesPerPage = 25;
                 if (bHasSnotel == false && bHasSnowCourse == false)
                 {
                     Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateSitesTableAsync),
                         "No sites found. Sites table will not be created!");
                     File.Copy(GeneralTools.GetAddInDirectory() + "\\" + Constants.FILE_NO_SITES, 
                         strPublishFile, true);
-                    return BA_ReturnCode.Success;
+                    return -1;
                 }
-                else if (intTotalSites > 25)
+                else if (intTotalSites > sitesPerPage)
                 {
                     Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateSitesTableAsync),
                         "AOI contains > 25 sites. Sites table will be generated as an appendix!");
@@ -2569,9 +2571,6 @@ namespace bagis_pro
                         site.ElevationText = String.Format("{0:0}", site.ElevMeters);
                     }
                 }
-                BA_Objects.Site[] arrSites = new BA_Objects.Site[lstAllSites.Count];
-                lstAllSites.CopyTo(arrSites, 0);
-                tPage.all_sites = arrSites;
                 //Set the site elevation units
                 BA_Objects.Analysis oAnalysis = GetAnalysisSettings(oAoi.FilePath);
                 string siteElevationUnits = "?";
@@ -2579,44 +2578,85 @@ namespace bagis_pro
                 {
                     siteElevationUnits = oAnalysis.ElevUnitsText;
                 }
-                tPage.site_elev_range_units = siteElevationUnits;
-
-                string myXmlFile = publishFolder + "\\" + Constants.FILE_SITES_TABLE_XML;
-                System.Xml.Serialization.XmlSerializer writer = new System.Xml.Serialization.XmlSerializer(tPage.GetType());
-                using (FileStream fs = System.IO.File.Create(myXmlFile))
+                int pageCount = (int)Math.Ceiling((double)lstAllSites.Count / sitesPerPage);    //Get page count
+                if (pageCount > 1)
                 {
-                    writer.Serialize(fs, tPage);
+                    int p = 0;
+                    for (int i = 0; i < pageCount; i++)
+                    {
+                        BA_Objects.Site[] arrSites = new BA_Objects.Site[sitesPerPage];
+                        for (int j = 0; j < sitesPerPage; j++)
+                        {
+                            arrSites[j] = lstAllSites[p];
+                            p++;
+                            if (p == lstAllSites.Count)
+                            {
+                                break;
+                            }
+                        }
+                        tPage.all_sites = arrSites.Where(x => x != null).ToArray(); ;
+                        tPage.site_elev_range_units = siteElevationUnits;
+                        strPublishFile = $@"{publishFolder}\{Path.GetFileNameWithoutExtension(Constants.FILE_SITES_APPENDIX_PDF)}{i+1}{Path.GetExtension(Constants.FILE_SITES_APPENDIX_PDF)}";
+                        success = GenerateSitePage(tPage, publishFolder, strPublishFile);
+                        if (success == BA_ReturnCode.Success)
+                        {
+                            Module1.Current.ModuleLogManager.LogDebug(nameof(GenerateSitesTableAsync),
+                                $@"Sites table {strPublishFile} created!!");
+                        }
+                    }
+                    appendixCount = pageCount;
                 }
-
-                // Process the sites table page through the xsl template
-                string myStyleSheet = GeneralTools.GetAddInDirectory() + "\\" + Constants.FILE_SITES_TABLE_XSL;
-                XPathDocument myXPathDoc = new XPathDocument(myXmlFile);
-                XslCompiledTransform myXslTrans = new XslCompiledTransform();
-                myXslTrans.Load(myStyleSheet);
-                string htmlFilePath = publishFolder + "\\" + Constants.FILE_SITES_TABLE_HTML;
-                using (XmlTextWriter myWriter = new XmlTextWriter(htmlFilePath, null))
+                else
                 {
-                    myXslTrans.Transform(myXPathDoc, null, myWriter);
+                    BA_Objects.Site[] arrSites = new BA_Objects.Site[lstAllSites.Count];
+                    lstAllSites.CopyTo(arrSites, 0);
+                    tPage.all_sites = arrSites;
+                    tPage.site_elev_range_units = siteElevationUnits;
+                    success = GenerateSitePage(tPage, publishFolder, strPublishFile);
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(GenerateSitesTableAsync),
+                            $@"Sites table {strPublishFile} created!!");
+                    }
                 }
-
-                // Convert the sites table to PDF
-                if (File.Exists(htmlFilePath))
-                {
-                    PdfSharp.Pdf.PdfDocument sitesPageDoc = TheArtOfDev.HtmlRenderer.PdfSharp.PdfGenerator.GeneratePdf(System.IO.File.ReadAllText(htmlFilePath),
-                        PdfSharp.PageSize.Letter);
-              
-                    sitesPageDoc.Save(strPublishFile);
-                }
-                Module1.Current.ModuleLogManager.LogDebug(nameof(GenerateSitesTableAsync),
-                    "Sites table created!!");
-                success = BA_ReturnCode.Success;
             }
             catch (Exception e)
             {
                 Module1.Current.ModuleLogManager.LogError(nameof(GenerateSitesTableAsync),
                     "Exception: " + e.Message);
-                return success;
+                return -1;
             }
+            return appendixCount;
+        }
+
+        private static BA_ReturnCode GenerateSitePage(BA_Objects.ExportTitlePage tPage, string publishFolder, string strPublishFile)
+        {
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            string myXmlFile = publishFolder + "\\" + Constants.FILE_SITES_TABLE_XML;
+            System.Xml.Serialization.XmlSerializer writer = new System.Xml.Serialization.XmlSerializer(tPage.GetType());
+            using (FileStream fs = System.IO.File.Create(myXmlFile))
+            {
+                writer.Serialize(fs, tPage);
+            }
+            // Process the sites table page through the xsl template
+            string myStyleSheet = GeneralTools.GetAddInDirectory() + "\\" + Constants.FILE_SITES_TABLE_XSL;
+            XPathDocument myXPathDoc = new XPathDocument(myXmlFile);
+            XslCompiledTransform myXslTrans = new XslCompiledTransform();
+            myXslTrans.Load(myStyleSheet);
+            string htmlFilePath = publishFolder + "\\" + Constants.FILE_SITES_TABLE_HTML;
+            using (XmlTextWriter myWriter = new XmlTextWriter(htmlFilePath, null))
+            {
+                myXslTrans.Transform(myXPathDoc, null, myWriter);
+            }
+            // Convert the sites table to PDF
+            if (File.Exists(htmlFilePath))
+            {
+                PdfSharp.Pdf.PdfDocument sitesPageDoc = TheArtOfDev.HtmlRenderer.PdfSharp.PdfGenerator.GeneratePdf(System.IO.File.ReadAllText(htmlFilePath),
+                    PdfSharp.PageSize.Letter);
+
+                sitesPageDoc.Save(strPublishFile);
+            }
+            success = BA_ReturnCode.Success;
             return success;
         }
 

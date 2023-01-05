@@ -813,7 +813,7 @@ namespace bagis_pro
                                 }
                             }
 
-                            success = await GeneralTools.GenerateSitesTableAsync(Module1.Current.Aoi);
+                            int sitesAppendixCount = await GeneralTools.GenerateSitesTableAsync(Module1.Current.Aoi);
                             success = await GeneralTools.GenerateMapsTitlePageAsync(ReportType.Watershed, strPublisher, Comments);
                             if (success != BA_ReturnCode.Success)
                             {
@@ -832,7 +832,7 @@ namespace bagis_pro
                                 string strBaseFileName = Module1.Current.Aoi.StationTriplet.Replace(':', '_') + "_Watershed-Report.pdf";
                                 outputPath = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\" + strBaseFileName;
                             }
-                            success = GeneralTools.PublishFullPdfDocument(outputPath, ReportType.Watershed);    // Put it all together into a single pdf document
+                            success = GeneralTools.PublishFullPdfDocument(outputPath, ReportType.Watershed, sitesAppendixCount);    // Put it all together into a single pdf document
                             if (success != BA_ReturnCode.Success)
                             {
                                 errorCount++;
