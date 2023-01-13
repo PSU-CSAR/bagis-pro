@@ -572,8 +572,8 @@ namespace bagis_pro
             if (oSettings == null || String.IsNullOrEmpty(Convert.ToString(oSettings.gaugeStation)))
             {
                 Module1.Current.ModuleLogManager.LogDebug(nameof(GetStationValues),
-                    "Unable to retrieve pourpoint settings from " + url);
-                MessageBox.Show("Unable to retrieve pourpoint settings. Clipping cancelled!!", "BAGIS-PRO");
+                    "Unable to retrieve gauge station uri from " + url);
+                MessageBox.Show("Unable to retrieve gauge station uri. Station values cannot be retrieved!!", "BAGIS-PRO");
                 return null;
             }
             string strWsUri = oSettings.gaugeStation;
@@ -631,6 +631,7 @@ namespace bagis_pro
                         string[] arrFound = new string[arrSearch.Length];
                         Module1.Current.ModuleLogManager.LogDebug(nameof(GetStationValues),
                             "Using awdb_id to query for the triplet from " + usgsServiceUri.ToString());
+
                         arrFound = await ws.QueryServiceForValuesAsync(usgsServiceUri, usgsServiceLayerId, arrSearch, queryFilter);
                         if (arrFound != null && arrFound.Length > 1)
                         {

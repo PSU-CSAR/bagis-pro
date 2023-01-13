@@ -931,11 +931,16 @@ namespace bagis_pro
                     {
                         if (await GeodatabaseTools.CountFeaturesAsync(new Uri(strAoiFolder), Constants.FILE_POURPOINT) == 1)
                         {
-                            string stationTriplet = await GeodatabaseTools.QueryTableForSingleValueAsync(new Uri(strAoiFolder),
-                                Constants.FILE_POURPOINT, Constants.FIELD_STATION_TRIPLET, new QueryFilter());
+                            // Query for station information
+                            string stationTriplet = "";
+                            string[] arrValues = await AnalysisTools.GetStationValues(aoiFolder);
+                            if (arrValues.Length == 2)
+                            {
+                                stationTriplet = arrValues[0];
+                            }
                             if (string.IsNullOrEmpty(stationTriplet))
                             {
-                                strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "ERROR:Pourpoint layer is missing stationTriplet. Skipping this AOI \r\n";
+                                strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "ERROR:Station triplet cannot be determined. Skipping this AOI! \r\n";
                                 File.AppendAllText(snodasLog, strLogEntry);       // append
                                 errorCount++;
                             }
@@ -968,32 +973,12 @@ namespace bagis_pro
                         string strPolyPath = strAoiFolder + "\\" + Constants.FILE_AOI_VECTOR;
                         if (await GeodatabaseTools.FeatureClassExistsAsync(new Uri(strAoiFolder), Constants.FILE_AOI_VECTOR))
                         {
-                            int intFeatures = await GeodatabaseTools.CountFeaturesAsync(new Uri(strAoiFolder), Constants.FILE_AOI_VECTOR);
                             string strFcPath = strPolyPath;
-                            string strTempAoiPath = null;
-                            if (intFeatures > 1)
-                            {
-                                strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "AOI boundary has > 1 polygon. Buffering ... \r\n";
-                                File.AppendAllText(snodasLog, strLogEntry);       // append
-                                strTempAoiPath = $@"{strAoiFolder}\tmpAoi";
-                                success = await GeoprocessingTools.BufferAsync(strPolyPath, strTempAoiPath, "0.5 Meters", "ALL");
-                                if (success == BA_ReturnCode.Success)
-                                {
-                                    strFcPath = strTempAoiPath;
-                                    strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Successfully buffered AOI polygon \r\n";
-                                    File.AppendAllText(snodasLog, strLogEntry);       // append
-                                }
-                            }
                             success = await GeoprocessingTools.FeaturesToSnodasGeoJsonAsync(strFcPath, polygonOutputPath, true);
                             if (success == BA_ReturnCode.Success)
                             {
                                 strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "AOI polygon geoJson exported to temp directory \r\n";
                                 File.AppendAllText(snodasLog, strLogEntry);       // append
-                                if (!String.IsNullOrEmpty(strTempAoiPath))
-                                {
-                                    // Clean up temp buffered FC
-                                    BA_ReturnCode rCode = await GeoprocessingTools.DeleteDatasetAsync(strTempAoiPath);
-                                }
                             }
                             else
                             {
