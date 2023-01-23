@@ -919,6 +919,7 @@ namespace bagis_pro
                         }
 
                         int i = 0;
+                        bool bIsNoData = false;
                         foreach (string strUri in arrClipUris)
                         {
                             Uri imageServiceUri = new Uri(strWsPrefix + strUri + Constants.URI_IMAGE_SERVER);
@@ -943,6 +944,16 @@ namespace bagis_pro
                             }
                             else
                             {
+                                // Check for NoData
+                                if (i==0)   // Check the first raster only
+                                {
+                                    bIsNoData = await IsNoDataRasterAsync(strAoiPath, strOutputGdb, arrClippedFileNames[i]);
+                                    if (bIsNoData)
+                                    {
+                                        intError++;
+                                        break;
+                                    }
+                                }
                                 Module1.Current.ModuleLogManager.LogDebug(nameof(ClipLayersAsync),
                                     "Clipped " + arrClippedFileNames[i] + " layer");
                                 //We need to add a new tag at "/metadata/dataIdInfo/searchKeys/keyword"
@@ -1026,9 +1037,9 @@ namespace bagis_pro
             {
                 Module1.Current.ModuleLogManager.LogDebug(nameof(ClipLayersAsync),
                     "At least one error occurred while clipping " + strDataType + " layers!");
+                return BA_ReturnCode.UnknownError;
             }
-            success = BA_ReturnCode.Success;
-            return success;
+            return BA_ReturnCode.Success;
         }
 
         public static async Task<BA_ReturnCode> CalculateZonesAsync(string strAoiPath, string strSourceLayer,
@@ -1396,8 +1407,8 @@ namespace bagis_pro
         {
             IList<BA_Objects.Interval> lstIntervals = new List<BA_Objects.Interval>();
 
-            double dblMin = -999;
-            double dblMax = 999;
+            double dblMin = 9999;
+            double dblMax = -9999;
             double dblInterval = 999;
             bool bTooSmall = false;
 
@@ -1417,7 +1428,6 @@ namespace bagis_pro
                 }
                 else
                 {
-                    MessageBox.Show("Unable to extract minimum " + strMessageKey + " value. Calculation halted !!", "BAGIS-PRO");
                     Module1.Current.ModuleLogManager.LogError(nameof(GetPrismClassesAsync),
                         "Unable to calculate " + strMessageKey + " miniumum");
                     return;
@@ -1434,7 +1444,6 @@ namespace bagis_pro
                 }
                 else
                 {
-                    MessageBox.Show("Unable to extract maximum " + strMessageKey + " value. Calculation halted !!", "BAGIS-PRO");
                     Module1.Current.ModuleLogManager.LogError(nameof(GetPrismClassesAsync),
                         "Unable to calculate " + strMessageKey + " maximum");
                     return;
@@ -1453,6 +1462,11 @@ namespace bagis_pro
                     dblInterval = Math.Round(dblInterval);
                 }
             });
+            if (dblMin == 9999 || dblMax == -9999)
+            {
+                Module1.Current.PrismZonesInterval = -1;
+                return null;
+            }
             int zones = GeneralTools.CreateRangeArray(dblMin, dblMax, dblInterval, out lstIntervals);
             // issue #18
             // Check to be sure the highest interval isn't too small; if it is merge into the second-to-last
@@ -3332,39 +3346,43 @@ namespace bagis_pro
         {
             string strMaskPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_PRISM_VECTOR;
             int prismZonesCount = (int)Module1.Current.BatchToolSettings.PrecipZonesCount;
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
             IList<BA_Objects.Interval> lstInterval = await AnalysisTools.GetPrismClassesAsync(Module1.Current.Aoi.FilePath,
                 strLayer, prismZonesCount, "PRISM");
-            BA_ReturnCode success = await AnalysisTools.CalculateZonesAsync(Module1.Current.Aoi.FilePath, strLayer,
-                lstInterval, strZonesRaster, strMaskPath, "PRISM");
-            string zonesFile = Path.GetFileName(strZonesRaster);
-            if (success == BA_ReturnCode.Success && !Constants.FILE_WINTER_PRECIPITATION_ZONE.Equals(zonesFile))
+            if (lstInterval != null)
             {
-                // Record the prism zones information to be used later when presenting maps/charts
-                // Open the current Analysis.xml from disk, if it exists
-                BA_Objects.Analysis oAnalysis = new BA_Objects.Analysis();
-                string strSettingsFile = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAPS + "\\" +
-                    Constants.FILE_SETTINGS;
-                if (File.Exists(strSettingsFile))
+                success = await AnalysisTools.CalculateZonesAsync(Module1.Current.Aoi.FilePath, strLayer,
+                    lstInterval, strZonesRaster, strMaskPath, "PRISM");
+                string zonesFile = Path.GetFileName(strZonesRaster);
+                if (success == BA_ReturnCode.Success && !Constants.FILE_WINTER_PRECIPITATION_ZONE.Equals(zonesFile))
                 {
-                    using (var file = new StreamReader(strSettingsFile))
+                    // Record the prism zones information to be used later when presenting maps/charts
+                    // Open the current Analysis.xml from disk, if it exists
+                    BA_Objects.Analysis oAnalysis = new BA_Objects.Analysis();
+                    string strSettingsFile = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAPS + "\\" +
+                        Constants.FILE_SETTINGS;
+                    if (File.Exists(strSettingsFile))
                     {
-                        var reader = new System.Xml.Serialization.XmlSerializer(typeof(BA_Objects.Analysis));
-                        oAnalysis = (BA_Objects.Analysis)reader.Deserialize(file);
+                        using (var file = new StreamReader(strSettingsFile))
+                        {
+                            var reader = new System.Xml.Serialization.XmlSerializer(typeof(BA_Objects.Analysis));
+                            oAnalysis = (BA_Objects.Analysis)reader.Deserialize(file);
+                        }
                     }
-                }
-                // Set the prism zones information on the analysis object and save
-                oAnalysis.PrecipZonesIntervalCount = prismZonesCount;
-                oAnalysis.PrecipZonesInterval = Module1.Current.PrismZonesInterval;
-                Module1.Current.PrismZonesInterval = 999;
-                string strPrecipFile = Path.GetFileName(strLayer);
-                oAnalysis.PrecipZonesBegin = strPrecipFile;
-                oAnalysis.PrecipZonesEnd = strPrecipFile;
-                using (var file_stream = File.Create(strSettingsFile))
-                {
-                    var serializer = new System.Xml.Serialization.XmlSerializer(typeof(BA_Objects.Analysis));
-                    serializer.Serialize(file_stream, oAnalysis);
-                    Module1.Current.ModuleLogManager.LogDebug(nameof(CalculatePrecipitationZonesAsync),
-                        "Set precipitation zone parameters in analysis.xml file");
+                    // Set the prism zones information on the analysis object and save
+                    oAnalysis.PrecipZonesIntervalCount = prismZonesCount;
+                    oAnalysis.PrecipZonesInterval = Module1.Current.PrismZonesInterval;
+                    Module1.Current.PrismZonesInterval = 999;
+                    string strPrecipFile = Path.GetFileName(strLayer);
+                    oAnalysis.PrecipZonesBegin = strPrecipFile;
+                    oAnalysis.PrecipZonesEnd = strPrecipFile;
+                    using (var file_stream = File.Create(strSettingsFile))
+                    {
+                        var serializer = new System.Xml.Serialization.XmlSerializer(typeof(BA_Objects.Analysis));
+                        serializer.Serialize(file_stream, oAnalysis);
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(CalculatePrecipitationZonesAsync),
+                            "Set precipitation zone parameters in analysis.xml file");
+                    }
                 }
             }
             return success;
@@ -3561,32 +3579,32 @@ namespace bagis_pro
                 success = GeneralTools.SaveDataSourcesToFile(dictLocalDataSources);
                 Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateSWEDeltaAsync),
                         "Updated settings overall min and max metadata for SWE Delta");
-            }
-            int intDefaultMonth = 8;
-            IList<BA_Objects.Interval> lstInterval = await MapTools.CalculateSweDeltaZonesAsync(intDefaultMonth);
-            //Reclassify into 7 classes for map
-            if (lstInterval.Count > 0)
-            {
-                for (int j = 0; j < Constants.FILES_SWE_DELTA.Length; j++)
+
+                int intDefaultMonth = 8;
+                IList<BA_Objects.Interval> lstInterval = await MapTools.CalculateSweDeltaZonesAsync(intDefaultMonth);
+                //Reclassify into 7 classes for map
+                if (lstInterval.Count > 0)
                 {
-                    string strInput = $@"{strAnalysisGdb}\temp{j}";
-                    string strOutput = strAnalysisGdb + "\\" + Constants.FILES_SWE_DELTA[j];
-                    string strMaskPath = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_PRISM_VECTOR;
-                    success = await AnalysisTools.CalculateZonesAsync(strAoiPath, strInput, lstInterval,
-                        strOutput, strMaskPath, "SWE DELTA");
-                    if (success == BA_ReturnCode.Success)
+                    for (int j = 0; j < Constants.FILES_SWE_DELTA.Length; j++)
                     {
-                        success = await GeoprocessingTools.DeleteDatasetAsync(strInput);
+                        string strInput = $@"{strAnalysisGdb}\temp{j}";
+                        string strOutput = strAnalysisGdb + "\\" + Constants.FILES_SWE_DELTA[j];
+                        string strMaskPath = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_PRISM_VECTOR;
+                        success = await AnalysisTools.CalculateZonesAsync(strAoiPath, strInput, lstInterval,
+                            strOutput, strMaskPath, "SWE DELTA");
+                        if (success == BA_ReturnCode.Success)
+                        {
+                            success = await GeoprocessingTools.DeleteDatasetAsync(strInput);
+                        }
                     }
                 }
+                else
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(CalculateQuarterlyPrecipitationAsync),
+                        "Unable to calculate interval list and publish classified quarterly precipitation layers!");
+                    return BA_ReturnCode.UnknownError;
+                }
             }
-            else
-            {
-                Module1.Current.ModuleLogManager.LogError(nameof(CalculateQuarterlyPrecipitationAsync),
-                    "Unable to calculate interval list and publish classified quarterly precipitation layers!");
-                return BA_ReturnCode.UnknownError;
-            }
-
             return success;
         }
 
@@ -5257,7 +5275,48 @@ namespace bagis_pro
             return success;
         }
 
-
+        private static async Task<bool> IsNoDataRasterAsync(string strAoiPath, string strGdbFolder, string strRasterFile)
+        {
+            var parameters = Geoprocessing.MakeValueArray($@"{strGdbFolder}\{strRasterFile}", "MAXIMUM");
+            var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath);
+            var gpResult = await Geoprocessing.ExecuteToolAsync("GetRasterProperties_management", parameters, environments,
+                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+            if (gpResult.IsFailed)
+            {
+                if (gpResult.ErrorCode == 2)
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(IsNoDataRasterAsync),
+                        "Unable to calculate maximum for raster data. Failed because no statistics are available!");
+                }
+                else
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(IsNoDataRasterAsync),
+                        "Error Code: " + gpResult.ErrorCode + ". Unable to calculate maximum for raster data!");
+                }
+                return true;
+            }
+            string strMax = Convert.ToString(gpResult.ReturnValue);
+            string strNoData = "-9998";
+            await QueuedTask.Run(() =>
+            {
+                using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(strGdbFolder))))
+                using (RasterDataset rasterDataset = geodatabase.OpenDataset<RasterDataset>(strRasterFile))
+                {
+                    RasterBandDefinition bandDefinition = rasterDataset.GetBand(0).GetDefinition();
+                    Raster raster = rasterDataset.CreateDefaultRaster();
+                    strNoData = Convert.ToString(raster.GetNoDataValue());
+                }
+            });
+            if (strMax.Equals(strNoData))
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
 
     }
+
+}

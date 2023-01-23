@@ -3029,6 +3029,13 @@ namespace bagis_pro
             string dataSourceUnits = await QuerySweLayerUnitsAsync(strPath);
             if (arrReturnValues.Length == 4)
             {
+                // An error occurred getting the min/max
+                if (arrReturnValues[IDX_STRETCH_MIN] == ERROR_MIN)
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(CalculateSweZonesAsync),
+                        "Unable to retrieve min/max values from SWE layers. Calculation halted!");
+                    return null;
+                }
                 bool bSkipInterval2 = false;
                 double floor = 0.5;
                 if (arrReturnValues[2] > floor)
@@ -3146,6 +3153,14 @@ namespace bagis_pro
             intZones = intZones - 1;  //Subtract the zones in the middle that we create
             int halfZones = intZones / 2;
             double[] arrReturnValues = await MapTools.SWEUnitsConversionAsync(Constants.DATA_TYPE_SWE_DELTA, idxDefaultMonth);
+            // An error occurred getting the min/max
+            if (arrReturnValues[IDX_STRETCH_MIN] == ERROR_MIN)
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(CalculateSweDeltaZonesAsync),
+                    "Unable to retrieve min/max values from SWE Delta layers. Calculation halted!");
+                return null;
+            }
+
             string strPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, true) +
                 Constants.FILES_SNODAS_SWE[idxDefaultMonth];
             string dataSourceUnits = await QuerySweLayerUnitsAsync(strPath);    // Data source units come from source SWE layer
@@ -3533,6 +3548,13 @@ namespace bagis_pro
                     }
                     lstInterval = AnalysisTools.CalculateQuarterlyPrecipIntervals(dblMin, dblMax);
                     break;
+            }
+
+            if (lstInterval == null)
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(DisplayMultiMapPageLayoutAsync),
+                    "Unable to calculate interval list for multi page map. Map cannot be displayed!");
+                return BA_ReturnCode.UnknownError;
             }
 
             //Get the map frame in the layout
