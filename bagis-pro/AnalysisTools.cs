@@ -1007,23 +1007,25 @@ namespace bagis_pro
                         }
 
                         // Update layer metadata
-                        IDictionary<string, BA_Objects.DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
-                        BA_Objects.DataSource updateDataSource = new BA_Objects.DataSource(dictDataSources[strDataType])
+                        if (bIsNoData == false)
                         {
-                            DateClipped = DateTime.Now,
-                        };
-                        if (dictLocalDataSources.ContainsKey(strDataType))
-                        {
-                            dictLocalDataSources[strDataType] = updateDataSource;
+                            IDictionary<string, BA_Objects.DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
+                            BA_Objects.DataSource updateDataSource = new BA_Objects.DataSource(dictDataSources[strDataType])
+                            {
+                                DateClipped = DateTime.Now,
+                            };
+                            if (dictLocalDataSources.ContainsKey(strDataType))
+                            {
+                                dictLocalDataSources[strDataType] = updateDataSource;
+                            }
+                            else
+                            {
+                                dictLocalDataSources.Add(strDataType, updateDataSource);
+                            }
+                            success = GeneralTools.SaveDataSourcesToFile(dictLocalDataSources);
+                            Module1.Current.ModuleLogManager.LogDebug(nameof(ClipLayersAsync),
+                                "Updated settings metadata for " + strDataType);
                         }
-                        else
-                        {
-                            dictLocalDataSources.Add(strDataType, updateDataSource);
-                        }
-                        success = GeneralTools.SaveDataSourcesToFile(dictLocalDataSources);
-                        Module1.Current.ModuleLogManager.LogDebug(nameof(ClipLayersAsync),
-                            "Updated settings metadata for " + strDataType);
-
                     }
                     catch (Exception e)
                     {
@@ -2474,6 +2476,12 @@ namespace bagis_pro
             Uri uriLayers = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers));
             double dblDemCellSize = await GeodatabaseTools.GetCellSizeAsync(uriSurfaces, Constants.FILE_DEM_CLIPPED);
             double dblPrismCellSize = await GeodatabaseTools.GetCellSizeAsync(uriPrism, prismFile);
+            if (dblPrismCellSize < 0)
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(CalculateElevPrecipCorrAsync),
+                    "Unable to extract Prism cell size. Calculation cancelled!");
+                return success;
+            }
             string demPath = uriSurfaces.LocalPath + "\\" + Constants.FILE_DEM_CLIPPED;
             string precipMeanPath = uriAnalysis.LocalPath + "\\" + Constants.FILE_PREC_MEAN_ELEV;
             int intCellFactor = (int)Math.Round(dblPrismCellSize / dblDemCellSize, 0);
@@ -2491,7 +2499,6 @@ namespace bagis_pro
             {
                 Module1.Current.ModuleLogManager.LogError(nameof(CalculateElevPrecipCorrAsync),
                 "Unable aggregate DEM. Error code: " + gpResult.ErrorCode);
-                MessageBox.Show("Unable aggregate DEM. Calculation cancelled!!", "BAGIS-PRO");
                 return success;
             }
             else
@@ -2793,7 +2800,6 @@ namespace bagis_pro
                         {
                             Module1.Current.ModuleLogManager.LogError(nameof(ClipRasterLayerAsync),
                                "Unable to buffer aoi_v. Error code: " + gpResult.Result.ErrorCode);
-                            MessageBox.Show("Unable to buffer aoi_v. Clipping cancelled!!", "BAGIS-PRO");
                             return;
                         }
 
@@ -2824,7 +2830,6 @@ namespace bagis_pro
                         {
                             Module1.Current.ModuleLogManager.LogError(nameof(ClipRasterLayerAsync),
                                "Unable to buffer " + strClipFile + ". Error code: " + gpResult.Result.ErrorCode);
-                            MessageBox.Show("Unable to buffer aoi_v. Clipping cancelled!!", "BAGIS-PRO");
                             return;
                         }
                         strClipFile = strTempBuffer2;
@@ -2855,7 +2860,6 @@ namespace bagis_pro
                     {
                         Module1.Current.ModuleLogManager.LogError(nameof(ClipRasterLayerAsync),
                             "Unable obtain clipping envelope from " + strClipGdb + "\\" + strClipFile);
-                        MessageBox.Show("Unable obtain clipping envelope from " + strClipGdb + "\\" + strClipFile + " Clipping cancelled!!", "BAGIS-PRO");
                         return;
                     }
 
@@ -2870,7 +2874,6 @@ namespace bagis_pro
                     {
                         Module1.Current.ModuleLogManager.LogError(nameof(ClipRasterLayerAsync),
                            "Unable to clip " + strClipFile + ". Error code: " + finalResult.ErrorCode);
-                        MessageBox.Show("Unable to clip. Clipping cancelled!!", "BAGIS-PRO");
                         return;
                     }
                     else
@@ -5277,6 +5280,8 @@ namespace bagis_pro
 
         private static async Task<bool> IsNoDataRasterAsync(string strAoiPath, string strGdbFolder, string strRasterFile)
         {
+            char[] charsToTrim = { '\\' };
+            strGdbFolder = strGdbFolder.TrimEnd(charsToTrim);
             var parameters = Geoprocessing.MakeValueArray($@"{strGdbFolder}\{strRasterFile}", "MAXIMUM");
             var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath);
             var gpResult = await Geoprocessing.ExecuteToolAsync("GetRasterProperties_management", parameters, environments,

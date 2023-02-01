@@ -1111,7 +1111,17 @@ namespace bagis_pro
                 // Create the raster layer on the active map
                 await QueuedTask.Run(() =>
                 {
-                    rasterLayer = (RasterLayer)LayerFactory.Instance.CreateLayer(rasterUri, oMap);
+                    try
+                    {
+                        rasterLayer = (RasterLayer)LayerFactory.Instance.CreateLayer(rasterUri, oMap);
+                    }
+                    catch (Exception e)
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(DisplayUniqueValuesRasterFromLayerFileAsync),
+                            $@"Exception: {e.Message}");
+                        Module1.Current.ModuleLogManager.LogError(nameof(DisplayUniqueValuesRasterFromLayerFileAsync),
+                            $@"Unable to create raster layer from {rasterUri.AbsolutePath}!");
+                    }                    
                 });
 
                 // Set raster layer transparency and name
@@ -3030,7 +3040,7 @@ namespace bagis_pro
             if (arrReturnValues.Length == 4)
             {
                 // An error occurred getting the min/max
-                if (arrReturnValues[IDX_STRETCH_MIN] == ERROR_MIN)
+                if (arrReturnValues[IDX_STRETCH_MAX] == 0)
                 {
                     Module1.Current.ModuleLogManager.LogError(nameof(CalculateSweZonesAsync),
                         "Unable to retrieve min/max values from SWE layers. Calculation halted!");
@@ -3154,7 +3164,7 @@ namespace bagis_pro
             int halfZones = intZones / 2;
             double[] arrReturnValues = await MapTools.SWEUnitsConversionAsync(Constants.DATA_TYPE_SWE_DELTA, idxDefaultMonth);
             // An error occurred getting the min/max
-            if (arrReturnValues[IDX_STRETCH_MIN] == ERROR_MIN)
+            if (arrReturnValues[IDX_STRETCH_MAX] == 0)
             {
                 Module1.Current.ModuleLogManager.LogError(nameof(CalculateSweDeltaZonesAsync),
                     "Unable to retrieve min/max values from SWE Delta layers. Calculation halted!");

@@ -682,16 +682,24 @@ namespace bagis_pro
 
         public static async Task<double> GetCellSizeAsync(Uri gdbUri, string rasterName)
         {
-            double cellSize = 0.0F;
-            await QueuedTask.Run(() => {
-                using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(gdbUri)))
-                using (RasterDataset rasterDataset = geodatabase.OpenDataset<RasterDataset>(rasterName))
-                {
-                    RasterBandDefinition bandDefinition = rasterDataset.GetBand(0).GetDefinition();
-                    Tuple<double, double> tupleSize = bandDefinition.GetMeanCellSize();
-                    cellSize = (tupleSize.Item1 + tupleSize.Item2) / 2;
-                }
-            });
+            double cellSize = -1.0F;
+            if (await GeodatabaseTools.RasterDatasetExistsAsync(gdbUri, rasterName))
+            {
+                await QueuedTask.Run(() => {
+                    using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(gdbUri)))
+                    using (RasterDataset rasterDataset = geodatabase.OpenDataset<RasterDataset>(rasterName))
+                    {
+                        RasterBandDefinition bandDefinition = rasterDataset.GetBand(0).GetDefinition();
+                        Tuple<double, double> tupleSize = bandDefinition.GetMeanCellSize();
+                        cellSize = (tupleSize.Item1 + tupleSize.Item2) / 2;
+                    }
+                });
+            }
+            else
+            {
+                Module1.Current.ModuleLogManager.LogDebug(nameof(GetCellSizeAsync),
+                    $@"Unable to calculate cell size for {gdbUri.LocalPath}\{rasterName}. Raster does not exist!");
+            }
             return cellSize;
         }
 

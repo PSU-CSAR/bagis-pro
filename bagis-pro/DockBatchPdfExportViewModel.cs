@@ -716,7 +716,8 @@ namespace bagis_pro
                             success = await MapTools.DisplayMaps(Module1.Current.Aoi.FilePath, oLayout, false);
                             if (success != BA_ReturnCode.Success)
                             {
-                                MessageBox.Show("Unable to load maps. The map package cannot be exported!!", "BAGIS-PRO");
+                                Module1.Current.ModuleLogManager.LogError(nameof(RunImplAsync),
+                                    "An error occurred while trying to load the maps. The map package cannot be exported!");
                                 Names[idxRow].AoiBatchStateText = AoiBatchState.Failed.ToString();
                                 return;
                             }
