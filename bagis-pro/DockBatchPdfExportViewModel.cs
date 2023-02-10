@@ -886,7 +886,6 @@ namespace bagis_pro
                     }
                 }
             }   // Move on to next AOI
-            MessageBox.Show("Done!");
 
             // Concluding log entry
             strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Batch tool finished!! \r\n";
@@ -894,6 +893,7 @@ namespace bagis_pro
             {
                 sw.WriteLine(strLogEntry);
             }
+            MessageBox.Show("Done!");
         }
 
         private async void RunSnodasImplAsync(object param)
