@@ -327,9 +327,9 @@ namespace bagis_pro
                 }
                 //Printing data sources
                 IDictionary<string, BA_Objects.DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
-                string[] keys = { Constants.DATA_TYPE_SWE, Constants.DATA_TYPE_PRECIPITATION, Constants.DATA_TYPE_SNOTEL,
+                string[] keys = { Constants.DATA_TYPE_SWE, BA_Objects.DataSource.GetPrecipitationKey, Constants.DATA_TYPE_SNOTEL,
                                   Constants.DATA_TYPE_SNOW_COURSE, Constants.DATA_TYPE_SNOLITE, Constants.DATA_TYPE_COOP_PILLOW,
-                                  Constants.DATA_TYPE_ROADS, Constants.DATA_TYPE_DEM,
+                                  Constants.DATA_TYPE_ROADS, BA_Objects.DataSource.GetDemKey,
                                   Constants.DATA_TYPE_LAND_OWNERSHIP, Constants.DATA_TYPE_LAND_COVER};
                 IList<BA_Objects.DataSource> lstDataSources = new List<BA_Objects.DataSource>();
                 foreach (string strKey in keys)
@@ -341,12 +341,12 @@ namespace bagis_pro
                     }
                 }
                 // Add the DEM if it isn't there
-                if (!dictLocalDataSources.ContainsKey(Constants.DATA_TYPE_DEM))
+                if (!dictLocalDataSources.ContainsKey(BA_Objects.DataSource.GetDemKey))
                 {
                     IDictionary<string, dynamic> dictDatasources = await ws.QueryDataSourcesAsync((string)Module1.Current.BatchToolSettings.EBagisServer);
                     if (dictDatasources != null)
                     {
-                        BA_Objects.DataSource dsDem = new BA_Objects.DataSource(dictDatasources[Constants.DATA_TYPE_DEM]);
+                        BA_Objects.DataSource dsDem = new BA_Objects.DataSource(dictDatasources[BA_Objects.DataSource.GetDemKey]);
                         if (dsDem != null)
                         {
                             lstDataSources.Add(dsDem);
@@ -646,16 +646,16 @@ namespace bagis_pro
                 Webservices ws = new Webservices();
                 IDictionary<string, BA_Objects.DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
                 BA_Objects.DataSource demDataSource = null;
-                if (dictLocalDataSources.Keys.Contains(Constants.DATA_TYPE_DEM))
+                if (dictLocalDataSources.Keys.Contains(BA_Objects.DataSource.GetDemKey))
                 {
-                    demDataSource = dictLocalDataSources[Constants.DATA_TYPE_DEM];
+                    demDataSource = dictLocalDataSources[BA_Objects.DataSource.GetDemKey];
                 }
                 else
                 {
                     IDictionary<string, dynamic> dictDatasources = await ws.QueryDataSourcesAsync((string)Module1.Current.BatchToolSettings.EBagisServer);
                     if (dictDatasources != null)
                     {
-                        demDataSource = new BA_Objects.DataSource(dictDatasources[Constants.DATA_TYPE_DEM]);
+                        demDataSource = new BA_Objects.DataSource(dictDatasources[BA_Objects.DataSource.GetDemKey]);
                     }
                 }
 

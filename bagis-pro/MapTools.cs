@@ -1948,10 +1948,10 @@ namespace bagis_pro
                         strTitle = strPrefix + " " + strTitle;
                     }
                     string dataSourceDesc = "";
-                    if (dictLocalDataSources.Keys.Contains(Constants.DATA_TYPE_PRECIPITATION))
+                    if (dictLocalDataSources.Keys.Contains(BA_Objects.DataSource.GetPrecipitationKey))
                     {
                         BA_Objects.DataSource oDs = new BA_Objects.DataSource();
-                        oDs = dictLocalDataSources[Constants.DATA_TYPE_PRECIPITATION];
+                        oDs = dictLocalDataSources[BA_Objects.DataSource.GetPrecipitationKey];
                         dataSourceDesc = oDs.shortDescription;
                     }
                     mapDefinition = new BA_Objects.MapDefinition(strTitle,
@@ -2433,10 +2433,10 @@ namespace bagis_pro
                         strTitle = strTitle + strSuffix;
                     }
                     dataSourceDesc = "";
-                    if (dictLocalDataSources.Keys.Contains(Constants.DATA_TYPE_PRECIPITATION))
+                    if (dictLocalDataSources.Keys.Contains(BA_Objects.DataSource.GetPrecipitationKey))
                     {
                         BA_Objects.DataSource oDs = new BA_Objects.DataSource();
-                        oDs = dictLocalDataSources[Constants.DATA_TYPE_PRECIPITATION];
+                        oDs = dictLocalDataSources[BA_Objects.DataSource.GetPrecipitationKey];
                         string tempDescr = oDs.shortDescription;
                         int pos = tempDescr.IndexOf("annual");
                         if (pos > 0)
@@ -3489,9 +3489,9 @@ namespace bagis_pro
                     layoutFile = Constants.LAYOUT_FILE_SEASONAL_PRECIP_CONTRIB;
                     mapLayerName = Constants.MAPS_SEASONAL_PRECIP_CONTRIB;
                     dataSourceDesc = "";
-                    if (dictLocalDataSources != null && dictLocalDataSources.Keys.Contains(Constants.DATA_TYPE_PRECIPITATION))
+                    if (dictLocalDataSources != null && dictLocalDataSources.Keys.Contains(BA_Objects.DataSource.GetPrecipitationKey))
                     {
-                        string tempDescr = dictLocalDataSources[Constants.DATA_TYPE_PRECIPITATION].shortDescription;
+                        string tempDescr = dictLocalDataSources[BA_Objects.DataSource.GetPrecipitationKey].shortDescription;
                         if (!string.IsNullOrEmpty(tempDescr))
                         {
                             int pos = tempDescr.IndexOf("annual");

@@ -43,5 +43,35 @@ namespace bagis_pro.BA_Objects
             { /*Do nothing; Required for serialization */}
         }
 
+        public static string GetDemKey
+        {
+            get
+            {
+                switch (Module1.Current.DataSourceGroup)
+                {
+                    case Constants.DATA_SOURCES_ALASKA:
+                        return Constants.DATA_TYPE_ALASKA_DEM;
+                    default:
+                        return Constants.DATA_TYPE_DEM;
+                }
+            }
+
+        }
+
+        public static string GetPrecipitationKey
+        {
+            get
+            {
+                switch (Module1.Current.DataSourceGroup)
+                {
+                    case Constants.DATA_SOURCES_ALASKA:
+                        return Constants.DATA_TYPE_ALASKA_PRECIPITATION;
+                    default:
+                        return Constants.DATA_TYPE_PRECIPITATION;
+                }
+            }
+
+        }
+
     }
 }

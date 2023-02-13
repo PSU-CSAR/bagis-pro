@@ -298,6 +298,12 @@ namespace bagis_pro
         public const string DATA_TYPE_SNOLITE = "SNOLITE";
         public const string DATA_TYPE_COOP_PILLOW = "Coop Pillow";
         public const string DATA_TYPE_DEM = "DEM";
+        public const string DATA_TYPE_ALASKA_DEM = "Alaska DEM";
+        public const string DATA_TYPE_ALASKA_PRECIPITATION = "Alaska Precipitation";
+        public const string DATA_TYPE_ALASKA_LAND_COVER = "Alaska Land Cover";
+        public const string DATA_SOURCES_DEFAULT = "Default Data Sources";
+        public const string DATA_SOURCES_ALASKA = "Alaska Data Sources";
+
 
         public const int VALUE_NO_DATA_9999 = -9999;
         public const string VALUE_NO_DATA = "NoData";

@@ -800,7 +800,7 @@ namespace bagis_pro
 
                                 strClipFile = strTempBuffer;
                                 arrLayersToDelete[0] = strTempBuffer;
-                                if (strDataType.Equals(Constants.DATA_TYPE_PRECIPITATION))
+                                if (strDataType.Equals(BA_Objects.DataSource.GetPrecipitationKey))
                                 {
                                     // Copy the updated buffered file into the aoi.gdb
                                     parameters = Geoprocessing.MakeValueArray(strOutputFeatures, GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, true) +
@@ -883,7 +883,7 @@ namespace bagis_pro
                         string strOutputGdb = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers, true);
 
                         // Reset some variables if clipping PRISM
-                        if (strDataType.Equals(Constants.DATA_TYPE_PRECIPITATION))
+                        if (strDataType.Equals(BA_Objects.DataSource.GetPrecipitationKey))
                         {
                             int prismCount = Enum.GetNames(typeof(PrismFile)).Length;
                             int seasonalPrismCount = Enum.GetNames(typeof(SeasonalPrismFile)).Length;
@@ -5000,7 +5000,7 @@ namespace bagis_pro
                     "Contacting webservices server to retrieve prism layer uri");
                 IDictionary<string, dynamic> dictDataSources =
                     await ws.QueryDataSourcesAsync((string)Module1.Current.BatchToolSettings.EBagisServer);
-                string strWsPrefix = dictDataSources[Constants.DATA_TYPE_PRECIPITATION].uri;
+                string strWsPrefix = dictDataSources[BA_Objects.DataSource.GetPrecipitationKey].uri;
                 if (!string.IsNullOrEmpty(strWsPrefix))
                 {
                     string localLayerName = Path.GetFileName((string)Module1.Current.BatchToolSettings.AoiPrecipFile);

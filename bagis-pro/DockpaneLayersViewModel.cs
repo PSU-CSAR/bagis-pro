@@ -469,7 +469,7 @@ namespace bagis_pro
 
                 if (clipPrism)
                 {
-                    success = await AnalysisTools.ClipLayersAsync(Module1.Current.Aoi.FilePath, Constants.DATA_TYPE_PRECIPITATION,
+                    success = await AnalysisTools.ClipLayersAsync(Module1.Current.Aoi.FilePath, BA_Objects.DataSource.GetPrecipitationKey,
                         pBufferDistance, pBufferUnits, PrismBufferDistance, PrismBufferUnits);
                     if (success == BA_ReturnCode.Success)
                     {

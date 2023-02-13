@@ -461,7 +461,7 @@ namespace bagis_pro
                         // Clip PRISM
                         string strDefaultBufferDistance = (string)Module1.Current.BatchToolSettings.PrecipBufferDistance;
                         string strDefaultBufferUnits = (string)Module1.Current.BatchToolSettings.PrecipBufferUnits;
-                        success = await AnalysisTools.ClipLayersAsync(aoiFolder, Constants.DATA_TYPE_PRECIPITATION,
+                        success = await AnalysisTools.ClipLayersAsync(aoiFolder, BA_Objects.DataSource.GetPrecipitationKey,
                             pBufferDistance, pBufferUnits, strDefaultBufferDistance, strDefaultBufferUnits);
                         if (success != BA_ReturnCode.Success)
                         {
