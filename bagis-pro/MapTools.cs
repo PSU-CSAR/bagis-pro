@@ -1079,6 +1079,7 @@ namespace bagis_pro
         public static async Task<BA_ReturnCode> DisplayUniqueValuesRasterFromLayerFileAsync(string strMapName, Uri rasterUri, 
             string displayName, string layerFilePath, int transparency, bool bIsVisible)
         {
+            BA_ReturnCode success = BA_ReturnCode.Success;
             // Make sure the layer file exists before trying to display
             if (!System.IO.File.Exists(layerFilePath))
             {
@@ -1121,6 +1122,7 @@ namespace bagis_pro
                             $@"Exception: {e.Message}");
                         Module1.Current.ModuleLogManager.LogError(nameof(DisplayUniqueValuesRasterFromLayerFileAsync),
                             $@"Unable to create raster layer from {rasterUri.AbsolutePath}!");
+                        success = BA_ReturnCode.ReadError;
                     }                    
                 });
 
@@ -1144,7 +1146,7 @@ namespace bagis_pro
                     rasterLayer?.SetVisibility(bIsVisible);
                 }
             });
-            return BA_ReturnCode.Success;
+            return success;
         }
 
         public static async Task SetToUniqueValueColorizer(Map oMap, string layerName, string styleCategory,
@@ -2172,10 +2174,10 @@ namespace bagis_pro
                     lstLegendLayers.Add(Constants.MAPS_ELEV_ZONE);
                     strDemDisplayUnits = (string)Module1.Current.BatchToolSettings.DemDisplayUnits;
                     dataSourceDesc = "";
-                    if (dictLocalDataSources.Keys.Contains(Constants.DATA_TYPE_LAND_COVER))
+                    if (dictLocalDataSources.Keys.Contains(BA_Objects.DataSource.GetLandCoverKey))
                     {
                         BA_Objects.DataSource oDs = new BA_Objects.DataSource();
-                        oDs = dictLocalDataSources[Constants.DATA_TYPE_LAND_COVER];
+                        oDs = dictLocalDataSources[BA_Objects.DataSource.GetLandCoverKey];
                         dataSourceDesc = oDs.shortDescription;
                     }
                     string strDescr = $@"Forested land cover includes areas with forest classifications {Environment.NewLine}from the {dataSourceDesc}.";
@@ -2479,10 +2481,10 @@ namespace bagis_pro
                     lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
                     lstLegendLayers.Add(Constants.MAPS_LAND_COVER);
                     dataSourceDesc = "";
-                    if (dictLocalDataSources.Keys.Contains(Constants.DATA_TYPE_LAND_COVER))
+                    if (dictLocalDataSources.Keys.Contains(BA_Objects.DataSource.GetLandCoverKey))
                     {
                         BA_Objects.DataSource oDs = new BA_Objects.DataSource();
-                        oDs = dictLocalDataSources[Constants.DATA_TYPE_LAND_COVER];
+                        oDs = dictLocalDataSources[BA_Objects.DataSource.GetLandCoverKey];
                         dataSourceDesc = oDs.shortDescription;
                     }
                     mapDefinition = new BA_Objects.MapDefinition(Constants.TITLE_LAND_COVER,
@@ -3636,11 +3638,15 @@ namespace bagis_pro
                             lstFile.Add(Constants.FILE_SNOW_COURSE);
                             lstDatasetType.Add(esriDatasetType.esriDTFeatureClass);
                         }
-                        // Waterbodies
+                    // Waterbodies
+                    bool bExists = await GeodatabaseTools.FeatureClassExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Analysis)), Constants.FILE_WATER_BODIES);
+                    if (bExists)
+                    {
                         lstLayerName.Add(Constants.MAPS_WATERBODIES);
                         lstGdb.Add(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Analysis));
                         lstFile.Add(Constants.FILE_WATER_BODIES);
                         lstDatasetType.Add(esriDatasetType.esriDTFeatureClass);
+                    }
                         // Streams
                         lstLayerName.Add(Constants.MAPS_STREAMS);
                         lstGdb.Add(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers));

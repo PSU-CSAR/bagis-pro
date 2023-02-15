@@ -272,6 +272,7 @@ namespace bagis_pro
         public const string FIELD_WINTER_START_MONTH = "winter_start_month";
         public const string FIELD_WINTER_END_MONTH = "winter_end_month";
         public const string FIELD_HUC = "huc";
+        public const string FIELD_HUC2 = "huc2";
         public const string FIELD_LATITUDE = "latitude";
         public const string FIELD_LONGITUDE = "longitude";
         public const string FIELD_SOURCE_ID_FEATURE = "SrcID_Feat";
@@ -310,6 +311,7 @@ namespace bagis_pro
         public const string VALUE_UNKNOWN = "Unknown";
         // BAGIS V3 allowed elevation intervals up to 5000; This tool only allows up to 1000
         public static readonly short[] VALUES_ELEV_INTERVALS = new short[] { 50, 100, 200, 250, 500, 1000 };
+        public const string VALUE_ALASKA_HUC2 = "19";
 
         public const string UNITS_INCHES = "Inches";
         public const string UNITS_MILLIMETERS = "Millimeters";

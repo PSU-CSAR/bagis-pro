@@ -330,7 +330,7 @@ namespace bagis_pro
                 string[] keys = { Constants.DATA_TYPE_SWE, BA_Objects.DataSource.GetPrecipitationKey, Constants.DATA_TYPE_SNOTEL,
                                   Constants.DATA_TYPE_SNOW_COURSE, Constants.DATA_TYPE_SNOLITE, Constants.DATA_TYPE_COOP_PILLOW,
                                   Constants.DATA_TYPE_ROADS, BA_Objects.DataSource.GetDemKey,
-                                  Constants.DATA_TYPE_LAND_OWNERSHIP, Constants.DATA_TYPE_LAND_COVER};
+                                  Constants.DATA_TYPE_LAND_OWNERSHIP, BA_Objects.DataSource.GetLandCoverKey};
                 IList<BA_Objects.DataSource> lstDataSources = new List<BA_Objects.DataSource>();
                 foreach (string strKey in keys)
                 {
@@ -1233,7 +1233,7 @@ namespace bagis_pro
                         string[] arrResults = await GeneralTools.QueryMasterAoiProperties(oAoi.StationTriplet);
                         Module1.Current.ModuleLogManager.LogDebug(nameof(SetAoiAsync),
                             "Master AOI properties returned. Array length: " + arrValues.Length);
-                        if (arrResults.Length == 4)
+                        if (arrResults.Length == 5)
                         {
                             oAoi.NwccName = arrResults[0];
                             if (!string.IsNullOrEmpty(arrResults[1]))
@@ -1249,6 +1249,15 @@ namespace bagis_pro
                                 oAoi.Huc = Convert.ToString(arrResults[3]);
                                 Module1.Current.ModuleLogManager.LogDebug(nameof(SetAoiAsync),
                                     "HUC set to " + oAoi.Huc);
+                            }
+                            if (!string.IsNullOrEmpty(arrResults[4]))
+                            {
+                                if (Constants.VALUE_ALASKA_HUC2.Equals(arrResults[4]))
+                                {
+                                    Module1.Current.DataSourceGroup = Constants.DATA_SOURCES_ALASKA;
+                                    Module1.Current.ModuleLogManager.LogDebug(nameof(SetAoiAsync),
+                                        "AOI set to use Alaska data sources. HUC2 = " + arrResults[4]);
+                                }
                             }
                         }
                         else
@@ -2480,7 +2489,7 @@ namespace bagis_pro
                     WhereClause = Constants.FIELD_STATION_TRIPLET + " = '" + stationTriplet + "'"
                 };
                 string[] arrSearch = { Constants.FIELD_NWCCNAME, Constants.FIELD_WINTER_START_MONTH, Constants.FIELD_WINTER_END_MONTH,
-                    Constants.FIELD_HUC};
+                    Constants.FIELD_HUC, Constants.FIELD_HUC2};
                 arrResults = await ws.QueryServiceForValuesAsync(uriMaster, "0", arrSearch, queryFilter);
                 if (arrResults.Length != arrSearch.Length)
                 {

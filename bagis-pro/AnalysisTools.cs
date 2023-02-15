@@ -4810,7 +4810,7 @@ namespace bagis_pro
         {
             string strOutputRaster = GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Layers, true)
                 + Constants.FILE_LAND_COVER;
-            BA_ReturnCode success = await AnalysisTools.ClipRasterLayerAsync(aoiFolderPath, strOutputRaster, Constants.DATA_TYPE_LAND_COVER,
+            BA_ReturnCode success = await AnalysisTools.ClipRasterLayerAsync(aoiFolderPath, strOutputRaster, BA_Objects.DataSource.GetLandCoverKey,
                 landCoverBufferDistance, landCoverBufferUnits);
             string strNullOutput = GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Analysis, true)
                 + "tmpNull";

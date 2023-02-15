@@ -371,7 +371,7 @@ namespace bagis_pro
                 return success;
             }
             string[] arrResults = await GeneralTools.QueryMasterAoiProperties(stationTriplet);
-            if (arrResults.Length == 4)
+            if (arrResults.Length == 5)
             {
                 nwccAoiName = arrResults[0].Trim();
                 nwccAoiName = nwccAoiName.Replace(" ", "_");

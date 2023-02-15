@@ -73,5 +73,20 @@ namespace bagis_pro.BA_Objects
 
         }
 
+        public static string GetLandCoverKey
+        {
+            get
+            {
+                switch (Module1.Current.DataSourceGroup)
+                {
+                    case Constants.DATA_SOURCES_ALASKA:
+                        return Constants.DATA_TYPE_ALASKA_LAND_COVER;
+                    default:
+                        return Constants.DATA_TYPE_LAND_COVER;
+                }
+            }
+
+        }
+
     }
 }
