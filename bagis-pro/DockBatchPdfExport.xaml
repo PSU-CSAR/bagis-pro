@@ -17,17 +17,17 @@
     </UserControl.Resources>
     <Grid x:Name="Batch_Pdf_Tool">
         <Grid.RowDefinitions>
-            <RowDefinition Height="50"/>
+            <RowDefinition Height="54"/>
             <RowDefinition Height="30"/>
-            <RowDefinition Height="25"/>
-            <RowDefinition Height="40"/>
+            <RowDefinition Height="30"/>
             <RowDefinition Height="30"/>
             <RowDefinition Height="60"/>
             <RowDefinition Height="30"/>
             <RowDefinition Height="30"/>
-            <RowDefinition Height="30"/>
+            <RowDefinition Height="10"/>
             <RowDefinition Height="*"/>
-            <RowDefinition Height="25"/>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="30"/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto"/>
@@ -48,22 +48,20 @@
         <DockPanel Grid.Row="1" Grid.Column="2" Margin="2,0,2,0">
             <Button x:Name="btnAoiFolder" Content="Select" HorizontalAlignment="Left"  VerticalAlignment="Center" Width="50" Command="{Binding CmdAoiFolder}" Margin="5, 0, 0, 0"/>
         </DockPanel>
-        <DockPanel Grid.Row="4" Grid.Column="0" VerticalAlignment="Center">
-            <!--<CheckBox x:Name="chkSiteAnalysis" Content="Include Site Analysis report" HorizontalAlignment="Left" Margin="5,0,2,0" 
-                  IsEnabled="True" IsChecked="{Binding SiteAnalysisChecked}"  /> -->
+        <DockPanel Grid.Row="2" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Top" Grid.ColumnSpan="3" Width="320">
+            <CheckBox x:Name="chkArchive" VerticalContentAlignment="Top" Margin="5,0,0,0" 
+                  IsEnabled="True" IsChecked="{Binding ArchiveChecked}" Height="34" >
+                <TextBlock Text="Copy reports for all AOIs to the maps_publish subfolder in the selected folder" TextWrapping="Wrap"/>
+            </CheckBox>
         </DockPanel>
-        <DockPanel Grid.Row="2" Grid.Column="0" VerticalAlignment="Center">
-            <CheckBox x:Name="chkArchive" Content="Copy reports to a single folder" HorizontalAlignment="Left" Margin="5,0,2,0" 
-                  IsEnabled="True" IsChecked="{Binding ArchiveChecked}"  />
-        </DockPanel>
-        <DockPanel Grid.Row="3" Grid.ColumnSpan="3" HorizontalAlignment="Left">
+        <!--<DockPanel Grid.Row="3" Grid.ColumnSpan="3" HorizontalAlignment="Left">
             <TextBlock
                 Name="tbArchive"
                 TextWrapping="WrapWithOverflow" MaxWidth="300" Margin="5,2,0,2">
                 Copies reports for all AOIs will be saved in the maps_publish subfolder in the selected basin folder
             </TextBlock>
-        </DockPanel>
-        <DockPanel Grid.Row="4" Grid.ColumnSpan="3" HorizontalAlignment="Left" Margin="2,2,2,2">
+        </DockPanel> -->
+        <DockPanel Grid.Row="3" Grid.ColumnSpan="3" HorizontalAlignment="Left" Margin="2,2,2,2">
             <TextBlock
                 Name="tbPublisher"
                 TextWrapping="WrapWithOverflow" MaxWidth="100" VerticalAlignment="Center" Margin="2, 2, 5, 2">
@@ -72,7 +70,7 @@
             <TextBox x:Name="txtPublisher" Text="{Binding Publisher}" HorizontalAlignment="Left"  
                      VerticalAlignment="Center" Width="240" Margin="0, 2, 0, 2"/>
         </DockPanel>
-        <DockPanel Grid.Row="5" Grid.Column="0" LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Grid.ColumnSpan="3" Margin="0,2,0,2">
+        <DockPanel Grid.Row="4" Grid.Column="0" LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Grid.ColumnSpan="3" Margin="0,2,0,2">
             <TextBlock
                 Name="tbComments"
                 TextWrapping="WrapWithOverflow" MaxWidth="300" VerticalAlignment="Center" Margin="5, 5, 0, 5">
@@ -81,7 +79,7 @@
             <TextBox x:Name="txtComments" Text="{Binding Comments}" HorizontalAlignment="Left"  
                      VerticalAlignment="Center" Width="230" Height="45" Margin="5,5,5,5" />
         </DockPanel>
-        <DockPanel Grid.Row="6" Grid.Column="0" LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Grid.ColumnSpan="3" Margin="0,0.2,-0.4,0.2">
+        <DockPanel Grid.Row="5" Grid.Column="0" LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Grid.ColumnSpan="3" Margin="0,0.2,-0.4,0.2">
             <TextBlock
                 Name="tbSettings"
                 TextWrapping="WrapWithOverflow" MaxWidth="300" VerticalAlignment="Center" Margin="5, 5, 0, 5">
@@ -91,11 +89,11 @@
                      VerticalAlignment="Center" Width="225" IsReadOnly="True" Margin="5,4,0,4.8"
                      Foreground="Blue" Background="Transparent"/>
         </DockPanel>
-        <DockPanel Grid.Row="7" Grid.ColumnSpan="3" LastChildFill="false" KeyboardNavigation.TabNavigation="Local" >
+        <DockPanel Grid.Row="6" Grid.ColumnSpan="3" LastChildFill="false" KeyboardNavigation.TabNavigation="Local" >
             <Button x:Name="btnLog" Content="View Log" HorizontalAlignment="Left" VerticalAlignment="Center" Width="75" IsEnabled="{Binding CmdLogEnabled}" Command="{Binding CmdLog}" Margin="5, 0, 0, 0"/>
         </DockPanel>
         <!--<StackPanel Grid.Row="9" Orientation="Vertical" Margin="5,2,0,2" HorizontalAlignment="Left" Grid.ColumnSpan="3">-->
-        <DockPanel Grid.Row="9" Grid.ColumnSpan="3" LastChildFill="false"  Margin="5,2,0,2" HorizontalAlignment="Left">
+        <DockPanel Grid.Row="8" Grid.ColumnSpan="3" LastChildFill="false"  Margin="5,2,0,2" HorizontalAlignment="Left">
             <ListView ItemsSource="{Binding Names}" Width="320">
                 <ListView.View>
                     <GridView AllowsColumnReorder="true"
@@ -129,12 +127,17 @@
             </ListView>
         </DockPanel>
         <!--</StackPanel>-->
+        <DockPanel Grid.Row="9" Grid.Column="0" LastChildFill="false" KeyboardNavigation.TabNavigation="Local" >
+            <Button x:Name="btnPourpoint" Content="Update Forecast Station Data" HorizontalAlignment="Left" VerticalAlignment="Center" Width="175" IsEnabled="{Binding CmdForecastEnabled}" Command="{Binding CmdForecast}" Margin="5, 0, 0, 0"/>
+        </DockPanel>
+
+        <DockPanel Grid.Row="9" Grid.Column="3" LastChildFill="false" KeyboardNavigation.TabNavigation="Local" >
+            <Button x:Name="btnRun" Content="Run" HorizontalAlignment="Left" VerticalAlignment="Center" Width="50" IsEnabled="{Binding CmdRunEnabled}" Command="{Binding CmdRun}" Margin="5, 0, 0, 0"/>
+        </DockPanel>
+        
         <DockPanel Grid.Row="10" Grid.Column="0" LastChildFill="false" KeyboardNavigation.TabNavigation="Local" >
             <Button x:Name="btnSnodas" Content="Export AOI GeoJson for Snodas" HorizontalAlignment="Left" VerticalAlignment="Center" Width="175" IsEnabled="{Binding CmdSnodasEnabled}" Command="{Binding CmdSnodas}" Margin="5, 0, 0, 0"/>
         </DockPanel>
 
-        <DockPanel Grid.Row="10" Grid.Column="3" LastChildFill="false" KeyboardNavigation.TabNavigation="Local" >
-            <Button x:Name="btnRun" Content="Run" HorizontalAlignment="Left" VerticalAlignment="Center" Width="50" IsEnabled="{Binding CmdRunEnabled}" Command="{Binding CmdRun}" Margin="5, 0, 0, 0"/>
-        </DockPanel>
     </Grid>
 </UserControl>

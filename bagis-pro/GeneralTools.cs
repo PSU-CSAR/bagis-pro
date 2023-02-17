@@ -2853,7 +2853,7 @@ namespace bagis_pro
                         return arrBuffer;
                     }
                 }
-                BA_ReturnCode success = await GeoprocessingTools.NearAsync(outputLines, outputLinesBuffered);
+                BA_ReturnCode success = await GeoprocessingTools.NearAsync(outputLines, outputLinesBuffered, "");
                 if (success != BA_ReturnCode.Success)
                 {
                     return arrBuffer;

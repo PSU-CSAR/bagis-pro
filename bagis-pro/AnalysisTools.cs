@@ -661,7 +661,7 @@ namespace bagis_pro
                 if (string.IsNullOrEmpty(strTriplet))
                 {
                     // If triplet is still null, use the near tool
-                    BA_ReturnCode success = await GeoprocessingTools.NearAsync(strPourpointClassPath, strWsUri);
+                    BA_ReturnCode success = await GeoprocessingTools.NearAsync(strPourpointClassPath, strWsUri, Constants.VALUE_FORECAST_STATION_SEARCH_RADIUS);
                     if (success == BA_ReturnCode.Success)
                     {
                         QueryFilter queryFilter = new QueryFilter();

@@ -108,6 +108,7 @@ namespace bagis_pro
         private bool _archiveChecked = false;
         private bool _siteAnalysisChecked = true;
         private bool _cmdRunEnabled = false;
+        private bool _cmdForecastEnabled = false;
         private bool _cmdSnodasEnabled = false;
         private bool _cmdLogEnabled = false;
         private ObservableCollection<string> _aoiList = new ObservableCollection<string>();
@@ -181,6 +182,15 @@ namespace bagis_pro
             set
             {
                 SetProperty(ref _cmdRunEnabled, value, () => CmdRunEnabled);
+            }
+        }
+
+        public bool CmdForecastEnabled
+        {
+            get { return _cmdForecastEnabled; }
+            set
+            {
+                SetProperty(ref _cmdForecastEnabled, value, () => CmdForecastEnabled);
             }
         }
 
@@ -258,6 +268,7 @@ namespace bagis_pro
                     {
                         CmdRunEnabled = true;
                         CmdSnodasEnabled = true;
+                        CmdForecastEnabled = true;
                     }
                     else
                     {
@@ -266,6 +277,7 @@ namespace bagis_pro
                             "No valid AOIs were found in the selected folder!");
                         CmdRunEnabled = false;
                         CmdSnodasEnabled = false;
+                        CmdForecastEnabled = false;
                     }
                 });
             }
@@ -281,6 +293,7 @@ namespace bagis_pro
             }
         }
 
+        private RelayCommand _runSnodasCommand;
         public ICommand CmdSnodas
         {
             get
@@ -288,6 +301,17 @@ namespace bagis_pro
                 if (_runSnodasCommand == null)
                     _runSnodasCommand = new RelayCommand(RunSnodasImplAsync, () => true);
                 return _runSnodasCommand;
+            }
+        }
+
+        private RelayCommand _runForecastCommand;
+        public ICommand CmdForecast
+        {
+            get
+            {
+                if (_runForecastCommand == null)
+                    _runForecastCommand = new RelayCommand(RunForecastImplAsync, () => true);
+                return _runForecastCommand;
             }
         }
 
@@ -306,7 +330,7 @@ namespace bagis_pro
                         MessageBox.Show("Could not find log file!", "BAGIS-PRO");
                         CmdLogEnabled = false;
                     }
-                    
+
                 });
             }
         }
@@ -322,16 +346,6 @@ namespace bagis_pro
                 if (_runCommand == null)
                     _runCommand = new RelayCommand(RunImplAsync, () => true);
                 return _runCommand;
-            }
-        }
-        private RelayCommand _runSnodasCommand;
-        public ICommand RunSnodasCommand
-        {
-            get
-            {
-                if (_runSnodasCommand == null)
-                    _runSnodasCommand = new RelayCommand(RunImplAsync, () => true);
-                return _runSnodasCommand;
             }
         }
 
@@ -989,7 +1003,7 @@ namespace bagis_pro
                             if (success == BA_ReturnCode.Success)
                             {
                                 Webservices ws = new Webservices();
-                                string errorMessage = ws.GenerateSnodasGeoJson(pointOutputPath, polygonOutputPath, 
+                                string errorMessage = ws.GenerateSnodasGeoJson(pointOutputPath, polygonOutputPath,
                                     ParentFolder + "\\" + Constants.FOLDER_SNODAS_GEOJSON);
                                 if (!string.IsNullOrEmpty(errorMessage))
                                 {
@@ -1026,27 +1040,150 @@ namespace bagis_pro
             File.AppendAllText(snodasLog, strLogEntry);       // append
             MessageBox.Show("Generated GeoJson files are available in " + ParentFolder + "\\" + Constants.FOLDER_SNODAS_GEOJSON, "BAGIS-PRO");
         }
-    }
 
-    /// <summary>
-    /// Button implementation to show the DockPane.
-    /// </summary>
-        internal class DockBatchPdfExport_ShowButton : Button
-    {
-        protected override void OnClick()
+        private async void RunForecastImplAsync(object param)
         {
-            try
+            string log = ParentFolder + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\" + Constants.FILE_FORECAST_STATION_LOG;
+            // Create initial log entry
+            string strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Starting forecast station updates " +
+                Path.GetDirectoryName(log) + "\r\n";
+            File.WriteAllText(log, strLogEntry);    // overwrite file if it exists
+            BA_ReturnCode success = BA_ReturnCode.Success;
+            Webservices ws = new Webservices();
+
+            for (int idxRow = 0; idxRow < Names.Count; idxRow++)
             {
-                DockBatchPdfExportViewModel.Show();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Unable to show batch pdf export pane! " + ex.Message, "BAGIS-PRO");
-                MessageBox.Show("Stack trace" + ex.StackTrace, "BAGIS-PRO");
-            }
+                if (Names[idxRow].AoiBatchIsSelected)
+                {
+                    int errorCount = 0; // keep track of any non-fatal errors
+                    string aoiFolder = Names[idxRow].FilePath;
+                    Names[idxRow].AoiBatchStateText = AoiBatchState.Started.ToString();  // update gui
+                    strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Starting forecast station update for " +
+                        Names[idxRow].Name + "\r\n";
+                    File.AppendAllText(log, strLogEntry);       // append
+
+                    Uri ppUri = new Uri(GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Aoi));
+                    string strTriplet = "";
+                    string strStationName = "";
+                    string strAwdbId = "";
+                    string strNearTriplet = "";
+                    string strNearStationName = "";
+                    string strNearAwdbId = "";
+
+                    if (await GeodatabaseTools.FeatureClassExistsAsync(ppUri, Constants.FILE_POURPOINT))
+                    {
+                        string[] arrFields = new string[] { Constants.FIELD_STATION_TRIPLET, Constants.FIELD_STATION_NAME, Constants.FIELD_AWDB_ID };
+                        foreach (string strField in arrFields)
+                        {
+                            // Check for the field, if it exists query the value
+                            if (await GeodatabaseTools.AttributeExistsAsync(ppUri, Constants.FILE_POURPOINT, strField))
+                            {
+                                QueryFilter queryFilter = new QueryFilter();
+                                string strValue = await GeodatabaseTools.QueryTableForSingleValueAsync(ppUri, Constants.FILE_POURPOINT,
+                                    strField, queryFilter);
+                                switch (strField)
+                                {
+                                    case Constants.FIELD_STATION_TRIPLET:
+                                        strTriplet = strValue;
+                                        break;
+                                    case Constants.FIELD_STATION_NAME:
+                                        strStationName = strValue;
+                                        break;
+                                    case Constants.FIELD_AWDB_ID:
+                                        strAwdbId = strValue;
+                                        break;
+                                }
+                            }
+                            // Add the field if it is missing
+                            else
+                            {
+                                success = await GeoprocessingTools.AddFieldAsync(ppUri.LocalPath + "\\" + Constants.FILE_POURPOINT, strField, "TEXT");
+                            }
+                        }
+                        strLogEntry = 
+                            $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss ")}Original station values for {Names[idxRow].Name} {Environment.NewLine}         Station Triplet: {strTriplet}{Environment.NewLine}         AWDB Id: {strAwdbId} {Environment.NewLine}         Station name: {strStationName}{Environment.NewLine}";
+                        File.AppendAllText(log, strLogEntry);       // append
+                    }
+                    else
+                    {
+                        strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss ")} ERROR: Unable to open {ppUri.LocalPath + "\\" + Constants.FILE_POURPOINT}{Environment.NewLine}";
+                        File.AppendAllText(log, strLogEntry);       // append
+                        success = BA_ReturnCode.ReadError;
+                        errorCount++;
+                    }
+
+                    // Use the NEAR tool to find the closest Pourpoint
+                    string strWsUri = (string) Module1.Current.BatchToolSettings.MasterAoiList + "/0";  // Append layer ordinal to the uri
+                    success = await GeoprocessingTools.NearAsync(ppUri.LocalPath + "\\" + Constants.FILE_POURPOINT, strWsUri, Constants.VALUE_FORECAST_STATION_SEARCH_RADIUS);
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        QueryFilter queryFilter = new QueryFilter();
+                        string strNearId = await GeodatabaseTools.QueryTableForSingleValueAsync(ppUri, Constants.FILE_POURPOINT,
+                            Constants.FIELD_NEAR_ID, queryFilter);
+                        string[] arrSearch = { Constants.FIELD_STATION_TRIPLET, Constants.FIELD_AWDB_ID, Constants.FIELD_NWCCNAME };
+                        string[] arrFound = new string[arrSearch.Length];
+                        if (!String.IsNullOrEmpty(strNearId))
+                        {
+                            queryFilter.WhereClause = Constants.FIELD_OBJECT_ID + " = " + strNearId;
+                            arrFound = await ws.QueryServiceForValuesAsync(new Uri((string) Module1.Current.BatchToolSettings.MasterAoiList), "0", arrSearch, queryFilter);
+                            if (arrFound != null && arrFound.Length == 3 && arrFound[0] != null)
+                            {
+                                strNearTriplet = arrFound[0];
+                                strNearAwdbId = arrFound[1].Trim('"');
+                                strNearStationName = arrFound[2];
+                                strLogEntry =
+                                    $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss ")}Near station values for {Names[idxRow].Name} {Environment.NewLine}         Station Triplet: {strNearTriplet}{Environment.NewLine}         AWDB Id: {strNearAwdbId} {Environment.NewLine}         Station name: {strNearStationName}{Environment.NewLine}";
+                                File.AppendAllText(log, strLogEntry);       // append
+
+                            }
+                            else
+                            {
+                                strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss ")} ERROR: Unable to retrieve at least 1 property from the master aoi webservice{Environment.NewLine}";
+                                File.AppendAllText(log, strLogEntry);       // append
+                            }
+                        }
+                        //Delete fields added by NEAR process: NEAR_DIST and NEAR_ID
+                        string[] arrFieldsToDelete = new string[] { Constants.FIELD_NEAR_ID, Constants.FIELD_NEAR_DIST };
+                        success = await GeoprocessingTools.DeleteFeatureClassFieldsAsync(ppUri.LocalPath + "\\" + Constants.FILE_POURPOINT, arrFieldsToDelete);
+                    }
 
 
-            //DockBatchPdfExportViewModel.Show();
+                    if (success == BA_ReturnCode.Success && errorCount == 0)
+                    {
+                        Names[idxRow].AoiBatchStateText = AoiBatchState.Completed.ToString();  // update gui
+                    }
+                    else
+                    {
+                        Names[idxRow].AoiBatchStateText = AoiBatchState.Failed.ToString();
+                    }
+
+                }
+            }
+            strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Forecast station updates complete!! \r\n";
+            File.AppendAllText(log, strLogEntry);       // append
+            MessageBox.Show("Forecast station updates done!!");
+        }
+
+        /// <summary>
+        /// Button implementation to show the DockPane.
+        /// </summary>
+        internal class DockBatchPdfExport_ShowButton : Button
+        {
+            protected override void OnClick()
+            {
+                try
+                {
+                    DockBatchPdfExportViewModel.Show();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Unable to show batch pdf export pane! " + ex.Message, "BAGIS-PRO");
+                    MessageBox.Show("Stack trace" + ex.StackTrace, "BAGIS-PRO");
+                }
+
+
+                //DockBatchPdfExportViewModel.Show();
+            }
         }
     }
 }

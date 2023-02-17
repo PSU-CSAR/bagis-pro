@@ -127,11 +127,11 @@ namespace bagis_pro
             }
         }
 
-        public static async Task<BA_ReturnCode> NearAsync(string strInputFeatures, string strNearFeatures)
+        public static async Task<BA_ReturnCode> NearAsync(string strInputFeatures, string strNearFeatures, string strRadius)
         {
             IGPResult gpResult = await QueuedTask.Run(() =>
             {
-                var parameters = Geoprocessing.MakeValueArray(strInputFeatures, strNearFeatures);
+                var parameters = Geoprocessing.MakeValueArray(strInputFeatures, strNearFeatures, strRadius);
                 return Geoprocessing.ExecuteToolAsync("Near_analysis", parameters, null,
                             CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
             });
