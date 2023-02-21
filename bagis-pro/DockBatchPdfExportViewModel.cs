@@ -1043,11 +1043,17 @@ namespace bagis_pro
 
         private async void RunForecastImplAsync(object param)
         {
+            const string UPDATED_MATCH = "Updated-Match";
+            const string UPDATED_NEAR = "Updated-Near";
+            const string NO_CHANGE_MATCH = "No change-Match";
+            const string NO_CHANGE_NEAR = "No change-Near";
+            const string NOT_A_FORECAST = "Not A Forecast";
             string log = ParentFolder + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\" + Constants.FILE_FORECAST_STATION_LOG;
             // Create initial log entry
-            string strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Starting forecast station updates " +
-                Path.GetDirectoryName(log) + "\r\n";
+            string strLogEntry = "Date,Time,AOI File Path,Old Triplet,New Triplet,Remarks\r\n";
             File.WriteAllText(log, strLogEntry);    // overwrite file if it exists
+            strLogEntry = CreateLogEntry(ParentFolder, "", "", $@"Starting forecast station updates");
+            File.AppendAllText(log, strLogEntry);
             BA_ReturnCode success = BA_ReturnCode.Success;
             Webservices ws = new Webservices();
 
@@ -1058,8 +1064,7 @@ namespace bagis_pro
                     int errorCount = 0; // keep track of any non-fatal errors
                     string aoiFolder = Names[idxRow].FilePath;
                     Names[idxRow].AoiBatchStateText = AoiBatchState.Started.ToString();  // update gui
-                    strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Starting forecast station update for " +
-                        Names[idxRow].Name + "\r\n";
+                    strLogEntry = CreateLogEntry(aoiFolder, "", "", $@"Starting forecast station updates");
                     File.AppendAllText(log, strLogEntry);       // append
 
                     Uri ppUri = new Uri(GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Aoi));
@@ -1069,6 +1074,7 @@ namespace bagis_pro
                     string strNearTriplet = "";
                     string strNearStationName = "";
                     string strNearAwdbId = "";
+                    string strRemark = "";
 
                     if (await GeodatabaseTools.FeatureClassExistsAsync(ppUri, Constants.FILE_POURPOINT))
                     {
@@ -1100,13 +1106,10 @@ namespace bagis_pro
                                 success = await GeoprocessingTools.AddFieldAsync(ppUri.LocalPath + "\\" + Constants.FILE_POURPOINT, strField, "TEXT");
                             }
                         }
-                        strLogEntry = 
-                            $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss ")}Original station values for {Names[idxRow].Name} {Environment.NewLine}         Station Triplet: {strTriplet}{Environment.NewLine}         AWDB Id: {strAwdbId} {Environment.NewLine}         Station name: {strStationName}{Environment.NewLine}";
-                        File.AppendAllText(log, strLogEntry);       // append
                     }
                     else
                     {
-                        strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss ")} ERROR: Unable to open {ppUri.LocalPath + "\\" + Constants.FILE_POURPOINT}{Environment.NewLine}";
+                        strLogEntry = CreateLogEntry(aoiFolder, "", "", $@"ERROR: Unable to open {ppUri.LocalPath + "\\" + Constants.FILE_POURPOINT}");
                         File.AppendAllText(log, strLogEntry);       // append
                         success = BA_ReturnCode.ReadError;
                         errorCount++;
@@ -1131,23 +1134,31 @@ namespace bagis_pro
                                 strNearTriplet = arrFound[0];
                                 strNearAwdbId = arrFound[1].Trim('"');
                                 strNearStationName = arrFound[2];
-                                strLogEntry =
-                                    $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss ")}Near station values for {Names[idxRow].Name} {Environment.NewLine}         Station Triplet: {strNearTriplet}{Environment.NewLine}         AWDB Id: {strNearAwdbId} {Environment.NewLine}         Station name: {strNearStationName}{Environment.NewLine}";
-                                File.AppendAllText(log, strLogEntry);       // append
-
+                                if (strNearTriplet.Equals(strTriplet))
+                                {
+                                    strRemark = NO_CHANGE_NEAR;
+                                }
+                                else
+                                {
+                                    strRemark = UPDATED_NEAR;
+                                }
                             }
                             else
                             {
-                                strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss ")} ERROR: Unable to retrieve at least 1 property from the master aoi webservice{Environment.NewLine}";
-                                File.AppendAllText(log, strLogEntry);       // append
+                                strRemark = NOT_A_FORECAST;
                             }
+                        }
+                        else
+                        {
+                            strRemark = NOT_A_FORECAST;
                         }
                         //Delete fields added by NEAR process: NEAR_DIST and NEAR_ID
                         string[] arrFieldsToDelete = new string[] { Constants.FIELD_NEAR_ID, Constants.FIELD_NEAR_DIST };
                         success = await GeoprocessingTools.DeleteFeatureClassFieldsAsync(ppUri.LocalPath + "\\" + Constants.FILE_POURPOINT, arrFieldsToDelete);
                     }
 
-
+                    strLogEntry = CreateLogEntry(aoiFolder, strTriplet, strNearTriplet, strRemark);
+                    File.AppendAllText(log, strLogEntry);       // append
                     if (success == BA_ReturnCode.Success && errorCount == 0)
                     {
                         Names[idxRow].AoiBatchStateText = AoiBatchState.Completed.ToString();  // update gui
@@ -1156,12 +1167,20 @@ namespace bagis_pro
                     {
                         Names[idxRow].AoiBatchStateText = AoiBatchState.Failed.ToString();
                     }
-
                 }
             }
-            strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Forecast station updates complete!! \r\n";
+            strLogEntry = CreateLogEntry(ParentFolder, "", "", $@"Forecast station updates complete!!");
             File.AppendAllText(log, strLogEntry);       // append
             MessageBox.Show("Forecast station updates done!!");
+        }
+
+        private string CreateLogEntry(string strAoiPath, string strOldTriplet, string strNewTriplet, string strRemarks)
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.Append($@"{DateTime.Now.ToString("MM/dd/yy")},{DateTime.Now.ToString("H:mm:ss")},");
+            sb.Append($@"{strAoiPath},{strOldTriplet},{strNewTriplet},");
+            sb.Append($@"{strRemarks}{Environment.NewLine}");
+            return sb.ToString();
         }
 
         /// <summary>
