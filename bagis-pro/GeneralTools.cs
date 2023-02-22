@@ -2370,7 +2370,7 @@ namespace bagis_pro
                         {
                             if (headerRow == true)
                             {
-                                if (field.ToUpper().Trim().Equals(Constants.FIELD_RUNOFF_STATION_TRIPLET.ToUpper().Trim()))
+                                if (field.ToUpper().Trim().Equals(Constants.FIELD_STATION_TRIPLET.ToUpper().Trim()))
                                 {
                                     idxId = i;
                                 }

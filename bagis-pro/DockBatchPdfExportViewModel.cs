@@ -1076,6 +1076,8 @@ namespace bagis_pro
                     string strNearAwdbId = "";
                     string strRemark = "";
 
+                    // GET THE STATION TRIPLET FROM THE POURPOINT
+                    QueryFilter queryFilter = new QueryFilter();
                     if (await GeodatabaseTools.FeatureClassExistsAsync(ppUri, Constants.FILE_POURPOINT))
                     {
                         string[] arrFields = new string[] { Constants.FIELD_STATION_TRIPLET, Constants.FIELD_STATION_NAME, Constants.FIELD_AWDB_ID };
@@ -1083,8 +1085,7 @@ namespace bagis_pro
                         {
                             // Check for the field, if it exists query the value
                             if (await GeodatabaseTools.AttributeExistsAsync(ppUri, Constants.FILE_POURPOINT, strField))
-                            {
-                                QueryFilter queryFilter = new QueryFilter();
+                            {                                
                                 string strValue = await GeodatabaseTools.QueryTableForSingleValueAsync(ppUri, Constants.FILE_POURPOINT,
                                     strField, queryFilter);
                                 switch (strField)
@@ -1115,48 +1116,71 @@ namespace bagis_pro
                         errorCount++;
                     }
 
-                    // Use the NEAR tool to find the closest Pourpoint
-                    string strWsUri = (string) Module1.Current.BatchToolSettings.MasterAoiList + "/0";  // Append layer ordinal to the uri
-                    success = await GeoprocessingTools.NearAsync(ppUri.LocalPath + "\\" + Constants.FILE_POURPOINT, strWsUri, Constants.VALUE_FORECAST_STATION_SEARCH_RADIUS);
-                    if (success == BA_ReturnCode.Success)
+                    // QUERY THE MASTER LIST FOR THE STATION TRIPLET
+                    string strWsUri = (string)Module1.Current.BatchToolSettings.MasterAoiList + "/0";  // Append layer ordinal to the uri
+                    string[] arrSearch = { Constants.FIELD_STATION_TRIPLET, Constants.FIELD_AWDB_ID, Constants.FIELD_NWCCNAME };
+                    string[] arrFound = new string[arrSearch.Length];
+                    queryFilter = new QueryFilter();
+                    queryFilter.WhereClause = Constants.FIELD_STATION_TRIPLET + " = " + strTriplet;
+                    arrFound = await ws.QueryServiceForValuesAsync(new Uri((string)Module1.Current.BatchToolSettings.MasterAoiList), "0", arrSearch, queryFilter);
+                    if (arrFound != null && arrFound.Length == arrSearch.Length && arrFound[0] != null)
                     {
-                        QueryFilter queryFilter = new QueryFilter();
-                        string strNearId = await GeodatabaseTools.QueryTableForSingleValueAsync(ppUri, Constants.FILE_POURPOINT,
-                            Constants.FIELD_NEAR_ID, queryFilter);
-                        string[] arrSearch = { Constants.FIELD_STATION_TRIPLET, Constants.FIELD_AWDB_ID, Constants.FIELD_NWCCNAME };
-                        string[] arrFound = new string[arrSearch.Length];
-                        if (!String.IsNullOrEmpty(strNearId))
+                        strRemark = NO_CHANGE_MATCH;
+                    }
+
+                    if (!NO_CHANGE_MATCH.Equals(strRemark))
+                    {
+                        // Use the NEAR tool to find the closest Pourpoint
+                        success = await GeoprocessingTools.NearAsync(ppUri.LocalPath + "\\" + Constants.FILE_POURPOINT, strWsUri, Constants.VALUE_FORECAST_STATION_SEARCH_RADIUS);
+                        if (success == BA_ReturnCode.Success)
                         {
-                            queryFilter.WhereClause = Constants.FIELD_OBJECT_ID + " = " + strNearId;
-                            arrFound = await ws.QueryServiceForValuesAsync(new Uri((string) Module1.Current.BatchToolSettings.MasterAoiList), "0", arrSearch, queryFilter);
-                            if (arrFound != null && arrFound.Length == 3 && arrFound[0] != null)
+                            queryFilter = new QueryFilter();
+                            arrFound = new string[arrSearch.Length];
+                            string strNearId = await GeodatabaseTools.QueryTableForSingleValueAsync(ppUri, Constants.FILE_POURPOINT,
+                                Constants.FIELD_NEAR_ID, queryFilter);
+                            if (!String.IsNullOrEmpty(strNearId))
                             {
-                                strNearTriplet = arrFound[0];
-                                strNearAwdbId = arrFound[1].Trim('"');
-                                strNearStationName = arrFound[2];
-                                if (strNearTriplet.Equals(strTriplet))
+                                queryFilter.WhereClause = Constants.FIELD_OBJECT_ID + " = " + strNearId;
+                                arrFound = await ws.QueryServiceForValuesAsync(new Uri((string) Module1.Current.BatchToolSettings.MasterAoiList), "0", arrSearch, queryFilter);
+                                if (arrFound != null && arrFound.Length == 3 && arrFound[0] != null)
                                 {
-                                    strRemark = NO_CHANGE_NEAR;
+                                    strNearTriplet = arrFound[0];
+                                    strNearAwdbId = arrFound[1].Trim('"');
+                                    strNearStationName = arrFound[2];
+                                    if (strNearTriplet.Equals(strTriplet))
+                                    {
+                                        strRemark = NO_CHANGE_NEAR;
+                                    }
+                                    else
+                                    {
+                                        strRemark = UPDATED_NEAR;
+                                    }
                                 }
                                 else
                                 {
-                                    strRemark = UPDATED_NEAR;
+                                    strRemark = NOT_A_FORECAST;
                                 }
                             }
                             else
                             {
                                 strRemark = NOT_A_FORECAST;
                             }
+                            //Delete fields added by NEAR process: NEAR_DIST and NEAR_ID
+                            string[] arrFieldsToDelete = new string[] { Constants.FIELD_NEAR_ID, Constants.FIELD_NEAR_DIST };
+                            success = await GeoprocessingTools.DeleteFeatureClassFieldsAsync(ppUri.LocalPath + "\\" + Constants.FILE_POURPOINT, arrFieldsToDelete);
                         }
-                        else
-                        {
-                            strRemark = NOT_A_FORECAST;
-                        }
-                        //Delete fields added by NEAR process: NEAR_DIST and NEAR_ID
-                        string[] arrFieldsToDelete = new string[] { Constants.FIELD_NEAR_ID, Constants.FIELD_NEAR_DIST };
-                        success = await GeoprocessingTools.DeleteFeatureClassFieldsAsync(ppUri.LocalPath + "\\" + Constants.FILE_POURPOINT, arrFieldsToDelete);
                     }
-
+                    switch (strRemark)
+                    {
+                        case UPDATED_NEAR:
+                            IDictionary<string, string> dictEdits = new Dictionary<string, string>();
+                            dictEdits.Add(Constants.FIELD_AWDB_ID, strNearAwdbId);
+                            dictEdits.Add(Constants.FIELD_STATION_TRIPLET, strNearTriplet);
+                            dictEdits.Add(Constants.FIELD_STATION_NAME, strNearStationName);
+                            success = await GeodatabaseTools.UpdateFeatureAttributesAsync(ppUri, Constants.FILE_POURPOINT,
+                                new QueryFilter(), dictEdits);
+                        break;
+                    }
                     strLogEntry = CreateLogEntry(aoiFolder, strTriplet, strNearTriplet, strRemark);
                     File.AppendAllText(log, strLogEntry);       // append
                     if (success == BA_ReturnCode.Success && errorCount == 0)
@@ -1168,7 +1192,7 @@ namespace bagis_pro
                         Names[idxRow].AoiBatchStateText = AoiBatchState.Failed.ToString();
                     }
                 }
-            }
+            }   // MOVE ON TO NEXT AOI
             strLogEntry = CreateLogEntry(ParentFolder, "", "", $@"Forecast station updates complete!!");
             File.AppendAllText(log, strLogEntry);       // append
             MessageBox.Show("Forecast station updates done!!");
