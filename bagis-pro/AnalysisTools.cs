@@ -576,11 +576,11 @@ namespace bagis_pro
                 MessageBox.Show("Unable to retrieve gauge station uri. Station values cannot be retrieved!!", "BAGIS-PRO");
                 return null;
             }
-            string strWsUri = oSettings.gaugeStation;
-            string usgsServiceLayerId = strWsUri.Split('/').Last();
-            int intTrim = usgsServiceLayerId.Length + 1;
-            string usgsTempString = strWsUri.Substring(0, strWsUri.Length - intTrim);
-            Uri usgsServiceUri = new Uri(usgsTempString);
+            string strWsUri = (string) Module1.Current.BatchToolSettings.MasterAoiList;
+            //string usgsServiceLayerId = strWsUri.Split('/').Last();
+            //int intTrim = usgsServiceLayerId.Length + 1;
+            //string usgsTempString = strWsUri.Substring(0, strWsUri.Length - intTrim);
+            Uri wsUri = new Uri(strWsUri);
 
             bool bUpdateTriplet = false;
             bool bUpdateAwdb = false;
@@ -613,55 +613,15 @@ namespace bagis_pro
                     }
                 }
 
-                if (String.IsNullOrEmpty(strTriplet))
-                {
-                    // Use the awdb_id to query for the triplet from the pourpoint layer
-                    strAwdbId = await GeodatabaseTools.QueryTableForSingleValueAsync(ppUri, Constants.FILE_POURPOINT,
-                        Constants.FIELD_AWDB_ID, new QueryFilter());
-                    if (!String.IsNullOrEmpty(strAwdbId))
-                    {
-                        string strAwdbQueryId = strAwdbId.Trim();
-                        if (strAwdbQueryId.Length < 8)     // left pad the triplet if less than 8 characters
-                        {
-                            strAwdbQueryId = strAwdbQueryId.PadLeft(8, '0');
-                        }
-                        QueryFilter queryFilter = new QueryFilter();
-                        queryFilter.WhereClause = Constants.FIELD_USGS_ID + " = '" + strAwdbQueryId + "'";
-                        string[] arrSearch = { Constants.FIELD_STATION_TRIPLET, (string)oSettings.gaugeStationName };
-                        string[] arrFound = new string[arrSearch.Length];
-                        Module1.Current.ModuleLogManager.LogDebug(nameof(GetStationValues),
-                            "Using awdb_id to query for the triplet from " + usgsServiceUri.ToString());
-
-                        arrFound = await ws.QueryServiceForValuesAsync(usgsServiceUri, usgsServiceLayerId, arrSearch, queryFilter);
-                        if (arrFound != null && arrFound.Length > 1)
-                        {
-                            strTriplet = arrFound[0];
-                            strStationName = arrFound[1];
-                        }
-                        else if (arrFound != null && arrFound.Length > 1 && arrFound[0] == null)
-                        {
-                            Module1.Current.ModuleLogManager.LogError(nameof(GetStationValues),
-                                "Unable to retrieve at least 1 property from the master aoi webservice");
-                        }
-                        if (!string.IsNullOrEmpty(strTriplet))
-                        {
-                            bUpdateTriplet = true;
-                        }
-                        if (!string.IsNullOrEmpty(strStationName))
-                        {
-                            bUpdateStationName = true;
-                        }
-                    }
-                }
-                else
+                if (!string.IsNullOrEmpty(strTriplet))
                 {
                     Module1.Current.ModuleLogManager.LogDebug(nameof(GetStationValues),
                     "Triplet retrieved from pourpoint feature class: " + strTriplet);
                 }
                 if (string.IsNullOrEmpty(strTriplet))
                 {
-                    // If triplet is still null, use the near tool
-                    BA_ReturnCode success = await GeoprocessingTools.NearAsync(strPourpointClassPath, strWsUri, Constants.VALUE_FORECAST_STATION_SEARCH_RADIUS);
+                    // If triplet is null, use the near tool
+                    BA_ReturnCode success = await GeoprocessingTools.NearAsync(strPourpointClassPath, strWsUri + "/0", Constants.VALUE_FORECAST_STATION_SEARCH_RADIUS);
                     if (success == BA_ReturnCode.Success)
                     {
                         QueryFilter queryFilter = new QueryFilter();
@@ -672,7 +632,7 @@ namespace bagis_pro
                         if (!String.IsNullOrEmpty(strNearId))
                         {
                             queryFilter.WhereClause = Constants.FIELD_OBJECT_ID + " = " + strNearId;
-                            arrFound = await ws.QueryServiceForValuesAsync(usgsServiceUri, usgsServiceLayerId, arrSearch, queryFilter);
+                            arrFound = await ws.QueryServiceForValuesAsync(wsUri, "0", arrSearch, queryFilter);
                             if (arrFound != null && arrFound.Length == 3 && arrFound[0] != null)
                             {
                                 strTriplet = arrFound[0];

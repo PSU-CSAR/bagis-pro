@@ -1046,7 +1046,6 @@ namespace bagis_pro
             const string UPDATED_MATCH = "Updated-Match";
             const string UPDATED_NEAR = "Updated-Near";
             const string NO_CHANGE_MATCH = "No change-Match";
-            const string NO_CHANGE_NEAR = "No change-Near";
             const string NOT_A_FORECAST = "Not A Forecast";
             string log = ParentFolder + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\" + Constants.FILE_FORECAST_STATION_LOG;
             // Create initial log entry
@@ -1121,7 +1120,7 @@ namespace bagis_pro
                     string[] arrSearch = { Constants.FIELD_STATION_TRIPLET, Constants.FIELD_AWDB_ID, Constants.FIELD_NWCCNAME };
                     string[] arrFound = new string[arrSearch.Length];
                     queryFilter = new QueryFilter();
-                    queryFilter.WhereClause = Constants.FIELD_STATION_TRIPLET + " = " + strTriplet;
+                    queryFilter.WhereClause = Constants.FIELD_STATION_TRIPLET + " = '" + strTriplet + "'";
                     arrFound = await ws.QueryServiceForValuesAsync(new Uri((string)Module1.Current.BatchToolSettings.MasterAoiList), "0", arrSearch, queryFilter);
                     if (arrFound != null && arrFound.Length == arrSearch.Length && arrFound[0] != null)
                     {
@@ -1147,12 +1146,8 @@ namespace bagis_pro
                                     strNearTriplet = arrFound[0];
                                     strNearAwdbId = arrFound[1].Trim('"');
                                     strNearStationName = arrFound[2];
-                                    if (strNearTriplet.Equals(strTriplet))
-                                    {
-                                        strRemark = NO_CHANGE_NEAR;
-                                    }
-                                    else
-                                    {
+                                    if (!string.IsNullOrEmpty(strNearTriplet))
+                                    { 
                                         strRemark = UPDATED_NEAR;
                                     }
                                 }
