@@ -76,6 +76,12 @@ bagis-pro:
       description: Alaska 2016 NLCD Land Cover. See https://www.mrlc.gov for more information.
       uri: http://bagis.geog.pdx.edu/arcgis/rest/services/BAGIS_Databin/NLCD_2016_land_cover_AK/ImageServer
       shortDescription: 2016 National Land Cover Database (NLCD)
+    - layerType: Alaska DEM
+      heading: Digital Elevation Model (DEM)
+      description: Elevation Data Source - One arc-second (approximately 30 meters) USGS National Elevaton Dataset (NED). Downloaded in 2010. See https://gdg.sc.egov.usda.gov/Catalog/ProductDescription/NED.html for more information.
+      uri: http://bagis.geog.pdx.edu/arcgis/services/BAGIS_GISLayers/DEM_Alaska_Yukon_30m/ImageServer
+      shortDescription: 30 meter USGS digital elevation model
+
 
 
 
