@@ -666,7 +666,7 @@ namespace bagis_pro
                 else
                 {
                     Module1.Current.ModuleLogManager.LogDebug(nameof(GetStationValues),
-                        "Triplet retrieved using the awdb_id and USGS webservice: " + strTriplet);
+                        "Triplet retrieved using the NEAR tool and AOI Master forecast list: " + strTriplet);
                 }
                 //Save the new values to the pourpoint layer if needed
                 if (bUpdateAwdb == true || bUpdateTriplet == true || bUpdateStationName == true)
@@ -682,6 +682,32 @@ namespace bagis_pro
                         dictEdits.Add(Constants.FIELD_STATION_NAME, strStationName);
                     BA_ReturnCode success = await GeodatabaseTools.UpdateFeatureAttributesAsync(ppUri, Constants.FILE_POURPOINT,
                         new QueryFilter(), dictEdits);
+
+                    //Save the new values to aoi_v
+                    string strAoiVPath = ppUri.LocalPath + "\\" + Constants.FILE_AOI_VECTOR;
+                    string[] arrPpFields = { Constants.FIELD_STATION_TRIPLET, Constants.FIELD_STATION_NAME, Constants.FIELD_AWDB_ID };
+                    foreach (var strField in arrPpFields)
+                    {
+                        if (!await GeodatabaseTools.AttributeExistsAsync(ppUri, Constants.FILE_AOI_VECTOR, strField))
+                        {
+                            success = await GeoprocessingTools.AddFieldAsync(strAoiVPath, strField, "TEXT");
+                        }
+                    }
+                    if (success != BA_ReturnCode.Success)
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(GetStationValues),
+                            "Unable to add 1 or more pourpoint fields to : " + strAoiVPath);
+                    }
+                    else
+                    {
+                        success = await GeodatabaseTools.UpdateFeatureAttributesAsync(ppUri, Constants.FILE_AOI_VECTOR,
+                            new QueryFilter(), dictEdits);
+                        if (success != BA_ReturnCode.Success)
+                        {
+                            Module1.Current.ModuleLogManager.LogError(nameof(GetStationValues),
+                                "Unable to update 1 or more pourpoint fields to : " + strAoiVPath);
+                        }
+                    }
                 }
             }
             arrReturnValues[0] = strTriplet;

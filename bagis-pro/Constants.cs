@@ -207,6 +207,7 @@ namespace bagis_pro
         public const string FILE_TOO_MANY_SITES = "too_many_sites.pdf";
         public const string FILE_NO_SITES = "no_sites.pdf";
         public const string FILE_SITES_APPENDIX_PDF = "sites_appendix.pdf";
+        public const string FILE_MERGED_AOI_POLYS = "merged_aoi_polygons";
         public static readonly string[] URIS_SNODAS_SWE = new string[] { "daily_swe_normal_nov_01", "daily_swe_normal_dec_01", "daily_swe_normal_jan_01",
                                                                          "daily_swe_normal_feb_01", "daily_swe_normal_mar_01", "daily_swe_normal_apr_01",
                                                                          "daily_swe_normal_may_01", "daily_swe_normal_jun_01", "daily_swe_normal_jul_01"};

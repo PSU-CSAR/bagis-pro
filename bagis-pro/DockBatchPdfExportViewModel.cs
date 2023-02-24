@@ -1043,7 +1043,6 @@ namespace bagis_pro
 
         private async void RunForecastImplAsync(object param)
         {
-            const string UPDATED_MATCH = "Updated-Match";
             const string UPDATED_NEAR = "Updated-Near";
             const string NO_CHANGE_MATCH = "No change-Match";
             const string NOT_A_FORECAST = "Not A Forecast";
@@ -1055,6 +1054,7 @@ namespace bagis_pro
             File.AppendAllText(log, strLogEntry);
             BA_ReturnCode success = BA_ReturnCode.Success;
             Webservices ws = new Webservices();
+            IList<string> lstMergeFeatures = new List<string>();
 
             for (int idxRow = 0; idxRow < Names.Count; idxRow++)
             {
@@ -1076,6 +1076,7 @@ namespace bagis_pro
                     string strRemark = "";
 
                     // GET THE STATION TRIPLET FROM THE POURPOINT
+                    IDictionary<string, string> dictEdits = new Dictionary<string, string>();
                     QueryFilter queryFilter = new QueryFilter();
                     if (await GeodatabaseTools.FeatureClassExistsAsync(ppUri, Constants.FILE_POURPOINT))
                     {
@@ -1091,12 +1092,15 @@ namespace bagis_pro
                                 {
                                     case Constants.FIELD_STATION_TRIPLET:
                                         strTriplet = strValue;
+                                        dictEdits.Add(Constants.FIELD_STATION_TRIPLET, strTriplet);
                                         break;
                                     case Constants.FIELD_STATION_NAME:
                                         strStationName = strValue;
+                                        dictEdits.Add(Constants.FIELD_STATION_NAME, strStationName);
                                         break;
                                     case Constants.FIELD_AWDB_ID:
                                         strAwdbId = strValue;
+                                        dictEdits.Add(Constants.FIELD_AWDB_ID, strAwdbId);
                                         break;
                                 }
                             }
@@ -1168,14 +1172,39 @@ namespace bagis_pro
                     switch (strRemark)
                     {
                         case UPDATED_NEAR:
-                            IDictionary<string, string> dictEdits = new Dictionary<string, string>();
-                            dictEdits.Add(Constants.FIELD_AWDB_ID, strNearAwdbId);
-                            dictEdits.Add(Constants.FIELD_STATION_TRIPLET, strNearTriplet);
-                            dictEdits.Add(Constants.FIELD_STATION_NAME, strNearStationName);
+                            dictEdits[Constants.FIELD_AWDB_ID] = strNearAwdbId;
+                            dictEdits[Constants.FIELD_STATION_TRIPLET] = strNearTriplet;
+                            dictEdits[Constants.FIELD_STATION_NAME] = strNearStationName;
                             success = await GeodatabaseTools.UpdateFeatureAttributesAsync(ppUri, Constants.FILE_POURPOINT,
                                 new QueryFilter(), dictEdits);
+                            lstMergeFeatures.Add(ppUri.LocalPath + "\\" + Constants.FILE_AOI_VECTOR);
+                            break;
+                        case NO_CHANGE_MATCH:
+                            lstMergeFeatures.Add(ppUri.LocalPath + "\\" + Constants.FILE_AOI_VECTOR);
                         break;
                     }
+                    // DO WE NEED TO UPDATE AOI_V?
+                    string strAoiVPath = ppUri.LocalPath + "\\" + Constants.FILE_AOI_VECTOR;
+                    string[] arrPpFields = { Constants.FIELD_STATION_TRIPLET, Constants.FIELD_STATION_NAME, Constants.FIELD_AWDB_ID };
+                    foreach (var strField in arrPpFields)
+                    {
+                        if (!await GeodatabaseTools.AttributeExistsAsync(ppUri, Constants.FILE_AOI_VECTOR, strField))
+                        {
+                            success = await GeoprocessingTools.AddFieldAsync(strAoiVPath, strField, "TEXT");
+                        }
+                    }
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        string strValue = await GeodatabaseTools.QueryTableForSingleValueAsync(ppUri, Constants.FILE_AOI_VECTOR,
+                            Constants.FIELD_STATION_TRIPLET, queryFilter);
+                        if ( !dictEdits[Constants.FIELD_STATION_TRIPLET].Equals(strValue))
+                        {
+                            // UPDATE VALUES ON AOI_V
+                            success = await GeodatabaseTools.UpdateFeatureAttributesAsync(ppUri, Constants.FILE_AOI_VECTOR,
+                                new QueryFilter(), dictEdits);
+                        }
+                    }
+
                     strLogEntry = CreateLogEntry(aoiFolder, strTriplet, strNearTriplet, strRemark);
                     File.AppendAllText(log, strLogEntry);       // append
                     if (success == BA_ReturnCode.Success && errorCount == 0)
@@ -1190,6 +1219,13 @@ namespace bagis_pro
             }   // MOVE ON TO NEXT AOI
             strLogEntry = CreateLogEntry(ParentFolder, "", "", $@"Forecast station updates complete!!");
             File.AppendAllText(log, strLogEntry);       // append
+            // Merge all forecast aoi_v into a shapefile
+            string outputPath = ParentFolder + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\" + Constants.FILE_MERGED_AOI_POLYS;
+            StringBuilder sb = new StringBuilder();
+            foreach (var fc in lstMergeFeatures)
+            {
+                //@ToDo: merge the features
+            }
             MessageBox.Show("Forecast station updates done!!");
         }
 
