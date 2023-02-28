@@ -4634,7 +4634,7 @@ namespace bagis_pro
                 if (gpResult.IsFailed)
                 {
                    Module1.Current.ModuleLogManager.LogError(nameof(CreateSitesLayerAsync),
-                        "Unable to merge features. Error code: " + gpResult.ErrorCode);
+                        "Unable to append features. Error code: " + gpResult.ErrorCode);
                     returnPath = ""; ;
                 }
                 else

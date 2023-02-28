@@ -11,6 +11,7 @@ using ArcGIS.Core.Data;
 using ArcGIS.Core.Geometry;
 using ArcGIS.Desktop.Catalog;
 using ArcGIS.Desktop.Core;
+using ArcGIS.Desktop.Core.Geoprocessing;
 using ArcGIS.Desktop.Editing;
 using ArcGIS.Desktop.Extensions;
 using ArcGIS.Desktop.Framework;
@@ -1085,7 +1086,7 @@ namespace bagis_pro
                         {
                             // Check for the field, if it exists query the value
                             if (await GeodatabaseTools.AttributeExistsAsync(ppUri, Constants.FILE_POURPOINT, strField))
-                            {                                
+                            {
                                 string strValue = await GeodatabaseTools.QueryTableForSingleValueAsync(ppUri, Constants.FILE_POURPOINT,
                                     strField, queryFilter);
                                 switch (strField)
@@ -1144,14 +1145,14 @@ namespace bagis_pro
                             if (!String.IsNullOrEmpty(strNearId))
                             {
                                 queryFilter.WhereClause = Constants.FIELD_OBJECT_ID + " = " + strNearId;
-                                arrFound = await ws.QueryServiceForValuesAsync(new Uri((string) Module1.Current.BatchToolSettings.MasterAoiList), "0", arrSearch, queryFilter);
+                                arrFound = await ws.QueryServiceForValuesAsync(new Uri((string)Module1.Current.BatchToolSettings.MasterAoiList), "0", arrSearch, queryFilter);
                                 if (arrFound != null && arrFound.Length == 3 && arrFound[0] != null)
                                 {
                                     strNearTriplet = arrFound[0];
                                     strNearAwdbId = arrFound[1].Trim('"');
                                     strNearStationName = arrFound[2];
                                     if (!string.IsNullOrEmpty(strNearTriplet))
-                                    { 
+                                    {
                                         strRemark = UPDATED_NEAR;
                                     }
                                 }
@@ -1181,7 +1182,7 @@ namespace bagis_pro
                             break;
                         case NO_CHANGE_MATCH:
                             lstMergeFeatures.Add(ppUri.LocalPath + "\\" + Constants.FILE_AOI_VECTOR);
-                        break;
+                            break;
                     }
                     // DO WE NEED TO UPDATE AOI_V?
                     string strAoiVPath = ppUri.LocalPath + "\\" + Constants.FILE_AOI_VECTOR;
@@ -1197,7 +1198,7 @@ namespace bagis_pro
                     {
                         string strValue = await GeodatabaseTools.QueryTableForSingleValueAsync(ppUri, Constants.FILE_AOI_VECTOR,
                             Constants.FIELD_STATION_TRIPLET, queryFilter);
-                        if ( !dictEdits[Constants.FIELD_STATION_TRIPLET].Equals(strValue))
+                        if (!dictEdits[Constants.FIELD_STATION_TRIPLET].Equals(strValue))
                         {
                             // UPDATE VALUES ON AOI_V
                             success = await GeodatabaseTools.UpdateFeatureAttributesAsync(ppUri, Constants.FILE_AOI_VECTOR,
@@ -1219,13 +1220,26 @@ namespace bagis_pro
             }   // MOVE ON TO NEXT AOI
             strLogEntry = CreateLogEntry(ParentFolder, "", "", $@"Forecast station updates complete!!");
             File.AppendAllText(log, strLogEntry);       // append
+            success = await MergeAoiVectorsAsync(lstMergeFeatures, log);
             // Merge all forecast aoi_v into a shapefile
-            string outputPath = ParentFolder + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\" + Constants.FILE_MERGED_AOI_POLYS;
-            StringBuilder sb = new StringBuilder();
-            foreach (var fc in lstMergeFeatures)
-            {
-                //@ToDo: merge the features
-            }
+            //string outputPath = ParentFolder + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\" + Constants.FILE_MERGED_AOI_POLYS;
+            //StringBuilder sb = new StringBuilder();
+            //StringBuilder sbAoiName = new StringBuilder($@"AOINAME ""AOINAME"" true true false 40 Text 0 0,First,#,");
+            //StringBuilder sbAwdbId = new StringBuilder($@"awdb_id ""awdb_id"" true true false 30 Text 0 0,First,#,");
+            //StringBuilder sbBasin = new StringBuilder($@"BASIN ""BASIN"" true true false 30 Text 0 0,First,#,");
+            //StringBuilder sbStationTriplet = new StringBuilder($@"stationTriplet ""stationTriplet"" true true false 255 Text 0 0,First,#,");
+            //StringBuilder sbStationName = new StringBuilder($@"stationName ""stationName"" true true false 255 Text 0 0,First,#,");
+            //IList<string> lstFieldMapping = new List<string>();
+
+
+            //string[] arrFieldMapping = new string[5];
+            //arrFieldMapping[0] = sbAoiName.ToString().TrimEnd(',');
+            //arrFieldMapping[1] = sbAwdbId.ToString().TrimEnd(',');
+            //arrFieldMapping[2] = sbBasin.ToString().TrimEnd(',');
+            //arrFieldMapping[3] = sbStationTriplet.ToString().TrimEnd(',');
+            //arrFieldMapping[4] = sbStationName.ToString().TrimEnd(',');
+            //var parameters = Geoprocessing.MakeValueArray(strMergeData, strOutputPath, arrFieldMapping);
+
             MessageBox.Show("Forecast station updates done!!");
         }
 
@@ -1236,6 +1250,64 @@ namespace bagis_pro
             sb.Append($@"{strAoiPath},{strOldTriplet},{strNewTriplet},");
             sb.Append($@"{strRemarks}{Environment.NewLine}");
             return sb.ToString();
+        }
+
+        private async Task<BA_ReturnCode> MergeAoiVectorsAsync(IList<string> lstMergeFeatures, string strLog)
+        {
+            BA_ReturnCode success = BA_ReturnCode.WriteError;
+            string mergeGdbPath = $@"{ParentFolder}\{Constants.FOLDER_MAP_PACKAGE}\{Constants.FILE_MERGE_GDB}";
+            var environments = Geoprocessing.MakeEnvironmentArray(workspace: ParentFolder);
+            if (!Directory.Exists(mergeGdbPath))
+            {
+                var parameters = Geoprocessing.MakeValueArray(ParentFolder, Constants.FILE_MERGE_GDB);
+                var gpResult = await Geoprocessing.ExecuteToolAsync("CreateFileGDB_management", parameters, environments,
+                                                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                if (gpResult.IsFailed)
+                {
+                    return success;
+                }
+            }
+            string strOutputPath = $@"{mergeGdbPath}\{Constants.FILE_MERGED_AOI_POLYS}";
+            StringBuilder sb = new StringBuilder();
+            if (lstMergeFeatures.Count > 0)
+            {
+                success = await GeoprocessingTools.CopyFeaturesAsync(ParentFolder, lstMergeFeatures[0], strOutputPath);
+                if (success == BA_ReturnCode.Success)
+                {
+                    for (int i = 1; i < lstMergeFeatures.Count; i++)
+                    {
+                        sb.Append(lstMergeFeatures[i]);
+                        sb.Append(";");
+                        //sbAoiName.Append($@"{fc},AOINAME,0,40, ");
+                        //sbAwdbId.Append($@"{fc},0,30, ");
+                        //sbBasin.Append($@"{fc},BASIN,0,30, ");
+                        //sbStationTriplet.Append($@"{fc},stationTriplet,0,255, ");
+                        //sbStationName.Append($@"{fc},stationName,0,255, ");
+                    }
+                    string strMergeData = sb.ToString().TrimEnd(';');
+                    var parameters = Geoprocessing.MakeValueArray(strMergeData, strOutputPath);
+
+                    var gpResult = await Geoprocessing.ExecuteToolAsync("Append_management", parameters, environments,
+                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                    if (gpResult.IsFailed)
+                    {
+                        string strLogEntry = CreateLogEntry(ParentFolder, "", "", $@"An error occurred while merging the aoi_v files! {gpResult.ReturnValue}");
+                        File.AppendAllText(strLog, strLogEntry);       // append
+                    }
+                    else
+                    {
+                        // Copy the merged feature class to a shapefile
+                        string strShapefilePath = $@"{ParentFolder}\{Constants.FOLDER_MAP_PACKAGE}\{Constants.FILE_MERGED_AOI_POLYS}.shp";
+                        success = await GeoprocessingTools.CopyFeaturesAsync(ParentFolder, strOutputPath, strShapefilePath);
+                        if (success == BA_ReturnCode.Success)
+                        {
+                            // Delete the working gdb
+                            Directory.Delete(mergeGdbPath,true);
+                        }
+                    }
+                }
+            }
+            return success;
         }
 
         /// <summary>
