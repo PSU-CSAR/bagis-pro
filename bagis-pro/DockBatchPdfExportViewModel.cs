@@ -1220,7 +1220,12 @@ namespace bagis_pro
             }   // MOVE ON TO NEXT AOI
             strLogEntry = CreateLogEntry(ParentFolder, "", "", $@"Forecast station updates complete!!");
             File.AppendAllText(log, strLogEntry);       // append
+            string strMergeMessage = "";
             success = await MergeAoiVectorsAsync(lstMergeFeatures, log);
+            if (success == BA_ReturnCode.Success)
+            {
+                strMergeMessage = $@" aoi_v polygons have been merged to {ParentFolder}\{Constants.FOLDER_MAP_PACKAGE}\{Constants.FILE_MERGE_GDB}\{Constants.FILE_MERGED_AOI_POLYS}";
+            }
             // Merge all forecast aoi_v into a shapefile
             //string outputPath = ParentFolder + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\" + Constants.FILE_MERGED_AOI_POLYS;
             //StringBuilder sb = new StringBuilder();
@@ -1240,7 +1245,7 @@ namespace bagis_pro
             //arrFieldMapping[4] = sbStationName.ToString().TrimEnd(',');
             //var parameters = Geoprocessing.MakeValueArray(strMergeData, strOutputPath, arrFieldMapping);
 
-            MessageBox.Show("Forecast station updates done!!");
+            MessageBox.Show($@"Forecast station updates done!!{strMergeMessage}");
         }
 
         private string CreateLogEntry(string strAoiPath, string strOldTriplet, string strNewTriplet, string strRemarks)
@@ -1259,7 +1264,7 @@ namespace bagis_pro
             var environments = Geoprocessing.MakeEnvironmentArray(workspace: ParentFolder);
             if (!Directory.Exists(mergeGdbPath))
             {
-                var parameters = Geoprocessing.MakeValueArray(ParentFolder, Constants.FILE_MERGE_GDB);
+                var parameters = Geoprocessing.MakeValueArray($@"{ParentFolder}\{Constants.FOLDER_MAP_PACKAGE}", Constants.FILE_MERGE_GDB);
                 var gpResult = await Geoprocessing.ExecuteToolAsync("CreateFileGDB_management", parameters, environments,
                                                 CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
                 if (gpResult.IsFailed)
@@ -1296,14 +1301,7 @@ namespace bagis_pro
                     }
                     else
                     {
-                        // Copy the merged feature class to a shapefile
-                        string strShapefilePath = $@"{ParentFolder}\{Constants.FOLDER_MAP_PACKAGE}\{Constants.FILE_MERGED_AOI_POLYS}.shp";
-                        success = await GeoprocessingTools.CopyFeaturesAsync(ParentFolder, strOutputPath, strShapefilePath);
-                        if (success == BA_ReturnCode.Success)
-                        {
-                            // Delete the working gdb
-                            Directory.Delete(mergeGdbPath,true);
-                        }
+                        success = BA_ReturnCode.Success;
                     }
                 }
             }
