@@ -17,11 +17,11 @@ using System.Windows.Shapes;
 namespace bagis_pro
 {
     /// <summary>
-    /// Interaction logic for DockBatchPdfExportView.xaml
+    /// Interaction logic for DockBatchToolsView.xaml
     /// </summary>
-    public partial class DockBatchPdfExportView : UserControl
+    public partial class DockBatchToolsView : UserControl
     {
-        public DockBatchPdfExportView()
+        public DockBatchToolsView()
         {
             InitializeComponent();
         }

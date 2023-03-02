@@ -187,14 +187,14 @@
     <Compile Include="Buttons\CboCurrentAoi.cs" />
     <Compile Include="Buttons\MapButtonPalette.cs" />
     <Compile Include="Constants.cs" />
-    <Compile Include="DockBatchPdfExport.xaml.cs">
-      <DependentUpon>DockBatchPdfExport.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="DockBatchPdfExportViewModel.cs" />
     <Compile Include="DockAnalysisLayers.xaml.cs">
       <DependentUpon>DockAnalysisLayers.xaml</DependentUpon>
     </Compile>
     <Compile Include="DockAnalysisLayersViewModel.cs" />
+    <Compile Include="DockBatchTools.xaml.cs">
+      <DependentUpon>DockBatchTools.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="DockBatchToolsViewModel.cs" />
     <Compile Include="DockExportForSnodas.xaml.cs">
       <DependentUpon>DockExportForSnodas.xaml</DependentUpon>
     </Compile>
@@ -340,11 +340,11 @@
     </COMReference>
   </ItemGroup>
   <ItemGroup>
-    <Page Include="DockBatchPdfExport.xaml">
+    <Page Include="DockAnalysisLayers.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="DockAnalysisLayers.xaml">
+    <Page Include="DockBatchTools.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

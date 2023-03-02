@@ -25,11 +25,11 @@ using Newtonsoft.Json.Linq;
 
 namespace bagis_pro
 {
-    internal class DockBatchPdfExportViewModel : DockPane
-    {
-        private const string _dockPaneID = "bagis_pro_DockBatchPdfExport";
-
-        protected DockBatchPdfExportViewModel()
+    internal class DockBatchToolsViewModel : DockPane
+    {   
+      private const string _dockPaneID = "bagis_pro_DockBatchTools";
+ 
+      protected DockBatchToolsViewModel()
         {
             // Set path to settings file if we need to
             if (String.IsNullOrEmpty(this.SettingsFile))
@@ -84,24 +84,21 @@ namespace bagis_pro
             Names = new ObservableCollection<BA_Objects.Aoi>();
             ArchiveChecked = false;
             SiteAnalysisChecked = true;
-        }
+        }  
 
-        /// <summary>
-        /// Show the DockPane.
-        /// </summary>
-        internal static void Show()
-        {
-            DockPane pane = FrameworkApplication.DockPaneManager.Find(_dockPaneID);
-            if (pane == null)
-                return;
+      /// <summary>
+      /// Show the DockPane.
+      /// </summary>
+      internal static void Show()
+      {        
+        DockPane pane = FrameworkApplication.DockPaneManager.Find(_dockPaneID);
+        if (pane == null)
+          return;
 
-            pane.Activate();
-        }
+        pane.Activate();
+      }
 
-        /// <summary>
-        /// Text shown near the top of the DockPane.
-        /// </summary>
-        private string _heading = "Batch Report Export";
+        private string _heading = "Batch Report Tools";
         private string _parentFolder;
         private string _settingsFile;
         private string _publisher;
@@ -1298,6 +1295,7 @@ namespace bagis_pro
                     {
                         string strLogEntry = CreateLogEntry(ParentFolder, "", "", $@"An error occurred while merging the aoi_v files! {gpResult.ReturnValue}");
                         File.AppendAllText(strLog, strLogEntry);       // append
+                        success = BA_ReturnCode.UnknownError;
                     }
                     else
                     {
@@ -1308,26 +1306,24 @@ namespace bagis_pro
             return success;
         }
 
-        /// <summary>
-        /// Button implementation to show the DockPane.
-        /// </summary>
-        internal class DockBatchPdfExport_ShowButton : Button
-        {
-            protected override void OnClick()
+    }
+
+  /// <summary>
+  /// Button implementation to show the DockPane.
+  /// </summary>
+	internal class DockBatchTools_ShowButton : Button
+	{
+		protected override void OnClick()
+		{
+            try
             {
-                try
-                {
-                    DockBatchPdfExportViewModel.Show();
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show("Unable to show batch pdf export pane! " + ex.Message, "BAGIS-PRO");
-                    MessageBox.Show("Stack trace" + ex.StackTrace, "BAGIS-PRO");
-                }
-
-
-                //DockBatchPdfExportViewModel.Show();
+                DockBatchToolsViewModel.Show();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Unable to show Batch Tools pane! " + ex.Message, "BAGIS-PRO");
+                MessageBox.Show("Stack trace" + ex.StackTrace, "BAGIS-PRO");
             }
         }
-    }
+  }	
 }
