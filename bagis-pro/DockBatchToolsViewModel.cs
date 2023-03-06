@@ -1046,6 +1046,19 @@ namespace bagis_pro
             const string NOT_A_FORECAST = "Not A Forecast";
             string log = ParentFolder + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\" + Constants.FILE_FORECAST_STATION_LOG;
             // Create initial log entry
+            try
+            {
+                FileInfo file = new FileInfo(log);
+                using (FileStream stream = file.Open(FileMode.Open, FileAccess.Read, FileShare.None))
+                {
+                    stream.Close();
+                }
+            }
+            catch (IOException)
+            {
+                MessageBox.Show($@"Unable to write to log file {log}! Please close the .csv file and try again.", "BAGIS-PRO");
+                return;
+            }
             string strLogEntry = "Date,Time,AOI File Path,Old Triplet,New Triplet,Remarks\r\n";
             File.WriteAllText(log, strLogEntry);    // overwrite file if it exists
             strLogEntry = CreateLogEntry(ParentFolder, "", "", $@"Starting forecast station updates");
@@ -1223,25 +1236,6 @@ namespace bagis_pro
             {
                 strMergeMessage = $@" aoi_v polygons have been merged to {ParentFolder}\{Constants.FOLDER_MAP_PACKAGE}\{Constants.FILE_MERGE_GDB}\{Constants.FILE_MERGED_AOI_POLYS}";
             }
-            // Merge all forecast aoi_v into a shapefile
-            //string outputPath = ParentFolder + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\" + Constants.FILE_MERGED_AOI_POLYS;
-            //StringBuilder sb = new StringBuilder();
-            //StringBuilder sbAoiName = new StringBuilder($@"AOINAME ""AOINAME"" true true false 40 Text 0 0,First,#,");
-            //StringBuilder sbAwdbId = new StringBuilder($@"awdb_id ""awdb_id"" true true false 30 Text 0 0,First,#,");
-            //StringBuilder sbBasin = new StringBuilder($@"BASIN ""BASIN"" true true false 30 Text 0 0,First,#,");
-            //StringBuilder sbStationTriplet = new StringBuilder($@"stationTriplet ""stationTriplet"" true true false 255 Text 0 0,First,#,");
-            //StringBuilder sbStationName = new StringBuilder($@"stationName ""stationName"" true true false 255 Text 0 0,First,#,");
-            //IList<string> lstFieldMapping = new List<string>();
-
-
-            //string[] arrFieldMapping = new string[5];
-            //arrFieldMapping[0] = sbAoiName.ToString().TrimEnd(',');
-            //arrFieldMapping[1] = sbAwdbId.ToString().TrimEnd(',');
-            //arrFieldMapping[2] = sbBasin.ToString().TrimEnd(',');
-            //arrFieldMapping[3] = sbStationTriplet.ToString().TrimEnd(',');
-            //arrFieldMapping[4] = sbStationName.ToString().TrimEnd(',');
-            //var parameters = Geoprocessing.MakeValueArray(strMergeData, strOutputPath, arrFieldMapping);
-
             MessageBox.Show($@"Forecast station updates done!!{strMergeMessage}");
         }
 
@@ -1271,6 +1265,13 @@ namespace bagis_pro
             }
             string strOutputPath = $@"{mergeGdbPath}\{Constants.FILE_MERGED_AOI_POLYS}";
             StringBuilder sb = new StringBuilder();
+            int intError = 0;
+            //StringBuilder sbAoiName = new StringBuilder($@"AOINAME ""AOINAME"" true true false 40 Text 0 0,First,#,");
+            StringBuilder sbAwdbId = new StringBuilder($@"awdb_id ""awdb_id"" true true false 30 Text 0 0,First,#,");
+            //StringBuilder sbBasin = new StringBuilder($@"BASIN ""BASIN"" true true false 30 Text 0 0,First,#,");
+            StringBuilder sbStationTriplet = new StringBuilder($@"stationTriplet ""stationTriplet"" true true false 255 Text 0 0,First,#,");
+            StringBuilder sbStationName = new StringBuilder($@"stationName ""stationName"" true true false 255 Text 0 0,First,#,");
+
             if (lstMergeFeatures.Count > 0)
             {
                 success = await GeoprocessingTools.CopyFeaturesAsync(ParentFolder, lstMergeFeatures[0], strOutputPath);
@@ -1281,27 +1282,32 @@ namespace bagis_pro
                         sb.Append(lstMergeFeatures[i]);
                         sb.Append(";");
                         //sbAoiName.Append($@"{fc},AOINAME,0,40, ");
-                        //sbAwdbId.Append($@"{fc},0,30, ");
+                        sbAwdbId.Append($@"{lstMergeFeatures[i]},0,30, ");
                         //sbBasin.Append($@"{fc},BASIN,0,30, ");
-                        //sbStationTriplet.Append($@"{fc},stationTriplet,0,255, ");
-                        //sbStationName.Append($@"{fc},stationName,0,255, ");
-                    }
-                    string strMergeData = sb.ToString().TrimEnd(';');
-                    var parameters = Geoprocessing.MakeValueArray(strMergeData, strOutputPath);
+                        sbStationTriplet.Append($@"{lstMergeFeatures[i]},stationTriplet,0,255, ");
+                        sbStationName.Append($@"{lstMergeFeatures[i]},stationName,0,255, ");
+                        string[] arrFieldMapping = new string[3];
+                        //arrFieldMapping[0] = sbAoiName.ToString().TrimEnd(',');
+                        arrFieldMapping[0] = sbAwdbId.ToString().TrimEnd(',');
+                        //arrFieldMapping[2] = sbBasin.ToString().TrimEnd(',');
+                        arrFieldMapping[1] = sbStationTriplet.ToString().TrimEnd(',');
+                        arrFieldMapping[2] = sbStationName.ToString().TrimEnd(',');
 
-                    var gpResult = await Geoprocessing.ExecuteToolAsync("Append_management", parameters, environments,
-                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                    if (gpResult.IsFailed)
-                    {
-                        string strLogEntry = CreateLogEntry(ParentFolder, "", "", $@"An error occurred while merging the aoi_v files! {gpResult.ReturnValue}");
-                        File.AppendAllText(strLog, strLogEntry);       // append
-                        success = BA_ReturnCode.UnknownError;
-                    }
-                    else
-                    {
-                        success = BA_ReturnCode.Success;
+                        var parameters = Geoprocessing.MakeValueArray(lstMergeFeatures[i], strOutputPath, "NO_TEST", arrFieldMapping);
+                        var gpResult = await Geoprocessing.ExecuteToolAsync("Append_management", parameters, environments,
+                                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                        if (gpResult.IsFailed)
+                        {
+                            string strLogEntry = CreateLogEntry(ParentFolder, "", "", $@"An error occurred while appending the {lstMergeFeatures[i]} file! {gpResult.ReturnValue}");
+                            File.AppendAllText(strLog, strLogEntry);       // append
+                            intError++;
+                        }
                     }
                 }
+            }
+            if (intError == 0)
+            {
+                success = BA_ReturnCode.Success;
             }
             return success;
         }
