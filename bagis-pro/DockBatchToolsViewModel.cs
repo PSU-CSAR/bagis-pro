@@ -1049,9 +1049,12 @@ namespace bagis_pro
             try
             {
                 FileInfo file = new FileInfo(log);
-                using (FileStream stream = file.Open(FileMode.Open, FileAccess.Read, FileShare.None))
+                if (file.Exists)
                 {
-                    stream.Close();
+                    using (FileStream stream = file.Open(FileMode.Open, FileAccess.Read, FileShare.None))
+                    {
+                        stream.Close();
+                    }
                 }
             }
             catch (IOException)
