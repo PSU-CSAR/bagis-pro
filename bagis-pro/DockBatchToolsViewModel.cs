@@ -54,8 +54,7 @@ namespace bagis_pro
                             }
                         }
                         Webservices ws = new Webservices();
-                        var success = Task.Run(() => ws.DownloadBatchSettingsAsync(Module1.Current.DefaultEbagisServer,
-                            strFullPath));
+                        var success = Task.Run(() => ws.DownloadBatchSettingsAsync(strFullPath));
                         if ((BA_ReturnCode)success.Result == BA_ReturnCode.Success)
                         {
                             this.SettingsFile = strFullPath;

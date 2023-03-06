@@ -216,11 +216,10 @@ namespace bagis_pro
             return dictDataSources;
         }
 
-        public async Task<BA_ReturnCode> DownloadBatchSettingsAsync(string webserviceUrl, string strSaveToPath)
+        public async Task<BA_ReturnCode> DownloadBatchSettingsAsync(string strSaveToPath)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
-            webserviceUrl = webserviceUrl + @"/api/rest/desktop/settings/bagis-pro/";
-            EsriHttpResponseMessage response = new EsriHttpClient().Get(webserviceUrl);
+            EsriHttpResponseMessage response = new EsriHttpClient().Get(Constants.URI_BATCH_TOOL_SETTINGS);
             JObject jsonVal = JObject.Parse(await response.Content.ReadAsStringAsync()) as JObject;
             dynamic oSettings = (JObject) jsonVal["BatchSettings"];
             using (System.IO.StreamWriter file = File.CreateText(strSaveToPath))
@@ -317,14 +316,13 @@ namespace bagis_pro
             }
             else
             {
-                var url = (string)Module1.Current.BatchToolSettings.EBagisServer + Constants.URI_DESKTOP_SETTINGS;
-                var response = new EsriHttpClient().Get(url);
+                var response = new EsriHttpClient().Get(Constants.URI_DESKTOP_SETTINGS);
                 var json = await response.Content.ReadAsStringAsync();
                 dynamic oSettings = JObject.Parse(json);
                 if (oSettings == null || String.IsNullOrEmpty(Convert.ToString(oSettings.westernStateBoundaries)))
                 {
                     Module1.Current.ModuleLogManager.LogError(nameof(GetWesternStateBoundariesUriAsync),
-                        "Unable to retrieve settings from " + url);
+                        "Unable to retrieve settings from " + Constants.URI_DESKTOP_SETTINGS);
                     return "";
                 }
                 else
@@ -342,14 +340,13 @@ namespace bagis_pro
             }
             else
             {
-                var url = (string)Module1.Current.BatchToolSettings.EBagisServer + Constants.URI_DESKTOP_SETTINGS;
-                var response = new EsriHttpClient().Get(url);
+                var response = new EsriHttpClient().Get(Constants.URI_DESKTOP_SETTINGS);
                 var json = await response.Content.ReadAsStringAsync();
                 dynamic oSettings = JObject.Parse(json);
                 if (oSettings == null || String.IsNullOrEmpty(Convert.ToString(oSettings.dem30)))
                 {
                     Module1.Current.ModuleLogManager.LogError(nameof(GetDem30UriAsync),
-                        "Unable to retrieve settings from " + url);
+                        "Unable to retrieve settings from " + Constants.URI_DESKTOP_SETTINGS);
                     return "";
                 }
                 else
@@ -549,13 +546,12 @@ namespace bagis_pro
             }
         }
 
-        public async Task<double> QueryBatchToolSettingsVersionAsync(string webserviceUrl)
+        public async Task<double> QueryBatchToolSettingsVersionAsync()
         {
             try
             {
                 IDictionary<string, dynamic> dictDataSources = new Dictionary<string, dynamic>();
-                webserviceUrl = webserviceUrl + @"/api/rest/desktop/settings/bagis-pro/";
-                EsriHttpResponseMessage response = new EsriHttpClient().Get(webserviceUrl);
+                EsriHttpResponseMessage response = new EsriHttpClient().Get(Constants.URI_BATCH_TOOL_SETTINGS);
                 JObject jsonVal = JObject.Parse(await response.Content.ReadAsStringAsync()) as JObject;
                 dynamic oSettings = (JObject)jsonVal["BatchSettings"];
                 return (double)oSettings.Version;

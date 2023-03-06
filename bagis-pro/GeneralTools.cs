@@ -2744,8 +2744,7 @@ namespace bagis_pro
             Webservices ws = new Webservices();
             if (!File.Exists(strSettingsPath + @"\" + Constants.FILE_BATCH_TOOL_SETTINGS))
             {
-                var success = Task.Run(() => ws.DownloadBatchSettingsAsync(Module1.Current.DefaultEbagisServer,
-                    strSettingsPath + @"\" + Constants.FILE_BATCH_TOOL_SETTINGS));
+                var success = Task.Run(() => ws.DownloadBatchSettingsAsync(strSettingsPath + @"\" + Constants.FILE_BATCH_TOOL_SETTINGS));
                 if ((BA_ReturnCode)success.Result == BA_ReturnCode.Success)
                 {
                     Module1.Current.ModuleLogManager.LogDebug(nameof(LoadBatchToolSettings),
@@ -2771,12 +2770,11 @@ namespace bagis_pro
                     }
                 }
                 // Check for most current server version
-                var result = Task.Run(() => ws.QueryBatchToolSettingsVersionAsync(Module1.Current.DefaultEbagisServer));
+                var result = Task.Run(() => ws.QueryBatchToolSettingsVersionAsync());
                 double dblServerVersion = (double)result.Result;
                 if ((oBatchSettings != null) && ((double)oBatchSettings.Version < dblServerVersion))
                 {
-                    var success = Task.Run(() => ws.DownloadBatchSettingsAsync(Module1.Current.DefaultEbagisServer,
-                        strSettingsPath + @"\" + Constants.FILE_BATCH_TOOL_SETTINGS));
+                    var success = Task.Run(() => ws.DownloadBatchSettingsAsync(strSettingsPath + @"\" + Constants.FILE_BATCH_TOOL_SETTINGS));
                     if ((BA_ReturnCode)success.Result == BA_ReturnCode.Success)
                     {
                         Module1.Current.ModuleLogManager.LogDebug(nameof(LoadBatchToolSettings),

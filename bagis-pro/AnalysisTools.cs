@@ -565,14 +565,13 @@ namespace bagis_pro
             Webservices ws = new Webservices();
             Module1.Current.ModuleLogManager.LogDebug(nameof(GetStationValues),
                 "Contacting webservices server to retrieve pourpoint layer uri");
-            var url = (string)Module1.Current.BatchToolSettings.EBagisServer + Constants.URI_DESKTOP_SETTINGS;
-            var response = new EsriHttpClient().Get(url);
+            var response = new EsriHttpClient().Get(Constants.URI_DESKTOP_SETTINGS);
             var json = await response.Content.ReadAsStringAsync();
             dynamic oSettings = JObject.Parse(json);
             if (oSettings == null || String.IsNullOrEmpty(Convert.ToString(oSettings.gaugeStation)))
             {
                 Module1.Current.ModuleLogManager.LogDebug(nameof(GetStationValues),
-                    "Unable to retrieve gauge station uri from " + url);
+                    "Unable to retrieve gauge station uri from " + Constants.URI_DESKTOP_SETTINGS);
                 MessageBox.Show("Unable to retrieve gauge station uri. Station values cannot be retrieved!!", "BAGIS-PRO");
                 return null;
             }
@@ -1560,14 +1559,13 @@ namespace bagis_pro
                 return success;
             }
 
-            var url = (string)Module1.Current.BatchToolSettings.EBagisServer + Constants.URI_DESKTOP_SETTINGS;
-            var response = new EsriHttpClient().Get(url);
+            var response = new EsriHttpClient().Get(Constants.URI_DESKTOP_SETTINGS);
             var json = await response.Content.ReadAsStringAsync();
             dynamic oSettings = JObject.Parse(json);
             if (oSettings == null || String.IsNullOrEmpty(Convert.ToString(oSettings.snowCourseName)))
             {
                 Module1.Current.ModuleLogManager.LogError(nameof(ClipSnoLayersAsync),
-                    "Unable to retrieve snotel settings from " + url + " .Clipping cancelled!!");
+                    "Unable to retrieve snotel settings from " + Constants.URI_DESKTOP_SETTINGS + " .Clipping cancelled!!");
                 return success;
             }
 

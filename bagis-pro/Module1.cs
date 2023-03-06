@@ -113,7 +113,6 @@ namespace bagis_pro
         internal string DisplayedSweDeltaMap { get; set; } = "";
         internal string DisplayedSeasonalPrecipContribMap { get; set; } = "";
         internal string SettingsPath { get; set; } = "";
-        internal string DefaultEbagisServer { get; } = "https://ebagis.geog.pdx.edu";
         internal dynamic BatchToolSettings { get; set; } = "";
         internal double PrismZonesInterval { get; set; } = 999;
         internal string WesternStateBoundariesUri { get; } = "";
