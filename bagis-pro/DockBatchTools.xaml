@@ -6,7 +6,7 @@
              xmlns:ui="clr-namespace:bagis_pro"
              xmlns:extensions="clr-namespace:ArcGIS.Desktop.Extensions;assembly=ArcGIS.Desktop.Extensions"
              mc:Ignorable="d" 
-             d:DesignHeight="500" d:DesignWidth="325"
+             d:DesignHeight="600" d:DesignWidth="325"
              d:DataContext="{Binding Path=ui.DockBatchToolsViewModel}">
      <UserControl.Resources>
         <ResourceDictionary>
@@ -27,6 +27,8 @@
             <RowDefinition Height="10"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="30"/>
+            <RowDefinition Height="20"/>
+            <RowDefinition Height="20"/>
             <RowDefinition Height="30"/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
@@ -128,16 +130,26 @@
             </ListView>
         </DockPanel>
         <!--</StackPanel>-->
-        <DockPanel Grid.Row="9" Grid.Column="0" LastChildFill="false" KeyboardNavigation.TabNavigation="Local" >
-            <Button x:Name="btnPourpoint" Content="Update Forecast Station Data" HorizontalAlignment="Left" VerticalAlignment="Center" Width="175" IsEnabled="{Binding CmdForecastEnabled}" Command="{Binding CmdForecast}" Margin="5, 0, 0, 0"/>
-        </DockPanel>
-
         <DockPanel Grid.Row="9" Grid.Column="3" LastChildFill="false" KeyboardNavigation.TabNavigation="Local" >
             <Button x:Name="btnRun" Content="Run" HorizontalAlignment="Left" VerticalAlignment="Center" Width="50" IsEnabled="{Binding CmdRunEnabled}" Command="{Binding CmdRun}" Margin="5, 0, 0, 0"/>
         </DockPanel>
-
-        <DockPanel Grid.Row="10" Grid.Column="0" LastChildFill="false" KeyboardNavigation.TabNavigation="Local" >
+        <DockPanel Grid.Row="9" Grid.Column="0" LastChildFill="false" KeyboardNavigation.TabNavigation="Local" >
             <Button x:Name="btnSnodas" Content="Export AOI GeoJson for Snodas" HorizontalAlignment="Left" VerticalAlignment="Center" Width="175" IsEnabled="{Binding CmdSnodasEnabled}" Command="{Binding CmdSnodas}" Margin="5, 0, 0, 0"/>
+        </DockPanel>
+        <DockPanel Grid.Row="10" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Top" Grid.ColumnSpan="3" Width="320">
+            <CheckBox x:Name="chkAlwaysNear" VerticalContentAlignment="Top" Margin="5,0,0,0" 
+                  IsEnabled="True" IsChecked="{Binding AlwaysNearChecked}" Height="34" >
+                <TextBlock Text="Always look up station triplet with NEAR" />
+            </CheckBox>
+        </DockPanel>
+        <DockPanel Grid.Row="11" Grid.Column="0" LastChildFill="false" KeyboardNavigation.TabNavigation="Local" >
+            <CheckBox x:Name="chkMerge" VerticalContentAlignment="Top" Margin="5,0,0,0" 
+                  IsEnabled="True" IsChecked="{Binding MergeAoiVChecked}" Height="34" >
+                <TextBlock Text="Merge all aoi_v polygons" />
+            </CheckBox>        
+        </DockPanel>
+        <DockPanel Grid.Row="12" Grid.Column="0" LastChildFill="false" KeyboardNavigation.TabNavigation="Local" >
+            <Button x:Name="btnPourpoint" Content="Update Forecast Station Data" HorizontalAlignment="Left" VerticalAlignment="Center" Width="175" IsEnabled="{Binding CmdForecastEnabled}" Command="{Binding CmdForecast}" Margin="5, 0, 0, 0"/>
         </DockPanel>
     </Grid>
 </UserControl>

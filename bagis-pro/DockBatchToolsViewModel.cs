@@ -108,6 +108,8 @@ namespace bagis_pro
         private bool _cmdForecastEnabled = false;
         private bool _cmdSnodasEnabled = false;
         private bool _cmdLogEnabled = false;
+        private bool _alwaysNearChecked = false;
+        private bool _mergeAoiVChecked = true;
         private ObservableCollection<string> _aoiList = new ObservableCollection<string>();
         private string _strLogFile;
         public string Heading
@@ -170,6 +172,24 @@ namespace bagis_pro
             set
             {
                 SetProperty(ref _siteAnalysisChecked, value, () => SiteAnalysisChecked);
+            }
+        }
+
+        public bool AlwaysNearChecked
+        {
+            get { return _alwaysNearChecked; }
+            set
+            {
+                SetProperty(ref _alwaysNearChecked, value, () => AlwaysNearChecked);
+            }
+        }
+
+        public bool MergeAoiVChecked
+        {
+            get { return _mergeAoiVChecked; }
+            set
+            {
+                SetProperty(ref _mergeAoiVChecked, value, () => MergeAoiVChecked);
             }
         }
 
@@ -1076,7 +1096,7 @@ namespace bagis_pro
                     int errorCount = 0; // keep track of any non-fatal errors
                     string aoiFolder = Names[idxRow].FilePath;
                     Names[idxRow].AoiBatchStateText = AoiBatchState.Started.ToString();  // update gui
-                    strLogEntry = CreateLogEntry(aoiFolder, "", "", $@"Starting forecast station updates");
+                    strLogEntry = CreateLogEntry(aoiFolder, "", "", $@"Starting forecast station update");
                     File.AppendAllText(log, strLogEntry);       // append
 
                     Uri ppUri = new Uri(GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Aoi));
@@ -1144,7 +1164,7 @@ namespace bagis_pro
                         strRemark = NO_CHANGE_MATCH;
                     }
 
-                    if (!NO_CHANGE_MATCH.Equals(strRemark))
+                    if (AlwaysNearChecked || !NO_CHANGE_MATCH.Equals(strRemark))
                     {
                         // Use the NEAR tool to find the closest Pourpoint
                         success = await GeoprocessingTools.NearAsync(ppUri.LocalPath + "\\" + Constants.FILE_POURPOINT, strWsUri, Constants.VALUE_FORECAST_STATION_SEARCH_RADIUS);
@@ -1233,10 +1253,19 @@ namespace bagis_pro
             strLogEntry = CreateLogEntry(ParentFolder, "", "", $@"Forecast station updates complete!!");
             File.AppendAllText(log, strLogEntry);       // append
             string strMergeMessage = "";
-            success = await MergeAoiVectorsAsync(lstMergeFeatures, log);
-            if (success == BA_ReturnCode.Success)
+            if (MergeAoiVChecked)
             {
-                strMergeMessage = $@" aoi_v polygons have been merged to {ParentFolder}\{Constants.FOLDER_MAP_PACKAGE}\{Constants.FILE_MERGE_GDB}\{Constants.FILE_MERGED_AOI_POLYS}";
+                success = await MergeAoiVectorsAsync(lstMergeFeatures, log);
+                if (success == BA_ReturnCode.Success)
+                {
+                    strLogEntry = CreateLogEntry(ParentFolder, "", "", $@"aoi_v feature class merge complete!!");
+                    strMergeMessage = $@" aoi_v polygons have been merged to {ParentFolder}\{Constants.FOLDER_MAP_PACKAGE}\{Constants.FILE_MERGE_GDB}\{Constants.FILE_MERGED_AOI_POLYS}";
+                }
+                else
+                {
+                    strLogEntry = CreateLogEntry(ParentFolder, "", "", $@"ERROR: aoi_v feature class merge encountered 1 or more errors!!");
+                }
+                File.AppendAllText(log, strLogEntry);       // append
             }
             MessageBox.Show($@"Forecast station updates done!!{strMergeMessage}");
         }
