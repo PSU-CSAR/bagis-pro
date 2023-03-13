@@ -1153,18 +1153,21 @@ namespace bagis_pro
                     }
 
                     // QUERY THE MASTER LIST FOR THE STATION TRIPLET
-                    string strWsUri = (string)Module1.Current.BatchToolSettings.MasterAoiList + "/0";  // Append layer ordinal to the uri
                     string[] arrSearch = { Constants.FIELD_STATION_TRIPLET, Constants.FIELD_AWDB_ID, Constants.FIELD_NWCCNAME };
                     string[] arrFound = new string[arrSearch.Length];
-                    queryFilter = new QueryFilter();
-                    queryFilter.WhereClause = Constants.FIELD_STATION_TRIPLET + " = '" + strTriplet + "'";
-                    arrFound = await ws.QueryServiceForValuesAsync(new Uri((string)Module1.Current.BatchToolSettings.MasterAoiList), "0", arrSearch, queryFilter);
-                    if (arrFound != null && arrFound.Length == arrSearch.Length && arrFound[0] != null)
+                    string strWsUri = (string)Module1.Current.BatchToolSettings.MasterAoiList + "/0";  // Append layer ordinal to the uri
+                    if (!AlwaysNearChecked)
                     {
-                        strRemark = NO_CHANGE_MATCH;
+                        queryFilter = new QueryFilter();
+                        queryFilter.WhereClause = Constants.FIELD_STATION_TRIPLET + " = '" + strTriplet + "'";
+                        arrFound = await ws.QueryServiceForValuesAsync(new Uri((string)Module1.Current.BatchToolSettings.MasterAoiList), "0", arrSearch, queryFilter);
+                        if (arrFound != null && arrFound.Length == arrSearch.Length && arrFound[0] != null)
+                        {
+                            strRemark = NO_CHANGE_MATCH;
+                        }
                     }
 
-                    if (AlwaysNearChecked || !NO_CHANGE_MATCH.Equals(strRemark))
+                    if (!NO_CHANGE_MATCH.Equals(strRemark))
                     {
                         // Use the NEAR tool to find the closest Pourpoint
                         success = await GeoprocessingTools.NearAsync(ppUri.LocalPath + "\\" + Constants.FILE_POURPOINT, strWsUri, Constants.VALUE_FORECAST_STATION_SEARCH_RADIUS);
@@ -1226,7 +1229,7 @@ namespace bagis_pro
                             success = await GeoprocessingTools.AddFieldAsync(strAoiVPath, strField, "TEXT");
                         }
                     }
-                    if (success == BA_ReturnCode.Success)
+                    if (success == BA_ReturnCode.Success && dictEdits.ContainsKey(Constants.FIELD_STATION_TRIPLET))
                     {
                         string strValue = await GeodatabaseTools.QueryTableForSingleValueAsync(ppUri, Constants.FILE_AOI_VECTOR,
                             Constants.FIELD_STATION_TRIPLET, queryFilter);
@@ -1236,6 +1239,11 @@ namespace bagis_pro
                             success = await GeodatabaseTools.UpdateFeatureAttributesAsync(ppUri, Constants.FILE_AOI_VECTOR,
                                 new QueryFilter(), dictEdits);
                         }
+                    }
+                    else
+                    {
+                        errorCount++;
+                        success = BA_ReturnCode.ReadError;
                     }
 
                     strLogEntry = CreateLogEntry(aoiFolder, strTriplet, strNearTriplet, strRemark);
