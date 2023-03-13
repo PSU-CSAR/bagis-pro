@@ -1109,7 +1109,11 @@ namespace bagis_pro
                     string strRemark = "";
 
                     // GET THE STATION TRIPLET FROM THE POURPOINT
-                    IDictionary<string, string> dictEdits = new Dictionary<string, string>();
+                    IDictionary<string, string> dictEdits = new Dictionary<string, string>()
+                    { { Constants.FIELD_STATION_TRIPLET, ""},
+                      { Constants.FIELD_STATION_NAME, ""},
+                      { Constants.FIELD_AWDB_ID, ""}
+                    }; 
                     QueryFilter queryFilter = new QueryFilter();
                     if (await GeodatabaseTools.FeatureClassExistsAsync(ppUri, Constants.FILE_POURPOINT))
                     {
@@ -1125,15 +1129,15 @@ namespace bagis_pro
                                 {
                                     case Constants.FIELD_STATION_TRIPLET:
                                         strTriplet = strValue;
-                                        dictEdits.Add(Constants.FIELD_STATION_TRIPLET, strTriplet);
+                                        dictEdits[Constants.FIELD_STATION_TRIPLET] = strTriplet;
                                         break;
                                     case Constants.FIELD_STATION_NAME:
                                         strStationName = strValue;
-                                        dictEdits.Add(Constants.FIELD_STATION_NAME, strStationName);
+                                        dictEdits[Constants.FIELD_STATION_NAME] = strStationName;
                                         break;
                                     case Constants.FIELD_AWDB_ID:
                                         strAwdbId = strValue;
-                                        dictEdits.Add(Constants.FIELD_AWDB_ID, strAwdbId);
+                                        dictEdits[Constants.FIELD_AWDB_ID] = strAwdbId;
                                         break;
                                 }
                             }
@@ -1229,7 +1233,7 @@ namespace bagis_pro
                             success = await GeoprocessingTools.AddFieldAsync(strAoiVPath, strField, "TEXT");
                         }
                     }
-                    if (success == BA_ReturnCode.Success && dictEdits.ContainsKey(Constants.FIELD_STATION_TRIPLET))
+                    if (success == BA_ReturnCode.Success)
                     {
                         string strValue = await GeodatabaseTools.QueryTableForSingleValueAsync(ppUri, Constants.FILE_AOI_VECTOR,
                             Constants.FIELD_STATION_TRIPLET, queryFilter);
