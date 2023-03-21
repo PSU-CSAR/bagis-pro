@@ -20,22 +20,24 @@ namespace bagis_pro
         public const string MAPS_SNODAS_LAYOUT = "SNODAS Layout";
         public const string MAPS_SNODAS_DELTA_LAYOUT = "SNODAS Delta Layout";
         public const string MAPS_SEASONAL_PRECIP_LAYOUT = "Seasonal Precipitation Layout";
-        public const string MAPS_AOI_BOUNDARY = "AOI Boundary";
+        public const string MAPS_BASIN_BOUNDARY = "Basin Boundary";
         public const string MAPS_STREAMS = "AOI Streams";
-        public const string MAPS_ACCESS_ROADS = "Access Roads";
-        public const string MAPS_SNOTEL = "SNOTEL Sites";
-        public const string MAPS_SNOW_COURSE = "Snow Courses";
+        public const string MAPS_ROADS = "Roads";
+        public const string MAPS_SNOTEL = "Snotel";
+        public const string MAPS_SNOW_COURSE = "Snow Course";
+        public const string MAPS_COOP_PILLOW = "Coop Pillow";
+        public const string MAPS_SNOLITE = "Snolite";
         public const string MAPS_HILLSHADE = "hillshade";
         public const string MAPS_ELEV_ZONE = "Elevation Zones";
         public const string MAPS_SLOPE_ZONE = "Slope Zones";
         public const string MAPS_ASPECT_ZONE = "Aspect Zones";
         public const string MAPS_PRISM_ZONE = "Precipitation Zones";
-        public const string MAPS_SNOTEL_REPRESENTED = "SNOTEL Rep Area";
-        public const string MAPS_SNOW_COURSE_REPRESENTED = "Snow Courses Rep Area";
+        public const string MAPS_AUTOMATED_SITES_REPRESENTED = "Auto Sites Rep Area";
+        public const string MAPS_SNOW_COURSE_REPRESENTED = "Snow Course Rep Area";
         public const string MAPS_ALL_SITES_REPRESENTED = "All Sites Rep Area";
-        public const string MAPS_SUITABLE_LAND_ZONES = "Suitable Land Ownership Type";
+        public const string MAPS_SUITABLE_LAND_ZONES = "Suitable Land Ownership";
         public const string MAPS_FORESTED_LAND_COVER = "Forested Land Cover";
-        public const string MAPS_SITES_LOCATION = "Meet All Criteria";
+        public const string MAPS_POTENTIAL_LOCATIONS = "Potential Locations";
         public const string MAPS_CRITICAL_PRECIPITATION_ZONES = "Critical Precipitation";
         public const string MAPS_LAND_OWNERSHIP = "Land Ownership";
         public const string MAPS_PRECIPITATION_CONTRIBUTION = "Precipitation Contribution";
@@ -44,6 +46,7 @@ namespace bagis_pro
         public const string MAPS_WESTERN_STATES_BOUNDARY = "Western States Boundary";
         public const string MAPS_LAND_COVER = "Land Cover";
         public const string MAPS_WATERBODIES = "Waterbodies";
+        public const string MAPS_STREAM_GAGE = "Streamgage";
 
         public const string MAPS_LEGEND = "Legend";
         public const string MAPS_TITLE = "Title";
@@ -101,6 +104,10 @@ namespace bagis_pro
         public const string FILE_SETTINGS = "analysis.xml";
         public const string FILE_BATCH_TOOL_SETTINGS = "batch_tool_settings.json";
         public const string FILE_BATCH_LOG = "batch_tool_log.txt";
+        public const string FILE_SNODAS_GEOJSON_LOG = "snodas_log.txt";
+        public const string FILE_FORECAST_STATION_LOG = "forecast_station_log.csv";
+        public const string FILE_SNOLITE = "snolite_sites";
+        public const string FILE_COOP_PILLOW = "coop_pillow_sites";
         public const string FILE_EXPORT_MAP_ELEV_PDF = "elevation_distribution.pdf";
         public const string FILE_EXPORT_MAP_SNOTEL_PDF = "map_elevation_snotel.pdf";
         public const string FILE_EXPORT_MAP_SCOS_PDF = "map_elevation_sc.pdf";
@@ -200,12 +207,16 @@ namespace bagis_pro
         public const string FILE_TOO_MANY_SITES = "too_many_sites.pdf";
         public const string FILE_NO_SITES = "no_sites.pdf";
         public const string FILE_SITES_APPENDIX_PDF = "sites_appendix.pdf";
+        public const string FILE_MERGED_AOI_POLYS = "merged_aoi_polygons";
+        public const string FILE_MERGE_GDB = "merge.gdb";
         public static readonly string[] URIS_SNODAS_SWE = new string[] { "daily_swe_normal_nov_01", "daily_swe_normal_dec_01", "daily_swe_normal_jan_01",
                                                                          "daily_swe_normal_feb_01", "daily_swe_normal_mar_01", "daily_swe_normal_apr_01",
                                                                          "daily_swe_normal_may_01", "daily_swe_normal_jun_01", "daily_swe_normal_jul_01"};
         public const string FILE_SNODAS_SWE_APRIL = "swe_apr_01";
         public static readonly string[] FILES_SNODAS_SWE = new string[] { "swe_nov_01", "swe_dec_01", "swe_jan_01", "swe_feb_01", "swe_mar_01",
                                                                           FILE_SNODAS_SWE_APRIL, "swe_may_01", "swe_jun_01", "swe_jul_01"};
+        public static readonly string[] FILES_SWE_ZONES = new string[] { "swe_nov_zone", "swe_dec_zone", "swe_jan_zone", "swe_feb_zone", "swe_mar_zone",
+                                                                         "swe_apr_zone", "swe_may_zone", "swe_jun_zone", "swe_jul_zone"};
         public const string MAPS_SNODAS_MEAN_SWE = "SNODAS Mean SWE";
         public const string MAPS_SNODAS_SWE_DELTA = "SNODAS SWE Delta";
         public const string MAPS_SEASONAL_PRECIP_CONTRIB = "Precip Contribution";
@@ -214,13 +225,12 @@ namespace bagis_pro
                                                                          "swe_jun_minus_may", "swe_jul_minus_jun"};
         public static readonly string[] FILES_SEASON_PRECIP_CONTRIB = new string[] {"sq1_precip_contrib", "sq2_precip_contrib", "sq3_precip_contrib",
                                                                                     "sq4_precip_contrib"};
-        public static readonly string[] LAYER_NAMES_SEASON_PRECIP_CONTRIB = new string[] {"SQ1 Precip Contribution", "SQ2 Precip Contribution", "SQ3 Precip Contribution",
-                                                                                          "SQ4 Precip Contribution"};
         public static readonly string[] MAP_NAMES_SEASON_PRECIP_CONTRIB = new string[] {"SQ1 PRECIPITATION CONTRIBUTION", "SQ2 PRECIPITATION CONTRIBUTION", "SQ3 PRECIPITATION CONTRIBUTION",
                                                                                         "SQ4 PRECIPITATION CONTRIBUTION"};
         public const string FILE_BAGIS_MAP_PARAMETERS = "map_parameters.txt";
         public const string URI_IMAGE_SERVER = "/ImageServer";
-        public const string URI_DESKTOP_SETTINGS = "/api/rest/desktop/settings/";
+        public const string URI_DESKTOP_SETTINGS = "https://github.com/PSU-CSAR/bagis-pro/raw/master/Settings/bagis.json";
+        public const string URI_BATCH_TOOL_SETTINGS = "https://github.com/PSU-CSAR/bagis-pro/raw/master/Settings/bagis-pro.json";
         public const string LAYER_FILE_NLCD_LAND_COVER = "nlcd_land_cover.lyrx";
         public const string LAYER_FILE_PUBLIC_TRIBAL_LANDS = "Public_and_Tribal_Lands.lyrx";
         public const string LAYOUT_FILE_SNODAS_SWE = "SNODAS Layout.pagx";
@@ -232,6 +242,7 @@ namespace bagis_pro
         public const string FOLDER_MAPS = "maps";
         public const string FOLDER_LOGS = "logs";
         public const string FOLDER_SETTINGS = "BAGIS";
+        public const string FOLDER_SNODAS_GEOJSON = "snodas_geojson";
 
         public const string FIELD_AOI_AREA = "AOISHPAREA";
         public const string FIELD_SITE_ELEV = "BA_SELEV";
@@ -258,13 +269,13 @@ namespace bagis_pro
         public const string FIELD_RASTERVALU = "RASTERVALU";   //Field generated when using BA_ExtractValuesToPoints to populate BA_SELEV from DEM
         public const string FIELD_SUITABLE = "Suitable";   //Indicates public and tribal lands
         public const string FIELD_GRID_CODE = "gridcode";   //Value after raster is converted to polygon
-        public const string FIELD_RUNOFF_STATION_TRIPLET = "stationtriplet";
         public const string FIELD_VOL_ACRE_FT = "VOL_ACRE_FT";
         public const string FIELD_SUM = "SUM";
         public const string FIELD_NWCCNAME = "nwccname";
         public const string FIELD_WINTER_START_MONTH = "winter_start_month";
         public const string FIELD_WINTER_END_MONTH = "winter_end_month";
         public const string FIELD_HUC = "huc";
+        public const string FIELD_HUC2 = "huc2";
         public const string FIELD_LATITUDE = "latitude";
         public const string FIELD_LONGITUDE = "longitude";
         public const string FIELD_SOURCE_ID_FEATURE = "SrcID_Feat";
@@ -288,19 +299,30 @@ namespace bagis_pro
         public const string DATA_TYPE_LAND_OWNERSHIP = "Land Ownership";
         public const string DATA_TYPE_SWE_DELTA = "Snotel SWE Delta";
         public const string DATA_TYPE_LAND_COVER = "Land Cover";
+        public const string DATA_TYPE_SNOLITE = "SNOLITE";
+        public const string DATA_TYPE_COOP_PILLOW = "Coop Pillow";
+        public const string DATA_TYPE_DEM = "DEM";
+        public const string DATA_TYPE_ALASKA_DEM = "Alaska DEM";
+        public const string DATA_TYPE_ALASKA_PRECIPITATION = "Alaska Precipitation";
+        public const string DATA_TYPE_ALASKA_LAND_COVER = "Alaska Land Cover";
+        public const string DATA_SOURCES_DEFAULT = "Default Data Sources";
+        public const string DATA_SOURCES_ALASKA = "Alaska Data Sources";
+
 
         public const int VALUE_NO_DATA_9999 = -9999;
         public const string VALUE_NO_DATA = "NoData";
         public const string VALUE_UNKNOWN = "Unknown";
         // BAGIS V3 allowed elevation intervals up to 5000; This tool only allows up to 1000
         public static readonly short[] VALUES_ELEV_INTERVALS = new short[] { 50, 100, 200, 250, 500, 1000 };
+        public const string VALUE_ALASKA_HUC2 = "19";
+        public const string VALUE_FORECAST_STATION_SEARCH_RADIUS = "500 Meters";
 
         public const string UNITS_INCHES = "Inches";
         public const string UNITS_MILLIMETERS = "Millimeters";
         public const string UNITS_FEET = "Feet";
         public const string UNITS_METERS = "Meters";
         public const double MAP_BUFFER_FACTOR = 1.3;
-        public const string TEXT_SITES_TABLE_DESCR = "See the Active Sites table for individual snow survey site descriptions";
+        public const string TEXT_SITES_TABLE_DESCR = "See Active Sites Table for characteristics of each snow monitoring site.";
         public const int PDF_EXPORT_RESOLUTION = 300;
 
         // States that control the map display buttons
@@ -348,13 +370,13 @@ namespace bagis_pro
         public static int EXCEL_LARGE_CHART_WIDTH = 800;
         public static int EXCEL_LARGE_CHART_HEIGHT = 500;
 
-        public static string TITLE_ELEVATION = "ELEVATION DISTRIBUTION";
+        public static string TITLE_BASIN_ELEVATION = "BASIN ELEVATION";
         public static string TITLE_SLOPE = "Slope Distribution";
         public static string TITLE_ASPECT = "Aspect Distribution";
         public static string TITLE_PRECIPITATION = "PRECIPITATION DISTRIBUTION";
-        public static string TITLE_SNOTEL_SITES = "SNOTEL SITES REPRESENTATION";
-        public static string TITLE_SCOS_SITES = "SNOW COURSE SITES REPRESENTATION";
-        public static string TITLE_SNOTEL_SCOS_SITES = "SNOTEL AND SNOW COURSE SITES REPRESENTATION";
+        public static string TITLE_AUTOMATED_SITES = "AUTOMATED SITE REPRESENTATION";
+        public static string TITLE_SCOS_SITES = "SNOW COURSE SITE REPRESENTATION";
+        public static string TITLE_SNOTEL_AUTO_SITES = "ALL SITE REPRESENTATION";
         public static string TITLE_ROADS_AND_TRIBAL = "ROADS, FEDERAL NON-WILDERNESS & TRIBAL LAND";
         public static string TITLE_FORESTED_LAND_COVER = "FORESTED LAND COVER";
         public static string TITLE_POTENTIAL_SITE_LOC = "POTENTIAL SITE LOCATIONS";
@@ -374,9 +396,9 @@ namespace bagis_pro
 
         public static string[] FILES_EXPORT_TITLES = new string[]
         { "Title Page", "Data Sources Table", TITLE_LOCATION_MAP, "Active Sites Table",
-          TITLE_ELEVATION + " MAP", TITLE_LAND_COVER + " MAP", TITLE_ASPECT + " MAP", TITLE_ASPECT + " CHART",
-          TITLE_SLOPE + " MAP", TITLE_SLOPE + " CHART", TITLE_SNOTEL_SITES + " MAP", TITLE_SCOS_SITES + " MAP",
-          TITLE_SNOTEL_SCOS_SITES + " MAP", TITLE_PRECIPITATION + " MAP", TITLE_ELEV_PRECIP_CORR + " CHART",
+          TITLE_BASIN_ELEVATION + " MAP", TITLE_LAND_COVER + " MAP", TITLE_ASPECT + " MAP", TITLE_ASPECT + " CHART",
+          TITLE_SLOPE + " MAP", TITLE_SLOPE + " CHART", TITLE_AUTOMATED_SITES + " MAP", TITLE_SCOS_SITES + " MAP",
+          TITLE_SNOTEL_AUTO_SITES + " MAP", TITLE_PRECIPITATION + " MAP", TITLE_ELEV_PRECIP_CORR + " CHART",
           TITLE_SUBBASIN_ANNUAL_PRECIP_CONTRIB + " MAP", TITLE_AREA_ELEV_PRECIP_SITE + " CHART",
           TITLE_AREA_ELEV_PRECIP_SITE + " (CUMULATIVE) CHART", TITLE_CRITICAL_PRECIPITATION + " MAP", TITLE_PRECIP_REPRESENTATION,
           TITLE_WINTER_PRECIP + " MAP", TITLE_SEASONAL_PRECIP_CONTRIB, TITLE_SNODAS_MEAN_SWE, TITLE_SNODAS_MEAN_SWE_DELTA, TITLE_POTENTIAL_SITE_LOC + " MAP",

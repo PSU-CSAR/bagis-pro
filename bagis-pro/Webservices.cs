@@ -214,11 +214,10 @@ namespace bagis_pro
             return dictDataSources;
         }
 
-        public async Task<BA_ReturnCode> DownloadBatchSettingsAsync(string webserviceUrl, string strSaveToPath)
+        public async Task<BA_ReturnCode> DownloadBatchSettingsAsync(string strSaveToPath)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
-            webserviceUrl = webserviceUrl + @"/api/rest/desktop/settings/bagis-pro/";
-            EsriHttpResponseMessage response = new EsriHttpClient().Get(webserviceUrl);
+            EsriHttpResponseMessage response = new EsriHttpClient().Get(Constants.URI_BATCH_TOOL_SETTINGS);
             JObject jsonVal = JObject.Parse(await response.Content.ReadAsStringAsync()) as JObject;
             dynamic oSettings = (JObject) jsonVal["BatchSettings"];
             using (System.IO.StreamWriter file = File.CreateText(strSaveToPath))
@@ -322,14 +321,13 @@ namespace bagis_pro
             }
             else
             {
-                var url = (string)Module1.Current.BatchToolSettings.EBagisServer + Constants.URI_DESKTOP_SETTINGS;
-                var response = new EsriHttpClient().Get(url);
+                var response = new EsriHttpClient().Get(Constants.URI_DESKTOP_SETTINGS);
                 var json = await response.Content.ReadAsStringAsync();
                 dynamic oSettings = JObject.Parse(json);
                 if (oSettings == null || String.IsNullOrEmpty(Convert.ToString(oSettings.westernStateBoundaries)))
                 {
                     Module1.Current.ModuleLogManager.LogError(nameof(GetWesternStateBoundariesUriAsync),
-                        "Unable to retrieve settings from " + url);
+                        "Unable to retrieve settings from " + Constants.URI_DESKTOP_SETTINGS);
                     return "";
                 }
                 else
@@ -347,14 +345,13 @@ namespace bagis_pro
             }
             else
             {
-                var url = (string)Module1.Current.BatchToolSettings.EBagisServer + Constants.URI_DESKTOP_SETTINGS;
-                var response = new EsriHttpClient().Get(url);
+                var response = new EsriHttpClient().Get(Constants.URI_DESKTOP_SETTINGS);
                 var json = await response.Content.ReadAsStringAsync();
                 dynamic oSettings = JObject.Parse(json);
                 if (oSettings == null || String.IsNullOrEmpty(Convert.ToString(oSettings.dem30)))
                 {
                     Module1.Current.ModuleLogManager.LogError(nameof(GetDem30UriAsync),
-                        "Unable to retrieve settings from " + url);
+                        "Unable to retrieve settings from " + Constants.URI_DESKTOP_SETTINGS);
                     return "";
                 }
                 else
@@ -376,7 +373,7 @@ namespace bagis_pro
                 return success;
             }
             string[] arrResults = await GeneralTools.QueryMasterAoiProperties(stationTriplet);
-            if (arrResults.Length == 4)
+            if (arrResults.Length == 5)
             {
                 nwccAoiName = arrResults[0].Trim();
                 nwccAoiName = nwccAoiName.Replace(" ", "_");
@@ -554,13 +551,12 @@ namespace bagis_pro
             }
         }
 
-        public async Task<double> QueryBatchToolSettingsVersionAsync(string webserviceUrl)
+        public async Task<double> QueryBatchToolSettingsVersionAsync()
         {
             try
             {
                 IDictionary<string, dynamic> dictDataSources = new Dictionary<string, dynamic>();
-                webserviceUrl = webserviceUrl + @"/api/rest/desktop/settings/bagis-pro/";
-                EsriHttpResponseMessage response = new EsriHttpClient().Get(webserviceUrl);
+                EsriHttpResponseMessage response = new EsriHttpClient().Get(Constants.URI_BATCH_TOOL_SETTINGS);
                 JObject jsonVal = JObject.Parse(await response.Content.ReadAsStringAsync()) as JObject;
                 dynamic oSettings = (JObject)jsonVal["BatchSettings"];
                 return (double)oSettings.Version;
@@ -572,6 +568,99 @@ namespace bagis_pro
                 return -1;
             }
 
+        }
+
+        public string GenerateSnodasGeoJson(string pointOutputPath, string polygonOutputPath, string outputFolder)
+        {
+            // Build new JObject
+            JObject objOutput = new JObject();
+            objOutput[Constants.FIELD_JSON_TYPE] = "GeometryCollection";
+            JArray arrGeometries = new JArray();
+
+            // read pourpoint JSON directly from a file
+            JObject o2 = null;
+            using (StreamReader file = File.OpenText(pointOutputPath))
+            using (JsonTextReader reader = new JsonTextReader(file))
+            {
+                o2 = (JObject)JToken.ReadFrom(reader);
+            }
+            string stationTriplet = null;
+            if (o2 != null)
+            {
+                dynamic esriDefinition = (JObject)o2;
+                JArray arrFeatures = (JArray)esriDefinition.features;
+                if (arrFeatures.Count > 0)
+                {
+                    // Always take the first one
+                    dynamic firstFeature = arrFeatures[0];
+                    var properties = firstFeature.properties;
+                    var objProperties = new JObject();
+                    objOutput[Constants.FIELD_JSON_ID] = properties.stationTriplet;
+                    stationTriplet = properties.stationTriplet;
+                    objProperties[Constants.FIELD_JSON_NAME] = properties.stationName;
+                    objProperties[Constants.FIELD_JSON_SOURCE] = "ref";
+                    objOutput[Constants.FIELD_JSON_PROPERTIES] = objProperties;
+                    arrGeometries.Add(firstFeature.geometry);
+                }
+            }
+
+            // read polygon JSON directly from a file
+            JObject o3 = null;
+            using (StreamReader file = File.OpenText(polygonOutputPath))
+            using (JsonTextReader reader = new JsonTextReader(file))
+            {
+                o3 = (JObject)JToken.ReadFrom(reader);
+            }
+            if (o3 != null)
+            {
+                dynamic esriDefinition = (JObject)o3;
+                
+                JArray arrFeatures = (JArray)esriDefinition.features;
+                int idx = 0;
+                if (arrFeatures.Count > 0)
+                {
+                    dynamic firstFeature = arrFeatures[idx];
+                    firstFeature.geometry.type = "MultiPolygon";
+                    idx++;
+                    for (int i = idx; i < arrFeatures.Count; i++)
+                    {
+                        dynamic nextFeature = arrFeatures[i];
+                        JArray arrCoordinates = (JArray) nextFeature.geometry.coordinates;
+                        for (int j = 0; j < arrCoordinates.Count(); j++)
+                        {
+                            firstFeature.geometry.coordinates.Add(arrCoordinates[j]);
+                        }
+                        
+                    }
+                    arrGeometries.Add(firstFeature.geometry);
+                }
+
+                //if (arrFeatures.Count > 1)
+                //{
+                //    // Always take the first one
+                //    dynamic firstFeature = arrFeatures[0];
+                //    arrGeometries.Add(firstFeature.geometry);
+                //}
+                //else
+                //{
+                //    return "This file has more than one polygon. Only a single polygon is allowed!!";
+                //}
+
+            }
+            if (arrGeometries.Count == 2)
+            {
+                objOutput[Constants.FIELD_JSON_GEOMETRIES] = arrGeometries;
+            }
+
+            // write JSON directly to a file
+            string strFileName = $@"{outputFolder}\{stationTriplet.Replace(':', '_')}.geojson";
+            using (StreamWriter file = File.CreateText(strFileName))
+            using (JsonTextWriter writer = new JsonTextWriter(file))
+            {
+                writer.Formatting = Formatting.Indented;
+                objOutput.WriteTo(writer);
+            }
+            return null;
         }
     }
 }

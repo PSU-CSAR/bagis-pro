@@ -61,8 +61,10 @@
                         <xsl:value-of select="description" />
                         <br/>
                         Clipped from: <xsl:value-of select="uri" />
+                        <xsl:if test="DateClippedText != 'January 1, 0001'">
                         <br/>
                         Clipped on: <xsl:value-of select="DateClippedText" />
+                        </xsl:if>
                       </td>
                     </tr>
                 </xsl:for-each>

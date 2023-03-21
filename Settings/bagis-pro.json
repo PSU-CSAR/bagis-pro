@@ -1,0 +1,128 @@
+{
+  "dataSources": [
+    {
+      "layerType": "Snotel SWE",
+      "heading": "Snow Water Equivalent (SWE)",
+      "description": "SWE Data Source - Averaged daily SNOw Data Assimilation System (SNODAS) Snow Water Equivalent (SWE) from 2004 to 2022 water year data. See https://www.nohrsc.noaa.gov/ for more information.",
+      "uri": "http://bagis.geog.pdx.edu/arcgis/services/DAILY_SWE_NORMALS/",
+      "units": "Millimeters",
+      "shortDescription": "2004-2022 SNODAS daily data"
+    },
+    {
+      "layerType": "Precipitation",
+      "heading": "Precipitation",
+      "description": "30-year (1991-2020, Version M4, released in December 2022) monthly/quarterly/annual average precipitation data created by the PRISM Climate Group. See https://prism.oregonstate.edu/ for more information.",
+      "uri": "http://bagis.geog.pdx.edu/arcgis/services/BAGIS_PRISM_1991_2020/",
+      "units": "Inches",
+      "shortDescription": "PRISM 1991-2020 annual precipitation averages"
+    },
+    {
+      "layerType": "SNOTEL",
+      "heading": "Active SNOTEL sites",
+      "description": "Active SNOTEL sites data hosted on Natural Resources Conservation Service (NRCS) National Water and Climate Center (NWCC) Air and Water Database (AWDB). See https://www.nrcs.usda.gov/wps/portal/wcc/home/dataAccessHelp/webService/webServiceTutorial/ for more information.",
+      "uri": "https://services.arcgis.com/SXbDpmb7xQkk44JV/arcgis/rest/services/stations_SNTL_ACTIVE/FeatureServer/0"
+    },
+    {
+      "layerType": "Snow Course",
+      "heading": "Active Snow Course sites",
+      "description": "Active Snow Course sites hosted on Natural Resources Conservation Service (NRCS) National Water and Climate Center (NWCC) Air and Water Database (AWDB). See https://www.nrcs.usda.gov/wps/portal/wcc/home/dataAccessHelp/webService/webServiceTutorial/ for more information.",
+      "uri": "https://services.arcgis.com/SXbDpmb7xQkk44JV/arcgis/rest/services/stations_SNOW_ACTIVE/FeatureServer/0"
+    },
+    {
+      "layerType": "SNOLITE",
+      "heading": "Active SNOLITE sites",
+      "description": "Active SNOLITE sites hosted on Natural Resources Conservation Service (NRCS) National Water and Climate Center (NWCC) Air and Water Database (AWDB). See https://www.nrcs.usda.gov/wps/portal/wcc/home/dataAccessHelp/webService/webServiceTutorial/ for more information.",
+      "uri": "https://services.arcgis.com/SXbDpmb7xQkk44JV/arcgis/rest/services/stations_SNTLT_ACTIVE/FeatureServer/0"
+    },
+    {
+      "layerType": "Coop Pillow",
+      "heading": "Active Coop Pillow sites",
+      "description": "Active Coop Pillow sites hosted on Natural Resources Conservation Service (NRCS) National Water and Climate Center (NWCC) Air and Water Database (AWDB). See https://www.nrcs.usda.gov/wps/portal/wcc/home/dataAccessHelp/webService/webServiceTutorial/ for more information.",
+      "uri": "https://services.arcgis.com/SXbDpmb7xQkk44JV/arcgis/rest/services/stations_MSNT_ACTIVE/FeatureServer/0"
+    },
+    {
+      "layerType": "Roads",
+      "heading": "Access Roads – for Potential Site Location Analysis",
+      "description": "USFS FSTopo Transportation Line 2020 version. See https://data.fs.usda.gov/geodata/edw/edw_resources/meta/S_USA.FSTopo_Transport_LN.xml for more information.",
+      "uri": "https://services.arcgis.com/SXbDpmb7xQkk44JV/arcgis/rest/services/USFS_FSTopo_Transport_LN/FeatureServer/0"
+    },
+    {
+      "layerType": "Land Ownership",
+      "heading": "Public Land Ownership – for Potential Site Location Analysis",
+      "description": "Federal non-wilderness and tribal land data based on the 2020 USGS Protected Areas Data (PAD) version 2.1 and the 2010 USA Indian Reservations dataset. See https://www.usgs.gov/programs/gap-analysis-project/science/pad-us-data-overview and https://www.sciencebase.gov/catalog/item/4f4e4a2ee4b07f02db61576c for more information.",
+      "uri": "https://services.arcgis.com/SXbDpmb7xQkk44JV/arcgis/rest/services/Public_and_Tribal_Lands/FeatureServer/0"
+    },
+    {
+      "layerType": "Land Cover",
+      "heading": "Land Cover – for Potential Site Location Analysis",
+      "description": "2019 NLCD Land Cover. See https://www.mrlc.gov for more information.",
+      "uri": "http://bagis.geog.pdx.edu/arcgis/rest/services/BAGIS_Databin/NLCD_2019_land_cover/ImageServer",
+      "shortDescription": "2019 National Land Cover Database (NLCD)"
+    },
+    {
+      "layerType": "DEM",
+      "heading": "Digital Elevation Model (DEM)",
+      "description": "Elevation Data Source - One arc-second (approximately 30 meters) USGS National Elevaton Dataset (NED). Downloaded in 2010. See https://gdg.sc.egov.usda.gov/Catalog/ProductDescription/NED.html for more information.",
+      "uri": "http://bagis.geog.pdx.edu/arcgis/services/BAGIS_GISLayers/DEM_westus_bc_30m/ImageServer",
+      "shortDescription": "30 meter USGS digital elevation model"
+    },
+    {
+      "layerType": "Alaska Precipitation",
+      "heading": "Precipitation",
+      "description": "Alaska 30-year (1981-2010) monthly/quarterly/annual average precipitation data created by the PRISM Climate Group. See https://prism.oregonstate.edu/ for more information.",
+      "uri": "http://bagis.geog.pdx.edu/arcgis/services/BAGIS_PRISM_1981_2010_AK/",
+      "units": "Inches",
+      "shortDescription": "PRISM 1981-2010 annual precipitation averages"
+    },
+    {
+      "layerType": "Alaska Land Cover",
+      "heading": "Land Cover – for Potential Site Location Analysis",
+      "description": "Alaska 2016 NLCD Land Cover. See https://www.mrlc.gov for more information.",
+      "uri": "http://bagis.geog.pdx.edu/arcgis/rest/services/BAGIS_Databin/NLCD_2016_land_cover_AK/ImageServer",
+      "shortDescription": "2016 National Land Cover Database (NLCD)"
+    },
+    {
+      "layerType": "Alaska DEM",
+      "heading": "Digital Elevation Model (DEM)",
+      "description": "Elevation Data Source - One arc-second (approximately 30 meters) USGS National Elevaton Dataset (NED). Downloaded in 2010. See https://gdg.sc.egov.usda.gov/Catalog/ProductDescription/NED.html for more information.",
+      "uri": "http://bagis.geog.pdx.edu/arcgis/services/BAGIS_GISLayers/DEM_Alaska_Yukon_30m/ImageServer",
+      "shortDescription": "30 meter USGS digital elevation model"
+    }
+  ],
+  "BatchSettings": {
+    "EBagisServer": "https://ebagis.geog.pdx.edu",
+    "SweDisplayUnits": "Inches",
+    "DemUnits": "Meters",
+    "DefaultDemInterval": 1000,
+    "DemDisplayUnits": "Feet",
+    "AoiPrecipFile": "prism.gdb\\Annual",
+    "PrecipZonesCount": 8,
+    "AspectDirectionsCount": 4,
+    "MinElevationZonesCount": 8,
+    "SnotelSweZonesCount": 7,
+    "PrecipBufferDistance": 1000,
+    "PrecipBufferUnits": "Meters",
+    "SnotelBufferDistance": 5,
+    "SnotelBufferUnits": "Kilometers",
+    "RoadsAnalysisBufferDistance": 300,
+    "RoadsAnalysisBufferUnits": "Feet",
+    "Publisher": "nwcc_nrcs",
+    "SiteElevRangeFeet": 500,
+    "SiteBufferDistMiles": 5.642,
+    "CriticalPrecipMinMeanVolInches": 20,
+    "CriticalPrecipTotalMaxVolPct": 66.6,
+    "AnnualRunoffItemId": "f641bbacceff4c1bb3f9661bd8f9de8d",
+    "NLCDLandCoverLayerItemId": "9f61719bc5314247bda76469362c7554",
+    "AnnualRunoffDataDescr": "Average Annual Naturalized Runoff Volume (1991-2020) data retrieved from Natural Resources Conservation Service (NRCS) National Water and Climate Center (NWCC) Air and Water Database (AWDB) by NWCC in 2022.",
+    "AnnualRunoffDataField": "Average_kac_ft_1991_2020",
+    "PrecipContribZones": 9,
+    "MasterAoiList": "https://services.arcgis.com/SXbDpmb7xQkk44JV/arcgis/rest/services/Master_FCST_List_Feature_Service/FeatureServer",
+    "PdfExportResolution": 300,
+    "SnodasSweLayoutItemId": "5de950a654b14c849a25a08b3b3a9bfd",
+    "SnodasDeltaLayoutItemId": "1eafb8ca4b2048a2a22598d6372cf0d5",
+    "SeasonalPrecipLayoutItemId": "34a1c22f75254c56918c5eb820a6810a",
+    "PublicAndTribalLandsLayerItemId": "c72cf8608c644a8c90c651e1bbfe815f",
+    "MaximumSitesAllowed": 50,
+    "Version": 3
+  }
+}

@@ -38,6 +38,16 @@ namespace bagis_pro
                 long lngSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_SNOTEL);
                 if (lngSites > 0)
                     bHasSnotel = true;
+                lngSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_SNOLITE);
+                if (lngSites > 0)
+                {
+                    bHasSnotel = true;
+                }
+                lngSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_COOP_PILLOW);
+                if (lngSites > 0)
+                {
+                    bHasSnotel = true;
+                }
                 lngSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_SNOW_COURSE);
                 if (lngSites > 0)
                     bHasSnowCourse = true;
@@ -77,7 +87,7 @@ namespace bagis_pro
                 IList<BA_Objects.Site> lstSites = null;
                 if (bHasSnotel)
                 {
-                    lstSites = await AnalysisTools.AssembleSitesListAsync(SiteType.Snotel.ToString(), siteBufferDistanceMiles);
+                    lstSites = await AnalysisTools.AssembleSitesListAsync(SiteType.Snotel, siteBufferDistanceMiles);
                     success = await AnalysisTools.CalculateRepresentedArea(sDemPath, demElevMinMeters, demElevMaxMeters, lstSites, siteElevRangeFeet, Constants.FILE_SNOTEL_REPRESENTED);
                     if (success != BA_ReturnCode.Success)
                         bHasSnotel = false;
@@ -86,7 +96,7 @@ namespace bagis_pro
                 // snow course sites
                 if (bHasSnowCourse)
                 {
-                    lstSites = await AnalysisTools.AssembleSitesListAsync(SiteType.SnowCourse.ToString(), siteBufferDistanceMiles);
+                    lstSites = await AnalysisTools.AssembleSitesListAsync(SiteType.SnowCourse, siteBufferDistanceMiles);
                     success = await AnalysisTools.CalculateRepresentedArea(sDemPath, demElevMinMeters, demElevMaxMeters, lstSites, siteElevRangeFeet, Constants.FILE_SCOS_REPRESENTED);
                     if (success != BA_ReturnCode.Success)
                         bHasSnowCourse = false;
@@ -148,7 +158,7 @@ namespace bagis_pro
 
         }
 
-        public static async Task<IList<BA_Objects.Site>> AssembleSitesListAsync(string sType,
+        public static async Task<IList<BA_Objects.Site>> AssembleSitesListAsync(SiteType sType,
             double siteBufferDistanceMiles)
         {
             //2. Buffer point from feature class and query site information
@@ -162,7 +172,15 @@ namespace bagis_pro
                 using (FeatureClass fClass = geodatabase.OpenDataset<FeatureClass>(Constants.FILE_MERGED_SITES))
                 {
                     QueryFilter queryFilter = new QueryFilter();
-                    queryFilter.WhereClause = Constants.FIELD_SITE_TYPE + " = '" + sType + "'";
+                    if (sType == SiteType.Snotel)
+                    {
+                        string strInClause = $@" IN ('{SiteType.Snotel.ToString()}', '{SiteType.CoopPillow.ToString()}', '{SiteType.Snolite.ToString()}')";
+                        queryFilter.WhereClause = Constants.FIELD_SITE_TYPE + strInClause;
+                    }
+                    else
+                    {
+                        queryFilter.WhereClause = Constants.FIELD_SITE_TYPE + " = '" + sType.ToString() + "'";
+                    }                    
                     using (RowCursor cursor = fClass.Search(queryFilter, false))
                     {
                         while (cursor.MoveNext())
@@ -200,7 +218,7 @@ namespace bagis_pro
                                 aSite.Latitude = Convert.ToDouble(nextFeature[idx]);
                             }
 
-                            aSite.SiteTypeText = sType;
+                            aSite.SiteTypeText = sType.ToString();
                             lstSites.Add(aSite);
                             Module1.Current.ModuleLogManager.LogDebug(nameof(AssembleSitesListAsync),
                                 "Added site " + aSite.Name + " to list");
@@ -550,22 +568,21 @@ namespace bagis_pro
             Webservices ws = new Webservices();
             Module1.Current.ModuleLogManager.LogDebug(nameof(GetStationValues),
                 "Contacting webservices server to retrieve pourpoint layer uri");
-            var url = (string)Module1.Current.BatchToolSettings.EBagisServer + Constants.URI_DESKTOP_SETTINGS;
-            var response = new EsriHttpClient().Get(url);
+            var response = new EsriHttpClient().Get(Constants.URI_DESKTOP_SETTINGS);
             var json = await response.Content.ReadAsStringAsync();
             dynamic oSettings = JObject.Parse(json);
             if (oSettings == null || String.IsNullOrEmpty(Convert.ToString(oSettings.gaugeStation)))
             {
                 Module1.Current.ModuleLogManager.LogDebug(nameof(GetStationValues),
-                    "Unable to retrieve pourpoint settings from " + url);
-                MessageBox.Show("Unable to retrieve pourpoint settings. Clipping cancelled!!", "BAGIS-PRO");
+                    "Unable to retrieve gauge station uri from " + Constants.URI_DESKTOP_SETTINGS);
+                MessageBox.Show("Unable to retrieve gauge station uri. Station values cannot be retrieved!!", "BAGIS-PRO");
                 return null;
             }
-            string strWsUri = oSettings.gaugeStation;
-            string usgsServiceLayerId = strWsUri.Split('/').Last();
-            int intTrim = usgsServiceLayerId.Length + 1;
-            string usgsTempString = strWsUri.Substring(0, strWsUri.Length - intTrim);
-            Uri usgsServiceUri = new Uri(usgsTempString);
+            string strWsUri = (string) Module1.Current.BatchToolSettings.MasterAoiList;
+            //string usgsServiceLayerId = strWsUri.Split('/').Last();
+            //int intTrim = usgsServiceLayerId.Length + 1;
+            //string usgsTempString = strWsUri.Substring(0, strWsUri.Length - intTrim);
+            Uri wsUri = new Uri(strWsUri);
 
             bool bUpdateTriplet = false;
             bool bUpdateAwdb = false;
@@ -598,54 +615,15 @@ namespace bagis_pro
                     }
                 }
 
-                if (String.IsNullOrEmpty(strTriplet))
-                {
-                    // Use the awdb_id to query for the triplet from the pourpoint layer
-                    strAwdbId = await GeodatabaseTools.QueryTableForSingleValueAsync(ppUri, Constants.FILE_POURPOINT,
-                        Constants.FIELD_AWDB_ID, new QueryFilter());
-                    if (!String.IsNullOrEmpty(strAwdbId))
-                    {
-                        string strAwdbQueryId = strAwdbId.Trim();
-                        if (strAwdbQueryId.Length < 8)     // left pad the triplet if less than 8 characters
-                        {
-                            strAwdbQueryId = strAwdbQueryId.PadLeft(8, '0');
-                        }
-                        QueryFilter queryFilter = new QueryFilter();
-                        queryFilter.WhereClause = Constants.FIELD_USGS_ID + " = '" + strAwdbQueryId + "'";
-                        string[] arrSearch = { Constants.FIELD_STATION_TRIPLET, (string)oSettings.gaugeStationName };
-                        string[] arrFound = new string[arrSearch.Length];
-                        Module1.Current.ModuleLogManager.LogDebug(nameof(GetStationValues),
-                            "Using awdb_id to query for the triplet from " + usgsServiceUri.ToString());
-                        arrFound = await ws.QueryServiceForValuesAsync(usgsServiceUri, usgsServiceLayerId, arrSearch, queryFilter);
-                        if (arrFound != null && arrFound.Length > 1)
-                        {
-                            strTriplet = arrFound[0];
-                            strStationName = arrFound[1];
-                        }
-                        else if (arrFound != null && arrFound.Length > 1 && arrFound[0] == null)
-                        {
-                            Module1.Current.ModuleLogManager.LogError(nameof(GetStationValues),
-                                "Unable to retrieve at least 1 property from the master aoi webservice");
-                        }
-                        if (!string.IsNullOrEmpty(strTriplet))
-                        {
-                            bUpdateTriplet = true;
-                        }
-                        if (!string.IsNullOrEmpty(strStationName))
-                        {
-                            bUpdateStationName = true;
-                        }
-                    }
-                }
-                else
+                if (!string.IsNullOrEmpty(strTriplet))
                 {
                     Module1.Current.ModuleLogManager.LogDebug(nameof(GetStationValues),
                     "Triplet retrieved from pourpoint feature class: " + strTriplet);
                 }
                 if (string.IsNullOrEmpty(strTriplet))
                 {
-                    // If triplet is still null, use the near tool
-                    BA_ReturnCode success = await GeoprocessingTools.NearAsync(strPourpointClassPath, strWsUri);
+                    // If triplet is null, use the near tool
+                    BA_ReturnCode success = await GeoprocessingTools.NearAsync(strPourpointClassPath, strWsUri + "/0", Constants.VALUE_FORECAST_STATION_SEARCH_RADIUS);
                     if (success == BA_ReturnCode.Success)
                     {
                         QueryFilter queryFilter = new QueryFilter();
@@ -656,7 +634,7 @@ namespace bagis_pro
                         if (!String.IsNullOrEmpty(strNearId))
                         {
                             queryFilter.WhereClause = Constants.FIELD_OBJECT_ID + " = " + strNearId;
-                            arrFound = await ws.QueryServiceForValuesAsync(usgsServiceUri, usgsServiceLayerId, arrSearch, queryFilter);
+                            arrFound = await ws.QueryServiceForValuesAsync(wsUri, "0", arrSearch, queryFilter);
                             if (arrFound != null && arrFound.Length == 3 && arrFound[0] != null)
                             {
                                 strTriplet = arrFound[0];
@@ -690,7 +668,7 @@ namespace bagis_pro
                 else
                 {
                     Module1.Current.ModuleLogManager.LogDebug(nameof(GetStationValues),
-                        "Triplet retrieved using the awdb_id and USGS webservice: " + strTriplet);
+                        "Triplet retrieved using the NEAR tool and AOI Master forecast list: " + strTriplet);
                 }
                 //Save the new values to the pourpoint layer if needed
                 if (bUpdateAwdb == true || bUpdateTriplet == true || bUpdateStationName == true)
@@ -706,6 +684,32 @@ namespace bagis_pro
                         dictEdits.Add(Constants.FIELD_STATION_NAME, strStationName);
                     BA_ReturnCode success = await GeodatabaseTools.UpdateFeatureAttributesAsync(ppUri, Constants.FILE_POURPOINT,
                         new QueryFilter(), dictEdits);
+
+                    //Save the new values to aoi_v
+                    string strAoiVPath = ppUri.LocalPath + "\\" + Constants.FILE_AOI_VECTOR;
+                    string[] arrPpFields = { Constants.FIELD_STATION_TRIPLET, Constants.FIELD_STATION_NAME, Constants.FIELD_AWDB_ID };
+                    foreach (var strField in arrPpFields)
+                    {
+                        if (!await GeodatabaseTools.AttributeExistsAsync(ppUri, Constants.FILE_AOI_VECTOR, strField))
+                        {
+                            success = await GeoprocessingTools.AddFieldAsync(strAoiVPath, strField, "TEXT");
+                        }
+                    }
+                    if (success != BA_ReturnCode.Success)
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(GetStationValues),
+                            "Unable to add 1 or more pourpoint fields to : " + strAoiVPath);
+                    }
+                    else
+                    {
+                        success = await GeodatabaseTools.UpdateFeatureAttributesAsync(ppUri, Constants.FILE_AOI_VECTOR,
+                            new QueryFilter(), dictEdits);
+                        if (success != BA_ReturnCode.Success)
+                        {
+                            Module1.Current.ModuleLogManager.LogError(nameof(GetStationValues),
+                                "Unable to update 1 or more pourpoint fields to : " + strAoiVPath);
+                        }
+                    }
                 }
             }
             arrReturnValues[0] = strTriplet;
@@ -784,7 +788,7 @@ namespace bagis_pro
 
                                 strClipFile = strTempBuffer;
                                 arrLayersToDelete[0] = strTempBuffer;
-                                if (strDataType.Equals(Constants.DATA_TYPE_PRECIPITATION))
+                                if (strDataType.Equals(BA_Objects.DataSource.GetPrecipitationKey))
                                 {
                                     // Copy the updated buffered file into the aoi.gdb
                                     parameters = Geoprocessing.MakeValueArray(strOutputFeatures, GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, true) +
@@ -867,7 +871,7 @@ namespace bagis_pro
                         string strOutputGdb = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers, true);
 
                         // Reset some variables if clipping PRISM
-                        if (strDataType.Equals(Constants.DATA_TYPE_PRECIPITATION))
+                        if (strDataType.Equals(BA_Objects.DataSource.GetPrecipitationKey))
                         {
                             int prismCount = Enum.GetNames(typeof(PrismFile)).Length;
                             int seasonalPrismCount = Enum.GetNames(typeof(SeasonalPrismFile)).Length;
@@ -903,6 +907,7 @@ namespace bagis_pro
                         }
 
                         int i = 0;
+                        bool bIsNoData = false;
                         foreach (string strUri in arrClipUris)
                         {
                             Uri imageServiceUri = new Uri(strWsPrefix + strUri + Constants.URI_IMAGE_SERVER);
@@ -927,6 +932,16 @@ namespace bagis_pro
                             }
                             else
                             {
+                                // Check for NoData
+                                if (i==0)   // Check the first raster only
+                                {
+                                    bIsNoData = await IsNoDataRasterAsync(strAoiPath, strOutputGdb, arrClippedFileNames[i]);
+                                    if (bIsNoData)
+                                    {
+                                        intError++;
+                                        break;
+                                    }
+                                }
                                 Module1.Current.ModuleLogManager.LogDebug(nameof(ClipLayersAsync),
                                     "Clipped " + arrClippedFileNames[i] + " layer");
                                 //We need to add a new tag at "/metadata/dataIdInfo/searchKeys/keyword"
@@ -980,23 +995,25 @@ namespace bagis_pro
                         }
 
                         // Update layer metadata
-                        IDictionary<string, BA_Objects.DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
-                        BA_Objects.DataSource updateDataSource = new BA_Objects.DataSource(dictDataSources[strDataType])
+                        if (bIsNoData == false)
                         {
-                            DateClipped = DateTime.Now,
-                        };
-                        if (dictLocalDataSources.ContainsKey(strDataType))
-                        {
-                            dictLocalDataSources[strDataType] = updateDataSource;
+                            IDictionary<string, BA_Objects.DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
+                            BA_Objects.DataSource updateDataSource = new BA_Objects.DataSource(dictDataSources[strDataType])
+                            {
+                                DateClipped = DateTime.Now,
+                            };
+                            if (dictLocalDataSources.ContainsKey(strDataType))
+                            {
+                                dictLocalDataSources[strDataType] = updateDataSource;
+                            }
+                            else
+                            {
+                                dictLocalDataSources.Add(strDataType, updateDataSource);
+                            }
+                            success = GeneralTools.SaveDataSourcesToFile(dictLocalDataSources);
+                            Module1.Current.ModuleLogManager.LogDebug(nameof(ClipLayersAsync),
+                                "Updated settings metadata for " + strDataType);
                         }
-                        else
-                        {
-                            dictLocalDataSources.Add(strDataType, updateDataSource);
-                        }
-                        success = GeneralTools.SaveDataSourcesToFile(dictLocalDataSources);
-                        Module1.Current.ModuleLogManager.LogDebug(nameof(ClipLayersAsync),
-                            "Updated settings metadata for " + strDataType);
-
                     }
                     catch (Exception e)
                     {
@@ -1010,9 +1027,9 @@ namespace bagis_pro
             {
                 Module1.Current.ModuleLogManager.LogDebug(nameof(ClipLayersAsync),
                     "At least one error occurred while clipping " + strDataType + " layers!");
+                return BA_ReturnCode.UnknownError;
             }
-            success = BA_ReturnCode.Success;
-            return success;
+            return BA_ReturnCode.Success;
         }
 
         public static async Task<BA_ReturnCode> CalculateZonesAsync(string strAoiPath, string strSourceLayer,
@@ -1380,8 +1397,8 @@ namespace bagis_pro
         {
             IList<BA_Objects.Interval> lstIntervals = new List<BA_Objects.Interval>();
 
-            double dblMin = -999;
-            double dblMax = 999;
+            double dblMin = 9999;
+            double dblMax = -9999;
             double dblInterval = 999;
             bool bTooSmall = false;
 
@@ -1401,7 +1418,6 @@ namespace bagis_pro
                 }
                 else
                 {
-                    MessageBox.Show("Unable to extract minimum " + strMessageKey + " value. Calculation halted !!", "BAGIS-PRO");
                     Module1.Current.ModuleLogManager.LogError(nameof(GetPrismClassesAsync),
                         "Unable to calculate " + strMessageKey + " miniumum");
                     return;
@@ -1418,7 +1434,6 @@ namespace bagis_pro
                 }
                 else
                 {
-                    MessageBox.Show("Unable to extract maximum " + strMessageKey + " value. Calculation halted !!", "BAGIS-PRO");
                     Module1.Current.ModuleLogManager.LogError(nameof(GetPrismClassesAsync),
                         "Unable to calculate " + strMessageKey + " maximum");
                     return;
@@ -1437,6 +1452,11 @@ namespace bagis_pro
                     dblInterval = Math.Round(dblInterval);
                 }
             });
+            if (dblMin == 9999 || dblMax == -9999)
+            {
+                Module1.Current.PrismZonesInterval = -1;
+                return null;
+            }
             int zones = GeneralTools.CreateRangeArray(dblMin, dblMax, dblInterval, out lstIntervals);
             // issue #18
             // Check to be sure the highest interval isn't too small; if it is merge into the second-to-last
@@ -1504,11 +1524,11 @@ namespace bagis_pro
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
             string strTempBuffer = "tmpBuffer";
-            string[] arrLayersToDelete = new string[2];
             string snotelClipLayer = "";
-            string[] strOutputFc = new string[2];
-            string[] strOutputLayer = { "tmpSno", "tmpSnowCos" };
-            string[] strFinalOutputLayer = { Constants.FILE_SNOTEL, Constants.FILE_SNOW_COURSE };
+            string[] strOutputFc = new string[4];
+            string[] strOutputLayer = { "tmpSno", "tmpSnowCos", "tmpSnoLite", "tmpSnowPil" };
+            string[] strFinalOutputLayer = { Constants.FILE_SNOTEL, Constants.FILE_SNOW_COURSE, Constants.FILE_SNOLITE, Constants.FILE_COOP_PILLOW };
+            bool[] bHasSites = { false, false, false, false };
             string snowCosClipLayer = "";
             string strClipGdb = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, false);
             string strLayers = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers);
@@ -1524,7 +1544,9 @@ namespace bagis_pro
             if (dictDataSources != null)
             {
                 if (!dictDataSources.ContainsKey(Constants.DATA_TYPE_SNOTEL) || 
-                    !dictDataSources.ContainsKey(Constants.DATA_TYPE_SNOW_COURSE))
+                    !dictDataSources.ContainsKey(Constants.DATA_TYPE_SNOW_COURSE) ||
+                    !dictDataSources.ContainsKey(Constants.DATA_TYPE_SNOLITE) ||
+                    !dictDataSources.ContainsKey(Constants.DATA_TYPE_COOP_PILLOW))
                 {
                     Module1.Current.ModuleLogManager.LogError(nameof(ClipSnoLayersAsync),
                         "Unable to retrieve snotel datasource information from " + (string) Module1.Current.BatchToolSettings.EBagisServer +
@@ -1540,14 +1562,13 @@ namespace bagis_pro
                 return success;
             }
 
-            var url = (string)Module1.Current.BatchToolSettings.EBagisServer + Constants.URI_DESKTOP_SETTINGS;
-            var response = new EsriHttpClient().Get(url);
+            var response = new EsriHttpClient().Get(Constants.URI_DESKTOP_SETTINGS);
             var json = await response.Content.ReadAsStringAsync();
             dynamic oSettings = JObject.Parse(json);
             if (oSettings == null || String.IsNullOrEmpty(Convert.ToString(oSettings.snowCourseName)))
             {
                 Module1.Current.ModuleLogManager.LogError(nameof(ClipSnoLayersAsync),
-                    "Unable to retrieve snotel settings from " + url + " .Clipping cancelled!!");
+                    "Unable to retrieve snotel settings from " + Constants.URI_DESKTOP_SETTINGS + " .Clipping cancelled!!");
                 return success;
             }
 
@@ -1571,7 +1592,7 @@ namespace bagis_pro
                     snotelClipLayer = await AnalysisTools.GetSnoClipLayer(strAoiPath, strClipGdb, strTempBuffer, snotelBufferDistance);
                 }
 
-                // Delete the existing snotel layer, snotel represented area, and snotel zones layers
+                // Delete the existing snotel layer, snotel represented area, snotel zones, snolite, and snow pillow layers
                 if (await GeodatabaseTools.FeatureClassExistsAsync(uriLayers, strFinalOutputLayer[0]))
                 {
                     success = await GeoprocessingTools.DeleteDatasetAsync(strLayers + "\\" + strFinalOutputLayer[0]);
@@ -1584,10 +1605,21 @@ namespace bagis_pro
                 {
                     success = await GeoprocessingTools.DeleteDatasetAsync(strAnalysis + "\\" + Constants.FILE_SNOTEL_ZONE);
                 }
+                if (await GeodatabaseTools.RasterDatasetExistsAsync(uriAnalysis, strFinalOutputLayer[2]))
+                {
+                    success = await GeoprocessingTools.DeleteDatasetAsync(strLayers + "\\" + strFinalOutputLayer[2]);
+                }
+                if (await GeodatabaseTools.RasterDatasetExistsAsync(uriAnalysis, strFinalOutputLayer[3]))
+                {
+                    success = await GeoprocessingTools.DeleteDatasetAsync(strLayers + "\\" + strFinalOutputLayer[3]);
+                }
 
                 string strWsUri = dictDataSources[Constants.DATA_TYPE_SNOTEL].uri;
                 strOutputFc[0] = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers, true) + strOutputLayer[0];
+                strOutputFc[2] = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers, true) + strOutputLayer[2];
+                strOutputFc[3] = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers, true) + strOutputLayer[3];
                 string strTemplateDataset = strClipGdb + "\\" + snotelClipLayer;
+                // SNOTEL
                 var environmentsClip = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath);
                 var parametersClip = Geoprocessing.MakeValueArray(strWsUri, strTemplateDataset, strOutputFc[0], "");
                 var gpResultClip = await Geoprocessing.ExecuteToolAsync("Clip_analysis", parametersClip, environmentsClip,
@@ -1595,13 +1627,60 @@ namespace bagis_pro
                 if (gpResultClip.IsFailed)
                 {
                     Module1.Current.ModuleLogManager.LogError(nameof(ClipSnoLayersAsync),
-                       "Unable to clip " + snotelClipLayer + ". Error code: " + gpResultClip.ErrorCode);
+                       "Unable to clip " + strOutputFc[0] + ". Error code: " + gpResultClip.ErrorCode);
                     return success;
                 }
                 else
                 {
                     Module1.Current.ModuleLogManager.LogDebug(nameof(ClipSnoLayersAsync),
-                        "Clipped " + snotelClipLayer + " layer");
+                        "Clipped " + strOutputFc[0] + " layer");
+                    long lngSites = await GeodatabaseTools.CountFeaturesAsync(uriLayers, strOutputLayer[0]);
+                    if (lngSites > 0)
+                    {
+                        bHasSites[0] = true;
+                    }
+                }
+                // SNOLITE
+                strWsUri = dictDataSources[Constants.DATA_TYPE_SNOLITE].uri;
+                parametersClip = Geoprocessing.MakeValueArray(strWsUri, strTemplateDataset, strOutputFc[2], "");
+                gpResultClip = await Geoprocessing.ExecuteToolAsync("Clip_analysis", parametersClip, environmentsClip,
+                                        CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                if (gpResultClip.IsFailed)
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(ClipSnoLayersAsync),
+                       "Unable to clip " + strOutputFc[2] + ". Error code: " + gpResultClip.ErrorCode);
+                    return success;
+                }
+                else
+                {
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(ClipSnoLayersAsync),
+                        "Clipped " + strOutputFc[2] + " layer");
+                    long lngSites = await GeodatabaseTools.CountFeaturesAsync(uriLayers, strOutputLayer[2]);
+                    if (lngSites > 0)
+                    {
+                        bHasSites[2] = true;
+                    }
+                }
+                // Snow pillow
+                strWsUri = dictDataSources[Constants.DATA_TYPE_COOP_PILLOW].uri;
+                parametersClip = Geoprocessing.MakeValueArray(strWsUri, strTemplateDataset, strOutputFc[3], "");
+                gpResultClip = await Geoprocessing.ExecuteToolAsync("Clip_analysis", parametersClip, environmentsClip,
+                                        CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                if (gpResultClip.IsFailed)
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(ClipSnoLayersAsync),
+                       "Unable to clip " + strOutputFc[3] + ". Error code: " + gpResultClip.ErrorCode);
+                    return success;
+                }
+                else
+                {
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(ClipSnoLayersAsync),
+                        "Clipped " + strOutputFc[3] + " layer");
+                    long lngSites = await GeodatabaseTools.CountFeaturesAsync(uriLayers, strOutputLayer[3]);
+                    if (lngSites > 0)
+                    {
+                        bHasSites[3] = true;
+                    }
                 }
             }
 
@@ -1664,6 +1743,11 @@ namespace bagis_pro
                 {
                     Module1.Current.ModuleLogManager.LogDebug(nameof(ClipSnoLayersAsync),
                         "Clipped " + snowCosClipLayer + " layer");
+                    long lngSites = await GeodatabaseTools.CountFeaturesAsync(uriLayers, strOutputLayer[1]);
+                    if (lngSites > 0)
+                    {
+                        bHasSites[1] = true;
+                    }
                 }
             }
 
@@ -1673,10 +1757,10 @@ namespace bagis_pro
             // Add attribute fields
             int snotelCount = 0;
             int snowCosCount = 0;
-            int i = 0;
-            foreach (var strFc in strOutputFc)
+            for (int i = 0; i < strOutputFc.Length; i++)
             {
-                if (!String.IsNullOrEmpty(strFc))
+                string strFc = strOutputFc[i];
+                if (bHasSites[i])
                 {
                     success = await GeoprocessingTools.AddFieldAsync(strFc, Constants.FIELD_SITE_NAME, "TEXT");
                     if (success == BA_ReturnCode.Success)
@@ -1695,95 +1779,106 @@ namespace bagis_pro
                         MessageBox.Show("Unable to add fields to " + strFc + ". Clipping cancelled!!", "BAGIS-PRO");
                         return success;
                     }
-                }
+                    //}
 
-                bool modificationResult = false;
-                string errorMsg = "";
-                await QueuedTask.Run(() =>
-                {
+                    bool modificationResult = false;
+                    string errorMsg = "";
+                    await QueuedTask.Run(() =>
+                    {
                     // Copy site name into ba_sname field
                     Uri gdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers));
-                    using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(gdbUri)))
-                    {
-                        if (!String.IsNullOrEmpty(strFc))
+                        using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(gdbUri)))
                         {
-                            string sourceName = Convert.ToString(oSettings.snotelName);
-                            if (i == 1)  // This is a snow course layer
+                            if (!String.IsNullOrEmpty(strFc))
                             {
-                                sourceName = Convert.ToString(oSettings.snowCourseName);
-                            }
-                            using (Table table = geodatabase.OpenDataset<Table>(strOutputLayer[i]))
+                                string sourceName = Convert.ToString(oSettings.snotelName);
+                                if (i == 1)  // This is a snow course layer
                             {
-                                QueryFilter queryFilter = new QueryFilter();
-                                EditOperation editOperation = new EditOperation();
-                                editOperation.Callback(context =>
+                                    sourceName = Convert.ToString(oSettings.snowCourseName);
+                                }
+                                using (Table table = geodatabase.OpenDataset<Table>(strOutputLayer[i]))
                                 {
-                                    using (RowCursor aCursor = table.Search(queryFilter, false))
+                                    QueryFilter queryFilter = new QueryFilter();
+                                    EditOperation editOperation = new EditOperation();
+                                    editOperation.Callback(context =>
                                     {
-                                        while (aCursor.MoveNext())
+                                        using (RowCursor aCursor = table.Search(queryFilter, false))
                                         {
-                                            using (Feature feature = (Feature)aCursor.Current)
+                                            while (aCursor.MoveNext())
                                             {
+                                                using (Feature feature = (Feature)aCursor.Current)
+                                                {
                                                 // name
                                                 int idxSource = feature.FindField(sourceName);
-                                                int idxTarget = feature.FindField(Constants.FIELD_SITE_NAME);
-                                                if (idxSource > -1 && idxTarget > -1)
-                                                {
-                                                    feature[idxTarget] = feature[idxSource];
-                                                }
-                                                string siteType = SiteType.Snotel.ToString();
-                                                if (i == 1)
-                                                {
-                                                    siteType = SiteType.SnowCourse.ToString();
-                                                }
-                                                idxTarget = feature.FindField(Constants.FIELD_SITE_TYPE);
-                                                if (idxTarget > -1)
-                                                {
-                                                    feature[idxTarget] = siteType;
-                                                }
-                                                feature.Store();
+                                                    int idxTarget = feature.FindField(Constants.FIELD_SITE_NAME);
+                                                    if (idxSource > -1 && idxTarget > -1)
+                                                    {
+                                                        feature[idxTarget] = feature[idxSource];
+                                                    }
+                                                    string siteType = SiteType.Missing.ToString();
+                                                    switch (i)
+                                                    {
+                                                        case 0:
+                                                            siteType = SiteType.Snotel.ToString();
+                                                            break;
+                                                        case 1:
+                                                            siteType = SiteType.SnowCourse.ToString();
+                                                            break;
+                                                        case 2:
+                                                            siteType = SiteType.Snolite.ToString();
+                                                            break;
+                                                        case 3:
+                                                            siteType = SiteType.CoopPillow.ToString();
+                                                            break;
+                                                    }
+                                                    idxTarget = feature.FindField(Constants.FIELD_SITE_TYPE);
+                                                    if (idxTarget > -1)
+                                                    {
+                                                        feature[idxTarget] = siteType;
+                                                    }
+                                                    feature.Store();
                                                 // Has to be called after the store too
                                                 context.Invalidate(feature);
-                                            }
-                                            if (i == 0)
-                                            {
-                                                snotelCount++;
-                                            }
-                                            else
-                                            {
-                                                snowCosCount++;
+                                                }
+                                                if (i == 0)
+                                                {
+                                                    snotelCount++;
+                                                }
+                                                else
+                                                {
+                                                    snowCosCount++;
+                                                }
                                             }
                                         }
-                                    }
-                                }, table);
-                                try
-                                {
-                                    modificationResult = editOperation.Execute();
-                                    if (!modificationResult) errorMsg = editOperation.ErrorMessage;
+                                    }, table);
+                                    try
+                                    {
+                                        modificationResult = editOperation.Execute();
+                                        if (!modificationResult) errorMsg = editOperation.ErrorMessage;
                                     // increment feature counter
                                 }
-                                catch (GeodatabaseException exObj)
-                                {
-                                    errorMsg = exObj.Message;
+                                    catch (GeodatabaseException exObj)
+                                    {
+                                        errorMsg = exObj.Message;
+                                    }
                                 }
                             }
                         }
-                    }
-                });
+                    });
 
-                if (String.IsNullOrEmpty(errorMsg))
-                {
-                    await Project.Current.SaveEditsAsync();
+                    if (String.IsNullOrEmpty(errorMsg))
+                    {
+                        await Project.Current.SaveEditsAsync();
+                    }
+                    else
+                    {
+                        if (Project.Current.HasEdits)
+                            await Project.Current.DiscardEditsAsync();
+                        Module1.Current.ModuleLogManager.LogError(nameof(ClipSnoLayersAsync),
+                            "Exception: " + errorMsg);
+                        return BA_ReturnCode.UnknownError;
+                    }
                 }
-                else
-                {
-                    if (Project.Current.HasEdits)
-                        await Project.Current.DiscardEditsAsync();
-                    Module1.Current.ModuleLogManager.LogError(nameof(ClipSnoLayersAsync),
-                        "Exception: " + errorMsg);
-                    return BA_ReturnCode.UnknownError;
-                }
-                i++;
             }
 
             // Extract the elevation from the DEM for the sites
@@ -1792,23 +1887,12 @@ namespace bagis_pro
             foreach (var strFc in strOutputFc)
             {
                 // Make sure the feature class has sites before trying to extract the elevation
-                bool bValidFc = !String.IsNullOrEmpty(strFc);
-                if (bValidFc)
+                if (bHasSites[j] == false)
                 {
-                    if (j == 0 && snotelCount == 0)
-                    {
-                        bValidFc = false;
-                        Module1.Current.ModuleLogManager.LogDebug(nameof(ClipSnoLayersAsync),
-                            "Snotel layer has no sites. Elevation cannot be extracted");
-                    }
-                    else if (j == 1 && snowCosCount == 0)
-                    {
-                        bValidFc = false;
-                        Module1.Current.ModuleLogManager.LogDebug(nameof(ClipSnoLayersAsync),
-                            "Snow course layer has no sites. Elevation cannot be extracted");
-                    }
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(ClipSnoLayersAsync),
+                    "This has no sites. Elevation cannot be extracted");
                 }
-                if (bValidFc)
+                else
                 {
                     finalOutputPath = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers, true) + strFinalOutputLayer[j];
                     var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath);
@@ -1891,9 +1975,17 @@ namespace bagis_pro
                     }
                     // Update layer metadata
                     string strKey = Constants.DATA_TYPE_SNOTEL;
-                    if (j == 1)
+                    switch (j)
                     {
-                        strKey = Constants.DATA_TYPE_SNOW_COURSE;
+                        case 1:
+                            strKey = Constants.DATA_TYPE_SNOW_COURSE;
+                            break;
+                        case 2:
+                            strKey = Constants.DATA_TYPE_SNOLITE;
+                            break;
+                        case 3:
+                            strKey = Constants.DATA_TYPE_COOP_PILLOW;
+                            break;
                     }
                     IDictionary<string, BA_Objects.DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
                     BA_Objects.DataSource updateDataSource = new BA_Objects.DataSource(dictDataSources[strKey])
@@ -1914,7 +2006,6 @@ namespace bagis_pro
                     // Delete the temporary layer
                     success = await GeoprocessingTools.DeleteDatasetAsync(strOutputFc[j]);
                 }
-
                 j++;
             }
 
@@ -2078,21 +2169,19 @@ namespace bagis_pro
                         if (featureCount > 1)
                         {
                             strTempBuffer2 = "tempBuffer2";
-                            var parameters = Geoprocessing.MakeValueArray(strClipGdb + "\\" + strClipFile,
-                                strClipGdb + "\\" + strTempBuffer2, "0.5 Meters", "", "", "ALL");
-                            var gpResult = Geoprocessing.ExecuteToolAsync("Buffer_analysis", parameters, null,
-                                                 CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                            if (gpResult.Result.IsFailed)
+                            success = await GeoprocessingTools.BufferAsync(strClipGdb + "\\" + strClipFile,
+                                strClipGdb + "\\" + strTempBuffer2, "0.5 Meters", "ALL");
+                            if (success != BA_ReturnCode.Success)
                             {
                                 Module1.Current.ModuleLogManager.LogError(nameof(ClipFeatureLayerAsync),
-                                   "Unable to buffer " + strClipFile + ". Error code: " + gpResult.Result.ErrorCode);
+                                   "Unable to buffer " + strClipFile + "!!");
                                 MessageBox.Show("Unable to buffer aoi_v. Clipping cancelled!!", "BAGIS-PRO");
                                 return;
                             }
                             strClipFile = strTempBuffer2;
                             arrLayersToDelete[1] = strTempBuffer;
                             Module1.Current.ModuleLogManager.LogDebug(nameof(ClipFeatureLayerAsync),
-                                "Run buffer tool again because clip file has > 2 features");
+                                "Ran buffer tool again because clip file has > 2 features");
                         }
 
                         Uri featureServiceUri = new Uri(strWsUri);
@@ -2403,6 +2492,12 @@ namespace bagis_pro
             Uri uriLayers = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers));
             double dblDemCellSize = await GeodatabaseTools.GetCellSizeAsync(uriSurfaces, Constants.FILE_DEM_CLIPPED);
             double dblPrismCellSize = await GeodatabaseTools.GetCellSizeAsync(uriPrism, prismFile);
+            if (dblPrismCellSize < 0)
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(CalculateElevPrecipCorrAsync),
+                    "Unable to extract Prism cell size. Calculation cancelled!");
+                return success;
+            }
             string demPath = uriSurfaces.LocalPath + "\\" + Constants.FILE_DEM_CLIPPED;
             string precipMeanPath = uriAnalysis.LocalPath + "\\" + Constants.FILE_PREC_MEAN_ELEV;
             int intCellFactor = (int)Math.Round(dblPrismCellSize / dblDemCellSize, 0);
@@ -2420,7 +2515,6 @@ namespace bagis_pro
             {
                 Module1.Current.ModuleLogManager.LogError(nameof(CalculateElevPrecipCorrAsync),
                 "Unable aggregate DEM. Error code: " + gpResult.ErrorCode);
-                MessageBox.Show("Unable aggregate DEM. Calculation cancelled!!", "BAGIS-PRO");
                 return success;
             }
             else
@@ -2722,7 +2816,6 @@ namespace bagis_pro
                         {
                             Module1.Current.ModuleLogManager.LogError(nameof(ClipRasterLayerAsync),
                                "Unable to buffer aoi_v. Error code: " + gpResult.Result.ErrorCode);
-                            MessageBox.Show("Unable to buffer aoi_v. Clipping cancelled!!", "BAGIS-PRO");
                             return;
                         }
 
@@ -2753,7 +2846,6 @@ namespace bagis_pro
                         {
                             Module1.Current.ModuleLogManager.LogError(nameof(ClipRasterLayerAsync),
                                "Unable to buffer " + strClipFile + ". Error code: " + gpResult.Result.ErrorCode);
-                            MessageBox.Show("Unable to buffer aoi_v. Clipping cancelled!!", "BAGIS-PRO");
                             return;
                         }
                         strClipFile = strTempBuffer2;
@@ -2784,7 +2876,6 @@ namespace bagis_pro
                     {
                         Module1.Current.ModuleLogManager.LogError(nameof(ClipRasterLayerAsync),
                             "Unable obtain clipping envelope from " + strClipGdb + "\\" + strClipFile);
-                        MessageBox.Show("Unable obtain clipping envelope from " + strClipGdb + "\\" + strClipFile + " Clipping cancelled!!", "BAGIS-PRO");
                         return;
                     }
 
@@ -2799,7 +2890,6 @@ namespace bagis_pro
                     {
                         Module1.Current.ModuleLogManager.LogError(nameof(ClipRasterLayerAsync),
                            "Unable to clip " + strClipFile + ". Error code: " + finalResult.ErrorCode);
-                        MessageBox.Show("Unable to clip. Clipping cancelled!!", "BAGIS-PRO");
                         return;
                     }
                     else
@@ -3011,7 +3101,7 @@ namespace bagis_pro
             {
                 success = await AnalysisTools.ClipLayersAsync(Module1.Current.Aoi.FilePath, Constants.DATA_TYPE_SWE,
                     precipBufferDistance, precipBufferUnits, sweBufferDistance, sweBufferUnits);
-                // Calculate and record overall min and max for symbology
+                //Calculate and record overall min and max for symbology
                 if (success == BA_ReturnCode.Success)
                 {
                     double dblOverallMin = 9999;
@@ -3068,6 +3158,22 @@ namespace bagis_pro
                                 "Unable to locate SWE metadata entry to update");
                         }
                         success = GeneralTools.SaveDataSourcesToFile(dictLocalDataSources);
+
+                        // Create classifed layers
+                        int idxDefaultMonth = 8;
+                        IList<BA_Objects.Interval> lstInterval = await MapTools.CalculateSweZonesAsync(idxDefaultMonth);
+                        if (lstInterval.Count > 0)
+                        {
+                            string strAnalysisGdb = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis);
+                            for (int j = 0; j < Constants.FILES_SNODAS_SWE.Length; j++)
+                            {
+                                string strInput = $@"{GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers)}\{Constants.FILES_SNODAS_SWE[j]}";
+                                string strOutput = strAnalysisGdb + "\\" + Constants.FILES_SWE_ZONES[j];
+                                string strMaskPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_PRISM_VECTOR;
+                                success = await AnalysisTools.CalculateZonesAsync(Module1.Current.Aoi.FilePath, strInput, lstInterval,
+                                    strOutput, strMaskPath, "SWE SNODAS");
+                            }
+                        }
                     }
                 }
             }
@@ -3206,7 +3312,7 @@ namespace bagis_pro
                 if (hasSnotel)
                 {
                     Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateSitesZonesAsync), "Begin create Snotel zone");
-                    lstInterval = await GeodatabaseTools.GetUniqueSortedValuesAsync(uriAnalysis, SiteType.Snotel.ToString(),
+                    lstInterval = await GeodatabaseTools.GetUniqueSortedValuesAsync(uriAnalysis, SiteType.Snotel,
                         Constants.FIELD_SITE_ELEV, Constants.FIELD_SITE_NAME, demElevMaxMeters, demElevMinMeters);
                     if (lstInterval.Count > 0)
                     {
@@ -3227,7 +3333,7 @@ namespace bagis_pro
                 if (hasSnowCourse)
                 {
                     Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateSitesZonesAsync), "Begin create Snow Course zone");
-                    lstInterval = await GeodatabaseTools.GetUniqueSortedValuesAsync(uriAnalysis, SiteType.SnowCourse.ToString(),
+                    lstInterval = await GeodatabaseTools.GetUniqueSortedValuesAsync(uriAnalysis, SiteType.SnowCourse,
                         Constants.FIELD_SITE_ELEV, Constants.FIELD_SITE_NAME, demElevMaxMeters, demElevMinMeters);
                     if (lstInterval.Count > 0)
                     {
@@ -3259,39 +3365,43 @@ namespace bagis_pro
         {
             string strMaskPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_PRISM_VECTOR;
             int prismZonesCount = (int)Module1.Current.BatchToolSettings.PrecipZonesCount;
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
             IList<BA_Objects.Interval> lstInterval = await AnalysisTools.GetPrismClassesAsync(Module1.Current.Aoi.FilePath,
                 strLayer, prismZonesCount, "PRISM");
-            BA_ReturnCode success = await AnalysisTools.CalculateZonesAsync(Module1.Current.Aoi.FilePath, strLayer,
-                lstInterval, strZonesRaster, strMaskPath, "PRISM");
-            string zonesFile = Path.GetFileName(strZonesRaster);
-            if (success == BA_ReturnCode.Success && !Constants.FILE_WINTER_PRECIPITATION_ZONE.Equals(zonesFile))
+            if (lstInterval != null)
             {
-                // Record the prism zones information to be used later when presenting maps/charts
-                // Open the current Analysis.xml from disk, if it exists
-                BA_Objects.Analysis oAnalysis = new BA_Objects.Analysis();
-                string strSettingsFile = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAPS + "\\" +
-                    Constants.FILE_SETTINGS;
-                if (File.Exists(strSettingsFile))
+                success = await AnalysisTools.CalculateZonesAsync(Module1.Current.Aoi.FilePath, strLayer,
+                    lstInterval, strZonesRaster, strMaskPath, "PRISM");
+                string zonesFile = Path.GetFileName(strZonesRaster);
+                if (success == BA_ReturnCode.Success && !Constants.FILE_WINTER_PRECIPITATION_ZONE.Equals(zonesFile))
                 {
-                    using (var file = new StreamReader(strSettingsFile))
+                    // Record the prism zones information to be used later when presenting maps/charts
+                    // Open the current Analysis.xml from disk, if it exists
+                    BA_Objects.Analysis oAnalysis = new BA_Objects.Analysis();
+                    string strSettingsFile = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAPS + "\\" +
+                        Constants.FILE_SETTINGS;
+                    if (File.Exists(strSettingsFile))
                     {
-                        var reader = new System.Xml.Serialization.XmlSerializer(typeof(BA_Objects.Analysis));
-                        oAnalysis = (BA_Objects.Analysis)reader.Deserialize(file);
+                        using (var file = new StreamReader(strSettingsFile))
+                        {
+                            var reader = new System.Xml.Serialization.XmlSerializer(typeof(BA_Objects.Analysis));
+                            oAnalysis = (BA_Objects.Analysis)reader.Deserialize(file);
+                        }
                     }
-                }
-                // Set the prism zones information on the analysis object and save
-                oAnalysis.PrecipZonesIntervalCount = prismZonesCount;
-                oAnalysis.PrecipZonesInterval = Module1.Current.PrismZonesInterval;
-                Module1.Current.PrismZonesInterval = 999;
-                string strPrecipFile = Path.GetFileName(strLayer);
-                oAnalysis.PrecipZonesBegin = strPrecipFile;
-                oAnalysis.PrecipZonesEnd = strPrecipFile;
-                using (var file_stream = File.Create(strSettingsFile))
-                {
-                    var serializer = new System.Xml.Serialization.XmlSerializer(typeof(BA_Objects.Analysis));
-                    serializer.Serialize(file_stream, oAnalysis);
-                    Module1.Current.ModuleLogManager.LogDebug(nameof(CalculatePrecipitationZonesAsync),
-                        "Set precipitation zone parameters in analysis.xml file");
+                    // Set the prism zones information on the analysis object and save
+                    oAnalysis.PrecipZonesIntervalCount = prismZonesCount;
+                    oAnalysis.PrecipZonesInterval = Module1.Current.PrismZonesInterval;
+                    Module1.Current.PrismZonesInterval = 999;
+                    string strPrecipFile = Path.GetFileName(strLayer);
+                    oAnalysis.PrecipZonesBegin = strPrecipFile;
+                    oAnalysis.PrecipZonesEnd = strPrecipFile;
+                    using (var file_stream = File.Create(strSettingsFile))
+                    {
+                        var serializer = new System.Xml.Serialization.XmlSerializer(typeof(BA_Objects.Analysis));
+                        serializer.Serialize(file_stream, oAnalysis);
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(CalculatePrecipitationZonesAsync),
+                            "Set precipitation zone parameters in analysis.xml file");
+                    }
                 }
             }
             return success;
@@ -3393,14 +3503,15 @@ namespace bagis_pro
 
         public static async Task<BA_ReturnCode> CalculateSWEDeltaAsync(string strAoiPath)
         {
+            string strAnalysisGdb = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Analysis, true);
+
             for (int idx = 0; idx < Constants.FILES_SWE_DELTA.Length; idx++)
             {
-                string strLayer1 = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, true) +
+                string strLayer1 = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers, true) +
                     Constants.FILES_SNODAS_SWE[idx + 1];
-                string strLayer2 = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, true) +
+                string strLayer2 = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers, true) +
                     Constants.FILES_SNODAS_SWE[idx];
-                string strOutputRaster = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) +
-                    Constants.FILES_SWE_DELTA[idx];
+                string strOutputRaster = $@"{strAnalysisGdb}\temp{idx}";
                 IGPResult gpResult = await QueuedTask.Run(() =>
                 {
                     var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath);
@@ -3429,16 +3540,15 @@ namespace bagis_pro
             // Calculate and record overall min and max for symbology
             double dblOverallMin = 9999;
             double dblOverallMax = -9999;
-            string strAnalysisGdb = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true);
-            foreach (var fName in Constants.FILES_SWE_DELTA)
+            for (int idx = 0; idx < Constants.FILES_SWE_DELTA.Length; idx++)
             {
-                string strOutputPath = strAnalysisGdb + fName;
-                bool bExists = await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis)), fName);
+                string strOutputPath = $@"{strAnalysisGdb}\temp{idx}";
+                bool bExists = await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Analysis)), $@"temp{idx}");
                 if (bExists)
                 {
                     double dblMin = -1;
                     var parameters = Geoprocessing.MakeValueArray(strOutputPath, "MINIMUM");
-                    var environments = Geoprocessing.MakeEnvironmentArray(workspace: Module1.Current.Aoi.FilePath);
+                    var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath);
                     IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("GetRasterProperties_management", parameters, environments,
                         CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
                     bool isDouble = Double.TryParse(Convert.ToString(gpResult.ReturnValue), out dblMin);
@@ -3488,6 +3598,31 @@ namespace bagis_pro
                 success = GeneralTools.SaveDataSourcesToFile(dictLocalDataSources);
                 Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateSWEDeltaAsync),
                         "Updated settings overall min and max metadata for SWE Delta");
+
+                int intDefaultMonth = 8;
+                IList<BA_Objects.Interval> lstInterval = await MapTools.CalculateSweDeltaZonesAsync(intDefaultMonth);
+                //Reclassify into 7 classes for map
+                if (lstInterval.Count > 0)
+                {
+                    for (int j = 0; j < Constants.FILES_SWE_DELTA.Length; j++)
+                    {
+                        string strInput = $@"{strAnalysisGdb}\temp{j}";
+                        string strOutput = strAnalysisGdb + "\\" + Constants.FILES_SWE_DELTA[j];
+                        string strMaskPath = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_PRISM_VECTOR;
+                        success = await AnalysisTools.CalculateZonesAsync(strAoiPath, strInput, lstInterval,
+                            strOutput, strMaskPath, "SWE DELTA");
+                        if (success == BA_ReturnCode.Success)
+                        {
+                            success = await GeoprocessingTools.DeleteDatasetAsync(strInput);
+                        }
+                    }
+                }
+                else
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(CalculateQuarterlyPrecipitationAsync),
+                        "Unable to calculate interval list and publish classified quarterly precipitation layers!");
+                    return BA_ReturnCode.UnknownError;
+                }
             }
             return success;
         }
@@ -3824,7 +3959,7 @@ namespace bagis_pro
                     // define the map algebra expression
                     string quarterlyRaster = strPrismGdb + "\\" + fName;
                     string maExpression = String.Format("\"{1}\" / \"{0}\" * 100", annualRaster, quarterlyRaster);
-                    string outRaster = strAnalysisGdb + "\\" + Constants.FILES_SEASON_PRECIP_CONTRIB[i];
+                    string outRaster = $@"{strAnalysisGdb}\temp{i}";
                     // make the input parameter values array
                     var valueArray = Geoprocessing.MakeValueArray(maExpression, outRaster);
                     var environments = Geoprocessing.MakeEnvironmentArray(workspace:strPrismGdb);
@@ -3912,8 +4047,9 @@ namespace bagis_pro
                 }
                 bIsDouble = Double.TryParse(Convert.ToString(gpResult.ReturnValue), out dblMin);
 
-                    if (dblMax > -1 && dblMin > -1)
-                    {
+                IList<BA_Objects.Interval> lstInterval = new List<BA_Objects.Interval>();
+                if (dblMax > -1 && dblMin > -1)
+                {
                         // save the min/max values to the configuration file
                         dblMin = Math.Round(dblMin, 2) + 0.05;
                         dblMax = Math.Round(dblMax, 2) + 0.05;
@@ -3929,12 +4065,141 @@ namespace bagis_pro
                                     "Unable to save min/max values for quarterly precip to analysis settings!");
                             }
                         }
-                    }
+                    lstInterval = CalculateQuarterlyPrecipIntervals(dblMin, dblMax);
+                }
                     // Delete results of cell statistics
                     success = await GeoprocessingTools.DeleteDatasetAsync(strMaxPath);
                     success = await GeoprocessingTools.DeleteDatasetAsync(strMinPath);
+
+                //Reclassify into 7 classes for map
+                if (lstInterval.Count > 0)
+                {
+                    for (int j = 0; j < Constants.FILES_SEASON_PRECIP_CONTRIB.Length; j++)
+                    {
+                        string strInput = $@"{strAnalysisGdb}\temp{j}";
+                        string strOutput = strAnalysisGdb + "\\" + Constants.FILES_SEASON_PRECIP_CONTRIB[j];
+                        string strMaskPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_PRISM_VECTOR;
+                        success = await AnalysisTools.CalculateZonesAsync(oAoi.FilePath, strInput, lstInterval,
+                            strOutput, strMaskPath, "QUARTERLY PRECIPITATION");
+                        if (success == BA_ReturnCode.Success)
+                        {
+                            success = await GeoprocessingTools.DeleteDatasetAsync(strInput);
+                        }
+                    }
+                }
+                else
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(CalculateQuarterlyPrecipitationAsync),
+                        "Unable to calculate interval list and publish classified quarterly precipitation layers!");
+                    return BA_ReturnCode.UnknownError;
+                }
             }
             return success;
+        }
+
+        public static IList<BA_Objects.Interval> CalculateQuarterlyPrecipIntervals(double SeasonalPrecipMin, double SeasonalPrecipMax)
+        {
+            // Calculate interval list
+            int intZones = 7;
+            intZones = intZones - 1;  //Subtract the zones in the middle that we create
+            int halfZones = intZones / 2;
+            if (SeasonalPrecipMin > 0 && SeasonalPrecipMax > 0)
+            {
+                // Calculate interval list for lower-range values
+                double lBound = 23.0F;
+                double uBound = 27.0F;
+                IList<BA_Objects.Interval> lstNegInterval = new List<BA_Objects.Interval>();
+                double dblRange = -1.0F;
+                double dblInterval = -1.0F;
+                int zones = -1;
+                if (SeasonalPrecipMin >= lBound)
+                {
+                    lBound = SeasonalPrecipMin;
+                    // Manually build middle intervals; Spec is defined
+                    BA_Objects.Interval oInterval = new BA_Objects.Interval
+                    {
+                        LowerBound = lBound,
+                        UpperBound = uBound,
+                        Value = 1
+                    };
+                    lstNegInterval.Add(oInterval);
+                }
+                else
+                {
+                    dblRange = lBound - SeasonalPrecipMin;
+                    dblInterval = Math.Round(dblRange / halfZones, 2);
+                    //determine the interval decimal place to add an increment value to the lower bound
+                    zones = GeneralTools.CreateRangeArray(SeasonalPrecipMin, lBound, dblInterval, out lstNegInterval);
+                    // Make sure we don't have > than intzones / 2
+                    if (zones > halfZones)
+                    {
+                        // Merge 2 lower zones
+                        if (lstNegInterval.Count > halfZones)
+                        {
+                            Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateQuarterlyPrecipIntervals),
+                                "Merging 2 lowest intervals. Too many intervals created.");
+                            var interval = lstNegInterval[0];
+                            interval.UpperBound = lstNegInterval[1].UpperBound;
+                            lstNegInterval.RemoveAt(1);
+                        }
+                    }
+                    // Reset upper interval to mesh with middle interval
+                    lstNegInterval[halfZones - 1].UpperBound = lBound;
+                    // Manually build middle intervals; Spec is defined
+                    BA_Objects.Interval oInterval = new BA_Objects.Interval
+                    {
+                        LowerBound = lstNegInterval[halfZones - 1].UpperBound,
+                        UpperBound = uBound,
+                        Value = halfZones + 1
+                    };
+                    lstNegInterval.Add(oInterval);
+                }
+
+                // Calculate interval list for positive values
+                dblRange = SeasonalPrecipMax - uBound;
+                dblInterval = Math.Round(dblRange / halfZones, 2);
+                IList<BA_Objects.Interval> lstPosInterval = new List<BA_Objects.Interval>();
+                zones = GeneralTools.CreateRangeArray(uBound, SeasonalPrecipMax, dblInterval, out lstPosInterval);
+                // Make sure we don't have > than half zones
+                if (zones > halfZones)
+                {
+                    // Merge 2 upper zones
+                    if (lstPosInterval.Count > halfZones)
+                    {
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateQuarterlyPrecipIntervals),
+                            "Merging 2 highest intervals. Too many intervals created.");
+                        var interval = lstPosInterval[halfZones - 1];
+                        interval.UpperBound = lstPosInterval[halfZones].UpperBound;
+                        lstPosInterval.RemoveAt(halfZones);
+                    }
+                }
+                // Reset lower interval to mesh with middle interval
+                lstPosInterval[0].LowerBound = lstNegInterval.Last().UpperBound;
+
+                // Merge intervals to create 1 list
+                foreach (var item in lstPosInterval)
+                {
+                    lstNegInterval.Add(item);
+                }
+
+                // Reset values in calculated interval list
+                int idx = 1;
+                foreach (var item in lstNegInterval)
+                {
+                    item.Value = idx;
+                    // Format name property
+                    item.Name = String.Format("{0:0.0}", item.LowerBound) + " - " +
+                            String.Format("{0:0.0}", item.UpperBound);
+                    idx++;
+                }
+                return lstNegInterval;
+            }
+            else
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(CalculateQuarterlyPrecipIntervals),
+                    "Invalid min/max precip values. Calculation halted!");
+                return null;
+            }
         }
 
         public static async Task<BA_ReturnCode> GenerateWinterPrecipitationLayerAsync(BA_Objects.Aoi oAoi)
@@ -4234,195 +4499,165 @@ namespace bagis_pro
         public static async Task<string> CreateSitesLayerAsync(Uri gdbUri)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
-            bool hasSnotel = await GeodatabaseTools.FeatureClassExistsAsync(gdbUri, Constants.FILE_SNOTEL);
             bool hasSiteType = false;
             bool hasSiteId = false;
-            bool bUpdateSnotel = false;
-            bool bUpdateSnowCourse = false;
-            if (hasSnotel)
+            string[] arrSiteFiles = new string[] { Constants.FILE_SNOTEL, Constants.FILE_SNOW_COURSE, Constants.FILE_SNOLITE, Constants.FILE_COOP_PILLOW };
+            bool[] arrHasSites = new bool[] { false, false, false, false };
+            for (int i = 0; i < arrSiteFiles.Length; i++)
             {
-                hasSiteType = await GeodatabaseTools.AttributeExistsAsync(gdbUri, Constants.FILE_SNOTEL, Constants.FIELD_SITE_TYPE);
-                if (hasSiteType == false)
+                if (await GeodatabaseTools.CountFeaturesAsync(gdbUri, arrSiteFiles[i]) > 0)
                 {
-                    success = await GeoprocessingTools.AddFieldAsync(gdbUri.LocalPath + "\\" + Constants.FILE_SNOTEL,
-                        Constants.FIELD_SITE_TYPE, "TEXT");
-                    if (success == BA_ReturnCode.Success)
+                    arrHasSites[i] = true;
+                    hasSiteType = await GeodatabaseTools.AttributeExistsAsync(gdbUri, arrSiteFiles[i], Constants.FIELD_SITE_TYPE);
+                    if (hasSiteType == false)
                     {
-                        bUpdateSnotel = true;
-                        Module1.Current.ModuleLogManager.LogDebug(nameof(CreateSitesLayerAsync),
-                            "Added ba_site_type field to Snotel");
-                    }
-                }
-                hasSiteId = await GeodatabaseTools.AttributeExistsAsync(gdbUri, Constants.FILE_SNOTEL, Constants.FIELD_SITE_ID);
-                if (hasSiteId == false)
-                {
-                    success = await GeoprocessingTools.AddFieldAsync(gdbUri.LocalPath + "\\" + Constants.FILE_SNOTEL,
-                        Constants.FIELD_SITE_ID, "INTEGER");
-                    if (success == BA_ReturnCode.Success)
-                    {
-                        bUpdateSnotel = true;
-                        Module1.Current.ModuleLogManager.LogDebug(nameof(CreateSitesLayerAsync),
-                            "Added ba_site_id field to Snotel");
-                    }
-                }
-            }
-            bool hasSnowCourse = await GeodatabaseTools.FeatureClassExistsAsync(gdbUri, Constants.FILE_SNOW_COURSE);
-            if (hasSnowCourse)
-            {
-                hasSiteType = await GeodatabaseTools.AttributeExistsAsync(gdbUri, Constants.FILE_SNOW_COURSE, Constants.FIELD_SITE_TYPE);
-                if (hasSiteType == false)
-                {
-                    success = await GeoprocessingTools.AddFieldAsync(gdbUri.LocalPath + "\\" + Constants.FILE_SNOW_COURSE,
-                        Constants.FIELD_SITE_TYPE, "TEXT");
-                    if (success == BA_ReturnCode.Success)
-                    {
-                        bUpdateSnowCourse = true;
-                        Module1.Current.ModuleLogManager.LogDebug(nameof(CreateSitesLayerAsync),
-                            "Added ba_site_type field to Snow Course");
-                    }
-                }
-                hasSiteId = await GeodatabaseTools.AttributeExistsAsync(gdbUri, Constants.FILE_SNOW_COURSE, Constants.FIELD_SITE_ID);
-                if (hasSiteId == false)
-                {
-                    success = await GeoprocessingTools.AddFieldAsync(gdbUri.LocalPath + "\\" + Constants.FILE_SNOW_COURSE,
-                        Constants.FIELD_SITE_ID, "INTEGER");
-                }
-                if (success == BA_ReturnCode.Success)
-                {
-                    bUpdateSnowCourse = true;
-                    Module1.Current.ModuleLogManager.LogDebug(nameof(CreateSitesLayerAsync),
-                        "Added ba_site_id field to Snow Course");
-                }
-            }
-
-            bool modificationResult = false;
-            string errorMsg = "";
-            await QueuedTask.Run(() => {
-                using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(gdbUri)))
-                {
-                    if (bUpdateSnotel)
-                    {
-                        using (FeatureClass featureClass = geodatabase.OpenDataset<FeatureClass>(Constants.FILE_SNOTEL))
+                        success = await GeoprocessingTools.AddFieldAsync(gdbUri.LocalPath + "\\" + arrSiteFiles[i],
+                            Constants.FIELD_SITE_TYPE, "TEXT");
+                        if (success == BA_ReturnCode.Success)
                         {
-                            FeatureClassDefinition featureClassDefinition = featureClass.GetDefinition();
-                            int idxSiteType = featureClassDefinition.FindField(Constants.FIELD_SITE_TYPE);
-                            if (idxSiteType > 0)
-                            {
-                                EditOperation editOperation = new EditOperation();
-                                editOperation.Callback(context =>
-                                {
-                                    using (RowCursor rowCursor = featureClass.Search(new QueryFilter(), false))
-                                    {
-                                        while (rowCursor.MoveNext())
-                                        {
-                                            using (Feature feature = (Feature)rowCursor.Current)
-                                            {
-                                                // In order to update the the attribute table has to be called before any changes are made to the row
-                                                context.Invalidate(feature);
-                                                feature[idxSiteType] = SiteType.Snotel.ToString();
-                                                feature.Store();
-                                                // Has to be called after the store too
-                                                context.Invalidate(feature);
-                                            }
-                                        }
-                                    }
-                                }, featureClass);
-
-                                try
-                                {
-                                    modificationResult = editOperation.Execute();
-                                    if (!modificationResult) errorMsg = editOperation.ErrorMessage;
-                                }
-                                catch (GeodatabaseException exObj)
-                                {
-                                    errorMsg = exObj.Message;
-                                }
-                            }
-                            else
-                            {
-                                Module1.Current.ModuleLogManager.LogDebug(nameof(CreateSitesLayerAsync),
-                                    "Unable to locate ba_site_type field on snotel_sites. Field could not be updated");
-                                return;
-                            }
+                            Module1.Current.ModuleLogManager.LogDebug(nameof(CreateSitesLayerAsync),
+                                "Added ba_site_type field to " + arrSiteFiles[i]);
                         }
                     }
-                    if (bUpdateSnowCourse)
+                    hasSiteId = await GeodatabaseTools.AttributeExistsAsync(gdbUri, arrSiteFiles[i], Constants.FIELD_SITE_ID);
+                    if (hasSiteId == false)
                     {
-                        using (FeatureClass featureClass = geodatabase.OpenDataset<FeatureClass>(Constants.FILE_SNOW_COURSE))
+                        success = await GeoprocessingTools.AddFieldAsync(gdbUri.LocalPath + "\\" + arrSiteFiles[i],
+                            Constants.FIELD_SITE_ID, "INTEGER");
+                        if (success == BA_ReturnCode.Success)
                         {
-                            FeatureClassDefinition featureClassDefinition = featureClass.GetDefinition();
-                            int idxSiteType = featureClassDefinition.FindField(Constants.FIELD_SITE_TYPE);
-                            if (idxSiteType > 0)
-                            {
-                                EditOperation editOperation = new EditOperation();
-                                editOperation.Callback(context =>
-                                {
-                                    using (RowCursor rowCursor = featureClass.Search(new QueryFilter(), false))
-                                    {
-                                        while (rowCursor.MoveNext())
-                                        {
-                                            using (Feature feature = (Feature)rowCursor.Current)
-                                            {
-                                                // In order to update the the attribute table has to be called before any changes are made to the row
-                                                context.Invalidate(feature);
-                                                feature[idxSiteType] = SiteType.SnowCourse.ToString();
-                                                feature.Store();
-                                                // Has to be called after the store too
-                                                context.Invalidate(feature);
-                                            }
-                                        }
-                                    }
-                                }, featureClass);
-
-                                try
-                                {
-                                    modificationResult = editOperation.Execute();
-                                    if (!modificationResult) errorMsg = editOperation.ErrorMessage;
-                                }
-                                catch (GeodatabaseException exObj)
-                                {
-                                    errorMsg = exObj.Message;
-                                }
-                            }
-                            else
-                            {
-                                Module1.Current.ModuleLogManager.LogDebug(nameof(CreateSitesLayerAsync),
-                                    "Unable to locate ba_site_type field on snow_course sites. Field could not be updated");
-                                return;
-                            }
+                            Module1.Current.ModuleLogManager.LogDebug(nameof(CreateSitesLayerAsync),
+                                "Added ba_site_id field to " + arrSiteFiles[i]);
                         }
                     }
                 }
-            });
-            if (String.IsNullOrEmpty(errorMsg))
-            {
-                await Project.Current.SaveEditsAsync();
             }
-            else
+
+            int siteLayersCount = 0;
+            for (int i = 0; i < arrHasSites.Length; i++)
             {
-                if (Project.Current.HasEdits)
-                    await Project.Current.DiscardEditsAsync();
-                Module1.Current.ModuleLogManager.LogError(nameof(CreateSitesLayerAsync),
-                    "Exception: " + errorMsg);
-                return "";
+                bool modificationResult = false;
+                string errorMsg = "";
+                await QueuedTask.Run(() => {
+                    using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(gdbUri)))
+                    {
+                        if (arrHasSites[i])
+                        {
+                            SiteType siteType = SiteType.Missing;
+                            switch (i)
+                            {
+                                case 0:
+                                    siteType = SiteType.Snotel;
+                                    break;
+                                case 1:
+                                    siteType = SiteType.SnowCourse;
+                                    break;
+                                case 2:
+                                    siteType = SiteType.Snolite;
+                                    break;
+                                case 3:
+                                    siteType = SiteType.CoopPillow;
+                                    break;
+                            }
+                            using (FeatureClass featureClass = geodatabase.OpenDataset<FeatureClass>(arrSiteFiles[i]))
+                            {
+                                FeatureClassDefinition featureClassDefinition = featureClass.GetDefinition();
+                                int idxSiteType = featureClassDefinition.FindField(Constants.FIELD_SITE_TYPE);
+                                if (idxSiteType > 0)
+                                {
+                                    EditOperation editOperation = new EditOperation();
+                                    editOperation.Callback(context =>
+                                    {
+                                        using (RowCursor rowCursor = featureClass.Search(new QueryFilter(), false))
+                                        {
+                                            while (rowCursor.MoveNext())
+                                            {
+                                                using (Feature feature = (Feature)rowCursor.Current)
+                                                {
+                                                    // In order to update the the attribute table has to be called before any changes are made to the row
+                                                    context.Invalidate(feature);
+                                                    feature[idxSiteType] = siteType.ToString();
+                                                    feature.Store();
+                                                    // Has to be called after the store too
+                                                    context.Invalidate(feature);
+                                                }
+                                            }
+                                        }
+                                    }, featureClass);
+
+                                    try
+                                    {
+                                        modificationResult = editOperation.Execute();
+                                        if (!modificationResult) errorMsg = editOperation.ErrorMessage;
+                                    }
+                                    catch (GeodatabaseException exObj)
+                                    {
+                                        errorMsg = exObj.Message;
+                                    }
+                                }
+                                else
+                                {
+                                    Module1.Current.ModuleLogManager.LogDebug(nameof(CreateSitesLayerAsync),
+                                        "Unable to locate ba_site_type field on " + arrSiteFiles[i] + ". Field could not be updated");
+                                    return;
+                                }
+                            }
+                            siteLayersCount++;
+                        }
+                    }
+                });
+                if (String.IsNullOrEmpty(errorMsg))
+                {
+                    await Project.Current.SaveEditsAsync();
+                }
+                else
+                {
+                    if (Project.Current.HasEdits)
+                        await Project.Current.DiscardEditsAsync();
+                    Module1.Current.ModuleLogManager.LogError(nameof(CreateSitesLayerAsync),
+                        "Exception: " + errorMsg);
+                    return "";
+                }
             }
 
             string analysisPath = GeodatabaseTools.GetGeodatabasePath(System.IO.Path.GetDirectoryName(gdbUri.LocalPath), GeodatabaseNames.Analysis);
             string returnPath = analysisPath + "\\" + Constants.FILE_MERGED_SITES;
-            if (hasSnotel)
+            // There is only one sites layer; We copy that to the merged sites file
+            if (siteLayersCount == 1)
             {
-                // No snow course to merge; copy SNOTEL to merged sites
-                success = await GeoprocessingTools.CopyFeaturesAsync(Module1.Current.Aoi.FilePath, gdbUri.LocalPath + "\\" + Constants.FILE_SNOTEL, returnPath);
+                for (int i = 0; i < arrHasSites.Length; i++)
+                {
+                    if (arrHasSites[i])
+                    {
+                        success = await GeoprocessingTools.CopyFeaturesAsync(Module1.Current.Aoi.FilePath, gdbUri.LocalPath + "\\" + arrSiteFiles[i], returnPath);
+                        break;
+                    }
+                }
             }
-            else if (hasSnowCourse)
-            {
-                // No Snotel to merge; copy snow courses to merged sites
-                success = await GeoprocessingTools.CopyFeaturesAsync(Module1.Current.Aoi.FilePath, gdbUri.LocalPath + "\\" + Constants.FILE_SNOW_COURSE, returnPath);
-            }
-            if (hasSnotel && hasSnowCourse)
+            else if (siteLayersCount > 1)
             {
                 // Need to append sites
-                string featuresToAppend = gdbUri.LocalPath + "\\" + Constants.FILE_SNOW_COURSE;
+                StringBuilder sb = new StringBuilder();
+                bool bCopyFirstLayer = false;
+                for (int i = 0; i < arrHasSites.Length; i++)
+                {
+                    if (arrHasSites[i])
+                    {
+                        if (bCopyFirstLayer == false)
+                        {
+                            success = await GeoprocessingTools.CopyFeaturesAsync(Module1.Current.Aoi.FilePath, gdbUri.LocalPath + "\\" + arrSiteFiles[i], returnPath);
+                            if (success == BA_ReturnCode.Success)
+                            {
+                                bCopyFirstLayer = true;
+                            }
+                        }
+                        else
+                        {
+                            sb.Append($@"{gdbUri.LocalPath}\{arrSiteFiles[i]};");
+                        }                        
+                    }
+                }
+                string featuresToAppend = sb.ToString().TrimEnd(';');
                 var parameters = Geoprocessing.MakeValueArray(featuresToAppend, returnPath);
                 IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("Append_management", parameters, null,
                             CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
@@ -4458,8 +4693,8 @@ namespace bagis_pro
             }
 
             // Assign the site id by elevation
-            success = await UpdateSiteIdsAsync(analysisPath, gdbUri, hasSnotel, hasSnowCourse);
-                var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath, snapRaster: BA_Objects.Aoi.SnapRasterPath(strAoiPath));
+            success = await UpdateSiteIdsAsync(analysisPath, gdbUri, arrHasSites, arrSiteFiles);
+            var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath, snapRaster: BA_Objects.Aoi.SnapRasterPath(strAoiPath));
                 string fileExtract = "tmpExtract";
                 string[] arrFields = { Constants.FIELD_PRECIP, Constants.FIELD_ASPECT, Constants.FIELD_SLOPE};
                 string[] arrFieldDataTypes = { "DOUBLE", "DOUBLE", "DOUBLE" };
@@ -4591,7 +4826,7 @@ namespace bagis_pro
         {
             string strOutputRaster = GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Layers, true)
                 + Constants.FILE_LAND_COVER;
-            BA_ReturnCode success = await AnalysisTools.ClipRasterLayerAsync(aoiFolderPath, strOutputRaster, Constants.DATA_TYPE_LAND_COVER,
+            BA_ReturnCode success = await AnalysisTools.ClipRasterLayerAsync(aoiFolderPath, strOutputRaster, BA_Objects.DataSource.GetLandCoverKey,
                 landCoverBufferDistance, landCoverBufferUnits);
             string strNullOutput = GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Analysis, true)
                 + "tmpNull";
@@ -4781,7 +5016,7 @@ namespace bagis_pro
                     "Contacting webservices server to retrieve prism layer uri");
                 IDictionary<string, dynamic> dictDataSources =
                     await ws.QueryDataSourcesAsync((string)Module1.Current.BatchToolSettings.EBagisServer);
-                string strWsPrefix = dictDataSources[Constants.DATA_TYPE_PRECIPITATION].uri;
+                string strWsPrefix = dictDataSources[BA_Objects.DataSource.GetPrecipitationKey].uri;
                 if (!string.IsNullOrEmpty(strWsPrefix))
                 {
                     string localLayerName = Path.GetFileName((string)Module1.Current.BatchToolSettings.AoiPrecipFile);
@@ -4858,7 +5093,8 @@ namespace bagis_pro
             return false;
         }
 
-        private static async Task<BA_ReturnCode>  UpdateSiteIdsAsync(string analysisPath, Uri uriLayers, bool bHasSnotel, bool bHasSnowCourse)
+        private static async Task<BA_ReturnCode>  UpdateSiteIdsAsync(string analysisPath, Uri uriLayers, bool[] arrHasSites,
+            string[] arrSiteFiles)
         {
             // Sort by elevation and set site id
             Uri analysisUri = new Uri(analysisPath);
@@ -4955,104 +5191,153 @@ namespace bagis_pro
                     }
                 });
 
-                success = await UpdateSnoIdsAsync(uriLayers, lstSites, bHasSnotel, bHasSnowCourse);
+                success = await UpdateSnoIdsAsync(uriLayers, lstSites, arrHasSites, arrSiteFiles);
             }
             return success;
         }
 
-        private static async Task<BA_ReturnCode> UpdateSnoIdsAsync(Uri uriLayers, IList<BA_Objects.Site> lstSites, 
-            bool bHasSnotel, bool bHasSnowCourse)
+        private static async Task<BA_ReturnCode> UpdateSnoIdsAsync(Uri uriLayers, IList<BA_Objects.Site> lstSites, bool[] arrHasSites,
+            string[] arrSiteFiles)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
-            IList<string> lstLayersToUpdate = new List<string>();
-            IList<string> lstSiteTypes = new List<string>();
-            int i = 0;
-            if (bHasSnotel)
-            {
-                lstLayersToUpdate.Add(Constants.FILE_SNOTEL);
-                lstSiteTypes.Add(SiteType.Snotel.ToString());
-            }
-            if (bHasSnowCourse)
-            {
-                lstLayersToUpdate.Add(Constants.FILE_SNOW_COURSE);
-                lstSiteTypes.Add(SiteType.SnowCourse.ToString());
-            }
             await QueuedTask.Run(() => {
                 string errorMsg = "";
-                foreach (var item in lstLayersToUpdate)
+                for (int i = 0; i < arrSiteFiles.Length; i++)
                 {
-                    string sType = lstSiteTypes[i];
-                    using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(uriLayers)))
+                    if (arrHasSites[i])
                     {
-                        using (FeatureClass featureClass = geodatabase.OpenDataset<FeatureClass>(item))
+
+                        string sType = SiteType.Missing.ToString();
+                        switch (i)
                         {
-                            FeatureClassDefinition featureClassDefinition = featureClass.GetDefinition();
-                            int idxSiteId = featureClassDefinition.FindField(Constants.FIELD_SITE_ID);
-                            int idxSiteName = featureClassDefinition.FindField(Constants.FIELD_SITE_NAME);
-                            EditOperation editOperation = new EditOperation();
-                            editOperation.Callback(context =>
+                            case 0:
+                                sType = SiteType.Snotel.ToString();
+                                break;
+                            case 1:
+                                sType = SiteType.SnowCourse.ToString();
+                                break;
+                            case 2:
+                                sType = SiteType.Snolite.ToString();
+                                break;
+                            case 3:
+                                sType = SiteType.CoopPillow.ToString();
+                                break;
+                        }
+
+                        using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(uriLayers)))
+                        {
+                            using (FeatureClass featureClass = geodatabase.OpenDataset<FeatureClass>(arrSiteFiles[i]))
                             {
-                                using (RowCursor rowCursor = featureClass.Search(new QueryFilter(), false))
+                                FeatureClassDefinition featureClassDefinition = featureClass.GetDefinition();
+                                int idxSiteId = featureClassDefinition.FindField(Constants.FIELD_SITE_ID);
+                                int idxSiteName = featureClassDefinition.FindField(Constants.FIELD_SITE_NAME);
+                                EditOperation editOperation = new EditOperation();
+                                editOperation.Callback(context =>
                                 {
-                                    while (rowCursor.MoveNext())
+                                    using (RowCursor rowCursor = featureClass.Search(new QueryFilter(), false))
                                     {
-                                        using (Feature feature = (Feature)rowCursor.Current)
+                                        while (rowCursor.MoveNext())
                                         {
+                                            using (Feature feature = (Feature)rowCursor.Current)
+                                            {
                                             // In order to update the the attribute table has to be called before any changes are made to the row
                                             context.Invalidate(feature);
                                             // Find the site
                                             string sName = Convert.ToString(feature[idxSiteName]);
-                                            int intNewSiteId = -1;
-                                            foreach (var aSite in lstSites)
-                                            {
-                                                if (aSite.SiteTypeText.Equals(sType) && sName.Equals(aSite.Name))
+                                                int intNewSiteId = -1;
+                                                foreach (var aSite in lstSites)
                                                 {
-                                                    intNewSiteId = aSite.SiteId;
-                                                    break;
+                                                    if (aSite.SiteTypeText.Equals(sType) && sName.Equals(aSite.Name))
+                                                    {
+                                                        intNewSiteId = aSite.SiteId;
+                                                        break;
+                                                    }
                                                 }
-                                            }
-                                            feature[idxSiteId] = intNewSiteId;
-                                            feature.Store();
+                                                feature[idxSiteId] = intNewSiteId;
+                                                feature.Store();
                                             // Has to be called after the store too
                                             context.Invalidate(feature);
+                                            }
                                         }
                                     }
+                                }, featureClass);
+                                try
+                                {
+                                    bool modificationResult = editOperation.Execute();
+                                    if (!modificationResult) errorMsg = editOperation.ErrorMessage;
                                 }
-                            }, featureClass);
-                            try
-                            {
-                                bool modificationResult = editOperation.Execute();
-                                if (!modificationResult) errorMsg = editOperation.ErrorMessage;
-                            }
-                            catch (GeodatabaseException exObj)
-                            {
-                                errorMsg = exObj.Message;
-                            }
+                                catch (GeodatabaseException exObj)
+                                {
+                                    errorMsg = exObj.Message;
+                                }
 
+                            }
                         }
                     }
-                    i++;
-                }
-                if (String.IsNullOrEmpty(errorMsg))
-                {
-                    Project.Current.SaveEditsAsync();
-                    Module1.Current.ModuleLogManager.LogDebug(nameof(CreateSitesLayerAsync),
-                        "ba_site_id edits saved");
-                    success =  BA_ReturnCode.Success;
-                }
-                else
-                {
-                    if (Project.Current.HasEdits)
-                        Project.Current.DiscardEditsAsync();
-                    Module1.Current.ModuleLogManager.LogError(nameof(CreateSitesLayerAsync),
-                        "Edit Exception: " + errorMsg);
-                    success = BA_ReturnCode.UnknownError;
+                    if (String.IsNullOrEmpty(errorMsg))
+                    {
+                        Project.Current.SaveEditsAsync();
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(CreateSitesLayerAsync),
+                            "ba_site_id edits saved");
+                        success = BA_ReturnCode.Success;
+                    }
+                    else
+                    {
+                        if (Project.Current.HasEdits)
+                            Project.Current.DiscardEditsAsync();
+                        Module1.Current.ModuleLogManager.LogError(nameof(CreateSitesLayerAsync),
+                            "Edit Exception: " + errorMsg);
+                        success = BA_ReturnCode.UnknownError;
+                    }
                 }
             });
             return success;
         }
 
-
+        private static async Task<bool> IsNoDataRasterAsync(string strAoiPath, string strGdbFolder, string strRasterFile)
+        {
+            char[] charsToTrim = { '\\' };
+            strGdbFolder = strGdbFolder.TrimEnd(charsToTrim);
+            var parameters = Geoprocessing.MakeValueArray($@"{strGdbFolder}\{strRasterFile}", "MAXIMUM");
+            var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath);
+            var gpResult = await Geoprocessing.ExecuteToolAsync("GetRasterProperties_management", parameters, environments,
+                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+            if (gpResult.IsFailed)
+            {
+                if (gpResult.ErrorCode == 2)
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(IsNoDataRasterAsync),
+                        "Unable to calculate maximum for raster data. Failed because no statistics are available!");
+                }
+                else
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(IsNoDataRasterAsync),
+                        "Error Code: " + gpResult.ErrorCode + ". Unable to calculate maximum for raster data!");
+                }
+                return true;
+            }
+            string strMax = Convert.ToString(gpResult.ReturnValue);
+            string strNoData = "-9998";
+            await QueuedTask.Run(() =>
+            {
+                using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(strGdbFolder))))
+                using (RasterDataset rasterDataset = geodatabase.OpenDataset<RasterDataset>(strRasterFile))
+                {
+                    RasterBandDefinition bandDefinition = rasterDataset.GetBand(0).GetDefinition();
+                    Raster raster = rasterDataset.CreateDefaultRaster();
+                    strNoData = Convert.ToString(raster.GetNoDataValue());
+                }
+            });
+            if (strMax.Equals(strNoData))
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
 
     }
+
+}

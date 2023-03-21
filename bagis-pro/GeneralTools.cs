@@ -178,20 +178,37 @@ namespace bagis_pro
                     elevMaxMeters = lstResult[1];
                 }
 
-                // Counting Snotel Sites in AOI boundary
+                // Counting Automated Sites in AOI boundary
                 gdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, false));
                 Uri sitesGdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, false));
                 long snotelInBasin = await GeodatabaseTools.CountPointsWithinInFeatureAsync(sitesGdbUri, Constants.FILE_SNOTEL,
                     gdbUri, Constants.FILE_AOI_VECTOR);
+                long snoliteInBasin = await GeodatabaseTools.CountPointsWithinInFeatureAsync(sitesGdbUri, Constants.FILE_SNOLITE,
+                    gdbUri, Constants.FILE_AOI_VECTOR);
+                long coopPillowInBasin = await GeodatabaseTools.CountPointsWithinInFeatureAsync(sitesGdbUri, Constants.FILE_COOP_PILLOW,
+                    gdbUri, Constants.FILE_AOI_VECTOR);
+
                 long snotelInBuffer = 0;
+                long snoliteInBuffer = 0;
+                long coopPillowInBuffer = 0;
                 long totalSnotelSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_SNOTEL);
+                long totalSnoliteSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_SNOLITE);
+                long totalCoopPillowSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_COOP_PILLOW);
                 if (totalSnotelSites > 0)
                 {
                     snotelInBuffer = totalSnotelSites - snotelInBasin;
                 }
+                if (totalSnoliteSites > 0)
+                {
+                    snoliteInBuffer = totalSnoliteSites - snoliteInBasin;
+                }
+                if (totalCoopPillowSites > 0)
+                {
+                    coopPillowInBuffer = totalCoopPillowSites - coopPillowInBasin;
+                }
 
                 // Counting Snow Course Sites in AOI boundary
-                int scosInBasin = await GeodatabaseTools.CountPointsWithinInFeatureAsync(sitesGdbUri, Constants.FILE_SNOW_COURSE,
+                long scosInBasin = await GeodatabaseTools.CountPointsWithinInFeatureAsync(sitesGdbUri, Constants.FILE_SNOW_COURSE,
                     gdbUri, Constants.FILE_AOI_VECTOR);
                 long scosInBuffer = 0;
                 long totalScosSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_SNOW_COURSE);
@@ -310,17 +327,10 @@ namespace bagis_pro
                 }
                 //Printing data sources
                 IDictionary<string, BA_Objects.DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
-                string[] keys = { Constants.DATA_TYPE_SWE, Constants.DATA_TYPE_PRECIPITATION, Constants.DATA_TYPE_SNOTEL,
-                                  Constants.DATA_TYPE_SNOW_COURSE, Constants.DATA_TYPE_ROADS,
-                                  Constants.DATA_TYPE_LAND_OWNERSHIP, Constants.DATA_TYPE_LAND_COVER};
-                //if (rType.Equals(ReportType.SiteAnalysis))
-                //{
-                //    Array.Resize(ref keys, 4);
-                //    keys[0] = Constants.DATA_TYPE_SNOTEL;
-                //    keys[1] = Constants.DATA_TYPE_SNOW_COURSE;
-                //    keys[2] = Constants.DATA_TYPE_ROADS;
-                //    keys[3] = Constants.DATA_TYPE_PUBLIC_LAND;
-                //}
+                string[] keys = { Constants.DATA_TYPE_SWE, BA_Objects.DataSource.GetPrecipitationKey, Constants.DATA_TYPE_SNOTEL,
+                                  Constants.DATA_TYPE_SNOW_COURSE, Constants.DATA_TYPE_SNOLITE, Constants.DATA_TYPE_COOP_PILLOW,
+                                  Constants.DATA_TYPE_ROADS, BA_Objects.DataSource.GetDemKey,
+                                  Constants.DATA_TYPE_LAND_OWNERSHIP, BA_Objects.DataSource.GetLandCoverKey};
                 IList<BA_Objects.DataSource> lstDataSources = new List<BA_Objects.DataSource>();
                 foreach (string strKey in keys)
                 {
@@ -328,6 +338,19 @@ namespace bagis_pro
                     {
                         BA_Objects.DataSource newSource = dictLocalDataSources[strKey];
                         lstDataSources.Add(newSource);
+                    }
+                }
+                // Add the DEM if it isn't there
+                if (!dictLocalDataSources.ContainsKey(BA_Objects.DataSource.GetDemKey))
+                {
+                    IDictionary<string, dynamic> dictDatasources = await ws.QueryDataSourcesAsync((string)Module1.Current.BatchToolSettings.EBagisServer);
+                    if (dictDatasources != null)
+                    {
+                        BA_Objects.DataSource dsDem = new BA_Objects.DataSource(dictDatasources[BA_Objects.DataSource.GetDemKey]);
+                        if (dsDem != null)
+                        {
+                            lstDataSources.Add(dsDem);
+                        }
                     }
                 }
 
@@ -357,6 +380,10 @@ namespace bagis_pro
                     snotel_sites_in_basin = snotelInBasin,
                     snotel_sites_in_buffer = snotelInBuffer,
                     snotel_sites_buffer_size = snotelSitesBufferSize,
+                    snolite_sites_in_basin = snoliteInBasin,
+                    snolite_sites_in_buffer = snoliteInBuffer,
+                    coop_pillow_sites_in_basin = coopPillowInBasin,
+                    coop_pillow_sites_in_buffer = coopPillowInBuffer,
                     has_scos_sites = hasScosSites,
                     scos_sites_in_basin = scosInBasin,
                     scos_sites_in_buffer = scosInBuffer,
@@ -542,7 +569,7 @@ namespace bagis_pro
             {
                 // Create SNOTEL Distribution Worksheet
                 Worksheet pSNOTELWorksheet = bkWorkBook.Sheets.Add();
-                pSNOTELWorksheet.Name = "SNOTEL";
+                pSNOTELWorksheet.Name = "Automated Sites";
 
                 // Create Snow Course Distribution Worksheet
                 Worksheet pSnowCourseWorksheet = bkWorkBook.Sheets.Add();
@@ -578,7 +605,7 @@ namespace bagis_pro
                     Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), Constants.FILE_MERGED_SITES +
                         " is missing. Creating it now...");
                     // Create the merged sites layer if it doesn't exist
-                    string returnPath = await AnalysisTools.CreateSitesLayerAsync(uriAnalysis);
+                    string returnPath = await AnalysisTools.CreateSitesLayerAsync(uriLayers);
                     if (string.IsNullOrEmpty(returnPath))
                     {
                         bMergedSitesExists = true;
@@ -631,6 +658,24 @@ namespace bagis_pro
                 // Create Charts Worksheet
                 Worksheet pChartsWorksheet = bkWorkBook.Sheets.Add();
                 pChartsWorksheet.Name = "Charts";
+
+                // Load local data sources for the short descriptions
+                Webservices ws = new Webservices();
+                IDictionary<string, BA_Objects.DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
+                BA_Objects.DataSource demDataSource = null;
+                if (dictLocalDataSources.Keys.Contains(BA_Objects.DataSource.GetDemKey))
+                {
+                    demDataSource = dictLocalDataSources[BA_Objects.DataSource.GetDemKey];
+                }
+                else
+                {
+                    IDictionary<string, dynamic> dictDatasources = await ws.QueryDataSourcesAsync((string)Module1.Current.BatchToolSettings.EBagisServer);
+                    if (dictDatasources != null)
+                    {
+                        demDataSource = new BA_Objects.DataSource(dictDatasources[BA_Objects.DataSource.GetDemKey]);
+                    }
+                }
+
 
                 // Query min/max from dem
                 string sMask = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_VECTOR;
@@ -727,15 +772,13 @@ namespace bagis_pro
                         {
                             Left = 10,
                             Top = lastRow * 15,
-                            Height = 80,
-                            Width = 725,
-                            Message = "Critical precipitation elevation zone selection criteria: \r\n" +
-                            "Criterion #1. mean annual precipitation > 20 inches \r\n" +
-                            "Criterion #2. %_VOL > 100% / (2 x zone#) \r\n" +
-                            "Criterion #3. higher %_VOL, but the total %_VOL of the selected zones must not exceed 66.67% (i.e., 2/3) \r\n" +
-                            "Red cells are zones meeting all criteria \r\n" +
-                            "Blue cells are zones meeting criterion #1 \r\n" +
-                            "Orange cells are zones meeting criteria #1 and #2"
+                            Height = 160,
+                            Width = 600,
+                            Message = "Precipitation amount, summary statistics, and resulting volume are indicated for each elevation zone. Critical precipitation zones (red cells) are the elevations that have the potential for delivering the most significant runoff. These areas are determined by the following steps:\r\n" +
+                            "1. Eliminate the zones that in general do not receive sufficient precipitation (annual precipitation <= 20 inches) to contribute significant basin runoff (blue cells).\r\n" +
+                            "2. From the remaining elevation zones, eliminate the elevations that do not produce a significant proportion of basin runoff (orange cells).\r\n" +
+                            "3. Of these zones, select the elevations with the highest runoff, up to a threshold (2/3 of the total runoff), to indicate the elevation zones most important for producing runoff (red cells).\r\n" +
+                            "\r\nSee the user manual for calculation specifics."
                         };
                         pPRISMWorkSheet.Shapes.AddTextbox(Microsoft.Office.Core.MsoTextOrientation.msoTextOrientationHorizontal,
                                                            textBoxSettings.Left,
@@ -795,7 +838,7 @@ namespace bagis_pro
                 if (success == BA_ReturnCode.Success)
                 {
                     success = ExcelTools.CreateSlopeChart(pSlopeWorksheet, pChartsWorksheet,
-                        Constants.EXCEL_CHART_SPACING, leftPosition);
+                        Constants.EXCEL_CHART_SPACING, leftPosition, demDataSource);
                     Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Created Slope Chart");
                 }
 
@@ -805,7 +848,7 @@ namespace bagis_pro
                 if (success == BA_ReturnCode.Success)
                 {
                     success = ExcelTools.CreateAspectChart(pAspectWorksheet, pChartsWorksheet,
-                        topPosition, Constants.EXCEL_CHART_SPACING);
+                        topPosition, Constants.EXCEL_CHART_SPACING, demDataSource);
                     Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Created Aspect Chart");
                 }
 
@@ -879,8 +922,8 @@ namespace bagis_pro
 
                     //Cumulative precip table
                     pathToSave = GetFullPdfFileName(Constants.FILE_EXPORT_TABLE_PRECIP_REPRESENT_PDF);
-                    pPRISMWorkSheet.PageSetup.PrintArea = "$A$1:$P$" + (lastRow + 7);  // Extend print area for comment textbox
-                    pPRISMWorkSheet.PageSetup.Orientation = XlPageOrientation.xlLandscape;
+                    pPRISMWorkSheet.PageSetup.PrintArea = "$A$1:$P$" + (lastRow + 12);  // Extend print area for comment textbox
+                    pPRISMWorkSheet.PageSetup.Orientation = XlPageOrientation.xlPortrait;
                     pPRISMWorkSheet.PageSetup.Zoom = false;     // Required to print on one page
                     pPRISMWorkSheet.PageSetup.PaperSize = oReqPaperSize;    // Required to print on one page
                     pPRISMWorkSheet.PageSetup.PrintGridlines = true;
@@ -890,9 +933,9 @@ namespace bagis_pro
                     {
                         strTitle = "Precipitation (" + LookupTables.PrismText[oAnalysis.PrecipZonesBegin] + ") Representation Table";
                     }
-                    pPRISMWorkSheet.PageSetup.LeftHeader = ((char)13).ToString() + "&\"Arial,Bold\"&12 " +
+                    pPRISMWorkSheet.PageSetup.LeftHeader = ((char)13).ToString() + ((char)13).ToString() + "&\"Arial,Bold\"&12 " +
                         strTitle;
-                    pPRISMWorkSheet.PageSetup.TopMargin = 0.8 * 72;   // Convert inches to points
+                    pPRISMWorkSheet.PageSetup.TopMargin = 1.0 * 72;   // Convert inches to points
                     pPRISMWorkSheet.get_Range("B:C").EntireColumn.Hidden = true;
                     pPRISMWorkSheet.PageSetup.FitToPagesTall = 1;   // Required to print on one page
                     pPRISMWorkSheet.PageSetup.FitToPagesWide = 1;   // Required to print on one page
@@ -1207,7 +1250,7 @@ namespace bagis_pro
                         string[] arrResults = await GeneralTools.QueryMasterAoiProperties(oAoi.StationTriplet);
                         Module1.Current.ModuleLogManager.LogDebug(nameof(SetAoiAsync),
                             "Master AOI properties returned. Array length: " + arrValues.Length);
-                        if (arrResults.Length == 4)
+                        if (arrResults.Length == 5)
                         {
                             oAoi.NwccName = arrResults[0];
                             if (!string.IsNullOrEmpty(arrResults[1]))
@@ -1223,6 +1266,15 @@ namespace bagis_pro
                                 oAoi.Huc = Convert.ToString(arrResults[3]);
                                 Module1.Current.ModuleLogManager.LogDebug(nameof(SetAoiAsync),
                                     "HUC set to " + oAoi.Huc);
+                            }
+                            if (!string.IsNullOrEmpty(arrResults[4]))
+                            {
+                                if (Constants.VALUE_ALASKA_HUC2.Equals(arrResults[4]))
+                                {
+                                    Module1.Current.DataSourceGroup = Constants.DATA_SOURCES_ALASKA;
+                                    Module1.Current.ModuleLogManager.LogDebug(nameof(SetAoiAsync),
+                                        "AOI set to use Alaska data sources. HUC2 = " + arrResults[4]);
+                                }
                             }
                         }
                         else
@@ -1673,217 +1725,217 @@ namespace bagis_pro
             return settingsPath;
         }
 
-        public static BA_ReturnCode PublishPdfDocumentChapters(string outputPath, ReportType rType)
-        {
-            // Initialize output document
-            PdfDocument outputDocument = new PdfDocument();
-            //Iterate through files
-            string[] arrAllFiles = Constants.FILES_EXPORT_WATERSHED_CHAPTERS_PDF;
-            //if (rType.Equals(ReportType.SiteAnalysis))
-            //{
-            //    arrAllFiles = Constants.FILES_EXPORT_SITE_ANALYSIS_PDF;
-            //}
-            //else
-            //{
-            // Create intro section of report
-            int idx = 0;
-            PdfDocument combineDocument = new PdfDocument();
-            foreach (var strFileName in Constants.FILE_EXPORT_OVERVIEW_FILES)
-            {
-                string fullPath = GetFullPdfFileName(strFileName);
-                if (File.Exists(fullPath))
-                {
-                    PdfDocument inputDocument = PdfReader.Open(fullPath, PdfDocumentOpenMode.Import);
-                    // Iterate pages
-                    int count = inputDocument.PageCount;
-                    for (idx = 0; idx < count; idx++)
-                    {
-                        // Get the page from the external document...
-                        PdfPage page = inputDocument.Pages[idx];
-                        combineDocument.AddPage(page);
-                    }
-                    File.Delete(fullPath);
-                }
-            }
-            if (idx > 0)
-            {
-                combineDocument.Save(GetFullPdfFileName(Constants.FILE_EXPORT_OVERVIEW_PDF));
-            }
-            // Combine aspect files
-            combineDocument = new PdfDocument();
-            idx = 0;
-            foreach (var strFileName in Constants.FILE_EXPORT_ASPECT_FILES)
-            {
-                string fullPath = GetFullPdfFileName(strFileName);
-                if (File.Exists(fullPath))
-                {
-                    PdfDocument inputDocument = PdfReader.Open(fullPath, PdfDocumentOpenMode.Import);
-                    // Get the page from the external document...
-                    PdfPage page = inputDocument.Pages[0];
-                    combineDocument.AddPage(page);
-                    idx++;
-                    File.Delete(fullPath);
-                }
-            }
-            if (idx > 0)
-            {
-                combineDocument.Save(GetFullPdfFileName(Constants.FILE_EXPORT_ASPECT_DISTRIBUTION_PDF));
-            }
-            // Combine slope files
-            combineDocument = new PdfDocument();
-            idx = 0;
-            foreach (var strFileName in Constants.FILE_EXPORT_SLOPE_FILES)
-            {
-                string fullPath = GetFullPdfFileName(strFileName);
-                if (File.Exists(fullPath))
-                {
-                    PdfDocument inputDocument = PdfReader.Open(fullPath, PdfDocumentOpenMode.Import);
-                    // Get the page from the external document...
-                    PdfPage page = inputDocument.Pages[0];
-                    combineDocument.AddPage(page);
-                    idx++;
-                    File.Delete(fullPath);
-                }
-            }
-            if (idx > 0)
-            {
-                combineDocument.Save(GetFullPdfFileName(Constants.FILE_EXPORT_SLOPE_DISTRIBUTION_PDF));
-            }
-            // Combine sites files
-            combineDocument = new PdfDocument();
-            idx = 0;
-            foreach (var strFileName in Constants.FILE_EXPORT_SITE_REPRESENTATION_FILES)
-            {
-                string fullPath = GetFullPdfFileName(strFileName);
-                if (File.Exists(fullPath))
-                {
-                    PdfDocument inputDocument = PdfReader.Open(fullPath, PdfDocumentOpenMode.Import);
-                    // Get the page from the external document...
-                    PdfPage page = inputDocument.Pages[0];
-                    combineDocument.AddPage(page);
-                    idx++;
-                    File.Delete(fullPath);
-                }
-            }
-            if (idx > 0)
-            {
-                combineDocument.Save(GetFullPdfFileName(Constants.FILE_EXPORT_SITE_REPRESENTATION_PDF));
-            }
+        //public static BA_ReturnCode PublishPdfDocumentChapters(string outputPath, ReportType rType)
+        //{
+        //    // Initialize output document
+        //    PdfDocument outputDocument = new PdfDocument();
+        //    //Iterate through files
+        //    string[] arrAllFiles = Constants.FILES_EXPORT_WATERSHED_CHAPTERS_PDF;
+        //    //if (rType.Equals(ReportType.SiteAnalysis))
+        //    //{
+        //    //    arrAllFiles = Constants.FILES_EXPORT_SITE_ANALYSIS_PDF;
+        //    //}
+        //    //else
+        //    //{
+        //    // Create intro section of report
+        //    int idx = 0;
+        //    PdfDocument combineDocument = new PdfDocument();
+        //    foreach (var strFileName in Constants.FILE_EXPORT_OVERVIEW_FILES)
+        //    {
+        //        string fullPath = GetFullPdfFileName(strFileName);
+        //        if (File.Exists(fullPath))
+        //        {
+        //            PdfDocument inputDocument = PdfReader.Open(fullPath, PdfDocumentOpenMode.Import);
+        //            // Iterate pages
+        //            int count = inputDocument.PageCount;
+        //            for (idx = 0; idx < count; idx++)
+        //            {
+        //                // Get the page from the external document...
+        //                PdfPage page = inputDocument.Pages[idx];
+        //                combineDocument.AddPage(page);
+        //            }
+        //            File.Delete(fullPath);
+        //        }
+        //    }
+        //    if (idx > 0)
+        //    {
+        //        combineDocument.Save(GetFullPdfFileName(Constants.FILE_EXPORT_OVERVIEW_PDF));
+        //    }
+        //    // Combine aspect files
+        //    combineDocument = new PdfDocument();
+        //    idx = 0;
+        //    foreach (var strFileName in Constants.FILE_EXPORT_ASPECT_FILES)
+        //    {
+        //        string fullPath = GetFullPdfFileName(strFileName);
+        //        if (File.Exists(fullPath))
+        //        {
+        //            PdfDocument inputDocument = PdfReader.Open(fullPath, PdfDocumentOpenMode.Import);
+        //            // Get the page from the external document...
+        //            PdfPage page = inputDocument.Pages[0];
+        //            combineDocument.AddPage(page);
+        //            idx++;
+        //            File.Delete(fullPath);
+        //        }
+        //    }
+        //    if (idx > 0)
+        //    {
+        //        combineDocument.Save(GetFullPdfFileName(Constants.FILE_EXPORT_ASPECT_DISTRIBUTION_PDF));
+        //    }
+        //    // Combine slope files
+        //    combineDocument = new PdfDocument();
+        //    idx = 0;
+        //    foreach (var strFileName in Constants.FILE_EXPORT_SLOPE_FILES)
+        //    {
+        //        string fullPath = GetFullPdfFileName(strFileName);
+        //        if (File.Exists(fullPath))
+        //        {
+        //            PdfDocument inputDocument = PdfReader.Open(fullPath, PdfDocumentOpenMode.Import);
+        //            // Get the page from the external document...
+        //            PdfPage page = inputDocument.Pages[0];
+        //            combineDocument.AddPage(page);
+        //            idx++;
+        //            File.Delete(fullPath);
+        //        }
+        //    }
+        //    if (idx > 0)
+        //    {
+        //        combineDocument.Save(GetFullPdfFileName(Constants.FILE_EXPORT_SLOPE_DISTRIBUTION_PDF));
+        //    }
+        //    // Combine sites files
+        //    combineDocument = new PdfDocument();
+        //    idx = 0;
+        //    foreach (var strFileName in Constants.FILE_EXPORT_SITE_REPRESENTATION_FILES)
+        //    {
+        //        string fullPath = GetFullPdfFileName(strFileName);
+        //        if (File.Exists(fullPath))
+        //        {
+        //            PdfDocument inputDocument = PdfReader.Open(fullPath, PdfDocumentOpenMode.Import);
+        //            // Get the page from the external document...
+        //            PdfPage page = inputDocument.Pages[0];
+        //            combineDocument.AddPage(page);
+        //            idx++;
+        //            File.Delete(fullPath);
+        //        }
+        //    }
+        //    if (idx > 0)
+        //    {
+        //        combineDocument.Save(GetFullPdfFileName(Constants.FILE_EXPORT_SITE_REPRESENTATION_PDF));
+        //    }
 
-            // Combine precipitation distribution files
-            combineDocument = new PdfDocument();
-            idx = 0;
-            foreach (var strFileName in Constants.FILE_EXPORT_PRECIPITATION_DISTRIBUTION_FILES)
-            {
-                string fullPath = GetFullPdfFileName(strFileName);
-                if (File.Exists(fullPath))
-                {
-                    PdfDocument inputDocument = PdfReader.Open(fullPath, PdfDocumentOpenMode.Import);
-                    // Iterate pages
-                    int count = inputDocument.PageCount;
-                    for (idx = 0; idx < count; idx++)
-                    {
-                        // Get the page from the external document...
-                        PdfPage page = inputDocument.Pages[idx];
-                        combineDocument.AddPage(page);
-                    }
-                    File.Delete(fullPath);
-                }
-            }
-            if (idx > 0)
-            {
-                combineDocument.Save(GetFullPdfFileName(Constants.FILE_EXPORT_PRECIPITATION_DISTRIBUTION_PDF));
-            }
-            // Potential site locations
-            combineDocument = new PdfDocument();
-            idx = 0;
-            foreach (var strFileName in Constants.FILE_EXPORT_SITE_ANALYSIS_FILES)
-            {
-                string fullPath = GetFullPdfFileName(strFileName);
-                if (File.Exists(fullPath))
-                {
-                    PdfDocument inputDocument = PdfReader.Open(fullPath, PdfDocumentOpenMode.Import);
-                    // Get the page from the external document...
-                    PdfPage page = inputDocument.Pages[0];
-                    combineDocument.AddPage(page);
-                    idx++;
-                    File.Delete(fullPath);
-                }
-            }
-            if (idx > 0)
-            {
-                combineDocument.Save(GetFullPdfFileName(Constants.FILE_EXPORT_POTENTIAL_SITE_ANALYSIS_PDF));
-            }
+        //    // Combine precipitation distribution files
+        //    combineDocument = new PdfDocument();
+        //    idx = 0;
+        //    foreach (var strFileName in Constants.FILE_EXPORT_PRECIPITATION_DISTRIBUTION_FILES)
+        //    {
+        //        string fullPath = GetFullPdfFileName(strFileName);
+        //        if (File.Exists(fullPath))
+        //        {
+        //            PdfDocument inputDocument = PdfReader.Open(fullPath, PdfDocumentOpenMode.Import);
+        //            // Iterate pages
+        //            int count = inputDocument.PageCount;
+        //            for (idx = 0; idx < count; idx++)
+        //            {
+        //                // Get the page from the external document...
+        //                PdfPage page = inputDocument.Pages[idx];
+        //                combineDocument.AddPage(page);
+        //            }
+        //            File.Delete(fullPath);
+        //        }
+        //    }
+        //    if (idx > 0)
+        //    {
+        //        combineDocument.Save(GetFullPdfFileName(Constants.FILE_EXPORT_PRECIPITATION_DISTRIBUTION_PDF));
+        //    }
+        //    // Potential site locations
+        //    combineDocument = new PdfDocument();
+        //    idx = 0;
+        //    foreach (var strFileName in Constants.FILE_EXPORT_SITE_ANALYSIS_FILES)
+        //    {
+        //        string fullPath = GetFullPdfFileName(strFileName);
+        //        if (File.Exists(fullPath))
+        //        {
+        //            PdfDocument inputDocument = PdfReader.Open(fullPath, PdfDocumentOpenMode.Import);
+        //            // Get the page from the external document...
+        //            PdfPage page = inputDocument.Pages[0];
+        //            combineDocument.AddPage(page);
+        //            idx++;
+        //            File.Delete(fullPath);
+        //        }
+        //    }
+        //    if (idx > 0)
+        //    {
+        //        combineDocument.Save(GetFullPdfFileName(Constants.FILE_EXPORT_POTENTIAL_SITE_ANALYSIS_PDF));
+        //    }
 
-            // Combine SWE Delta maps into a single .pdf document
-            // Initialize output document
-            PdfDocument snodasOutputDocument = new PdfDocument();
-            string swePath = GetFullPdfFileName(Constants.FILE_EXPORT_SNODAS_SWE_PDF);
-            idx = 0;
-            if (File.Exists(swePath))
-            {
-                PdfDocument inputDocument = PdfReader.Open(swePath, PdfDocumentOpenMode.Import);
-                // Get the page from the external document...
-                PdfPage page = inputDocument.Pages[0];
-                snodasOutputDocument.AddPage(page);
-                idx++;
-                File.Delete(swePath);
-            }
-            swePath = GetFullPdfFileName(Constants.FILE_EXPORT_SNODAS_SWE_DELTA_PDF);
-            if (File.Exists(swePath))
-            {
-                PdfDocument inputDocument = PdfReader.Open(swePath, PdfDocumentOpenMode.Import);
-                // Get the page from the external document...
-                PdfPage page = inputDocument.Pages[0];
-                snodasOutputDocument.AddPage(page);
-                idx++;
-                File.Delete(swePath);
-            }
-            if (idx > 0)
-            {
-                snodasOutputDocument.Save(GetFullPdfFileName(Constants.FILE_EXPORT_SNODAS_SWE_PDF));
-            }
+        //    // Combine SWE Delta maps into a single .pdf document
+        //    // Initialize output document
+        //    PdfDocument snodasOutputDocument = new PdfDocument();
+        //    string swePath = GetFullPdfFileName(Constants.FILE_EXPORT_SNODAS_SWE_PDF);
+        //    idx = 0;
+        //    if (File.Exists(swePath))
+        //    {
+        //        PdfDocument inputDocument = PdfReader.Open(swePath, PdfDocumentOpenMode.Import);
+        //        // Get the page from the external document...
+        //        PdfPage page = inputDocument.Pages[0];
+        //        snodasOutputDocument.AddPage(page);
+        //        idx++;
+        //        File.Delete(swePath);
+        //    }
+        //    swePath = GetFullPdfFileName(Constants.FILE_EXPORT_SNODAS_SWE_DELTA_PDF);
+        //    if (File.Exists(swePath))
+        //    {
+        //        PdfDocument inputDocument = PdfReader.Open(swePath, PdfDocumentOpenMode.Import);
+        //        // Get the page from the external document...
+        //        PdfPage page = inputDocument.Pages[0];
+        //        snodasOutputDocument.AddPage(page);
+        //        idx++;
+        //        File.Delete(swePath);
+        //    }
+        //    if (idx > 0)
+        //    {
+        //        snodasOutputDocument.Save(GetFullPdfFileName(Constants.FILE_EXPORT_SNODAS_SWE_PDF));
+        //    }
 
-            // Combine monthly SQ PrecipContribution maps into a single .pdf document
-            PdfDocument seasonalPrecipOutputDocument = new PdfDocument();
-            idx = 0;
-            // Winter Precipitation map
-            PdfDocument winterDocument = PdfReader.Open(GetFullPdfFileName(Constants.FILE_EXPORT_MAP_WINTER_PRECIPITATION_PDF),
-                PdfDocumentOpenMode.Import);
-            PdfPage winterPage = winterDocument.Pages[0];
-            seasonalPrecipOutputDocument.AddPage(winterPage);
-            File.Delete(GetFullPdfFileName(Constants.FILE_EXPORT_MAP_WINTER_PRECIPITATION_PDF));
-            if (File.Exists(GetFullPdfFileName(Constants.FILE_EXPORT_SEASONAL_PRECIP_DISTRIBUTION_PDF)))
-            {
-                PdfDocument inputDocument = PdfReader.Open(GetFullPdfFileName(Constants.FILE_EXPORT_SEASONAL_PRECIP_DISTRIBUTION_PDF),
-                    PdfDocumentOpenMode.Import);
-                PdfPage page = inputDocument.Pages[0];
-                seasonalPrecipOutputDocument.AddPage(page);
-                File.Delete(GetFullPdfFileName(Constants.FILE_EXPORT_SEASONAL_PRECIP_DISTRIBUTION_PDF));
-            }
-            seasonalPrecipOutputDocument.Save(GetFullPdfFileName(Constants.FILE_EXPORT_SEASONAL_PRECIP_DISTRIBUTION_PDF));
-            foreach (string strFileName in arrAllFiles)
-            {
-                string fullPath = GetFullPdfFileName(strFileName);
-                if (File.Exists(fullPath))
-                {
-                    PdfDocument inputDocument = PdfReader.Open(fullPath, PdfDocumentOpenMode.Import);
-                    // Iterate pages
-                    int count = inputDocument.PageCount;
-                    for (idx = 0; idx < count; idx++)
-                    {
-                        // Get the page from the external document...
-                        PdfPage page = inputDocument.Pages[idx];
-                        outputDocument.AddPage(page);
-                    }
-                }
-            }
-            // Save final document
-            outputDocument.Save(outputPath);
-            return BA_ReturnCode.Success;
-        }
+        //    // Combine monthly SQ PrecipContribution maps into a single .pdf document
+        //    PdfDocument seasonalPrecipOutputDocument = new PdfDocument();
+        //    idx = 0;
+        //    // Winter Precipitation map
+        //    PdfDocument winterDocument = PdfReader.Open(GetFullPdfFileName(Constants.FILE_EXPORT_MAP_WINTER_PRECIPITATION_PDF),
+        //        PdfDocumentOpenMode.Import);
+        //    PdfPage winterPage = winterDocument.Pages[0];
+        //    seasonalPrecipOutputDocument.AddPage(winterPage);
+        //    File.Delete(GetFullPdfFileName(Constants.FILE_EXPORT_MAP_WINTER_PRECIPITATION_PDF));
+        //    if (File.Exists(GetFullPdfFileName(Constants.FILE_EXPORT_SEASONAL_PRECIP_DISTRIBUTION_PDF)))
+        //    {
+        //        PdfDocument inputDocument = PdfReader.Open(GetFullPdfFileName(Constants.FILE_EXPORT_SEASONAL_PRECIP_DISTRIBUTION_PDF),
+        //            PdfDocumentOpenMode.Import);
+        //        PdfPage page = inputDocument.Pages[0];
+        //        seasonalPrecipOutputDocument.AddPage(page);
+        //        File.Delete(GetFullPdfFileName(Constants.FILE_EXPORT_SEASONAL_PRECIP_DISTRIBUTION_PDF));
+        //    }
+        //    seasonalPrecipOutputDocument.Save(GetFullPdfFileName(Constants.FILE_EXPORT_SEASONAL_PRECIP_DISTRIBUTION_PDF));
+        //    foreach (string strFileName in arrAllFiles)
+        //    {
+        //        string fullPath = GetFullPdfFileName(strFileName);
+        //        if (File.Exists(fullPath))
+        //        {
+        //            PdfDocument inputDocument = PdfReader.Open(fullPath, PdfDocumentOpenMode.Import);
+        //            // Iterate pages
+        //            int count = inputDocument.PageCount;
+        //            for (idx = 0; idx < count; idx++)
+        //            {
+        //                // Get the page from the external document...
+        //                PdfPage page = inputDocument.Pages[idx];
+        //                outputDocument.AddPage(page);
+        //            }
+        //        }
+        //    }
+        //    // Save final document
+        //    outputDocument.Save(outputPath);
+        //    return BA_ReturnCode.Success;
+        //}
 
-        public static BA_ReturnCode PublishFullPdfDocument(string outputPath, ReportType rType)
+        public static BA_ReturnCode PublishFullPdfDocument(string outputPath, ReportType rType, int sitesAppendixCount)
         {
             // Initialize output document
             PdfDocument outputDocument = new PdfDocument();
@@ -1918,18 +1970,18 @@ namespace bagis_pro
             }
             // Add appendix if it exists
             string outputFolder = Path.GetDirectoryName(outputPath);
-            if (File.Exists(outputFolder + "\\" + Constants.FILE_SITES_APPENDIX_PDF))
+            if (sitesAppendixCount > 0)
             {
-                PdfDocument inputDocument = PdfReader.Open(outputFolder + "\\" + Constants.FILE_SITES_APPENDIX_PDF, 
-                    PdfDocumentOpenMode.Import);
-                int count = inputDocument.PageCount;
-                for (idx = 0; idx < count; idx++)
+                for (int j = 0; j < sitesAppendixCount; j++)
                 {
+                    string strPublishFile = $@"{outputFolder}\{Path.GetFileNameWithoutExtension(Constants.FILE_SITES_APPENDIX_PDF)}{j+1}{Path.GetExtension(Constants.FILE_SITES_APPENDIX_PDF)}";
+                    PdfDocument inputDocument = PdfReader.Open(strPublishFile,
+                        PdfDocumentOpenMode.Import);
                     // Get the page from the external document...
-                    PdfPage page = inputDocument.Pages[idx];
+                    PdfPage page = inputDocument.Pages[0];
                     combineDocument.AddPage(page);
+                    File.Delete(strPublishFile);
                 }
-                File.Delete(outputFolder + "\\" + Constants.FILE_SITES_APPENDIX_PDF);
             }
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             combineDocument.Save(outputPath);
@@ -2336,7 +2388,7 @@ namespace bagis_pro
                         {
                             if (headerRow == true)
                             {
-                                if (field.ToUpper().Trim().Equals(Constants.FIELD_RUNOFF_STATION_TRIPLET.ToUpper().Trim()))
+                                if (field.ToUpper().Trim().Equals(Constants.FIELD_STATION_TRIPLET.ToUpper().Trim()))
                                 {
                                     idxId = i;
                                 }
@@ -2455,7 +2507,7 @@ namespace bagis_pro
                     WhereClause = Constants.FIELD_STATION_TRIPLET + " = '" + stationTriplet + "'"
                 };
                 string[] arrSearch = { Constants.FIELD_NWCCNAME, Constants.FIELD_WINTER_START_MONTH, Constants.FIELD_WINTER_END_MONTH,
-                    Constants.FIELD_HUC};
+                    Constants.FIELD_HUC, Constants.FIELD_HUC2};
                 arrResults = await ws.QueryServiceForValuesAsync(uriMaster, "0", arrSearch, queryFilter);
                 if (arrResults.Length != arrSearch.Length)
                 {
@@ -2476,9 +2528,10 @@ namespace bagis_pro
             return arrResults;
         }
 
-        public static async Task<BA_ReturnCode> GenerateSitesTableAsync(BA_Objects.Aoi oAoi)
+        public static async Task<int> GenerateSitesTableAsync(BA_Objects.Aoi oAoi)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            int appendixCount = 0;
             try
             {
                 bool bHasSnotel = false;
@@ -2499,15 +2552,16 @@ namespace bagis_pro
                 }
                 string publishFolder = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE;
                 string strPublishFile = publishFolder + "\\" + Constants.FILE_SITES_TABLE_PDF;
+                int sitesPerPage = 25;
                 if (bHasSnotel == false && bHasSnowCourse == false)
                 {
                     Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateSitesTableAsync),
                         "No sites found. Sites table will not be created!");
                     File.Copy(GeneralTools.GetAddInDirectory() + "\\" + Constants.FILE_NO_SITES, 
                         strPublishFile, true);
-                    return BA_ReturnCode.Success;
+                    return -1;
                 }
-                else if (lngTotalSites > 25)
+                else if (lngTotalSites > sitesPerPage)
                 {
                     Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateSitesTableAsync),
                         "AOI contains > 25 sites. Sites table will be generated as an appendix!");
@@ -2544,9 +2598,6 @@ namespace bagis_pro
                         site.ElevationText = String.Format("{0:0}", site.ElevMeters);
                     }
                 }
-                BA_Objects.Site[] arrSites = new BA_Objects.Site[lstAllSites.Count];
-                lstAllSites.CopyTo(arrSites, 0);
-                tPage.all_sites = arrSites;
                 //Set the site elevation units
                 BA_Objects.Analysis oAnalysis = GetAnalysisSettings(oAoi.FilePath);
                 string siteElevationUnits = "?";
@@ -2554,52 +2605,90 @@ namespace bagis_pro
                 {
                     siteElevationUnits = oAnalysis.ElevUnitsText;
                 }
-                tPage.site_elev_range_units = siteElevationUnits;
-
-                string myXmlFile = publishFolder + "\\" + Constants.FILE_SITES_TABLE_XML;
-                System.Xml.Serialization.XmlSerializer writer = new System.Xml.Serialization.XmlSerializer(tPage.GetType());
-                using (FileStream fs = System.IO.File.Create(myXmlFile))
+                int pageCount = (int)Math.Ceiling((double)lstAllSites.Count / sitesPerPage);    //Get page count
+                if (pageCount > 1)
                 {
-                    writer.Serialize(fs, tPage);
-                }
-
-                // Process the sites table page through the xsl template
-                string myStyleSheet = GeneralTools.GetAddInDirectory() + "\\" + Constants.FILE_SITES_TABLE_XSL;
-                XPathDocument myXPathDoc = new XPathDocument(myXmlFile);
-                XslCompiledTransform myXslTrans = new XslCompiledTransform();
-                myXslTrans.Load(myStyleSheet);
-                string htmlFilePath = publishFolder + "\\" + Constants.FILE_SITES_TABLE_HTML;
-                using (XmlTextWriter myWriter = new XmlTextWriter(htmlFilePath, null))
-                {
-                    myXslTrans.Transform(myXPathDoc, null, myWriter);
-                }
-
-                // Convert the sites table to PDF
-                if (File.Exists(htmlFilePath))
-                {
-                    //PdfSharp.Pdf.PdfDocument sitesPageDoc = TheArtOfDev.HtmlRenderer.PdfSharp.PdfGenerator.GeneratePdf(System.IO.File.ReadAllText(htmlFilePath),
-                    //    PdfSharp.PageSize.Letter)              
-                    //sitesPageDoc.Save(strPublishFile);
-                    var url = $@"file:///{htmlFilePath}";
-                    var chromePath = @"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe";
-                    using (var p = new Process())
+                    int p = 0;
+                    for (int i = 0; i < pageCount; i++)
                     {
-                        p.StartInfo.FileName = chromePath;
-                        p.StartInfo.Arguments = $"--headless --disable-gpu --print-to-pdf-no-header --print-to-pdf={strPublishFile} {url}";
-                        p.Start();
-                        p.WaitForExit();
+                        BA_Objects.Site[] arrSites = new BA_Objects.Site[sitesPerPage];
+                        for (int j = 0; j < sitesPerPage; j++)
+                        {
+                            arrSites[j] = lstAllSites[p];
+                            p++;
+                            if (p == lstAllSites.Count)
+                            {
+                                break;
+                            }
+                        }
+                        tPage.all_sites = arrSites.Where(x => x != null).ToArray(); ;
+                        tPage.site_elev_range_units = siteElevationUnits;
+                        strPublishFile = $@"{publishFolder}\{Path.GetFileNameWithoutExtension(Constants.FILE_SITES_APPENDIX_PDF)}{i + 1}{Path.GetExtension(Constants.FILE_SITES_APPENDIX_PDF)}";
+                        success = GenerateSitePage(tPage, publishFolder, strPublishFile);
+                        if (success == BA_ReturnCode.Success)
+                        {
+                            Module1.Current.ModuleLogManager.LogDebug(nameof(GenerateSitesTableAsync),
+                                $@"Sites table {strPublishFile} created!!");
+                        }
+                    }
+                    appendixCount = pageCount;
+                }
+                else
+                {
+                    BA_Objects.Site[] arrSites = new BA_Objects.Site[lstAllSites.Count];
+                    lstAllSites.CopyTo(arrSites, 0);
+                    tPage.all_sites = arrSites;
+                    tPage.site_elev_range_units = siteElevationUnits;
+                    success = GenerateSitePage(tPage, publishFolder, strPublishFile);
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(GenerateSitesTableAsync),
+                            $@"Sites table {strPublishFile} created!!");
                     }
                 }
-                Module1.Current.ModuleLogManager.LogDebug(nameof(GenerateSitesTableAsync),
-                    "Sites table created!!");
-                success = BA_ReturnCode.Success;
             }
             catch (Exception e)
             {
                 Module1.Current.ModuleLogManager.LogError(nameof(GenerateSitesTableAsync),
                     "Exception: " + e.Message);
-                return success;
+                return -1;
             }
+            return appendixCount;
+        }
+
+        private static BA_ReturnCode GenerateSitePage(BA_Objects.ExportTitlePage tPage, string publishFolder, string strPublishFile)
+        {
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            string myXmlFile = publishFolder + "\\" + Constants.FILE_SITES_TABLE_XML;
+            System.Xml.Serialization.XmlSerializer writer = new System.Xml.Serialization.XmlSerializer(tPage.GetType());
+            using (FileStream fs = System.IO.File.Create(myXmlFile))
+            {
+                writer.Serialize(fs, tPage);
+            }
+            // Process the sites table page through the xsl template
+            string myStyleSheet = GeneralTools.GetAddInDirectory() + "\\" + Constants.FILE_SITES_TABLE_XSL;
+            XPathDocument myXPathDoc = new XPathDocument(myXmlFile);
+            XslCompiledTransform myXslTrans = new XslCompiledTransform();
+            myXslTrans.Load(myStyleSheet);
+            string htmlFilePath = publishFolder + "\\" + Constants.FILE_SITES_TABLE_HTML;
+            using (XmlTextWriter myWriter = new XmlTextWriter(htmlFilePath, null))
+            {
+                myXslTrans.Transform(myXPathDoc, null, myWriter);
+            }
+            // Convert the sites table to PDF
+            if (File.Exists(htmlFilePath))
+            {
+                var chromePath = @"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe";
+                var url = $@"file:///{htmlFilePath}";
+                using (var p = new Process())
+                {
+                    p.StartInfo.FileName = chromePath;
+                    p.StartInfo.Arguments = $"--headless --disable-gpu --print-to-pdf-no-header --print-to-pdf={strPublishFile} {url}";
+                    p.Start();
+                    p.WaitForExit();
+                }
+            }
+            success = BA_ReturnCode.Success;
             return success;
         }
 
@@ -2687,8 +2776,7 @@ namespace bagis_pro
             Webservices ws = new Webservices();
             if (!File.Exists(strSettingsPath + @"\" + Constants.FILE_BATCH_TOOL_SETTINGS))
             {
-                var success = Task.Run(() => ws.DownloadBatchSettingsAsync(Module1.Current.DefaultEbagisServer,
-                    strSettingsPath + @"\" + Constants.FILE_BATCH_TOOL_SETTINGS));
+                var success = Task.Run(() => ws.DownloadBatchSettingsAsync(strSettingsPath + @"\" + Constants.FILE_BATCH_TOOL_SETTINGS));
                 if ((BA_ReturnCode)success.Result == BA_ReturnCode.Success)
                 {
                     Module1.Current.ModuleLogManager.LogDebug(nameof(LoadBatchToolSettings),
@@ -2714,12 +2802,11 @@ namespace bagis_pro
                     }
                 }
                 // Check for most current server version
-                var result = Task.Run(() => ws.QueryBatchToolSettingsVersionAsync(Module1.Current.DefaultEbagisServer));
+                var result = Task.Run(() => ws.QueryBatchToolSettingsVersionAsync());
                 double dblServerVersion = (double)result.Result;
                 if ((oBatchSettings != null) && ((double)oBatchSettings.Version < dblServerVersion))
                 {
-                    var success = Task.Run(() => ws.DownloadBatchSettingsAsync(Module1.Current.DefaultEbagisServer,
-                        strSettingsPath + @"\" + Constants.FILE_BATCH_TOOL_SETTINGS));
+                    var success = Task.Run(() => ws.DownloadBatchSettingsAsync(strSettingsPath + @"\" + Constants.FILE_BATCH_TOOL_SETTINGS));
                     if ((BA_ReturnCode)success.Result == BA_ReturnCode.Success)
                     {
                         Module1.Current.ModuleLogManager.LogDebug(nameof(LoadBatchToolSettings),
@@ -2796,7 +2883,7 @@ namespace bagis_pro
                         return arrBuffer;
                     }
                 }
-                BA_ReturnCode success = await GeoprocessingTools.NearAsync(outputLines, outputLinesBuffered);
+                BA_ReturnCode success = await GeoprocessingTools.NearAsync(outputLines, outputLinesBuffered, "");
                 if (success != BA_ReturnCode.Success)
                 {
                     return arrBuffer;

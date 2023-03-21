@@ -16,6 +16,7 @@ namespace bagis_pro.BA_Objects
         public double maxValue;
         public string layerType;
         public string heading;
+        public string shortDescription;
 
         public DataSource()
         {
@@ -29,6 +30,7 @@ namespace bagis_pro.BA_Objects
             units = dynSource.units;
             layerType = dynSource.layerType;
             heading = dynSource.heading;
+            shortDescription = dynSource.shortDescription;
         }
 
         public string DateClippedText
@@ -39,6 +41,51 @@ namespace bagis_pro.BA_Objects
             }
             set
             { /*Do nothing; Required for serialization */}
+        }
+
+        public static string GetDemKey
+        {
+            get
+            {
+                switch (Module1.Current.DataSourceGroup)
+                {
+                    case Constants.DATA_SOURCES_ALASKA:
+                        return Constants.DATA_TYPE_ALASKA_DEM;
+                    default:
+                        return Constants.DATA_TYPE_DEM;
+                }
+            }
+
+        }
+
+        public static string GetPrecipitationKey
+        {
+            get
+            {
+                switch (Module1.Current.DataSourceGroup)
+                {
+                    case Constants.DATA_SOURCES_ALASKA:
+                        return Constants.DATA_TYPE_ALASKA_PRECIPITATION;
+                    default:
+                        return Constants.DATA_TYPE_PRECIPITATION;
+                }
+            }
+
+        }
+
+        public static string GetLandCoverKey
+        {
+            get
+            {
+                switch (Module1.Current.DataSourceGroup)
+                {
+                    case Constants.DATA_SOURCES_ALASKA:
+                        return Constants.DATA_TYPE_ALASKA_LAND_COVER;
+                    default:
+                        return Constants.DATA_TYPE_LAND_COVER;
+                }
+            }
+
         }
 
     }

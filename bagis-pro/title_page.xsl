@@ -102,6 +102,8 @@
                 <xsl:if test="streamgage_station != ''">
                   <tr>
                     <td class="style3">
+                      The boundary of a basin is the watershed delineated upstream of the streamgage station listed below:
+                      <br/>
                       Streamgage station: <xsl:value-of select="streamgage_station"/>
                     </td>
                   </tr>
@@ -118,7 +120,8 @@
                 </tr>
                   <tr>
                     <td class="style3">
-                      Annual runoff ratio: <xsl:value-of select="annual_runoff_ratio"/>
+                      Annual runoff ratio: <xsl:value-of select="annual_runoff_ratio"/> (Annual runoff ratio is calculated as the volume of potential annual runoff from
+                      precipitation divided by the normal annual runoff observed at the stream gage.)
                     </td>
                   </tr>
                 <tr>
@@ -128,16 +131,30 @@
                 </tr>
                 <tr>
                   <td class="style3">
-                    SNOTEL Sites: within basin – <xsl:value-of select="snotel_sites_in_basin"/>, within a <xsl:value-of select="snotel_sites_buffer_size"/> buffer distance outside 
-                    basin – <xsl:value-of select="snotel_sites_in_buffer"/>
-                    <xsl:if test="has_snotel_sites = 'true'"> (See SNOTEL SITES REPRESENTATION map)</xsl:if>
+                    SNOTEL Sites: <xsl:value-of select="snotel_sites_in_basin + snotel_sites_in_buffer"/>; within basin – <xsl:value-of select="snotel_sites_in_basin"/>; within a <xsl:value-of select="snotel_sites_buffer_size"/> buffer distance outside 
+                    of basin – <xsl:value-of select="snotel_sites_in_buffer"/>
+                    <xsl:if test="has_snotel_sites = 'true'"> (See AUTOMATED SITE REPRESENTATION map)</xsl:if>
                   </td>
                 </tr>
                 <tr>
                   <td class="style3">
-                    Snow Courses: within basin – <xsl:value-of select="scos_sites_in_basin"/>, within a <xsl:value-of select="scos_sites_buffer_size"/> buffer distance outside 
-                    basin – <xsl:value-of select="scos_sites_in_buffer"/> 
-                    <xsl:if test="has_scos_sites = 'true'"> (See SNOW COURSE SITES REPRESENTATION map)</xsl:if>
+                    SNOLITE Sites: <xsl:value-of select="snolite_sites_in_basin + snolite_sites_in_buffer"/>; within basin – <xsl:value-of select="snolite_sites_in_basin"/>; within a <xsl:value-of select="snotel_sites_buffer_size"/> buffer distance outside 
+                    of basin – <xsl:value-of select="snolite_sites_in_buffer"/>
+                    <xsl:if test="snolite_sites_in_basin + snolite_sites_in_buffer > 0"> (See AUTOMATED SITE REPRESENTATION map)</xsl:if>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="style3">
+                    Coop Pillow Sites: <xsl:value-of select="coop_pillow_sites_in_basin + coop_pillow_sites_in_buffer"/>; within basin – <xsl:value-of select="coop_pillow_sites_in_basin"/>; within a <xsl:value-of select="snotel_sites_buffer_size"/> buffer distance outside 
+                    of basin – <xsl:value-of select="coop_pillow_sites_in_buffer"/>
+                    <xsl:if test="coop_pillow_sites_in_basin + coop_pillow_sites_in_buffer > 0"> (See AUTOMATED SITE REPRESENTATION map)</xsl:if>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="style3">
+                    Snow Courses: <xsl:value-of select="scos_sites_in_basin + scos_sites_in_buffer"/>; within basin – <xsl:value-of select="scos_sites_in_basin"/>; within a <xsl:value-of select="scos_sites_buffer_size"/> buffer distance outside 
+                    of basin – <xsl:value-of select="scos_sites_in_buffer"/> 
+                    <xsl:if test="has_scos_sites = 'true'"> (See SNOW COURSE SITE REPRESENTATION map)</xsl:if>
                   </td>
                 </tr>
               </table>
@@ -159,20 +176,21 @@
                   </tr>
                 <tr>
                   <td class="style3">
-                    Represented by SNOTEL site(s): <xsl:value-of select="represented_snotel_percent"/>% 
-                    <xsl:if test="has_snotel_sites = 'true'"> (See SNOTEL SITES REPRESENTATION map)</xsl:if>
+                    Percent of total basin represented by automated site(s): <xsl:value-of select="represented_snotel_percent"/>% 
+                    <xsl:if test="has_snotel_sites = 'true'"> (See AUTOMATED SITE REPRESENTATION map)</xsl:if>
                   </td>
                 </tr>
                 <tr>
                   <td class="style3">
-                    Represented by snow course site(s): <xsl:value-of select="represented_snow_course_percent"/>%
-                    <xsl:if test="has_scos_sites = 'true'"> (See SNOW COURSE SITES REPRESENTATION map)</xsl:if>
+                    Percent of total basin area represented by snow course site(s): <xsl:value-of select="represented_snow_course_percent"/>%
+                    <xsl:if test="has_scos_sites = 'true'"> (See SNOW COURSE SITE REPRESENTATION map)</xsl:if>
                   </td>
                 </tr>                
                 <tr>
                   <td class="style3">
-                    Represented by both SNOTEL and snow course site(s): <xsl:value-of select="represented_all_sites_percent"/>%
-                    <xsl:if test="has_scos_sites = 'true' and has_snotel_sites = 'true'"> (See SNOTEL AND SNOW COURSE SITES REPRESENTATION map)</xsl:if>
+                    Percent of total basin area represented by both automated and
+                    snow course site(s): <xsl:value-of select="represented_all_sites_percent"/>%
+                    <xsl:if test="has_scos_sites = 'true' and has_snotel_sites = 'true'"> (See ALL SITE REPRESENTATION map)</xsl:if>
                   </td>
                 </tr>
                 <tr>
@@ -202,7 +220,7 @@
             </div>
                    
             <div class="footer">
-            Report generated using BAGIS V3 – A tool <br />
+            Report generated using BAGIS Pro – A tool <br />
             maintained by the NRCS National Water and Climate Center (NWCC)<br />
             and Center for Spatial Analysis &#38; Research (CSAR), <br />
             Geography, Portland State University <br />

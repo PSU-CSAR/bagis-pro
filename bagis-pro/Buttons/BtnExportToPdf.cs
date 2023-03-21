@@ -116,7 +116,7 @@ namespace bagis_pro.Buttons
                     }
                     else
                     {
-                        // Generate the crtical precip map; It has to follow the tables
+                        // Generate the critical precip map; It has to follow the tables
                         Uri uriAnalysis = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis));
                         if (await GeodatabaseTools.FeatureClassExistsAsync(uriAnalysis, Constants.FILE_CRITICAL_PRECIP_ZONE))
                         {
@@ -153,7 +153,7 @@ namespace bagis_pro.Buttons
                     }
                 }
 
-                success = await GeneralTools.GenerateSitesTableAsync(Module1.Current.Aoi);
+                int sitesAppendixCount = await GeneralTools.GenerateSitesTableAsync(Module1.Current.Aoi);
                 string strPublisher = (string)Module1.Current.BatchToolSettings.Publisher;
                 success = await GeneralTools.GenerateMapsTitlePageAsync(rType, strPublisher, "");
                 string[] arrPieces = Module1.Current.Aoi.StationTriplet.Split(':');
@@ -172,7 +172,7 @@ namespace bagis_pro.Buttons
                 //{
                 //    outputPath = GeneralTools.GetFullPdfFileName(Constants.FILE_EXPORT_SITE_ANALYSIS_REPORT_PDF);
                 //}
-                GeneralTools.PublishFullPdfDocument(outputPath, rType);    // Put it all together into a single pdf document
+                GeneralTools.PublishFullPdfDocument(outputPath, rType, sitesAppendixCount);    // Put it all together into a single pdf document
 
                 MessageBox.Show("Map package exported to " + outputPath + "!!", "BAGIS-PRO");
             }

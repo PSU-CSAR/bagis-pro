@@ -11,6 +11,7 @@ using ArcGIS.Core.Data;
 using ArcGIS.Core.Geometry;
 using ArcGIS.Desktop.Catalog;
 using ArcGIS.Desktop.Core;
+using ArcGIS.Desktop.Core.Geoprocessing;
 using ArcGIS.Desktop.Editing;
 using ArcGIS.Desktop.Extensions;
 using ArcGIS.Desktop.Framework;
@@ -24,11 +25,11 @@ using Newtonsoft.Json.Linq;
 
 namespace bagis_pro
 {
-    internal class DockBatchPdfExportViewModel : DockPane
-    {
-        private const string _dockPaneID = "bagis_pro_DockBatchPdfExport";
-
-        protected DockBatchPdfExportViewModel()
+    internal class DockBatchToolsViewModel : DockPane
+    {   
+      private const string _dockPaneID = "bagis_pro_DockBatchTools";
+ 
+      protected DockBatchToolsViewModel()
         {
             // Set path to settings file if we need to
             if (String.IsNullOrEmpty(this.SettingsFile))
@@ -53,8 +54,7 @@ namespace bagis_pro
                             }
                         }
                         Webservices ws = new Webservices();
-                        var success = Task.Run(() => ws.DownloadBatchSettingsAsync(Module1.Current.DefaultEbagisServer,
-                            strFullPath));
+                        var success = Task.Run(() => ws.DownloadBatchSettingsAsync(strFullPath));
                         if ((BA_ReturnCode)success.Result == BA_ReturnCode.Success)
                         {
                             this.SettingsFile = strFullPath;
@@ -83,24 +83,21 @@ namespace bagis_pro
             Names = new ObservableCollection<BA_Objects.Aoi>();
             ArchiveChecked = false;
             SiteAnalysisChecked = true;
-        }
+        }  
 
-        /// <summary>
-        /// Show the DockPane.
-        /// </summary>
-        internal static void Show()
-        {
-            DockPane pane = FrameworkApplication.DockPaneManager.Find(_dockPaneID);
-            if (pane == null)
-                return;
+      /// <summary>
+      /// Show the DockPane.
+      /// </summary>
+      internal static void Show()
+      {        
+        DockPane pane = FrameworkApplication.DockPaneManager.Find(_dockPaneID);
+        if (pane == null)
+          return;
 
-            pane.Activate();
-        }
+        pane.Activate();
+      }
 
-        /// <summary>
-        /// Text shown near the top of the DockPane.
-        /// </summary>
-        private string _heading = "Batch Report Export";
+        private string _heading = "Batch Report Tools";
         private string _parentFolder;
         private string _settingsFile;
         private string _publisher;
@@ -108,7 +105,11 @@ namespace bagis_pro
         private bool _archiveChecked = false;
         private bool _siteAnalysisChecked = true;
         private bool _cmdRunEnabled = false;
+        private bool _cmdForecastEnabled = false;
+        private bool _cmdSnodasEnabled = false;
         private bool _cmdLogEnabled = false;
+        private bool _alwaysNearChecked = false;
+        private bool _mergeAoiVChecked = true;
         private ObservableCollection<string> _aoiList = new ObservableCollection<string>();
         private string _strLogFile;
         public string Heading
@@ -174,12 +175,48 @@ namespace bagis_pro
             }
         }
 
+        public bool AlwaysNearChecked
+        {
+            get { return _alwaysNearChecked; }
+            set
+            {
+                SetProperty(ref _alwaysNearChecked, value, () => AlwaysNearChecked);
+            }
+        }
+
+        public bool MergeAoiVChecked
+        {
+            get { return _mergeAoiVChecked; }
+            set
+            {
+                SetProperty(ref _mergeAoiVChecked, value, () => MergeAoiVChecked);
+            }
+        }
+
         public bool CmdRunEnabled
         {
             get { return _cmdRunEnabled; }
             set
             {
                 SetProperty(ref _cmdRunEnabled, value, () => CmdRunEnabled);
+            }
+        }
+
+        public bool CmdForecastEnabled
+        {
+            get { return _cmdForecastEnabled; }
+            set
+            {
+                SetProperty(ref _cmdForecastEnabled, value, () => CmdForecastEnabled);
+            }
+        }
+
+        public bool CmdSnodasEnabled
+        {
+            get { return _cmdSnodasEnabled; }
+            set
+            {
+                SetProperty(ref _cmdSnodasEnabled, value, () => CmdSnodasEnabled);
             }
         }
 
@@ -247,6 +284,8 @@ namespace bagis_pro
                     if (Names.Count > 0)
                     {
                         CmdRunEnabled = true;
+                        CmdSnodasEnabled = true;
+                        CmdForecastEnabled = true;
                     }
                     else
                     {
@@ -254,6 +293,8 @@ namespace bagis_pro
                         Module1.Current.ModuleLogManager.LogDebug(nameof(CmdAoiFolder),
                             "No valid AOIs were found in the selected folder!");
                         CmdRunEnabled = false;
+                        CmdSnodasEnabled = false;
+                        CmdForecastEnabled = false;
                     }
                 });
             }
@@ -266,6 +307,28 @@ namespace bagis_pro
                 if (_runCommand == null)
                     _runCommand = new RelayCommand(RunImplAsync, () => true);
                 return _runCommand;
+            }
+        }
+
+        private RelayCommand _runSnodasCommand;
+        public ICommand CmdSnodas
+        {
+            get
+            {
+                if (_runSnodasCommand == null)
+                    _runSnodasCommand = new RelayCommand(RunSnodasImplAsync, () => true);
+                return _runSnodasCommand;
+            }
+        }
+
+        private RelayCommand _runForecastCommand;
+        public ICommand CmdForecast
+        {
+            get
+            {
+                if (_runForecastCommand == null)
+                    _runForecastCommand = new RelayCommand(RunForecastImplAsync, () => true);
+                return _runForecastCommand;
             }
         }
 
@@ -284,7 +347,7 @@ namespace bagis_pro
                         MessageBox.Show("Could not find log file!", "BAGIS-PRO");
                         CmdLogEnabled = false;
                     }
-                    
+
                 });
             }
         }
@@ -429,7 +492,7 @@ namespace bagis_pro
                         // Clip PRISM
                         string strDefaultBufferDistance = (string)Module1.Current.BatchToolSettings.PrecipBufferDistance;
                         string strDefaultBufferUnits = (string)Module1.Current.BatchToolSettings.PrecipBufferUnits;
-                        success = await AnalysisTools.ClipLayersAsync(aoiFolder, Constants.DATA_TYPE_PRECIPITATION,
+                        success = await AnalysisTools.ClipLayersAsync(aoiFolder, BA_Objects.DataSource.GetPrecipitationKey,
                             pBufferDistance, pBufferUnits, strDefaultBufferDistance, strDefaultBufferUnits);
                         if (success != BA_ReturnCode.Success)
                         {
@@ -495,8 +558,30 @@ namespace bagis_pro
 
                             // Sites Zones
                             Uri uri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers));
-                            bool hasSnotel = await GeodatabaseTools.FeatureClassExistsAsync(uri, Constants.FILE_SNOTEL);
-                            bool hasSnowCourse = await GeodatabaseTools.FeatureClassExistsAsync(uri, Constants.FILE_SNOW_COURSE);
+                            string[] arrSitesLayers = new string[] { Constants.FILE_SNOTEL, Constants.FILE_SNOW_COURSE, Constants.FILE_SNOLITE, Constants.FILE_COOP_PILLOW };
+                            bool hasSnotel = false;
+                            bool hasSnowCourse = false;
+                            for (int i = 0; i < arrSitesLayers.Length; i++)
+                            {
+                                if (await GeodatabaseTools.CountFeaturesAsync(uri, arrSitesLayers[i]) > 0)
+                                {
+                                    switch (i)
+                                    {
+                                        case 0:
+                                            hasSnotel = true;
+                                            break;
+                                        case 1:
+                                            hasSnowCourse = true;
+                                            break;
+                                        case 2:
+                                            hasSnotel = true;
+                                            break;
+                                        case 3:
+                                            hasSnotel = true;
+                                            break;
+                                    }
+                                }
+                            }
                             if (hasSnotel || hasSnowCourse)
                             {
                                 success = await AnalysisTools.CalculateSitesZonesAsync(Module1.Current.Aoi.FilePath, hasSnotel, hasSnowCourse);
@@ -662,7 +747,8 @@ namespace bagis_pro
                             success = await MapTools.DisplayMaps(Module1.Current.Aoi.FilePath, oLayout, false);
                             if (success != BA_ReturnCode.Success)
                             {
-                                MessageBox.Show("Unable to load maps. The map package cannot be exported!!", "BAGIS-PRO");
+                                Module1.Current.ModuleLogManager.LogError(nameof(RunImplAsync),
+                                    "An error occurred while trying to load the maps. The map package cannot be exported!");
                                 Names[idxRow].AoiBatchStateText = AoiBatchState.Failed.ToString();
                                 return;
                             }
@@ -722,7 +808,7 @@ namespace bagis_pro
                             }
                             else
                             {
-                                // Generate the crtical precip map; It has to follow the tables
+                                // Generate the critical precip map; It has to follow the tables
                                 Uri uriAnalysis = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis));
                                 if (await GeodatabaseTools.FeatureClassExistsAsync(uriAnalysis, Constants.FILE_CRITICAL_PRECIP_ZONE))
                                 {
@@ -759,7 +845,7 @@ namespace bagis_pro
                                 }
                             }
 
-                            success = await GeneralTools.GenerateSitesTableAsync(Module1.Current.Aoi);
+                            int sitesAppendixCount = await GeneralTools.GenerateSitesTableAsync(Module1.Current.Aoi);
                             success = await GeneralTools.GenerateMapsTitlePageAsync(ReportType.Watershed, strPublisher, Comments);
                             if (success != BA_ReturnCode.Success)
                             {
@@ -778,7 +864,7 @@ namespace bagis_pro
                                 string strBaseFileName = Module1.Current.Aoi.StationTriplet.Replace(':', '_') + "_Watershed-Report.pdf";
                                 outputPath = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\" + strBaseFileName;
                             }
-                            success = GeneralTools.PublishFullPdfDocument(outputPath, ReportType.Watershed);    // Put it all together into a single pdf document
+                            success = GeneralTools.PublishFullPdfDocument(outputPath, ReportType.Watershed, sitesAppendixCount);    // Put it all together into a single pdf document
                             if (success != BA_ReturnCode.Success)
                             {
                                 errorCount++;
@@ -831,7 +917,6 @@ namespace bagis_pro
                     }
                 }
             }   // Move on to next AOI
-            MessageBox.Show("Done!");
 
             // Concluding log entry
             strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Batch tool finished!! \r\n";
@@ -839,28 +924,455 @@ namespace bagis_pro
             {
                 sw.WriteLine(strLogEntry);
             }
+            MessageBox.Show("Done!");
         }
-    }
 
-    /// <summary>
-    /// Button implementation to show the DockPane.
-    /// </summary>
-        internal class DockBatchPdfExport_ShowButton : Button
-    {
-        protected override void OnClick()
+        private async void RunSnodasImplAsync(object param)
         {
+            string snodasLog = ParentFolder + "\\" + Constants.FOLDER_SNODAS_GEOJSON + "\\" + Constants.FILE_SNODAS_GEOJSON_LOG;
+            // Make sure the maps_publish folder exists under the selected folder
+            if (!Directory.Exists(Path.GetDirectoryName(snodasLog)))
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(snodasLog));
+            }
+
+            // Create initial log entry
+            string strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Starting snodas geojson export to publish in " +
+                Path.GetDirectoryName(snodasLog) + "\r\n";
+            File.WriteAllText(snodasLog, strLogEntry);    // overwrite file if it exists
+
+            for (int idxRow = 0; idxRow < Names.Count; idxRow++)
+            {
+                if (Names[idxRow].AoiBatchIsSelected)
+                {
+                    int errorCount = 0; // keep track of any non-fatal errors
+                    string aoiFolder = Names[idxRow].FilePath;
+                    Names[idxRow].AoiBatchStateText = AoiBatchState.Started.ToString();  // update gui
+                    strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Starting geojson export for " +
+                        Names[idxRow].Name + "\r\n";
+                    File.AppendAllText(snodasLog, strLogEntry);       // append
+
+                    // generate the file(s)
+                    string pointOutputPath = Path.GetTempPath() + "pourpoint.geojson";
+                    string polygonOutputPath = Path.GetTempPath() + "polygon.geojson";
+                    string strAoiFolder = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Aoi);
+                    // Validate and process pourpoint file
+                    string strPointPath = strAoiFolder + "\\" + Constants.FILE_POURPOINT;
+                    BA_ReturnCode success = BA_ReturnCode.UnknownError;
+                    if (await GeodatabaseTools.FeatureClassExistsAsync(new Uri(strAoiFolder), Constants.FILE_POURPOINT))
+                    {
+                        if (await GeodatabaseTools.CountFeaturesAsync(new Uri(strAoiFolder), Constants.FILE_POURPOINT) == 1)
+                        {
+                            // Query for station information
+                            string stationTriplet = "";
+                            string[] arrValues = await AnalysisTools.GetStationValues(aoiFolder);
+                            if (arrValues.Length == 2)
+                            {
+                                stationTriplet = arrValues[0];
+                            }
+                            if (string.IsNullOrEmpty(stationTriplet))
+                            {
+                                strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "ERROR:Station triplet cannot be determined. Skipping this AOI! \r\n";
+                                File.AppendAllText(snodasLog, strLogEntry);       // append
+                                errorCount++;
+                            }
+                            else
+                            {
+                                success = await GeoprocessingTools.FeaturesToSnodasGeoJsonAsync(strPointPath, pointOutputPath, true);
+                                if (success == BA_ReturnCode.Success)
+                                {
+                                    strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Pourpoint geoJson exported to temp directory \r\n";
+                                    File.AppendAllText(snodasLog, strLogEntry);       // append
+                                }
+                            }
+                        }
+                        else
+                        {
+                            strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Pourpoint file does not have one and only one feature. Skipping this AOI!! \r\n";
+                            File.AppendAllText(snodasLog, strLogEntry);       // append
+                            errorCount++;
+                        }
+                    }
+                    else
+                    {
+                        strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Unable to locate pourpoint file for AOI. Skipping this AOI!! \r\n";
+                        File.AppendAllText(snodasLog, strLogEntry);       // append
+                        errorCount++;
+                    }
+                    // Validate and process aoi_v file
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        string strPolyPath = strAoiFolder + "\\" + Constants.FILE_AOI_VECTOR;
+                        if (await GeodatabaseTools.FeatureClassExistsAsync(new Uri(strAoiFolder), Constants.FILE_AOI_VECTOR))
+                        {
+                            string strFcPath = strPolyPath;
+                            success = await GeoprocessingTools.FeaturesToSnodasGeoJsonAsync(strFcPath, polygonOutputPath, true);
+                            if (success == BA_ReturnCode.Success)
+                            {
+                                strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "AOI polygon geoJson exported to temp directory \r\n";
+                                File.AppendAllText(snodasLog, strLogEntry);       // append
+                            }
+                            else
+                            {
+                                strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "An error occurred while processing the polygon. Skipping this AOI! \r\n";
+                                File.AppendAllText(snodasLog, strLogEntry);       // append
+                            }
+                            if (success == BA_ReturnCode.Success)
+                            {
+                                Webservices ws = new Webservices();
+                                string errorMessage = ws.GenerateSnodasGeoJson(pointOutputPath, polygonOutputPath,
+                                    ParentFolder + "\\" + Constants.FOLDER_SNODAS_GEOJSON);
+                                if (!string.IsNullOrEmpty(errorMessage))
+                                {
+                                    strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + errorMessage + " \r\n";
+                                    File.AppendAllText(snodasLog, strLogEntry);       // append
+                                    errorCount++;
+                                }
+                                else
+                                {
+                                    strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Geojson exported for " + Names[idxRow].Name + " \r\n";
+                                    File.AppendAllText(snodasLog, strLogEntry);       // append
+                                }
+                            }
+                        }
+                        else
+                        {
+                            strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Unable to locate aoi_v file for AOI. Skipping this AOI!! \r\n";
+                            File.AppendAllText(snodasLog, strLogEntry);       // append
+                            errorCount++;
+                        }
+                    }
+                    if (success == BA_ReturnCode.Success && errorCount == 0)
+                    {
+                        Names[idxRow].AoiBatchStateText = AoiBatchState.Completed.ToString();  // update gui
+                    }
+                    else
+                    {
+                        Names[idxRow].AoiBatchStateText = AoiBatchState.Failed.ToString();
+                    }
+
+                }
+            }
+            strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "GeoJson exports complete!! \r\n";
+            File.AppendAllText(snodasLog, strLogEntry);       // append
+            MessageBox.Show("Generated GeoJson files are available in " + ParentFolder + "\\" + Constants.FOLDER_SNODAS_GEOJSON, "BAGIS-PRO");
+        }
+
+        private async void RunForecastImplAsync(object param)
+        {
+            const string UPDATED_NEAR = "Updated-Near";
+            const string NO_CHANGE_MATCH = "No change-Match";
+            const string NOT_A_FORECAST = "Not A Forecast";
+            string log = ParentFolder + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\" + Constants.FILE_FORECAST_STATION_LOG;
+            // Create initial log entry
             try
             {
-                DockBatchPdfExportViewModel.Show();
+                FileInfo file = new FileInfo(log);
+                if (file.Exists)
+                {
+                    using (FileStream stream = file.Open(FileMode.Open, FileAccess.Read, FileShare.None))
+                    {
+                        stream.Close();
+                    }
+                }
+            }
+            catch (IOException)
+            {
+                MessageBox.Show($@"Unable to write to log file {log}! Please close the .csv file and try again.", "BAGIS-PRO");
+                return;
+            }
+            string strLogEntry = "Date,Time,AOI File Path,Old Triplet,New Triplet,Remarks\r\n";
+            File.WriteAllText(log, strLogEntry);    // overwrite file if it exists
+            strLogEntry = CreateLogEntry(ParentFolder, "", "", $@"Starting forecast station updates");
+            File.AppendAllText(log, strLogEntry);
+            BA_ReturnCode success = BA_ReturnCode.Success;
+            Webservices ws = new Webservices();
+            IList<string> lstMergeFeatures = new List<string>();
+
+            for (int idxRow = 0; idxRow < Names.Count; idxRow++)
+            {
+                if (Names[idxRow].AoiBatchIsSelected)
+                {
+                    int errorCount = 0; // keep track of any non-fatal errors
+                    string aoiFolder = Names[idxRow].FilePath;
+                    Names[idxRow].AoiBatchStateText = AoiBatchState.Started.ToString();  // update gui
+                    strLogEntry = CreateLogEntry(aoiFolder, "", "", $@"Starting forecast station update");
+                    File.AppendAllText(log, strLogEntry);       // append
+
+                    Uri ppUri = new Uri(GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Aoi));
+                    string strTriplet = "";
+                    string strStationName = "";
+                    string strAwdbId = "";
+                    string strNearTriplet = "";
+                    string strNearStationName = "";
+                    string strNearAwdbId = "";
+                    string strRemark = "";
+
+                    // GET THE STATION TRIPLET FROM THE POURPOINT
+                    IDictionary<string, string> dictEdits = new Dictionary<string, string>()
+                    { { Constants.FIELD_STATION_TRIPLET, ""},
+                      { Constants.FIELD_STATION_NAME, ""},
+                      { Constants.FIELD_AWDB_ID, ""}
+                    }; 
+                    QueryFilter queryFilter = new QueryFilter();
+                    if (await GeodatabaseTools.FeatureClassExistsAsync(ppUri, Constants.FILE_POURPOINT))
+                    {
+                        string[] arrFields = new string[] { Constants.FIELD_STATION_TRIPLET, Constants.FIELD_STATION_NAME, Constants.FIELD_AWDB_ID };
+                        foreach (string strField in arrFields)
+                        {
+                            // Check for the field, if it exists query the value
+                            if (await GeodatabaseTools.AttributeExistsAsync(ppUri, Constants.FILE_POURPOINT, strField))
+                            {
+                                string strValue = await GeodatabaseTools.QueryTableForSingleValueAsync(ppUri, Constants.FILE_POURPOINT,
+                                    strField, queryFilter);
+                                switch (strField)
+                                {
+                                    case Constants.FIELD_STATION_TRIPLET:
+                                        strTriplet = strValue;
+                                        dictEdits[Constants.FIELD_STATION_TRIPLET] = strTriplet;
+                                        break;
+                                    case Constants.FIELD_STATION_NAME:
+                                        strStationName = strValue;
+                                        dictEdits[Constants.FIELD_STATION_NAME] = strStationName;
+                                        break;
+                                    case Constants.FIELD_AWDB_ID:
+                                        strAwdbId = strValue;
+                                        dictEdits[Constants.FIELD_AWDB_ID] = strAwdbId;
+                                        break;
+                                }
+                            }
+                            // Add the field if it is missing
+                            else
+                            {
+                                success = await GeoprocessingTools.AddFieldAsync(ppUri.LocalPath + "\\" + Constants.FILE_POURPOINT, strField, "TEXT");
+                            }
+                        }
+                    }
+                    else
+                    {
+                        strLogEntry = CreateLogEntry(aoiFolder, "", "", $@"ERROR: Unable to open {ppUri.LocalPath + "\\" + Constants.FILE_POURPOINT}");
+                        File.AppendAllText(log, strLogEntry);       // append
+                        success = BA_ReturnCode.ReadError;
+                        errorCount++;
+                    }
+
+                    // QUERY THE MASTER LIST FOR THE STATION TRIPLET
+                    string[] arrSearch = { Constants.FIELD_STATION_TRIPLET, Constants.FIELD_AWDB_ID, Constants.FIELD_NWCCNAME };
+                    string[] arrFound = new string[arrSearch.Length];
+                    string strWsUri = (string)Module1.Current.BatchToolSettings.MasterAoiList + "/0";  // Append layer ordinal to the uri
+                    if (!AlwaysNearChecked)
+                    {
+                        queryFilter = new QueryFilter();
+                        queryFilter.WhereClause = Constants.FIELD_STATION_TRIPLET + " = '" + strTriplet + "'";
+                        arrFound = await ws.QueryServiceForValuesAsync(new Uri((string)Module1.Current.BatchToolSettings.MasterAoiList), "0", arrSearch, queryFilter);
+                        if (arrFound != null && arrFound.Length == arrSearch.Length && arrFound[0] != null)
+                        {
+                            strRemark = NO_CHANGE_MATCH;
+                        }
+                    }
+
+                    if (!NO_CHANGE_MATCH.Equals(strRemark))
+                    {
+                        // Use the NEAR tool to find the closest Pourpoint
+                        success = await GeoprocessingTools.NearAsync(ppUri.LocalPath + "\\" + Constants.FILE_POURPOINT, strWsUri, Constants.VALUE_FORECAST_STATION_SEARCH_RADIUS);
+                        if (success == BA_ReturnCode.Success)
+                        {
+                            queryFilter = new QueryFilter();
+                            arrFound = new string[arrSearch.Length];
+                            string strNearId = await GeodatabaseTools.QueryTableForSingleValueAsync(ppUri, Constants.FILE_POURPOINT,
+                                Constants.FIELD_NEAR_ID, queryFilter);
+                            if (!String.IsNullOrEmpty(strNearId))
+                            {
+                                queryFilter.WhereClause = Constants.FIELD_OBJECT_ID + " = " + strNearId;
+                                arrFound = await ws.QueryServiceForValuesAsync(new Uri((string)Module1.Current.BatchToolSettings.MasterAoiList), "0", arrSearch, queryFilter);
+                                if (arrFound != null && arrFound.Length == 3 && arrFound[0] != null)
+                                {
+                                    strNearTriplet = arrFound[0];
+                                    strNearAwdbId = arrFound[1].Trim('"');
+                                    strNearStationName = arrFound[2];
+                                    if (!string.IsNullOrEmpty(strNearTriplet))
+                                    {
+                                        strRemark = UPDATED_NEAR;
+                                    }
+                                }
+                                else
+                                {
+                                    strRemark = NOT_A_FORECAST;
+                                }
+                            }
+                            else
+                            {
+                                strRemark = NOT_A_FORECAST;
+                            }
+                            //Delete fields added by NEAR process: NEAR_DIST and NEAR_ID
+                            string[] arrFieldsToDelete = new string[] { Constants.FIELD_NEAR_ID, Constants.FIELD_NEAR_DIST };
+                            success = await GeoprocessingTools.DeleteFeatureClassFieldsAsync(ppUri.LocalPath + "\\" + Constants.FILE_POURPOINT, arrFieldsToDelete);
+                        }
+                    }
+                    switch (strRemark)
+                    {
+                        case UPDATED_NEAR:
+                            dictEdits[Constants.FIELD_AWDB_ID] = strNearAwdbId;
+                            dictEdits[Constants.FIELD_STATION_TRIPLET] = strNearTriplet;
+                            dictEdits[Constants.FIELD_STATION_NAME] = strNearStationName;
+                            success = await GeodatabaseTools.UpdateFeatureAttributesAsync(ppUri, Constants.FILE_POURPOINT,
+                                new QueryFilter(), dictEdits);
+                            lstMergeFeatures.Add(ppUri.LocalPath + "\\" + Constants.FILE_AOI_VECTOR);
+                            break;
+                        case NO_CHANGE_MATCH:
+                            lstMergeFeatures.Add(ppUri.LocalPath + "\\" + Constants.FILE_AOI_VECTOR);
+                            break;
+                    }
+                    // DO WE NEED TO UPDATE AOI_V?
+                    string strAoiVPath = ppUri.LocalPath + "\\" + Constants.FILE_AOI_VECTOR;
+                    string[] arrPpFields = { Constants.FIELD_STATION_TRIPLET, Constants.FIELD_STATION_NAME, Constants.FIELD_AWDB_ID };
+                    foreach (var strField in arrPpFields)
+                    {
+                        if (!await GeodatabaseTools.AttributeExistsAsync(ppUri, Constants.FILE_AOI_VECTOR, strField))
+                        {
+                            success = await GeoprocessingTools.AddFieldAsync(strAoiVPath, strField, "TEXT");
+                        }
+                    }
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        string strValue = await GeodatabaseTools.QueryTableForSingleValueAsync(ppUri, Constants.FILE_AOI_VECTOR,
+                            Constants.FIELD_STATION_TRIPLET, queryFilter);
+                        if (!dictEdits[Constants.FIELD_STATION_TRIPLET].Equals(strValue))
+                        {
+                            // UPDATE VALUES ON AOI_V
+                            success = await GeodatabaseTools.UpdateFeatureAttributesAsync(ppUri, Constants.FILE_AOI_VECTOR,
+                                new QueryFilter(), dictEdits);
+                        }
+                    }
+                    else
+                    {
+                        errorCount++;
+                        success = BA_ReturnCode.ReadError;
+                    }
+
+                    strLogEntry = CreateLogEntry(aoiFolder, strTriplet, strNearTriplet, strRemark);
+                    File.AppendAllText(log, strLogEntry);       // append
+                    if (success == BA_ReturnCode.Success && errorCount == 0)
+                    {
+                        Names[idxRow].AoiBatchStateText = AoiBatchState.Completed.ToString();  // update gui
+                    }
+                    else
+                    {
+                        Names[idxRow].AoiBatchStateText = AoiBatchState.Failed.ToString();
+                    }
+                }
+            }   // MOVE ON TO NEXT AOI
+            strLogEntry = CreateLogEntry(ParentFolder, "", "", $@"Forecast station updates complete!!");
+            File.AppendAllText(log, strLogEntry);       // append
+            string strMergeMessage = "";
+            if (MergeAoiVChecked)
+            {
+                success = await MergeAoiVectorsAsync(lstMergeFeatures, log);
+                if (success == BA_ReturnCode.Success)
+                {
+                    strLogEntry = CreateLogEntry(ParentFolder, "", "", $@"aoi_v feature class merge complete!!");
+                    strMergeMessage = $@" aoi_v polygons have been merged to {ParentFolder}\{Constants.FOLDER_MAP_PACKAGE}\{Constants.FILE_MERGE_GDB}\{Constants.FILE_MERGED_AOI_POLYS}";
+                }
+                else
+                {
+                    strLogEntry = CreateLogEntry(ParentFolder, "", "", $@"ERROR: aoi_v feature class merge encountered 1 or more errors!!");
+                }
+                File.AppendAllText(log, strLogEntry);       // append
+            }
+            MessageBox.Show($@"Forecast station updates done!!{strMergeMessage}");
+        }
+
+        private string CreateLogEntry(string strAoiPath, string strOldTriplet, string strNewTriplet, string strRemarks)
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.Append($@"{DateTime.Now.ToString("MM/dd/yy")},{DateTime.Now.ToString("H:mm:ss")},");
+            sb.Append($@"{strAoiPath},{strOldTriplet},{strNewTriplet},");
+            sb.Append($@"{strRemarks}{Environment.NewLine}");
+            return sb.ToString();
+        }
+
+        private async Task<BA_ReturnCode> MergeAoiVectorsAsync(IList<string> lstMergeFeatures, string strLog)
+        {
+            BA_ReturnCode success = BA_ReturnCode.WriteError;
+            string mergeGdbPath = $@"{ParentFolder}\{Constants.FOLDER_MAP_PACKAGE}\{Constants.FILE_MERGE_GDB}";
+            var environments = Geoprocessing.MakeEnvironmentArray(workspace: ParentFolder);
+            if (!Directory.Exists(mergeGdbPath))
+            {
+                var parameters = Geoprocessing.MakeValueArray($@"{ParentFolder}\{Constants.FOLDER_MAP_PACKAGE}", Constants.FILE_MERGE_GDB);
+                var gpResult = await Geoprocessing.ExecuteToolAsync("CreateFileGDB_management", parameters, environments,
+                                                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                if (gpResult.IsFailed)
+                {
+                    return success;
+                }
+            }
+            string strOutputPath = $@"{mergeGdbPath}\{Constants.FILE_MERGED_AOI_POLYS}";
+            StringBuilder sb = new StringBuilder();
+            int intError = 0;
+            //StringBuilder sbAoiName = new StringBuilder($@"AOINAME ""AOINAME"" true true false 40 Text 0 0,First,#,");
+            StringBuilder sbAwdbId = new StringBuilder($@"awdb_id ""awdb_id"" true true false 30 Text 0 0,First,#,");
+            //StringBuilder sbBasin = new StringBuilder($@"BASIN ""BASIN"" true true false 30 Text 0 0,First,#,");
+            StringBuilder sbStationTriplet = new StringBuilder($@"stationTriplet ""stationTriplet"" true true false 255 Text 0 0,First,#,");
+            StringBuilder sbStationName = new StringBuilder($@"stationName ""stationName"" true true false 255 Text 0 0,First,#,");
+
+            if (lstMergeFeatures.Count > 0)
+            {
+                success = await GeoprocessingTools.CopyFeaturesAsync(ParentFolder, lstMergeFeatures[0], strOutputPath);
+                if (success == BA_ReturnCode.Success)
+                {
+                    for (int i = 1; i < lstMergeFeatures.Count; i++)
+                    {
+                        sb.Append(lstMergeFeatures[i]);
+                        sb.Append(";");
+                        //sbAoiName.Append($@"{fc},AOINAME,0,40, ");
+                        sbAwdbId.Append($@"{lstMergeFeatures[i]},0,30, ");
+                        //sbBasin.Append($@"{fc},BASIN,0,30, ");
+                        sbStationTriplet.Append($@"{lstMergeFeatures[i]},stationTriplet,0,255, ");
+                        sbStationName.Append($@"{lstMergeFeatures[i]},stationName,0,255, ");
+                        string[] arrFieldMapping = new string[3];
+                        //arrFieldMapping[0] = sbAoiName.ToString().TrimEnd(',');
+                        arrFieldMapping[0] = sbAwdbId.ToString().TrimEnd(',');
+                        //arrFieldMapping[2] = sbBasin.ToString().TrimEnd(',');
+                        arrFieldMapping[1] = sbStationTriplet.ToString().TrimEnd(',');
+                        arrFieldMapping[2] = sbStationName.ToString().TrimEnd(',');
+
+                        var parameters = Geoprocessing.MakeValueArray(lstMergeFeatures[i], strOutputPath, "NO_TEST", arrFieldMapping);
+                        var gpResult = await Geoprocessing.ExecuteToolAsync("Append_management", parameters, environments,
+                                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                        if (gpResult.IsFailed)
+                        {
+                            string strLogEntry = CreateLogEntry(ParentFolder, "", "", $@"An error occurred while appending the {lstMergeFeatures[i]} file! {gpResult.ReturnValue}");
+                            File.AppendAllText(strLog, strLogEntry);       // append
+                            intError++;
+                        }
+                    }
+                }
+            }
+            if (intError == 0)
+            {
+                success = BA_ReturnCode.Success;
+            }
+            return success;
+        }
+
+    }
+
+  /// <summary>
+  /// Button implementation to show the DockPane.
+  /// </summary>
+	internal class DockBatchTools_ShowButton : Button
+	{
+		protected override void OnClick()
+		{
+            try
+            {
+                DockBatchToolsViewModel.Show();
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Unable to show batch pdf export pane! " + ex.Message, "BAGIS-PRO");
+                MessageBox.Show("Unable to show Batch Tools pane! " + ex.Message, "BAGIS-PRO");
                 MessageBox.Show("Stack trace" + ex.StackTrace, "BAGIS-PRO");
             }
-
-
-            //DockBatchPdfExportViewModel.Show();
         }
-    }
+  }	
 }

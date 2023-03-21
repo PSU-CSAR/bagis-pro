@@ -31,6 +31,7 @@
           <toolbar refID="BAGIS_V4_Toolbar1" /> -->
           <tool refID="bagis_pro_Basin_SetDEMExtenttTool" size="large" />
           <button refID="bagis_pro_Maps_Tables_Button1" size="large" />
+          <button refID="bagis_pro_DockBatchTools_ShowButton" size="large" />
         </group>
         <group id="bagis_pro_Groups_Basin" appearsOnAddInTab="false" caption=" " keytip="G2">
           <menu refID="bagis_pro_Menus_MnuBasin" size="middle" />
@@ -49,7 +50,7 @@
           <button refID="bagis_pro_DockMapPackage_ShowButton" size="middle" />
         </group>
         <group id="bagis_pro_Groups_Tools" appearsOnAddInTab="false" caption="Tools" keytip="G4">
-          <button refID="bagis_pro_DockBatchPdfExport_ShowButton" size="middle" />
+          <button refID="bagis_pro_DockBatchTools_ShowButton" size="middle" />
           <button refID="bagis_pro_DockMigrateToFGDB_ShowButton" size="middle" />
           <button refID="bagis_pro_Buttons_BtnTest" size="middle" />
           <button refID="bagis_pro_DockExportForSnodas_ShowButton" size="middle" />
@@ -150,7 +151,7 @@
           <tooltip heading="Palette Button 3">
             ToolTip<disabledText /></tooltip>
         </button>
-        <button id="MapButtonPalette_BtnSnotel" caption="Snotel Sites Distribution" className="bagis_pro.Buttons.MapButtonPalette_BtnSnotel" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSnotel_Condition" keytip="B19">
+        <button id="MapButtonPalette_BtnSnotel" caption="Automated Sites Distribution" className="bagis_pro.Buttons.MapButtonPalette_BtnSnotel" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSnotel_Condition" keytip="B19">
           <tooltip heading="Palette Button 4">
             ToolTip<disabledText /></tooltip>
         </button>
@@ -237,9 +238,9 @@
         <button id="bagis_pro_DockAnalysisLayers_ShowButton" caption="Generate Analysis Layers" className="DockAnalysisLayers_ShowButton" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/CalculateGeometry16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/CalculateGeometry32.png" condition="Aoi_Selected_Condition" keytip="B56">
           <tooltip heading="Generate Analysis Layers">Generate Analysis Layers<disabledText /></tooltip>
         </button>
-        <button id="bagis_pro_DockBatchPdfExport_ShowButton" caption="Batch PDF Export" className="DockBatchPdfExport_ShowButton" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/JobExport16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/JobExport16.png" keytip="B57">
-          <tooltip heading="Batch PDF Export">Batch PDF Export<disabledText /></tooltip>
-        </button>
+        <!--<button id="bagis_pro_DockBatchPdfExport_ShowButton" caption="Batch PDF Export" className="DockBatchPdfExport_ShowButton" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/JobExport16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/JobExport16.png" keytip="B57">
+          <tooltip heading="Batch PDF Export">Batch PDF Export<disabledText /></tooltip> 
+        </button> -->
         <button id="bagis_pro_DockMigrateToFGDB_ShowButton" caption="Migrate to FGDB" className="DockMigrateToFGDB_ShowButton" loadOnClick="true" smallImage="Images\Weasel.png" largeImage="Images\Weasel.png" keytip="B58">
           <tooltip heading="Migrate to FGDB">Migrate to FGDB<disabledText /></tooltip>
         </button>
@@ -251,6 +252,11 @@
         </button>
         <button id="bagis_pro_DockExportForSnodas_ShowButton" caption="Export For Snodas" className="DockExportForSnodas_ShowButton" loadOnClick="true" smallImage="Images\snowflake.png" largeImage="Images\snowflake.png" keytip="B61">
           <tooltip heading="Show Dockpane">Export For Snodas<disabledText /></tooltip>
+        </button>
+        <button id="bagis_pro_DockBatchTools_ShowButton" caption="Batch Tools" className="DockBatchTools_ShowButton" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/JobExport16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/JobExport16.png" keytip="B57">
+          <tooltip heading="Batch Tools">
+            Batch Tools<disabledText />
+          </tooltip>
         </button>
       </controls>
       <menus>
@@ -281,12 +287,9 @@
         <dockPane id="bagis_pro_DockAnalysisLayers" caption="Generate Analysis Layers" className="DockAnalysisLayersViewModel" dock="group" dockWith="esri_core_catalogDockPane">
           <content className="DockAnalysisLayersView" />
         </dockPane>
-        <dockPane id="bagis_pro_DockBatchPdfTool" caption="PDF Map Package Batch Tool" className="DockBatchPdfToolViewModel" dock="group" dockWith="esri_core_catalogDockPane">
-          <content className="PDF Map Package Batch Tool" />
-        </dockPane>
-        <dockPane id="bagis_pro_DockBatchPdfExport" caption="Batch PDF Export" className="DockBatchPdfExportViewModel" dock="group" dockWith="esri_core_contentsDockPane">
+        <!--<dockPane id="bagis_pro_DockBatchPdfExport" caption="Batch PDF Export" className="DockBatchPdfExportViewModel" dock="group" dockWith="esri_core_contentsDockPane">
           <content className="DockBatchPdfExportView" />
-        </dockPane>
+        </dockPane> -->
         <dockPane id="bagis_pro_DockMigrateToFGDB" caption="Migrate to File Geodatabase" className="DockMigrateToFGDBViewModel" dock="group" dockWith="esri_core_contentsDockPane">
           <content className="DockMigrateToFGDBView" />
         </dockPane>
@@ -295,6 +298,9 @@
         </dockPane>
         <dockPane id="bagis_pro_DockExportForSnodas" caption="Export For Snodas" className="DockExportForSnodasViewModel" dock="group" dockWith="esri_core_projectDockPane">
           <content className="DockExportForSnodasView" />
+        </dockPane>
+        <dockPane id="bagis_pro_DockBatchTools" caption="Batch Tools" className="DockBatchToolsViewModel" dock="group" dockWith="esri_core_projectDockPane">
+          <content className="DockBatchToolsView" />
         </dockPane>
       </dockPanes>
     </insertModule>

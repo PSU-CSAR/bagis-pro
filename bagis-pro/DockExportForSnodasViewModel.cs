@@ -201,7 +201,7 @@ namespace bagis_pro
         {
             get
             {
-                return new RelayCommand(async () =>
+                return new RelayCommand(() =>
                 {
                     //Create an instance of BrowseProjectFilter class
                     BrowseProjectFilter bf = new BrowseProjectFilter
@@ -235,26 +235,27 @@ namespace bagis_pro
                     {
                         // get the item
                         var item = aNewFilter.Items.First();
-                        string strPolyErrorMsg = "";
-                        await QueuedTask.Run(async () =>
-                        {
-                            string strGdbPath = System.IO.Path.GetDirectoryName(item.Path);
-                            Uri uriGdb = new Uri(System.IO.Path.GetDirectoryName(item.Path));
-                            string strFc = System.IO.Path.GetFileName(item.Path);
-                            long lngPoints = await GeodatabaseTools.CountFeaturesAsync(uriGdb, strFc);
-                            if (lngPoints != 1)
-                            {
-                                strPolyErrorMsg = "The polygon feature class must have 1 and only 1 feature!";
-                            }
-                            else
-                            {
-                                PolyPath = item.Path;
-                            }
-                        });
-                        if (!String.IsNullOrEmpty(strPolyErrorMsg))
-                        {
-                            MessageBox.Show(strPolyErrorMsg, "BAGIS-PRO", System.Windows.MessageBoxButton.OK);
-                        }
+                        PolyPath = item.Path;
+                        //string strPolyErrorMsg = "";
+                        //await QueuedTask.Run(async () =>
+                        //{
+                        //    string strGdbPath = System.IO.Path.GetDirectoryName(item.Path);
+                        //    Uri uriGdb = new Uri(System.IO.Path.GetDirectoryName(item.Path));
+                        //    string strFc = System.IO.Path.GetFileName(item.Path);
+                        //    int intPoints = await GeodatabaseTools.CountFeaturesAsync(uriGdb, strFc);
+                        //    if (intPoints != 1)
+                        //    {
+                        //        strPolyErrorMsg = "The polygon feature class must have 1 and only 1 feature!";
+                        //    }
+                        //    else
+                        //    {
+                        //        PolyPath = item.Path;
+                        //    }
+                        //});
+                        //if (!String.IsNullOrEmpty(strPolyErrorMsg))
+                        //{
+                        //    MessageBox.Show(strPolyErrorMsg, "BAGIS-PRO", System.Windows.MessageBoxButton.OK);
+                        //}
                     }
                 });
             }
@@ -304,81 +305,42 @@ namespace bagis_pro
                     }
 
                     // generate the file(s)
-                    string pointOutputPath = System.IO.Path.GetTempPath() + "pourpoint.geojson";
-                    string polygonOutputPath = System.IO.Path.GetTempPath() + "polygon.geojson";
+                    string pointOutputPath = Path.GetTempPath() + "pourpoint.geojson";
+                    string polygonOutputPath = Path.GetTempPath() + "polygon.geojson";
+                    // Process the pourpoint
                     BA_ReturnCode success = await GeoprocessingTools.FeaturesToSnodasGeoJsonAsync(PointPath, pointOutputPath, true);
                     if (success.Equals(BA_ReturnCode.Success))
                     {
-                        success = await GeoprocessingTools.FeaturesToSnodasGeoJsonAsync(PolyPath, polygonOutputPath, true);
+                        // Process the feature class
+                        Uri uriGdb = new Uri(Path.GetDirectoryName(PolyPath));
+                        string strFc = Path.GetFileName(PolyPath);
+                        //int intFeatures = await GeodatabaseTools.CountFeaturesAsync(uriGdb, strFc);
+                        string strFcPath = PolyPath;
+                        //string strTempAoiPath = null;
+                        //if (intFeatures > 1)
+                        //{
+                        //    strTempAoiPath = $@"{Path.GetDirectoryName(PolyPath)}\tmpAoi";
+                        //    success = await GeoprocessingTools.BufferAsync(PolyPath, strTempAoiPath, "0.5 Meters", "ALL");
+                        //    if (success == BA_ReturnCode.Success)
+                        //    {
+                        //        strFcPath = strTempAoiPath;
+                        //    }
+                        //}
+                        success = await GeoprocessingTools.FeaturesToSnodasGeoJsonAsync(strFcPath, polygonOutputPath, true);
+                        //if (success == BA_ReturnCode.Success && !String.IsNullOrEmpty(strTempAoiPath))
+                        //{
+                        //    // Clean up temp buffered FC
+                        //    success = await GeoprocessingTools.DeleteDatasetAsync(strTempAoiPath);
+                        //}
                     }
 
                     if (success.Equals(BA_ReturnCode.Success))
                     {
-                        // Build new JObject
-                        JObject objOutput = new JObject();
-                        objOutput[Constants.FIELD_JSON_TYPE] = "GeometryCollection";
-                        JArray arrGeometries = new JArray();
-
-                        // read pourpoint JSON directly from a file
-                        JObject o2 = null;
-                        using (StreamReader file = File.OpenText(pointOutputPath))
-                        using (JsonTextReader reader = new JsonTextReader(file))
+                        Webservices ws = new Webservices();
+                        string errorMessage = ws.GenerateSnodasGeoJson(pointOutputPath, polygonOutputPath, OutputPath);
+                        if (! string.IsNullOrEmpty(errorMessage))
                         {
-                            o2 = (JObject)JToken.ReadFrom(reader);
-                        }
-                        if (o2 != null)
-                        {
-                            dynamic esriDefinition = (JObject)o2;
-                            JArray arrFeatures = (JArray)esriDefinition.features;
-                            if (arrFeatures.Count > 0)
-                            {
-                                // Always take the first one
-                                dynamic firstFeature = arrFeatures[0];
-                                var properties = firstFeature.properties;
-                                var objProperties = new JObject();
-                                objOutput[Constants.FIELD_JSON_ID] = properties.stationTriplet;
-                                objProperties[Constants.FIELD_JSON_NAME] = properties.stationName;
-                                objProperties[Constants.FIELD_JSON_SOURCE] = "ref";
-                                objOutput[Constants.FIELD_JSON_PROPERTIES] = objProperties;
-                                arrGeometries.Add(firstFeature.geometry);
-                            }
-                        }
-
-                        // read polygon JSON directly from a file
-                        JObject o3 = null;
-                        using (StreamReader file = File.OpenText(polygonOutputPath))
-                        using (JsonTextReader reader = new JsonTextReader(file))
-                        {
-                            o3 = (JObject)JToken.ReadFrom(reader);
-                        }
-                        if (o3 != null)
-                        {
-                            dynamic esriDefinition = (JObject)o3;
-                            JArray arrFeatures = (JArray)esriDefinition.features;
-                            if (arrFeatures.Count == 1)
-                            {
-                                // Always take the first one
-                                dynamic firstFeature = arrFeatures[0];
-                                arrGeometries.Add(firstFeature.geometry);
-                            }
-                            else
-                            {
-                                MessageBox.Show("This file has more than one polygon. Only a single polygon is allowed!!");
-                                return;
-                            }
-                        }
-                        if (arrGeometries.Count == 2)
-                        {
-                            objOutput[Constants.FIELD_JSON_GEOMETRIES] = arrGeometries;
-                        }
-
-                        // write JSON directly to a file
-                        string strFileName = StationTriplet.Replace(':', '_');
-                        using (StreamWriter file = File.CreateText($@"{OutputPath}\{StationTriplet.Replace(':', '_')}.geojson"))
-                        using (JsonTextWriter writer = new JsonTextWriter(file))
-                        {
-                            writer.Formatting = Formatting.Indented;
-                            objOutput.WriteTo(writer);
+                            MessageBox.Show(errorMessage, "BAGIS-PRO");
                         }
                     }
                     else

@@ -23,7 +23,7 @@ namespace bagis_pro.BA_Objects
         public long snotel_sites_in_buffer;
         public string snotel_sites_buffer_size;
         public bool has_scos_sites;
-        public int scos_sites_in_basin;
+        public long scos_sites_in_basin;
         public long scos_sites_in_buffer;
         public string scos_sites_buffer_size;
         public double site_elev_range;
@@ -37,6 +37,11 @@ namespace bagis_pro.BA_Objects
         public string annual_runoff_data_descr;
         public string report_title;
         public string roads_buffer;
+        public long snolite_sites_in_basin;
+        public long snolite_sites_in_buffer;
+        public long coop_pillow_sites_in_basin;
+        public long coop_pillow_sites_in_buffer;
+
         public Site[] all_sites;
         public DataSource[] data_sources;
 

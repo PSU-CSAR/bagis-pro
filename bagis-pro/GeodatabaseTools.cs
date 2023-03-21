@@ -618,64 +618,6 @@ namespace bagis_pro
             return success;
         }
 
-        public static async Task<string[]> QueryAoiEnvelopeAsync(Uri clipFileGdbUri, string clipName)
-        {
-            string[] arrRetValues = new string[2];
-            Geometry aoiGeo = null;
-            int intCount = 0;
-            await QueuedTask.Run(() =>
-            {
-                using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(clipFileGdbUri)))
-                using (Table table = geodatabase.OpenDataset<Table>(clipName))
-                {
-                    //check for multiple buffer polygons and buffer AOI if we need to
-                    QueryFilter queryFilter = new QueryFilter();
-                    using (RowCursor cursor = table.Search(queryFilter, false))
-                    {
-                        while (cursor.MoveNext())
-                        {
-                            using (Feature feature = (Feature)cursor.Current)
-                            {
-                                aoiGeo = feature.GetShape();
-                            }
-                            intCount++;
-                        }
-                    }
-                }
-            });
-            if (intCount > 1)
-            {
-                string tmpClipBuffer = "tmpClipBuffer";
-                BA_ReturnCode success = await GeoprocessingTools.BufferAsync(clipFileGdbUri.LocalPath + "\\" + clipName, clipFileGdbUri.LocalPath + "\\" + tmpClipBuffer,
-                            "0.5 Meters", "ALL");
-                if (success == BA_ReturnCode.Success)
-                {
-                    await QueuedTask.Run(() =>
-                    {
-                        using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(clipFileGdbUri)))
-                        using (Table table = geodatabase.OpenDataset<Table>(tmpClipBuffer))
-                        {
-                            //check for multiple buffer polygons and buffer AOI if we need to
-                            QueryFilter queryFilter = new QueryFilter();
-                            using (RowCursor cursor = table.Search(queryFilter, false))
-                            {
-                                while (cursor.MoveNext())
-                                {
-                                    using (Feature feature = (Feature)cursor.Current)
-                                    {
-                                        aoiGeo = feature.GetShape();    // Replace unbuffered geometry with buffered
-                                        clipName = tmpClipBuffer;
-                                    }
-                                }
-                            }
-                        }
-                    });
-                }
-            }
-            arrRetValues[0] = aoiGeo.Extent.XMin + " " + aoiGeo.Extent.YMin + " " + aoiGeo.Extent.XMax + " " + aoiGeo.Extent.YMax;
-            arrRetValues[1] = clipFileGdbUri.LocalPath + "\\" + clipName;
-            return arrRetValues;
-        }
 
         public static async Task<IList<BA_Objects.Interval>> ReadReclassRasterAttribute(Uri gdbUri, string rasterName)
         {
@@ -741,16 +683,24 @@ namespace bagis_pro
 
         public static async Task<double> GetCellSizeAsync(Uri gdbUri, string rasterName)
         {
-            double cellSize = 0.0F;
-            await QueuedTask.Run(() => {
-                using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(gdbUri)))
-                using (RasterDataset rasterDataset = geodatabase.OpenDataset<RasterDataset>(rasterName))
-                {
-                    RasterBandDefinition bandDefinition = rasterDataset.GetBand(0).GetDefinition();
-                    Tuple<double, double> tupleSize = bandDefinition.GetMeanCellSize();
-                    cellSize = (tupleSize.Item1 + tupleSize.Item2) / 2;
-                }
-            });
+            double cellSize = -1.0F;
+            if (await GeodatabaseTools.RasterDatasetExistsAsync(gdbUri, rasterName))
+            {
+                await QueuedTask.Run(() => {
+                    using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(gdbUri)))
+                    using (RasterDataset rasterDataset = geodatabase.OpenDataset<RasterDataset>(rasterName))
+                    {
+                        RasterBandDefinition bandDefinition = rasterDataset.GetBand(0).GetDefinition();
+                        Tuple<double, double> tupleSize = bandDefinition.GetMeanCellSize();
+                        cellSize = (tupleSize.Item1 + tupleSize.Item2) / 2;
+                    }
+                });
+            }
+            else
+            {
+                Module1.Current.ModuleLogManager.LogDebug(nameof(GetCellSizeAsync),
+                    $@"Unable to calculate cell size for {gdbUri.LocalPath}\{rasterName}. Raster does not exist!");
+            }
             return cellSize;
         }
 
@@ -783,7 +733,7 @@ namespace bagis_pro
             return bExists;
         }
 
-        public static async Task<IList<BA_Objects.Interval>> GetUniqueSortedValuesAsync(Uri gdbUri, string sType, 
+        public static async Task<IList<BA_Objects.Interval>> GetUniqueSortedValuesAsync(Uri gdbUri, SiteType sType, 
             string valueFieldName, string nameFieldName, double upperBound, double lowerBound)
         {
             IList<BA_Objects.Interval> lstInterval = new List<BA_Objects.Interval>();
@@ -810,7 +760,15 @@ namespace bagis_pro
                                 return;
                             }
                             QueryFilter queryFilter = new QueryFilter();
-                            queryFilter.WhereClause = Constants.FIELD_SITE_TYPE + " = '" + sType + "'";
+                            if (sType == SiteType.Snotel)
+                            {
+                                string strInClause = $@" IN ('{SiteType.Snotel.ToString()}', '{SiteType.CoopPillow.ToString()}', '{SiteType.Snolite.ToString()}')";
+                                queryFilter.WhereClause = Constants.FIELD_SITE_TYPE + strInClause;
+                            }
+                            else
+                            {
+                                queryFilter.WhereClause = Constants.FIELD_SITE_TYPE + " = '" + sType + "'";
+                            }                            
                             using (RowCursor rowCursor = featureClass.Search(queryFilter, false))
                             {
                                 while (rowCursor.MoveNext())
@@ -841,9 +799,7 @@ namespace bagis_pro
                                             dictElev.Add(strElev, strName);
                                         }
                                     }
-
                                 }
-
                             }
                         }
                             List<double> lstValidValues = new List<double>();
