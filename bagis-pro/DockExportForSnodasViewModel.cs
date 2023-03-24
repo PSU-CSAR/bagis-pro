@@ -201,7 +201,7 @@ namespace bagis_pro
         {
             get
             {
-                return new RelayCommand(async () =>
+                return new RelayCommand( () =>
                 {
                     //Create an instance of BrowseProjectFilter class
                     BrowseProjectFilter bf = new BrowseProjectFilter

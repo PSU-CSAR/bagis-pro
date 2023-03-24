@@ -4844,7 +4844,7 @@ namespace bagis_pro
                 strDistance = (string)Module1.Current.BatchToolSettings.SnotelBufferDistance + " " +
                     (string)Module1.Current.BatchToolSettings.SnotelBufferUnits;
             }
-            
+
             var parameters = Geoprocessing.MakeValueArray(strSitesPath, strOutputFeatures, strDistance, "",
                                                               "", "ALL");
             var res = Geoprocessing.ExecuteToolAsync("Buffer_analysis", parameters, null,
@@ -4866,29 +4866,37 @@ namespace bagis_pro
                     }
                 });
             }
-            if (! String.IsNullOrEmpty(clipEnvelope))
+            if (!String.IsNullOrEmpty(clipEnvelope))
             {
                 success = await GeoprocessingTools.DeleteDatasetAsync(strOutputFeatures);
             }
             string outputRaster = GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Analysis, true) + Constants.FILE_SITES_DEM;
-            var environments = Geoprocessing.MakeEnvironmentArray(workspace: aoiFolderPath, 
+            var environments = Geoprocessing.MakeEnvironmentArray(workspace: aoiFolderPath,
                 snapRaster: BA_Objects.Aoi.SnapRasterPath(aoiFolderPath));
             IGPResult gpResult = null;
             if (success == BA_ReturnCode.Success)
             {
                 success = await GeoprocessingTools.ClipRasterAsync(demUri, clipEnvelope, outputRaster, null, null, false,
                     aoiFolderPath, BA_Objects.Aoi.SnapRasterPath(aoiFolderPath));
-                // Recalculate slope layer on clipped DEM
-                parameters = Geoprocessing.MakeValueArray(outputRaster, GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Analysis, true) +
-                    Constants.FILE_SITES_SLOPE, "PERCENT_RISE");
-                gpResult = await Geoprocessing.ExecuteToolAsync("Slope_sa", parameters, environments,
-                                                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                if (gpResult.IsFailed)
+                if (success == BA_ReturnCode.Success)
+                {
+                    // Recalculate slope layer on clipped DEM
+                    parameters = Geoprocessing.MakeValueArray(outputRaster, GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Analysis, true) +
+                        Constants.FILE_SITES_SLOPE, "PERCENT_RISE");
+                    gpResult = await Geoprocessing.ExecuteToolAsync("Slope_sa", parameters, environments,
+                                                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                    if (gpResult.IsFailed)
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(ReclipSurfacesAsync),
+                            "Slope tool failed to create sites_slope layer. Error code: " + gpResult.ErrorCode);
+                    }
+                }
+                else
                 {
                     Module1.Current.ModuleLogManager.LogError(nameof(ReclipSurfacesAsync),
-                        "Slope tool failed to create sites_slope layer. Error code: " + gpResult.ErrorCode);
-                    success = BA_ReturnCode.UnknownError;
+                        "Failed to clip DEM for buffered sites layer!");
                 }
+
             }
 
             // Recalculate aspect layer on clipped DEM
@@ -4901,7 +4909,7 @@ namespace bagis_pro
                 if (gpResult.IsFailed)
                 {
                     Module1.Current.ModuleLogManager.LogError(nameof(ReclipSurfacesAsync),
-                        "Slope tool failed to create sites_aspect layer. Error code: " + gpResult.ErrorCode);
+                        "Aspect tool failed to create sites_aspect layer. Error code: " + gpResult.ErrorCode);
                     success = BA_ReturnCode.UnknownError;
                 }
             }
@@ -4946,7 +4954,7 @@ namespace bagis_pro
                         }
                         else
                         {
-                            var map = MapView.Active.Map;
+                            var map = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
                             await QueuedTask.Run(() =>
                             {
                                 Layer oLayer =
