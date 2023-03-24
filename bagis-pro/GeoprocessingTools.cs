@@ -224,7 +224,7 @@ namespace bagis_pro
                 var environments = Geoprocessing.MakeEnvironmentArray(workspace: strWorkspace, snapRaster: strSnapRaster);
                 var parameters = Geoprocessing.MakeValueArray(strInputRaster, strRectangle, strOutputRaster, strTemplateDataset,
                                     strNoDataValue, strClippingGeometry);
-                return Geoprocessing.ExecuteToolAsync("Clip_management", parameters, null,
+                return Geoprocessing.ExecuteToolAsync("Clip_management", parameters, environments,
                             CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
             });
             if (gpResult.IsFailed)

@@ -3462,7 +3462,7 @@ namespace bagis_pro
                         string returnPath = await AnalysisTools.CreateSitesLayerAsync(sitesGdbUri);
                         if (string.IsNullOrEmpty(returnPath))
                         {
-                            bMergedSitesExists = true;
+                            bMergedSitesExists = false;
                         }
                     }
                     else
@@ -4691,7 +4691,12 @@ namespace bagis_pro
                 // This sets the elevation for sites outside the filled_dem extent
                 success = await ReclipSurfacesAsync(strAoiPath, returnPath);
             }
+            if (success != BA_ReturnCode.Success)
+            {
+                return "";
+            }
 
+            
             // Assign the site id by elevation
             success = await UpdateSiteIdsAsync(analysisPath, gdbUri, arrHasSites, arrSiteFiles);
             var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath, snapRaster: BA_Objects.Aoi.SnapRasterPath(strAoiPath));
@@ -4910,17 +4915,25 @@ namespace bagis_pro
             {
                 success = await GeoprocessingTools.ClipRasterAsync(demUri, clipEnvelope, outputRaster, null, null, false,
                     aoiFolderPath, BA_Objects.Aoi.SnapRasterPath(aoiFolderPath));
-                // Recalculate slope layer on clipped DEM
-                parameters = Geoprocessing.MakeValueArray(outputRaster, GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Analysis, true) +
-                    Constants.FILE_SITES_SLOPE, "PERCENT_RISE");
-                gpResult = await Geoprocessing.ExecuteToolAsync("Slope_sa", parameters, environments,
-                                                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                if (gpResult.IsFailed)
+                if (success == BA_ReturnCode.Success)
+                {
+                    // Recalculate slope layer on clipped DEM
+                    parameters = Geoprocessing.MakeValueArray(outputRaster, GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Analysis, true) +
+                        Constants.FILE_SITES_SLOPE, "PERCENT_RISE");
+                    gpResult = await Geoprocessing.ExecuteToolAsync("Slope_sa", parameters, environments,
+                                                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                    if (gpResult.IsFailed)
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(ReclipSurfacesAsync),
+                            "Slope tool failed to create sites_slope layer. Error code: " + gpResult.ErrorCode);
+                    }
+                }
+                else
                 {
                     Module1.Current.ModuleLogManager.LogError(nameof(ReclipSurfacesAsync),
-                        "Slope tool failed to create sites_slope layer. Error code: " + gpResult.ErrorCode);
-                    success = BA_ReturnCode.UnknownError;
+                        "Failed to clip DEM for buffered sites layer!");
                 }
+
             }
 
             // Recalculate aspect layer on clipped DEM
@@ -4933,7 +4946,7 @@ namespace bagis_pro
                 if (gpResult.IsFailed)
                 {
                     Module1.Current.ModuleLogManager.LogError(nameof(ReclipSurfacesAsync),
-                        "Slope tool failed to create sites_aspect layer. Error code: " + gpResult.ErrorCode);
+                        "Aspect tool failed to create sites_aspect layer. Error code: " + gpResult.ErrorCode);
                     success = BA_ReturnCode.UnknownError;
                 }
             }

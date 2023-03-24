@@ -12,7 +12,7 @@
       <style type="text/css">
         .style1
         {
-        height: 600px;
+        height: 800px;
         }
         .style2
         {
@@ -163,9 +163,6 @@
                   <td class="style5">&#160;</td>
                 </tr>
                 <tr>
-                  <td class="style5">&#160;</td>
-                </tr>
-                <tr>
                   <td class="style5">Network Representation Analysis</td>
                 </tr>
                   <tr>
@@ -192,9 +189,6 @@
                     snow course site(s): <xsl:value-of select="represented_all_sites_percent"/>%
                     <xsl:if test="has_scos_sites = 'true' and has_snotel_sites = 'true'"> (See ALL SITE REPRESENTATION map)</xsl:if>
                   </td>
-                </tr>
-                <tr>
-                  <td class="style5">&#160;</td>
                 </tr>
                 <tr>
                   <td class="style5">&#160;</td>
