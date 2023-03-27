@@ -812,7 +812,7 @@ namespace bagis_pro
                                 Uri uriAnalysis = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis));
                                 if (await GeodatabaseTools.FeatureClassExistsAsync(uriAnalysis, Constants.FILE_CRITICAL_PRECIP_ZONE))
                                 {
-                                    success = await MapTools.DisplayCriticalPrecipitationZonesMap(uriAnalysis);
+                                    success = await MapTools.DisplayCriticalPrecipitationZonesMapAsync(uriAnalysis);
                                     string strButtonState = "MapButtonPalette_BtnCriticalPrecipZone_State";
                                     if (success.Equals(BA_ReturnCode.Success))
                                         Module1.ActivateState(strButtonState);

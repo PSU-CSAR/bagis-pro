@@ -340,28 +340,31 @@ namespace bagis_pro
                     success = await MapTools.ZoomToExtentAsync(aoiUri, Constants.MAPS_DEFAULT_LAYOUT_NAME, Constants.MAPS_DEFAULT_MAP_FRAME_NAME, 
                         Constants.MAP_BUFFER_FACTOR);
 
+                    // Put maps in correct order for 3.x
+                    success = await MapTools.ReOrderMapsAsync();
+
                     // load AOI location map
                     success = await DisplayLocationMapAsync(oAoi);
 
                     // load SWE map layout
                     int idxDefaultMonth = 8;    // Note: This needs to be the month with the lowest SWE value for symbology; In this case July
-                    success = await DisplayMultiMapPageLayoutAsync(oAoi.FilePath, idxDefaultMonth, BagisMapType.SNODAS_SWE);
-                    if (success == BA_ReturnCode.Success)
-                    {
-                        Module1.ActivateState("MapButtonPalette_BtnSwe_State");
-                    }
-                    // load SWE Delta map layout
-                    success = await DisplayMultiMapPageLayoutAsync(oAoi.FilePath, idxDefaultMonth - 1, BagisMapType.SNODAS_DELTA);
-                    if (success == BA_ReturnCode.Success)
-                    {
-                        Module1.ActivateState("MapButtonPalette_BtnSweDelta_State");
-                    }
-                    // load seasonal precipitation map layout
-                    success = await DisplayMultiMapPageLayoutAsync(oAoi.FilePath, idxDefaultMonth, BagisMapType.SEASONAL_PRECIP_CONTRIB);
-                    if (success == BA_ReturnCode.Success)
-                    {
-                        Module1.ActivateState("MapButtonPalette_BtnSeasonalPrecipContrib_State");
-                    }
+                    //success = await DisplayMultiMapPageLayoutAsync(oAoi.FilePath, idxDefaultMonth, BagisMapType.SNODAS_SWE);
+                    //if (success == BA_ReturnCode.Success)
+                    //{
+                    //    Module1.ActivateState("MapButtonPalette_BtnSwe_State");
+                    //}
+                    //// load SWE Delta map layout
+                    //success = await DisplayMultiMapPageLayoutAsync(oAoi.FilePath, idxDefaultMonth - 1, BagisMapType.SNODAS_DELTA);
+                    //if (success == BA_ReturnCode.Success)
+                    //{
+                    //    Module1.ActivateState("MapButtonPalette_BtnSweDelta_State");
+                    //}
+                    //// load seasonal precipitation map layout
+                    //success = await DisplayMultiMapPageLayoutAsync(oAoi.FilePath, idxDefaultMonth, BagisMapType.SEASONAL_PRECIP_CONTRIB);
+                    //if (success == BA_ReturnCode.Success)
+                    //{
+                    //    Module1.ActivateState("MapButtonPalette_BtnSeasonalPrecipContrib_State");
+                    //}
                     return success;
 
                 }
@@ -845,34 +848,6 @@ namespace bagis_pro
 
         public static async Task RemoveLayersfromMapFrame()
         {
-            string[] arrLayerNames = new string[30];
-            arrLayerNames[0] = Constants.MAPS_BASIN_BOUNDARY;
-            arrLayerNames[1] = Constants.MAPS_STREAMS;
-            arrLayerNames[2] = Constants.MAPS_SNOTEL;
-            arrLayerNames[3] = Constants.MAPS_SNOW_COURSE;
-            arrLayerNames[4] = Constants.MAPS_HILLSHADE;
-            arrLayerNames[5] = Constants.MAPS_ELEV_ZONE;
-            arrLayerNames[6] = Constants.MAPS_SNOW_COURSE_REPRESENTED;
-            arrLayerNames[7] = Constants.MAPS_AUTOMATED_SITES_REPRESENTED;
-            arrLayerNames[8] = Constants.MAPS_SLOPE_ZONE;
-            arrLayerNames[9] = Constants.MAPS_ASPECT_ZONE;
-            arrLayerNames[10] = Constants.MAPS_ALL_SITES_REPRESENTED;
-            arrLayerNames[11] = Constants.MAPS_PRISM_ZONE;
-            arrLayerNames[12] = Constants.MAPS_SUITABLE_LAND_ZONES;
-            arrLayerNames[13] = Constants.MAPS_FORESTED_LAND_COVER;
-            arrLayerNames[14] = Constants.MAPS_POTENTIAL_LOCATIONS;
-            arrLayerNames[15] = Constants.MAPS_CRITICAL_PRECIPITATION_ZONES;
-            arrLayerNames[16] = Constants.MAPS_LAND_OWNERSHIP;
-            arrLayerNames[17] = Constants.MAPS_PRECIPITATION_CONTRIBUTION;
-            arrLayerNames[18] = Constants.MAPS_WINTER_PRECIPITATION;
-            arrLayerNames[19] = Constants.MAPS_SUBBASIN_BOUNDARY;
-            arrLayerNames[20] = Constants.MAPS_LAND_COVER;
-            arrLayerNames[21] = Constants.MAPS_WATERBODIES;
-            arrLayerNames[22] = Constants.MAPS_ROADS;
-            arrLayerNames[23] = Constants.MAPS_SNOLITE;
-            arrLayerNames[24] = Constants.MAPS_COOP_PILLOW;
-            arrLayerNames[25] = Constants.MAPS_STREAM_GAGE;
-
             await QueuedTask.Run(() =>
             {
                 //Finding the first project item with name matches with mapName
@@ -880,11 +855,11 @@ namespace bagis_pro
                 // Basin Analysis
                 MapProjectItem mpi =
                     Project.Current.GetItems<MapProjectItem>()
-                        .FirstOrDefault(m => m.Name.Equals(Constants.MAPS_DEFAULT_MAP_NAME, StringComparison.CurrentCultureIgnoreCase));                
+                        .FirstOrDefault(m => m.Name.Equals(Constants.MAPS_DEFAULT_MAP_NAME, StringComparison.CurrentCultureIgnoreCase));
                 if (mpi != null)
                 {
                     map = mpi.GetMap();
-                    foreach (string strName in arrLayerNames)
+                    foreach (string strName in Constants.MAPS_ALL_ARRAY)
                     {
                         Layer oLayer =
                             map.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(strName, StringComparison.CurrentCultureIgnoreCase));
@@ -2482,10 +2457,13 @@ namespace bagis_pro
                         BA_Objects.DataSource oDs = new BA_Objects.DataSource();
                         oDs = dictLocalDataSources[BA_Objects.DataSource.GetPrecipitationKey];
                         string tempDescr = oDs.shortDescription;
-                        int pos = tempDescr.IndexOf("annual");
-                        if (pos > 0)
+                        if (!string.IsNullOrEmpty(tempDescr))
                         {
-                            dataSourceDesc = tempDescr.Substring(0, pos) + "monthly" + tempDescr.Substring(pos + "annual".Length);
+                            int pos = tempDescr.IndexOf("annual");
+                            if (pos > 0)
+                            {
+                                dataSourceDesc = tempDescr.Substring(0, pos) + "monthly" + tempDescr.Substring(pos + "annual".Length);
+                            }
                         }
                     }
                     strDescr = $@"Precipitation {oAnalysis.WinterStartMonth} through {oAnalysis.WinterEndMonth} determined from {Environment.NewLine}{dataSourceDesc}.";
@@ -3380,7 +3358,7 @@ namespace bagis_pro
             return success;
         }
 
-        public static async Task<BA_ReturnCode> DisplayCriticalPrecipitationZonesMap(Uri uriAnalysis)
+        public static async Task<BA_ReturnCode> DisplayCriticalPrecipitationZonesMapAsync(Uri uriAnalysis)
         {
             CIMColor fillColor = CIMColor.CreateRGBColor(255, 0, 0, 70);    //Red with 30% transparency
             string strLayerPath = uriAnalysis.LocalPath + "\\" + Constants.FILE_CRITICAL_PRECIP_ZONE;
@@ -3393,7 +3371,7 @@ namespace bagis_pro
                 f.Name == Constants.MAPS_CRITICAL_PRECIPITATION_ZONES).FirstOrDefault();
                 if (layerToMove == null)
                 {
-                    Module1.Current.ModuleLogManager.LogError(nameof(DisplayCriticalPrecipitationZonesMap), "The Critical Precipitation Zones layer could not be found!");
+                    Module1.Current.ModuleLogManager.LogError(nameof(DisplayCriticalPrecipitationZonesMapAsync), "The Critical Precipitation Zones layer could not be found!");
                     success = BA_ReturnCode.UnknownError;
                     return success;
                 }
@@ -3402,7 +3380,7 @@ namespace bagis_pro
                 Tuple<GroupLayer, int> moveToLayerPosition = FindLayerPosition(null, moveBelowThisLayerName, oMap);
                 if (moveToLayerPosition.Item2 == -1)
                 {
-                    Module1.Current.ModuleLogManager.LogError(nameof(DisplayCriticalPrecipitationZonesMap), $"Layer {moveBelowThisLayerName} not found ");
+                    Module1.Current.ModuleLogManager.LogError(nameof(DisplayCriticalPrecipitationZonesMapAsync), $"Layer {moveBelowThisLayerName} not found ");
                     success = BA_ReturnCode.UnknownError;
                     return success;
                 }
@@ -3891,6 +3869,47 @@ namespace bagis_pro
                     {
                         (mapPane as Pane).Close();
                     }
+                }
+            }
+            return BA_ReturnCode.Success;
+        }
+
+        private static async Task<BA_ReturnCode> ReOrderMapsAsync()
+        {
+            string[] arrTestLayers = { Constants.MAPS_STREAMS, Constants.MAPS_ROADS, Constants.MAPS_WATERBODIES,
+                Constants.MAPS_STREAM_GAGE, Constants.MAPS_SUBBASIN_BOUNDARY, Constants.MAPS_SNOTEL, Constants.MAPS_SNOLITE, Constants.MAPS_COOP_PILLOW,
+                Constants.MAPS_AUTOMATED_SITES_REPRESENTED, Constants.MAPS_SNOW_COURSE, Constants.MAPS_SNOW_COURSE_REPRESENTED,
+                Constants.MAPS_ALL_SITES_REPRESENTED, Constants.MAPS_CRITICAL_PRECIPITATION_ZONES, Constants.MAPS_SUITABLE_LAND_ZONES,
+                Constants.MAPS_FORESTED_LAND_COVER, Constants.MAPS_POTENTIAL_LOCATIONS};
+            Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
+            var moveBelowThisLayerName = "";
+            for (int i = 0; i < arrTestLayers.Length; i++)
+            {
+                var layerToMove = oMap.GetLayersAsFlattenedList().OfType<FeatureLayer>().Where(f =>
+                    f.Name == arrTestLayers[i]).FirstOrDefault();
+                if (layerToMove != null)
+                {
+                    //In order to move layerToMove, I need to know if the destination is a group layer and the zero based position it needs to move to.
+                    Tuple<GroupLayer, int> moveToLayerPosition = new Tuple<GroupLayer, int>(null, 0);
+                    if (!string.IsNullOrEmpty(moveBelowThisLayerName))
+                    {
+                        moveToLayerPosition = FindLayerPosition(null, moveBelowThisLayerName, oMap);
+                    }
+                    if (moveToLayerPosition.Item2 == -1)
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(ReOrderMapsAsync), $"Layer {moveBelowThisLayerName} not found ");
+                    }
+                    await QueuedTask.Run(() => {
+                        if (moveToLayerPosition.Item1 != null) //layer gets moved into the group
+                            moveToLayerPosition.Item1.MoveLayer(layerToMove, moveToLayerPosition.Item2);
+                        else //Layer gets moved into the root
+                            oMap.MoveLayer(layerToMove, moveToLayerPosition.Item2);
+                    });
+                    moveBelowThisLayerName = arrTestLayers[i];
+                }
+                else
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(ReOrderMapsAsync), @$"The {arrTestLayers[i]} was not be found!");
                 }
             }
             return BA_ReturnCode.Success;

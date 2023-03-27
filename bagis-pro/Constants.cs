@@ -47,7 +47,14 @@ namespace bagis_pro
         public const string MAPS_LAND_COVER = "Land Cover";
         public const string MAPS_WATERBODIES = "Waterbodies";
         public const string MAPS_STREAM_GAGE = "Streamgage";
-
+        public static readonly string[] MAPS_ALL_ARRAY = { Constants.MAPS_BASIN_BOUNDARY, Constants.MAPS_STREAMS, Constants.MAPS_SNOTEL,
+            Constants.MAPS_SNOW_COURSE, Constants.MAPS_HILLSHADE, Constants.MAPS_ELEV_ZONE, Constants.MAPS_SNOW_COURSE_REPRESENTED,
+            Constants.MAPS_AUTOMATED_SITES_REPRESENTED, Constants.MAPS_SLOPE_ZONE, Constants.MAPS_ASPECT_ZONE,
+            Constants.MAPS_ALL_SITES_REPRESENTED, Constants.MAPS_PRISM_ZONE, Constants.MAPS_SUITABLE_LAND_ZONES,
+            Constants.MAPS_FORESTED_LAND_COVER, Constants.MAPS_POTENTIAL_LOCATIONS, Constants.MAPS_CRITICAL_PRECIPITATION_ZONES,
+            Constants.MAPS_LAND_OWNERSHIP, Constants.MAPS_PRECIPITATION_CONTRIBUTION, Constants.MAPS_WINTER_PRECIPITATION,
+            Constants.MAPS_SUBBASIN_BOUNDARY, Constants.MAPS_LAND_COVER, Constants.MAPS_WATERBODIES, Constants.MAPS_ROADS,
+            Constants.MAPS_SNOLITE, Constants.MAPS_COOP_PILLOW, Constants.MAPS_STREAM_GAGE };
         public const string MAPS_LEGEND = "Legend";
         public const string MAPS_TITLE = "Title";
         public const string MAPS_SUBTITLE = "SubTitle";
