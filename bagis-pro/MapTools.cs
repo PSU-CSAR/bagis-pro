@@ -840,35 +840,6 @@ namespace bagis_pro
 
         public static async Task RemoveLayersfromMapFrame()
         {
-            string[] arrLayerNames = new string[30];
-            arrLayerNames[0] = Constants.MAPS_BASIN_BOUNDARY;
-            arrLayerNames[1] = Constants.MAPS_STREAMS;
-            arrLayerNames[2] = Constants.MAPS_SNOTEL;
-            arrLayerNames[3] = Constants.MAPS_SNOW_COURSE;
-            arrLayerNames[4] = Constants.MAPS_HILLSHADE;
-            arrLayerNames[5] = Constants.MAPS_ELEV_ZONE;
-            arrLayerNames[6] = Constants.MAPS_SNOW_COURSE_REPRESENTED;
-            arrLayerNames[7] = Constants.MAPS_AUTOMATED_SITES_REPRESENTED;
-            arrLayerNames[8] = Constants.MAPS_SLOPE_ZONE;
-            arrLayerNames[9] = Constants.MAPS_ASPECT_ZONE;
-            arrLayerNames[10] = Constants.MAPS_ALL_SITES_REPRESENTED;
-            arrLayerNames[11] = Constants.MAPS_PRISM_ZONE;
-            arrLayerNames[12] = Constants.MAPS_SUITABLE_LAND_ZONES;
-            arrLayerNames[13] = Constants.MAPS_FORESTED_LAND_COVER;
-            arrLayerNames[14] = Constants.MAPS_POTENTIAL_LOCATIONS;
-            arrLayerNames[15] = Constants.MAPS_CRITICAL_PRECIPITATION_ZONES;
-            arrLayerNames[16] = Constants.MAPS_LAND_OWNERSHIP;
-            arrLayerNames[17] = Constants.MAPS_PRECIPITATION_CONTRIBUTION;
-            arrLayerNames[18] = Constants.MAPS_WINTER_PRECIPITATION;
-            arrLayerNames[19] = Constants.MAPS_SUBBASIN_BOUNDARY;
-            arrLayerNames[20] = Constants.MAPS_LAND_COVER;
-            arrLayerNames[21] = Constants.MAPS_WATERBODIES;
-            arrLayerNames[22] = Constants.MAPS_ROADS;
-            arrLayerNames[23] = Constants.MAPS_SNOLITE;
-            arrLayerNames[24] = Constants.MAPS_COOP_PILLOW;
-            arrLayerNames[25] = Constants.MAPS_STREAM_GAGE;
-            int idxLayerNames = 26;
-
             await QueuedTask.Run(() =>
             {
                 //Finding the first project item with name matches with mapName
@@ -880,7 +851,7 @@ namespace bagis_pro
                 if (mpi != null)
                 {
                     map = mpi.GetMap();
-                    foreach (string strName in arrLayerNames)
+                    foreach (string strName in Constants.MAPS_ALL_ARRAY)
                     {
                         Layer oLayer =
                             map.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(strName, StringComparison.CurrentCultureIgnoreCase));
