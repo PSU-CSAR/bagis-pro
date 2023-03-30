@@ -2941,8 +2941,11 @@ namespace bagis_pro
                 if (textBox != null)
                 {
                     CIMTextGraphic graphic = (CIMTextGraphic)textBox.GetGraphic();
-                    graphic.Text = oAoi.NwccName.ToUpper();
-                    textBox.SetGraphic(graphic);
+                    if (!string.IsNullOrEmpty(oAoi.NwccName))
+                    {
+                        graphic.Text = oAoi.NwccName.ToUpper();
+                        textBox.SetGraphic(graphic);
+                    }
                 }
             });
 
