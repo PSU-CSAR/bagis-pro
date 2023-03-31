@@ -790,6 +790,10 @@ namespace bagis_pro
                     if (lstCriticalZoneValues.Count > 0)
                     {
                         success = await AnalysisTools.ExtractCriticalPrecipitationZonesAsync(Module1.Current.Aoi.FilePath, lstCriticalZoneValues);
+                        if (success != BA_ReturnCode.Success)
+                        {
+                            Module1.Current.ModuleLogManager.LogError(nameof(GenerateTablesAsync), "Unable to create critical precipitation zones layer!!");
+                        }
                     }
                     else
                     {

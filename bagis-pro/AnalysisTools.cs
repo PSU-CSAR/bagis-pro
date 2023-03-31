@@ -2475,8 +2475,8 @@ namespace bagis_pro
                 }
                 // Remove temporary layer
                 oMap.RemoveLayer(slectionLayer);
+                success = BA_ReturnCode.Success;
             });
-            success = BA_ReturnCode.Success;
             return success;
         }
 
