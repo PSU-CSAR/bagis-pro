@@ -1,27 +1,21 @@
 ﻿using ArcGIS.Core.CIM;
 using ArcGIS.Core.Data;
+using ArcGIS.Core.Data.Exceptions;
 using ArcGIS.Core.Data.Raster;
 using ArcGIS.Core.Geometry;
 using ArcGIS.Desktop.Core;
+using ArcGIS.Desktop.Framework;
+using ArcGIS.Desktop.Framework.Contracts;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
 using ArcGIS.Desktop.Layouts;
 using ArcGIS.Desktop.Mapping;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using System.Diagnostics;
 using System.Windows;
-using ArcGIS.Desktop.Framework.Contracts;
-using ArcGIS.Desktop.Framework;
 using System.Windows.Input;
-using ArcGIS.Desktop.Core.Geoprocessing;
-using ArcGIS.Core.Data.Exceptions;
-using NLog.Layouts;
 using Layout = ArcGIS.Desktop.Layouts.Layout;
-using System.ComponentModel;
-using System.Security.Policy;
 
 namespace bagis_pro
 {
@@ -348,23 +342,23 @@ namespace bagis_pro
 
                     // load SWE map layout
                     int idxDefaultMonth = 8;    // Note: This needs to be the month with the lowest SWE value for symbology; In this case July
-                    //success = await DisplayMultiMapPageLayoutAsync(oAoi.FilePath, idxDefaultMonth, BagisMapType.SNODAS_SWE);
-                    //if (success == BA_ReturnCode.Success)
-                    //{
-                    //    Module1.ActivateState("MapButtonPalette_BtnSwe_State");
-                    //}
-                    //// load SWE Delta map layout
-                    //success = await DisplayMultiMapPageLayoutAsync(oAoi.FilePath, idxDefaultMonth - 1, BagisMapType.SNODAS_DELTA);
-                    //if (success == BA_ReturnCode.Success)
-                    //{
-                    //    Module1.ActivateState("MapButtonPalette_BtnSweDelta_State");
-                    //}
-                    //// load seasonal precipitation map layout
-                    //success = await DisplayMultiMapPageLayoutAsync(oAoi.FilePath, idxDefaultMonth, BagisMapType.SEASONAL_PRECIP_CONTRIB);
-                    //if (success == BA_ReturnCode.Success)
-                    //{
-                    //    Module1.ActivateState("MapButtonPalette_BtnSeasonalPrecipContrib_State");
-                    //}
+                    success = await DisplayMultiMapPageLayoutAsync(oAoi.FilePath, idxDefaultMonth, BagisMapType.SNODAS_SWE);
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        Module1.ActivateState("MapButtonPalette_BtnSwe_State");
+                    }
+                    // load SWE Delta map layout
+                    success = await DisplayMultiMapPageLayoutAsync(oAoi.FilePath, idxDefaultMonth - 1, BagisMapType.SNODAS_DELTA);
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        Module1.ActivateState("MapButtonPalette_BtnSweDelta_State");
+                    }
+                    // load seasonal precipitation map layout
+                    success = await DisplayMultiMapPageLayoutAsync(oAoi.FilePath, idxDefaultMonth, BagisMapType.SEASONAL_PRECIP_CONTRIB);
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        Module1.ActivateState("MapButtonPalette_BtnSeasonalPrecipContrib_State");
+                    }
                     return success;
 
                 }
@@ -1769,7 +1763,7 @@ namespace bagis_pro
                     ScaleBarStyleItem scaleBarStyleItem2 = scaleBars2[0];
 
                     //Define the location
-                    Coordinate2D location2 = new Coordinate2D(coordX, 0.9);
+                    Coordinate2D location2 = new Coordinate2D(coordX, 0.905);
 
                     //Construct the scale bar
                     //Migrate from 2.x
@@ -3000,8 +2994,11 @@ namespace bagis_pro
                 if (textBox != null)
                 {
                     CIMTextGraphic graphic = (CIMTextGraphic)textBox.GetGraphic();
-                    graphic.Text = oAoi.NwccName.ToUpper();
-                    textBox.SetGraphic(graphic);
+                    if (!string.IsNullOrEmpty(oAoi.NwccName))
+                    {
+                        graphic.Text = oAoi.NwccName.ToUpper();
+                        textBox.SetGraphic(graphic);
+                    }                                       
                 }
             });
 
@@ -3575,8 +3572,7 @@ namespace bagis_pro
             BA_Objects.Analysis oAnalysis = GeneralTools.GetAnalysisSettings(strAoiPath);
             IList<BA_Objects.Interval> lstInterval = new List<BA_Objects.Interval>();
             switch (bagisMapType)
-            {
-                
+            {                
                 case BagisMapType.SNODAS_SWE:
                     lstInterval = await CalculateSweZonesAsync(idxDefaultMonth);
                     break;
@@ -3731,16 +3727,6 @@ namespace bagis_pro
                           j++;
                       }
 
-                      // Zoom to the AOI
-                      string strPath = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, true) +
-                          Constants.FILE_AOI_VECTOR;
-                      Uri aoiUri = new Uri(strPath);
-                      Envelope env = await QueryZoomEnvelopeAsync(aoiUri, Constants.MAP_BUFFER_FACTOR);
-                      if (env != null)
-                      {
-                          mapFrame.SetCamera(env);
-                      }
-
                         // Reset the clip geometry
                         success = await SetClipGeometryAsync(strAoiPath, arrMapFrames[i]);
 
@@ -3853,7 +3839,49 @@ namespace bagis_pro
                     textBox.SetGraphic(graphic);
                 }
             });
+
+            // Pro 3.x did not properly apply the camera without separating this out
+            for (int i = 0; i < arrMapFrames.Length; i++)
+            {
+                string mFrameName = arrMapFrames[i];       
+                    await QueuedTask.Run(() =>
+                    {
+                        layout = someLytItem.GetLayout();
+                        MapFrame mapFrame = layout.FindElement(mFrameName) as MapFrame;
+                    if (mapFrame != null)
+                    {
+                        //Get map and a layer of interest
+                        Map m = mapFrame.Map;
+                        //Get the specific layer you want from the map and its extent
+                        FeatureLayer lyr = m.FindLayers("Basin Boundary").First() as FeatureLayer;
+                        mapFrame.SetCamera(lyr);
+                    }
+                        else
+                        {
+                            Module1.Current.ModuleLogManager.LogDebug(nameof(DisplayMultiMapPageLayoutAsync),
+                                $@"Unable to find element mapFrame {arrMapFrames[i]}");
+                        }
+                    });
+            }
             success = CloseMapPanes(arrMapFrames);
+
+            // Pro 3.x did not properly apply the camera without touching the map frames a second time
+            for (int i = 0; i < arrMapFrames.Length; i++)
+            {
+                string mFrameName = arrMapFrames[i];
+                await QueuedTask.Run(() =>
+                {
+                    layout = someLytItem.GetLayout();
+                    MapFrame mapFrame = layout.FindElement(mFrameName) as MapFrame;
+                    if (mapFrame != null)
+                    {
+                        //Zoom out MAP_BUFFER_FACTOR
+                        Camera cam = mapFrame.Camera;
+                        cam.Scale = cam.Scale * Constants.MAP_BUFFER_FACTOR;
+                        mapFrame.SetCamera(cam);
+                    }
+                });
+            }
             return success;
         }
 

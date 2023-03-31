@@ -221,7 +221,7 @@ namespace bagis_pro
             }
             IGPResult gpResult = await QueuedTask.Run(() =>
             {
-                var environments = Geoprocessing.MakeEnvironmentArray(workspace: strWorkspace, snapRaster: strSnapRaster);
+                var environments = Geoprocessing.MakeEnvironmentArray(workspace: strWorkspace, snapRaster: strSnapRaster, extent: strRectangle);
                 var parameters = Geoprocessing.MakeValueArray(strInputRaster, strRectangle, strOutputRaster, strTemplateDataset,
                                     strNoDataValue, strClippingGeometry);
                 return Geoprocessing.ExecuteToolAsync("Clip_management", parameters, environments,

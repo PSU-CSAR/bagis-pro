@@ -2881,7 +2881,8 @@ namespace bagis_pro
 
                     Uri imageServiceUri = new Uri(strWsUri);
                     string strTemplateDataset = strClipGdb + "\\" + strClipFile;
-                    var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath, snapRaster: BA_Objects.Aoi.SnapRasterPath(strAoiPath));
+                    var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath, snapRaster: BA_Objects.Aoi.SnapRasterPath(strAoiPath),
+                        extent: strClipEnvelope);
                     parameters = Geoprocessing.MakeValueArray(imageServiceUri.AbsoluteUri, strClipEnvelope, strOutputRaster, strTemplateDataset,
                                         "", "ClippingGeometry");
                     var finalResult = await Geoprocessing.ExecuteToolAsync("Clip_management", parameters, environments,
