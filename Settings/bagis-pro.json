@@ -123,8 +123,8 @@
     "SeasonalPrecipLayoutItemId": "34a1c22f75254c56918c5eb820a6810a",
     "PublicAndTribalLandsLayerItemId": "c72cf8608c644a8c90c651e1bbfe815f",
     "MaximumSitesAllowed": 50,
-    "WinterStartMonth": "11",
-    "WinterEndMonth": "3",
+    "WinterStartMonth": 11,
+    "WinterEndMonth": 3,
     "Version": 4
   }
 }
