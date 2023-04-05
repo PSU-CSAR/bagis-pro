@@ -1261,9 +1261,23 @@ namespace bagis_pro
                             {
                                 oAoi.WinterStartMonth = Convert.ToInt32(arrResults[1]);
                             }
+                            else if (Module1.Current.BatchToolSettings != null)
+                            {
+                                if (Module1.Current.BatchToolSettings.WinterStartMonth != null)
+                                {
+                                    oAoi.WinterStartMonth = Convert.ToInt32(Module1.Current.BatchToolSettings.WinterStartMonth);
+                                }
+                            }
                             if (!string.IsNullOrEmpty(arrResults[2]))
                             {
                                 oAoi.WinterEndMonth = Convert.ToInt32(arrResults[2]);
+                            }
+                            else if (Module1.Current.BatchToolSettings != null)
+                            {
+                                if (Module1.Current.BatchToolSettings.WinterEndMonth != null)
+                                {
+                                    oAoi.WinterEndMonth = Convert.ToInt32(Module1.Current.BatchToolSettings.WinterEndMonth);
+                                }
                             }
                             if (!string.IsNullOrEmpty(arrResults[3]))
                             {
