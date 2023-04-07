@@ -119,5 +119,6 @@ namespace bagis_pro
         internal string Dem30Uri { get; } = "";
         internal string RoadsBufferDistance { get; set; } = "";
         internal string DataSourceGroup { get; set; } = Constants.DATA_SOURCES_DEFAULT;
+        internal string ChromePath { get; set; } = "";
     }
 }

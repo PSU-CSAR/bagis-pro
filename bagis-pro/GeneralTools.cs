@@ -25,6 +25,7 @@ using ArcGIS.Desktop.Catalog;
 using Microsoft.VisualBasic.FileIO;
 using ArcGIS.Desktop.Core.Geoprocessing;
 using System.Text;
+using ArcGIS.Core.Data.UtilityNetwork.Trace;
 
 namespace bagis_pro
 {
@@ -427,7 +428,6 @@ namespace bagis_pro
                 }
 
                 // Convert the title page to PDF
-                var chromePath = @"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe";
                 if (File.Exists(htmlFilePath))
                 {
                     //PdfSharp.Pdf.PdfDocument titlePageDoc = TheArtOfDev.HtmlRenderer.PdfSharp.PdfGenerator.GeneratePdf(System.IO.File.ReadAllText(htmlFilePath),
@@ -436,7 +436,7 @@ namespace bagis_pro
                     var url = $@"file:///{htmlFilePath}";
                     using (var p = new Process())
                     {
-                        p.StartInfo.FileName = chromePath;
+                        p.StartInfo.FileName = Module1.Current.ChromePath;
                         p.StartInfo.Arguments = $"--headless --disable-gpu --print-to-pdf-no-header --print-to-pdf={publishFolder + "\\" + Constants.FILE_TITLE_PAGE_PDF} {url}";
                         p.Start();
                         p.WaitForExit();
@@ -472,7 +472,7 @@ namespace bagis_pro
                     var url = $@"file:///{htmlFilePath}";
                     using (var p = new Process())
                     {
-                        p.StartInfo.FileName = chromePath;
+                        p.StartInfo.FileName = Module1.Current.ChromePath;
                         p.StartInfo.Arguments = $"--headless --disable-gpu --print-to-pdf-no-header --print-to-pdf={publishFolder + "\\" + Constants.FILE_DATA_SOURCES_PDF} {url}";
                         p.Start();
                         p.WaitForExit();
@@ -1592,6 +1592,11 @@ namespace bagis_pro
                     Module1.Current.Aoi = oAoi;
                 });
 
+                // Find path to chrome so we can export to pdf
+                if (string.IsNullOrEmpty(Module1.Current.ChromePath))
+                {
+                    QueryChromePath();
+                }
                 MapTools.DeactivateMapButtons();
                 Module1.ActivateState("Aoi_Selected_State");
                 Module1.ActivateState("BtnExcelTables_State");
@@ -2696,11 +2701,10 @@ namespace bagis_pro
             // Convert the sites table to PDF
             if (File.Exists(htmlFilePath))
             {
-                var chromePath = @"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe";
                 var url = $@"file:///{htmlFilePath}";
                 using (var p = new Process())
                 {
-                    p.StartInfo.FileName = chromePath;
+                    p.StartInfo.FileName = Module1.Current.ChromePath;
                     p.StartInfo.Arguments = $"--headless --disable-gpu --print-to-pdf-no-header --print-to-pdf={strPublishFile} {url}";
                     p.Start();
                     p.WaitForExit();
@@ -2746,11 +2750,10 @@ namespace bagis_pro
                     //PdfSharp.Pdf.PdfDocument sitesPageDoc = TheArtOfDev.HtmlRenderer.PdfSharp.PdfGenerator.GeneratePdf(File.ReadAllText(htmlFilePath),
                     //    PdfSharp.PageSize.Letter);
                     //sitesPageDoc.Save(outputFile);
-                    var chromePath = @"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe";
                     var url = $@"file:///{htmlFilePath}";
                     using (var p = new Process())
                     {
-                        p.StartInfo.FileName = chromePath;
+                        p.StartInfo.FileName = Module1.Current.ChromePath;
                         p.StartInfo.Arguments = $"--headless --disable-gpu --print-to-pdf-no-header --print-to-pdf={outputFile} {url}";
                         p.Start();
                         p.WaitForExit();
@@ -3008,6 +3011,26 @@ namespace bagis_pro
             System.Windows.Forms.DialogResult result = inputBox.ShowDialog();
             input = textBox.Text;
             return result;
+        }
+
+        public static void QueryChromePath()
+        {
+            string defaultPath = @"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe";
+            var path = Microsoft.Win32.Registry.GetValue(
+                @"HKEY_CLASSES_ROOT\ChromeHTML\shell\open\command", null, null) as string;
+            if (path != null)
+            {
+                var split = path.Split('\"');
+                Module1.Current.ChromePath = split.Length >= 2 ? split[1] : null;
+                Module1.Current.ModuleLogManager.LogInfo(nameof(QueryChromePath),
+                    "Found Chrome path: " + path);
+            }
+            else
+            {
+                Module1.Current.ChromePath = defaultPath;
+                Module1.Current.ModuleLogManager.LogError(nameof(QueryChromePath),
+                    "Chrome path not found. Attempting to use default!");
+            }
         }
     }
 
