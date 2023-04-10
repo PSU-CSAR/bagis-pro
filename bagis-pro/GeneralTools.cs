@@ -926,7 +926,8 @@ namespace bagis_pro
 
                     //Cumulative precip table
                     pathToSave = GetFullPdfFileName(Constants.FILE_EXPORT_TABLE_PRECIP_REPRESENT_PDF);
-                    pPRISMWorkSheet.PageSetup.PrintArea = "$A$1:$P$" + (lastRow + 12);  // Extend print area for comment textbox
+                    string strPrintArea = "$A$1:$P$" + (lastRow + 12);
+                    pPRISMWorkSheet.PageSetup.PrintArea = strPrintArea;  // Extend print area for comment textbox
                     pPRISMWorkSheet.PageSetup.Orientation = XlPageOrientation.xlPortrait;
                     pPRISMWorkSheet.PageSetup.Zoom = false;     // Required to print on one page
                     pPRISMWorkSheet.PageSetup.PaperSize = oReqPaperSize;    // Required to print on one page
@@ -944,7 +945,8 @@ namespace bagis_pro
                     pPRISMWorkSheet.PageSetup.FitToPagesTall = 1;   // Required to print on one page
                     pPRISMWorkSheet.PageSetup.FitToPagesWide = 1;   // Required to print on one page
                     pPRISMWorkSheet.ExportAsFixedFormat(XlFixedFormatType.xlTypePDF, pathToSave);
-                    Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Published represented precip table to PDF");
+                    Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Published " + strTitle + ". Print area: " + strPrintArea);
+
 
                     // cumulative precipitation chart
                     pathToSave = GetFullPdfFileName(Constants.FILE_EXPORT_CHART_PRECIP_REPRESENT_PDF);

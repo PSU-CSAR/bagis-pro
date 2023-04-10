@@ -28,6 +28,7 @@
         border-style: solid;
         border-width: 1px;
         border-color:black;
+        font-size: 14px;
         }
         .style4
         {
@@ -37,6 +38,7 @@
         border-width: 1px;
         border-color:black;
         text-align: right;
+        font-size: 14px;
         }
 
       </style>
@@ -61,7 +63,7 @@
               <td class="style3">
                 Name
               </td>
-              <td class="style3">
+              <td class="style3" width="50">
                 Elevation (<xsl:value-of select="site_elev_range_units"/>)
               </td>
               <td class="style3">

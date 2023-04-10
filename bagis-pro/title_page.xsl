@@ -25,13 +25,7 @@
         {
         font-family: Arial, Helvetica, sans-serif;
         padding: 1px 4px;
-        }
-        .style4
-        {
-        font-family: Arial, Helvetica, sans-serif;
-        font-size: 95%;
-        padding-top: 1px;
-        padding-left: 10px;
+        font-size: 14px;
         }
         .style5
         {
@@ -39,10 +33,12 @@
         padding: 1px 4px;
         font-weight: bold;
         }
-        .footer {
+        .footer 
+        {
         width: 100%;
         text-align: center;
         font-family: Arial, Helvetica, sans-serif;
+        font-size: 14px;
         }
         <title>
           <xsl:value-of select="report_title"/>
