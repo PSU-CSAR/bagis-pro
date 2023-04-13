@@ -1,26 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Windows.Input;
 using System.Threading.Tasks;
 using ArcGIS.Core.Data;
 using ArcGIS.Desktop.Core;
-using ArcGIS.Desktop.Editing;
-using ArcGIS.Desktop.Extensions;
 using ArcGIS.Desktop.Framework;
 using ArcGIS.Desktop.Framework.Contracts;
 using ArcGIS.Desktop.Framework.Dialogs;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
-using ArcGIS.Desktop.Mapping;
 using ArcGIS.Desktop.Core.Portal;
 using Newtonsoft.Json.Linq;
-using System.Collections.Specialized;
 using System.Net.Http;
 using Newtonsoft.Json;
-using System.Diagnostics;
 using System.IO;
-using ArcGIS.Core.Internal.CIM;
 
 namespace bagis_pro
 {
@@ -616,36 +608,21 @@ namespace bagis_pro
                 dynamic esriDefinition = (JObject)o3;
                 
                 JArray arrFeatures = (JArray)esriDefinition.features;
-                int idx = 0;
                 if (arrFeatures.Count > 0)
                 {
+                    int idx = 0;
                     dynamic firstFeature = arrFeatures[idx];
-                    firstFeature.geometry.type = "MultiPolygon";
-                    idx++;
+                    dynamic allFeatures = (JObject) firstFeature.DeepClone();   // Clone the first feature so we have a scaffold object
+                    allFeatures.geometry.type = "MultiPolygon"; // Set the geometry type
+                    allFeatures.geometry.coordinates.Clear();   // Clear the existing coordinates
                     for (int i = idx; i < arrFeatures.Count; i++)
                     {
                         dynamic nextFeature = arrFeatures[i];
                         JArray arrCoordinates = (JArray) nextFeature.geometry.coordinates;
-                        for (int j = 0; j < arrCoordinates.Count(); j++)
-                        {
-                            firstFeature.geometry.coordinates.Add(arrCoordinates[j]);
-                        }
-                        
+                        allFeatures.geometry.coordinates.Add(arrCoordinates);   // Add the coordinates for each feature
                     }
-                    arrGeometries.Add(firstFeature.geometry);
+                    arrGeometries.Add(allFeatures.geometry);    // Add the multipolygon feature to the geometries    
                 }
-
-                //if (arrFeatures.Count > 1)
-                //{
-                //    // Always take the first one
-                //    dynamic firstFeature = arrFeatures[0];
-                //    arrGeometries.Add(firstFeature.geometry);
-                //}
-                //else
-                //{
-                //    return "This file has more than one polygon. Only a single polygon is allowed!!";
-                //}
-
             }
             if (arrGeometries.Count == 2)
             {

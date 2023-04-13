@@ -1309,11 +1309,9 @@ namespace bagis_pro
             string strOutputPath = $@"{mergeGdbPath}\{Constants.FILE_MERGED_AOI_POLYS}";
             StringBuilder sb = new StringBuilder();
             int intError = 0;
-            //StringBuilder sbAoiName = new StringBuilder($@"AOINAME ""AOINAME"" true true false 40 Text 0 0,First,#,");
-            StringBuilder sbAwdbId = new StringBuilder($@"awdb_id ""awdb_id"" true true false 30 Text 0 0,First,#,");
-            //StringBuilder sbBasin = new StringBuilder($@"BASIN ""BASIN"" true true false 30 Text 0 0,First,#,");
-            StringBuilder sbStationTriplet = new StringBuilder($@"stationTriplet ""stationTriplet"" true true false 255 Text 0 0,First,#,");
-            StringBuilder sbStationName = new StringBuilder($@"stationName ""stationName"" true true false 255 Text 0 0,First,#,");
+            string mapAwdbId = "$@\"awdb_id \"\"awdb_id\"\" true true false 30 Text 0 0,First,#,\"";
+            string mapStationTriplet = "$@\"stationTriplet \"\"stationTriplet\"\" true true false 255 Text 0 0,First,#,\"";
+            string mapStationName = $@"stationName ""stationName"" true true false 255 Text 0 0,First,#,";
 
             if (lstMergeFeatures.Count > 0)
             {
@@ -1324,10 +1322,13 @@ namespace bagis_pro
                     {
                         sb.Append(lstMergeFeatures[i]);
                         sb.Append(";");
+                        //StringBuilder sbAoiName = new StringBuilder($@"AOINAME ""AOINAME"" true true false 40 Text 0 0,First,#,");
                         //sbAoiName.Append($@"{fc},AOINAME,0,40, ");
+                        StringBuilder sbAwdbId = new StringBuilder(mapAwdbId);
                         sbAwdbId.Append($@"{lstMergeFeatures[i]},0,30, ");
-                        //sbBasin.Append($@"{fc},BASIN,0,30, ");
+                        StringBuilder sbStationTriplet = new StringBuilder(mapStationTriplet);   
                         sbStationTriplet.Append($@"{lstMergeFeatures[i]},stationTriplet,0,255, ");
+                        StringBuilder sbStationName = new StringBuilder(mapStationName);
                         sbStationName.Append($@"{lstMergeFeatures[i]},stationName,0,255, ");
                         string[] arrFieldMapping = new string[3];
                         //arrFieldMapping[0] = sbAoiName.ToString().TrimEnd(',');
