@@ -59,12 +59,7 @@ namespace bagis_pro.Buttons
                 }
             });
 
-            string nwccName = "";
-            if (!string.IsNullOrEmpty(Module1.Current.Aoi.NwccName))
-            {
-                nwccName = Module1.Current.Aoi.NwccName.ToUpper();
-            }
-            await MapTools.UpdateMapElementsAsync(nwccName, thisMap);
+            await MapTools.UpdateMapElementsAsync(Module1.Current.Aoi.StationName.ToUpper(), thisMap);
             BA_ReturnCode success = await MapTools.UpdateLegendAsync(oLayout, thisMap.LegendLayerList);
             Module1.Current.MapFinishedLoading = true;
             Module1.Current.DisplayedMap = thisMap.PdfFileName;

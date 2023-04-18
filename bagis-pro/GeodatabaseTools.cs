@@ -515,6 +515,66 @@ namespace bagis_pro
             }
         }
 
+        public static async Task<BA_ReturnCode> UpdateFeatureAttributeNumericAsync(Uri gdbUri, string featureClassName, QueryFilter oQueryFilter, string strFieldName, double dblNewValue)
+        {
+            bool modificationResult = false;
+            string errorMsg = "";
+            await QueuedTask.Run(() =>
+            {
+                using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(gdbUri)))
+                using (FeatureClass featureClass = geodatabase.OpenDataset<FeatureClass>(featureClassName))
+                {
+                    FeatureClassDefinition featureClassDefinition = featureClass.GetDefinition();
+
+                    EditOperation editOperation = new EditOperation();
+                    editOperation.Callback(context => {
+                        using (RowCursor rowCursor = featureClass.Search(oQueryFilter, false))
+                        {
+                            while (rowCursor.MoveNext())
+                            {
+                                using (Feature feature = (Feature)rowCursor.Current)
+                                {
+                                    // In order to update the the attribute table has to be called before any changes are made to the row
+                                    context.Invalidate(feature);
+                                    int idxRow = featureClassDefinition.FindField(strFieldName);
+                                    if (idxRow > -1)
+                                    {
+                                        feature[idxRow] = dblNewValue;
+                                    }
+                                    feature.Store();
+                                    // Has to be called after the store too
+                                    context.Invalidate(feature);
+                                }
+                            }
+                        }
+                    }, featureClass);
+
+                    try
+                    {
+                        modificationResult = editOperation.Execute();
+                        if (!modificationResult) errorMsg = editOperation.ErrorMessage;
+                    }
+                    catch (GeodatabaseException exObj)
+                    {
+                        errorMsg = exObj.Message;
+                    }
+                }
+            });
+            if (String.IsNullOrEmpty(errorMsg))
+            {
+                await Project.Current.SaveEditsAsync();
+                return BA_ReturnCode.Success;
+            }
+            else
+            {
+                if (Project.Current.HasEdits)
+                    await Project.Current.DiscardEditsAsync();
+                Module1.Current.ModuleLogManager.LogError(nameof(UpdateFeatureAttributesAsync),
+                    "Exception: " + errorMsg);
+                return BA_ReturnCode.UnknownError;
+            }
+        }
+
         public static async Task<BA_ReturnCode> UpdateReclassFeatureAttributesAsync(Uri uriFeatureClass, string strFeatureClassName, 
             IList<BA_Objects.Interval> lstIntervals)
         {

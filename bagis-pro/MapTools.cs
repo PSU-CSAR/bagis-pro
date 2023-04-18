@@ -12,6 +12,7 @@ using ArcGIS.Desktop.Mapping;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
@@ -2597,7 +2598,7 @@ namespace bagis_pro
                 if (textBox != null)
                 {
                     CIMTextGraphic graphic = (CIMTextGraphic)textBox.GetGraphic();
-                    graphic.Text = Module1.Current.Aoi.NwccName.ToUpper();
+                    graphic.Text = Module1.Current.Aoi.StationName.ToUpper();
                     textBox.SetGraphic(graphic);
                     success = BA_ReturnCode.Success;
                 }
@@ -2994,9 +2995,9 @@ namespace bagis_pro
                 if (textBox != null)
                 {
                     CIMTextGraphic graphic = (CIMTextGraphic)textBox.GetGraphic();
-                    if (!string.IsNullOrEmpty(oAoi.NwccName))
+                    if (!string.IsNullOrEmpty(oAoi.StationName))
                     {
-                        graphic.Text = oAoi.NwccName.ToUpper();
+                        graphic.Text = oAoi.StationName.ToUpper();
                         textBox.SetGraphic(graphic);
                     }                                       
                 }
@@ -3778,9 +3779,9 @@ namespace bagis_pro
                 if (textBox != null)
                 {
                     CIMTextGraphic graphic = (CIMTextGraphic)textBox.GetGraphic();
-                    if (Module1.Current.Aoi.NwccName != null)
+                    if (Module1.Current.Aoi.StationName != null)
                     {
-                        graphic.Text = Module1.Current.Aoi.NwccName.ToUpper();
+                        graphic.Text = Module1.Current.Aoi.StationName.ToUpper();
                     }
                     else
                     {
@@ -3846,6 +3847,7 @@ namespace bagis_pro
                 string mFrameName = arrMapFrames[i];       
                     await QueuedTask.Run(() =>
                     {
+                        Thread.Sleep(2000); // Try sleeping thread to see if it helps SetCamera work better
                         layout = someLytItem.GetLayout();
                         MapFrame mapFrame = layout.FindElement(mFrameName) as MapFrame;
                     if (mapFrame != null)
@@ -3866,22 +3868,22 @@ namespace bagis_pro
             success = CloseMapPanes(arrMapFrames);
 
             // Pro 3.x did not properly apply the camera without touching the map frames a second time
-            for (int i = 0; i < arrMapFrames.Length; i++)
-            {
-                string mFrameName = arrMapFrames[i];
-                await QueuedTask.Run(() =>
-                {
-                    layout = someLytItem.GetLayout();
-                    MapFrame mapFrame = layout.FindElement(mFrameName) as MapFrame;
-                    if (mapFrame != null)
-                    {
-                        //Zoom out MAP_BUFFER_FACTOR
-                        Camera cam = mapFrame.Camera;
-                        cam.Scale = cam.Scale * Constants.MAP_BUFFER_FACTOR;
-                        mapFrame.SetCamera(cam);
-                    }
-                });
-            }
+            //for (int i = 0; i < arrMapFrames.Length; i++)
+            //{
+            //    string mFrameName = arrMapFrames[i];
+            //    await QueuedTask.Run(() =>
+            //    {
+            //        layout = someLytItem.GetLayout();
+            //        MapFrame mapFrame = layout.FindElement(mFrameName) as MapFrame;
+            //        if (mapFrame != null)
+            //        {
+            //            //Zoom out MAP_BUFFER_FACTOR
+            //            Camera cam = mapFrame.Camera;
+            //            cam.Scale = cam.Scale * Constants.MAP_BUFFER_FACTOR;
+            //            mapFrame.SetCamera(cam);
+            //        }
+            //    });
+            //}
             return success;
         }
 
