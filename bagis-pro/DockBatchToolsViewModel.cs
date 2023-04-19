@@ -857,7 +857,7 @@ namespace bagis_pro
                             if (arrPieces.Length != 3)
                             {
                                 Module1.Current.ModuleLogManager.LogDebug(nameof(RunImplAsync), "Unable to determine station triplet for document title!");
-
+                                outputPath = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\" + "Not_Specified_Watershed-Report.pdf";
                             }
                             else
                             {

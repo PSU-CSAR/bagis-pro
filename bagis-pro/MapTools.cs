@@ -3844,10 +3844,11 @@ namespace bagis_pro
             // Pro 3.x did not properly apply the camera without separating this out
             for (int i = 0; i < arrMapFrames.Length; i++)
             {
-                string mFrameName = arrMapFrames[i];       
+                string mFrameName = arrMapFrames[i];
+                await Task.Delay(TimeSpan.FromSeconds(0.4));
                     await QueuedTask.Run(() =>
                     {
-                        Thread.Sleep(2000); // Try sleeping thread to see if it helps SetCamera work better
+                        //Thread.Sleep(2000); // Try sleeping thread to see if it helps SetCamera work better
                         layout = someLytItem.GetLayout();
                         MapFrame mapFrame = layout.FindElement(mFrameName) as MapFrame;
                     if (mapFrame != null)
@@ -3857,7 +3858,11 @@ namespace bagis_pro
                         //Get the specific layer you want from the map and its extent
                         FeatureLayer lyr = m.FindLayers("Basin Boundary").First() as FeatureLayer;
                         mapFrame.SetCamera(lyr);
-                    }
+                            //Thread.Sleep(2000); // Try sleeping thread to see if it helps SetCamera work better
+                            Camera cam = mapFrame.Camera;
+                        cam.Scale = cam.Scale * 1.1;
+                        mapFrame.SetCamera(cam);
+                        }
                         else
                         {
                             Module1.Current.ModuleLogManager.LogDebug(nameof(DisplayMultiMapPageLayoutAsync),
