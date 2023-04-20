@@ -726,7 +726,7 @@ namespace bagis_pro
             string strPourpointClassPath = ppUri.LocalPath + "\\" + Constants.FILE_POURPOINT;
             if (await GeodatabaseTools.FeatureClassExistsAsync(ppUri, Constants.FILE_POURPOINT))
             {
-                string[] arrFields = new string[] { Constants.FIELD_STATION_TRIPLET, Constants.FIELD_STATION_NAME };
+                string[] arrFields = new string[] { Constants.FIELD_STATION_TRIPLET, Constants.FIELD_STATION_NAME, Constants.FIELD_HUC2 };
                 foreach (string strField in arrFields)
                 {
                     // Check for the field, if it exists query the value

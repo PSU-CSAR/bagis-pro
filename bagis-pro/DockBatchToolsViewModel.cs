@@ -373,6 +373,9 @@ namespace bagis_pro
                 Path.GetDirectoryName(_strLogFile) + "\r\n";
             File.WriteAllText(_strLogFile, strLogEntry);    // overwrite file if it exists
 
+            // Reset AOI status
+            ResetAoiBatchStateText();   
+            
             // Check for existing map package files and warn user
             if (ArchiveChecked)
             {
@@ -941,6 +944,9 @@ namespace bagis_pro
                 Path.GetDirectoryName(snodasLog) + "\r\n";
             File.WriteAllText(snodasLog, strLogEntry);    // overwrite file if it exists
 
+            // Reset batch states
+            ResetAoiBatchStateText();
+
             for (int idxRow = 0; idxRow < Names.Count; idxRow++)
             {
                 if (Names[idxRow].AoiBatchIsSelected)
@@ -963,27 +969,11 @@ namespace bagis_pro
                     {
                         if (await GeodatabaseTools.CountFeaturesAsync(new Uri(strAoiFolder), Constants.FILE_POURPOINT) == 1)
                         {
-                            // Query for station information
-                            string stationTriplet = "";
-                            string[] arrValues = await AnalysisTools.GetStationValues(aoiFolder);
-                            if (arrValues.Length == 2)
+                            success = await GeoprocessingTools.FeaturesToSnodasGeoJsonAsync(strPointPath, pointOutputPath, true);
+                            if (success == BA_ReturnCode.Success)
                             {
-                                stationTriplet = arrValues[0];
-                            }
-                            if (string.IsNullOrEmpty(stationTriplet))
-                            {
-                                strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "ERROR:Station triplet cannot be determined. Skipping this AOI! \r\n";
+                                strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Pourpoint geoJson exported to temp directory \r\n";
                                 File.AppendAllText(snodasLog, strLogEntry);       // append
-                                errorCount++;
-                            }
-                            else
-                            {
-                                success = await GeoprocessingTools.FeaturesToSnodasGeoJsonAsync(strPointPath, pointOutputPath, true);
-                                if (success == BA_ReturnCode.Success)
-                                {
-                                    strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Pourpoint geoJson exported to temp directory \r\n";
-                                    File.AppendAllText(snodasLog, strLogEntry);       // append
-                                }
                             }
                         }
                         else
@@ -1058,7 +1048,15 @@ namespace bagis_pro
             MessageBox.Show("Generated GeoJson files are available in " + ParentFolder + "\\" + Constants.FOLDER_SNODAS_GEOJSON, "BAGIS-PRO");
         }
 
-        private async void RunForecastImplAsync(object param)
+        private void ResetAoiBatchStateText()
+        {
+            for (int idxRow = 0; idxRow < Names.Count; idxRow++)
+            {
+                Names[idxRow].AoiBatchStateText = AoiBatchState.Waiting.ToString();
+            }
+        }
+
+            private async void RunForecastImplAsync(object param)
         {
             const string UPDATED_NEAR = "Updated-Near";
             const string NO_CHANGE_MATCH = "No change-Match";
@@ -1085,6 +1083,10 @@ namespace bagis_pro
             File.WriteAllText(log, strLogEntry);    // overwrite file if it exists
             strLogEntry = CreateLogEntry(ParentFolder, "", "", $@"Starting forecast station updates");
             File.AppendAllText(log, strLogEntry);
+
+            // Reset AOI status
+            ResetAoiBatchStateText();
+
             BA_ReturnCode success = BA_ReturnCode.Success;
             Webservices ws = new Webservices();
             IList<string> lstMergeFeatures = new List<string>();

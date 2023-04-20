@@ -596,6 +596,11 @@ namespace bagis_pro
                 }
             }
 
+            if (stationTriplet == null)
+            {
+                return @$"StationTriplet is null for this basin. No geojson generated!";
+            }
+
             // read polygon JSON directly from a file
             JObject o3 = null;
             using (StreamReader file = File.OpenText(polygonOutputPath))
