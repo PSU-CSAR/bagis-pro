@@ -4766,7 +4766,8 @@ namespace bagis_pro
             
             // Assign the site id by elevation
             success = await UpdateSiteIdsAsync(analysisPath, gdbUri, arrHasSites, arrSiteFiles);
-            var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath, snapRaster: BA_Objects.Aoi.SnapRasterPath(strAoiPath));
+            var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath, snapRaster: BA_Objects.Aoi.SnapRasterPath(strAoiPath),
+                extent: BA_Objects.Aoi.SnapRasterPath(strAoiPath));
                 string fileExtract = "tmpExtract";
                 string[] arrFields = { Constants.FIELD_PRECIP, Constants.FIELD_ASPECT, Constants.FIELD_SLOPE};
                 string[] arrFieldDataTypes = { "DOUBLE", "DOUBLE", "DOUBLE" };
@@ -4814,7 +4815,8 @@ namespace bagis_pro
                     if (arrIsImageService[i] == true || await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(arrUri[i]), arrInputRasters[i]))
                     {
                             var parameters = Geoprocessing.MakeValueArray(returnPath, inputRaster, analysisPath + "\\" + fileExtract, "NONE", "VALUE_ONLY");
-                            var gpResult = await Geoprocessing.ExecuteToolAsync("ExtractValuesToPoints_sa", parameters, environments,
+                            
+                        var gpResult = await Geoprocessing.ExecuteToolAsync("ExtractValuesToPoints_sa", parameters, environments,
                                                             CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
                                 if (gpResult.IsFailed)
                                 {

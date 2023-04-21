@@ -1105,7 +1105,6 @@ namespace bagis_pro
                     string strTriplet = "";
                     string strStationName = "";
                     string strAwdbId = "";
-                    string strHuc2 = "";
                     string strNearTriplet = "";
                     string strNearStationName = "";
                     string strNearAwdbId = "";
