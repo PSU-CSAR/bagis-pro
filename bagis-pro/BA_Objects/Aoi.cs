@@ -22,14 +22,13 @@ namespace bagis_pro.BA_Objects
         string m_aoiBatchState;
         bool m_aoiBatchIsSelected;
         string m_stationTriplet = "";
-        string m_NwccName = "";
         string m_fileStationName = "";
         string m_stationNumber = "";
         string m_stationState = "";
         public string StationName = "";
         public int WinterStartMonth;
         public int WinterEndMonth;
-        public string Huc;
+        public int Huc2;
 
         public Aoi()
         {
@@ -150,19 +149,6 @@ namespace bagis_pro.BA_Objects
                 {
                     m_stationTriplet = "XXXXXXXX:XX:USGS";
                 }
-            }
-        }
-
-        public string NwccName
-        {
-            get { return m_NwccName; }
-            set
-            {
-                m_NwccName = value;
-                if (! string.IsNullOrEmpty(m_NwccName))
-                {
-                    m_fileStationName = m_NwccName.Replace(' ', '_');
-                }                
             }
         }
 

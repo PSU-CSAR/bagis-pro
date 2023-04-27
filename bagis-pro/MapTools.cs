@@ -2557,7 +2557,7 @@ namespace bagis_pro
                 if (textBox != null)
                 {
                     CIMTextGraphic graphic = (CIMTextGraphic)textBox.GetGraphic();
-                    graphic.Text = Module1.Current.Aoi.NwccName.ToUpper();
+                    graphic.Text = Module1.Current.Aoi.StationName.ToUpper();
                     textBox.SetGraphic(graphic);
                     success = BA_ReturnCode.Success;
                 }
@@ -2941,11 +2941,8 @@ namespace bagis_pro
                 if (textBox != null)
                 {
                     CIMTextGraphic graphic = (CIMTextGraphic)textBox.GetGraphic();
-                    if (!string.IsNullOrEmpty(oAoi.NwccName))
-                    {
-                        graphic.Text = oAoi.NwccName.ToUpper();
+                        graphic.Text = oAoi.StationName.ToUpper();
                         textBox.SetGraphic(graphic);
-                    }
                 }
             });
 
@@ -3736,14 +3733,7 @@ namespace bagis_pro
                 if (textBox != null)
                 {
                     CIMTextGraphic graphic = (CIMTextGraphic)textBox.GetGraphic();
-                    if (Module1.Current.Aoi.NwccName != null)
-                    {
-                        graphic.Text = Module1.Current.Aoi.NwccName.ToUpper();
-                    }
-                    else
-                    {
-                        graphic.Text = "BASIN NAME UNKNOWN";
-                    }                    
+                    graphic.Text = Module1.Current.Aoi.StationName.ToUpper();             
                     textBox.SetGraphic(graphic);
                 }
                 // Update legend map frame

@@ -367,7 +367,7 @@ namespace bagis_pro
                 // Serialize the title page object
                 BA_Objects.ExportTitlePage tPage = new BA_Objects.ExportTitlePage
                 {
-                    aoi_name = Module1.Current.Aoi.NwccName,
+                    aoi_name = Module1.Current.Aoi.StationName,
                     comments = strComments,
                     publisher = strPublisher,
                     local_path = Module1.Current.Aoi.FilePath,
@@ -887,7 +887,7 @@ namespace bagis_pro
                     pChartsWorksheet.PageSetup.FitToPagesTall = 1;
                     pChartsWorksheet.PageSetup.FitToPagesWide = 1;
                     pChartsWorksheet.PageSetup.PrintArea = "$A$1:$M$30";
-                    pChartsWorksheet.PageSetup.CenterHeader = "&C&\"Arial,Bold\"&16 " + Module1.Current.Aoi.NwccName;
+                    pChartsWorksheet.PageSetup.CenterHeader = "&C&\"Arial,Bold\"&16 " + Module1.Current.Aoi.StationName;
                     pChartsWorksheet.ExportAsFixedFormat(XlFixedFormatType.xlTypePDF, pathToSave);
                     Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateTablesAsync), "Published combined chart to PDF");
 
@@ -910,7 +910,7 @@ namespace bagis_pro
                     pPRISMWorkSheet.PageSetup.Zoom = false;     // Required to print on one page
                     pPRISMWorkSheet.PageSetup.PaperSize = oReqPaperSize;    // Required to print on one page
                     pPRISMWorkSheet.PageSetup.PrintGridlines = true;
-                    pPRISMWorkSheet.PageSetup.CenterHeader = "&C&\"Arial,Bold\"&16 " + Module1.Current.Aoi.NwccName; ;
+                    pPRISMWorkSheet.PageSetup.CenterHeader = "&C&\"Arial,Bold\"&16 " + Module1.Current.Aoi.StationName;
                     string strTitle = Constants.TITLE_PRECIP_REPRESENTATION;
                     if (!String.IsNullOrEmpty(oAnalysis.PrecipZonesBegin))
                     {
@@ -940,7 +940,7 @@ namespace bagis_pro
                         pPrecipChartWorksheet.PageSetup.PaperSize = oReqPaperSize;
                         pPrecipChartWorksheet.PageSetup.FitToPagesTall = 1;
                         pPrecipChartWorksheet.PageSetup.FitToPagesWide = 1;
-                        pPrecipChartWorksheet.PageSetup.CenterHeader = "&C&\"Arial,Bold\"&16 " + Module1.Current.Aoi.NwccName;
+                        pPrecipChartWorksheet.PageSetup.CenterHeader = "&C&\"Arial,Bold\"&16 " + Module1.Current.Aoi.StationName;
                         pathToSave = GetFullPdfFileName(Constants.FILE_EXPORT_CHART_ELEV_PRECIP_CORR_PDF);
                         pPrecipChartWorksheet.ExportAsFixedFormat(XlFixedFormatType.xlTypePDF, pathToSave);
                         pPrecipChartWorksheet.PageSetup.PaperSize = oPaperSize;
@@ -1219,14 +1219,18 @@ namespace bagis_pro
                 string[] arrValues = new string[2];
                 await QueuedTask.Run(async () =>
                 {
-                    arrValues = await AnalysisTools.GetStationValues(oAoi.FilePath);
-                    Module1.Current.ModuleLogManager.LogDebug(nameof(SetAoiAsync),
-                        "Station values returned. Array length: " + arrValues.Length);
-
-                    if (arrValues.Length == 2)
+                    arrValues = await AnalysisTools.QueryLocalStationValues(oAoi.FilePath);
+                    if (arrValues.Length == 3)
                     {
                         oAoi.StationTriplet = arrValues[0];
                         oAoi.StationName = arrValues[1];
+                        oAoi.Huc2 = Convert.ToInt16(arrValues[2]);
+                    }
+                    if (Constants.VALUE_ALASKA_HUC2.Equals(oAoi.Huc2))
+                    {
+                        Module1.Current.DataSourceGroup = Constants.DATA_SOURCES_ALASKA;
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(SetAoiAsync),
+                           "AOI set to use Alaska data sources. HUC2 = " + oAoi.Huc2);
                     }
                     if (!string.IsNullOrEmpty(oAoi.StationTriplet))
                     {
@@ -1235,7 +1239,6 @@ namespace bagis_pro
                             "Master AOI properties returned. Array length: " + arrValues.Length);
                         if (arrResults.Length == 5)
                         {
-                            oAoi.NwccName = arrResults[0];
                             if (!string.IsNullOrEmpty(arrResults[1]))
                             {
                                 oAoi.WinterStartMonth = Convert.ToInt32(arrResults[1]);
@@ -1256,21 +1259,6 @@ namespace bagis_pro
                                 if (Module1.Current.BatchToolSettings.WinterEndMonth != null)
                                 {
                                     oAoi.WinterEndMonth = Convert.ToInt32(Module1.Current.BatchToolSettings.WinterEndMonth);
-                                }
-                            }
-                            if (!string.IsNullOrEmpty(arrResults[3]))
-                            {
-                                oAoi.Huc = Convert.ToString(arrResults[3]);
-                                Module1.Current.ModuleLogManager.LogDebug(nameof(SetAoiAsync),
-                                    "HUC set to " + oAoi.Huc);
-                            }
-                            if (!string.IsNullOrEmpty(arrResults[4]))
-                            {
-                                if (Constants.VALUE_ALASKA_HUC2.Equals(arrResults[4]))
-                                {
-                                    Module1.Current.DataSourceGroup = Constants.DATA_SOURCES_ALASKA;
-                                    Module1.Current.ModuleLogManager.LogDebug(nameof(SetAoiAsync),
-                                        "AOI set to use Alaska data sources. HUC2 = " + arrResults[4]);
                                 }
                             }
                         }
@@ -2569,7 +2557,7 @@ namespace bagis_pro
                 // Initialize the title page object
                 BA_Objects.ExportTitlePage tPage = new BA_Objects.ExportTitlePage
                 {
-                    aoi_name = oAoi.NwccName,
+                    aoi_name = oAoi.StationName,
                     local_path = oAoi.FilePath,
                     date_created = DateTime.Now
                 };

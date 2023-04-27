@@ -714,6 +714,71 @@ namespace bagis_pro
             return arrReturnValues;
         }
 
+        public static async Task<string[]> QueryLocalStationValues(string aoiFilePath)
+        {
+            string strTriplet = "Not Specified";
+            string strTempHuc2 = "-1";
+            string strStationName = "Not Specified";
+            Uri ppUri = new Uri(GeodatabaseTools.GetGeodatabasePath(aoiFilePath, GeodatabaseNames.Aoi));
+            string strPourpointClassPath = ppUri.LocalPath + "\\" + Constants.FILE_POURPOINT;
+            if (await GeodatabaseTools.FeatureClassExistsAsync(ppUri, Constants.FILE_POURPOINT))
+            {
+                string[] arrFields = new string[] { Constants.FIELD_STATION_TRIPLET, Constants.FIELD_STATION_NAME, Constants.FIELD_HUC2 };
+                foreach (string strField in arrFields)
+                {
+                    // Check for the field, if it exists query the value
+                    if (await GeodatabaseTools.AttributeExistsAsync(ppUri, Constants.FILE_POURPOINT, strField))
+                    {
+                        QueryFilter queryFilter = new QueryFilter();
+                        string strValue = await GeodatabaseTools.QueryTableForSingleValueAsync(ppUri, Constants.FILE_POURPOINT,
+                            strField, queryFilter);
+                        if (!string.IsNullOrEmpty(strValue))
+                        {
+                            switch (strField)
+                            {
+                                case Constants.FIELD_STATION_TRIPLET:
+                                    strTriplet = strValue;
+                                    break;
+                                case Constants.FIELD_STATION_NAME:
+                                    strStationName = strValue;
+                                    break;
+                                case Constants.FIELD_HUC2:
+                                    strTempHuc2 = strValue;
+                                    break;
+                            }
+                        }
+                    }
+                    // Add the field if it is missing
+                    else
+                    {
+                        BA_ReturnCode success = BA_ReturnCode.UnknownError;
+                        if (strField.Equals(Constants.FIELD_HUC2))
+                        {
+                            success = await GeoprocessingTools.AddFieldAsync(strPourpointClassPath, strField, "INTEGER");
+                        }
+                        else
+                        {
+                            success = await GeoprocessingTools.AddFieldAsync(strPourpointClassPath, strField, "TEXT");
+                        }
+                        if (success != BA_ReturnCode.Success)
+                        {
+                            Module1.Current.ModuleLogManager.LogError(nameof(QueryLocalStationValues),
+                                $@"Unable to add field {strField} to {strPourpointClassPath}");
+
+                        }
+                    }
+                }
+            }
+            else
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(QueryLocalStationValues),
+                    "Unable to locate pourpoint feature class: " + strPourpointClassPath);
+
+            }
+            string[] arrReturnValues = new string[] { strTriplet, strStationName, strTempHuc2 };
+            return arrReturnValues;
+        }
+
         public static async Task<BA_ReturnCode> ClipLayersAsync(string strAoiPath, string strDataType,
             string prismBufferDistance, string prismBufferUnits, string strBufferDistance, string strBufferUnits)
         {
