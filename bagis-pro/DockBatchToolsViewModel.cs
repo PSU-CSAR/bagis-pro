@@ -1086,16 +1086,15 @@ namespace bagis_pro
 
             // Reset AOI status
             ResetAoiBatchStateText();
-
-            BA_ReturnCode success = BA_ReturnCode.Success;
             Webservices ws = new Webservices();
             IList<string> lstMergeFeatures = new List<string>();
-
+            BA_ReturnCode success = BA_ReturnCode.Success;
             for (int idxRow = 0; idxRow < Names.Count; idxRow++)
             {
                 if (Names[idxRow].AoiBatchIsSelected)
                 {
                     int errorCount = 0; // keep track of any non-fatal errors
+                    success = BA_ReturnCode.Success;    // Re-initialize success variable
                     string aoiFolder = Names[idxRow].FilePath;
                     Names[idxRow].AoiBatchStateText = AoiBatchState.Started.ToString();  // update gui
                     strLogEntry = CreateLogEntry(aoiFolder, "", "", $@"Starting forecast station update");
@@ -1321,8 +1320,8 @@ namespace bagis_pro
             string strOutputPath = $@"{mergeGdbPath}\{Constants.FILE_MERGED_AOI_POLYS}";
             StringBuilder sb = new StringBuilder();
             int intError = 0;
-            string mapAwdbId = "$@\"awdb_id \"\"awdb_id\"\" true true false 30 Text 0 0,First,#,\"";
-            string mapStationTriplet = "$@\"stationTriplet \"\"stationTriplet\"\" true true false 255 Text 0 0,First,#,\"";
+            string mapAwdbId = $@"awdb_id ""awdb_id"" true true false 30 Text 0 0,First,#,";
+            string mapStationTriplet = $@"stationTriplet ""stationTriplet"" true true false 255 Text 0 0,First,#,";
             string mapStationName = $@"stationName ""stationName"" true true false 255 Text 0 0,First,#,";
 
             if (lstMergeFeatures.Count > 0)
@@ -1337,11 +1336,11 @@ namespace bagis_pro
                         //StringBuilder sbAoiName = new StringBuilder($@"AOINAME ""AOINAME"" true true false 40 Text 0 0,First,#,");
                         //sbAoiName.Append($@"{fc},AOINAME,0,40, ");
                         StringBuilder sbAwdbId = new StringBuilder(mapAwdbId);
-                        sbAwdbId.Append($@"{lstMergeFeatures[i]},0,30, ");
+                        sbAwdbId.Append($@"{lstMergeFeatures[i]},awdb_id,0,30,");
                         StringBuilder sbStationTriplet = new StringBuilder(mapStationTriplet);   
-                        sbStationTriplet.Append($@"{lstMergeFeatures[i]},stationTriplet,0,255, ");
+                        sbStationTriplet.Append($@"{lstMergeFeatures[i]},stationTriplet,0,255,");
                         StringBuilder sbStationName = new StringBuilder(mapStationName);
-                        sbStationName.Append($@"{lstMergeFeatures[i]},stationName,0,255, ");
+                        sbStationName.Append($@"{lstMergeFeatures[i]},stationName,0,255,");
                         string[] arrFieldMapping = new string[3];
                         //arrFieldMapping[0] = sbAoiName.ToString().TrimEnd(',');
                         arrFieldMapping[0] = sbAwdbId.ToString().TrimEnd(',');
