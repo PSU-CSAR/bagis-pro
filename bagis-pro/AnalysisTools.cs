@@ -2672,7 +2672,7 @@ namespace bagis_pro
                                     double dblAspect = Convert.ToDouble(row[idxAspect]);
                                     foreach (var interval in lstAspectInterval)
                                     {
-                                        if (dblAspect > interval.LowerBound && dblAspect < interval.UpperBound)
+                                        if (dblAspect > interval.LowerBound && dblAspect <= interval.UpperBound)
                                         {
                                             row[idxAspectDirect] = interval.Name;
                                             row.Store();

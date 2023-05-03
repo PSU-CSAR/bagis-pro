@@ -373,6 +373,9 @@ namespace bagis_pro
                 Path.GetDirectoryName(_strLogFile) + "\r\n";
             File.WriteAllText(_strLogFile, strLogEntry);    // overwrite file if it exists
 
+            // Reset AOI status
+            ResetAoiBatchStateText();
+
             // Check for existing map package files and warn user
             if (ArchiveChecked)
             {
@@ -941,6 +944,9 @@ namespace bagis_pro
                 Path.GetDirectoryName(snodasLog) + "\r\n";
             File.WriteAllText(snodasLog, strLogEntry);    // overwrite file if it exists
 
+            // Reset batch states
+            ResetAoiBatchStateText();
+
             for (int idxRow = 0; idxRow < Names.Count; idxRow++)
             {
                 if (Names[idxRow].AoiBatchIsSelected)
@@ -1058,6 +1064,14 @@ namespace bagis_pro
             MessageBox.Show("Generated GeoJson files are available in " + ParentFolder + "\\" + Constants.FOLDER_SNODAS_GEOJSON, "BAGIS-PRO");
         }
 
+        private void ResetAoiBatchStateText()
+        {
+            for (int idxRow = 0; idxRow < Names.Count; idxRow++)
+            {
+                Names[idxRow].AoiBatchStateText = AoiBatchState.Waiting.ToString();
+            }
+        }
+
         private async void RunForecastImplAsync(object param)
         {
             const string UPDATED_NEAR = "Updated-Near";
@@ -1085,15 +1099,18 @@ namespace bagis_pro
             File.WriteAllText(log, strLogEntry);    // overwrite file if it exists
             strLogEntry = CreateLogEntry(ParentFolder, "", "", $@"Starting forecast station updates");
             File.AppendAllText(log, strLogEntry);
-            BA_ReturnCode success = BA_ReturnCode.Success;
+
+            // Reset AOI status
+            ResetAoiBatchStateText();
             Webservices ws = new Webservices();
             IList<string> lstMergeFeatures = new List<string>();
-
+            BA_ReturnCode success = BA_ReturnCode.Success;
             for (int idxRow = 0; idxRow < Names.Count; idxRow++)
             {
                 if (Names[idxRow].AoiBatchIsSelected)
                 {
                     int errorCount = 0; // keep track of any non-fatal errors
+                    success = BA_ReturnCode.Success;    // Re-initialize success variable
                     string aoiFolder = Names[idxRow].FilePath;
                     Names[idxRow].AoiBatchStateText = AoiBatchState.Started.ToString();  // update gui
                     strLogEntry = CreateLogEntry(aoiFolder, "", "", $@"Starting forecast station update");
@@ -1106,6 +1123,7 @@ namespace bagis_pro
                     string strNearTriplet = "";
                     string strNearStationName = "";
                     string strNearAwdbId = "";
+                    int intNearHuc2 = -1;
                     string strRemark = "";
 
                     // GET THE STATION TRIPLET FROM THE POURPOINT
@@ -1113,11 +1131,11 @@ namespace bagis_pro
                     { { Constants.FIELD_STATION_TRIPLET, ""},
                       { Constants.FIELD_STATION_NAME, ""},
                       { Constants.FIELD_AWDB_ID, ""}
-                    }; 
+                    };
                     QueryFilter queryFilter = new QueryFilter();
                     if (await GeodatabaseTools.FeatureClassExistsAsync(ppUri, Constants.FILE_POURPOINT))
                     {
-                        string[] arrFields = new string[] { Constants.FIELD_STATION_TRIPLET, Constants.FIELD_STATION_NAME, Constants.FIELD_AWDB_ID };
+                        string[] arrFields = new string[] { Constants.FIELD_STATION_TRIPLET, Constants.FIELD_STATION_NAME, Constants.FIELD_AWDB_ID, Constants.FIELD_HUC2 };
                         foreach (string strField in arrFields)
                         {
                             // Check for the field, if it exists query the value
@@ -1144,7 +1162,14 @@ namespace bagis_pro
                             // Add the field if it is missing
                             else
                             {
-                                success = await GeoprocessingTools.AddFieldAsync(ppUri.LocalPath + "\\" + Constants.FILE_POURPOINT, strField, "TEXT");
+                                if (strField.Equals(Constants.FIELD_HUC2))
+                                {
+                                    success = await GeoprocessingTools.AddFieldAsync(ppUri.LocalPath + "\\" + Constants.FILE_POURPOINT, strField, "INTEGER");
+                                }
+                                else
+                                {
+                                    success = await GeoprocessingTools.AddFieldAsync(ppUri.LocalPath + "\\" + Constants.FILE_POURPOINT, strField, "TEXT");
+                                }
                             }
                         }
                     }
@@ -1157,7 +1182,7 @@ namespace bagis_pro
                     }
 
                     // QUERY THE MASTER LIST FOR THE STATION TRIPLET
-                    string[] arrSearch = { Constants.FIELD_STATION_TRIPLET, Constants.FIELD_AWDB_ID, Constants.FIELD_NWCCNAME };
+                    string[] arrSearch = { Constants.FIELD_STATION_TRIPLET, Constants.FIELD_AWDB_ID, Constants.FIELD_NWCCNAME, Constants.FIELD_HUC2 };
                     string[] arrFound = new string[arrSearch.Length];
                     string strWsUri = (string)Module1.Current.BatchToolSettings.MasterAoiList + "/0";  // Append layer ordinal to the uri
                     if (!AlwaysNearChecked)
@@ -1165,7 +1190,7 @@ namespace bagis_pro
                         queryFilter = new QueryFilter();
                         queryFilter.WhereClause = Constants.FIELD_STATION_TRIPLET + " = '" + strTriplet + "'";
                         arrFound = await ws.QueryServiceForValuesAsync(new Uri((string)Module1.Current.BatchToolSettings.MasterAoiList), "0", arrSearch, queryFilter);
-                        if (arrFound != null && arrFound.Length == arrSearch.Length && arrFound[0] != null)
+                        if (arrFound != null && arrFound.Length == arrSearch.Length && strTriplet.Equals(arrFound[0]))
                         {
                             strRemark = NO_CHANGE_MATCH;
                         }
@@ -1185,11 +1210,12 @@ namespace bagis_pro
                             {
                                 queryFilter.WhereClause = Constants.FIELD_OBJECT_ID + " = " + strNearId;
                                 arrFound = await ws.QueryServiceForValuesAsync(new Uri((string)Module1.Current.BatchToolSettings.MasterAoiList), "0", arrSearch, queryFilter);
-                                if (arrFound != null && arrFound.Length == 3 && arrFound[0] != null)
+                                if (arrFound != null && arrFound.Length == 4 && arrFound[0] != null)
                                 {
                                     strNearTriplet = arrFound[0];
                                     strNearAwdbId = arrFound[1].Trim('"');
                                     strNearStationName = arrFound[2];
+                                    intNearHuc2 = Convert.ToInt16(arrFound[3]);
                                     if (!string.IsNullOrEmpty(strNearTriplet))
                                     {
                                         strRemark = UPDATED_NEAR;
@@ -1217,6 +1243,7 @@ namespace bagis_pro
                             dictEdits[Constants.FIELD_STATION_NAME] = strNearStationName;
                             success = await GeodatabaseTools.UpdateFeatureAttributesAsync(ppUri, Constants.FILE_POURPOINT,
                                 new QueryFilter(), dictEdits);
+                            success = await GeodatabaseTools.UpdateFeatureAttributeNumericAsync(ppUri, Constants.FILE_POURPOINT, new QueryFilter(), Constants.FIELD_HUC2, intNearHuc2);
                             lstMergeFeatures.Add(ppUri.LocalPath + "\\" + Constants.FILE_AOI_VECTOR);
                             break;
                         case NO_CHANGE_MATCH:
@@ -1309,11 +1336,9 @@ namespace bagis_pro
             string strOutputPath = $@"{mergeGdbPath}\{Constants.FILE_MERGED_AOI_POLYS}";
             StringBuilder sb = new StringBuilder();
             int intError = 0;
-            //StringBuilder sbAoiName = new StringBuilder($@"AOINAME ""AOINAME"" true true false 40 Text 0 0,First,#,");
-            StringBuilder sbAwdbId = new StringBuilder($@"awdb_id ""awdb_id"" true true false 30 Text 0 0,First,#,");
-            //StringBuilder sbBasin = new StringBuilder($@"BASIN ""BASIN"" true true false 30 Text 0 0,First,#,");
-            StringBuilder sbStationTriplet = new StringBuilder($@"stationTriplet ""stationTriplet"" true true false 255 Text 0 0,First,#,");
-            StringBuilder sbStationName = new StringBuilder($@"stationName ""stationName"" true true false 255 Text 0 0,First,#,");
+            string mapAwdbId = $@"awdb_id ""awdb_id"" true true false 30 Text 0 0,First,#,";
+            string mapStationTriplet = $@"stationTriplet ""stationTriplet"" true true false 255 Text 0 0,First,#,";
+            string mapStationName = $@"stationName ""stationName"" true true false 255 Text 0 0,First,#,";
 
             if (lstMergeFeatures.Count > 0)
             {
@@ -1324,11 +1349,14 @@ namespace bagis_pro
                     {
                         sb.Append(lstMergeFeatures[i]);
                         sb.Append(";");
+                        //StringBuilder sbAoiName = new StringBuilder($@"AOINAME ""AOINAME"" true true false 40 Text 0 0,First,#,");
                         //sbAoiName.Append($@"{fc},AOINAME,0,40, ");
-                        sbAwdbId.Append($@"{lstMergeFeatures[i]},0,30, ");
-                        //sbBasin.Append($@"{fc},BASIN,0,30, ");
-                        sbStationTriplet.Append($@"{lstMergeFeatures[i]},stationTriplet,0,255, ");
-                        sbStationName.Append($@"{lstMergeFeatures[i]},stationName,0,255, ");
+                        StringBuilder sbAwdbId = new StringBuilder(mapAwdbId);
+                        sbAwdbId.Append($@"{lstMergeFeatures[i]},awdb_id,0,30,");
+                        StringBuilder sbStationTriplet = new StringBuilder(mapStationTriplet);
+                        sbStationTriplet.Append($@"{lstMergeFeatures[i]},stationTriplet,0,255,");
+                        StringBuilder sbStationName = new StringBuilder(mapStationName);
+                        sbStationName.Append($@"{lstMergeFeatures[i]},stationName,0,255,");
                         string[] arrFieldMapping = new string[3];
                         //arrFieldMapping[0] = sbAoiName.ToString().TrimEnd(',');
                         arrFieldMapping[0] = sbAwdbId.ToString().TrimEnd(',');
