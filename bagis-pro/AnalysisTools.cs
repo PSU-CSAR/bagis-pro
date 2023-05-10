@@ -4727,8 +4727,9 @@ namespace bagis_pro
 
             // Assign the site id by elevation
             success = await UpdateSiteIdsAsync(analysisPath, gdbUri, arrHasSites, arrSiteFiles);
-            var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath, snapRaster: BA_Objects.Aoi.SnapRasterPath(strAoiPath));
-                string fileExtract = "tmpExtract";
+            var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath, snapRaster: BA_Objects.Aoi.SnapRasterPath(strAoiPath),
+                extent: returnPath);
+            string fileExtract = "tmpExtract";
                 string[] arrFields = { Constants.FIELD_PRECIP, Constants.FIELD_ASPECT, Constants.FIELD_SLOPE};
                 string[] arrFieldDataTypes = { "DOUBLE", "DOUBLE", "DOUBLE" };
                 string[] arrUri = { GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Prism),

@@ -116,7 +116,6 @@ namespace bagis_pro
         internal dynamic BatchToolSettings { get; set; } = "";
         internal double PrismZonesInterval { get; set; } = 999;
         internal string WesternStateBoundariesUri { get; } = "";
-        internal string Dem30Uri { get; } = "";
         internal string RoadsBufferDistance { get; set; } = "";
         internal string DataSourceGroup { get; set; } = Constants.DATA_SOURCES_DEFAULT;
     }

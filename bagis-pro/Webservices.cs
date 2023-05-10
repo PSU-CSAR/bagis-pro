@@ -334,25 +334,35 @@ namespace bagis_pro
 
         public async Task<string> GetDem30UriAsync()
         {
-            if (!string.IsNullOrEmpty(Module1.Current.Dem30Uri))
+            IDictionary<string, BA_Objects.DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
+            if (!dictLocalDataSources.ContainsKey(BA_Objects.DataSource.GetDemKey))
             {
-                return Module1.Current.Dem30Uri;
-            }
-            else
-            {
-                var response = new EsriHttpClient().Get(Constants.URI_DESKTOP_SETTINGS);
-                var json = await response.Content.ReadAsStringAsync();
-                dynamic oSettings = JObject.Parse(json);
-                if (oSettings == null || String.IsNullOrEmpty(Convert.ToString(oSettings.dem30)))
+                IDictionary<string, dynamic> dictDatasources = await this.QueryDataSourcesAsync((string)Module1.Current.BatchToolSettings.EBagisServer);
+                if (dictDatasources != null)
                 {
-                    Module1.Current.ModuleLogManager.LogError(nameof(GetDem30UriAsync),
-                        "Unable to retrieve settings from " + Constants.URI_DESKTOP_SETTINGS);
-                    return "";
+                    BA_Objects.DataSource dsDem = new BA_Objects.DataSource(dictDatasources[BA_Objects.DataSource.GetDemKey]);
+                    if (dsDem != null)
+                    {
+                        return dsDem.uri;
+                    }
+                    else
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(GetDem30UriAsync),
+                            $@"Unable to find element 30m DEM in server data sources");
+                        return "";
+                    }
                 }
                 else
                 {
-                    return Convert.ToString(oSettings.dem30);
+                    Module1.Current.ModuleLogManager.LogError(nameof(GetDem30UriAsync),
+                        $@"Unable to retrieve data sources from server!");
+                    return "";
                 }
+            }
+            else
+            {
+                BA_Objects.DataSource dsDem = new BA_Objects.DataSource(dictLocalDataSources[BA_Objects.DataSource.GetDemKey]);
+                return dsDem.uri;
             }
         }
 
