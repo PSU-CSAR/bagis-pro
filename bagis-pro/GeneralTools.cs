@@ -772,7 +772,7 @@ namespace bagis_pro
                         {
                             Left = 10,
                             Top = lastRow * 15,
-                            Height = 160,
+                            Height = 200,
                             Width = 600,
                             Message = "Precipitation amount, summary statistics, and resulting volume are indicated for each elevation zone. Critical precipitation zones (red cells) are the elevations that have the potential for delivering the most significant runoff. These areas are determined by the following steps:\r\n" +
                             "1. Eliminate the zones that in general do not receive sufficient precipitation (annual precipitation <= 20 inches) to contribute significant basin runoff (blue cells).\r\n" +
