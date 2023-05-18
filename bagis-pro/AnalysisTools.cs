@@ -16,6 +16,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -2838,6 +2839,11 @@ namespace bagis_pro
             string strDataType, string strBufferDistance, string strBufferUnits)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            bool bClipFromLayer = false;
+            if (strDataType == Constants.DATA_TYPE_ALASKA_LAND_COVER)
+            {
+                bClipFromLayer = true;
+            }
 
             Webservices ws = new Webservices();
             Module1.Current.ModuleLogManager.LogDebug(nameof(ClipLayersAsync),
@@ -2845,6 +2851,7 @@ namespace bagis_pro
             IDictionary<string, dynamic> dictDataSources =
                 await ws.QueryDataSourcesAsync((string)Module1.Current.BatchToolSettings.EBagisServer);
             string strWsUri = dictDataSources[strDataType].uri;
+            string strInputRaster = strWsUri;
             string[] arrLayersToDelete = new string[2];
             string strClipGdb = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, false);
             string strClipFile = Constants.FILE_AOI_BUFFERED_VECTOR;
@@ -2946,14 +2953,30 @@ namespace bagis_pro
                         return;
                     }
 
-                    Uri imageServiceUri = new Uri(strWsUri);
+                    if (bClipFromLayer)
+                    {
+                        strInputRaster = "ClipRasterSource";
+                        Uri uri = new Uri(strWsUri);
+                        success = await MapTools.DisplayMapServiceLayerAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, strInputRaster, false);
+                    }
                     string strTemplateDataset = strClipGdb + "\\" + strClipFile;
                     var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath, snapRaster: BA_Objects.Aoi.SnapRasterPath(strAoiPath),
                         extent: strClipEnvelope);
-                    parameters = Geoprocessing.MakeValueArray(imageServiceUri.AbsoluteUri, strClipEnvelope, strOutputRaster, strTemplateDataset,
+                    parameters = Geoprocessing.MakeValueArray(strInputRaster, strClipEnvelope, strOutputRaster, strTemplateDataset,
                                         "", "ClippingGeometry");
                     var finalResult = await Geoprocessing.ExecuteToolAsync("Clip_management", parameters, environments,
                                     CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                    if (bClipFromLayer)
+                    {
+                        // Remove the temp layer
+                        var oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
+                        Layer oLayer =
+                            oMap.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(strInputRaster, StringComparison.CurrentCultureIgnoreCase));
+                        if (oLayer != null)
+                        {
+                            oMap.RemoveLayer(oLayer);
+                        }
+                    }
                     if (finalResult.IsFailed)
                     {
                         Module1.Current.ModuleLogManager.LogError(nameof(ClipRasterLayerAsync),
@@ -4403,7 +4426,7 @@ namespace bagis_pro
             Uri gdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, false));
             Uri sitesGdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false));
             int sitesInBasin = await GeodatabaseTools.CountPointsWithinInFeatureAsync(sitesGdbUri, Constants.FILE_MERGED_SITES,
-                gdbUri, Constants.FILE_AOI_BUFFERED_VECTOR);
+                gdbUri, Constants.FILE_AOI_VECTOR);
             long totalSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_MERGED_SITES);
             if (totalSites > 0)
             {
@@ -4748,7 +4771,7 @@ namespace bagis_pro
             Uri aoiUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, false));
             Uri sitesGdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false));
             int sitesInBasin = await GeodatabaseTools.CountPointsWithinInFeatureAsync(sitesGdbUri, Constants.FILE_MERGED_SITES,
-                aoiUri, Constants.FILE_AOI_BUFFERED_VECTOR);
+                aoiUri, Constants.FILE_AOI_VECTOR);
             long totalSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_MERGED_SITES);
             if (totalSites > 0)
             {
@@ -4946,13 +4969,14 @@ namespace bagis_pro
             string strOutputFeatures = GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Analysis, true) +
                 "tmpBuffer";
             string strDistance = "1 Kilometers";
-            if (Module1.Current.BatchToolSettings.SnotelBufferDistance != null)
+            if (Module1.Current.BatchToolSettings.PrecipBufferDistance != null)
             {
-                strDistance = (string)Module1.Current.BatchToolSettings.SnotelBufferDistance + " " +
-                    (string)Module1.Current.BatchToolSettings.SnotelBufferUnits;
+                strDistance = (string)Module1.Current.BatchToolSettings.PrecipBufferDistance + " " +
+                    (string)Module1.Current.BatchToolSettings.PrecipBufferUnits;
             }
             
-            var parameters = Geoprocessing.MakeValueArray(strSitesPath, strOutputFeatures, strDistance, "",
+            string strAoiPath = GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_VECTOR;
+            var parameters = Geoprocessing.MakeValueArray(strAoiPath, strOutputFeatures, strDistance, "",
                                                               "", "ALL");
             var res = Geoprocessing.ExecuteToolAsync("Buffer_analysis", parameters, null,
                                  CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
@@ -4985,6 +5009,13 @@ namespace bagis_pro
             {
                 success = await GeoprocessingTools.ClipRasterAsync(demUri, clipEnvelope, outputRaster, null, null, false,
                     aoiFolderPath, BA_Objects.Aoi.SnapRasterPath(aoiFolderPath));
+                if (success != BA_ReturnCode.Success)
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(ReclipSurfacesAsync),
+                        "Failed to clip DEM for buffered sites layer using ClipRasterAsync. Attempting ClipRasterToLayerAsync");
+                    success = await GeoprocessingTools.ClipRasterAsLayerAsync(demUri, clipEnvelope, outputRaster, null, null, false,
+                    aoiFolderPath, BA_Objects.Aoi.SnapRasterPath(aoiFolderPath));
+;                }
                 if (success == BA_ReturnCode.Success)
                 {
                     // Recalculate slope layer on clipped DEM
@@ -4997,11 +5028,6 @@ namespace bagis_pro
                         Module1.Current.ModuleLogManager.LogError(nameof(ReclipSurfacesAsync),
                             "Slope tool failed to create sites_slope layer. Error code: " + gpResult.ErrorCode);
                     }
-                }
-                else
-                {
-                    Module1.Current.ModuleLogManager.LogError(nameof(ReclipSurfacesAsync),
-                        "Failed to clip DEM for buffered sites layer!");
                 }
 
             }

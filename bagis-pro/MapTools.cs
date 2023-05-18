@@ -2828,7 +2828,7 @@ namespace bagis_pro
         }
 
         public static async Task DisplayRasterStretchSymbolAsync(string strMapName, Uri rasterUri, string displayName, string styleCategory,
-     string styleName, int transparency)
+            string styleName, int transparency)
         {
             // parse the uri for the folder and file
             string strFileName = null;

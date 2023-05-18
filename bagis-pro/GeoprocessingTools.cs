@@ -2,6 +2,7 @@
 using ArcGIS.Core.Geometry;
 using ArcGIS.Desktop.Core.Geoprocessing;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
+using ArcGIS.Desktop.Mapping;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -227,6 +228,44 @@ namespace bagis_pro
                 return Geoprocessing.ExecuteToolAsync("Clip_management", parameters, environments,
                             CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
             });
+            if (gpResult.IsFailed)
+            {
+                return BA_ReturnCode.UnknownError;
+            }
+            else
+            {
+                return BA_ReturnCode.Success;
+            }
+        }
+
+        public static async Task<BA_ReturnCode> ClipRasterAsLayerAsync(string strInputRaster, string strRectangle, string strOutputRaster,
+                                        string strTemplateDataset, string strNoDataValue, bool bUseClippingGeometry,
+                                        string strWorkspace, string strSnapRaster)
+        {
+            string strLayerName = "ClipRasterSource";
+            Uri uri = new Uri(strInputRaster);
+            BA_ReturnCode success = await MapTools.DisplayMapServiceLayerAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, strLayerName, false);
+            string strClippingGeometry = "NONE";
+            if (bUseClippingGeometry == true)
+            {
+                strClippingGeometry = "ClippingGeometry";
+            }
+            IGPResult gpResult = await QueuedTask.Run(() =>
+            {
+                var environments = Geoprocessing.MakeEnvironmentArray(workspace: strWorkspace, snapRaster: strSnapRaster, extent: strRectangle);
+                var parameters = Geoprocessing.MakeValueArray(strLayerName, strRectangle, strOutputRaster, strTemplateDataset,
+                                    strNoDataValue, strClippingGeometry);
+                return Geoprocessing.ExecuteToolAsync("Clip_management", parameters, environments,
+                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+            });
+            // Remove the temp layer
+            var oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
+            Layer oLayer =
+                oMap.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(strLayerName, StringComparison.CurrentCultureIgnoreCase));
+            if (oLayer != null)
+            {
+                oMap.RemoveLayer(oLayer);
+            }
             if (gpResult.IsFailed)
             {
                 return BA_ReturnCode.UnknownError;
