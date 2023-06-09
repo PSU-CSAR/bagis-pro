@@ -100,7 +100,7 @@
     "AspectDirectionsCount": 4,
     "MinElevationZonesCount": 8,
     "SnotelSweZonesCount": 7,
-    "PrecipBufferDistance": 5,
+    "PrecipBufferDistance": 1,
     "PrecipBufferUnits": "Kilometers",
     "SnotelBufferDistance": 5,
     "SnotelBufferUnits": "Kilometers",
@@ -125,6 +125,6 @@
     "MaximumSitesAllowed": 50,
     "WinterStartMonth": 11,
     "WinterEndMonth": 3,
-    "Version": 6
+    "Version": 7
   }
 }
