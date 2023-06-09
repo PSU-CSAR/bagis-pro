@@ -5112,7 +5112,7 @@ namespace bagis_pro
             // Check to see if all sites are with the PRISM buffered AOI. If not, need to get the correct service name
             long outsidePrism = 0;
             int sitesInBasin = await GeodatabaseTools.CountPointsWithinInFeatureAsync(sitesGdbUri, Constants.FILE_MERGED_SITES,
-                aoiUri, Constants.FILE_AOI_PRISM_VECTOR);
+                aoiUri, Constants.FILE_AOI_VECTOR);
             if (totalSites > 0)
             {
                 outsidePrism = totalSites - sitesInBasin;
