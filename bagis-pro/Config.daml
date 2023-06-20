@@ -1,5 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<ArcGIS defaultAssembly="bagis_pro.dll" defaultNamespace="bagis_pro" xmlns="http://schemas.esri.com/DADF/Registry" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://schemas.esri.com/DADF/Registry file:///C:/Program%20Files/ArcGIS/Pro/bin/ArcGIS.Desktop.Framework.xsd">
+﻿<ArcGIS defaultAssembly="bagis_pro.dll" defaultNamespace="bagis_pro" xmlns="http://schemas.esri.com/DADF/Registry" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://schemas.esri.com/DADF/Registry file:///C:/Program%20Files/ArcGIS/Pro/bin/ArcGIS.Desktop.Framework.xsd">
   <AddInInfo id="{bfef0cd1-e877-48dc-8b78-40de4825c346}" version="1.0" desktopVersion="3.0.36056">
     <Name>BAGIS-PRO</Name>
     <Description>Basin Analysis for ArcGIS Pro</Description>
@@ -31,7 +30,6 @@
           <toolbar refID="BAGIS_V4_Toolbar1" /> -->
           <tool refID="bagis_pro_Basin_SetDEMExtenttTool" size="large" />
           <button refID="bagis_pro_Maps_Tables_Button1" size="large" />
-          <button refID="bagis_pro_DockBatchTools_ShowButton" size="large" />
         </group>
         <group id="bagis_pro_Groups_Basin" appearsOnAddInTab="false" caption=" " keytip="G2">
           <menu refID="bagis_pro_Menus_MnuBasin" size="middle" />
@@ -50,7 +48,8 @@
           <button refID="bagis_pro_DockMapPackage_ShowButton" size="middle" />
         </group>
         <group id="bagis_pro_Groups_Tools" appearsOnAddInTab="false" caption="Tools" keytip="G4">
-          <button refID="bagis_pro_DockBatchTools_ShowButton" size="middle" />
+          <!--<button refID="bagis_pro_DockBatchTools_ShowButton" size="middle" /> -->
+          <button refID="bagis_pro_DockAdminTools_ShowButton" size="middle" />
           <button refID="bagis_pro_DockMigrateToFGDB_ShowButton" size="middle" />
           <button refID="bagis_pro_Buttons_BtnTest" size="middle" />
           <button refID="bagis_pro_DockExportForSnodas_ShowButton" size="middle" />
@@ -255,8 +254,11 @@
         </button>
         <button id="bagis_pro_DockBatchTools_ShowButton" caption="Batch Tools" className="DockBatchTools_ShowButton" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/JobExport16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/JobExport16.png" keytip="B57">
           <tooltip heading="Batch Tools">
-            Batch Tools<disabledText />
-          </tooltip>
+            Batch Tools<disabledText /></tooltip>
+        </button>
+        <button id="bagis_pro_DockAdminTools_ShowButton" caption="Batch Tools" className="DockAdminTools_ShowButton" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/JobExport16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/JobExport16.png" keytip="B57">
+          <tooltip heading="Batch Tools">
+            Batch Tools<disabledText /></tooltip>
         </button>
       </controls>
       <menus>
@@ -301,6 +303,9 @@
         </dockPane>
         <dockPane id="bagis_pro_DockBatchTools" caption="Batch Tools" className="DockBatchToolsViewModel" dock="group" dockWith="esri_core_projectDockPane">
           <content className="DockBatchToolsView" />
+        </dockPane>
+        <dockPane id="bagis_pro_DockAdminTools" caption="Batch Tools" className="DockAdminToolsViewModel" dock="group" dockWith="esri_core_projectDockPane">
+          <content className="DockAdminToolsView" />
         </dockPane>
       </dockPanes>
     </insertModule>
