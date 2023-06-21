@@ -21,7 +21,7 @@ using System.Linq;
 using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
-
+using System.Windows.Input;
 
 namespace bagis_pro
 {
@@ -103,6 +103,7 @@ namespace bagis_pro
         private string _heading = "Batch Report Tools";
         private string _parentFolder;
         private string _settingsFile;
+        private string _snodasFolder;
         private string _publisher;
         private string _comments;
         private bool _archiveChecked = false;
@@ -174,6 +175,15 @@ namespace bagis_pro
             }
         }
 
+        public string SnodasFolder
+        {
+            get { return _snodasFolder; }
+            set
+            {
+                SetProperty(ref _snodasFolder, value, () => SnodasFolder);
+            }
+        }
+
         public string Publisher
         {
             get { return _publisher; }
@@ -238,6 +248,7 @@ namespace bagis_pro
                     }
 
                     _strLogFile = ParentFolder + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\" + Constants.FILE_BATCH_LOG;
+                    SnodasFolder = ParentFolder + "\\" + Constants.FOLDER_SNODAS_GEOJSON;
                     // Make sure the maps_publish folder exists under the selected folder
                     if (!Directory.Exists(Path.GetDirectoryName(_strLogFile)))
                     {
@@ -270,6 +281,135 @@ namespace bagis_pro
                     }
                 });
             }
+        }
+
+        private RelayCommand _runSnodasCommand;
+        public ICommand CmdSnodas
+        {
+            get
+            {
+                if (_runSnodasCommand == null)
+                    _runSnodasCommand = new RelayCommand(RunSnodasImplAsync, () => true);
+                return _runSnodasCommand;
+            }
+        }
+
+        private async void RunSnodasImplAsync(object param)
+        {
+            string snodasLog = ParentFolder + "\\" + Constants.FOLDER_SNODAS_GEOJSON + "\\" + Constants.FILE_SNODAS_GEOJSON_LOG;
+            // Make sure the maps_publish folder exists under the selected folder
+            if (!Directory.Exists(Path.GetDirectoryName(snodasLog)))
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(snodasLog));
+            }
+
+            // Create initial log entry
+            string strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Starting snodas geojson export to publish in " +
+                Path.GetDirectoryName(snodasLog) + "\r\n";
+            File.WriteAllText(snodasLog, strLogEntry);    // overwrite file if it exists
+
+            // Reset batch states
+            ResetAoiBatchStateText();
+
+            for (int idxRow = 0; idxRow < Names.Count; idxRow++)
+            {
+                if (Names[idxRow].AoiBatchIsSelected)
+                {
+                    int errorCount = 0; // keep track of any non-fatal errors
+                    string aoiFolder = Names[idxRow].FilePath;
+                    Names[idxRow].AoiBatchStateText = AoiBatchState.Started.ToString();  // update gui
+                    strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Starting geojson export for " +
+                        Names[idxRow].Name + "\r\n";
+                    File.AppendAllText(snodasLog, strLogEntry);       // append
+
+                    // generate the file(s)
+                    string pointOutputPath = Path.GetTempPath() + "pourpoint.geojson";
+                    string polygonOutputPath = Path.GetTempPath() + "polygon.geojson";
+                    string strAoiFolder = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Aoi);
+                    // Validate and process pourpoint file
+                    string strPointPath = strAoiFolder + "\\" + Constants.FILE_POURPOINT;
+                    BA_ReturnCode success = BA_ReturnCode.UnknownError;
+                    if (await GeodatabaseTools.FeatureClassExistsAsync(new Uri(strAoiFolder), Constants.FILE_POURPOINT))
+                    {
+                        if (await GeodatabaseTools.CountFeaturesAsync(new Uri(strAoiFolder), Constants.FILE_POURPOINT) == 1)
+                        {
+                            success = await GeoprocessingTools.FeaturesToSnodasGeoJsonAsync(strPointPath, pointOutputPath, true);
+                            if (success == BA_ReturnCode.Success)
+                            {
+                                strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Pourpoint geoJson exported to temp directory \r\n";
+                                File.AppendAllText(snodasLog, strLogEntry);       // append
+                            }
+                        }
+                        else
+                        {
+                            strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Pourpoint file does not have one and only one feature. Skipping this AOI!! \r\n";
+                            File.AppendAllText(snodasLog, strLogEntry);       // append
+                            errorCount++;
+                        }
+                    }
+                    else
+                    {
+                        strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Unable to locate pourpoint file for AOI. Skipping this AOI!! \r\n";
+                        File.AppendAllText(snodasLog, strLogEntry);       // append
+                        errorCount++;
+                    }
+                    // Validate and process aoi_v file
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        string strPolyPath = strAoiFolder + "\\" + Constants.FILE_AOI_VECTOR;
+                        if (await GeodatabaseTools.FeatureClassExistsAsync(new Uri(strAoiFolder), Constants.FILE_AOI_VECTOR))
+                        {
+                            string strFcPath = strPolyPath;
+                            success = await GeoprocessingTools.FeaturesToSnodasGeoJsonAsync(strFcPath, polygonOutputPath, true);
+                            if (success == BA_ReturnCode.Success)
+                            {
+                                strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "AOI polygon geoJson exported to temp directory \r\n";
+                                File.AppendAllText(snodasLog, strLogEntry);       // append
+                            }
+                            else
+                            {
+                                strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "An error occurred while processing the polygon. Skipping this AOI! \r\n";
+                                File.AppendAllText(snodasLog, strLogEntry);       // append
+                            }
+                            if (success == BA_ReturnCode.Success)
+                            {
+                                Webservices ws = new Webservices();
+                                string errorMessage = ws.GenerateSnodasGeoJson(pointOutputPath, polygonOutputPath,
+                                    ParentFolder + "\\" + Constants.FOLDER_SNODAS_GEOJSON);
+                                if (!string.IsNullOrEmpty(errorMessage))
+                                {
+                                    strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + errorMessage + " \r\n";
+                                    File.AppendAllText(snodasLog, strLogEntry);       // append
+                                    errorCount++;
+                                }
+                                else
+                                {
+                                    strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Geojson exported for " + Names[idxRow].Name + " \r\n";
+                                    File.AppendAllText(snodasLog, strLogEntry);       // append
+                                }
+                            }
+                        }
+                        else
+                        {
+                            strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Unable to locate aoi_v file for AOI. Skipping this AOI!! \r\n";
+                            File.AppendAllText(snodasLog, strLogEntry);       // append
+                            errorCount++;
+                        }
+                    }
+                    if (success == BA_ReturnCode.Success && errorCount == 0)
+                    {
+                        Names[idxRow].AoiBatchStateText = AoiBatchState.Completed.ToString();  // update gui
+                    }
+                    else
+                    {
+                        Names[idxRow].AoiBatchStateText = AoiBatchState.Failed.ToString();
+                    }
+
+                }
+            }
+            strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "GeoJson exports complete!! \r\n";
+            File.AppendAllText(snodasLog, strLogEntry);       // append
+            MessageBox.Show("Generated GeoJson files are available in " + ParentFolder + "\\" + Constants.FOLDER_SNODAS_GEOJSON, "BAGIS-PRO");
         }
 
         private void ResetAoiBatchStateText()
