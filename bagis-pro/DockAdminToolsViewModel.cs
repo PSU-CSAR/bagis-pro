@@ -81,7 +81,7 @@ namespace bagis_pro
                 }
             }
             Names = new ObservableCollection<BA_Objects.Aoi>();
-            ArchiveChecked = false;
+            ArchiveChecked = true;
             SiteAnalysisChecked = true;
         }
 
@@ -112,6 +112,7 @@ namespace bagis_pro
         private bool _cmdRunEnabled = false;
         private bool _cmdForecastEnabled = false;
         private bool _cmdSnodasEnabled = false;
+        private bool _cmdToggleEnabled = false;
         private bool _cmdLogEnabled = false;
 
 
@@ -154,6 +155,15 @@ namespace bagis_pro
             set
             {
                 SetProperty(ref _cmdSnodasEnabled, value, () => CmdSnodasEnabled);
+            }
+        }
+
+        public bool CmdToggleEnabled
+        {
+            get { return _cmdToggleEnabled; }
+            set
+            {
+                SetProperty(ref _cmdToggleEnabled, value, () => CmdToggleEnabled);
             }
         }
 
@@ -269,6 +279,7 @@ namespace bagis_pro
                         CmdRunEnabled = true;
                         CmdSnodasEnabled = true;
                         CmdForecastEnabled = true;
+                        CmdToggleEnabled = true;
                     }
                     else
                     {
@@ -278,6 +289,21 @@ namespace bagis_pro
                         CmdRunEnabled = false;
                         CmdSnodasEnabled = false;
                         CmdForecastEnabled = false;
+                        CmdToggleEnabled = false;
+                    }
+                });
+            }
+        }
+
+        public System.Windows.Input.ICommand CmdToggle
+        {
+            get
+            {
+                return new RelayCommand( () =>
+                {
+                    for (int idxRow = 0; idxRow < Names.Count; idxRow++)
+                    {
+                        Names[idxRow].AoiBatchIsSelected = !Names [idxRow].AoiBatchIsSelected;                       
                     }
                 });
             }
