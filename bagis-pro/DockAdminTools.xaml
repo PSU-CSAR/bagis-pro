@@ -94,10 +94,11 @@
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="260"/>
-                        <RowDefinition Height="100"/>
+                        <RowDefinition Height="130"/>
                         <RowDefinition Height="120"/>
+                        <RowDefinition Height="100"/>
                     </Grid.RowDefinitions>
-                    <GroupBox Header="Generate AOI Reports" Margin="5,5,0,5" Padding="2" Grid.Row="0" HorizontalAlignment="Left" Grid.ColumnSpan="4">
+                    <GroupBox Header="Generate AOI Reports" Margin="5,5,0,5" Padding="2" Grid.Row="0" HorizontalAlignment="Left" IsEnabled="{Binding TasksEnabled}">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="30"/>
@@ -126,7 +127,6 @@
                                     TextWrapping="WrapWithOverflow" MaxWidth="300" Margin="5,2,0,2" HorizontalAlignment="Left">
                                     The output will be created in the maps_publish folder for each AOI in that folder.
                                 </TextBlock>
-
                             </StackPanel>
                             <StackPanel Grid.Row="3" Orientation="Horizontal" >
                                 <CheckBox x:Name="chkArchive" VerticalContentAlignment="Top" 
@@ -149,23 +149,33 @@
                             </StackPanel>
                         </Grid>
                     </GroupBox>
-                    <GroupBox Header="Forecast Station Data" Margin="5,5,0,5" Padding="2" Grid.Row="1" HorizontalAlignment="Left" Grid.ColumnSpan="4">
-                        <StackPanel>
-                            <CheckBox x:Name="chkAlwaysNear" VerticalContentAlignment="Top" Margin="4,0,0,0" 
+                    <GroupBox Header="Forecast Station Data" Margin="5,5,0,5" Padding="2" Grid.Row="1" HorizontalAlignment="Left" IsEnabled="{Binding TasksEnabled}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="60"/>
+                                <RowDefinition Height="30"/>
+                            </Grid.RowDefinitions>
+                            <StackPanel Grid.Row="0">
+                                <CheckBox x:Name="chkAlwaysNear" VerticalContentAlignment="Top" Margin="4,0,0,0" 
                                 IsEnabled="True" IsChecked="{Binding AlwaysNearChecked}" Height="20" >
-                                <TextBlock Text="Always look up station triplet with NEAR" />
-                            </CheckBox>
-                            <CheckBox x:Name="chkMerge" VerticalContentAlignment="Top" Margin="4,0,0,0" 
+                                    <TextBlock Text="Always look up station triplet with NEAR" />
+                                </CheckBox>
+                                <CheckBox x:Name="chkMerge" VerticalContentAlignment="Top" Margin="4,0,0,0" 
                                 IsEnabled="True" IsChecked="{Binding MergeAoiVChecked}" Height="20" >
-                                <TextBlock Text="Merge all aoi_v polygons" />
-                            </CheckBox>
-                            <CheckBox x:Name="chkUpdateStationInfo" VerticalContentAlignment="Top" Margin="4,0,0,0" 
+                                    <TextBlock Text="Merge all aoi_v polygons" />
+                                </CheckBox>
+                                <CheckBox x:Name="chkUpdateStationInfo" VerticalContentAlignment="Top" Margin="4,0,0,0" 
                                 IsEnabled="True" IsChecked="{Binding MergeAoiVChecked}" Height="20" >
-                                <TextBlock Text="Update station data based on stationTriplet value" />
-                            </CheckBox>
-                        </StackPanel>
+                                    <TextBlock Text="Update station data based on stationTriplet value" />
+                                </CheckBox>
+                            </StackPanel>
+                            <StackPanel Grid.Row="1" Orientation="Horizontal">
+                                <Button x:Name="btnForecastLog" Content="View Log" HorizontalAlignment="Left" VerticalAlignment="Center" Width="75" IsEnabled="{Binding CmdLogEnabled}" Command="{Binding CmdLog}" Margin="5, 0, 70, 0"/>
+                                <Button x:Name="btnForecastRun" Content="Run" HorizontalAlignment="Right" VerticalAlignment="Center" Width="50" IsEnabled="{Binding CmdRunEnabled}" Command="{Binding CmdRun}" Margin="70, 0, 0, 0"/>
+                            </StackPanel>
+                        </Grid>
                     </GroupBox>
-                    <GroupBox Header="aoi_v &amp; pourpoint GeoJson Export" Margin="5,5,0,5" Padding="2" Grid.Row="2" HorizontalAlignment="Left" Grid.ColumnSpan="4">
+                    <GroupBox Header="aoi_v &amp; pourpoint GeoJson Export" Margin="5,5,0,5" Padding="2" Grid.Row="2" HorizontalAlignment="Left" Grid.ColumnSpan="4" IsEnabled="{Binding TasksEnabled}">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="30"/>
@@ -180,8 +190,9 @@
                                     VerticalAlignment="Center" Width="210" IsReadOnly="True"
                                     Foreground="Blue" Background="Transparent"/>
                             </StackPanel>
-                            <StackPanel Grid.Row="1">
-                                <Button x:Name="btnSnodas" Content="Export" HorizontalAlignment="Right" VerticalAlignment="Center" Width="75" IsEnabled="{Binding CmdSnodasEnabled}" Command="{Binding CmdSnodas}" Margin="5, 0, 0, 0"/>
+                            <StackPanel Grid.Row="1" Orientation="Horizontal">
+                                <Button x:Name="btnSnodasLog" Content="View Log" HorizontalAlignment="Left" VerticalAlignment="Center" Width="75" IsEnabled="{Binding CmdSnodsLogEnabled}" Command="{Binding CmdSnodasLog}" Margin="5, 0, 70, 0"/>
+                                <Button x:Name="btnSnodas" Content="Export" HorizontalAlignment="Right" VerticalAlignment="Center" Width="50" IsEnabled="{Binding CmdSnodasEnabled}" Command="{Binding CmdSnodas}" Margin="70, 0, 0, 0"/>
                             </StackPanel>
                         </Grid>
                     </GroupBox>

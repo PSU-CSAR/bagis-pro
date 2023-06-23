@@ -22,6 +22,7 @@ using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using System.Collections.Specialized;
 
 namespace bagis_pro
 {
@@ -82,7 +83,7 @@ namespace bagis_pro
             }
             Names = new ObservableCollection<BA_Objects.Aoi>();
             ArchiveChecked = true;
-            SiteAnalysisChecked = true;
+            TasksEnabled = false;    
         }
 
         /// <summary>
@@ -107,13 +108,13 @@ namespace bagis_pro
         private string _publisher;
         private string _comments;
         private bool _archiveChecked = false;
-        private bool _siteAnalysisChecked = true;
         private string _strLogFile;
         private bool _cmdRunEnabled = false;
         private bool _cmdForecastEnabled = false;
         private bool _cmdSnodasEnabled = false;
         private bool _cmdToggleEnabled = false;
         private bool _cmdLogEnabled = false;
+        private bool _tasksEnabled = false;
 
 
         public string Heading
@@ -164,6 +165,15 @@ namespace bagis_pro
             set
             {
                 SetProperty(ref _cmdToggleEnabled, value, () => CmdToggleEnabled);
+            }
+        }
+
+        public bool TasksEnabled
+        {
+            get { return _tasksEnabled; }
+            set
+            {
+                SetProperty(ref _tasksEnabled, value, () => TasksEnabled);
             }
         }
 
@@ -221,15 +231,6 @@ namespace bagis_pro
             }
         }
 
-        public bool SiteAnalysisChecked
-        {
-            get { return _siteAnalysisChecked; }
-            set
-            {
-                SetProperty(ref _siteAnalysisChecked, value, () => SiteAnalysisChecked);
-            }
-        }
-
         public ObservableCollection<BA_Objects.Aoi> Names { get; set; }
 
         public System.Windows.Input.ICommand CmdAoiFolder
@@ -280,6 +281,7 @@ namespace bagis_pro
                         CmdSnodasEnabled = true;
                         CmdForecastEnabled = true;
                         CmdToggleEnabled = true;
+                        TasksEnabled = true;
                     }
                     else
                     {
@@ -290,6 +292,7 @@ namespace bagis_pro
                         CmdSnodasEnabled = false;
                         CmdForecastEnabled = false;
                         CmdToggleEnabled = false;
+                        TasksEnabled = false;    
                     }
                 });
             }
@@ -445,6 +448,7 @@ namespace bagis_pro
                 Names[idxRow].AoiBatchStateText = AoiBatchState.Waiting.ToString();
             }
         }
+
     }
 
     /// <summary>
