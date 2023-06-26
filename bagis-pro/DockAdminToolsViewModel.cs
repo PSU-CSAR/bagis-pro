@@ -23,6 +23,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using System.Collections.Specialized;
+using System.ComponentModel;
 
 namespace bagis_pro
 {
@@ -82,6 +83,7 @@ namespace bagis_pro
                 }
             }
             Names = new ObservableCollection<BA_Objects.Aoi>();
+            Names.CollectionChanged += ContentCollectionChanged;
             ArchiveChecked = true;
             TasksEnabled = false;    
         }
@@ -232,6 +234,42 @@ namespace bagis_pro
         }
 
         public ObservableCollection<BA_Objects.Aoi> Names { get; set; }
+
+        // Assigns the propertyChanged event handler to each AOI item
+        public void ContentCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            if (e.Action == NotifyCollectionChangedAction.Remove)
+            {
+                foreach (BA_Objects.Aoi item in e.OldItems)
+                {
+                    //Removed items
+                    item.PropertyChanged -= AoiPropertyChanged;
+                }
+            }
+            else if (e.Action == NotifyCollectionChangedAction.Add)
+            {
+                foreach (BA_Objects.Aoi item in e.NewItems)
+                {
+                    //Added items
+                    item.PropertyChanged += AoiPropertyChanged;
+                }
+            }
+        }
+
+        public void AoiPropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            //This will get called when the property of an object inside the collection changes
+            bool bOneSelected = false;
+            for (int idxRow = 0; idxRow < Names.Count; idxRow++)
+            {
+                if (Names[idxRow].AoiBatchIsSelected)
+                {
+                    bOneSelected = true;
+                    break;
+                }
+            }
+            TasksEnabled = bOneSelected;    
+        }
 
         public System.Windows.Input.ICommand CmdAoiFolder
         {
