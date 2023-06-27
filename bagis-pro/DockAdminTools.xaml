@@ -170,12 +170,12 @@
                                 </CheckBox>
                             </StackPanel>
                             <StackPanel Grid.Row="1" Orientation="Horizontal">
-                                <Button x:Name="btnForecastLog" Content="View Log" HorizontalAlignment="Left" VerticalAlignment="Center" Width="75" IsEnabled="{Binding CmdLogEnabled}" Command="{Binding CmdLog}" Margin="5, 0, 70, 0"/>
+                                <Button x:Name="btnForecastLog" Content="View Log" HorizontalAlignment="Left" VerticalAlignment="Center" Width="75" IsEnabled="{Binding CmdForecastLogEnabled}" Command="{Binding CmdForecastLog}" Margin="5, 0, 70, 0"/>
                                 <Button x:Name="btnForecastRun" Content="Run" HorizontalAlignment="Right" VerticalAlignment="Center" Width="50" IsEnabled="{Binding CmdRunEnabled}" Command="{Binding CmdRun}" Margin="70, 0, 0, 0"/>
                             </StackPanel>
                         </Grid>
                     </GroupBox>
-                    <GroupBox Header="aoi_v &amp; pourpoint GeoJson Export" Margin="5,5,0,5" Padding="2" Grid.Row="2" HorizontalAlignment="Left" Grid.ColumnSpan="4" IsEnabled="{Binding TasksEnabled}">
+                    <GroupBox Header="aoi__v &amp; pourpoint GeoJson Export" Margin="5,5,0,5" Padding="2" Grid.Row="2" HorizontalAlignment="Left" Grid.ColumnSpan="4" IsEnabled="{Binding TasksEnabled}">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="30"/>
@@ -191,7 +191,7 @@
                                     Foreground="Blue" Background="Transparent"/>
                             </StackPanel>
                             <StackPanel Grid.Row="1" Orientation="Horizontal">
-                                <Button x:Name="btnSnodasLog" Content="View Log" HorizontalAlignment="Left" VerticalAlignment="Center" Width="75" IsEnabled="{Binding CmdSnodsLogEnabled}" Command="{Binding CmdSnodasLog}" Margin="5, 0, 70, 0"/>
+                                <Button x:Name="btnSnodasLog" Content="View Log" HorizontalAlignment="Left" VerticalAlignment="Center" Width="75" IsEnabled="{Binding CmdSnodasLogEnabled}" Command="{Binding CmdSnodasLog}" Margin="5, 0, 70, 0"/>
                                 <Button x:Name="btnSnodas" Content="Export" HorizontalAlignment="Right" VerticalAlignment="Center" Width="50" IsEnabled="{Binding CmdSnodasEnabled}" Command="{Binding CmdSnodas}" Margin="70, 0, 0, 0"/>
                             </StackPanel>
                         </Grid>
