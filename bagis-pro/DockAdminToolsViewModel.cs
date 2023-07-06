@@ -125,6 +125,7 @@ namespace bagis_pro
         private bool _tasksEnabled = false;
         private bool _alwaysNearChecked = false;
         private bool _mergeAoiVChecked = true;
+        private bool _updateStationDataChecked = false;
 
         public string Heading
         {
@@ -273,6 +274,15 @@ namespace bagis_pro
             }
         }
 
+        public bool UpdateStationDataChecked
+        {
+            get { return _updateStationDataChecked; }
+            set
+            {
+                SetProperty(ref _updateStationDataChecked, value, () => UpdateStationDataChecked);
+            }
+        }
+
         public ObservableCollection<BA_Objects.Aoi> Names { get; set; }
 
         // Assigns the propertyChanged event handler to each AOI item
@@ -406,6 +416,7 @@ namespace bagis_pro
         }
 
         private RelayCommand _runForecastCommand;
+
         public ICommand CmdForecast
         {
             get
@@ -1205,6 +1216,7 @@ namespace bagis_pro
             const string UPDATED_NEAR = "Updated-Near";
             const string NO_CHANGE_MATCH = "No change-Match";
             const string NOT_A_FORECAST = "Not A Forecast";
+            const string UPDATED_STATION_DATA = "Updated-Station Data";
             // Create initial _strForecastLogFile entry
             try
             {
@@ -1251,6 +1263,7 @@ namespace bagis_pro
                     string strNearStationName = "";
                     string strNearAwdbId = "";
                     int intNearHuc2 = -1;
+                    int intHuc2 = -1;   
                     string strRemark = "";
 
                     // GET THE STATION TRIPLET FROM THE POURPOINT
@@ -1320,10 +1333,18 @@ namespace bagis_pro
                         if (arrFound != null && arrFound.Length == arrSearch.Length && strTriplet.Equals(arrFound[0]))
                         {
                             strRemark = NO_CHANGE_MATCH;
+                            if (UpdateStationDataChecked)
+                            {
+                                strRemark = UPDATED_STATION_DATA;
+                                strAwdbId = arrFound[1];
+                                strStationName = arrFound[2];
+                                intHuc2 = Convert.ToInt16(arrFound[3]);
+                            }
                         }
                     }
 
-                    if (!NO_CHANGE_MATCH.Equals(strRemark))
+                    string[] arrMatched = {NO_CHANGE_MATCH, UPDATED_STATION_DATA };
+                    if (!arrMatched.Contains(strRemark))
                     {
                         // Use the NEAR tool to find the closest Pourpoint
                         success = await GeoprocessingTools.NearAsync(ppUri.LocalPath + "\\" + Constants.FILE_POURPOINT, strWsUri, Constants.VALUE_FORECAST_STATION_SEARCH_RADIUS);
@@ -1373,6 +1394,14 @@ namespace bagis_pro
                             success = await GeodatabaseTools.UpdateFeatureAttributeNumericAsync(ppUri, Constants.FILE_POURPOINT, new QueryFilter(), Constants.FIELD_HUC2, intNearHuc2);
                             lstMergeFeatures.Add(ppUri.LocalPath + "\\" + Constants.FILE_AOI_VECTOR);
                             break;
+                        case UPDATED_STATION_DATA:
+                            dictEdits[Constants.FIELD_AWDB_ID] = strAwdbId;
+                            dictEdits[Constants.FIELD_STATION_NAME] = strStationName;
+                            success = await GeodatabaseTools.UpdateFeatureAttributesAsync(ppUri, Constants.FILE_POURPOINT,
+                                new QueryFilter(), dictEdits);
+                            success = await GeodatabaseTools.UpdateFeatureAttributeNumericAsync(ppUri, Constants.FILE_POURPOINT, new QueryFilter(), Constants.FIELD_HUC2, intHuc2);
+                            lstMergeFeatures.Add(ppUri.LocalPath + "\\" + Constants.FILE_AOI_VECTOR);
+                            break;
                         case NO_CHANGE_MATCH:
                             lstMergeFeatures.Add(ppUri.LocalPath + "\\" + Constants.FILE_AOI_VECTOR);
                             break;
@@ -1391,7 +1420,7 @@ namespace bagis_pro
                     {
                         string strValue = await GeodatabaseTools.QueryTableForSingleValueAsync(ppUri, Constants.FILE_AOI_VECTOR,
                             Constants.FIELD_STATION_TRIPLET, queryFilter);
-                        if (!dictEdits[Constants.FIELD_STATION_TRIPLET].Equals(strValue))
+                        if (!dictEdits[Constants.FIELD_STATION_TRIPLET].Equals(strValue) || strRemark.Equals(UPDATED_STATION_DATA))
                         {
                             // UPDATE VALUES ON AOI_V
                             success = await GeodatabaseTools.UpdateFeatureAttributesAsync(ppUri, Constants.FILE_AOI_VECTOR,
