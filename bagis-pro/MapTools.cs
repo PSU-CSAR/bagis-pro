@@ -35,7 +35,7 @@ namespace bagis_pro
                 if (System.IO.Directory.Exists(strAoiPath))
                 {
                     // Initialize AOI object
-                    oAoi = await GeneralTools.SetAoiAsync(strAoiPath);
+                    oAoi = await GeneralTools.SetAoiAsync(strAoiPath, null);
                     if (oAoi != null)
                     {
                         Module1.Current.CboCurrentAoi.SetAoiName(oAoi.Name);

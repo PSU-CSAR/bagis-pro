@@ -429,7 +429,7 @@ namespace bagis_pro
                     Module1.Current.ModuleLogManager.UpdateLogFileLocation(logFolderName);
 
                     // Set current AOI
-                    BA_Objects.Aoi oAoi = await GeneralTools.SetAoiAsync(aoiFolder);
+                    BA_Objects.Aoi oAoi = await GeneralTools.SetAoiAsync(aoiFolder, null);
                     if (Module1.Current.CboCurrentAoi != null)
                     {
                         FrameworkApplication.Current.Dispatcher.Invoke(() =>

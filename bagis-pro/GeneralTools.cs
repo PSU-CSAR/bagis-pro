@@ -1224,7 +1224,7 @@ namespace bagis_pro
             return success;
         }
 
-        public static async Task<BA_Objects.Aoi> SetAoiAsync(string strAoiPath)
+        public static async Task<BA_Objects.Aoi> SetAoiAsync(string strAoiPath, BA_Objects.Aoi pAoi)
         {
             // Initialize AOI object
             BA_Objects.Aoi oAoi = new BA_Objects.Aoi(Path.GetFileName(strAoiPath), strAoiPath);
@@ -1239,16 +1239,26 @@ namespace bagis_pro
                 Module1.Current.ModuleLogManager.UpdateLogFileLocation(logFolderName);
 
                 // Query for station information and save it in the aoi object
-                string[] arrValues = new string[2];
                 await QueuedTask.Run(async () =>
                 {
-                    arrValues = await AnalysisTools.QueryLocalStationValues(oAoi.FilePath);
-                    if (arrValues.Length == 3)
+                    string[] arrValues = new string[2];
+                    if (pAoi != null)
                     {
-                        oAoi.StationTriplet = arrValues[0];
-                        oAoi.StationName = arrValues[1];
-                        oAoi.Huc2 = Convert.ToInt16(arrValues[2]);
+                        oAoi.StationTriplet = pAoi.StationTriplet;
+                        oAoi.StationName = pAoi.StationName;
+                        oAoi.Huc2 = pAoi.Huc2;
                     }
+                    else
+                    {
+                        arrValues = await AnalysisTools.QueryLocalStationValues(oAoi.FilePath);
+                        if (arrValues.Length == 3)
+                        {
+                            oAoi.StationTriplet = arrValues[0];
+                            oAoi.StationName = arrValues[1];
+                            oAoi.Huc2 = Convert.ToInt16(arrValues[2]);
+                        }
+                    }
+
                     if (Constants.VALUE_ALASKA_HUC2.Equals(oAoi.Huc2))
                     {
                         Module1.Current.DataSourceGroup = Constants.DATA_SOURCES_ALASKA;

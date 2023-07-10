@@ -608,7 +608,7 @@ namespace bagis_pro
 
             if (stationTriplet == null)
             {
-                return @$"StationTriplet is null for this basin. No geojson generated!";
+                return @$"ERROR: StationTriplet is null for this basin. No geojson generated!";
             }
 
             // read polygon JSON directly from a file

@@ -56,7 +56,12 @@ namespace bagis_pro
                 bool bExists = await GeodatabaseTools.RasterDatasetExistsAsync(gdbUri, Constants.FILE_AOI_RASTER);
                 if (bExists)
                 {
-                    return FolderType.AOI;
+                    // Multiple BAGIS-Pro functions depend on the existence of the pourpoint feature class
+                    bExists = await GeodatabaseTools.FeatureClassExistsAsync(gdbUri, Constants.FILE_POURPOINT);
+                    if (bExists)
+                    {
+                        return FolderType.AOI;
+                    }                    
                 }
                 bExists = await FeatureClassExistsAsync(gdbUri, Constants.FILE_AOI_VECTOR);
                 if (bExists)

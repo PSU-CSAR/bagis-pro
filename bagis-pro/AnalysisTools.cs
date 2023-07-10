@@ -720,9 +720,9 @@ namespace bagis_pro
 
         public static async Task<string[]> QueryLocalStationValues(string aoiFilePath)
         {
-            string strTriplet = "Not Specified";
+            string strTriplet = Constants.VALUE_NOT_SPECIFIED;
             string strTempHuc2 = "-1";
-            string strStationName = "Not Specified";
+            string strStationName = Constants.VALUE_NOT_SPECIFIED;
             Uri ppUri = new Uri(GeodatabaseTools.GetGeodatabasePath(aoiFilePath, GeodatabaseNames.Aoi));
             string strPourpointClassPath = ppUri.LocalPath + "\\" + Constants.FILE_POURPOINT;
             if (await GeodatabaseTools.FeatureClassExistsAsync(ppUri, Constants.FILE_POURPOINT))

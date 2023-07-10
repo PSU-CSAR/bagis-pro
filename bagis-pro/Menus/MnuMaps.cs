@@ -34,7 +34,7 @@ namespace bagis_pro.Menus
                     Module1.DeactivateState("Aoi_Selected_State");
                     IEnumerable<Item> selectedItems = selectAoiDialog.Items;
                     var e = selectedItems.FirstOrDefault();
-                    BA_Objects.Aoi oAoi = await GeneralTools.SetAoiAsync(e.Path);
+                    BA_Objects.Aoi oAoi = await GeneralTools.SetAoiAsync(e.Path, null);
                     if (oAoi != null)
                     {
                         Module1.Current.CboCurrentAoi.SetAoiName(oAoi.Name);

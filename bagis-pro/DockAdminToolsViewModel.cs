@@ -26,6 +26,7 @@ using System.Collections.Specialized;
 using System.ComponentModel;
 using ArcGIS.Desktop.Core.Geoprocessing;
 using System.Diagnostics;
+using bagis_pro.BA_Objects;
 
 namespace bagis_pro
 {
@@ -366,6 +367,19 @@ namespace bagis_pro
                     IList<BA_Objects.Aoi> lstAois = await GeneralTools.GetAoiFoldersAsync(ParentFolder, _strLogFile);
                     foreach (var pAoi in lstAois)
                     {
+                        string[] arrValues = await AnalysisTools.QueryLocalStationValues(pAoi.FilePath);
+                        if (arrValues.Length == 3)
+                        {
+                            pAoi.StationTriplet = arrValues[0];
+                            pAoi.StationName = arrValues[1];
+                            pAoi.Huc2 = Convert.ToInt16(arrValues[2]);
+                            if (pAoi.StationTriplet.Equals(Constants.VALUE_NOT_SPECIFIED) ||
+                                pAoi.StationName.Equals(Constants.VALUE_NOT_SPECIFIED) ||
+                                pAoi.Huc2 == -1)
+                            {
+                                pAoi.AoiBatchStateText = AoiBatchState.NotReady.ToString();
+                            }
+                        }
                         Names.Add(pAoi);
                     }
                     if (Names.Count > 0)
@@ -560,7 +574,17 @@ namespace bagis_pro
         {
             for (int idxRow = 0; idxRow < Names.Count; idxRow++)
             {
-                Names[idxRow].AoiBatchStateText = AoiBatchState.Waiting.ToString();
+                BA_Objects.Aoi oAoi = Names[idxRow];
+                if (oAoi.StationTriplet.Equals(Constants.VALUE_NOT_SPECIFIED) ||
+                    oAoi.StationName.Equals(Constants.VALUE_NOT_SPECIFIED) ||
+                    oAoi.Huc2 == -1)
+                {
+                    oAoi.AoiBatchStateText = AoiBatchState.NotReady.ToString();
+                }
+                else
+                {
+                   oAoi.AoiBatchStateText = AoiBatchState.Waiting.ToString();
+                }
             }
         }
 
@@ -690,7 +714,11 @@ namespace bagis_pro
             // Make sure that maps and maps_publish folders exist
             for (int idxRow = 0; idxRow < Names.Count; idxRow++)
             {
-                if (Names[idxRow].AoiBatchIsSelected)
+                if (Names[idxRow].AoiBatchStateText.Equals(AoiBatchState.NotReady.ToString()))
+                {
+
+                }
+                else if (Names[idxRow].AoiBatchIsSelected)
                 {
                     int errorCount = 0; // keep track of any non-fatal errors
                     string aoiFolder = Names[idxRow].FilePath;
@@ -710,7 +738,7 @@ namespace bagis_pro
                     Module1.Current.ModuleLogManager.UpdateLogFileLocation(logFolderName);
 
                     // Set current AOI
-                    BA_Objects.Aoi oAoi = await GeneralTools.SetAoiAsync(aoiFolder);
+                    BA_Objects.Aoi oAoi = await GeneralTools.SetAoiAsync(aoiFolder, Names[idxRow]);
                     if (Module1.Current.CboCurrentAoi != null)
                     {
                         FrameworkApplication.Current.Dispatcher.Invoke(() =>
@@ -1433,8 +1461,11 @@ namespace bagis_pro
                         success = BA_ReturnCode.ReadError;
                     }
 
-                    strLogFileEntry = CreateLogEntry(aoiFolder, strTriplet, strNearTriplet, strRemark);
-                    File.AppendAllText(_strForecastLogFile, strLogFileEntry);       // append
+                    if (!strRemark.Equals(NO_CHANGE_MATCH))
+                    {
+                        strLogFileEntry = CreateLogEntry(aoiFolder, strTriplet, strNearTriplet, strRemark);
+                        File.AppendAllText(_strForecastLogFile, strLogFileEntry);       // append
+                    }
                     if (success == BA_ReturnCode.Success && errorCount == 0)
                     {
                         Names[idxRow].AoiBatchStateText = AoiBatchState.Completed.ToString();  // update gui

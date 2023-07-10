@@ -323,6 +323,7 @@ namespace bagis_pro
         public static readonly short[] VALUES_ELEV_INTERVALS = new short[] { 50, 100, 200, 250, 500, 1000 };
         public const int VALUE_ALASKA_HUC2 = 19;
         public const string VALUE_FORECAST_STATION_SEARCH_RADIUS = "500 Meters";
+        public const string VALUE_NOT_SPECIFIED = "Not Specified";
 
         public const string UNITS_INCHES = "Inches";
         public const string UNITS_MILLIMETERS = "Millimeters";

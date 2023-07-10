@@ -122,7 +122,8 @@ namespace bagis_pro
         Started,
         Failed,
         Completed,
-        Errors
+        Errors,
+        NotReady
     }
 
     public enum ReportType
