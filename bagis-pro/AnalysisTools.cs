@@ -4968,10 +4968,10 @@ namespace bagis_pro
             string clipEnvelope = "";
             string strOutputFeatures = GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Analysis, true) +
                 "tmpBuffer";
-            string strDistance = "1 Kilometers";
-            if (Module1.Current.BatchToolSettings.PrecipBufferDistance != null)
+            string strDistance = "5 Kilometers";
+            if (Module1.Current.BatchToolSettings.SnotelBufferDistance != null)
             {
-                strDistance = (string)Module1.Current.BatchToolSettings.PrecipBufferDistance + " " +
+                strDistance = (string)Module1.Current.BatchToolSettings.SnotelBufferDistance + " " +
                     (string)Module1.Current.BatchToolSettings.PrecipBufferUnits;
             }
             

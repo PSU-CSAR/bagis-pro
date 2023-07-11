@@ -714,15 +714,20 @@ namespace bagis_pro
             // Make sure that maps and maps_publish folders exist
             for (int idxRow = 0; idxRow < Names.Count; idxRow++)
             {
-                if (Names[idxRow].AoiBatchStateText.Equals(AoiBatchState.NotReady.ToString()))
-                {
-
-                }
-                else if (Names[idxRow].AoiBatchIsSelected)
+                if (Names[idxRow].AoiBatchIsSelected)
                 {
                     int errorCount = 0; // keep track of any non-fatal errors
                     string aoiFolder = Names[idxRow].FilePath;
-                    Names[idxRow].AoiBatchStateText = AoiBatchState.Started.ToString();  // update gui
+                    if (Names[idxRow].AoiBatchStateText.Equals(AoiBatchState.NotReady.ToString()))
+                    {
+                        strLogEntry = $@"Skipping report for {Names[idxRow].FilePath}. Required station information is missing.{System.Environment.NewLine}";
+                        File.AppendAllText(_strLogFile, strLogEntry);
+                        continue;
+                    }
+                    else
+                    {
+                        Names[idxRow].AoiBatchStateText = AoiBatchState.Started.ToString();  // update gui
+                    }
                     string[] arrFolders = { aoiFolder + "\\" + Constants.FOLDER_MAPS, aoiFolder + "\\" + Constants.FOLDER_MAP_PACKAGE,
                                                 aoiFolder + "\\" + Constants.FOLDER_LOGS};
                     foreach (var directory in arrFolders)
