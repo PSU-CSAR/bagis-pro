@@ -474,10 +474,20 @@ namespace bagis_pro
                 {
                     int errorCount = 0; // keep track of any non-fatal errors
                     string aoiFolder = Names[idxRow].FilePath;
-                    Names[idxRow].AoiBatchStateText = AoiBatchState.Started.ToString();  // update gui
-                    strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Starting geojson export for " +
-                        Names[idxRow].Name + "\r\n";
-                    File.AppendAllText(_strSnodasLogFile, strLogEntry);       // append
+                    if (Names[idxRow].AoiBatchStateText.Equals(AoiBatchState.NotReady.ToString()))
+                    {
+                        strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} Skipping export for {Names[idxRow].FilePath}. Required station information is missing.{System.Environment.NewLine}";
+                        File.AppendAllText(_strSnodasLogFile, strLogEntry);
+                        continue;
+                    }
+                    else
+                    {
+                        Names[idxRow].AoiBatchStateText = AoiBatchState.Started.ToString();  // update gui
+                        strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Starting geojson export for " +
+                            Names[idxRow].Name + "\r\n";
+                        File.AppendAllText(_strSnodasLogFile, strLogEntry);       // append
+
+                    }
 
                     // generate the file(s)
                     string pointOutputPath = Path.GetTempPath() + "pourpoint.geojson";
@@ -1426,6 +1436,9 @@ namespace bagis_pro
                                 new QueryFilter(), dictEdits);
                             success = await GeodatabaseTools.UpdateFeatureAttributeNumericAsync(ppUri, Constants.FILE_POURPOINT, new QueryFilter(), Constants.FIELD_HUC2, intNearHuc2);
                             lstMergeFeatures.Add(ppUri.LocalPath + "\\" + Constants.FILE_AOI_VECTOR);
+                            Names[idxRow].StationTriplet = strNearTriplet;
+                            Names[idxRow].StationName = strNearStationName;
+                            Names[idxRow].Huc2 = intNearHuc2;   
                             break;
                         case UPDATED_STATION_DATA:
                             dictEdits[Constants.FIELD_AWDB_ID] = strAwdbId;
@@ -1434,6 +1447,8 @@ namespace bagis_pro
                                 new QueryFilter(), dictEdits);
                             success = await GeodatabaseTools.UpdateFeatureAttributeNumericAsync(ppUri, Constants.FILE_POURPOINT, new QueryFilter(), Constants.FIELD_HUC2, intHuc2);
                             lstMergeFeatures.Add(ppUri.LocalPath + "\\" + Constants.FILE_AOI_VECTOR);
+                            Names[idxRow].StationName = strStationName;
+                            Names[idxRow].Huc2 = intHuc2;
                             break;
                         case NO_CHANGE_MATCH:
                             lstMergeFeatures.Add(ppUri.LocalPath + "\\" + Constants.FILE_AOI_VECTOR);
