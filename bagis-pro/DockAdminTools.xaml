@@ -94,11 +94,18 @@
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="260"/>
+                        <RowDefinition Height="16"/>
                         <RowDefinition Height="130"/>
-                        <RowDefinition Height="120"/>
+                        <RowDefinition Height="16"/>
                         <RowDefinition Height="100"/>
+                        <RowDefinition Height="50"/>
                     </Grid.RowDefinitions>
-                    <GroupBox Header="Generate AOI Reports" Margin="5,5,0,5" Padding="2" Grid.Row="0" HorizontalAlignment="Left" IsEnabled="{Binding TasksEnabled}">
+                    <GroupBox Margin="5,5,0,5" Padding="2" Grid.Row="0" HorizontalAlignment="Left" IsEnabled="{Binding TasksEnabled}">
+                        <GroupBox.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock FontWeight="Bold">Generate AOI Reports</TextBlock>
+                            </StackPanel>
+                        </GroupBox.Header>
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="30"/>
@@ -149,7 +156,20 @@
                             </StackPanel>
                         </Grid>
                     </GroupBox>
-                    <GroupBox Header="Forecast Station Data" Margin="5,5,0,5" Padding="2" Grid.Row="1" HorizontalAlignment="Left" IsEnabled="{Binding TasksEnabled}">
+                    <StackPanel Grid.Row="1" HorizontalAlignment="Left" Margin="5,0,0,0">
+                        <Image Width="16" 
+                            Source="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericInformation16.png">
+                            <Image.ToolTip>
+                                <ToolTip Content="Update the stationTriplet, stationName, and HUC data in AOI's aoi_v and pourpoint attribute tables using a published webservice hosted on NRCS ArcGIS Online" />
+                            </Image.ToolTip>
+                        </Image>
+                    </StackPanel>
+                    <GroupBox Margin="5,0,0,5" Padding="2" Grid.Row="2" HorizontalAlignment="Left" IsEnabled="{Binding TasksEnabled}">
+                        <GroupBox.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock FontWeight="Bold">Forecast Station Data</TextBlock>
+                            </StackPanel>
+                        </GroupBox.Header>
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="60"/>
@@ -175,7 +195,20 @@
                             </StackPanel>
                         </Grid>
                     </GroupBox>
-                    <GroupBox Header="aoi__v &amp; pourpoint GeoJson Export" Margin="5,5,0,5" Padding="2" Grid.Row="2" HorizontalAlignment="Left" Grid.ColumnSpan="4" IsEnabled="{Binding TasksEnabled}">
+                    <StackPanel Grid.Row="3" HorizontalAlignment="Left" Margin="5,0,0,0">
+                        <Image Width="16" 
+                            Source="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericInformation16.png">
+                            <Image.ToolTip>
+                                <ToolTip Content="Export AOI's aoi_v and pourpoint featureclasses to GeoJson's multipolygon and point geometry types" />
+                            </Image.ToolTip>
+                        </Image>
+                    </StackPanel>
+                    <GroupBox Margin="5,0,0,5" Padding="2" Grid.Row="4" HorizontalAlignment="Left" IsEnabled="{Binding TasksEnabled}">
+                        <GroupBox.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock FontWeight="Bold">aoi_v &amp; pourpoint GeoJson Export</TextBlock>
+                            </StackPanel>
+                        </GroupBox.Header>
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="30"/>
