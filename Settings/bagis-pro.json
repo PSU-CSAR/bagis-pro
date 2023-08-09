@@ -125,6 +125,7 @@
     "MaximumSitesAllowed": 50,
     "WinterStartMonth": 11,
     "WinterEndMonth": 3,
-    "Version": 7
+    "AdminMenu": false,
+    "Version": 8
   }
 }
