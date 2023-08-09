@@ -245,7 +245,7 @@ namespace bagis_pro
                 double aoiArea = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(gdbUri, Constants.FILE_AOI_VECTOR);
                 bool hasSnotelSites = false;
                 bool hasScosSites = false;
-                string snotelSitesBufferSize = (string) Module1.Current.BatchToolSettings.SnotelBufferDistance + " " +
+                string snotelSitesBufferSize = (string)Module1.Current.BatchToolSettings.SnotelBufferDistance + " " +
                     (string)Module1.Current.BatchToolSettings.SnotelBufferUnits;
                 string snowCourseSitesBufferSize = snotelSitesBufferSize;
                 var layersPane = (DockpaneLayersViewModel)FrameworkApplication.DockPaneManager.Find("bagis_pro_DockpaneLayers");
@@ -1463,7 +1463,7 @@ namespace bagis_pro
                                                              Constants.FILE_SNOW_COURSE, Constants.FILE_ROADS,
                                                              Constants.FILE_LAND_OWNERSHIP,
                                                              Constants.FILE_LAND_COVER};
-                    bool[] arrLayerExists = new bool[] { false, false, false, false, false, false};
+                    bool[] arrLayerExists = new bool[] { false, false, false, false, false, false };
                     gdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers, false));
                     bExists = false;
                     if (gdbUri.IsFile)
@@ -1600,6 +1600,11 @@ namespace bagis_pro
                 MapTools.DeactivateMapButtons();
                 Module1.ActivateState("Aoi_Selected_State");
                 Module1.ActivateState("BtnExcelTables_State");
+                // Activate Admin Menu state for some buttons
+                if (Module1.Current.BatchToolSettings.AdminMenu == true)
+                {
+                    Module1.ActivateState("Admin_Menu_State");
+                }
                 return oAoi;
             }
             catch (Exception e)
@@ -1982,7 +1987,7 @@ namespace bagis_pro
                     if (success == BA_ReturnCode.Success)
                     {
                         inputDocument = PdfReader.Open(fullPath, PdfDocumentOpenMode.Import);
-                    }                    
+                    }
                 }
                 if (inputDocument != null)
                 {
@@ -1997,7 +2002,7 @@ namespace bagis_pro
             {
                 for (int j = 0; j < sitesAppendixCount; j++)
                 {
-                    string strPublishFile = $@"{outputFolder}\{Path.GetFileNameWithoutExtension(Constants.FILE_SITES_APPENDIX_PDF)}{j+1}{Path.GetExtension(Constants.FILE_SITES_APPENDIX_PDF)}";
+                    string strPublishFile = $@"{outputFolder}\{Path.GetFileNameWithoutExtension(Constants.FILE_SITES_APPENDIX_PDF)}{j + 1}{Path.GetExtension(Constants.FILE_SITES_APPENDIX_PDF)}";
                     PdfDocument inputDocument = PdfReader.Open(strPublishFile,
                         PdfDocumentOpenMode.Import);
                     // Get the page from the external document...
@@ -2352,7 +2357,8 @@ namespace bagis_pro
         {
             IList<string> layerNames = new List<string>();
 
-            await QueuedTask.Run(() => {
+            await QueuedTask.Run(() =>
+            {
                 using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(strGdbPath))))
                 {
                     IReadOnlyList<Definition> lstDefinitions = null;
@@ -2566,7 +2572,7 @@ namespace bagis_pro
                 {
                     bHasSnotel = true;
                     lngTotalSites = lngSites;
-                }                    
+                }
                 lngSites = await GeodatabaseTools.CountFeaturesAsync(sitesGdbUri, Constants.FILE_SNOW_COURSE);
                 if (lngSites > 0)
                 {
@@ -2580,7 +2586,7 @@ namespace bagis_pro
                 {
                     Module1.Current.ModuleLogManager.LogInfo(nameof(GenerateSitesTableAsync),
                         "No sites found. Sites table will not be created!");
-                    File.Copy(GeneralTools.GetAddInDirectory() + "\\" + Constants.FILE_NO_SITES, 
+                    File.Copy(GeneralTools.GetAddInDirectory() + "\\" + Constants.FILE_NO_SITES,
                         strPublishFile, true);
                     return -1;
                 }
@@ -2918,7 +2924,7 @@ namespace bagis_pro
                     int intDistance = -1;
                     if (!string.IsNullOrEmpty(strNearDistance))
                     {
-                        intDistance = (int) Math.Round(Convert.ToDouble(strNearDistance));
+                        intDistance = (int)Math.Round(Convert.ToDouble(strNearDistance));
                     }
                     await QueuedTask.Run(() =>
                     {

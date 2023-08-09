@@ -229,11 +229,11 @@
           <tooltip heading="Tooltip Heading">Selected AOI<disabledText /></tooltip>
         </comboBox>
         <labelControl id="bagis_pro_Buttons_LblCurrentAoi" caption="  Selected AOI" />
-        <button id="bagis_pro_DockpaneLayers_ShowButton" caption="Clip Layers" className="DockpaneLayers_ShowButton" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/PaperClip32.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/PaperClip32.png" condition="Aoi_Selected_Condition" keytip="B55">
+        <button id="bagis_pro_DockpaneLayers_ShowButton" caption="Clip Layers" className="DockpaneLayers_ShowButton" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/PaperClip32.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/PaperClip32.png" condition="AdminMenu_ShowButton_Condition" keytip="B55">
           <tooltip heading="Clip Layers">
             Clip Layers<disabledText /></tooltip>
         </button>
-        <button id="bagis_pro_DockAnalysisLayers_ShowButton" caption="Generate Analysis Layers" className="DockAnalysisLayers_ShowButton" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/CalculateGeometry16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/CalculateGeometry32.png" condition="Aoi_Selected_Condition" keytip="B56">
+        <button id="bagis_pro_DockAnalysisLayers_ShowButton" caption="Generate Analysis Layers" className="DockAnalysisLayers_ShowButton" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/CalculateGeometry16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/CalculateGeometry32.png" condition="AdminMenu_ShowButton_Condition" keytip="B56">
           <tooltip heading="Generate Analysis Layers">Generate Analysis Layers<disabledText /></tooltip>
         </button>
         <!--<button id="bagis_pro_DockBatchPdfExport_ShowButton" caption="Batch PDF Export" className="DockBatchPdfExport_ShowButton" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/JobExport16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/JobExport16.png" keytip="B57">
@@ -325,7 +325,16 @@
       <state id="Aoi_Selected_State" />
     </insertCondition>
     <insertCondition id="DockMapPackage_ShowButton_Condition" caption="Map Settings">
-      <state id="Aoi_Selected_State" />
+      <and>
+        <state id="Aoi_Selected_State" />
+        <state id="Admin_Menu_State" />
+      </and>
+    </insertCondition>
+    <insertCondition id="AdminMenu_ShowButton_Condition" caption="Admin Menu Item">
+      <and>
+        <state id="Aoi_Selected_State" />
+        <state id="Admin_Menu_State" />
+      </and>
     </insertCondition>
     <insertCondition id="MapButtonPalette_BtnElevation_Condition" caption="Map Disabled">
       <state id="MapButtonPalette_BtnElevation_State" />
