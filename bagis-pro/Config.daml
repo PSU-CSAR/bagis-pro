@@ -322,7 +322,10 @@
       </and>
     </insertCondition>
     <insertCondition id="BtnLoadMaps_Condition" caption="Load Maps">
-      <state id="Aoi_Selected_State" />
+      <and>
+        <state id="Aoi_Selected_State" />
+        <state id="BtnLoadMaps_State" />
+      </and>
     </insertCondition>
     <insertCondition id="DockMapPackage_ShowButton_Condition" caption="Map Settings">
       <and>

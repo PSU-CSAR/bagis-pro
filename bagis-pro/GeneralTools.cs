@@ -26,6 +26,7 @@ using Microsoft.VisualBasic.FileIO;
 using ArcGIS.Desktop.Core.Geoprocessing;
 using System.Text;
 using ArcGIS.Core.Data.UtilityNetwork.Trace;
+using System.Runtime.CompilerServices;
 
 namespace bagis_pro
 {
@@ -1598,13 +1599,15 @@ namespace bagis_pro
                     QueryChromePath();
                 }
                 MapTools.DeactivateMapButtons();
-                Module1.ActivateState("Aoi_Selected_State");
-                Module1.ActivateState("BtnExcelTables_State");
                 // Activate Admin Menu state for some buttons
                 if (Module1.Current.BatchToolSettings.AdminMenu == true)
                 {
                     Module1.ActivateState("Admin_Menu_State");
                 }
+                // Manage Excel button
+                bool bEnabled = await EnableExcelButtonAsync();
+                bEnabled = await EnableLoadMapsButtonAsync();
+                Module1.ActivateState("Aoi_Selected_State");
                 return oAoi;
             }
             catch (Exception e)
@@ -3037,6 +3040,86 @@ namespace bagis_pro
                 Module1.Current.ModuleLogManager.LogError(nameof(QueryChromePath),
                     "Chrome path not found. Attempting to use default!");
             }
+        }
+
+        public static async Task<bool> EnableExcelButtonAsync()
+        {
+            Uri uriAnalysis = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false));
+            // Check for presence of elevation, precipitation, and aspect zones; Also source file for elev-precip chart
+            string[] arrRaster = new string[] { Constants.FILE_ELEV_ZONE, Constants.FILE_PRECIP_ZONE,
+                                                Constants.FILE_ASPECT_ZONE, Constants.FILE_PREC_MEAN_ELEV };
+            bool notFound = true;
+            foreach (var r in arrRaster)
+            {
+                if (await GeodatabaseTools.RasterDatasetExistsAsync(uriAnalysis, r))
+                {
+                    notFound = false;
+                }
+                else
+                {
+                    notFound = true;
+                    Module1.Current.ModuleLogManager.LogError(nameof(EnableExcelButtonAsync),
+                        $@"Unable to locate {uriAnalysis.LocalPath}\{r}. Excel button will be disabled!");
+                    break;
+                }
+            }
+            if (notFound)
+            {
+                Module1.DeactivateState("BtnExcelTables_State");
+            }
+            else
+            {
+                Module1.ActivateState("BtnExcelTables_State");
+            }
+            return notFound;
+        }
+
+        public static async Task<bool> EnableLoadMapsButtonAsync()
+        {
+            Uri uriAnalysis = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false));
+            Uri uriLayers = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, false));
+            // Check for presence of elevation, precipitation, and aspect zones; Also source file for elev-precip chart
+            string[] arrRaster = new string[] { Constants.FILE_ELEV_ZONE, Constants.FILE_PRECIP_ZONE,
+                                                Constants.FILE_ASPECT_ZONE, Constants.FILE_LAND_OWNERSHIP,
+                                                Constants.FILE_PRECIPITATION_CONTRIBUTION};
+            bool notFound = true;
+            foreach (var r in arrRaster)
+            {
+                if (await GeodatabaseTools.RasterDatasetExistsAsync(uriAnalysis, r))
+                {
+                    notFound = false;
+                }
+                else
+                {
+                    if (r.Equals(Constants.FILE_LAND_OWNERSHIP))
+                    {
+                        
+                        if (! await GeodatabaseTools.FeatureClassExistsAsync(uriLayers, r))
+                        {
+                            notFound = true;
+                            Module1.Current.ModuleLogManager.LogError(nameof(EnableLoadMapsButtonAsync),
+                                $@"Unable to locate {uriLayers.LocalPath}\{r}. Load Maps button will be disabled!");
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        notFound = true;
+                        Module1.Current.ModuleLogManager.LogError(nameof(EnableLoadMapsButtonAsync),
+                            $@"Unable to locate {uriAnalysis.LocalPath}\{r}. Load Maps button will be disabled!");
+                        break;
+                    }
+                }
+            }
+            if (notFound)
+            {
+                Module1.DeactivateState("BtnLoadMaps_State");
+            }
+            else
+            {
+                Module1.ActivateState("BtnLoadMaps_State");
+            }
+            return notFound;
         }
     }
 
