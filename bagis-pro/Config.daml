@@ -101,9 +101,9 @@
         <button id="bagis_pro_Menus_MnuBasinAnalyst_AoiUtilities" caption="AOI Utilities" className="bagis_pro.Menus.MnuBasinAnalyst_AoiUtilities" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GeoprocessingEnvironmentSettings16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GeoprocessingEnvironmentSettings32.png" keytip="B4">
           <tooltip heading="AOI Utilities">AOI Utilities<disabledText /></tooltip>
         </button>
-        <button id="bagis_pro_Menus_MnuBasinAnalyst_AOIShapefile" caption="Test PDF Upload" className="bagis_pro.Menus.MnuBasinAnalyst_AOIShapefile" loadOnClick="true" condition="BtnExportToPdf_Condition" keytip="B5">
-          <tooltip heading="Test PDF Upload">
-            Test PDF Upload<disabledText /></tooltip>
+        <button id="bagis_pro_Menus_MnuBasinAnalyst_AOIShapefile" caption="Create AOI from Shapefile" className="bagis_pro.Menus.MnuBasinAnalyst_AOIShapefile" loadOnClick="true" keytip="B5">
+          <tooltip heading="Create AOI from Shapefile">
+            Create AOI from Shapefile<disabledText /></tooltip>
         </button>
         <button id="bagis_pro_Menus_MnuBasinAnalyst_Options" caption="Options" className="bagis_pro.Menus.MnuBasinAnalyst_Options" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericOptions16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericOptions32.png" keytip="B6">
           <tooltip heading="Options">
@@ -313,7 +313,11 @@
       <state id="MnuBasinAnalyst_BasinInfo_State" />
     </insertCondition>
     <insertCondition id="BtnExportToPdf_Condition" caption="Export PDF">
-      <state id="Aoi_Selected_State" />
+      <and>
+        <state id="Aoi_Selected_State" />
+        <state id="BtnExcelTables_State" />
+        <state id="BtnLoadMaps_State" />
+      </and>
     </insertCondition>
     <insertCondition id="BtnExcelTables_Condition" caption="Excel Tables">
       <and>

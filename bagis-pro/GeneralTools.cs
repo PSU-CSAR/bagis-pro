@@ -3059,7 +3059,7 @@ namespace bagis_pro
                 {
                     notFound = true;
                     Module1.Current.ModuleLogManager.LogError(nameof(EnableExcelButtonAsync),
-                        $@"Unable to locate {uriAnalysis.LocalPath}\{r}. Excel button will be disabled!");
+                        $@"Unable to locate {uriAnalysis.LocalPath}\{r}. Excel and PDF Export buttons will be disabled!");
                     break;
                 }
             }
@@ -3098,7 +3098,7 @@ namespace bagis_pro
                         {
                             notFound = true;
                             Module1.Current.ModuleLogManager.LogError(nameof(EnableLoadMapsButtonAsync),
-                                $@"Unable to locate {uriLayers.LocalPath}\{r}. Load Maps button will be disabled!");
+                                $@"Unable to locate {uriLayers.LocalPath}\{r}. Load Maps and PDF Export buttons will be disabled!");
                             break;
                         }
                     }
@@ -3106,7 +3106,7 @@ namespace bagis_pro
                     {
                         notFound = true;
                         Module1.Current.ModuleLogManager.LogError(nameof(EnableLoadMapsButtonAsync),
-                            $@"Unable to locate {uriAnalysis.LocalPath}\{r}. Load Maps button will be disabled!");
+                            $@"Unable to locate {uriAnalysis.LocalPath}\{r}. Load Maps and PDF Export buttons will be disabled!");
                         break;
                     }
                 }
