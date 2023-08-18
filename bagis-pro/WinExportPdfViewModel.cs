@@ -1,24 +1,129 @@
-﻿using System;
+﻿using ArcGIS.Desktop.Framework;
+using ArcGIS.Desktop.Framework.Contracts;
+using ArcGIS.Desktop.Framework.Dialogs;
+using Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using ArcGIS.Desktop.Core;
-using ArcGIS.Desktop.Framework;
-using ArcGIS.Desktop.Framework.Contracts;
-using ArcGIS.Desktop.Framework.Dialogs;
 using ArcGIS.Desktop.Layouts;
 
-namespace bagis_pro.Buttons
+namespace bagis_pro
 {
-    internal class BtnExportToPdf : Button
+    public class WinExportPdfViewModel : PropertyChangedBase
     {
-        // THIS IS AN OLD VERSION; THIS CODE IS NOW MAINTAINED IN WinExportPdfViewModel.cs
-        protected async override void OnClick()
+        WinExportPdf _view = null;
+        private string _publisher;
+        private string _comments;
+        private string _settingsFile;
+
+        public WinExportPdfViewModel(WinExportPdf view)
+        {
+            _view = view;
+
+            // Set path to settings file if we need to
+            if (String.IsNullOrEmpty(this.SettingsFile))
+
+            {
+                // Find batch tool settings file
+                string strSettingsPath = GeneralTools.GetBagisSettingsPath();
+                if (!string.IsNullOrEmpty(strSettingsPath))
+                {
+                    string strFullPath = strSettingsPath + @"\" + Constants.FOLDER_SETTINGS
+                        + @"\" + Constants.FILE_BATCH_TOOL_SETTINGS;
+                    if (!File.Exists(strFullPath))
+                    {
+                        if (!Directory.Exists(strSettingsPath + @"\" + Constants.FOLDER_SETTINGS))
+                        {
+                            var dirInfo = Directory.CreateDirectory(strSettingsPath + @"\" + Constants.FOLDER_SETTINGS);
+                            if (dirInfo == null)
+                            {
+                                MessageBox.Show("Unable to create BAGIS settings folder in " + strSettingsPath +
+                                    "! Process stopped.");
+                                return;
+                            }
+                        }
+                        Webservices ws = new Webservices();
+                        var success = Task.Run(() => ws.DownloadBatchSettingsAsync(strFullPath));
+                        if ((BA_ReturnCode)success.Result == BA_ReturnCode.Success)
+                        {
+                            this.SettingsFile = strFullPath;
+                        }
+                    }
+                    else
+                    {
+                        this.SettingsFile = strFullPath;
+                    }
+
+                    // read JSON directly from a file
+                    using (FileStream fs = File.OpenRead(this.SettingsFile))
+                    {
+                        using (JsonTextReader reader = new JsonTextReader(new StreamReader(fs)))
+                        {
+                            dynamic oBatchSettings = (JObject)JToken.ReadFrom(reader);
+                            if (oBatchSettings != null)
+                            {
+                                Module1.Current.BatchToolSettings = oBatchSettings;
+                            }
+                            Publisher = (string)oBatchSettings.Publisher;
+                        }
+                    }
+                }
+            }
+        }
+
+        public string Publisher
+        {
+            get { return _publisher; }
+            set
+            {
+                SetProperty(ref _publisher, value, () => Publisher);
+            }
+        }
+
+        public string Comments
+        {
+            get { return _comments; }
+            set
+            {
+                SetProperty(ref _comments, value, () => Comments);
+            }
+        }
+
+        public string SettingsFile
+        {
+            get { return _settingsFile; }
+            set
+            {
+                SetProperty(ref _settingsFile, value, () => SettingsFile);
+            }
+        }
+
+        public ICommand CmdExport => new RelayCommand(() =>
+        {
+            ExecuteExport();
+            _view.DialogResult = true;
+            _view.Close();
+        });
+
+        public ICommand CmdCancel => new RelayCommand(() =>
+        {
+            _view.DialogResult = false;
+            _view.Close();
+        });
+
+        protected async void ExecuteExport()
         {
             ReportType rType = ReportType.Watershed;
             try
             {
                 string outputDirectory = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE;
-                if (! System.IO.Directory.Exists(outputDirectory))
+                if (!System.IO.Directory.Exists(outputDirectory))
                 {
                     System.IO.Directory.CreateDirectory(outputDirectory);
                 }
@@ -60,7 +165,7 @@ namespace bagis_pro.Buttons
                 {
                     success = await MapTools.DisplayMaps(Module1.Current.Aoi.FilePath, oLayout, true);
                     success = await MapTools.DisplayLegendAsync(Constants.MAPS_DEFAULT_MAP_FRAME_NAME, oLayout,
-                        "ArcGIS Colors", "1.5 Point",true);
+                        "ArcGIS Colors", "1.5 Point", true);
                 }
 
                 if (success != BA_ReturnCode.Success)
@@ -117,7 +222,7 @@ namespace bagis_pro.Buttons
                             int foundS1 = strButtonState.IndexOf("_State");
                             string strMapButton = strButtonState.Remove(foundS1);
                             ICommand cmd = FrameworkApplication.GetPlugInWrapper(strMapButton) as ICommand;
-                            Module1.Current.ModuleLogManager.LogDebug(nameof(OnClick),
+                            Module1.Current.ModuleLogManager.LogDebug(nameof(ExecuteExport),
                                 "About to toggle map button " + strMapButton);
                             if ((cmd != null))
                             {
@@ -144,13 +249,12 @@ namespace bagis_pro.Buttons
                 }
 
                 int sitesAppendixCount = await GeneralTools.GenerateSitesTableAsync(Module1.Current.Aoi);
-                string strPublisher = (string)Module1.Current.BatchToolSettings.Publisher;
-                success = await GeneralTools.GenerateMapsTitlePageAsync(rType, strPublisher, "");
+                success = await GeneralTools.GenerateMapsTitlePageAsync(rType, Publisher, Comments);
                 string[] arrPieces = Module1.Current.Aoi.StationTriplet.Split(':');
                 string outputPath = GeneralTools.GetFullPdfFileName(Constants.FILE_EXPORT_WATERSHED_REPORT_PDF);
                 if (arrPieces.Length != 3)
-                {                    
-                    Module1.Current.ModuleLogManager.LogDebug(nameof(OnClick), "Unable to determine station triplet for document title!");
+                {
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(ExecuteExport), "Unable to determine station triplet for document title!");
                     outputPath = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\" + "Not_Specified_Watershed-Report.pdf";
                 }
                 else
@@ -171,36 +275,6 @@ namespace bagis_pro.Buttons
                 MessageBox.Show("An error occurred while trying to export the maps!! " + e.Message, "BAGIS PRO");
             }
         }
-    }
 
-    internal class BtnExcelTables : Button
-    {
-        protected async override void OnClick()
-        {
-            try
-            {
-                Module1.DeactivateState("BtnExcelTables_State");
-                var cmdShowHistory = FrameworkApplication.GetPlugInWrapper("esri_geoprocessing_showToolHistory") as ICommand;
-                if (cmdShowHistory != null)
-                {
-                    if (cmdShowHistory.CanExecute(null))
-                    {
-                        cmdShowHistory.Execute(null);
-                    }
-                }
-                BA_ReturnCode success = await GeneralTools.GenerateTablesAsync(true);
-                Module1.ActivateState("BtnExcelTables_State");
-                if (!success.Equals(BA_ReturnCode.Success))
-                {
-                    MessageBox.Show("An error occurred while generating the Excel tables!!", "BAGIS-PRO");
-                }
-            }
-            catch (Exception e)
-            {
-                MessageBox.Show("An exception occurred while trying to export the tables!! " + e.Message, "BAGIS PRO");
-                Module1.Current.ModuleLogManager.LogError(nameof(OnClick), 
-                    "An error occurred while trying to export the tables!! " + e.Message);
-            }
-        }
     }
 }

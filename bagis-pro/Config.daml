@@ -43,7 +43,7 @@
           <button refID="bagis_pro_DockAnalysisLayers_ShowButton" size="middle" />
           <button refID="bagis_pro_Menus_MnuMaps_BtnMapLoad" size="middle" />
           <buttonPalette refID="bagis_pro_Buttons_MapButtonPalette" size="middle" />
-          <button refID="bagis_pro_Buttons_BtnExportToPdf" size="middle" />
+          <button refID="bagis_pro_WinExportPdf" size="middle" />
           <button refID="bagis_pro_Buttons_BtnExcelTables" size="middle" />
           <button refID="bagis_pro_DockMapPackage_ShowButton" size="middle" />
         </group>
@@ -131,9 +131,6 @@
         </button>
         <button id="bagis_pro_Menus_MnuMaps_BtnSelectAoi" caption="Select AOI" className="bagis_pro.Menus.MnuMaps_BtnSelectAoi" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ArcGISProjectOpenState16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ArcGISProjectOpenState32.png" keytip="B13">
           <tooltip heading="Select AOI">Click to select an AOI<disabledText /></tooltip>
-        </button>
-        <button id="bagis_pro_Buttons_BtnExportToPdf" caption="Export Map Package to PDF" className="bagis_pro.Buttons.BtnExportToPdf" loadOnClick="true" smallImage="Images\PdfIcon.png" largeImage="Images\PdfIcon.png" condition="BtnExportToPdf_Condition" keytip="B14">
-          <tooltip heading="Export Map Package to PDF">Export Map Package to PDF<disabledText /></tooltip>
         </button>
         <button id="bagis_pro_Buttons_BtnExcelTables" caption="Excel Tables" className="bagis_pro.Buttons.BtnExcelTables" loadOnClick="true" smallImage="Images\excel.png" largeImage="Images\excel.png" condition="BtnExcelTables_Condition" keytip="B15">
           <tooltip heading="Excel Tables">
@@ -254,6 +251,14 @@
         <button id="bagis_pro_DockAdminTools_ShowButton" caption="Batch Tools" className="DockAdminTools_ShowButton" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/JobExport16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/JobExport16.png" keytip="B57">
           <tooltip heading="Batch Tools">
             Batch Tools<disabledText /></tooltip>
+        </button>
+        <!--<button id="bagis_pro_Buttons_BtnExportToPdf" caption="Export Map Package to PDF" className="bagis_pro.Buttons.BtnExportToPdf" loadOnClick="true" smallImage="Images\PdfIcon.png" largeImage="Images\PdfIcon.png" condition="BtnExportToPdf_Condition" keytip="B14">
+          <tooltip heading="Export Map Package to PDF">
+            Export Map Package to PDF<disabledText />
+          </tooltip>
+        </button> -->
+        <button id="bagis_pro_WinExportPdf" caption="Export Map Package to PDF" className="BtnWinExportPdf" loadOnClick="true" smallImage="Images\PdfIcon.png" largeImage="Images\PdfIcon.png" condition="BtnExportToPdf_Condition" keytip="B14" >
+          <tooltip heading="Export Map Package to PDF">Export Map Package to PDF<disabledText /></tooltip>
         </button>
       </controls>
       <menus>
