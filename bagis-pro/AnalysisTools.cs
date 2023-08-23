@@ -10,6 +10,7 @@ using ArcGIS.Desktop.Editing;
 using ArcGIS.Desktop.Framework.Dialogs;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
 using ArcGIS.Desktop.Mapping;
+using bagis_pro.BA_Objects;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -5445,6 +5446,62 @@ namespace bagis_pro
             {
                 return false;
             }
+        }
+
+        public static async Task<IList<string>> GenerateForecastStatisticsList(BA_Objects.Aoi oAoi, string strLogFile, BA_ReturnCode runOffData)
+        {
+            IList<string> lstElements = new List<string>();
+            lstElements.Add(oAoi.Name);  //AOI Name
+            lstElements.Add(oAoi.StationTriplet);   // Station triplet
+            // Retrieve AOI Analysis object with settings for future use
+            BA_Objects.Analysis oAnalysis = GeneralTools.GetAnalysisSettings(oAoi.FilePath);
+            string strLogEntry;
+
+            // aoiArea_SqMeters
+            string strAreaSqM = "Not Found";
+            string strAreaSqMiles = strAreaSqM;
+            string strAnnRunoffRatioPct = strAreaSqM;
+            QueryFilter queryFilter = new QueryFilter();
+            Uri aoiUri = new Uri(GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi));
+            string strAreaSqKm = await GeodatabaseTools.QueryTableForSingleValueAsync(aoiUri, Constants.FILE_POURPOINT,
+                                    Constants.FIELD_AOI_AREA, new QueryFilter());
+            double dblAreaSqKm = -1;
+            bool isDouble = Double.TryParse(strAreaSqKm, out dblAreaSqKm);
+            if (isDouble)
+            {
+                strAreaSqM = String.Format("{0:0.00}",AreaUnit.SquareKilometers.ConvertTo(dblAreaSqKm, AreaUnit.SquareMeters));
+                // aoiArea_SqMiles
+                strAreaSqMiles = String.Format("{0:0.00}", AreaUnit.SquareKilometers.ConvertTo(dblAreaSqKm, AreaUnit.SquareMiles));
+
+            }
+            lstElements.Add(strAreaSqM);
+            lstElements.Add(strAreaSqMiles);
+            // ann_runoff_ratio_pct
+            if (runOffData == BA_ReturnCode.Success && oAnalysis != null)
+            {
+                // Query for the annual runoff value
+                string annualRunoffField = (string)Module1.Current.BatchToolSettings.AnnualRunoffDataField;
+                double dblAnnualRunoff = GeneralTools.QueryAnnualRunoffValue(oAoi.StationTriplet, annualRunoffField);
+                double dblRunoffRatio = -1;
+                if (dblAnnualRunoff >= 0)
+                {
+                    if (oAnalysis != null)
+                    {
+                        if (oAnalysis.PrecipVolumeKaf > 0)
+                        {
+                            dblRunoffRatio = dblAnnualRunoff / oAnalysis.PrecipVolumeKaf;
+                            strAnnRunoffRatioPct = dblRunoffRatio.ToString("0.##");
+                        }
+                        else
+                        {
+                            strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "PrecipVolumeKaf is missing from the analysis.xml file. Generate the Excel tables before generating the statistics ! \r\n";
+                            File.AppendAllText(strLogFile, strLogEntry);       // append
+                        }
+                    }
+                }
+            }
+            lstElements.Add(strAnnRunoffRatioPct);
+            return lstElements;
         }
 
     }

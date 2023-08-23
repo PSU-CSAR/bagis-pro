@@ -2390,7 +2390,7 @@ namespace bagis_pro
             return layerNames;
         }
 
-        private static double QueryAnnualRunoffValue(string stationTriplet, string strField)
+        public static double QueryAnnualRunoffValue(string stationTriplet, string strField)
         {
             double returnValue = -1.0F;
             string strCsvPath = Module1.Current.SettingsPath + "\\" + Constants.FOLDER_SETTINGS +

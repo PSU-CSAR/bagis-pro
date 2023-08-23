@@ -644,11 +644,20 @@ namespace bagis_pro
             // Reset batch states
             ResetAoiBatchStateText();
 
+            // Download the runoff csv file from the NRCS Portal                
+            string documentId = (string)Module1.Current.BatchToolSettings.AnnualRunoffItemId;
+            string annualRunoffDataDescr = (string)Module1.Current.BatchToolSettings.AnnualRunoffDataDescr;
+            string annualRunoffDataYear = (string)Module1.Current.BatchToolSettings.AnnualRunoffDataYear;
+            Webservices ws = new Webservices();
+            var runOffSuccess = await ws.GetPortalFile(BA_Objects.AGSPortalProperties.PORTAL_ORGANIZATION, documentId, Module1.Current.SettingsPath + "\\" + Constants.FOLDER_SETTINGS +
+                "\\" + Constants.FILE_ANNUAL_RUNOFF_CSV);
+
+
             // Structures to manage data
             string strCsvFile =$@"{Path.GetDirectoryName(_strGenStatisticsLogFile)}\{Constants.FILE_AOI_STATISTICS}";
             string separator = ",";
             StringBuilder output = new StringBuilder();
-            String[] headings = { "stationTriplet", "stationName"};
+            String[] headings = { "stationTriplet","stationName","aoiArea_SqMeters", "aoiArea_SqMiles", "ann_runoff_ratio_pct" };
             output.AppendLine(string.Join(separator, headings));
 
             for (int idxRow = 0; idxRow < Names.Count; idxRow++)
@@ -656,12 +665,15 @@ namespace bagis_pro
                 if (Names[idxRow].AoiBatchIsSelected)
                 {
                     int errorCount = 0; // keep track of any non-fatal errors
+                    if (runOffSuccess != BA_ReturnCode.Success)
+                    {
+                        errorCount++;
+                    }
                     string aoiFolder = Names[idxRow].FilePath;
-                    IList<string> lstElements =  new List<string>();
                     if (Names[idxRow].AoiBatchStateText.Equals(AoiBatchState.NotReady.ToString()))
                     {
                         strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} Skipping export for {Names[idxRow].FilePath}. Required station information is missing.{System.Environment.NewLine}";
-                        File.AppendAllText(_strSnodasLogFile, strLogEntry);
+                        File.AppendAllText(_strGenStatisticsLogFile, strLogEntry);
                         continue;
                     }
                     else
@@ -669,8 +681,7 @@ namespace bagis_pro
                         Names[idxRow].AoiBatchStateText = AoiBatchState.Started.ToString();  // update gui
                         strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Starting generate statistics export for " +
                             Names[idxRow].Name + "\r\n";
-                        File.AppendAllText(_strSnodasLogFile, strLogEntry);       // append
-
+                        File.AppendAllText(_strGenStatisticsLogFile, strLogEntry);       // append
                     }
 
                     // Set current AOI
@@ -683,15 +694,15 @@ namespace bagis_pro
                             Module1.Current.CboCurrentAoi.SetAoiName(oAoi.Name);
                         });
                     }
-                    lstElements.Add(oAoi.Name);  //AOI Name
-                    lstElements.Add(oAoi.StationTriplet);   // Station triplet
 
+                    IList<string> lstElements = await AnalysisTools.GenerateForecastStatisticsList(oAoi, _strGenStatisticsLogFile, runOffSuccess);
                     output.AppendLine(string.Join(separator, lstElements));
                 }
             }
             try
             {
-                File.AppendAllText(strCsvFile, output.ToString());
+                // Overwrites file with new content
+                File.WriteAllText(strCsvFile, output.ToString());
             }
             catch (Exception ex)
             {
@@ -701,7 +712,7 @@ namespace bagis_pro
                 return;
             }
             strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} The data has been successfully saved to the CSV file.{System.Environment.NewLine}";
-            File.WriteAllText(_strGenStatisticsLogFile, strLogEntry);
+            File.AppendAllText(_strGenStatisticsLogFile, strLogEntry);
             MessageBox.Show("The data has been successfully saved to the CSV file.", "BAGIS-PRO");
 
         }
