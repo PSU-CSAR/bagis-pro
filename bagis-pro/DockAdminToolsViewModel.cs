@@ -27,6 +27,7 @@ using System.ComponentModel;
 using ArcGIS.Desktop.Core.Geoprocessing;
 using System.Diagnostics;
 using bagis_pro.BA_Objects;
+using Microsoft.Office.Core;
 
 namespace bagis_pro
 {
@@ -110,19 +111,23 @@ namespace bagis_pro
         private string _parentFolder;
         private string _settingsFile;
         private string _snodasFolder;
+        private string _statisticsFolder;
         private string _publisher;
         private string _comments;
         private bool _archiveChecked = false;
         private string _strLogFile;
         private string _strForecastLogFile;
         private string _strSnodasLogFile;
+        private string _strGenStatisticsLogFile;
         private bool _cmdRunEnabled = false;
         private bool _cmdForecastEnabled = false;
         private bool _cmdSnodasEnabled = false;
         private bool _cmdToggleEnabled = false;
+        private bool _cmdGenStatisticsEnabled = false;
         private bool _cmdLogEnabled = false;
         private bool _cmdForecastLogEnabled = false;
         private bool _cmdSnodasLogEnabled = false;
+        private bool _cmdGenStatisticsLogEnabled = false;
         private bool _tasksEnabled = false;
         private bool _alwaysNearChecked = false;
         private bool _mergeAoiVChecked = true;
@@ -169,6 +174,14 @@ namespace bagis_pro
                 SetProperty(ref _cmdSnodasLogEnabled, value, () => CmdSnodasLogEnabled);
             }
         }
+        public bool CmdGenStatisticsLogEnabled
+        {
+            get { return _cmdGenStatisticsLogEnabled; }
+            set
+            {
+                SetProperty(ref _cmdGenStatisticsLogEnabled, value, () => CmdGenStatisticsLogEnabled);
+            }
+        }
         public bool CmdForecastEnabled
         {
             get { return _cmdForecastEnabled; }
@@ -193,6 +206,15 @@ namespace bagis_pro
             set
             {
                 SetProperty(ref _cmdToggleEnabled, value, () => CmdToggleEnabled);
+            }
+        }
+
+        public bool CmdGenStatisticsEnabled
+        {
+            get { return _cmdGenStatisticsEnabled; }
+            set
+            {
+                SetProperty(ref _cmdGenStatisticsEnabled, value, () => CmdGenStatisticsEnabled);
             }
         }
 
@@ -229,6 +251,15 @@ namespace bagis_pro
             set
             {
                 SetProperty(ref _snodasFolder, value, () => SnodasFolder);
+            }
+        }
+
+        public string StatisticsFolder
+        {
+            get { return _statisticsFolder; }
+            set
+            {
+                SetProperty(ref _statisticsFolder, value, () => StatisticsFolder);
             }
         }
 
@@ -349,6 +380,7 @@ namespace bagis_pro
 
                     _strLogFile = ParentFolder + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\" + Constants.FILE_BATCH_LOG;
                     SnodasFolder = ParentFolder + "\\" + Constants.FOLDER_SNODAS_GEOJSON;
+                    StatisticsFolder = $@"{ParentFolder}\{Constants.FOLDER_MAP_PACKAGE}";
                     // Make sure the maps_publish folder exists under the selected folder
                     if (!Directory.Exists(Path.GetDirectoryName(_strLogFile)))
                     {
@@ -362,6 +394,9 @@ namespace bagis_pro
 
                     _strSnodasLogFile = $@"{ParentFolder}\{Constants.FOLDER_SNODAS_GEOJSON}\{Constants.FILE_SNODAS_GEOJSON_LOG}";
                     CmdSnodasLogEnabled = File.Exists(_strSnodasLogFile);
+
+                    _strGenStatisticsLogFile = $@"{ParentFolder}\{Constants.FOLDER_MAP_PACKAGE}\{Constants.FILE_GEN_STATISTICS_LOG}";
+                    CmdGenStatisticsLogEnabled = File.Exists(_strGenStatisticsLogFile);
 
                     Names.Clear();
                     IList<BA_Objects.Aoi> lstAois = await GeneralTools.GetAoiFoldersAsync(ParentFolder, _strLogFile);
@@ -389,6 +424,7 @@ namespace bagis_pro
                         CmdForecastEnabled = true;
                         CmdToggleEnabled = true;
                         TasksEnabled = true;
+                        CmdGenStatisticsEnabled = true; 
                     }
                     else
                     {
@@ -399,7 +435,8 @@ namespace bagis_pro
                         CmdSnodasEnabled = false;
                         CmdForecastEnabled = false;
                         CmdToggleEnabled = false;
-                        TasksEnabled = false;    
+                        TasksEnabled = false; 
+                        CmdGenStatisticsEnabled = false;    
                     }
                 });
             }
@@ -580,6 +617,95 @@ namespace bagis_pro
             MessageBox.Show("Generated GeoJson files are available in " + ParentFolder + "\\" + Constants.FOLDER_SNODAS_GEOJSON, "BAGIS-PRO");
         }
 
+        private RelayCommand _runGenStatisticsCommand;
+        public ICommand CmdStatistics
+        {
+            get
+            {
+                if (_runGenStatisticsCommand == null)
+                    _runGenStatisticsCommand = new RelayCommand(RunGenStatisticsImplAsync, () => true);
+                return _runGenStatisticsCommand;
+            }
+        }
+
+        private async void RunGenStatisticsImplAsync(object param)
+        {
+            // Make sure the maps_publish folder exists under the selected folder
+            if (!Directory.Exists(Path.GetDirectoryName(_strGenStatisticsLogFile)))
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(_strGenStatisticsLogFile));
+            }
+
+            // Create initial log entry
+            string strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Starting generate statistics export to publish in " +
+                Path.GetDirectoryName(_strGenStatisticsLogFile) + "\r\n";
+            File.WriteAllText(_strGenStatisticsLogFile, strLogEntry);    // overwrite file if it exists
+
+            // Reset batch states
+            ResetAoiBatchStateText();
+
+            // Structures to manage data
+            string strCsvFile =$@"{Path.GetDirectoryName(_strGenStatisticsLogFile)}\{Constants.FILE_AOI_STATISTICS}";
+            string separator = ",";
+            StringBuilder output = new StringBuilder();
+            String[] headings = { "stationTriplet", "stationName"};
+            output.AppendLine(string.Join(separator, headings));
+
+            for (int idxRow = 0; idxRow < Names.Count; idxRow++)
+            {
+                if (Names[idxRow].AoiBatchIsSelected)
+                {
+                    int errorCount = 0; // keep track of any non-fatal errors
+                    string aoiFolder = Names[idxRow].FilePath;
+                    IList<string> lstElements =  new List<string>();
+                    if (Names[idxRow].AoiBatchStateText.Equals(AoiBatchState.NotReady.ToString()))
+                    {
+                        strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} Skipping export for {Names[idxRow].FilePath}. Required station information is missing.{System.Environment.NewLine}";
+                        File.AppendAllText(_strSnodasLogFile, strLogEntry);
+                        continue;
+                    }
+                    else
+                    {
+                        Names[idxRow].AoiBatchStateText = AoiBatchState.Started.ToString();  // update gui
+                        strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Starting generate statistics export for " +
+                            Names[idxRow].Name + "\r\n";
+                        File.AppendAllText(_strSnodasLogFile, strLogEntry);       // append
+
+                    }
+
+                    // Set current AOI
+                    BA_Objects.Aoi oAoi = await GeneralTools.SetAoiAsync(aoiFolder, Names[idxRow]);
+                    if (Module1.Current.CboCurrentAoi != null)
+                    {
+                        FrameworkApplication.Current.Dispatcher.Invoke(() =>
+                        {
+                            // Do something on the GUI thread
+                            Module1.Current.CboCurrentAoi.SetAoiName(oAoi.Name);
+                        });
+                    }
+                    lstElements.Add(oAoi.Name);  //AOI Name
+                    lstElements.Add(oAoi.StationTriplet);   // Station triplet
+
+                    output.AppendLine(string.Join(separator, lstElements));
+                }
+            }
+            try
+            {
+                File.AppendAllText(strCsvFile, output.ToString());
+            }
+            catch (Exception ex)
+            {
+                strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} Data could not be written to the CSV file!{System.Environment.NewLine}";
+                File.AppendAllText(_strGenStatisticsLogFile, strLogEntry);
+                MessageBox.Show("Data could not be written to the CSV file!", "BAGIS-PRO");
+                return;
+            }
+            strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} The data has been successfully saved to the CSV file.{System.Environment.NewLine}";
+            File.WriteAllText(_strGenStatisticsLogFile, strLogEntry);
+            MessageBox.Show("The data has been successfully saved to the CSV file.", "BAGIS-PRO");
+
+        }
+
         private void ResetAoiBatchStateText()
         {
             for (int idxRow = 0; idxRow < Names.Count; idxRow++)
@@ -676,6 +802,30 @@ namespace bagis_pro
                     {
                         MessageBox.Show("Could not find snodas log file!", "BAGIS-PRO");
                         CmdSnodasLogEnabled = false;
+                    }
+                });
+            }
+        }
+
+        public ICommand CmdStatisticsLog
+        {
+            get
+            {
+                return new RelayCommand(() =>
+                {
+                    if (File.Exists(_strGenStatisticsLogFile))
+                    {
+                        var p = new Process();
+                        p.StartInfo = new ProcessStartInfo(_strGenStatisticsLogFile)
+                        {
+                            UseShellExecute = true
+                        };
+                        p.Start();
+                    }
+                    else
+                    {
+                        MessageBox.Show("Could not find Generate Statistics log file!", "BAGIS-PRO");
+                        CmdGenStatisticsLogEnabled = false;
                     }
                 });
             }

@@ -112,7 +112,9 @@ namespace bagis_pro
         public const string FILE_BATCH_TOOL_SETTINGS = "batch_tool_settings.json";
         public const string FILE_BATCH_LOG = "batch_tool_log.txt";
         public const string FILE_SNODAS_GEOJSON_LOG = "snodas_log.txt";
+        public const string FILE_GEN_STATISTICS_LOG = "generate_statistics_log.txt";
         public const string FILE_FORECAST_STATION_LOG = "forecast_station_log.csv";
+        public const string FILE_AOI_STATISTICS = "forecast_aoi_statistics.csv";
         public const string FILE_SNOLITE = "snolite_sites";
         public const string FILE_COOP_PILLOW = "coop_pillow_sites";
         public const string FILE_EXPORT_MAP_ELEV_PDF = "elevation_distribution.pdf";
