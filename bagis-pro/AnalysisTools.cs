@@ -57,7 +57,7 @@ namespace bagis_pro
                 {
                     Module1.Current.ModuleLogManager.LogDebug(nameof(GenerateSiteLayersAsync),
                         "No SNOTEL or Snow Course layers found for AOI. Site Layers cannot be generated!!");
-                    return success;
+                    return BA_ReturnCode.Success;
                 }
 
                 //1. Get min/max DEM elevation for reclassing raster. We only want to do this once
@@ -4626,6 +4626,8 @@ namespace bagis_pro
             }
 
             int siteLayersCount = 0;
+            string analysisPath = GeodatabaseTools.GetGeodatabasePath(System.IO.Path.GetDirectoryName(gdbUri.LocalPath), GeodatabaseNames.Analysis);
+            string returnPath = analysisPath + "\\" + Constants.FILE_MERGED_SITES;
             for (int i = 0; i < arrHasSites.Length; i++)
             {
                 bool modificationResult = false;
@@ -4712,10 +4714,8 @@ namespace bagis_pro
                 }
             }
 
-            string analysisPath = GeodatabaseTools.GetGeodatabasePath(System.IO.Path.GetDirectoryName(gdbUri.LocalPath), GeodatabaseNames.Analysis);
-            string returnPath = analysisPath + "\\" + Constants.FILE_MERGED_SITES;
             // There is only one sites layer; We copy that to the merged sites file
-            if (siteLayersCount == 1)
+            if (siteLayersCount == 1)            
             {
                 for (int i = 0; i < arrHasSites.Length; i++)
                 {
@@ -4725,6 +4725,10 @@ namespace bagis_pro
                         break;
                     }
                 }
+            }
+            else if (siteLayersCount == 0)
+            {
+                return returnPath;
             }
             else if (siteLayersCount > 1)
             {
@@ -4783,11 +4787,14 @@ namespace bagis_pro
                 // This sets the elevation for sites outside the filled_dem extent
                 success = await ReclipSurfacesAsync(strAoiPath, returnPath);
             }
+            else
+            {
+                success = BA_ReturnCode.Success;
+            }
             if (success != BA_ReturnCode.Success)
             {
                 return "";
             }
-
             
             // Assign the site id by elevation
             success = await UpdateSiteIdsAsync(analysisPath, gdbUri, arrHasSites, arrSiteFiles);
