@@ -3704,10 +3704,11 @@ namespace bagis_pro
                         lstDatasetType.Add(esriDatasetType.esriDTFeatureClass);
 
                     int j = 0;
-                    await QueuedTask.Run(async () =>
+
+                    foreach (var layerName in lstLayerName)
                     {
-                      foreach (var layerName in lstLayerName)
-                      {
+                        await QueuedTask.Run(() =>
+                        {
                           oLayer = oMap.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(layerName, StringComparison.CurrentCultureIgnoreCase));
                           if (oLayer != null && arrExists[i])
                           {
@@ -3726,27 +3727,29 @@ namespace bagis_pro
                                 oLayer.SetDataConnection(updatedDataConnection);
                           }
                           j++;
-                      }
+                        });
+                    }
 
-                        // Reset the clip geometry
-                        success = await SetClipGeometryAsync(strAoiPath, arrMapFrames[i]);
-
-                        IList<BA_Objects.Interval> lstCustomInterval = new List<BA_Objects.Interval>();
-                        int idxData = -1;
-                        for (int k = 0; k < lstLayerName.Count; k++)
+                    // Reset the clip geometry
+                    success = await SetClipGeometryAsync(strAoiPath, arrMapFrames[i]);
+                    IList<BA_Objects.Interval> lstCustomInterval = new List<BA_Objects.Interval>();
+                    int idxData = -1;
+                    for (int k = 0; k < lstLayerName.Count; k++)
+                    {
+                        if (lstLayerName[k].Equals(mapLayerName))
                         {
-                            if (lstLayerName[k].Equals(mapLayerName))
-                            {
-                                idxData = k;                
-                                break;
-                            }
+                            idxData = k;                
+                            break;
                         }
+                    }
 
-                        // Update labels on data layer for this AOI
-                        oLayer = oMap.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(mapLayerName, StringComparison.CurrentCultureIgnoreCase));
-                        if (oLayer != null)
+                    // Update labels on data layer for this AOI
+                    oLayer = oMap.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(mapLayerName, StringComparison.CurrentCultureIgnoreCase));
+                    if (oLayer != null)
+                    {
+                        BasicRasterLayer bLayer = (BasicRasterLayer)oLayer;
+                        await QueuedTask.Run(() =>
                         {
-                            BasicRasterLayer bLayer = (BasicRasterLayer)oLayer;
                             var colorizer = bLayer.GetColorizer();
                             if (colorizer is CIMRasterUniqueValueColorizer uvrColorizer)
                             {
@@ -3763,12 +3766,12 @@ namespace bagis_pro
                                             break;
                                         }
                                     }
-                                    grpClass.Label = $@"{correctField}";
-                                }
-                                bLayer.SetColorizer(uvrColorizer);
+                                grpClass.Label = $@"{correctField}";
                             }
+                            bLayer.SetColorizer(uvrColorizer);
                         }
-                     });
+                        });
+                    }
                 }
             }
 

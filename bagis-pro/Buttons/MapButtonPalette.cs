@@ -44,9 +44,9 @@ namespace bagis_pro.Buttons
             Module1.Current.MapFinishedLoading = false;
             Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
             var allLayers = oMap.Layers.ToList();
-            await QueuedTask.Run(() =>
+            foreach (var layer in allLayers)
             {
-                foreach (var layer in allLayers)
+                await QueuedTask.Run( () =>
                 {
                     if (thisMap.LayerList.Contains(layer.Name))
                     {
@@ -56,8 +56,8 @@ namespace bagis_pro.Buttons
                     {
                         layer.SetVisibility(false);
                     }
-                }
-            });
+                });
+            }
 
             await MapTools.UpdateMapElementsAsync(Module1.Current.Aoi.StationName.ToUpper(), thisMap);
             BA_ReturnCode success = await MapTools.UpdateLegendAsync(oLayout, thisMap.LegendLayerList);
