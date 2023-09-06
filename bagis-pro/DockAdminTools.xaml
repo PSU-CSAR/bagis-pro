@@ -234,14 +234,14 @@
                         <Image Width="16" 
                             Source="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericInformation16.png">
                             <Image.ToolTip>
-                                <ToolTip Content="Export AOI's aoi_v and pourpoint featureclasses to GeoJson's multipolygon and point geometry types" />
+                                <ToolTip Content="Extract AOI report data to generate a .csv summary table that can be linked to AOI geometries using stationTriplet values" />
                             </Image.ToolTip>
                         </Image>
                     </StackPanel>
                     <GroupBox Margin="5,0,0,5" Padding="2" Grid.Row="6" HorizontalAlignment="Left" IsEnabled="{Binding TasksEnabled}">
                         <GroupBox.Header>
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock FontWeight="Bold">Generate Forecast Statistics</TextBlock>
+                                <TextBlock FontWeight="Bold">Generate AOI Summary</TextBlock>
                             </StackPanel>
                         </GroupBox.Header>
                         <Grid>
