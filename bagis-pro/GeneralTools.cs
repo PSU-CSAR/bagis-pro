@@ -3063,13 +3063,19 @@ namespace bagis_pro
                     break;
                 }
             }
+            var plugin = FrameworkApplication.GetPlugInWrapper("bagis_pro_Buttons_BtnExcelTables");
+            var pdfPlugin = FrameworkApplication.GetPlugInWrapper("bagis_pro_WinExportPdf");
             if (notFound)
             {
                 Module1.DeactivateState("BtnExcelTables_State");
+                plugin.Tooltip = "One or more required layers are missing from this AOI";
+                pdfPlugin.Tooltip = plugin.Tooltip;
             }
             else
             {
                 Module1.ActivateState("BtnExcelTables_State");
+                plugin.Tooltip = "Click to generate interactive Excel tables";
+                pdfPlugin.Tooltip = "Click to export Map Package to PDF";
             }
             return notFound;
         }
@@ -3111,13 +3117,16 @@ namespace bagis_pro
                     }
                 }
             }
+            var plugin = FrameworkApplication.GetPlugInWrapper("bagis_pro_Menus_MnuMaps_BtnMapLoad");
             if (notFound)
             {
                 Module1.DeactivateState("BtnLoadMaps_State");
+                plugin.Tooltip = "One or more required layers are missing from this AOI";
             }
             else
             {
                 Module1.ActivateState("BtnLoadMaps_State");
+                plugin.Tooltip = "Click to load maps";
             }
             return notFound;
         }
