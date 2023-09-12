@@ -657,7 +657,8 @@ namespace bagis_pro
             string strCsvFile =$@"{Path.GetDirectoryName(_strGenStatisticsLogFile)}\{Constants.FILE_AOI_STATISTICS}";
             string separator = ",";
             StringBuilder output = new StringBuilder();
-            String[] headings = { "stationTriplet","stationName","aoiArea_SqMeters", "aoiArea_SqMiles", "ann_runoff_ratio_pct" };
+            String[] headings = { "stationTriplet","stationName","aoiArea_SqMeters", "aoiArea_SqMiles", "ann_runoff_ratio_pct",
+                "centroid_x_dd","centroid_y_dd"};
             output.AppendLine(string.Join(separator, headings));
 
             for (int idxRow = 0; idxRow < Names.Count; idxRow++)

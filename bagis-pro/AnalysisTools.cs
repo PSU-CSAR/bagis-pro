@@ -5206,7 +5206,11 @@ namespace bagis_pro
                     }
                 }
                 i++;
-            }          
+            }
+            if (await GeodatabaseTools.FeatureClassExistsAsync(uriAoi, tempJoin))
+            {
+                BA_ReturnCode success = await GeoprocessingTools.DeleteDatasetAsync(strTempOutput);
+            }
             return false;
         }
 
@@ -5508,6 +5512,66 @@ namespace bagis_pro
                 }
             }
             lstElements.Add(strAnnRunoffRatioPct);
+            // centroid_x_dd and centroid_y_dd
+            string strCentroidX = "Not Found";
+            string strCentroidY = strCentroidX;
+            string strInputFeatures = $@"{aoiUri.LocalPath}\{Constants.FILE_AOI_VECTOR}";
+            string strTmpPoint = "tmpPoint";
+            string strTmpPointProj = "tmpPointProj";
+            string strOutputFeature = $@"{aoiUri.LocalPath}\{strTmpPoint}";
+            string strOutputFeatureProj = $@"{aoiUri.LocalPath}\{strTmpPointProj}";
+            var parameters = Geoprocessing.MakeValueArray(strInputFeatures, strOutputFeature, "INSIDE");
+            IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("FeatureToPoint_management", parameters, null,
+                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+            if (gpResult.IsFailed)
+            {
+                strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Unable to run FeatureToPoint tool. Centroid x and y are not available! \r\n";
+                File.AppendAllText(strLogFile, strLogEntry);       // append
+            }
+            else            
+            {
+                parameters = Geoprocessing.MakeValueArray(strOutputFeature, strOutputFeatureProj, SpatialReferences.WGS84, "NAD_1983_To_WGS_1984_1");
+                gpResult = await Geoprocessing.ExecuteToolAsync("Project_management", parameters, null,
+                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                if (gpResult.IsFailed)
+                {
+                    strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Unable to Project tmpPoint. Centroid x and y are not available! \r\n";
+                    File.AppendAllText(strLogFile, strLogEntry);       // append
+                }
+                else
+                {
+                    string strPointX = "POINT_X";
+                    string strPointY = "POINT_Y";
+                    string strProperties = @$"{strPointX} {strPointX};{strPointY} {strPointY}";
+                    parameters = Geoprocessing.MakeValueArray(strOutputFeatureProj, strProperties);
+                    gpResult = await Geoprocessing.ExecuteToolAsync("CalculateGeometryAttributes_management", parameters, null,
+                        CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                    if (gpResult.IsFailed)
+                    {
+                        strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Unable to CalculateGeometryAttributs for tmpPoint. Centroid x and y are not available! \r\n";
+                        File.AppendAllText(strLogFile, strLogEntry);       // append
+                    }
+                    else
+                    {
+                        double dblX = Convert.ToDouble(await GeodatabaseTools.QueryTableForSingleValueAsync(aoiUri, strTmpPointProj, strPointX, new QueryFilter()));
+                        strCentroidX = dblX.ToString("0.###");
+                        lstElements.Add(strCentroidX);
+                        double dblY = Convert.ToDouble(await GeodatabaseTools.QueryTableForSingleValueAsync(aoiUri, strTmpPointProj, strPointY, new QueryFilter()));
+                        strCentroidY = dblY.ToString("0.###");
+                        lstElements.Add(strCentroidY);
+                    }
+                }
+            }
+            // Delete temp files
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            if (await GeodatabaseTools.FeatureClassExistsAsync(aoiUri, strTmpPoint))
+            {
+                success = await GeoprocessingTools.DeleteDatasetAsync(strOutputFeature);
+            }
+            if (await GeodatabaseTools.FeatureClassExistsAsync(aoiUri, strTmpPointProj))
+            {
+                success = await GeoprocessingTools.DeleteDatasetAsync(strOutputFeatureProj);
+            }
             return lstElements;
         }
 
