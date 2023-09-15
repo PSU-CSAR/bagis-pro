@@ -126,6 +126,7 @@
     "WinterStartMonth": 11,
     "WinterEndMonth": 3,
     "AdminMenu": false,
-    "Version": 8
+    "USStateBoundaries": "https://services.arcgis.com/ue9rwulIoeLEI9bj/arcgis/rest/services/US_StateBoundaries/FeatureServer/0",
+    "Version": 9
   }
 }
