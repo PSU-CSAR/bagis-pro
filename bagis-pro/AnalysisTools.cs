@@ -4,11 +4,13 @@ using ArcGIS.Core.Data.Exceptions;
 using ArcGIS.Core.Data.Raster;
 using ArcGIS.Core.Data.UtilityNetwork.Trace;
 using ArcGIS.Core.Geometry;
+using ArcGIS.Core.Internal.CIM;
 using ArcGIS.Desktop.Core;
 using ArcGIS.Desktop.Core.Geoprocessing;
 using ArcGIS.Desktop.Editing;
 using ArcGIS.Desktop.Framework.Dialogs;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
+using ArcGIS.Desktop.Internal.GeoProcessing;
 using ArcGIS.Desktop.Mapping;
 using bagis_pro.BA_Objects;
 using Newtonsoft.Json.Linq;
@@ -5571,6 +5573,78 @@ namespace bagis_pro
             if (await GeodatabaseTools.FeatureClassExistsAsync(aoiUri, strTmpPointProj))
             {
                 success = await GeoprocessingTools.DeleteDatasetAsync(strOutputFeatureProj);
+            }
+
+            // state_codes
+            string strStateCodes = "Not Found";
+            if (Module1.Current.BatchToolSettings.USStateBoundaries != null)
+            {
+                string strStatesUrl = Convert.ToString(Module1.Current.BatchToolSettings.USStateBoundaries);
+                string strTmpStates = "tmpStates";
+                strOutputFeature = $@"{aoiUri.LocalPath}\{strTmpStates}";
+                parameters = Geoprocessing.MakeValueArray(strStatesUrl, strInputFeatures, strOutputFeature);
+                gpResult = await Geoprocessing.ExecuteToolAsync("PairwiseClip", parameters, null,
+                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                if (gpResult.IsFailed)
+                {
+                    strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Unable to clip state boundaries layer. State codes are not available! \r\n";
+                    File.AppendAllText(strLogFile, strLogEntry);       // append
+                }
+                else
+                {
+                    IList<string> lstStateCodes = await GeodatabaseTools.QueryTableForDistinctValuesAsync(aoiUri, strTmpStates, "STATE_ABBR", new QueryFilter());
+                    StringBuilder sb = new StringBuilder();
+                    foreach (var item in lstStateCodes)
+                    {
+                        sb.Append(item);
+                        sb.Append(',');
+                    }
+                    strStateCodes = sb.ToString();
+                    if (!string.IsNullOrEmpty(strStateCodes))
+                    {
+                        strStateCodes = "\"" + strStateCodes.TrimEnd(',') + "\"";                       
+                    }
+                    // Delete temp file
+                    if (await GeodatabaseTools.FeatureClassExistsAsync(aoiUri, strTmpStates))
+                    {
+                        success = await GeoprocessingTools.DeleteDatasetAsync(strOutputFeature);
+                    }
+                }
+                lstElements.Add(strStateCodes);
+
+                //elev_min_ft,elev_max_ft,elev_range_ft
+                string strElevMinFt = "Not Found";
+                string strElevMaxFt = strElevMinFt;
+                string strElevRangeFt = strElevMinFt;
+                IList<double> lstResult = await GeoprocessingTools.GetDemStatsAsync(oAoi.FilePath, strInputFeatures, 0.005);
+                double elevMinMeters = -1;
+                double elevMaxMeters = -1;
+                if (lstResult.Count == 2)   // We expect the min and max values in that order
+                {
+                    elevMinMeters = lstResult[0];
+                    double dblMinFt = ArcGIS.Core.Geometry.LinearUnit.Meters.ConvertTo(elevMinMeters, ArcGIS.Core.Geometry.LinearUnit.Feet);
+                    strElevMinFt = Convert.ToString(Math.Round(dblMinFt, 2, MidpointRounding.AwayFromZero));
+                    elevMaxMeters = lstResult[1];
+                    double dblMaxFt = ArcGIS.Core.Geometry.LinearUnit.Meters.ConvertTo(elevMaxMeters, ArcGIS.Core.Geometry.LinearUnit.Feet);
+                    strElevMaxFt = Convert.ToString(Math.Round(dblMaxFt, 2, MidpointRounding.AwayFromZero));
+                    if (dblMinFt >= 0 && dblMaxFt >=0)
+                    {
+                        double dblRangeFt = dblMaxFt - dblMinFt;
+                        strElevRangeFt = Convert.ToString(Math.Round(dblRangeFt, 2, MidpointRounding.AwayFromZero));
+                    }
+                }
+                lstElements.Add(strElevMinFt);
+                lstElements.Add(strElevMaxFt);
+                lstElements.Add(strElevRangeFt);
+
+                //elev_median_ft
+                //string strTmpMedian = "tmpMedian";
+                //strOutputFeature = $@"{aoiUri.LocalPath}\{strTmpMedian}";
+                //string strFilledDem = $@"";
+                //parameters = Geoprocessing.MakeValueArray(strInputFeatures, "AOINAME", , strOutputFeature, "DATA", "SUM");
+                //gpResult = await Geoprocessing.ExecuteToolAsync("ZonalStatisticsAsTable_sa", parameters, environments,
+                //    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+
             }
             return lstElements;
         }

@@ -147,6 +147,57 @@ namespace bagis_pro
             return returnValue;
         }
 
+        public static async Task<IList<string>> QueryTableForDistinctValuesAsync(Uri fileUri, string featureClassName, string fieldName, QueryFilter queryFilter)
+        {
+            // parse the uri for the folder and file
+            IList<string> lstReturn = new List<string>();   
+            string strFileName = null;
+            string strFolderPath = null;
+            if (fileUri.IsFile)
+            {
+                strFileName = System.IO.Path.GetFileName(fileUri.LocalPath);
+                strFolderPath = System.IO.Path.GetDirectoryName(fileUri.LocalPath);
+            }
+            else
+            {
+                return lstReturn;
+            }
+            await QueuedTask.Run(() =>
+            {
+                try
+                {
+                    using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(fileUri)))
+                    {
+                        Table table = geodatabase.OpenDataset<Table>(featureClassName);
+                        using (RowCursor cursor = table.Search(queryFilter, false))
+                        {
+                            cursor.MoveNext();
+                            Feature aFeature = (Feature)cursor.Current;
+                            if (aFeature != null)
+                            {
+                                int idx = aFeature.FindField(fieldName);
+                                if (idx > -1)
+                                {
+                                    string strValue = Convert.ToString(aFeature[idx]);
+                                    if (!string.IsNullOrEmpty(strValue) &&
+                                        !lstReturn.Contains(strValue))
+                                    {
+                                        lstReturn.Add(strValue);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(QueryTableForSingleValueAsync),
+                        "Exception: " + e.Message);
+                }
+            });
+            return lstReturn;
+        }
+
         public static async Task<TableStatisticsResult> GetRasterStats(Uri rasterUri, string field)
         {
             // parse the uri for the folder and file
