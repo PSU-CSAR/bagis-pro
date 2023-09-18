@@ -125,13 +125,13 @@ namespace bagis_pro
                         using (RowCursor cursor = table.Search(queryFilter, false))
                         {
                             cursor.MoveNext();
-                            Feature onlyFeature = (Feature)cursor.Current;
-                            if (onlyFeature != null)
+                            Row onlyRow = cursor.Current;
+                            if (onlyRow != null)
                             {
-                                int idx = onlyFeature.FindField(fieldName);
+                                int idx = onlyRow.FindField(fieldName);
                                 if (idx > -1)
                                 {
-                                    returnValue = Convert.ToString(onlyFeature[idx]);
+                                    returnValue = Convert.ToString(onlyRow[idx]);
                                 }
                             }
 

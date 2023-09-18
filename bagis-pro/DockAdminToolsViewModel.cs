@@ -658,7 +658,8 @@ namespace bagis_pro
             string separator = ",";
             StringBuilder output = new StringBuilder();
             String[] headings = { "stationTriplet","stationName","aoiArea_SqMeters", "aoiArea_SqMiles", "ann_runoff_ratio_pct",
-                "centroid_x_dd","centroid_y_dd","state_codes","elev_min_ft","elev_max_ft","elev_range_ft","elev_median_ft"};
+                "centroid_x_dd","centroid_y_dd","state_codes","elev_min_ft","elev_max_ft","elev_range_ft","elev_median_ft",
+                "sites_buffer","snotel_sites_all","snolite_sites_all","scos_sites_all","coop_sites_all"};
             output.AppendLine(string.Join(separator, headings));
 
             for (int idxRow = 0; idxRow < Names.Count; idxRow++)

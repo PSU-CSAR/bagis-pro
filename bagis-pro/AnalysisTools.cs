@@ -1,16 +1,12 @@
-﻿using ArcGIS.Core.CIM;
-using ArcGIS.Core.Data;
+﻿using ArcGIS.Core.Data;
 using ArcGIS.Core.Data.Exceptions;
 using ArcGIS.Core.Data.Raster;
-using ArcGIS.Core.Data.UtilityNetwork.Trace;
 using ArcGIS.Core.Geometry;
-using ArcGIS.Core.Internal.CIM;
 using ArcGIS.Desktop.Core;
 using ArcGIS.Desktop.Core.Geoprocessing;
 using ArcGIS.Desktop.Editing;
 using ArcGIS.Desktop.Framework.Dialogs;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
-using ArcGIS.Desktop.Internal.GeoProcessing;
 using ArcGIS.Desktop.Mapping;
 using bagis_pro.BA_Objects;
 using Newtonsoft.Json.Linq;
@@ -19,7 +15,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -5638,12 +5633,112 @@ namespace bagis_pro
                 lstElements.Add(strElevRangeFt);
 
                 //elev_median_ft
-                //string strTmpMedian = "tmpMedian";
-                //strOutputFeature = $@"{aoiUri.LocalPath}\{strTmpMedian}";
-                //string strFilledDem = $@"";
-                //parameters = Geoprocessing.MakeValueArray(strInputFeatures, "AOINAME", , strOutputFeature, "DATA", "SUM");
-                //gpResult = await Geoprocessing.ExecuteToolAsync("ZonalStatisticsAsTable_sa", parameters, environments,
-                //    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                string strElevMedianFt = "Not Found";
+                string strTmpMedian = "tmpMedian";
+                strOutputFeature = $@"{aoiUri.LocalPath}\{strTmpMedian}";
+                string strFilledDem = $@"{GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Surfaces)}\{Constants.FILE_DEM_FILLED}";
+                parameters = Geoprocessing.MakeValueArray(strInputFeatures, "AOINAME", strFilledDem,strOutputFeature, "DATA", "MEDIAN");
+                gpResult = await Geoprocessing.ExecuteToolAsync("ZonalStatisticsAsTable_sa", parameters, null,
+                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                if (gpResult.IsFailed)
+                {
+                    strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Unable to execute zonal statistics on filled_dem. Median elevation is not available! \r\n";
+                    File.AppendAllText(strLogFile, strLogEntry);       // append
+                }
+                else
+                {
+                    // Field name is MEDIAN
+                    string strMedian = await GeodatabaseTools.QueryTableForSingleValueAsync(aoiUri, strTmpMedian, "MEDIAN", new QueryFilter());
+                    if (!string.IsNullOrEmpty(strMedian))
+                    {
+                        double dblMedian = -1;
+                        bool bIsDouble = Double.TryParse(strMedian, out dblMedian);
+                        if (bIsDouble)
+                        {
+                            double dblMedianFt = LinearUnit.Meters.ConvertTo(dblMedian, LinearUnit.Feet);
+                            strElevMedianFt = Convert.ToString(Math.Round(dblMedianFt, 2, MidpointRounding.AwayFromZero));
+                        }
+
+                    }
+                    // Delete temp file
+                    if (await GeodatabaseTools.FeatureClassExistsAsync(aoiUri, strTmpMedian))
+                    {
+                        success = await GeoprocessingTools.DeleteDatasetAsync(strOutputFeature);
+                    }
+                }
+                lstElements.Add(strElevMedianFt);
+
+                //snotel_sites_all, snolite_sites_all, scos_sites_all, coop_sites_all
+                string strSnotelCount = "0";
+                string strSnoliteCount = "0";
+                string strScosCount = "0";
+                string strCoopCount = "0";  
+                Uri sitesUri = new Uri(GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers));
+                int snotelCount = await GeodatabaseTools.CountPointsWithinInFeatureAsync(sitesUri, Constants.FILE_SNOTEL,
+                    aoiUri, Constants.FILE_AOI_VECTOR);
+                if (snotelCount > 0)
+                {
+                    strSnotelCount = Convert.ToString(snotelCount);
+                }
+                int snoliteCount = await GeodatabaseTools.CountPointsWithinInFeatureAsync(sitesUri, Constants.FILE_SNOLITE,
+                    aoiUri, Constants.FILE_AOI_VECTOR);
+                if (snoliteCount > 0)
+                {
+                    strSnoliteCount = Convert.ToString(snoliteCount);
+                }
+                int scosCount = await GeodatabaseTools.CountPointsWithinInFeatureAsync(sitesUri, Constants.FILE_SNOW_COURSE,
+                    aoiUri, Constants.FILE_AOI_VECTOR);
+                if (scosCount > 0)
+                {
+                    strScosCount = Convert.ToString(scosCount);
+                }
+                int coopCount = await GeodatabaseTools.CountPointsWithinInFeatureAsync(sitesUri, Constants.FILE_COOP_PILLOW,
+                    aoiUri, Constants.FILE_AOI_VECTOR);
+                if (coopCount > 0)
+                {
+                    strCoopCount = Convert.ToString(coopCount);
+                }
+
+                //sites
+                string strSitesBuffer = "Not Found";
+                string fcPath = "";
+                if (snotelCount > 0)
+                {
+                    fcPath = sitesUri.LocalPath + "\\" + Constants.FILE_SNOTEL;
+                }
+                else if (scosCount > 0)
+                {
+                    fcPath = sitesUri.LocalPath + "\\" + Constants.FILE_SNOW_COURSE;
+                }
+                if (!string.IsNullOrEmpty(fcPath))
+                {
+                    string bufferDistance = "";
+                    string bufferUnits = "";
+                    // Check for default units
+                    await QueuedTask.Run( () =>
+                    {
+                        Item fc = ItemFactory.Instance.Create(fcPath, ItemFactory.ItemType.PathItem);
+                        if (fc != null)
+                        {
+                            string strXml = string.Empty;
+                            strXml = fc.GetXml();
+                            //check metadata was returned
+                            string strBagisTag = GeneralTools.GetBagisTag(strXml);
+                            if (!string.IsNullOrEmpty(strBagisTag))
+                            {
+                                bufferDistance = GeneralTools.GetValueForKey(strBagisTag, Constants.META_TAG_BUFFER_DISTANCE, ';');
+                                bufferUnits = GeneralTools.GetValueForKey(strBagisTag, Constants.META_TAG_XUNIT_VALUE, ';');
+                                strSitesBuffer = $@"{bufferDistance} {bufferUnits}";
+                            }
+                        }
+                    });
+                }
+
+                lstElements.Add(strSitesBuffer);
+                lstElements.Add(strSnotelCount);
+                lstElements.Add(strSnoliteCount);
+                lstElements.Add(strScosCount);
+                lstElements.Add(strCoopCount);
 
             }
             return lstElements;
