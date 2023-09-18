@@ -5674,26 +5674,22 @@ namespace bagis_pro
                 string strScosCount = "0";
                 string strCoopCount = "0";  
                 Uri sitesUri = new Uri(GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers));
-                int snotelCount = await GeodatabaseTools.CountPointsWithinInFeatureAsync(sitesUri, Constants.FILE_SNOTEL,
-                    aoiUri, Constants.FILE_AOI_VECTOR);
+                long snotelCount = await GeodatabaseTools.CountFeaturesAsync(sitesUri, Constants.FILE_SNOTEL);
                 if (snotelCount > 0)
                 {
                     strSnotelCount = Convert.ToString(snotelCount);
                 }
-                int snoliteCount = await GeodatabaseTools.CountPointsWithinInFeatureAsync(sitesUri, Constants.FILE_SNOLITE,
-                    aoiUri, Constants.FILE_AOI_VECTOR);
+                long snoliteCount = await GeodatabaseTools.CountFeaturesAsync(sitesUri, Constants.FILE_SNOLITE);
                 if (snoliteCount > 0)
                 {
                     strSnoliteCount = Convert.ToString(snoliteCount);
                 }
-                int scosCount = await GeodatabaseTools.CountPointsWithinInFeatureAsync(sitesUri, Constants.FILE_SNOW_COURSE,
-                    aoiUri, Constants.FILE_AOI_VECTOR);
+                long scosCount = await GeodatabaseTools.CountFeaturesAsync(sitesUri, Constants.FILE_SNOW_COURSE);
                 if (scosCount > 0)
                 {
                     strScosCount = Convert.ToString(scosCount);
                 }
-                int coopCount = await GeodatabaseTools.CountPointsWithinInFeatureAsync(sitesUri, Constants.FILE_COOP_PILLOW,
-                    aoiUri, Constants.FILE_AOI_VECTOR);
+                long coopCount = await GeodatabaseTools.CountFeaturesAsync(sitesUri, Constants.FILE_COOP_PILLOW);
                 if (coopCount > 0)
                 {
                     strCoopCount = Convert.ToString(coopCount);
