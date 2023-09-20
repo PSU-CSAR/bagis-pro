@@ -5669,42 +5669,78 @@ namespace bagis_pro
                 lstElements.Add(strElevMedianFt);
 
                 //snotel_sites_all, snolite_sites_all, scos_sites_all, coop_sites_all
-                string strSnotelCount = "0";
-                string strSnoliteCount = "0";
-                string strScosCount = "0";
-                string strCoopCount = "0";  
-                Uri sitesUri = new Uri(GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers));
-                long snotelCount = await GeodatabaseTools.CountFeaturesAsync(sitesUri, Constants.FILE_SNOTEL);
-                if (snotelCount > 0)
+                string strSnotelAll = "0";
+                string strSnoliteAll = "0";
+                string strScosAll = "0";
+                string strCoopAll = "0";
+                string strSnotelInside = "0";
+                string strSnoliteInside = "0";
+                string strScosInside = "0";
+                string strCoopInside = "0";
+                string strSnotelOutside = "0";
+                string strSnoliteOutside = "0";
+                string strScosOutside = "0";
+                string strCoopOutside = "0";
+
+
+                Uri layersUri = new Uri(GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers));
+                string[] arrSiteFiles = new string[] { Constants.FILE_SNOTEL, Constants.FILE_SNOLITE, Constants.FILE_SNOW_COURSE,
+                    Constants.FILE_COOP_PILLOW};
+                long[] arrSitesAll = new long[] { 0,0,0,0};
+                long[] arrSitesInside = new long[] { 0, 0, 0, 0 };
+                // Load statistics into arrays
+                for (int i = 0; i < arrSiteFiles.Length; i++)
                 {
-                    strSnotelCount = Convert.ToString(snotelCount);
+                    long sitesCount = await GeodatabaseTools.CountFeaturesAsync(layersUri, arrSiteFiles[i]);
+                    if (sitesCount > 0)
+                    {
+                        arrSitesAll[i] = sitesCount;
+                    }
+                    long sitesInside = await GeodatabaseTools.CountPointsWithinInFeatureAsync(layersUri, arrSiteFiles[i],
+                        aoiUri, Constants.FILE_AOI_VECTOR);
+                    if (sitesInside > 0)
+                    {
+                        arrSitesInside[i] = sitesInside;
+                    }
                 }
-                long snoliteCount = await GeodatabaseTools.CountFeaturesAsync(sitesUri, Constants.FILE_SNOLITE);
-                if (snoliteCount > 0)
+                for (int i = 0; i < arrSiteFiles.Length; i++)
                 {
-                    strSnoliteCount = Convert.ToString(snoliteCount);
-                }
-                long scosCount = await GeodatabaseTools.CountFeaturesAsync(sitesUri, Constants.FILE_SNOW_COURSE);
-                if (scosCount > 0)
-                {
-                    strScosCount = Convert.ToString(scosCount);
-                }
-                long coopCount = await GeodatabaseTools.CountFeaturesAsync(sitesUri, Constants.FILE_COOP_PILLOW);
-                if (coopCount > 0)
-                {
-                    strCoopCount = Convert.ToString(coopCount);
+                    long sitesOutside = arrSitesAll[i] - arrSitesInside[i];
+                    switch (arrSiteFiles[i])
+                    {
+                        case Constants.FILE_SNOTEL:
+                            strSnotelAll = Convert.ToString(arrSitesAll[i]);
+                            strSnotelInside = Convert.ToString(arrSitesInside[i]);
+                            strSnotelOutside = Convert.ToString(sitesOutside);
+                            break;
+                        case Constants.FILE_SNOLITE:
+                            strSnoliteAll = Convert.ToString(arrSitesAll[i]);
+                            strSnoliteInside = Convert.ToString(arrSitesInside[i]);
+                            strSnoliteOutside = Convert.ToString(sitesOutside);
+                            break;
+                        case Constants.FILE_SNOW_COURSE:
+                            strScosAll = Convert.ToString(arrSitesAll[i]);
+                            strScosInside = Convert.ToString(arrSitesInside[i]);
+                            strScosOutside = Convert.ToString(sitesOutside);
+                            break;
+                        case Constants.FILE_COOP_PILLOW:
+                            strCoopAll = Convert.ToString(arrSitesAll[i]);
+                            strCoopInside = Convert.ToString(arrSitesInside[i]);
+                            strCoopOutside = Convert.ToString(sitesOutside);
+                            break;
+                    }
                 }
 
                 //sites
                 string strSitesBuffer = "Not Found";
                 string fcPath = "";
-                if (snotelCount > 0)
+                if (arrSitesAll[0] > 0) // Snotel
                 {
-                    fcPath = sitesUri.LocalPath + "\\" + Constants.FILE_SNOTEL;
+                    fcPath = layersUri.LocalPath + "\\" + arrSiteFiles[0];
                 }
-                else if (scosCount > 0)
+                else if (arrSitesAll[2] > 0) // Snow Course
                 {
-                    fcPath = sitesUri.LocalPath + "\\" + Constants.FILE_SNOW_COURSE;
+                    fcPath = layersUri.LocalPath + "\\" + arrSiteFiles[2];
                 }
                 if (!string.IsNullOrEmpty(fcPath))
                 {
@@ -5731,10 +5767,20 @@ namespace bagis_pro
                 }
 
                 lstElements.Add(strSitesBuffer);
-                lstElements.Add(strSnotelCount);
-                lstElements.Add(strSnoliteCount);
-                lstElements.Add(strScosCount);
-                lstElements.Add(strCoopCount);
+                lstElements.Add(strSnotelAll);
+                lstElements.Add(strSnoliteAll);
+                lstElements.Add(strScosAll);
+                lstElements.Add(strCoopAll);
+                lstElements.Add(strSnotelInside);
+                lstElements.Add(strSnoliteInside);
+                lstElements.Add(strScosInside);
+                lstElements.Add(strCoopInside);
+                lstElements.Add(strSnotelOutside);
+                lstElements.Add(strSnoliteOutside);
+                lstElements.Add(strScosOutside);
+                lstElements.Add(strCoopOutside);
+
+
 
             }
             return lstElements;
