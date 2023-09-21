@@ -5732,41 +5732,129 @@ namespace bagis_pro
                 }
 
                 //sites
-                string strSitesBuffer = "Not Found";
-                string fcPath = "";
+                string strAutoSitesBuffer = "Not Found";
+                string strScosSitesBuffer = "Not Found";
+                string autoSitesPath = "";
+                string scosSitesPath = "";
                 if (arrSitesAll[0] > 0) // Snotel
                 {
-                    fcPath = layersUri.LocalPath + "\\" + arrSiteFiles[0];
+                    autoSitesPath = layersUri.LocalPath + "\\" + arrSiteFiles[0];
                 }
-                else if (arrSitesAll[2] > 0) // Snow Course
+                else if (arrSitesAll[1] > 0)    // Snolite
                 {
-                    fcPath = layersUri.LocalPath + "\\" + arrSiteFiles[2];
+                    autoSitesPath = layersUri.LocalPath + "\\" + arrSiteFiles[1];
                 }
-                if (!string.IsNullOrEmpty(fcPath))
+                else if (arrSitesAll[3] > 0)    // Coop Pillow
                 {
+                    autoSitesPath = layersUri.LocalPath + "\\" + arrSiteFiles[3];
+                }
+                if (arrSitesAll[2] > 0) // Snow Course
+                {
+                    scosSitesPath = layersUri.LocalPath + "\\" + arrSiteFiles[2];
+                }
                     string bufferDistance = "";
                     string bufferUnits = "";
                     // Check for default units
                     await QueuedTask.Run( () =>
                     {
-                        Item fc = ItemFactory.Instance.Create(fcPath, ItemFactory.ItemType.PathItem);
-                        if (fc != null)
+                        if (!string.IsNullOrEmpty(autoSitesPath))
                         {
-                            string strXml = string.Empty;
-                            strXml = fc.GetXml();
-                            //check metadata was returned
-                            string strBagisTag = GeneralTools.GetBagisTag(strXml);
-                            if (!string.IsNullOrEmpty(strBagisTag))
+                            Item fc = ItemFactory.Instance.Create(autoSitesPath, ItemFactory.ItemType.PathItem);
+                            if (fc != null)
                             {
-                                bufferDistance = GeneralTools.GetValueForKey(strBagisTag, Constants.META_TAG_BUFFER_DISTANCE, ';');
-                                bufferUnits = GeneralTools.GetValueForKey(strBagisTag, Constants.META_TAG_XUNIT_VALUE, ';');
-                                strSitesBuffer = $@"{bufferDistance} {bufferUnits}";
+                                string strXml = string.Empty;
+                                strXml = fc.GetXml();
+                                //check metadata was returned
+                                string strBagisTag = GeneralTools.GetBagisTag(strXml);
+                                if (!string.IsNullOrEmpty(strBagisTag))
+                                {
+                                    bufferDistance = GeneralTools.GetValueForKey(strBagisTag, Constants.META_TAG_BUFFER_DISTANCE, ';');
+                                    bufferUnits = GeneralTools.GetValueForKey(strBagisTag, Constants.META_TAG_XUNIT_VALUE, ';');
+                                    strAutoSitesBuffer = $@"{bufferDistance} {bufferUnits}";
+                                }
+                            }
+                        }
+                        if (!string.IsNullOrEmpty(scosSitesPath))
+                        {
+                            Item fc = ItemFactory.Instance.Create(scosSitesPath, ItemFactory.ItemType.PathItem);
+                            if (fc != null)
+                            {
+                                string strXml = string.Empty;
+                                strXml = fc.GetXml();
+                                //check metadata was returned
+                                string strBagisTag = GeneralTools.GetBagisTag(strXml);
+                                if (!string.IsNullOrEmpty(strBagisTag))
+                                {
+                                    bufferDistance = GeneralTools.GetValueForKey(strBagisTag, Constants.META_TAG_BUFFER_DISTANCE, ';');
+                                    bufferUnits = GeneralTools.GetValueForKey(strBagisTag, Constants.META_TAG_XUNIT_VALUE, ';');
+                                    strScosSitesBuffer = $@"{bufferDistance} {bufferUnits}";
+                                }
                             }
                         }
                     });
+
+                // auto_rep_area_pct, scos_rep_area_pct
+                string strAutoRepAreaPct = "0";
+                string strScosRepAreaPct = "0";
+                Uri uriAnalysis = new Uri(GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath,GeodatabaseNames.Analysis));
+                double aoiArea = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(aoiUri, Constants.FILE_AOI_VECTOR);
+                double repArea = 0;
+                string[] arrRepAreaFiles = new string[] { Constants.FILE_SNOTEL_REPRESENTED, Constants.FILE_SCOS_REPRESENTED };
+                for (int i = 0; i < arrRepAreaFiles.Length; i++)
+                {
+                    bool bExists = await GeodatabaseTools.FeatureClassExistsAsync(uriAnalysis, arrRepAreaFiles[i]);
+                    if (bExists)
+                    {
+                        repArea = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(uriAnalysis, arrRepAreaFiles[i]);
+                        if (repArea > 0)
+                        {
+                            double repPct = (repArea / aoiArea) * 100;
+                            switch (i)
+                            {
+                                case 0:
+                                    strAutoRepAreaPct = Convert.ToString(Math.Round(repArea / aoiArea * 100));
+                                    break;
+                                case 1:
+                                    strScosRepAreaPct = Convert.ToString(Math.Round(repArea / aoiArea * 100));
+                                    break;
+                            }
+                        }
+                    }
                 }
 
-                lstElements.Add(strSitesBuffer);
+                //forested_area_pct
+                string strForestedAreaPct = "0";
+                if (await GeodatabaseTools.FeatureClassExistsAsync(uriAnalysis, Constants.FILE_FORESTED_ZONE))
+                {
+                    string strTmpForested = "tmpForested";
+                    strOutputFeature = $@"{uriAnalysis.LocalPath}\{strTmpForested}";
+                    string strForestedInput = $@"{uriAnalysis.LocalPath}\{Constants.FILE_FORESTED_ZONE}";
+                    parameters = Geoprocessing.MakeValueArray(strForestedInput, strInputFeatures, strOutputFeature);
+                    var environments = Geoprocessing.MakeEnvironmentArray(workspace: oAoi.FilePath);
+                    var gpResultClip = await Geoprocessing.ExecuteToolAsync("Clip_analysis", parameters, environments,
+                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                    if (gpResultClip.IsFailed)
+                    {
+                        strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Unable to clip forestedzone. forested_area_pct is not available! \r\n";
+                        File.AppendAllText(strLogFile, strLogEntry);       // append
+                    }
+                    else
+                    {
+                        double forestedArea = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(uriAnalysis, strTmpForested);
+                        if (forestedArea > 0)
+                        {
+                            strForestedAreaPct = Convert.ToString(Math.Round(forestedArea / aoiArea * 100));
+                        }
+                        // Delete temp file
+                        if (await GeodatabaseTools.FeatureClassExistsAsync(uriAnalysis, strTmpForested))
+                        {
+                            success = await GeoprocessingTools.DeleteDatasetAsync(strOutputFeature);
+                        }
+                    }
+                }
+
+                lstElements.Add(strAutoSitesBuffer);
+                lstElements.Add(strScosSitesBuffer);
                 lstElements.Add(strSnotelAll);
                 lstElements.Add(strSnoliteAll);
                 lstElements.Add(strScosAll);
@@ -5779,8 +5867,9 @@ namespace bagis_pro
                 lstElements.Add(strSnoliteOutside);
                 lstElements.Add(strScosOutside);
                 lstElements.Add(strCoopOutside);
-
-
+                lstElements.Add(strAutoRepAreaPct);
+                lstElements.Add(strScosRepAreaPct);
+                lstElements.Add(strForestedAreaPct);
 
             }
             return lstElements;
