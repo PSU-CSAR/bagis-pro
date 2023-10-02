@@ -1,20 +1,26 @@
 ﻿using ArcGIS.Core.Data;
 using ArcGIS.Core.Data.Exceptions;
 using ArcGIS.Core.Data.Raster;
+using ArcGIS.Core.Data.UtilityNetwork.Trace;
 using ArcGIS.Core.Geometry;
 using ArcGIS.Desktop.Core;
 using ArcGIS.Desktop.Core.Geoprocessing;
 using ArcGIS.Desktop.Editing;
+using ArcGIS.Desktop.Framework.Contracts;
 using ArcGIS.Desktop.Framework.Dialogs;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
+using ArcGIS.Desktop.Internal.Core.Conda;
+using ArcGIS.Desktop.Internal.GeoProcessing;
 using ArcGIS.Desktop.Mapping;
 using bagis_pro.BA_Objects;
+using Microsoft.Office.Interop.Excel;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -3273,7 +3279,7 @@ namespace bagis_pro
             }
             return success;
         }
-
+        
         public static async Task<BA_ReturnCode> GenerateProximityRoadsLayerAsync(Uri uri, string strDistance)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
@@ -5456,6 +5462,71 @@ namespace bagis_pro
             }
         }
 
+        public static async Task<IDictionary<string, string>> CalculateZonalAreaPercentages(string strAoiFolder, string strZonalLayerPath, string strZonalField,
+            string strInRaster, string strOutputTable, IList<string> lstZoneNames, string strLogFile)
+        {
+            var parameters = Geoprocessing.MakeValueArray(strZonalLayerPath, strZonalField, strInRaster, strOutputTable, "DATA", "MINIMUM");
+            var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiFolder);
+            var gpResult = await Geoprocessing.ExecuteToolAsync("ZonalStatisticsAsTable_sa", parameters, environments,
+                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+            string strLogEntry = "";
+            IDictionary<string, string> dictZonalPercentages = new Dictionary<string, string>();
+            IDictionary<string, int> dictCounts = new Dictionary<string, int>();
+            if (gpResult.IsFailed)
+            {
+                strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Unable to execute zonal statistics on filled_dem. Aspect Percent areas are not available! \r\n";
+                File.AppendAllText(strLogFile, strLogEntry);       // append
+            }
+            else
+            {
+                foreach (var item in lstZoneNames)
+                {
+                    dictCounts.Add(item, 0);
+                }
+                Uri gdbUri = new Uri(Path.GetDirectoryName(strOutputTable));
+                int intTotalCount = 0;
+                await QueuedTask.Run(() =>
+                {
+                    using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(gdbUri)))
+                    using (Table table = geodatabase.OpenDataset<Table>(Path.GetFileName(strOutputTable)))
+                    {
+                        QueryFilter queryFilter = new QueryFilter();
+                        using (RowCursor aCursor = table.Search(queryFilter, false))
+                        {
+                            while (aCursor.MoveNext())
+                            {
+                                using (Row aRow = (Row)aCursor.Current)
+                                {
+                                    if (aRow != null)
+                                    {
+                                        int idxName = aRow.FindField(strZonalField);
+                                        int idxCount = aRow.FindField(Constants.FIELD_COUNT);
+                                        if (idxName > -1 && idxCount > -1)
+                                        {
+                                            string strName = Convert.ToString(aRow[idxName]);
+                                            int intCount = Convert.ToInt16(aRow[idxCount]);
+                                            if (!string.IsNullOrEmpty(strName) && dictCounts.ContainsKey(strName))
+                                            {
+                                                dictCounts[strName] = intCount;
+                                                intTotalCount = intTotalCount + intCount;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    foreach (var key in dictCounts.Keys)
+                    {
+                        double dblPercent = (double)Math.Round((double)(100 * dictCounts[key]) / intTotalCount,1);
+                        dictZonalPercentages.Add(key, Convert.ToString(dblPercent));
+                    }
+                });
+            }
+            return dictZonalPercentages;
+        }
+
         public static async Task<IList<string>> GenerateForecastStatisticsList(BA_Objects.Aoi oAoi, string strLogFile, BA_ReturnCode runOffData)
         {
             IList<string> lstElements = new List<string>();
@@ -5852,6 +5923,53 @@ namespace bagis_pro
                         }
                     }
                 }
+                string strAspectZones = "Not Found";
+                string strAspectAreaPct = "Not Found";
+                string strTmpAspect = "tmpAspect";
+                IList<BA_Objects.Interval> lstInterval = new List<BA_Objects.Interval>();
+                IList<string> lstZoneNames = new List<string>();
+                if (oAnalysis.AspectDirectionsCount > 0)
+                {
+                    lstInterval = GetAspectClasses(oAnalysis.AspectDirectionsCount);
+                    StringBuilder sb = new StringBuilder();
+                    foreach (var item in lstInterval)
+                    {
+                        if (! lstZoneNames.Contains(item.Name))
+                        {
+                            lstZoneNames.Add(item.Name);
+                            sb.Append(item.Name);
+                            sb.Append(",");
+                        }
+                    }
+                    if (sb.Length > 0)
+                    {
+                        string strTrimmed = sb.ToString().TrimEnd(',');
+                        strAspectZones = $@"""{strTrimmed}""";                        
+                    }
+                    if (lstInterval.Count > 0)
+                    {
+                        string aspectZonesPath = $@"{uriAnalysis.LocalPath}\{Constants.FILE_ASPECT_ZONE}";
+                        strOutputFeature = $@"{uriAnalysis.LocalPath}\{strTmpAspect}";
+                        IDictionary<string, string> dictZonalPercentages =
+                            await CalculateZonalAreaPercentages(oAoi.FilePath, aspectZonesPath, Constants.FIELD_NAME, strFilledDem,
+                            strOutputFeature, lstZoneNames, strLogFile);
+                        StringBuilder sb2 = new StringBuilder();
+                        foreach (var item in lstZoneNames)
+                        {
+                            if (dictZonalPercentages.ContainsKey(item))
+                            {
+                                sb2.Append(dictZonalPercentages[item]);
+                            }
+                            else
+                            {
+                                sb2.Append("0");
+                            }
+                            sb2.Append(",");
+                        }
+                        string strTrimmed = sb2.ToString().TrimEnd(',');
+                        strAspectAreaPct = $@"""{strTrimmed}""";
+                    }
+                }
 
                 lstElements.Add(strAutoSitesBuffer);
                 lstElements.Add(strScosSitesBuffer);
@@ -5870,6 +5988,8 @@ namespace bagis_pro
                 lstElements.Add(strAutoRepAreaPct);
                 lstElements.Add(strScosRepAreaPct);
                 lstElements.Add(strForestedAreaPct);
+                lstElements.Add(strAspectZones);
+                lstElements.Add(strAspectAreaPct);
 
             }
             return lstElements;
