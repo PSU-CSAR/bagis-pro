@@ -243,7 +243,7 @@ namespace bagis_pro
                 double pctSnotelRepresented = 0;
                 double pctSnowCourseRepresented = 0;
                 double pctAllSitesRepresented = 0;
-                double aoiArea = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(gdbUri, Constants.FILE_AOI_VECTOR);
+                double aoiArea = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(gdbUri, Constants.FILE_AOI_VECTOR, null);
                 bool hasSnotelSites = false;
                 bool hasScosSites = false;
                 string snotelSitesBufferSize = (string)Module1.Current.BatchToolSettings.SnotelBufferDistance + " " +
@@ -266,7 +266,7 @@ namespace bagis_pro
                     gdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false));
                     if (totalSnotelSites > 0)
                     {
-                        double repArea = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(gdbUri, Constants.FILE_SNOTEL_REPRESENTED);
+                        double repArea = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(gdbUri, Constants.FILE_SNOTEL_REPRESENTED, null);
                         pctSnotelRepresented = Math.Round(repArea / aoiArea * 100);
                         hasSnotelSites = true;
                         string strPath = sitesGdbUri.LocalPath + "\\" + Constants.FILE_SNOTEL;
@@ -283,7 +283,7 @@ namespace bagis_pro
                     }
                     if (totalScosSites > 0)
                     {
-                        double repArea = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(gdbUri, Constants.FILE_SCOS_REPRESENTED);
+                        double repArea = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(gdbUri, Constants.FILE_SCOS_REPRESENTED, null);
                         pctSnowCourseRepresented = Math.Round(repArea / aoiArea * 100);
                         hasScosSites = true;
                         string strPath = sitesGdbUri.LocalPath + "\\" + Constants.FILE_SNOW_COURSE;
@@ -300,7 +300,7 @@ namespace bagis_pro
                     }
                     if (totalSnotelSites > 0 && totalScosSites > 0)
                     {
-                        double repArea = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(gdbUri, Constants.FILE_SITES_REPRESENTED);
+                        double repArea = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(gdbUri, Constants.FILE_SITES_REPRESENTED, null);
                         pctAllSitesRepresented = Math.Round(repArea / aoiArea * 100);
                     }
                     else if (totalSnotelSites > 0)

@@ -380,7 +380,8 @@ namespace bagis_pro
             return retVal;
         }
 
-        public static async Task<double> CalculateTotalPolygonAreaAsync(Uri gdbUri, string featureClassName)
+        public static async Task<double> CalculateTotalPolygonAreaAsync(Uri gdbUri, string featureClassName,
+            string strWhere)
         {
             double dblRetVal = 0;
             try
@@ -395,6 +396,10 @@ namespace bagis_pro
                     using (Table table = geodatabase.OpenDataset<Table>(featureClassName))
                     {
                         QueryFilter queryFilter = new QueryFilter();
+                        if (!string.IsNullOrEmpty(strWhere))
+                        {
+                            queryFilter.WhereClause = strWhere;
+                        }
                         using (RowCursor aCursor = table.Search(queryFilter, false))
                         {
                             while (aCursor.MoveNext())

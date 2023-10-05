@@ -5471,7 +5471,7 @@ namespace bagis_pro
                 CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
             string strLogEntry = "";
             IDictionary<string, string> dictZonalPercentages = new Dictionary<string, string>();
-            IDictionary<string, int> dictCounts = new Dictionary<string, int>();
+            IDictionary<string, long> dictCounts = new Dictionary<string, long>();
             if (gpResult.IsFailed)
             {
                 strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Unable to execute zonal statistics on filled_dem. Aspect Percent areas are not available! \r\n";
@@ -5484,7 +5484,7 @@ namespace bagis_pro
                     dictCounts.Add(item, 0);
                 }
                 Uri gdbUri = new Uri(Path.GetDirectoryName(strOutputTable));
-                int intTotalCount = 0;
+                long lngTotalCount = 0;
                 await QueuedTask.Run(() =>
                 {
                     using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(gdbUri)))
@@ -5504,11 +5504,11 @@ namespace bagis_pro
                                         if (idxName > -1 && idxCount > -1)
                                         {
                                             string strName = Convert.ToString(aRow[idxName]);
-                                            int intCount = Convert.ToInt16(aRow[idxCount]);
+                                            long lngCount = Convert.ToInt64(aRow[idxCount]);
                                             if (!string.IsNullOrEmpty(strName) && dictCounts.ContainsKey(strName))
                                             {
-                                                dictCounts[strName] = intCount;
-                                                intTotalCount = intTotalCount + intCount;
+                                                dictCounts[strName] = lngCount;
+                                                lngTotalCount = lngTotalCount + lngCount;
                                             }
                                         }
                                     }
@@ -5519,7 +5519,7 @@ namespace bagis_pro
 
                     foreach (var key in dictCounts.Keys)
                     {
-                        double dblPercent = (double)Math.Round((double)(100 * dictCounts[key]) / intTotalCount,1);
+                        double dblPercent = (double)Math.Round((double)(100 * dictCounts[key]) / lngTotalCount,1);
                         dictZonalPercentages.Add(key, Convert.ToString(dblPercent));
                     }
                 });
@@ -5685,13 +5685,15 @@ namespace bagis_pro
                 IList<double> lstResult = await GeoprocessingTools.GetDemStatsAsync(oAoi.FilePath, strInputFeatures, 0.005);
                 double elevMinMeters = -1;
                 double elevMaxMeters = -1;
+                double dblMinFt = elevMinMeters;
+                double dblMaxFt = elevMaxMeters;
                 if (lstResult.Count == 2)   // We expect the min and max values in that order
                 {
                     elevMinMeters = lstResult[0];
-                    double dblMinFt = ArcGIS.Core.Geometry.LinearUnit.Meters.ConvertTo(elevMinMeters, ArcGIS.Core.Geometry.LinearUnit.Feet);
+                    dblMinFt = LinearUnit.Meters.ConvertTo(elevMinMeters, LinearUnit.Feet);
                     strElevMinFt = Convert.ToString(Math.Round(dblMinFt, 2, MidpointRounding.AwayFromZero));
                     elevMaxMeters = lstResult[1];
-                    double dblMaxFt = ArcGIS.Core.Geometry.LinearUnit.Meters.ConvertTo(elevMaxMeters, ArcGIS.Core.Geometry.LinearUnit.Feet);
+                    dblMaxFt = LinearUnit.Meters.ConvertTo(elevMaxMeters, LinearUnit.Feet);
                     strElevMaxFt = Convert.ToString(Math.Round(dblMaxFt, 2, MidpointRounding.AwayFromZero));
                     if (dblMinFt >= 0 && dblMaxFt >=0)
                     {
@@ -5868,7 +5870,7 @@ namespace bagis_pro
                 string strAutoRepAreaPct = "0";
                 string strScosRepAreaPct = "0";
                 Uri uriAnalysis = new Uri(GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath,GeodatabaseNames.Analysis));
-                double aoiArea = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(aoiUri, Constants.FILE_AOI_VECTOR);
+                double aoiArea = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(aoiUri, Constants.FILE_AOI_VECTOR, null);
                 double repArea = 0;
                 string[] arrRepAreaFiles = new string[] { Constants.FILE_SNOTEL_REPRESENTED, Constants.FILE_SCOS_REPRESENTED };
                 for (int i = 0; i < arrRepAreaFiles.Length; i++)
@@ -5876,7 +5878,7 @@ namespace bagis_pro
                     bool bExists = await GeodatabaseTools.FeatureClassExistsAsync(uriAnalysis, arrRepAreaFiles[i]);
                     if (bExists)
                     {
-                        repArea = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(uriAnalysis, arrRepAreaFiles[i]);
+                        repArea = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(uriAnalysis, arrRepAreaFiles[i], null);
                         if (repArea > 0)
                         {
                             double repPct = (repArea / aoiArea) * 100;
@@ -5911,7 +5913,7 @@ namespace bagis_pro
                     }
                     else
                     {
-                        double forestedArea = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(uriAnalysis, strTmpForested);
+                        double forestedArea = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(uriAnalysis, strTmpForested, null);
                         if (forestedArea > 0)
                         {
                             strForestedAreaPct = Convert.ToString(Math.Round(forestedArea / aoiArea * 100));
@@ -5968,8 +5970,112 @@ namespace bagis_pro
                         }
                         string strTrimmed = sb2.ToString().TrimEnd(',');
                         strAspectAreaPct = $@"""{strTrimmed}""";
+                        // Delete temp file
+                        if (await GeodatabaseTools.FeatureClassExistsAsync(uriAnalysis, strTmpAspect))
+                        {
+                            success = await GeoprocessingTools.DeleteDatasetAsync(strOutputFeature);
+                        }
                     }
                 }
+                string strElevZonesDef = "Not Found";
+                string strElevAreaPct = "Not Found";
+                string strTmpElev = "tmpElev";
+                IList<string> lstZoneValues = new List<string>();
+                if (oAnalysis.ElevationZonesInterval > 0 &&
+                    dblMinFt > -1 && dblMaxFt > -1)
+                {
+                    string strDemUnits = (string)Module1.Current.BatchToolSettings.DemUnits;
+                    string strDemDisplayUnits = (string)Module1.Current.BatchToolSettings.DemDisplayUnits;
+                    lstInterval = GetElevationClasses(dblMinFt, dblMaxFt, oAnalysis.ElevationZonesInterval,
+                        strDemUnits, strDemDisplayUnits);
+                    StringBuilder sb = new StringBuilder();
+                    foreach (var item in lstInterval)
+                    {
+                        // Need to massage the start and end intervals for rounding
+                        string[] arrPieces = item.Name.Split(' ');
+                        if (arrPieces.Count() == 3)
+                        {
+                            double dblLowerBound = Convert.ToDouble(arrPieces[0]);
+                            string strLowerBound = String.Format("{0:0.##}", dblLowerBound);
+                            double dblUpperBound = Convert.ToDouble(arrPieces[2]);
+                            string strUpperBound = String.Format("{0:0.##}", dblUpperBound);
+                            sb.Append($@"{strLowerBound}-{strUpperBound}");
+                            sb.Append(",");
+                        }
+
+
+                        string strValue = Convert.ToString(item.Value);
+                        if (!lstZoneValues.Contains(strValue))
+                        {
+                            lstZoneValues.Add(strValue);
+                        }
+                    }
+                    if (sb.Length > 0)
+                    {
+                        string strTrimmed = sb.ToString().TrimEnd(',');
+                        strElevZonesDef = $@"""{strTrimmed}""";
+                    }
+                    if (lstInterval.Count > 0)
+                    {
+                        string elevZonesPath = $@"{uriAnalysis.LocalPath}\{Constants.FILE_ELEV_ZONE}";
+                        strOutputFeature = $@"{uriAnalysis.LocalPath}\{strTmpElev}";
+                        IDictionary<string, string> dictZonalPercentages =
+                            await CalculateZonalAreaPercentages(oAoi.FilePath, elevZonesPath, Constants.FIELD_VALUE, strFilledDem,
+                            strOutputFeature, lstZoneValues, strLogFile);
+                        StringBuilder sb2 = new StringBuilder();
+                        foreach (var item in lstZoneValues)
+                        {
+                            if (dictZonalPercentages.ContainsKey(item))
+                            {
+                                sb2.Append(dictZonalPercentages[item]);
+                            }
+                            else
+                            {
+                                sb2.Append("0");
+                            }
+                            sb2.Append(",");
+                        }
+                        string strTrimmed = sb2.ToString().TrimEnd(',');
+                        strElevAreaPct = $@"""{strTrimmed}""";
+                        // Delete temp file
+                        if (await GeodatabaseTools.FeatureClassExistsAsync(uriAnalysis, strTmpElev))
+                        {
+                            success = await GeoprocessingTools.DeleteDatasetAsync(strOutputFeature);
+                        }
+                    }
+                }
+
+                // Wilderness area percent
+                string strWildernessAreaPct = "Not Found";
+                string strTmpWilderness = "tmpWilderness";
+                strOutputFeature = $@"{uriAnalysis.LocalPath}\{strTmpWilderness}";
+                string strWildernessInput = $@"{layersUri.LocalPath}\{Constants.FILE_LAND_OWNERSHIP}";
+                parameters = Geoprocessing.MakeValueArray(strWildernessInput, strInputFeatures, strOutputFeature);
+                gpResult = await Geoprocessing.ExecuteToolAsync("Clip_analysis", parameters, null,
+                        CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                if (gpResult.IsFailed)
+                {
+                    strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Unable to clip Land Ownership. wilderness_area_pct is not available! \r\n";
+                        File.AppendAllText(strLogFile, strLogEntry);       // append
+                }
+                else
+                {
+                    string strQuery = $@"UPPER({Constants.FIELD_AGBUR}) LIKE '%WILDERNESS%'";
+                    double wildernessArea = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(uriAnalysis, strTmpWilderness, strQuery);
+                    if (wildernessArea > 0)
+                    {
+                        strWildernessAreaPct = Convert.ToString(Math.Round(wildernessArea / aoiArea * 100));
+                    }
+                    // Delete temp file
+                    if (await GeodatabaseTools.FeatureClassExistsAsync(uriAnalysis, strTmpWilderness))
+                    {
+                        success = await GeoprocessingTools.DeleteDatasetAsync(strOutputFeature);
+                    }
+                }
+
+
+
+
 
                 lstElements.Add(strAutoSitesBuffer);
                 lstElements.Add(strScosSitesBuffer);
@@ -5990,6 +6096,9 @@ namespace bagis_pro
                 lstElements.Add(strForestedAreaPct);
                 lstElements.Add(strAspectZones);
                 lstElements.Add(strAspectAreaPct);
+                lstElements.Add(strElevZonesDef);
+                lstElements.Add(strElevAreaPct);
+                lstElements.Add(strWildernessAreaPct);
 
             }
             return lstElements;

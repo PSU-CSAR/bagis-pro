@@ -93,7 +93,7 @@ namespace bagis_pro
                     Uri uri = new Uri(strPath);
 
                     success = await MapTools.AddPolygonLayerUniqueValuesAsync(oMap, uri, "ArcGIS Colors", "Basic Random",
-                        new List<string> { "AGBUR" }, false, false, 30.0F, Constants.MAPS_LAND_OWNERSHIP);
+                        new List<string> { Constants.FIELD_AGBUR }, false, false, 30.0F, Constants.MAPS_LAND_OWNERSHIP);
                     string strLayerFilePath = Module1.Current.SettingsPath + "\\" + Constants.FOLDER_SETTINGS + "\\" + Constants.LAYER_FILE_PUBLIC_TRIBAL_LANDS;
                     success = await GeoprocessingTools.ApplySymbologyFromLayerAsync(Constants.MAPS_LAND_OWNERSHIP, strLayerFilePath,
                         "UPDATE");

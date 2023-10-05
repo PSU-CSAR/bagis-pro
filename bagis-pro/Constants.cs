@@ -299,6 +299,7 @@ namespace bagis_pro
         public const string FIELD_JSON_SOURCE = "source";
         public const string FIELD_JSON_PROPERTIES = "properties";
         public const string FIELD_JSON_GEOMETRIES = "geometries";
+        public const string FIELD_AGBUR = "AGBUR";
 
         public const string DATA_TYPE_SWE = "Snotel SWE";
         public const string DATA_TYPE_PRECIPITATION = "Precipitation";
