@@ -23,6 +23,7 @@ using System.Linq;
 using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Windows.Forms.MonthCalendar;
 
 namespace bagis_pro
 {
@@ -6066,16 +6067,46 @@ namespace bagis_pro
                     {
                         strWildernessAreaPct = Convert.ToString(Math.Round(wildernessArea / aoiArea * 100));
                     }
-                    // Delete temp file
-                    if (await GeodatabaseTools.FeatureClassExistsAsync(uriAnalysis, strTmpWilderness))
+                    else if (wildernessArea == 0)
                     {
-                        success = await GeoprocessingTools.DeleteDatasetAsync(strOutputFeature);
+                        strWildernessAreaPct = "0";
                     }
                 }
 
+                //Public non-wilderness area percent
+                string strPublicNonWildAreaPct = "Not Found";               
+                if (await GeodatabaseTools.FeatureClassExistsAsync(uriAnalysis, strTmpWilderness))
+                {
+                    string strQuery = $@"{Constants.FIELD_SUITABLE} = 1 And {Constants.FIELD_AGBUR} <> 'AIR'";
+                    double publicNonWildArea = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(uriAnalysis, strTmpWilderness, strQuery);
+                    if (publicNonWildArea > 0)
+                    {
+                        strPublicNonWildAreaPct = Convert.ToString(Math.Round(publicNonWildArea / aoiArea * 100));
+                    }
+                    else if (publicNonWildArea == 0)
+                    {
+                        strPublicNonWildAreaPct = "0";
+                    }
+                }
 
+                //American indian reservation area percent
+                string strAirPct = "Not Found";
+                if (await GeodatabaseTools.FeatureClassExistsAsync(uriAnalysis, strTmpWilderness))
+                {
+                    string strQuery = $@"{Constants.FIELD_AGBUR} = 'AIR'";
+                    double airArea = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(uriAnalysis, strTmpWilderness, strQuery);
+                    if (airArea > 0)
+                    {
+                        strAirPct = Convert.ToString(Math.Round(airArea / aoiArea * 100));
+                    }
+                    else if (airArea == 0)
+                    {
+                        strAirPct = "0";
+                    }
 
-
+                    // Delete temp file
+                    success = await GeoprocessingTools.DeleteDatasetAsync(strOutputFeature);
+                }
 
                 lstElements.Add(strAutoSitesBuffer);
                 lstElements.Add(strScosSitesBuffer);
@@ -6099,6 +6130,8 @@ namespace bagis_pro
                 lstElements.Add(strElevZonesDef);
                 lstElements.Add(strElevAreaPct);
                 lstElements.Add(strWildernessAreaPct);
+                lstElements.Add(strPublicNonWildAreaPct);
+                lstElements.Add(strAirPct);
 
             }
             return lstElements;
