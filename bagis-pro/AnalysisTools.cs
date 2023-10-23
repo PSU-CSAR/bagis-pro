@@ -5528,6 +5528,86 @@ namespace bagis_pro
             return dictZonalPercentages;
         }
 
+        public static async Task<string[]> CalculateSiteCountElevZone(string strAoiFilePath, IList<BA_Objects.Interval> lstInterval)
+        {
+            // 1. Put intervals into 2 Dictionaries (auto zones and scos zones)
+            IDictionary<string, int> dictAutoSites = new Dictionary<string, int>();
+            IDictionary<string, int> dictScosSites = new Dictionary<string, int>();
+            foreach (var interval in lstInterval) 
+            { 
+                string value = Convert.ToString(interval.Value);
+                if (! dictAutoSites.ContainsKey(value))
+                {
+                    dictAutoSites.Add(value, 0);
+                    dictScosSites.Add(value, 0);
+                }
+            }
+            // 2. Use AssembleSitesListAsync() twice to query the sites
+            IList<Site> lstAllSites = new List<Site>();
+            Uri uriAnalysis = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiFilePath, GeodatabaseNames.Analysis));
+            if (await GeodatabaseTools.FeatureClassExistsAsync(uriAnalysis, Constants.FILE_MERGED_SITES))
+            {
+                lstAllSites = await AssembleMergedSitesListAsync(uriAnalysis);
+            }
+            // 3. Loop through the sites list and assign site to an interval depending on elevation
+            foreach (var oSite in lstAllSites)
+            {
+                string key = "-1";
+                double sElev = oSite.ElevMeters;
+                foreach (var oInterval in lstInterval)
+                {
+                    if (oSite.ElevMeters > oInterval.LowerBound && oSite.ElevMeters <= oInterval.UpperBound)
+                    {
+                        key = Convert.ToString(oInterval.Value);
+                        break;
+                    }
+                }
+                switch (oSite.SiteType)
+                {
+                    case SiteType.Snotel:
+                        dictAutoSites[key] = dictAutoSites[key] + 1;
+                        break;
+                    case SiteType.SnowCourse:
+                        dictScosSites[key] = dictScosSites[key] + 1;
+                        break;
+                    case SiteType.Snolite:
+                        dictAutoSites[key] = dictAutoSites[key] + 1;
+                        break;
+                    case SiteType.CoopPillow:
+                        dictAutoSites[key] = dictAutoSites[key] + 1;
+                        break;
+                    default:
+                        break;
+                }
+            }
+            string strAutoSites = "";
+            string strScosSites = "";
+            StringBuilder sb = new StringBuilder();
+            foreach (var entry in dictAutoSites)
+            {
+                sb.Append(Convert.ToString(dictAutoSites[entry.Key]));
+                sb.Append(',');
+            }
+            if (sb.Length > 0)
+            {
+                string strTrimmed = sb.ToString().TrimEnd(',');
+                strAutoSites = $@"""{strTrimmed}""";
+            }
+            sb.Clear();
+            foreach (var entry in dictScosSites)
+            {
+                sb.Append(Convert.ToString(dictScosSites[entry.Key]));
+                sb.Append(',');
+            }
+            if (sb.Length > 0)
+            {
+                string strTrimmed = sb.ToString().TrimEnd(',');
+                strScosSites = $@"""{strTrimmed}""";
+            }
+            string[] retVal = new string[2] {strAutoSites, strScosSites };
+            return retVal;
+        }
+
         public static async Task<IList<string>> GenerateForecastStatisticsList(BA_Objects.Aoi oAoi, string strLogFile, BA_ReturnCode runOffData)
         {
             IList<string> lstElements = new List<string>();
@@ -6046,6 +6126,22 @@ namespace bagis_pro
                     }
                 }
 
+                // Site counts per elevation zone
+                string strAutoSiteCountElevZone = "Not Found";
+                string strScosSiteCountElevZone = "Not Found";
+                string[] arrCounts = await CalculateSiteCountElevZone(oAoi.FilePath, lstInterval);
+                if (arrCounts.Length == 2)
+                {
+                    if (arrCounts[0] != null && arrCounts[0].Length > 0)
+                    {
+                        strAutoSiteCountElevZone = arrCounts[0];
+                    }
+                    if (arrCounts[1] != null && arrCounts[1].Length > 0)
+                    {
+                        strScosSiteCountElevZone = arrCounts[1];
+                    }
+                }
+
                 // Wilderness area percent
                 string strWildernessAreaPct = "Not Found";
                 string strTmpWilderness = "tmpWilderness";
@@ -6108,6 +6204,10 @@ namespace bagis_pro
                     success = await GeoprocessingTools.DeleteDatasetAsync(strOutputFeature);
                 }
 
+                // major_precip_zones_ft
+
+
+
                 lstElements.Add(strAutoSitesBuffer);
                 lstElements.Add(strScosSitesBuffer);
                 lstElements.Add(strSnotelAll);
@@ -6129,6 +6229,8 @@ namespace bagis_pro
                 lstElements.Add(strAspectAreaPct);
                 lstElements.Add(strElevZonesDef);
                 lstElements.Add(strElevAreaPct);
+                lstElements.Add(strAutoSiteCountElevZone);
+                lstElements.Add(strScosSiteCountElevZone);
                 lstElements.Add(strWildernessAreaPct);
                 lstElements.Add(strPublicNonWildAreaPct);
                 lstElements.Add(strAirPct);
