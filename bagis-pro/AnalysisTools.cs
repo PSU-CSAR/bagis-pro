@@ -5464,7 +5464,7 @@ namespace bagis_pro
         }
 
         public static async Task<IDictionary<string, string>> CalculateZonalAreaPercentages(string strAoiFolder, string strZonalLayerPath, string strZonalField,
-            string strInRaster, string strOutputTable, IList<string> lstZoneNames, string strLogFile)
+            string strInRaster, string strOutputTable, IDictionary<string, string> dictZoneNames, string strLogFile)
         {
             var parameters = Geoprocessing.MakeValueArray(strZonalLayerPath, strZonalField, strInRaster, strOutputTable, "DATA", "MINIMUM");
             var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiFolder);
@@ -5480,9 +5480,9 @@ namespace bagis_pro
             }
             else
             {
-                foreach (var item in lstZoneNames)
+                foreach (var strKey in dictZoneNames.Keys)
                 {
-                    dictCounts.Add(item, 0);
+                    dictCounts.Add(strKey, 0);
                 }
                 Uri gdbUri = new Uri(Path.GetDirectoryName(strOutputTable));
                 long lngTotalCount = 0;
@@ -5606,6 +5606,48 @@ namespace bagis_pro
             }
             string[] retVal = new string[2] {strAutoSites, strScosSites };
             return retVal;
+        }
+
+        public static async Task<IList<string>> QueryCriticalPrecipElevZones(BA_Objects.Aoi oAoi, string strLogFile)
+        {
+            IList<string> lstValues = new List<string>();
+            Uri uriAnalysis = new Uri(GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis));
+            if (!await GeodatabaseTools.FeatureClassExistsAsync(uriAnalysis, Constants.FILE_CRITICAL_PRECIP_ZONE))
+            {
+                string strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + Constants.FILE_CRITICAL_PRECIP_ZONE + " is missing. Run the batch tool before generating forecast statistics ! \r\n";
+                File.AppendAllText(strLogFile, strLogEntry);       // append
+                return lstValues;
+            }
+
+            await QueuedTask.Run(() =>
+            {
+                using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(uriAnalysis)))
+                {
+                using (FeatureClass oFeatureClass = geodatabase.OpenDataset<FeatureClass>(Constants.FILE_CRITICAL_PRECIP_ZONE))
+                {
+                    int idxValue = oFeatureClass.GetDefinition().FindField(Constants.FIELD_GRID_CODE);
+                    if (idxValue > -1)
+                    {
+                        using (RowCursor aCursor = oFeatureClass.Search(new QueryFilter(), false))
+                        {
+                            while (aCursor.MoveNext())
+                            {
+                                using (Feature feature = (Feature)aCursor.Current)
+                                {
+                                    string strValue = Convert.ToString(feature[idxValue]);
+                                        if (!lstValues.Contains(strValue))
+                                        {
+                                            lstValues.Add(strValue);
+                                        }
+
+                                }
+                            }
+                        }
+                    }
+                }
+                }
+            });
+            return lstValues;
         }
 
         public static async Task<IList<string>> GenerateForecastStatisticsList(BA_Objects.Aoi oAoi, string strLogFile, BA_ReturnCode runOffData)
@@ -6010,16 +6052,16 @@ namespace bagis_pro
                 string strAspectAreaPct = "Not Found";
                 string strTmpAspect = "tmpAspect";
                 IList<BA_Objects.Interval> lstInterval = new List<BA_Objects.Interval>();
-                IList<string> lstZoneNames = new List<string>();
+                IDictionary<string, string> dictZoneNames = new Dictionary<string,string>();
                 if (oAnalysis.AspectDirectionsCount > 0)
                 {
                     lstInterval = GetAspectClasses(oAnalysis.AspectDirectionsCount);
                     StringBuilder sb = new StringBuilder();
                     foreach (var item in lstInterval)
                     {
-                        if (! lstZoneNames.Contains(item.Name))
+                        if (!dictZoneNames.ContainsKey((item.Name)))
                         {
-                            lstZoneNames.Add(item.Name);
+                            dictZoneNames.Add(item.Name, "");
                             sb.Append(item.Name);
                             sb.Append(",");
                         }
@@ -6035,13 +6077,13 @@ namespace bagis_pro
                         strOutputFeature = $@"{uriAnalysis.LocalPath}\{strTmpAspect}";
                         IDictionary<string, string> dictZonalPercentages =
                             await CalculateZonalAreaPercentages(oAoi.FilePath, aspectZonesPath, Constants.FIELD_NAME, strFilledDem,
-                            strOutputFeature, lstZoneNames, strLogFile);
+                            strOutputFeature, dictZoneNames, strLogFile);
                         StringBuilder sb2 = new StringBuilder();
-                        foreach (var item in lstZoneNames)
+                        foreach (var strKey in dictZoneNames.Keys)
                         {
-                            if (dictZonalPercentages.ContainsKey(item))
+                            if (dictZonalPercentages.ContainsKey(strKey))
                             {
-                                sb2.Append(dictZonalPercentages[item]);
+                                sb2.Append(dictZonalPercentages[strKey]);
                             }
                             else
                             {
@@ -6061,34 +6103,34 @@ namespace bagis_pro
                 string strElevZonesDef = "Not Found";
                 string strElevAreaPct = "Not Found";
                 string strTmpElev = "tmpElev";
-                IList<string> lstZoneValues = new List<string>();
+                IDictionary<string,string> dictZoneValues = new Dictionary<string,string>();
                 if (oAnalysis.ElevationZonesInterval > 0 &&
                     dblMinFt > -1 && dblMaxFt > -1)
                 {
+                    StringBuilder sb = new StringBuilder();
                     string strDemUnits = (string)Module1.Current.BatchToolSettings.DemUnits;
                     string strDemDisplayUnits = (string)Module1.Current.BatchToolSettings.DemDisplayUnits;
                     lstInterval = GetElevationClasses(dblMinFt, dblMaxFt, oAnalysis.ElevationZonesInterval,
                         strDemUnits, strDemDisplayUnits);
-                    StringBuilder sb = new StringBuilder();
                     foreach (var item in lstInterval)
                     {
                         // Need to massage the start and end intervals for rounding
                         string[] arrPieces = item.Name.Split(' ');
+                        string strName = "";
                         if (arrPieces.Count() == 3)
                         {
                             double dblLowerBound = Convert.ToDouble(arrPieces[0]);
                             string strLowerBound = String.Format("{0:0.##}", dblLowerBound);
                             double dblUpperBound = Convert.ToDouble(arrPieces[2]);
                             string strUpperBound = String.Format("{0:0.##}", dblUpperBound);
-                            sb.Append($@"{strLowerBound}-{strUpperBound}");
+                            strName = $@"{strLowerBound}-{strUpperBound}";
+                            sb.Append(strName);
                             sb.Append(",");
                         }
-
-
                         string strValue = Convert.ToString(item.Value);
-                        if (!lstZoneValues.Contains(strValue))
+                        if (!dictZoneValues.ContainsKey((strValue)))
                         {
-                            lstZoneValues.Add(strValue);
+                            dictZoneValues.Add(strValue,strName);
                         }
                     }
                     if (sb.Length > 0)
@@ -6102,13 +6144,13 @@ namespace bagis_pro
                         strOutputFeature = $@"{uriAnalysis.LocalPath}\{strTmpElev}";
                         IDictionary<string, string> dictZonalPercentages =
                             await CalculateZonalAreaPercentages(oAoi.FilePath, elevZonesPath, Constants.FIELD_VALUE, strFilledDem,
-                            strOutputFeature, lstZoneValues, strLogFile);
+                            strOutputFeature, dictZoneValues, strLogFile);
                         StringBuilder sb2 = new StringBuilder();
-                        foreach (var item in lstZoneValues)
+                        foreach (var strKey in dictZoneValues.Keys)
                         {
-                            if (dictZonalPercentages.ContainsKey(item))
+                            if (dictZonalPercentages.ContainsKey(strKey))
                             {
-                                sb2.Append(dictZonalPercentages[item]);
+                                sb2.Append(dictZonalPercentages[strKey]);
                             }
                             else
                             {
@@ -6141,6 +6183,30 @@ namespace bagis_pro
                         strScosSiteCountElevZone = arrCounts[1];
                     }
                 }
+
+                // Critical precipitation zones definition
+                string strCriticalPrecipZonesDef = "Not Found";
+                IList<string> lstValues = await QueryCriticalPrecipElevZones(oAoi, strLogFile);
+                if (lstValues.Count > 0)
+                {
+                    StringBuilder sb = new StringBuilder(); 
+                    foreach (var item in lstValues)
+                    {
+                        if (dictZoneValues.ContainsKey(item))
+                        {
+                            sb.Append(dictZoneValues[item]);
+                            sb.Append(',');
+                        }
+                    }
+                    if (sb.Length > 0)
+                    {
+                        string strTrimmed = sb.ToString().TrimEnd(',');
+                        strCriticalPrecipZonesDef = $@"""{strTrimmed}""";
+                    }
+                }
+
+                // Critical precip zones pct of AOI area
+
 
                 // Wilderness area percent
                 string strWildernessAreaPct = "Not Found";
@@ -6231,6 +6297,7 @@ namespace bagis_pro
                 lstElements.Add(strElevAreaPct);
                 lstElements.Add(strAutoSiteCountElevZone);
                 lstElements.Add(strScosSiteCountElevZone);
+                lstElements.Add(strCriticalPrecipZonesDef);
                 lstElements.Add(strWildernessAreaPct);
                 lstElements.Add(strPublicNonWildAreaPct);
                 lstElements.Add(strAirPct);
