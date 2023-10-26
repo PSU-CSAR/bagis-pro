@@ -6104,6 +6104,7 @@ namespace bagis_pro
                 string strElevAreaPct = "Not Found";
                 string strTmpElev = "tmpElev";
                 IDictionary<string,string> dictZoneValues = new Dictionary<string,string>();
+                IDictionary<string,string> dictElevZonalPercentages = new Dictionary<string, string>();
                 if (oAnalysis.ElevationZonesInterval > 0 &&
                     dblMinFt > -1 && dblMaxFt > -1)
                 {
@@ -6142,21 +6143,21 @@ namespace bagis_pro
                     {
                         string elevZonesPath = $@"{uriAnalysis.LocalPath}\{Constants.FILE_ELEV_ZONE}";
                         strOutputFeature = $@"{uriAnalysis.LocalPath}\{strTmpElev}";
-                        IDictionary<string, string> dictZonalPercentages =
+                        dictElevZonalPercentages =
                             await CalculateZonalAreaPercentages(oAoi.FilePath, elevZonesPath, Constants.FIELD_VALUE, strFilledDem,
                             strOutputFeature, dictZoneValues, strLogFile);
                         StringBuilder sb2 = new StringBuilder();
                         foreach (var strKey in dictZoneValues.Keys)
                         {
-                            if (dictZonalPercentages.ContainsKey(strKey))
+                            if (dictElevZonalPercentages.ContainsKey(strKey))
                             {
-                                sb2.Append(dictZonalPercentages[strKey]);
+                                sb2.Append(dictElevZonalPercentages[strKey]);
                             }
                             else
                             {
-                                sb2.Append("0");
+                                sb2.Append('0');
                             }
-                            sb2.Append(",");
+                            sb2.Append(',');
                         }
                         string strTrimmed = sb2.ToString().TrimEnd(',');
                         strElevAreaPct = $@"""{strTrimmed}""";
@@ -6186,10 +6187,11 @@ namespace bagis_pro
 
                 // Critical precipitation zones definition
                 string strCriticalPrecipZonesDef = "Not Found";
+                // Get a list of the critical precip zone (gridcode) ids
                 IList<string> lstValues = await QueryCriticalPrecipElevZones(oAoi, strLogFile);
                 if (lstValues.Count > 0)
                 {
-                    StringBuilder sb = new StringBuilder(); 
+                    StringBuilder sb = new StringBuilder();
                     foreach (var item in lstValues)
                     {
                         if (dictZoneValues.ContainsKey(item))
@@ -6206,7 +6208,19 @@ namespace bagis_pro
                 }
 
                 // Critical precip zones pct of AOI area
-
+                string strCriticalPrecipPctArea = "Not Found";
+                double dblCriticalPrecipPctArea = -1;
+                foreach (var strKey in dictElevZonalPercentages.Keys)
+                {
+                    if (lstValues.Contains(strKey))
+                    {
+                        dblCriticalPrecipPctArea = dblCriticalPrecipPctArea + Convert.ToDouble(dictElevZonalPercentages[strKey]);
+                    }
+                }
+                if (dblCriticalPrecipPctArea > 0)
+                {
+                    strCriticalPrecipPctArea = String.Format("{0:0.#}", dblCriticalPrecipPctArea);
+                }
 
                 // Wilderness area percent
                 string strWildernessAreaPct = "Not Found";
@@ -6270,8 +6284,6 @@ namespace bagis_pro
                     success = await GeoprocessingTools.DeleteDatasetAsync(strOutputFeature);
                 }
 
-                // major_precip_zones_ft
-
 
 
                 lstElements.Add(strAutoSitesBuffer);
@@ -6298,6 +6310,7 @@ namespace bagis_pro
                 lstElements.Add(strAutoSiteCountElevZone);
                 lstElements.Add(strScosSiteCountElevZone);
                 lstElements.Add(strCriticalPrecipZonesDef);
+                lstElements.Add(strCriticalPrecipPctArea);
                 lstElements.Add(strWildernessAreaPct);
                 lstElements.Add(strPublicNonWildAreaPct);
                 lstElements.Add(strAirPct);
