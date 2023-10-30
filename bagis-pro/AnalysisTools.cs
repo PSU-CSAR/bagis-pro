@@ -6284,6 +6284,35 @@ namespace bagis_pro
                     success = await GeoprocessingTools.DeleteDatasetAsync(strOutputFeature);
                 }
 
+                // Site density Total # of sites / AOI area (sq miles)
+                string strSiteDensity = "Not Found";
+                double dblAreaSqMiles = -1;
+                long lngSiteCount = 0;
+                bool bIsNumber = double.TryParse(strAreaSqMiles, out dblAreaSqMiles);  
+                if (bIsNumber)
+                {
+                    string[] arrSiteCounts = new string[] {strSnotelAll, strSnoliteAll, strCoopAll, strScosAll };              
+                    for (int i = 0; i < arrSiteCounts.Length; i++)
+                    {
+                        long lngCount = 0;
+                        bIsNumber = long.TryParse(arrSiteCounts[i], out lngCount);
+                        if (bIsNumber)
+                        {
+                            lngSiteCount = lngSiteCount + lngCount;
+                        }
+                    }
+                    if (lngSiteCount > 0)
+                    {
+                        double dblResult = lngSiteCount / dblAreaSqMiles;
+                        strSiteDensity = String.Format("{0:0.####}", dblResult);
+                    }
+                    else
+                    {
+                        strSiteDensity = "0";
+                    }
+                }
+
+
 
 
                 lstElements.Add(strAutoSitesBuffer);
@@ -6314,6 +6343,7 @@ namespace bagis_pro
                 lstElements.Add(strWildernessAreaPct);
                 lstElements.Add(strPublicNonWildAreaPct);
                 lstElements.Add(strAirPct);
+                lstElements.Add(strSiteDensity);
 
             }
             return lstElements;
