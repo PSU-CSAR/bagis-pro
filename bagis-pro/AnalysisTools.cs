@@ -5766,6 +5766,7 @@ namespace bagis_pro
 
             // state_codes
             string strStateCodes = "Not Found";
+            string strPctAreaOutsideUsa = "Not Found";
             if (Module1.Current.BatchToolSettings.USStateBoundaries != null)
             {
                 string strStatesUrl = Convert.ToString(Module1.Current.BatchToolSettings.USStateBoundaries);
@@ -5793,10 +5794,48 @@ namespace bagis_pro
                     {
                         strStateCodes = "\"" + strStateCodes.TrimEnd(',') + "\"";                       
                     }
-                    // Delete temp file
+
+                    // Area outside USA
+                    string strTmpStatesProj = "tmpStatesProj";
+                    strOutputFeatureProj = $@"{aoiUri.LocalPath}\{strTmpStatesProj}";
+                    // Spatial reference for NAD 1983 Albers North America
+                    SpatialReference oSpatialReference = SpatialReferenceBuilder.CreateSpatialReference(102008);
+                    parameters = Geoprocessing.MakeValueArray(strOutputFeature, strOutputFeatureProj, oSpatialReference);
+                    gpResult = await Geoprocessing.ExecuteToolAsync("Project_management", parameters, null,
+                        CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                    if (gpResult.IsFailed)
+                    {
+                        strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Unable to Project tmpStates. Area outside USA is not available! \r\n";
+                        File.AppendAllText(strLogFile, strLogEntry);       // append
+                    }
+                    else
+                    {
+                        double dblArea = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(aoiUri, strTmpStatesProj, "");
+                        if (dblArea > 0)
+                        {
+                            double dblAreaSqM = -1;
+                            isDouble = Double.TryParse(strAreaSqM, out dblAreaSqM);
+                            if (isDouble)
+                            {
+                                
+                                double dblPctOutside = ((dblAreaSqM-dblArea) / dblAreaSqM) * 100;
+                                if (dblPctOutside >= 0)
+                                {
+                                    strPctAreaOutsideUsa = String.Format("{0:0.#}", dblPctOutside);
+                                }
+                            }
+                        }
+                    }
+
+
+                    // Delete temp file(s)
                     if (await GeodatabaseTools.FeatureClassExistsAsync(aoiUri, strTmpStates))
                     {
                         success = await GeoprocessingTools.DeleteDatasetAsync(strOutputFeature);
+                    }
+                    if (await GeodatabaseTools.FeatureClassExistsAsync(aoiUri, strTmpStatesProj))
+                    {
+                        success = await GeoprocessingTools.DeleteDatasetAsync(strOutputFeatureProj);
                     }
                 }
                 lstElements.Add(strStateCodes);
@@ -5857,7 +5896,7 @@ namespace bagis_pro
 
                     }
                     // Delete temp file
-                    if (await GeodatabaseTools.FeatureClassExistsAsync(aoiUri, strTmpMedian))
+                    if (await GeodatabaseTools.TableExistsAsync(aoiUri, strTmpMedian))
                     {
                         success = await GeoprocessingTools.DeleteDatasetAsync(strOutputFeature);
                     }
@@ -6344,6 +6383,7 @@ namespace bagis_pro
                 lstElements.Add(strPublicNonWildAreaPct);
                 lstElements.Add(strAirPct);
                 lstElements.Add(strSiteDensity);
+                lstElements.Add(strPctAreaOutsideUsa);
 
             }
             return lstElements;
