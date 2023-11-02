@@ -5464,10 +5464,10 @@ namespace bagis_pro
         }
 
         public static async Task<IDictionary<string, string>> CalculateZonalAreaPercentages(string strAoiFolder, string strZonalLayerPath, string strZonalField,
-            string strInRaster, string strOutputTable, IDictionary<string, string> dictZoneNames, string strLogFile)
+            string strInRaster, string strOutputTable, string strAnalysisMask, IDictionary<string, string> dictZoneNames, string strLogFile)
         {
             var parameters = Geoprocessing.MakeValueArray(strZonalLayerPath, strZonalField, strInRaster, strOutputTable, "DATA", "MINIMUM");
-            var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiFolder);
+            var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiFolder, mask:strAnalysisMask);
             var gpResult = await Geoprocessing.ExecuteToolAsync("ZonalStatisticsAsTable_sa", parameters, environments,
                 CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
             string strLogEntry = "";
@@ -5827,7 +5827,6 @@ namespace bagis_pro
                         }
                     }
 
-
                     // Delete temp file(s)
                     if (await GeodatabaseTools.FeatureClassExistsAsync(aoiUri, strTmpStates))
                     {
@@ -6090,6 +6089,7 @@ namespace bagis_pro
                 string strAspectZones = "Not Found";
                 string strAspectAreaPct = "Not Found";
                 string strTmpAspect = "tmpAspect";
+                string strAnalysisMask = $@"{aoiUri.LocalPath}\{Constants.FILE_AOI_VECTOR}";
                 IList<BA_Objects.Interval> lstInterval = new List<BA_Objects.Interval>();
                 IDictionary<string, string> dictZoneNames = new Dictionary<string,string>();
                 if (oAnalysis.AspectDirectionsCount > 0)
@@ -6116,7 +6116,7 @@ namespace bagis_pro
                         strOutputFeature = $@"{uriAnalysis.LocalPath}\{strTmpAspect}";
                         IDictionary<string, string> dictZonalPercentages =
                             await CalculateZonalAreaPercentages(oAoi.FilePath, aspectZonesPath, Constants.FIELD_NAME, strFilledDem,
-                            strOutputFeature, dictZoneNames, strLogFile);
+                            strOutputFeature, strAnalysisMask, dictZoneNames, strLogFile);
                         StringBuilder sb2 = new StringBuilder();
                         foreach (var strKey in dictZoneNames.Keys)
                         {
@@ -6184,7 +6184,7 @@ namespace bagis_pro
                         strOutputFeature = $@"{uriAnalysis.LocalPath}\{strTmpElev}";
                         dictElevZonalPercentages =
                             await CalculateZonalAreaPercentages(oAoi.FilePath, elevZonesPath, Constants.FIELD_VALUE, strFilledDem,
-                            strOutputFeature, dictZoneValues, strLogFile);
+                            strOutputFeature, strAnalysisMask, dictZoneValues, strLogFile);
                         StringBuilder sb2 = new StringBuilder();
                         foreach (var strKey in dictZoneValues.Keys)
                         {
@@ -6351,7 +6351,56 @@ namespace bagis_pro
                     }
                 }
 
-
+                // slope zones definition
+                string strSlopeZones = "Not Found";
+                string strSlopeAreaPct = "Not Found";
+                string strTmpSlope = "tmpSlope";
+                lstInterval.Clear();
+                dictZoneNames.Clear();
+                lstInterval = await GeodatabaseTools.ReadReclassRasterAttribute(uriAnalysis, Constants.FILE_SLOPE_ZONE);
+                StringBuilder sbSlope = new StringBuilder();
+                foreach (var item in lstInterval)
+                {
+                    if (!dictZoneNames.ContainsKey((item.Name)))
+                    {
+                        dictZoneNames.Add(item.Name, "");
+                        sbSlope.Append(item.Name);
+                        sbSlope.Append(",");
+                    }
+                }
+                if (sbSlope.Length > 0)
+                {
+                    string strTrimmed = sbSlope.ToString().TrimEnd(',');
+                    strSlopeZones = $@"""{strTrimmed}""";
+                }
+                if (lstInterval.Count > 0)
+                {
+                    string slopeZonesPath = $@"{uriAnalysis.LocalPath}\{Constants.FILE_SLOPE_ZONE}";
+                    strOutputFeature = $@"{uriAnalysis.LocalPath}\{strTmpSlope}";
+                    IDictionary<string, string> dictZonalPercentages =
+                        await CalculateZonalAreaPercentages(oAoi.FilePath, slopeZonesPath, Constants.FIELD_NAME, strFilledDem,
+                        strOutputFeature, strAnalysisMask, dictZoneNames, strLogFile);
+                    StringBuilder sb2 = new StringBuilder();
+                    foreach (var strKey in dictZoneNames.Keys)
+                    {
+                        if (dictZonalPercentages.ContainsKey(strKey))
+                        {
+                            sb2.Append(dictZonalPercentages[strKey]);
+                        }
+                        else
+                        {
+                            sb2.Append("0");
+                        }
+                        sb2.Append(",");
+                    }
+                    string strTrimmed = sb2.ToString().TrimEnd(',');
+                    strSlopeAreaPct = $@"""{strTrimmed}""";
+                    // Delete temp file
+                    if (await GeodatabaseTools.FeatureClassExistsAsync(uriAnalysis, strTmpSlope))
+                    {
+                        success = await GeoprocessingTools.DeleteDatasetAsync(strOutputFeature);
+                    }
+                }
 
 
                 lstElements.Add(strAutoSitesBuffer);
@@ -6384,6 +6433,8 @@ namespace bagis_pro
                 lstElements.Add(strAirPct);
                 lstElements.Add(strSiteDensity);
                 lstElements.Add(strPctAreaOutsideUsa);
+                lstElements.Add(strSlopeZones);
+                lstElements.Add(strSlopeAreaPct);
 
             }
             return lstElements;
