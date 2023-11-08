@@ -13,6 +13,7 @@ using ArcGIS.Desktop.Framework.Contracts;
 using ArcGIS.Desktop.Framework.Dialogs;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
 using ArcGIS.Desktop.Layouts;
+using bagis_pro.BA_Objects;
 using MessageBox = ArcGIS.Desktop.Framework.Dialogs.MessageBox;
 
 namespace bagis_pro.Menus
@@ -39,6 +40,41 @@ namespace bagis_pro.Menus
                     {
                         Module1.Current.CboCurrentAoi.SetAoiName(oAoi.Name);
                         MessageBox.Show("AOI is set to " + oAoi.Name + "!", "BAGIS PRO");
+
+                        if (!oAoi.ValidForecastData)
+                        {
+                            StringBuilder sb = new StringBuilder();
+                            sb.Append("This AOI does not have the required forecast station information. ");
+                            sb.Append("Use the Batch Tools menu to run the 'Forecast Station Data' tool to update ");
+                            sb.Append("the forecast station data. Next use the Batch Tools menu to run the ");
+                            sb.Append("'Generate AOI Reports' tool to create the analysis layers required by BAGIS-Pro.");
+                            MessageBox.Show(sb.ToString(), "BAGIS PRO");
+                        }
+                        else
+                        {
+                            string[] arrButtonNames = { "bagis_pro_Menus_MnuMaps_BtnMapLoad", "bagis_pro_Buttons_BtnExcelTables",
+                                "bagis_pro_WinExportPdf"};
+                            int intButtonsDisabled = 0;
+                            for (int i = 0; i < arrButtonNames.Length; i++)
+                            {
+                                var plugin = FrameworkApplication.GetPlugInWrapper(arrButtonNames[i]);
+                                if (plugin == null)
+                                {
+                                    intButtonsDisabled++;
+                                }
+                                else if (!plugin.Enabled)
+                                {
+                                    intButtonsDisabled++;
+                                }
+                            }
+                            if (intButtonsDisabled > 0)
+                            {
+                                StringBuilder sb = new StringBuilder();
+                                sb.Append("This AOI is missing at least one required layer. Use the Batch Tools menu to run the ");
+                                sb.Append("'Generate AOI Reports' tool to create the analysis layers required by BAGIS-Pro.");
+                                MessageBox.Show(sb.ToString(), "BAGIS PRO");
+                            }
+                        }
                     }
                 }
             }

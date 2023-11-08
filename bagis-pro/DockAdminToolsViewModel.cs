@@ -408,9 +408,7 @@ namespace bagis_pro
                             pAoi.StationTriplet = arrValues[0];
                             pAoi.StationName = arrValues[1];
                             pAoi.Huc2 = Convert.ToInt16(arrValues[2]);
-                            if (pAoi.StationTriplet.Equals(Constants.VALUE_NOT_SPECIFIED) ||
-                                pAoi.StationName.Equals(Constants.VALUE_NOT_SPECIFIED) ||
-                                pAoi.Huc2 == -1)
+                            if (!pAoi.ValidForecastData)
                             {
                                 pAoi.AoiBatchStateText = AoiBatchState.NotReady.ToString();
                             }

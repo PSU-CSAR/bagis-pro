@@ -3049,18 +3049,21 @@ namespace bagis_pro
             string[] arrRaster = new string[] { Constants.FILE_ELEV_ZONE, Constants.FILE_PRECIP_ZONE,
                                                 Constants.FILE_ASPECT_ZONE, Constants.FILE_PREC_MEAN_ELEV };
             bool notFound = true;
-            foreach (var r in arrRaster)
+            if (Module1.Current.Aoi.ValidForecastData)
             {
-                if (await GeodatabaseTools.RasterDatasetExistsAsync(uriAnalysis, r))
+                foreach (var r in arrRaster)
                 {
-                    notFound = false;
-                }
-                else
-                {
-                    notFound = true;
-                    Module1.Current.ModuleLogManager.LogError(nameof(EnableExcelButtonAsync),
-                        $@"Unable to locate {uriAnalysis.LocalPath}\{r}. Excel and PDF Export buttons will be disabled!");
-                    break;
+                    if (await GeodatabaseTools.RasterDatasetExistsAsync(uriAnalysis, r))
+                    {
+                        notFound = false;
+                    }
+                    else
+                    {
+                        notFound = true;
+                        Module1.Current.ModuleLogManager.LogError(nameof(EnableExcelButtonAsync),
+                            $@"Unable to locate {uriAnalysis.LocalPath}\{r}. Excel and PDF Export buttons will be disabled!");
+                        break;
+                    }
                 }
             }
             var plugin = FrameworkApplication.GetPlugInWrapper("bagis_pro_Buttons_BtnExcelTables");
@@ -3089,31 +3092,34 @@ namespace bagis_pro
                                                 Constants.FILE_ASPECT_ZONE, Constants.FILE_LAND_OWNERSHIP,
                                                 Constants.FILE_PRECIPITATION_CONTRIBUTION};
             bool notFound = true;
-            foreach (var r in arrRaster)
+            if (Module1.Current.Aoi.ValidForecastData)
             {
-                if (await GeodatabaseTools.RasterDatasetExistsAsync(uriAnalysis, r))
+                foreach (var r in arrRaster)
                 {
-                    notFound = false;
-                }
-                else
-                {
-                    if (r.Equals(Constants.FILE_LAND_OWNERSHIP))
+                    if (await GeodatabaseTools.RasterDatasetExistsAsync(uriAnalysis, r))
                     {
-                        
-                        if (! await GeodatabaseTools.FeatureClassExistsAsync(uriLayers, r))
-                        {
-                            notFound = true;
-                            Module1.Current.ModuleLogManager.LogError(nameof(EnableLoadMapsButtonAsync),
-                                $@"Unable to locate {uriLayers.LocalPath}\{r}. Load Maps and PDF Export buttons will be disabled!");
-                            break;
-                        }
+                        notFound = false;
                     }
                     else
                     {
-                        notFound = true;
-                        Module1.Current.ModuleLogManager.LogError(nameof(EnableLoadMapsButtonAsync),
-                            $@"Unable to locate {uriAnalysis.LocalPath}\{r}. Load Maps and PDF Export buttons will be disabled!");
-                        break;
+                        if (r.Equals(Constants.FILE_LAND_OWNERSHIP))
+                        {
+
+                            if (!await GeodatabaseTools.FeatureClassExistsAsync(uriLayers, r))
+                            {
+                                notFound = true;
+                                Module1.Current.ModuleLogManager.LogError(nameof(EnableLoadMapsButtonAsync),
+                                    $@"Unable to locate {uriLayers.LocalPath}\{r}. Load Maps and PDF Export buttons will be disabled!");
+                                break;
+                            }
+                        }
+                        else
+                        {
+                            notFound = true;
+                            Module1.Current.ModuleLogManager.LogError(nameof(EnableLoadMapsButtonAsync),
+                                $@"Unable to locate {uriAnalysis.LocalPath}\{r}. Load Maps and PDF Export buttons will be disabled!");
+                            break;
+                        }
                     }
                 }
             }

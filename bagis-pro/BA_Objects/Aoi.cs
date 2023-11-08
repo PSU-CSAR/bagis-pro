@@ -167,6 +167,23 @@ namespace bagis_pro.BA_Objects
             get { return m_stationState; }
         }
 
+        public bool ValidForecastData
+        {
+            get
+            {
+                if (StationTriplet.Equals(Constants.VALUE_NOT_SPECIFIED) ||
+                    StationName.Equals(Constants.VALUE_NOT_SPECIFIED) ||
+                    Huc2 == -1)
+                {
+                    return false;
+                }
+                else
+                {
+                    return true;
+                }
+            }
+        }
+
         public event PropertyChangedEventHandler PropertyChanged;
 
         // This method is called by the Set accessor of each property.
