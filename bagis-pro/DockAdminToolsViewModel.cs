@@ -702,6 +702,11 @@ namespace bagis_pro
 
                     IList<string> lstElements = await AnalysisTools.GenerateForecastStatisticsList(oAoi, _strGenStatisticsLogFile, runOffSuccess);
                     output.AppendLine(string.Join(separator, lstElements));
+
+                    Names[idxRow].AoiBatchStateText = AoiBatchState.Completed.ToString();  // update gui
+                    strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Finished generate statistics export for " +
+                        Names[idxRow].Name + "\r\n";
+                    File.AppendAllText(_strGenStatisticsLogFile, strLogEntry);       // append
                 }
             }
             try

@@ -743,6 +743,10 @@ namespace bagis_pro
         public static async Task<IList<BA_Objects.Interval>> ReadReclassRasterAttribute(Uri gdbUri, string rasterName)
         {
             IList<BA_Objects.Interval> lstInterval = new List<BA_Objects.Interval>();
+            if (! await RasterDatasetExistsAsync(gdbUri,rasterName)) 
+            {
+                return lstInterval;
+            }
             await QueuedTask.Run(() => {
                 using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(gdbUri)))
                 using (RasterDataset rasterDataset = geodatabase.OpenDataset<RasterDataset>(rasterName))

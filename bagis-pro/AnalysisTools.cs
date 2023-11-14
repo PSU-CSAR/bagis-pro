@@ -5562,22 +5562,25 @@ namespace bagis_pro
                         break;
                     }
                 }
-                switch (oSite.SiteType)
+                if (!key.Equals("-1"))
                 {
-                    case SiteType.Snotel:
-                        dictAutoSites[key] = dictAutoSites[key] + 1;
-                        break;
-                    case SiteType.SnowCourse:
-                        dictScosSites[key] = dictScosSites[key] + 1;
-                        break;
-                    case SiteType.Snolite:
-                        dictAutoSites[key] = dictAutoSites[key] + 1;
-                        break;
-                    case SiteType.CoopPillow:
-                        dictAutoSites[key] = dictAutoSites[key] + 1;
-                        break;
-                    default:
-                        break;
+                    switch (oSite.SiteType)
+                    {
+                        case SiteType.Snotel:
+                            dictAutoSites[key] = dictAutoSites[key] + 1;
+                            break;
+                        case SiteType.SnowCourse:
+                            dictScosSites[key] = dictScosSites[key] + 1;
+                            break;
+                        case SiteType.Snolite:
+                            dictAutoSites[key] = dictAutoSites[key] + 1;
+                            break;
+                        case SiteType.CoopPillow:
+                            dictAutoSites[key] = dictAutoSites[key] + 1;
+                            break;
+                        default:
+                            break;
+                    }
                 }
             }
             string strAutoSites = "";
