@@ -5554,16 +5554,29 @@ namespace bagis_pro
             {
                 string key = "-1";
                 double sElev = oSite.ElevMeters;
-                foreach (var oInterval in lstInterval)
+                for (int i = 0; i < lstInterval.Count; i++)
                 {
+                    Interval oInterval = lstInterval[i];
                     if (oSite.ElevMeters > oInterval.LowerBound && oSite.ElevMeters <= oInterval.UpperBound)
                     {
                         key = Convert.ToString(oInterval.Value);
                         break;
                     }
+                    // Site is outside aoi elevation range
+                    if (key.Equals("-1"))
+                    {
+                        Interval firstInterval = lstInterval[0];
+                        Interval lastInterval = lstInterval[lstInterval.Count - 1];
+                        if (oSite.ElevMeters <= firstInterval.UpperBound)
+                        {
+                            key = Convert.ToString(firstInterval.Value);
+                        }
+                        else if (oSite.ElevMeters > lastInterval.LowerBound)
+                        {
+                            key = Convert.ToString(lastInterval.Value);
+                        }
+                    }
                 }
-                if (!key.Equals("-1"))
-                {
                     switch (oSite.SiteType)
                     {
                         case SiteType.Snotel:
@@ -5581,7 +5594,6 @@ namespace bagis_pro
                         default:
                             break;
                     }
-                }
             }
             string strAutoSites = "";
             string strScosSites = "";
@@ -5656,8 +5668,8 @@ namespace bagis_pro
         public static async Task<IList<string>> GenerateForecastStatisticsList(BA_Objects.Aoi oAoi, string strLogFile, BA_ReturnCode runOffData)
         {
             IList<string> lstElements = new List<string>();
-            lstElements.Add(oAoi.Name);  //AOI Name
             lstElements.Add(oAoi.StationTriplet);   // Station triplet
+            lstElements.Add(oAoi.Name);  //AOI Name
             // Retrieve AOI Analysis object with settings for future use
             BA_Objects.Analysis oAnalysis = GeneralTools.GetAnalysisSettings(oAoi.FilePath);
             string strLogEntry;
@@ -5822,9 +5834,14 @@ namespace bagis_pro
                             {
                                 
                                 double dblPctOutside = ((dblAreaSqM-dblArea) / dblAreaSqM) * 100;
-                                if (dblPctOutside >= 0)
+                                // dblPctOutside may be < 0 due to rounding/projection differences
+                                if (dblPctOutside > 0)
                                 {
                                     strPctAreaOutsideUsa = String.Format("{0:0.#}", dblPctOutside);
+                                }
+                                else
+                                {
+                                    strPctAreaOutsideUsa = "0";
                                 }
                             }
                         }
@@ -6155,9 +6172,11 @@ namespace bagis_pro
                     string strDemDisplayUnits = (string)Module1.Current.BatchToolSettings.DemDisplayUnits;
                     lstInterval = GetElevationClasses(dblMinFt, dblMaxFt, oAnalysis.ElevationZonesInterval,
                         strDemUnits, strDemDisplayUnits);
-                    foreach (var item in lstInterval)
-                    {
+                    for (int i = 0; i < lstInterval.Count; i++)
+
+                        {
                         // Need to massage the start and end intervals for rounding
+                        Interval item = lstInterval[i];
                         string[] arrPieces = item.Name.Split(' ');
                         string strName = "";
                         if (arrPieces.Count() == 3)
@@ -6166,7 +6185,19 @@ namespace bagis_pro
                             string strLowerBound = String.Format("{0:0.##}", dblLowerBound);
                             double dblUpperBound = Convert.ToDouble(arrPieces[2]);
                             string strUpperBound = String.Format("{0:0.##}", dblUpperBound);
-                            strName = $@"{strLowerBound}-{strUpperBound}";
+                            if (i==0)
+                            {
+                                // The first interval
+                                strName = $@"<{strUpperBound}";
+                            }
+                            else if (i==(lstInterval.Count -1))
+                            {
+                                strName = $@">{strLowerBound}";
+                            }
+                            else
+                            {
+                                strName = $@"{strLowerBound}-{strUpperBound}";
+                            }                            
                             sb.Append(strName);
                             sb.Append(",");
                         }
