@@ -1115,7 +1115,7 @@ namespace bagis_pro
                     { { Constants.FIELD_STATION_TRIPLET, ""},
                       { Constants.FIELD_STATION_NAME, ""},
                       { Constants.FIELD_AWDB_ID, ""}
-                    }; 
+                    };
                     QueryFilter queryFilter = new QueryFilter();
                     if (await GeodatabaseTools.FeatureClassExistsAsync(ppUri, Constants.FILE_POURPOINT))
                     {

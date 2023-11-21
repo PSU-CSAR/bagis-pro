@@ -1265,6 +1265,13 @@ namespace bagis_pro
                         Module1.Current.DataSourceGroup = Constants.DATA_SOURCES_ALASKA;
                         Module1.Current.ModuleLogManager.LogDebug(nameof(SetAoiAsync),
                            "AOI set to use Alaska data sources. HUC2 = " + oAoi.Huc2);
+                        oAoi.Huc2 = Convert.ToInt16(arrValues[2]);
+                    }
+                    if (Constants.VALUE_ALASKA_HUC2.Equals(oAoi.Huc2))
+                    {
+                        Module1.Current.DataSourceGroup = Constants.DATA_SOURCES_ALASKA;
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(SetAoiAsync),
+                           "AOI set to use Alaska data sources. HUC2 = " + oAoi.Huc2);
                     }
                     if (!string.IsNullOrEmpty(oAoi.StationTriplet))
                     {

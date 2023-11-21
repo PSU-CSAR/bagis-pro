@@ -100,8 +100,8 @@
     "AspectDirectionsCount": 4,
     "MinElevationZonesCount": 8,
     "SnotelSweZonesCount": 7,
-    "PrecipBufferDistance": 1000,
-    "PrecipBufferUnits": "Meters",
+    "PrecipBufferDistance": 1,
+    "PrecipBufferUnits": "Kilometers",
     "SnotelBufferDistance": 5,
     "SnotelBufferUnits": "Kilometers",
     "RoadsAnalysisBufferDistance": 300,
@@ -123,6 +123,10 @@
     "SeasonalPrecipLayoutItemId": "34a1c22f75254c56918c5eb820a6810a",
     "PublicAndTribalLandsLayerItemId": "c72cf8608c644a8c90c651e1bbfe815f",
     "MaximumSitesAllowed": 50,
-    "Version": 3
+    "WinterStartMonth": 11,
+    "WinterEndMonth": 3,
+    "AdminMenu": false,
+    "USStateBoundaries": "https://services.arcgis.com/ue9rwulIoeLEI9bj/arcgis/rest/services/US_StateBoundaries/FeatureServer/0",
+    "Version": 9
   }
 }
