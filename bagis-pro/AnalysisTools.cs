@@ -17,6 +17,7 @@ using Microsoft.Office.Interop.Excel;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Data.SqlTypes;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -5665,6 +5666,33 @@ namespace bagis_pro
             return lstValues;
         }
 
+        private static async Task<double> CalculateBufferedSiteAreaSqM(Aoi oAoi, string strBufferDistance)
+        {
+            double dblSiteArea = -1;
+            if (string.IsNullOrEmpty(strBufferDistance))
+            {
+                string strDistance = (string)Module1.Current.BatchToolSettings.SnotelBufferDistance;
+                string strUnits = (string)Module1.Current.BatchToolSettings.SnotelBufferUnits;
+                strBufferDistance = $@"{strDistance} {strUnits}";
+            }
+            string aoiFcPath = $@"{GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi,true)}{Constants.FILE_AOI_VECTOR}";
+            string outputGdb = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis);
+            string strTempBuffer = "tmpSitesBuffer";
+            BA_ReturnCode success = await GeoprocessingTools.BufferAsync(aoiFcPath,
+                outputGdb  + "\\" + strTempBuffer, strBufferDistance, "ALL");
+            if (success == BA_ReturnCode.Success)
+            { 
+                double dblArea = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(new Uri(outputGdb), strTempBuffer, "");
+                if (dblArea > 0)
+                    dblSiteArea = dblArea;
+            }
+            if (await GeodatabaseTools.FeatureClassExistsAsync(new Uri(outputGdb), strTempBuffer))
+            {
+                success = await GeoprocessingTools.DeleteDatasetAsync($@"{outputGdb}\{strTempBuffer}");
+            }
+            return dblSiteArea;
+        }
+        
         public static async Task<IList<string>> GenerateForecastStatisticsList(BA_Objects.Aoi oAoi, string strLogFile, BA_ReturnCode runOffData)
         {
             IList<string> lstElements = new List<string>();
@@ -6357,31 +6385,110 @@ namespace bagis_pro
                     success = await GeoprocessingTools.DeleteDatasetAsync(strOutputFeature);
                 }
 
-                // Site density Total # of sites / AOI area (sq miles)
-                string strSiteDensity = "Not Found";
-                double dblAreaSqMiles = -1;
-                long lngSiteCount = 0;
-                bool bIsNumber = double.TryParse(strAreaSqMiles, out dblAreaSqMiles);  
+                // Site density Total # of sites / buffered area (sq miles)
+                string strAllSiteDensity = "Not Found";
+                string strAutoSiteDensity = strAllSiteDensity;
+                string strScosSiteDensity = strAllSiteDensity;
+                long lngAutoSitesCount = 0;
+                long lngScosSitesCount = 0;
+                bool bIsNumber = false;
+                long lngCount = 0;
+
+                string[] arrAutoSiteCounts = new string[] {strSnotelAll, strSnoliteAll, strCoopAll };              
+                for (int i = 0; i < arrAutoSiteCounts.Length; i++)
+                {
+                    bIsNumber = long.TryParse(arrAutoSiteCounts[i], out lngCount);
+                    if (bIsNumber)
+                    {
+                        lngAutoSitesCount = lngAutoSitesCount + lngCount;
+                    }
+                }
+                bIsNumber = long.TryParse(strScosAll, out lngCount);
                 if (bIsNumber)
                 {
-                    string[] arrSiteCounts = new string[] {strSnotelAll, strSnoliteAll, strCoopAll, strScosAll };              
-                    for (int i = 0; i < arrSiteCounts.Length; i++)
+                    lngScosSitesCount = lngScosSitesCount + lngCount;   
+                }
+                double dblAutoSitesAreaSqMi = -1;
+                if (lngAutoSitesCount > 0)
+                {
+                    double dblAutoSitesArea = await CalculateBufferedSiteAreaSqM(oAoi, strAutoSitesBuffer);
+                    if (dblAutoSitesArea > 0)
                     {
-                        long lngCount = 0;
-                        bIsNumber = long.TryParse(arrSiteCounts[i], out lngCount);
-                        if (bIsNumber)
-                        {
-                            lngSiteCount = lngSiteCount + lngCount;
-                        }
-                    }
-                    if (lngSiteCount > 0)
-                    {
-                        double dblResult = lngSiteCount / dblAreaSqMiles;
-                        strSiteDensity = String.Format("{0:0.####}", dblResult);
+                        dblAutoSitesAreaSqMi = AreaUnit.SquareMeters.ConvertTo(dblAutoSitesArea, AreaUnit.SquareMiles);
+                        double dblResult = lngAutoSitesCount / dblAutoSitesAreaSqMi;
+                        strAutoSiteDensity = String.Format("{0:0.####}", dblResult);
                     }
                     else
                     {
-                        strSiteDensity = "0";
+                        strAutoSiteDensity = "0";
+                    }
+                }
+                else
+                {
+                    strAutoSiteDensity = "0";
+                }
+                double dblScosSitesAreaSqMi = -1;
+                if (lngScosSitesCount > 0)                
+                {
+                    if (strAutoSitesBuffer.Equals(strScosSitesBuffer))
+                    {
+                        if (dblAutoSitesAreaSqMi > 0)
+                        {
+                            dblScosSitesAreaSqMi = dblAutoSitesAreaSqMi;
+                            double dblResult = lngScosSitesCount / dblScosSitesAreaSqMi;
+                            strScosSiteDensity = String.Format("{0:0.####}", dblResult);
+                        }
+                    }
+                    else
+                    {
+                        double dblScosSitesArea = await CalculateBufferedSiteAreaSqM(oAoi, strScosSitesBuffer);
+                        if (dblScosSitesArea > 0)
+                        {
+                            dblScosSitesAreaSqMi = AreaUnit.SquareMeters.ConvertTo(dblScosSitesArea, AreaUnit.SquareMiles);
+                            double dblResult = lngScosSitesCount / dblScosSitesAreaSqMi;
+                            strScosSiteDensity = String.Format("{0:0.####}", dblResult);
+                        }
+                        else
+                        {
+                            strScosSiteDensity = "0";
+                        }
+                    }                    
+                }
+                else
+                {
+                    strScosSiteDensity = "0";
+                }
+                if (lngAutoSitesCount > 0 && lngScosSitesCount == 0)
+                {
+                    strAllSiteDensity = strAutoSiteDensity;
+                }
+                else if (lngAutoSitesCount == 0 && lngScosSitesCount > 0)
+                {
+                    strAllSiteDensity = strScosSiteDensity;
+                }
+                else if (lngAutoSitesCount == 0 && lngScosSitesCount == 0)
+                {
+                    strAllSiteDensity = "0";
+                }
+                else
+                {
+                    long lngAllSitesCount = lngAutoSitesCount + lngScosSitesCount;
+                    if (strAutoSitesBuffer.Equals(strScosSitesBuffer))
+                    {
+                        double dblResult = lngAllSitesCount / dblScosSitesAreaSqMi;
+                        strAllSiteDensity = String.Format("{0:0.####}", dblResult);
+                    }
+                    else if (dblAutoSitesAreaSqMi > dblScosSitesAreaSqMi)
+                    {
+                        {
+                            double dblResult = lngAllSitesCount / dblAutoSitesAreaSqMi;
+                            strAllSiteDensity = String.Format("{0:0.####}", dblResult);
+                        }
+                    }
+                    else
+                    {
+                        double dblResult = lngAllSitesCount / dblScosSitesAreaSqMi;
+                        strAllSiteDensity = String.Format("{0:0.####}", dblResult);
                     }
                 }
 
@@ -6465,7 +6572,9 @@ namespace bagis_pro
                 lstElements.Add(strWildernessAreaPct);
                 lstElements.Add(strPublicNonWildAreaPct);
                 lstElements.Add(strAirPct);
-                lstElements.Add(strSiteDensity);
+                lstElements.Add(strAllSiteDensity);
+                lstElements.Add(strAutoSiteDensity);
+                lstElements.Add(strScosSiteDensity);
                 lstElements.Add(strPctAreaOutsideUsa);
                 lstElements.Add(strSlopeZones);
                 lstElements.Add(strSlopeAreaPct);

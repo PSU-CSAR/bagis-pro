@@ -662,7 +662,7 @@ namespace bagis_pro
                 "scos_sites_outside","coop_sites_outside","auto_rep_area_pct","scos_rep_area_pct","forested_area_pct",
                 "aspect_zones_def","aspect_area_pct", "elev_zones_def","elev_zones_area_pct","auto_site_count_elev_zone","scos_site_count_elev_zone",
                 "critical_precip_zones_def","critical_precip_zones_pct","wilderness_area_pct","public_non_wild_area_pct",
-                "air_area_pct","site_density","area_outside_usa_pct","slope_zones_def","slope_area_pct"};
+                "air_area_pct","all_site_density","auto_site_density","scos_site_density","area_outside_usa_pct","slope_zones_def","slope_area_pct"};
             output.AppendLine(string.Join(separator, headings));
 
             for (int idxRow = 0; idxRow < Names.Count; idxRow++)
