@@ -5664,12 +5664,6 @@ namespace bagis_pro
         private static async Task<double> CalculateBufferedSiteAreaSqM(Aoi oAoi, string strBufferDistance)
         {
             double dblSiteArea = -1;
-            if (string.IsNullOrEmpty(strBufferDistance))
-            {
-                string strDistance = (string)Module1.Current.BatchToolSettings.SnotelBufferDistance;
-                string strUnits = (string)Module1.Current.BatchToolSettings.SnotelBufferUnits;
-                strBufferDistance = $@"{strDistance} {strUnits}";
-            }
             string aoiFcPath = $@"{GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi, true)}{Constants.FILE_AOI_VECTOR}";
             string outputGdb = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis);
             string strTempBuffer = "tmpSitesBuffer";
@@ -6404,8 +6398,15 @@ namespace bagis_pro
                     lngScosSitesCount = lngScosSitesCount + lngCount;
                 }
                 double dblAutoSitesAreaSqMi = -1;
+                string strDistance = (string)Module1.Current.BatchToolSettings.SnotelBufferDistance;
+                string strUnits = (string)Module1.Current.BatchToolSettings.SnotelBufferUnits;
+                string strDefaultSitesBuffer = $@"{strDistance} {strUnits}";
                 if (lngAutoSitesCount > 0)
                 {
+                    if (string.IsNullOrEmpty(strAutoSitesBuffer))
+                    {
+                        strAutoSitesBuffer = strDefaultSitesBuffer;
+                    }
                     double dblAutoSitesArea = await CalculateBufferedSiteAreaSqM(oAoi, strAutoSitesBuffer);
                     if (dblAutoSitesArea > 0)
                     {
@@ -6425,6 +6426,10 @@ namespace bagis_pro
                 double dblScosSitesAreaSqMi = -1;
                 if (lngScosSitesCount > 0)
                 {
+                    if (string.IsNullOrEmpty(strScosSitesBuffer))
+                    {
+                        strScosSitesBuffer = strDefaultSitesBuffer;
+                    }
                     if (strAutoSitesBuffer.Equals(strScosSitesBuffer))
                     {
                         if (dblAutoSitesAreaSqMi > 0)
