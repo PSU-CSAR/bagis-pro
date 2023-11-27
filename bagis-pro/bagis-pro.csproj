@@ -11,6 +11,7 @@
     <UseWPF>true</UseWPF>
     <AssemblyName>bagis_pro</AssemblyName>
     <RootNamespace>bagis_pro</RootNamespace>
+    <OutputType>Library</OutputType>
   </PropertyGroup>
   <ItemGroup>
     <COMReference Include="Microsoft.Office.Core">

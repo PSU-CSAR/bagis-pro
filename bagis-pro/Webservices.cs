@@ -187,11 +187,10 @@ namespace bagis_pro
             return returnValues;
         }
 
-        public async Task<IDictionary<string, dynamic>> QueryDataSourcesAsync(string webserviceUrl)
+        public async Task<IDictionary<string, dynamic>> QueryDataSourcesAsync()
         {
             IDictionary<string, dynamic> dictDataSources = new Dictionary<string, dynamic>();
-            webserviceUrl = webserviceUrl + @"/api/rest/desktop/settings/bagis-pro/";
-            EsriHttpResponseMessage response = new EsriHttpClient().Get(webserviceUrl);
+            EsriHttpResponseMessage response = new EsriHttpClient().Get(Constants.URI_BATCH_TOOL_SETTINGS);
             JObject jsonVal = JObject.Parse(await response.Content.ReadAsStringAsync()) as JObject;
             JArray arrDataSources = (JArray)jsonVal["dataSources"];
 
@@ -334,7 +333,7 @@ namespace bagis_pro
             IDictionary<string, BA_Objects.DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
             if (!dictLocalDataSources.ContainsKey(BA_Objects.DataSource.GetDemKey))
             {
-                IDictionary<string, dynamic> dictDatasources = await this.QueryDataSourcesAsync((string)Module1.Current.BatchToolSettings.EBagisServer);
+                IDictionary<string, dynamic> dictDatasources = await this.QueryDataSourcesAsync();
                 if (dictDatasources != null)
                 {
                     BA_Objects.DataSource dsDem = new BA_Objects.DataSource(dictDatasources[BA_Objects.DataSource.GetDemKey]);

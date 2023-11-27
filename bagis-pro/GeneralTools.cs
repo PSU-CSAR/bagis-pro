@@ -345,7 +345,7 @@ namespace bagis_pro
                 // Add the DEM if it isn't there
                 if (!dictLocalDataSources.ContainsKey(BA_Objects.DataSource.GetDemKey))
                 {
-                    IDictionary<string, dynamic> dictDatasources = await ws.QueryDataSourcesAsync((string)Module1.Current.BatchToolSettings.EBagisServer);
+                    IDictionary<string, dynamic> dictDatasources = await ws.QueryDataSourcesAsync();
                     if (dictDatasources != null)
                     {
                         BA_Objects.DataSource dsDem = new BA_Objects.DataSource(dictDatasources[BA_Objects.DataSource.GetDemKey]);
@@ -670,7 +670,7 @@ namespace bagis_pro
                 }
                 else
                 {
-                    IDictionary<string, dynamic> dictDatasources = await ws.QueryDataSourcesAsync((string)Module1.Current.BatchToolSettings.EBagisServer);
+                    IDictionary<string, dynamic> dictDatasources = await ws.QueryDataSourcesAsync();
                     if (dictDatasources != null)
                     {
                         demDataSource = new BA_Objects.DataSource(dictDatasources[BA_Objects.DataSource.GetDemKey]);

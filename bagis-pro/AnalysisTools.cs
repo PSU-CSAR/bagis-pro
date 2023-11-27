@@ -793,7 +793,7 @@ namespace bagis_pro
             Module1.Current.ModuleLogManager.LogDebug(nameof(ClipLayersAsync),
                 "Contacting webservices server to retrieve layer metadata");
             IDictionary<string, dynamic> dictDataSources =
-                await ws.QueryDataSourcesAsync((string)Module1.Current.BatchToolSettings.EBagisServer);
+                await ws.QueryDataSourcesAsync();
             string strWsPrefix = dictDataSources[strDataType].uri;
 
             string[] arrLayersToDelete = new string[2];
@@ -1608,7 +1608,7 @@ namespace bagis_pro
             Module1.Current.ModuleLogManager.LogDebug(nameof(ClipSnoLayersAsync),
                 "Contacting webservices server to retrieve layer metadata");
             IDictionary<string, dynamic> dictDataSources =
-                await ws.QueryDataSourcesAsync((string)Module1.Current.BatchToolSettings.EBagisServer);
+                await ws.QueryDataSourcesAsync();
             if (dictDataSources != null)
             {
                 if (!dictDataSources.ContainsKey(Constants.DATA_TYPE_SNOTEL) ||
@@ -2172,7 +2172,7 @@ namespace bagis_pro
             Module1.Current.ModuleLogManager.LogDebug(nameof(ClipFeatureLayerAsync),
                 "Contacting webservices server to retrieve layer metadata");
             IDictionary<string, dynamic> dictDataSources =
-                await ws.QueryDataSourcesAsync((string)Module1.Current.BatchToolSettings.EBagisServer);
+                await ws.QueryDataSourcesAsync();
             string strWsUri = dictDataSources[strDataType].uri;
 
             string[] arrLayersToDelete = new string[2];
@@ -2849,7 +2849,7 @@ namespace bagis_pro
             Module1.Current.ModuleLogManager.LogDebug(nameof(ClipLayersAsync),
                 "Contacting webservices server to retrieve layer metadata");
             IDictionary<string, dynamic> dictDataSources =
-                await ws.QueryDataSourcesAsync((string)Module1.Current.BatchToolSettings.EBagisServer);
+                await ws.QueryDataSourcesAsync();
             string strWsUri = dictDataSources[strDataType].uri;
             string strInputRaster = strWsUri;
             string[] arrLayersToDelete = new string[2];
@@ -5132,7 +5132,7 @@ namespace bagis_pro
                 Module1.Current.ModuleLogManager.LogDebug(nameof(GetPrismImageUriAsync),
                     "Contacting webservices server to retrieve prism layer uri");
                 IDictionary<string, dynamic> dictDataSources =
-                    await ws.QueryDataSourcesAsync((string)Module1.Current.BatchToolSettings.EBagisServer);
+                    await ws.QueryDataSourcesAsync();
                 string strWsPrefix = dictDataSources[BA_Objects.DataSource.GetPrecipitationKey].uri;
                 if (!string.IsNullOrEmpty(strWsPrefix))
                 {
@@ -5153,7 +5153,7 @@ namespace bagis_pro
             int maxSitesAllowed = (int)Module1.Current.BatchToolSettings.MaximumSitesAllowed;
             Webservices ws = new Webservices();
             IDictionary<string, dynamic> dictDataSources =
-                await ws.QueryDataSourcesAsync((string)Module1.Current.BatchToolSettings.EBagisServer);
+                await ws.QueryDataSourcesAsync();
             if (dictDataSources != null)
             {
                 if (!dictDataSources.ContainsKey(Constants.DATA_TYPE_SNOTEL) ||
