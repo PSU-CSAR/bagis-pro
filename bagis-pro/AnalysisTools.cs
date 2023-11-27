@@ -6411,8 +6411,8 @@ namespace bagis_pro
                     if (dblAutoSitesArea > 0)
                     {
                         dblAutoSitesAreaSqMi = AreaUnit.SquareMeters.ConvertTo(dblAutoSitesArea, AreaUnit.SquareMiles);
-                        double dblResult = lngAutoSitesCount / dblAutoSitesAreaSqMi;
-                        strAutoSiteDensity = String.Format("{0:0.####}", dblResult);
+                        double dblResult = lngAutoSitesCount / dblAutoSitesAreaSqMi * 100;  // Units of measure are # site / 100 square miles
+                        strAutoSiteDensity = String.Format("{0:0.##}", dblResult);
                     }
                     else
                     {
@@ -6435,8 +6435,8 @@ namespace bagis_pro
                         if (dblAutoSitesAreaSqMi > 0)
                         {
                             dblScosSitesAreaSqMi = dblAutoSitesAreaSqMi;
-                            double dblResult = lngScosSitesCount / dblScosSitesAreaSqMi;
-                            strScosSiteDensity = String.Format("{0:0.####}", dblResult);
+                            double dblResult = lngScosSitesCount / dblScosSitesAreaSqMi * 100;  // Units of measure are # site / 100 square miles
+                            strScosSiteDensity = String.Format("{0:0.##}", dblResult);
                         }
                     }
                     else
@@ -6445,8 +6445,8 @@ namespace bagis_pro
                         if (dblScosSitesArea > 0)
                         {
                             dblScosSitesAreaSqMi = AreaUnit.SquareMeters.ConvertTo(dblScosSitesArea, AreaUnit.SquareMiles);
-                            double dblResult = lngScosSitesCount / dblScosSitesAreaSqMi;
-                            strScosSiteDensity = String.Format("{0:0.####}", dblResult);
+                            double dblResult = lngScosSitesCount / dblScosSitesAreaSqMi * 100;  // Units of measure are # site / 100 square miles
+                            strScosSiteDensity = String.Format("{0:0.##}", dblResult);
                         }
                         else
                         {
@@ -6475,20 +6475,20 @@ namespace bagis_pro
                     long lngAllSitesCount = lngAutoSitesCount + lngScosSitesCount;
                     if (strAutoSitesBuffer.Equals(strScosSitesBuffer))
                     {
-                        double dblResult = lngAllSitesCount / dblScosSitesAreaSqMi;
-                        strAllSiteDensity = String.Format("{0:0.####}", dblResult);
+                        double dblResult = lngAllSitesCount / dblScosSitesAreaSqMi * 100;  // Units of measure are # site / 100 square miles
+                        strAllSiteDensity = String.Format("{0:0.##}", dblResult);
                     }
                     else if (dblAutoSitesAreaSqMi > dblScosSitesAreaSqMi)
                     {
                         {
-                            double dblResult = lngAllSitesCount / dblAutoSitesAreaSqMi;
-                            strAllSiteDensity = String.Format("{0:0.####}", dblResult);
+                            double dblResult = lngAllSitesCount / dblAutoSitesAreaSqMi * 100;  // Units of measure are # site / 100 square miles
+                            strAllSiteDensity = String.Format("{0:0.##}", dblResult);
                         }
                     }
                     else
                     {
-                        double dblResult = lngAllSitesCount / dblScosSitesAreaSqMi;
-                        strAllSiteDensity = String.Format("{0:0.####}", dblResult);
+                        double dblResult = lngAllSitesCount / dblScosSitesAreaSqMi * 100;  // Units of measure are # site / 100 square miles
+                        strAllSiteDensity = String.Format("{0:0.##}", dblResult);
                     }
                 }
 
