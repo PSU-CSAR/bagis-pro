@@ -1617,7 +1617,7 @@ namespace bagis_pro
                     !dictDataSources.ContainsKey(Constants.DATA_TYPE_COOP_PILLOW))
                 {
                     Module1.Current.ModuleLogManager.LogError(nameof(ClipSnoLayersAsync),
-                        "Unable to retrieve snotel datasource information from " + (string)Module1.Current.BatchToolSettings.EBagisServer +
+                        "Unable to retrieve snotel datasource information from " + Constants.URI_BATCH_TOOL_SETTINGS +
                         ". Clipping cancelled!!");
                     return success;
                 }
@@ -1625,7 +1625,7 @@ namespace bagis_pro
             else
             {
                 Module1.Current.ModuleLogManager.LogError(nameof(ClipSnoLayersAsync),
-                    "Unable to retrieve datasource information from " + (string)Module1.Current.BatchToolSettings.EBagisServer +
+                    "Unable to retrieve datasource information from " + Constants.URI_BATCH_TOOL_SETTINGS +
                     ". Clipping cancelled!!");
                 return success;
             }
@@ -5160,7 +5160,7 @@ namespace bagis_pro
                     !dictDataSources.ContainsKey(Constants.DATA_TYPE_SNOW_COURSE))
                 {
                     Module1.Current.ModuleLogManager.LogError(nameof(TooManySitesAsync),
-                        "Unable to retrieve snotel datasource information from " + (string)Module1.Current.BatchToolSettings.EBagisServer +
+                        "Unable to retrieve snotel datasource information from " + Constants.URI_BATCH_TOOL_SETTINGS +
                         ". Processing cancelled!!");
                     return true;
                 }
