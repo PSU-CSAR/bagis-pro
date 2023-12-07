@@ -90,7 +90,6 @@
     }
   ],
   "BatchSettings": {
-    "EBagisServer": "https://ebagis.geog.pdx.edu",
     "SweDisplayUnits": "Inches",
     "DemUnits": "Meters",
     "DefaultDemInterval": 1000,
@@ -127,6 +126,6 @@
     "WinterEndMonth": 3,
     "AdminMenu": false,
     "USStateBoundaries": "https://services.arcgis.com/ue9rwulIoeLEI9bj/arcgis/rest/services/US_StateBoundaries/FeatureServer/0",
-    "Version": 9
+    "Version": 10
   }
 }
