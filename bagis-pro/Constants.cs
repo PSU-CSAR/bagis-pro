@@ -280,7 +280,6 @@ namespace bagis_pro
         public const string FIELD_GRID_CODE = "gridcode";   //Value after raster is converted to polygon
         public const string FIELD_VOL_ACRE_FT = "VOL_ACRE_FT";
         public const string FIELD_SUM = "SUM";
-        public const string FIELD_NWCCNAME = "nwccname";
         public const string FIELD_WINTER_START_MONTH = "winter_start_month";
         public const string FIELD_WINTER_END_MONTH = "winter_end_month";
         public const string FIELD_HUC = "huc";

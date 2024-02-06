@@ -1536,14 +1536,22 @@ namespace bagis_pro
                     }
 
                     // QUERY THE MASTER LIST FOR THE STATION TRIPLET
-                    string[] arrSearch = { Constants.FIELD_STATION_TRIPLET, Constants.FIELD_AWDB_ID, Constants.FIELD_NWCCNAME, Constants.FIELD_HUC2 };
+                    string[] arrSearch = { Constants.FIELD_STATION_TRIPLET, Constants.FIELD_AWDB_ID, Constants.FIELD_NAME, Constants.FIELD_HUC2 };
                     string[] arrFound = new string[arrSearch.Length];
-                    string strWsUri = (string)Module1.Current.BatchToolSettings.MasterAoiList + "/0";  // Append layer ordinal to the uri
+                    string strWsUri = await ws.GetForecastStationsUriAsync();
+                    string strWsUriTrimmed = "";
+                    string layerId = "";
+                    if (!string.IsNullOrEmpty(strWsUri))
+                    {
+                        layerId = strWsUri[strWsUri.Length - 1].ToString();
+                        strWsUriTrimmed = strWsUri.Substring(0, strWsUri.Length - 2);
+                    }
+                    
                     if (!AlwaysNearChecked)
                     {
                         queryFilter = new QueryFilter();
                         queryFilter.WhereClause = Constants.FIELD_STATION_TRIPLET + " = '" + strTriplet + "'";
-                        arrFound = await ws.QueryServiceForValuesAsync(new Uri((string)Module1.Current.BatchToolSettings.MasterAoiList), "0", arrSearch, queryFilter);
+                        arrFound = await ws.QueryServiceForValuesAsync(new Uri(strWsUriTrimmed), layerId, arrSearch, queryFilter);
                         if (arrFound != null && arrFound.Length == arrSearch.Length && strTriplet.Equals(arrFound[0]))
                         {
                             strRemark = NO_CHANGE_MATCH;
@@ -1571,11 +1579,14 @@ namespace bagis_pro
                             if (!String.IsNullOrEmpty(strNearId))
                             {
                                 queryFilter.WhereClause = Constants.FIELD_OBJECT_ID + " = " + strNearId;
-                                arrFound = await ws.QueryServiceForValuesAsync(new Uri((string)Module1.Current.BatchToolSettings.MasterAoiList), "0", arrSearch, queryFilter);
+                                arrFound = await ws.QueryServiceForValuesAsync(new Uri(strWsUriTrimmed), layerId, arrSearch, queryFilter);
                                 if (arrFound != null && arrFound.Length == 4 && arrFound[0] != null)
                                 {
                                     strNearTriplet = arrFound[0];
-                                    strNearAwdbId = arrFound[1].Trim('"');
+                                    if (!string.IsNullOrEmpty(arrFound[1]))
+                                    {
+                                        strNearAwdbId = arrFound[1].Trim('"');
+                                    }
                                     strNearStationName = arrFound[2];
                                     intNearHuc2 = Convert.ToInt16(arrFound[3]);
                                     if (!string.IsNullOrEmpty(strNearTriplet))

@@ -579,11 +579,12 @@ namespace bagis_pro
                 MessageBox.Show("Unable to retrieve gauge station uri. Station values cannot be retrieved!!", "BAGIS-PRO");
                 return null;
             }
-            string strWsUri = (string)Module1.Current.BatchToolSettings.MasterAoiList;
-            //string usgsServiceLayerId = strWsUri.Split('/').Last();
-            //int intTrim = usgsServiceLayerId.Length + 1;
-            //string usgsTempString = strWsUri.Substring(0, strWsUri.Length - intTrim);
-            Uri wsUri = new Uri(strWsUri);
+            // Note: Refactored this 2024-FEB-02 but couldn't test it because it's not in use
+            string strWsUri = Convert.ToString(oSettings.gaugeStation);
+            string fcstServiceLayerId = strWsUri.Split('/').Last();
+            int intTrim = fcstServiceLayerId.Length + 1;
+            string fcstTempString = strWsUri.Substring(0, strWsUri.Length - intTrim);
+            Uri wsUri = new Uri(fcstTempString);
 
             bool bUpdateTriplet = false;
             bool bUpdateAwdb = false;

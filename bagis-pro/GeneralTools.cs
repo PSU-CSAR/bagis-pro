@@ -1275,7 +1275,7 @@ namespace bagis_pro
                     }
                     if (!string.IsNullOrEmpty(oAoi.StationTriplet))
                     {
-                        string[] arrResults = await GeneralTools.QueryMasterAoiProperties(oAoi.StationTriplet);
+                        string[] arrResults = await GeneralTools.QueryForecastListAoiProperties(oAoi.StationTriplet);
                         Module1.Current.ModuleLogManager.LogDebug(nameof(SetAoiAsync),
                             "Master AOI properties returned. Array length: " + arrValues.Length);
                         if (arrResults.Length == 5)
@@ -2533,35 +2533,42 @@ namespace bagis_pro
             }
         }
 
-        public static async Task<string[]> QueryMasterAoiProperties(string stationTriplet)
+        public static async Task<string[]> QueryForecastListAoiProperties(string stationTriplet)
         {
             string[] arrResults = { };
             try
             {
-                string strMasterUrl = (string)Module1.Current.BatchToolSettings.MasterAoiList;
-                Uri uriMaster = new Uri(strMasterUrl);
                 Webservices ws = new Webservices();
+                string strForecastUri = await ws.GetForecastStationsUriAsync();
+                string strForecastUriTrimmed = "";
+                string layerId = "";
+                if (!string.IsNullOrEmpty(strForecastUri))
+                {
+                    layerId = strForecastUri[strForecastUri.Length - 1].ToString();
+                    strForecastUriTrimmed = strForecastUri.Substring(0, strForecastUri.Length - 2);
+                }
+                Uri uriForecast = new Uri(strForecastUriTrimmed);
                 QueryFilter queryFilter = new QueryFilter
                 {
                     WhereClause = Constants.FIELD_STATION_TRIPLET + " = '" + stationTriplet + "'"
                 };
-                string[] arrSearch = { Constants.FIELD_NWCCNAME, Constants.FIELD_WINTER_START_MONTH, Constants.FIELD_WINTER_END_MONTH,
+                string[] arrSearch = { Constants.FIELD_NAME, Constants.FIELD_WINTER_START_MONTH, Constants.FIELD_WINTER_END_MONTH,
                     Constants.FIELD_HUC, Constants.FIELD_HUC2};
-                arrResults = await ws.QueryServiceForValuesAsync(uriMaster, "0", arrSearch, queryFilter);
+                arrResults = await ws.QueryServiceForValuesAsync(uriForecast, layerId, arrSearch, queryFilter);
                 if (arrResults.Length != arrSearch.Length)
                 {
-                    Module1.Current.ModuleLogManager.LogError(nameof(QueryMasterAoiProperties),
-                        "An error occurred while retrieving properties from the master aoi webservice");
+                    Module1.Current.ModuleLogManager.LogError(nameof(QueryForecastListAoiProperties),
+                        "An error occurred while retrieving properties from the FCST_Active webservice");
                 }
                 else if (arrResults != null && arrResults.Length > 1 && arrResults[0] == null)
                 {
-                    Module1.Current.ModuleLogManager.LogError(nameof(QueryMasterAoiProperties),
-                        "Unable to retrieve at least 1 property from the master aoi webservice");
+                    Module1.Current.ModuleLogManager.LogError(nameof(QueryForecastListAoiProperties),
+                        "Unable to retrieve at least 1 property from the FCST_Active webservice");
                 }
             }
             catch (Exception e)
             {
-                Module1.Current.ModuleLogManager.LogError(nameof(QueryMasterAoiProperties),
+                Module1.Current.ModuleLogManager.LogError(nameof(QueryForecastListAoiProperties),
                     "Exception: " + e.StackTrace);
             }
             return arrResults;

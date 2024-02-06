@@ -328,6 +328,23 @@ namespace bagis_pro
             }
         }
 
+        public async Task<string> GetForecastStationsUriAsync()
+        {
+                var response = new EsriHttpClient().Get(Constants.URI_DESKTOP_SETTINGS);
+                var json = await response.Content.ReadAsStringAsync();
+                dynamic oSettings = JObject.Parse(json);
+                if (oSettings == null || String.IsNullOrEmpty(Convert.ToString(oSettings.gaugeStation)))
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(GetForecastStationsUriAsync),
+                        "Unable to retrieve settings from " + Constants.URI_DESKTOP_SETTINGS);
+                    return "";
+                }
+                else
+                {                    
+                    return Convert.ToString(oSettings.gaugeStation);
+                }
+        }
+
         public async Task<string> GetDem30UriAsync()
         {
             IDictionary<string, BA_Objects.DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
@@ -373,7 +390,7 @@ namespace bagis_pro
                 MessageBox.Show("Batch tool settings could not be loaded. The portal files cannot be updated!!");
                 return success;
             }
-            string[] arrResults = await GeneralTools.QueryMasterAoiProperties(stationTriplet);
+            string[] arrResults = await GeneralTools.QueryForecastListAoiProperties(stationTriplet);
             if (arrResults.Length == 5)
             {
                 nwccAoiName = arrResults[0].Trim();
