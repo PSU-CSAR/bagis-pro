@@ -1260,6 +1260,7 @@ namespace bagis_pro
                         }
                     }
 
+                    //@ToDo: This is a test
                     if (Constants.VALUE_ALASKA_HUC2.Equals(oAoi.Huc2))
                     {
                         Module1.Current.DataSourceGroup = Constants.DATA_SOURCES_ALASKA;
