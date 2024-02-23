@@ -119,6 +119,7 @@ namespace bagis_pro
         private string _strForecastLogFile;
         private string _strSnodasLogFile;
         private string _strGenStatisticsLogFile;
+        private string _strFireDataLogFile;
         private bool _cmdRunEnabled = false;
         private bool _cmdForecastEnabled = false;
         private bool _cmdSnodasEnabled = false;
@@ -398,6 +399,8 @@ namespace bagis_pro
                     _strGenStatisticsLogFile = $@"{ParentFolder}\{Constants.FOLDER_MAP_PACKAGE}\{Constants.FILE_GEN_STATISTICS_LOG}";
                     CmdGenStatisticsLogEnabled = File.Exists(_strGenStatisticsLogFile);
 
+                    _strFireDataLogFile = $@"{ParentFolder}\{Constants.FOLDER_MAP_PACKAGE}\{Constants.FILE_FIRE_DATA_LOG}";
+
                     Names.Clear();
                     IList<BA_Objects.Aoi> lstAois = await GeneralTools.GetAoiFoldersAsync(ParentFolder, _strLogFile);
                     foreach (var pAoi in lstAois)
@@ -484,6 +487,17 @@ namespace bagis_pro
                 if (_runSnodasCommand == null)
                     _runSnodasCommand = new RelayCommand(RunSnodasImplAsync, () => true);
                 return _runSnodasCommand;
+            }
+        }
+
+        private RelayCommand _runFireDataCommand;
+        public ICommand CmdFireData
+        {
+            get
+            {
+                if (_runFireDataCommand == null)
+                    _runFireDataCommand = new RelayCommand(RunFireDataImplAsync, () => true);
+                return _runFireDataCommand;
             }
         }
 
@@ -1699,6 +1713,62 @@ namespace bagis_pro
             MessageBox.Show($@"Forecast station updates done!!{strMergeMessage}");
         }
 
+        private async void RunFireDataImplAsync(object param)
+        {
+            // Make sure the maps_publish folder exists under the selected folder
+            if (!Directory.Exists(Path.GetDirectoryName(_strFireDataLogFile)))
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(_strFireDataLogFile));
+            }
+
+            // Create initial log entry
+            string strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Starting fire data " + "\r\n";
+            File.WriteAllText(_strFireDataLogFile, strLogEntry);    // overwrite file if it exists
+
+            // Reset batch states
+            ResetAoiBatchStateText();
+
+            for (int idxRow = 0; idxRow < Names.Count; idxRow++)
+            {
+                if (Names[idxRow].AoiBatchIsSelected)
+                {
+                    int errorCount = 0; // keep track of any non-fatal errors
+                    string aoiFolder = Names[idxRow].FilePath;
+                    if (Names[idxRow].AoiBatchStateText.Equals(AoiBatchState.NotReady.ToString()))
+                    {
+                        strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} Skipping fire data for {Names[idxRow].FilePath}. Required station information is missing.{System.Environment.NewLine}";
+                        File.AppendAllText(_strSnodasLogFile, strLogEntry);
+                        continue;
+                    }
+                    else
+                    {
+                        Names[idxRow].AoiBatchStateText = AoiBatchState.Started.ToString();  // update gui
+                        strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Starting fire data for " +
+                            Names[idxRow].Name + "\r\n";
+                        File.AppendAllText(_strSnodasLogFile, strLogEntry);       // append
+                    }
+                    string strAoiFolder = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Aoi);
+                    BA_ReturnCode success = BA_ReturnCode.UnknownError;
+
+
+
+                    if (success == BA_ReturnCode.Success && errorCount == 0)
+                    {
+                        Names[idxRow].AoiBatchStateText = AoiBatchState.Completed.ToString();  // update gui
+                    }
+                    else
+                    {
+                        Names[idxRow].AoiBatchStateText = AoiBatchState.Failed.ToString();
+                    }
+
+                }
+            }
+            strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "GeoJson exports complete!! \r\n";
+            File.AppendAllText(_strSnodasLogFile, strLogEntry);       // append
+            CmdSnodasLogEnabled = true;
+            MessageBox.Show("Generated GeoJson files are available in " + ParentFolder + "\\" + Constants.FOLDER_SNODAS_GEOJSON, "BAGIS-PRO");
+        }
+
         private string CreateLogEntry(string strAoiPath, string strOldTriplet, string strNewTriplet, string strRemarks)
         {
             StringBuilder sb = new StringBuilder();
@@ -1772,7 +1842,6 @@ namespace bagis_pro
             }
             return success;
         }
-
     }
 
     /// <summary>

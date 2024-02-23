@@ -85,7 +85,7 @@
 
                 </Grid>
             </TabItem>
-            <TabItem HorizontalAlignment="Left" Width="45">
+            <TabItem>
                 <TabItem.Header>
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="Tasks" Foreground="Black" />
@@ -264,6 +264,25 @@
                             </StackPanel>
                         </Grid>
                     </GroupBox>
+                </Grid>
+            </TabItem>
+            <TabItem>
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Fire Tasks" Foreground="Black" />
+                    </StackPanel>
+                </TabItem.Header>
+                <Grid>
+                     <Grid.RowDefinitions>
+                        <RowDefinition Height="100"/>
+                    </Grid.RowDefinitions>
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" IsEnabled="{Binding TasksEnabled}">
+                        <TextBlock Name="tbFire1" TextWrapping="WrapWithOverflow" MaxWidth="100" VerticalAlignment="Center" Margin="5, 0, 0, 0">
+                                    Generate fire data
+                        </TextBlock>
+                        <Button x:Name="btnFireData" Content="Run" HorizontalAlignment="Left" VerticalAlignment="Center" Width="75" Command="{Binding CmdFireData}" Margin="5, 0, 70, 0"/>
+                    </StackPanel>
+
                 </Grid>
             </TabItem>
         </TabControl>
