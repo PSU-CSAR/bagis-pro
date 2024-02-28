@@ -27,7 +27,6 @@ using System.ComponentModel;
 using ArcGIS.Desktop.Core.Geoprocessing;
 using System.Diagnostics;
 using bagis_pro.BA_Objects;
-using Microsoft.Office.Core;
 
 namespace bagis_pro
 {
@@ -1131,8 +1130,8 @@ namespace bagis_pro
 
                         string[] arrUnmanagedBufferInfo = await GeneralTools.QueryBufferDistanceAsync(aoiFolder, GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Aoi),
                             Constants.FILE_AOI_BUFFERED_VECTOR, false);
-                        string unmanagedBufferDistance = arrPrismBufferInfo[0];
-                        string unmanagedBufferUnits = arrPrismBufferInfo[1];
+                        string unmanagedBufferDistance = arrUnmanagedBufferInfo[0];
+                        string unmanagedBufferUnits = arrUnmanagedBufferInfo[1];
 
                             // Clip Roads
                             string strOutputFc = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Layers, true)
@@ -1737,7 +1736,7 @@ namespace bagis_pro
                     if (Names[idxRow].AoiBatchStateText.Equals(AoiBatchState.NotReady.ToString()))
                     {
                         strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} Skipping fire data for {Names[idxRow].FilePath}. Required station information is missing.{System.Environment.NewLine}";
-                        File.AppendAllText(_strSnodasLogFile, strLogEntry);
+                        File.AppendAllText(_strFireDataLogFile, strLogEntry);
                         continue;
                     }
                     else
@@ -1745,11 +1744,69 @@ namespace bagis_pro
                         Names[idxRow].AoiBatchStateText = AoiBatchState.Started.ToString();  // update gui
                         strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Starting fire data for " +
                             Names[idxRow].Name + "\r\n";
-                        File.AppendAllText(_strSnodasLogFile, strLogEntry);       // append
+                        File.AppendAllText(_strFireDataLogFile, strLogEntry);       // append
                     }
                     string strAoiFolder = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Aoi);
+                    // Set current AOI
+                    Aoi oAoi = await GeneralTools.SetAoiAsync(aoiFolder, Names[idxRow]);
+                    if (Module1.Current.CboCurrentAoi != null)
+                    {
+                        FrameworkApplication.Current.Dispatcher.Invoke(() =>
+                        {
+                            // Do something on the GUI thread
+                            Module1.Current.CboCurrentAoi.SetAoiName(oAoi.Name);
+                        });
+                    }
                     BA_ReturnCode success = BA_ReturnCode.UnknownError;
+                    string[] arrUnmanagedBufferInfo = await GeneralTools.QueryBufferDistanceAsync(aoiFolder, GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Aoi),
+                        Constants.FILE_AOI_BUFFERED_VECTOR, false);
+                    string unmanagedBufferDistance = arrUnmanagedBufferInfo[0];
+                    string unmanagedBufferUnits = arrUnmanagedBufferInfo[1];
 
+                    //Clip fire layers
+                    string strOutputFc = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Layers, true)
+                        + Constants.FILE_FIRE_HISTORY;
+                    success = await AnalysisTools.ClipFeatureLayerAsync(aoiFolder, strOutputFc, Constants.DATA_TYPE_FIRE_HISTORY,
+                        unmanagedBufferDistance, unmanagedBufferUnits);
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        success = await GeoprocessingTools.AddFieldAsync(strOutputFc, Constants.FIELD_YEAR, "SHORT");
+                        if (success == BA_ReturnCode.Success)
+                        {
+                            var parameters = Geoprocessing.MakeValueArray(strOutputFc, Constants.FIELD_YEAR,
+                                "!FIRE_YEAR_INT!", "PYTHON3", "", "SHORT");
+                            IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("management.CalculateField", parameters, null,
+                                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                            if (gpResult.IsFailed)
+                            {
+                                Module1.Current.ModuleLogManager.LogError(nameof(RunFireDataImplAsync),
+                                    "CalculateField tool failed to update YEAR field. Error code: " + gpResult.ErrorCode);
+                                success = BA_ReturnCode.UnknownError;
+                            }
+                        }
+                    }
+                    
+                    strOutputFc = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Layers, true)
+                        + Constants.FILE_FIRE_CURRENT;
+                    success = await AnalysisTools.ClipFeatureLayerAsync(aoiFolder, strOutputFc, Constants.DATA_TYPE_FIRE_CURRENT,
+                        unmanagedBufferDistance, unmanagedBufferUnits);
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        success = await GeoprocessingTools.AddFieldAsync(strOutputFc, Constants.FIELD_YEAR, "SHORT");
+                        if (success == BA_ReturnCode.Success)
+                        {
+                            var parameters = Geoprocessing.MakeValueArray(strOutputFc, Constants.FIELD_YEAR,
+                                $@"Year($feature.{Constants.FIELD_FIRECURRENT_DATE})", "Arcade", "", "SHORT");
+                            IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("management.CalculateField", parameters, null,
+                                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                            if (gpResult.IsFailed)
+                            {
+                                Module1.Current.ModuleLogManager.LogError(nameof(RunFireDataImplAsync),
+                                    "CalculateField tool failed to update YEAR field. Error code: " + gpResult.ErrorCode);
+                                success = BA_ReturnCode.UnknownError;
+                            }
+                        }
+                    }
 
 
                     if (success == BA_ReturnCode.Success && errorCount == 0)
@@ -1764,9 +1821,7 @@ namespace bagis_pro
                 }
             }
             strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "GeoJson exports complete!! \r\n";
-            File.AppendAllText(_strSnodasLogFile, strLogEntry);       // append
-            CmdSnodasLogEnabled = true;
-            MessageBox.Show("Generated GeoJson files are available in " + ParentFolder + "\\" + Constants.FOLDER_SNODAS_GEOJSON, "BAGIS-PRO");
+            File.AppendAllText(_strFireDataLogFile, strLogEntry);       // append
         }
 
         private string CreateLogEntry(string strAoiPath, string strOldTriplet, string strNewTriplet, string strRemarks)

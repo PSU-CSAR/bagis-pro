@@ -118,6 +118,9 @@ namespace bagis_pro
         public const string FILE_AOI_STATISTICS = "forecast_aoi_statistics.csv";
         public const string FILE_SNOLITE = "snolite_sites";
         public const string FILE_COOP_PILLOW = "coop_pillow_sites";
+        public const string FILE_FIRE_HISTORY = "firehistory";
+        public const string FILE_FIRE_CURRENT = "firecurrent";
+        public const string FILE_NIFC_FIRE = "nifcfire";
         public const string FILE_EXPORT_MAP_ELEV_PDF = "elevation_distribution.pdf";
         public const string FILE_EXPORT_MAP_SNOTEL_PDF = "map_elevation_snotel.pdf";
         public const string FILE_EXPORT_MAP_SCOS_PDF = "map_elevation_sc.pdf";
@@ -300,6 +303,9 @@ namespace bagis_pro
         public const string FIELD_JSON_PROPERTIES = "properties";
         public const string FIELD_JSON_GEOMETRIES = "geometries";
         public const string FIELD_AGBUR = "AGBUR";
+        public const string FIELD_YEAR = "YEAR";
+        public const string FIELD_FIRECURRENT_DATE = "attr_FireDiscoveryDateTime";
+        public const string FIELD_FIRE_YEAR = "FIRE_YEAR";
 
         public const string DATA_TYPE_SWE = "Snotel SWE";
         public const string DATA_TYPE_PRECIPITATION = "Precipitation";
@@ -317,7 +323,8 @@ namespace bagis_pro
         public const string DATA_TYPE_ALASKA_LAND_COVER = "Alaska Land Cover";
         public const string DATA_SOURCES_DEFAULT = "Default Data Sources";
         public const string DATA_SOURCES_ALASKA = "Alaska Data Sources";
-
+        public const string DATA_TYPE_FIRE_HISTORY = "Fire History";
+        public const string DATA_TYPE_FIRE_CURRENT = "Fire Current";
 
         public const int VALUE_NO_DATA_9999 = -9999;
         public const string VALUE_NO_DATA = "NoData";
