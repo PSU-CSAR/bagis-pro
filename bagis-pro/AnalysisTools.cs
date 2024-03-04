@@ -4761,7 +4761,7 @@ namespace bagis_pro
                 {
                     Module1.Current.ModuleLogManager.LogError(nameof(CreateSitesLayerAsync),
                          "Unable to append features. Error code: " + gpResult.ErrorCode);
-                    returnPath = ""; ;
+                    returnPath = "";
                 }
                 else
                 {

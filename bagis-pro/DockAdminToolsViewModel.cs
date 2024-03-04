@@ -1723,6 +1723,7 @@ namespace bagis_pro
             // Create initial log entry
             string strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Starting fire data " + "\r\n";
             File.WriteAllText(_strFireDataLogFile, strLogEntry);    // overwrite file if it exists
+            var oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
 
             // Reset batch states
             ResetAoiBatchStateText();
@@ -1764,6 +1765,7 @@ namespace bagis_pro
                     string unmanagedBufferUnits = arrUnmanagedBufferInfo[1];
 
                     //Clip fire layers
+                    FeatureLayer lyrHistory = null;
                     string strOutputFc = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Layers, true)
                         + Constants.FILE_FIRE_HISTORY;
                     success = await AnalysisTools.ClipFeatureLayerAsync(aoiFolder, strOutputFc, Constants.DATA_TYPE_FIRE_HISTORY,
@@ -1782,6 +1784,21 @@ namespace bagis_pro
                                 Module1.Current.ModuleLogManager.LogError(nameof(RunFireDataImplAsync),
                                     "CalculateField tool failed to update YEAR field. Error code: " + gpResult.ErrorCode);
                                 success = BA_ReturnCode.UnknownError;
+                            }
+                            else
+                            {
+                                await QueuedTask.Run(() =>
+                                {
+                                    var historyParams = new FeatureLayerCreationParams(new Uri(strOutputFc))
+                                    {
+                                        Name = "Selection Layer",
+                                        IsVisible = false,
+                                        MapMemberIndex = 0,
+                                        MapMemberPosition = 0,
+                                    };
+                                    lyrHistory = LayerFactory.Instance.CreateLayer<FeatureLayer>(historyParams, oMap);
+                                    lyrHistory.SetDefinitionQuery(Constants.FIELD_YEAR + " >= 1981");
+                                });
                             }
                         }
                     }
@@ -1808,6 +1825,25 @@ namespace bagis_pro
                         }
                     }
 
+                    // Merge features
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        string[] arrInputDatasets = {GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Layers, true)
+                            + Constants.FILE_FIRE_HISTORY, strOutputFc};
+                        string strInputDatasets = $@"{lyrHistory.Name};{strOutputFc}";
+                        strOutputFc = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Analysis, true)
+                            + Constants.FILE_NIFC_FIRE;
+                        string strFieldMap = $@"IRWINID ""IRWINID"" true true false 50 Text 0 0,First,#,firehistory,IRWINID,0,50,C:\Docs\AOIs\13309220_ID_USGS_Mf_Salmon_R_at_Mf_Lodge\layers.gdb\firecurrent,poly_IRWINID,0,38;INCIDENT ""INCIDENT"" true true false 50 Text 0 0,First,#,firehistory,INCIDENT,0,50,C:\Docs\AOIs\13309220_ID_USGS_Mf_Salmon_R_at_Mf_Lodge\layers.gdb\firecurrent,attr_IncidentName,0,50;YEAR ""YEAR"" true true false 2 Short 0 0,First,#,firehistory,YEAR,-1,-1,C:\Docs\AOIs\13309220_ID_USGS_Mf_Salmon_R_at_Mf_Lodge\layers.gdb\firecurrent,YEAR,-1,-1;CURRENT_OID ""CURRENT_OID"" true true false 255 Text 0 0,First,#,C:\Docs\AOIs\13309220_ID_USGS_Mf_Salmon_R_at_Mf_Lodge\layers.gdb\firecurrent,poly_SourceOID,-1,-1";
+                        var parameters = Geoprocessing.MakeValueArray(arrInputDatasets, strOutputFc, strFieldMap, "NO_SOURCE_INFO");
+                        IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("Merge_management", parameters, null,
+                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                        if (gpResult.IsFailed)
+                        {
+                            Module1.Current.ModuleLogManager.LogError(nameof(RunFireDataImplAsync),
+                                 "Unable to merge features. Error code: " + gpResult.ErrorCode);
+                        }
+                    }
+
 
                     if (success == BA_ReturnCode.Success && errorCount == 0)
                     {
@@ -1818,6 +1854,11 @@ namespace bagis_pro
                         Names[idxRow].AoiBatchStateText = AoiBatchState.Failed.ToString();
                     }
 
+                    // Remove temporary layer
+                    //await QueuedTask.Run(() =>
+                    //{
+                    //    oMap.RemoveLayer(lyrHistory);
+                    //});
                 }
             }
             strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "GeoJson exports complete!! \r\n";

@@ -90,17 +90,15 @@
     },
     {
       "layerType": "Fire History",
-      "heading": "Fire History",
-      "description": "NIFC Historic fires through 2021",
-      "uri": "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/InterAgencyFirePerimeterHistory_All_Years_View/FeatureServer/0",
-      "shortDescription": "Fire History"
+      "heading": "NIFC Wildland Fires",
+      "description": "National Interagency Fire Center (NIFC) historic wildland fires webservices accessed on the report creating date (see the report summary page). See https://data-nifc.opendata.arcgis.com/datasets/nifc::interagencyfireperimeterhistory-all-years-view/about for more information.",
+      "uri": "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/InterAgencyFirePerimeterHistory_All_Years_View/FeatureServer/0"
     },
     {
       "layerType": "Fire Current",
-      "heading": "Fire Current",
-      "description": "NIFC Current fires from 2021-present",
-      "uri": "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Interagency_Perimeters/FeatureServer/0",
-      "shortDescription": "Fire Current"
+      "heading": "NIFC Wildland Fires",
+      "description": "National Interagency Fire Center (NIFC) current wildland fires webservices accessed on the report creating date (see the report summary page). See https://data-nifc.opendata.arcgis.com/datasets/nifc::wfigs-interagency-fire-perimeters/about for more information.",
+      "uri": "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Interagency_Perimeters/FeatureServer/0"
     },
 
   ],
