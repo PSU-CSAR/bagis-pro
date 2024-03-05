@@ -1826,15 +1826,18 @@ namespace bagis_pro
                     }
 
                     // Merge features
+                    string strFieldIrwinId = "IRWINID";
+                    string strCurrentId = "poly_SourceOID"; // Used to identify records that come from fire_current
                     if (success == BA_ReturnCode.Success)
                     {
-                        string[] arrInputDatasets = {GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Layers, true)
-                            + Constants.FILE_FIRE_HISTORY, strOutputFc};
                         string strInputDatasets = $@"{lyrHistory.Name};{strOutputFc}";
-                        strOutputFc = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Analysis, true)
+                        string strMergeFc = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Analysis, true)
                             + Constants.FILE_NIFC_FIRE;
-                        string strFieldMap = $@"IRWINID ""IRWINID"" true true false 50 Text 0 0,First,#,firehistory,IRWINID,0,50,C:\Docs\AOIs\13309220_ID_USGS_Mf_Salmon_R_at_Mf_Lodge\layers.gdb\firecurrent,poly_IRWINID,0,38;INCIDENT ""INCIDENT"" true true false 50 Text 0 0,First,#,firehistory,INCIDENT,0,50,C:\Docs\AOIs\13309220_ID_USGS_Mf_Salmon_R_at_Mf_Lodge\layers.gdb\firecurrent,attr_IncidentName,0,50;YEAR ""YEAR"" true true false 2 Short 0 0,First,#,firehistory,YEAR,-1,-1,C:\Docs\AOIs\13309220_ID_USGS_Mf_Salmon_R_at_Mf_Lodge\layers.gdb\firecurrent,YEAR,-1,-1;CURRENT_OID ""CURRENT_OID"" true true false 255 Text 0 0,First,#,C:\Docs\AOIs\13309220_ID_USGS_Mf_Salmon_R_at_Mf_Lodge\layers.gdb\firecurrent,poly_SourceOID,-1,-1";
-                        var parameters = Geoprocessing.MakeValueArray(arrInputDatasets, strOutputFc, strFieldMap, "NO_SOURCE_INFO");
+                        string strIrwinIdMap = $@"{strFieldIrwinId} ""{strFieldIrwinId}"" true true false 50 Text 0 0,First,#,{lyrHistory.Name},{strFieldIrwinId},0,50,{strOutputFc},poly_IRWINID,0,38;";
+                        string strIncidentMap = $@"INCIDENT ""INCIDENT"" true true false 50 Text 0 0,First,#,{lyrHistory.Name},INCIDENT,0,50,{strOutputFc},attr_IncidentName,0,50;";
+                        string strYearMap = $@"{Constants.FIELD_YEAR} ""{Constants.FIELD_YEAR}"" true true false 2 Short 0 0,First,#,{lyrHistory.Name},{Constants.FIELD_YEAR},-1,-1,{strOutputFc},{Constants.FIELD_YEAR},-1,-1;";
+                        string strFieldMap = $@"{strIrwinIdMap}{strIncidentMap}{strYearMap}{strCurrentId} ""{strCurrentId}"" true true false 4 Long 0 0,First,#,{strOutputFc},{strCurrentId},-1,-1";
+                        var parameters = Geoprocessing.MakeValueArray(strInputDatasets, strMergeFc, strFieldMap, "NO_SOURCE_INFO");
                         IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("Merge_management", parameters, null,
                             CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
                         if (gpResult.IsFailed)
@@ -1855,10 +1858,10 @@ namespace bagis_pro
                     }
 
                     // Remove temporary layer
-                    //await QueuedTask.Run(() =>
-                    //{
-                    //    oMap.RemoveLayer(lyrHistory);
-                    //});
+                    await QueuedTask.Run(() =>
+                    {
+                        oMap.RemoveLayer(lyrHistory);
+                    });
                 }
             }
             strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "GeoJson exports complete!! \r\n";
