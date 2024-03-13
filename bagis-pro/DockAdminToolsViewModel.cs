@@ -1828,10 +1828,11 @@ namespace bagis_pro
                     // Merge features
                     string strFieldIrwinId = "IRWINID";
                     string strCurrentId = "poly_SourceOID"; // Used to identify records that come from fire_current
+                    string strMergeFc = "";
                     if (success == BA_ReturnCode.Success)
                     {
                         string strInputDatasets = $@"{lyrHistory.Name};{strOutputFc}";
-                        string strMergeFc = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Analysis, true)
+                        strMergeFc = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Analysis, true)
                             + Constants.FILE_NIFC_FIRE;
                         string strIrwinIdMap = $@"{strFieldIrwinId} ""{strFieldIrwinId}"" true true false 50 Text 0 0,First,#,{lyrHistory.Name},{strFieldIrwinId},0,50,{strOutputFc},poly_IRWINID,0,38;";
                         string strIncidentMap = $@"INCIDENT ""INCIDENT"" true true false 50 Text 0 0,First,#,{lyrHistory.Name},INCIDENT,0,50,{strOutputFc},attr_IncidentName,0,50;";
@@ -1844,7 +1845,15 @@ namespace bagis_pro
                         {
                             Module1.Current.ModuleLogManager.LogError(nameof(RunFireDataImplAsync),
                                  "Unable to merge features. Error code: " + gpResult.ErrorCode);
+                            success = BA_ReturnCode.UnknownError;
                         }
+                    }
+
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        string strWhere1 = $@"{strCurrentId} > 0";    //Identifies features that came from firecurrent
+                        string strNotWhere1 = $@"{strCurrentId} IS NULL";                                               
+                        success = await AnalysisTools.DeleteDuplicatesAsync(strMergeFc, strWhere1, strFieldIrwinId, strNotWhere1);
                     }
 
 

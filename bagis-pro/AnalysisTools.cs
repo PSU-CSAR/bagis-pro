@@ -6584,6 +6584,87 @@ namespace bagis_pro
             return lstElements;
         }
 
+        public async static Task<BA_ReturnCode> DeleteDuplicatesAsync(string strFeatureClass, string strWhere1, string strJoinField,
+            string strNotWhere1)
+        {
+            string Delete_YN = "DELETE_YN";
+            string strGeodatabase = Path.GetDirectoryName(strFeatureClass);
+            string strData = Path.GetFileName(strFeatureClass);
+            FeatureLayer lyrDelete = null;
+            BA_ReturnCode success = await GeoprocessingTools.AddFieldAsync(strFeatureClass, Delete_YN, "TEXT");
+            if (success == BA_ReturnCode.Success)
+            {
+                await QueuedTask.Run(() =>
+                {
+                    using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(strGeodatabase))))
+                    {
+                        using (FeatureClass fClass = geodatabase.OpenDataset<FeatureClass>(strData))
+                        {
+                            QueryFilter queryFilter = new QueryFilter
+                            {
+                                WhereClause = strWhere1,
+                            };
+                            // create an edit operation and name.
+                            var editOp = new EditOperation
+                            {
+                                Name = "modify delete field",
+                                // set the ExecuteMOde
+                                ExecuteMode = ExecuteModeType.Sequential
+                            };
+                            using (RowCursor rowCursor = fClass.Search(queryFilter, false))
+                            {
+                                while (rowCursor.MoveNext())
+                                {
+                                    using (Row row = rowCursor.Current)
+                                    {
+                                        string strKey = Convert.ToString(row[strJoinField]);
+                                        string strWhere2 = $@"{strJoinField} = '{strKey}' AND {strNotWhere1}";
+                                        QueryFilter queryFilter2 = new QueryFilter
+                                        {
+                                            WhereClause = strWhere2,
+                                        };
+                                        using (RowCursor rowCursor2 = fClass.Search(queryFilter2, false))
+                                        {
+                                            if (rowCursor2.MoveNext())
+                                            {
+                                                // We found a duplicate with the same key
+                                                editOp.Modify(row, Delete_YN, "Y");
+                                            }
+                                            else
+                                            {
+                                                editOp.Modify(row, Delete_YN, "N");
+                                            }
+                                        }
+                                    }
+                                }
+
+                            }
+                            if (!editOp.IsEmpty)
+                            {
+                                bool result = editOp.Execute();
+                            }
+
+                        }
+                    }
+                });
+                var oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
+                await QueuedTask.Run(() =>
+                {
+                    var deleteParams = new FeatureLayerCreationParams(new Uri(strFeatureClass))
+                    {
+                        Name = "Selection Layer",
+                        IsVisible = false,
+                        MapMemberIndex = 0,
+                        MapMemberPosition = 0,
+                    };
+                    lyrDelete = LayerFactory.Instance.CreateLayer<FeatureLayer>(deleteParams, oMap);
+                    lyrDelete.SetDefinitionQuery($@"{Delete_YN} = 'Y'");
+                });
+
+            }
+            return success;
+        }
+
     }
 
 }
