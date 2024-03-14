@@ -225,8 +225,8 @@
                                     Foreground="Blue" Background="Transparent"/>
                             </StackPanel>
                             <StackPanel Grid.Row="1" Orientation="Horizontal">
-                                <Button x:Name="btnSnodasLog" Content="View Log" HorizontalAlignment="Left" VerticalAlignment="Center" Width="75" IsEnabled="{Binding CmdSnodasLogEnabled}" Command="{Binding CmdSnodasLog}" Margin="5, 0, 70, 0"/>
-                                <Button x:Name="btnSnodas" Content="Export" HorizontalAlignment="Right" VerticalAlignment="Center" Width="50" IsEnabled="{Binding CmdSnodasEnabled}" Command="{Binding CmdSnodas}" Margin="70, 0, 0, 0"/>
+                                <Button x:Name="btnSnodasLog" Content="View Log" HorizontalAlignment="Left" VerticalAlignment="Center" Width="75" IsEnabled="{Binding CmdFireReportLogEnabled}" Command="{Binding CmdFireReportLog}" Margin="5, 0, 70, 0"/>
+                                <Button x:Name="btnSnodas" Content="Export" HorizontalAlignment="Right" VerticalAlignment="Center" Width="50" IsEnabled="{Binding CmdFireReportEnabled}" Command="{Binding CmdSnodas}" Margin="70, 0, 0, 0"/>
                             </StackPanel>
                         </Grid>
                     </GroupBox>
@@ -254,7 +254,7 @@
                                     TextWrapping="WrapWithOverflow" MaxWidth="300" VerticalAlignment="Center" Margin="0, 0, 0, 2">
                                     Output folder:
                                 </TextBlock>
-                                <TextBox x:Name="txtStatisticsFolder" Text="{Binding StatisticsFolder}" HorizontalAlignment="Left" Margin="5, 0, 0, 0" 
+                                <TextBox x:Name="txtStatisticsFolder" Text="{Binding FireReportFolder}" HorizontalAlignment="Left" Margin="5, 0, 0, 0" 
                                     VerticalAlignment="Center" Width="210" IsReadOnly="True"
                                     Foreground="Blue" Background="Transparent"/>
                             </StackPanel>
@@ -275,14 +275,61 @@
                 <Grid>
                      <Grid.RowDefinitions>
                         <RowDefinition Height="100"/>
+                        <RowDefinition Height="100"/>
+                        <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
-                    <StackPanel Grid.Row="0" Orientation="Horizontal" IsEnabled="{Binding TasksEnabled}">
-                        <TextBlock Name="tbFire1" TextWrapping="WrapWithOverflow" MaxWidth="100" VerticalAlignment="Center" Margin="5, 0, 0, 0">
-                                    Generate fire data
-                        </TextBlock>
-                        <Button x:Name="btnFireData" Content="Run" HorizontalAlignment="Left" VerticalAlignment="Center" Width="75" Command="{Binding CmdFireData}" Margin="5, 0, 70, 0"/>
-                    </StackPanel>
-
+                    <GroupBox Margin="5,0,0,5" Padding="2" Grid.Row="0" HorizontalAlignment="Left" IsEnabled="{Binding TasksEnabled}">
+                        <GroupBox.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock FontWeight="Bold">Generate AOI Fire Data</TextBlock>
+                            </StackPanel>
+                        </GroupBox.Header>
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="30"/>
+                                <RowDefinition Height="30"/>
+                            </Grid.RowDefinitions>
+                            <StackPanel Orientation="Horizontal" Grid.Row="0">
+                                <TextBlock Name="tbFireData"
+                                    TextWrapping="WrapWithOverflow" MaxWidth="300" VerticalAlignment="Center" Margin="0, 0, 0, 2">
+                                    Output folder:
+                                </TextBlock>
+                                <TextBox x:Name="txtFireDataFolder" Text="{Binding FireDataFolder}" HorizontalAlignment="Left" Margin="5, 0, 0, 0" 
+                                    VerticalAlignment="Center" Width="210" IsReadOnly="True"
+                                    Foreground="Blue" Background="Transparent"/>
+                            </StackPanel>
+                            <StackPanel Grid.Row="1" Orientation="Horizontal">
+                                <Button x:Name="btnFireDataLog" Content="View Log" HorizontalAlignment="Left" VerticalAlignment="Center" Width="75" IsEnabled="{Binding CmdFireDataLogEnabled}" Command="{Binding CmdFireDataLog}" Margin="5, 0, 70, 0"/>
+                                <Button x:Name="btnFireData" Content="Generate" HorizontalAlignment="Right" VerticalAlignment="Center" Width="60" IsEnabled="{Binding CmdFireDataEnabled}" Command="{Binding CmdFireReport}" Margin="70, 0, 0, 0"/>
+                            </StackPanel>
+                        </Grid>
+                    </GroupBox>
+                    <GroupBox Margin="5,0,0,5" Padding="2" Grid.Row="1" HorizontalAlignment="Left" IsEnabled="{Binding TasksEnabled}">
+                        <GroupBox.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock FontWeight="Bold">Generate AOI Fire Report</TextBlock>
+                        </StackPanel>
+                    </GroupBox.Header>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                                <RowDefinition Height="30"/>
+                                <RowDefinition Height="30"/>
+                        </Grid.RowDefinitions>
+                            <StackPanel Orientation="Horizontal" Grid.Row="0">
+                                <TextBlock Name="tbFireReport"
+                                    TextWrapping="WrapWithOverflow" MaxWidth="300" VerticalAlignment="Center" Margin="0, 0, 0, 2">
+                                    Output folder:
+                                </TextBlock>
+                                <TextBox x:Name="txtFireReportFolder" Text="{Binding FireReportFolder}" HorizontalAlignment="Left" Margin="5, 0, 0, 0" 
+                                    VerticalAlignment="Center" Width="210" IsReadOnly="True"
+                                    Foreground="Blue" Background="Transparent"/>
+                            </StackPanel>
+                            <StackPanel Grid.Row="1" Orientation="Horizontal">
+                                <Button x:Name="btnFireReportLog" Content="View Log" HorizontalAlignment="Left" VerticalAlignment="Center" Width="75" IsEnabled="{Binding CmdFireReportLogEnabled}" Command="{Binding CmdFireReportLog}" Margin="5, 0, 70, 0"/>
+                                <Button x:Name="btnFireReport" Content="Generate" HorizontalAlignment="Right" VerticalAlignment="Center" Width="60" IsEnabled="{Binding CmdFireReportEnabled}" Command="{Binding CmdFireReport}" Margin="70, 0, 0, 0"/>
+                        </StackPanel>
+                    </Grid>
+                    </GroupBox>
                 </Grid>
             </TabItem>
         </TabControl>

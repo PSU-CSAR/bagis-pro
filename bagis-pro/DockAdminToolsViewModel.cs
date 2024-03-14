@@ -119,6 +119,7 @@ namespace bagis_pro
         private string _strSnodasLogFile;
         private string _strGenStatisticsLogFile;
         private string _strFireDataLogFile;
+        private string _strFireReportLogFile;
         private bool _cmdRunEnabled = false;
         private bool _cmdForecastEnabled = false;
         private bool _cmdSnodasEnabled = false;
@@ -132,6 +133,12 @@ namespace bagis_pro
         private bool _alwaysNearChecked = false;
         private bool _mergeAoiVChecked = true;
         private bool _updateStationDataChecked = false;
+        private string _fireReportFolder;
+        private string _fireDataFolder;
+        private bool _cmdFireReportLogEnabled = false;
+        private bool _cmdFireReportEnabled = false;
+        private bool _cmdFireDataLogEnabled = false;
+
 
         public string Heading
         {
@@ -315,6 +322,51 @@ namespace bagis_pro
             }
         }
 
+        public string FireReportFolder
+        {
+            get { return _fireReportFolder; }
+            set
+            {
+                SetProperty(ref _fireReportFolder, value, () => FireReportFolder);
+            }
+        }
+
+        public string FireDataFolder
+        {
+            get { return _fireDataFolder; }
+            set
+            {
+                SetProperty(ref _fireDataFolder, value, () => FireDataFolder);
+            }
+        }
+
+        public bool CmdFireReportLogEnabled
+        {
+            get { return _cmdFireReportLogEnabled; }
+            set
+            {
+                SetProperty(ref _cmdFireReportLogEnabled, value, () => CmdFireReportLogEnabled);
+            }
+        }
+
+        public bool CmdFireDataLogEnabled
+        {
+            get { return _cmdFireDataLogEnabled; }
+            set
+            {
+                SetProperty(ref _cmdFireDataLogEnabled, value, () => CmdFireDataLogEnabled);
+            }
+        }
+
+        public bool CmdFireReportEnabled
+        {
+            get { return _cmdFireReportEnabled; }
+            set
+            {
+                SetProperty(ref _cmdFireReportEnabled, value, () => CmdFireReportEnabled);
+            }
+        }
+
         public ObservableCollection<BA_Objects.Aoi> Names { get; set; }
 
         // Assigns the propertyChanged event handler to each AOI item
@@ -381,6 +433,8 @@ namespace bagis_pro
                     _strLogFile = ParentFolder + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\" + Constants.FILE_BATCH_LOG;
                     SnodasFolder = ParentFolder + "\\" + Constants.FOLDER_SNODAS_GEOJSON;
                     StatisticsFolder = $@"{ParentFolder}\{Constants.FOLDER_MAP_PACKAGE}";
+                    FireReportFolder = StatisticsFolder;
+                    FireDataFolder = FireReportFolder;
                     // Make sure the maps_publish folder exists under the selected folder
                     if (!Directory.Exists(Path.GetDirectoryName(_strLogFile)))
                     {
@@ -399,6 +453,11 @@ namespace bagis_pro
                     CmdGenStatisticsLogEnabled = File.Exists(_strGenStatisticsLogFile);
 
                     _strFireDataLogFile = $@"{ParentFolder}\{Constants.FOLDER_MAP_PACKAGE}\{Constants.FILE_FIRE_DATA_LOG}";
+                    CmdFireReportLogEnabled = File.Exists(_strFireReportLogFile);
+
+                    _strFireReportLogFile = $@"{ParentFolder}\{Constants.FOLDER_MAP_PACKAGE}\{Constants.FILE_FIRE_REPORT_LOG}";
+                    CmdFireReportLogEnabled = File.Exists(_strFireReportLogFile);
+
 
                     Names.Clear();
                     IList<BA_Objects.Aoi> lstAois = await GeneralTools.GetAoiFoldersAsync(ParentFolder, _strLogFile);
@@ -424,7 +483,8 @@ namespace bagis_pro
                         CmdForecastEnabled = true;
                         CmdToggleEnabled = true;
                         TasksEnabled = true;
-                        CmdGenStatisticsEnabled = true; 
+                        CmdGenStatisticsEnabled = true;
+                        CmdFireReportEnabled = true;
                     }
                     else
                     {
@@ -436,7 +496,8 @@ namespace bagis_pro
                         CmdForecastEnabled = false;
                         CmdToggleEnabled = false;
                         TasksEnabled = false; 
-                        CmdGenStatisticsEnabled = false;    
+                        CmdGenStatisticsEnabled = false;
+                        CmdFireReportEnabled = false;
                     }
                 });
             }
@@ -497,6 +558,16 @@ namespace bagis_pro
                 if (_runFireDataCommand == null)
                     _runFireDataCommand = new RelayCommand(RunFireDataImplAsync, () => true);
                 return _runFireDataCommand;
+            }
+        }
+        private RelayCommand _runFireReport;
+        public ICommand CmdFireReport
+        {
+            get
+            {
+                if (_runFireReport == null)
+                    _runFireReport = new RelayCommand(RunFireReportImplAsync, () => true);
+                return _runFireReport;
             }
         }
 
@@ -860,6 +931,54 @@ namespace bagis_pro
                     {
                         MessageBox.Show("Could not find Generate Statistics log file!", "BAGIS-PRO");
                         CmdGenStatisticsLogEnabled = false;
+                    }
+                });
+            }
+        }
+
+        public ICommand CmdFireReportLog
+        {
+            get
+            {
+                return new RelayCommand(() =>
+                {
+                    if (File.Exists(_strFireReportLogFile))
+                    {
+                        var p = new Process();
+                        p.StartInfo = new ProcessStartInfo(_strFireReportLogFile)
+                        {
+                            UseShellExecute = true
+                        };
+                        p.Start();
+                    }
+                    else
+                    {
+                        MessageBox.Show("Could not find fire report log file!", "BAGIS-PRO");
+                        CmdFireReportLogEnabled = false;
+                    }
+                });
+            }
+        }
+
+        public ICommand CmdFireDataLog
+        {
+            get
+            {
+                return new RelayCommand(() =>
+                {
+                    if (File.Exists(_strFireDataLogFile))
+                    {
+                        var p = new Process();
+                        p.StartInfo = new ProcessStartInfo(_strFireDataLogFile)
+                        {
+                            UseShellExecute = true
+                        };
+                        p.Start();
+                    }
+                    else
+                    {
+                        MessageBox.Show("Could not find fire data file!", "BAGIS-PRO");
+                        CmdFireDataLogEnabled = false;
                     }
                 });
             }
@@ -1877,7 +1996,20 @@ namespace bagis_pro
             File.AppendAllText(_strFireDataLogFile, strLogEntry);       // append
         }
 
-        private string CreateLogEntry(string strAoiPath, string strOldTriplet, string strNewTriplet, string strRemarks)
+        private async void RunFireReportImplAsync(object param)
+        {
+            // Make sure the maps_publish folder exists under the selected folder
+            if (!Directory.Exists(Path.GetDirectoryName(_strFireReportLogFile)))
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(_strFireReportLogFile));
+            }
+
+            // Create initial log entry
+            string strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Starting fire report " + "\r\n";
+            File.WriteAllText(_strFireReportLogFile, strLogEntry);    // overwrite file if it exists
+        }
+
+            private string CreateLogEntry(string strAoiPath, string strOldTriplet, string strNewTriplet, string strRemarks)
         {
             StringBuilder sb = new StringBuilder();
             sb.Append($@"{DateTime.Now.ToString("MM/dd/yy")},{DateTime.Now.ToString("H:mm:ss")},");

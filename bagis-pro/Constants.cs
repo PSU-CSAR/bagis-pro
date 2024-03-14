@@ -114,6 +114,7 @@ namespace bagis_pro
         public const string FILE_SNODAS_GEOJSON_LOG = "snodas_log.txt";
         public const string FILE_GEN_STATISTICS_LOG = "generate_statistics_log.txt";
         public const string FILE_FIRE_DATA_LOG = "generate_fire_data_log.txt";
+        public const string FILE_FIRE_REPORT_LOG = "generate_fire_report_log.txt";
         public const string FILE_FORECAST_STATION_LOG = "forecast_station_log.csv";
         public const string FILE_AOI_STATISTICS = "forecast_aoi_statistics.csv";
         public const string FILE_SNOLITE = "snolite_sites";
