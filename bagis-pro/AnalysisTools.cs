@@ -1,6 +1,7 @@
 ﻿using ArcGIS.Core.Data;
 using ArcGIS.Core.Data.Exceptions;
 using ArcGIS.Core.Data.Raster;
+using ArcGIS.Core.Data.UtilityNetwork.Trace;
 using ArcGIS.Core.Geometry;
 using ArcGIS.Desktop.Core;
 using ArcGIS.Desktop.Core.Geoprocessing;
@@ -8,8 +9,10 @@ using ArcGIS.Desktop.Editing;
 using ArcGIS.Desktop.Framework.Contracts;
 using ArcGIS.Desktop.Framework.Dialogs;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
+using ArcGIS.Desktop.Internal.GeoProcessing;
 using ArcGIS.Desktop.Mapping;
 using bagis_pro.BA_Objects;
+using Microsoft.Office.Interop.Excel;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -6642,13 +6645,21 @@ namespace bagis_pro
                             if (!editOp.IsEmpty)
                             {
                                 bool result = editOp.Execute();
+                                if (!result)
+                                {
+                                    Module1.Current.ModuleLogManager.LogError(nameof(DeleteDuplicatesAsync), "Failed to mark duplicates in feature class");
+                                }
+                                else
+                                {
+                                    Project.Current.SaveEditsAsync();
+                                }
                             }
 
                         }
                     }
                 });
                 var oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
-                await QueuedTask.Run(() =>
+                await QueuedTask.Run( async () =>
                 {
                     var deleteParams = new FeatureLayerCreationParams(new Uri(strFeatureClass))
                     {
@@ -6659,8 +6670,28 @@ namespace bagis_pro
                     };
                     lyrDelete = LayerFactory.Instance.CreateLayer<FeatureLayer>(deleteParams, oMap);
                     lyrDelete.SetDefinitionQuery($@"{Delete_YN} = 'Y'");
+
+                    var parameters = Geoprocessing.MakeValueArray(lyrDelete.Name);
+                    var gpResult = await Geoprocessing.ExecuteToolAsync("DeleteFeatures_management", parameters, null,
+                       CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                    if (gpResult.IsFailed)
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(DeleteDuplicatesAsync),
+                            "Failed to execute DeleteFeatures tool");
+                        success = BA_ReturnCode.UnknownError;
+                    }
+                    else
+                    {
+                        oMap.RemoveLayer(lyrDelete);
+                        success = BA_ReturnCode.Success;
+                    }                    
                 });
 
+            }
+            if (success == BA_ReturnCode.Success)
+            {
+                success = await GeoprocessingTools.DeleteFieldAsync(strFeatureClass, Delete_YN);
+                success = await GeoprocessingTools.DeleteFieldAsync(strFeatureClass, "poly_SourceOID");
             }
             return success;
         }
