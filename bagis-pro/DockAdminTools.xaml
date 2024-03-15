@@ -274,7 +274,7 @@
                 </TabItem.Header>
                 <Grid>
                      <Grid.RowDefinitions>
-                        <RowDefinition Height="100"/>
+                        <RowDefinition Height="60"/>
                         <RowDefinition Height="100"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
@@ -287,20 +287,10 @@
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="30"/>
-                                <RowDefinition Height="30"/>
                             </Grid.RowDefinitions>
-                            <StackPanel Orientation="Horizontal" Grid.Row="0">
-                                <TextBlock Name="tbFireData"
-                                    TextWrapping="WrapWithOverflow" MaxWidth="300" VerticalAlignment="Center" Margin="0, 0, 0, 2">
-                                    Output folder:
-                                </TextBlock>
-                                <TextBox x:Name="txtFireDataFolder" Text="{Binding FireDataFolder}" HorizontalAlignment="Left" Margin="5, 0, 0, 0" 
-                                    VerticalAlignment="Center" Width="210" IsReadOnly="True"
-                                    Foreground="Blue" Background="Transparent"/>
-                            </StackPanel>
-                            <StackPanel Grid.Row="1" Orientation="Horizontal">
+                            <StackPanel Grid.Row="0" Orientation="Horizontal">
                                 <Button x:Name="btnFireDataLog" Content="View Log" HorizontalAlignment="Left" VerticalAlignment="Center" Width="75" IsEnabled="{Binding CmdFireDataLogEnabled}" Command="{Binding CmdFireDataLog}" Margin="5, 0, 70, 0"/>
-                                <Button x:Name="btnFireData" Content="Generate" HorizontalAlignment="Right" VerticalAlignment="Center" Width="60" IsEnabled="{Binding CmdFireDataEnabled}" Command="{Binding CmdFireReport}" Margin="70, 0, 0, 0"/>
+                                <Button x:Name="btnFireData" Content="Generate" HorizontalAlignment="Right" VerticalAlignment="Center" Width="60" IsEnabled="{Binding CmdFireReportEnabled}" Command="{Binding CmdFireData}" Margin="70, 0, 0, 0"/>
                             </StackPanel>
                         </Grid>
                     </GroupBox>

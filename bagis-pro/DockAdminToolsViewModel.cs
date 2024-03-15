@@ -134,7 +134,6 @@ namespace bagis_pro
         private bool _mergeAoiVChecked = true;
         private bool _updateStationDataChecked = false;
         private string _fireReportFolder;
-        private string _fireDataFolder;
         private bool _cmdFireReportLogEnabled = false;
         private bool _cmdFireReportEnabled = false;
         private bool _cmdFireDataLogEnabled = false;
@@ -331,15 +330,6 @@ namespace bagis_pro
             }
         }
 
-        public string FireDataFolder
-        {
-            get { return _fireDataFolder; }
-            set
-            {
-                SetProperty(ref _fireDataFolder, value, () => FireDataFolder);
-            }
-        }
-
         public bool CmdFireReportLogEnabled
         {
             get { return _cmdFireReportLogEnabled; }
@@ -434,7 +424,6 @@ namespace bagis_pro
                     SnodasFolder = ParentFolder + "\\" + Constants.FOLDER_SNODAS_GEOJSON;
                     StatisticsFolder = $@"{ParentFolder}\{Constants.FOLDER_MAP_PACKAGE}";
                     FireReportFolder = StatisticsFolder;
-                    FireDataFolder = FireReportFolder;
                     // Make sure the maps_publish folder exists under the selected folder
                     if (!Directory.Exists(Path.GetDirectoryName(_strLogFile)))
                     {
@@ -453,7 +442,7 @@ namespace bagis_pro
                     CmdGenStatisticsLogEnabled = File.Exists(_strGenStatisticsLogFile);
 
                     _strFireDataLogFile = $@"{ParentFolder}\{Constants.FOLDER_MAP_PACKAGE}\{Constants.FILE_FIRE_DATA_LOG}";
-                    CmdFireReportLogEnabled = File.Exists(_strFireReportLogFile);
+                    CmdFireDataLogEnabled = File.Exists(_strFireDataLogFile);
 
                     _strFireReportLogFile = $@"{ParentFolder}\{Constants.FOLDER_MAP_PACKAGE}\{Constants.FILE_FIRE_REPORT_LOG}";
                     CmdFireReportLogEnabled = File.Exists(_strFireReportLogFile);
@@ -1992,7 +1981,7 @@ namespace bagis_pro
                     });
                 }
             }
-            strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "GeoJson exports complete!! \r\n";
+            strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Fire data generation complete!! \r\n";
             File.AppendAllText(_strFireDataLogFile, strLogEntry);       // append
         }
 
