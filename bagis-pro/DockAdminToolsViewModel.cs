@@ -27,6 +27,7 @@ using System.ComponentModel;
 using ArcGIS.Desktop.Core.Geoprocessing;
 using System.Diagnostics;
 using bagis_pro.BA_Objects;
+using ArcGIS.Desktop.Internal.GeoProcessing;
 
 namespace bagis_pro
 {
@@ -1866,7 +1867,23 @@ namespace bagis_pro
                             Module1.Current.CboCurrentAoi.SetAoiName(oAoi.Name);
                         });
                     }
+
+                    // Make sure fire.gdb exists
+                    var environments = Geoprocessing.MakeEnvironmentArray(workspace: ParentFolder);
                     BA_ReturnCode success = BA_ReturnCode.UnknownError;
+                    if (!Directory.Exists(GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Fire)))
+                    {
+                        var parameters = Geoprocessing.MakeValueArray(ParentFolder, GeodatabaseNames.Fire.Value);
+                        var gpResult = await Geoprocessing.ExecuteToolAsync("CreateFileGDB_management", parameters, environments,
+                                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                        if (gpResult.IsFailed)
+                        {
+                            Module1.Current.ModuleLogManager.LogError(nameof(RunFireDataImplAsync),
+                                $@"Unable to create {GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Fire)}. Skipping AOI!");
+                            return;
+                        }
+                    }
+
                     string[] arrUnmanagedBufferInfo = await GeneralTools.QueryBufferDistanceAsync(aoiFolder, GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Aoi),
                         Constants.FILE_AOI_BUFFERED_VECTOR, false);
                     string unmanagedBufferDistance = arrUnmanagedBufferInfo[0];
@@ -1940,7 +1957,7 @@ namespace bagis_pro
                     if (success == BA_ReturnCode.Success)
                     {
                         string strInputDatasets = $@"{lyrHistory.Name};{strOutputFc}";
-                        strMergeFc = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Analysis, true)
+                        strMergeFc = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Fire, true)
                             + Constants.FILE_NIFC_FIRE;
                         string strIrwinIdMap = $@"{strFieldIrwinId} ""{strFieldIrwinId}"" true true false 50 Text 0 0,First,#,{lyrHistory.Name},{strFieldIrwinId},0,50,{strOutputFc},poly_IRWINID,0,38;";
                         string strIncidentMap = $@"INCIDENT ""INCIDENT"" true true false 50 Text 0 0,First,#,{lyrHistory.Name},INCIDENT,0,50,{strOutputFc},attr_IncidentName,0,50;";

@@ -28,6 +28,7 @@ namespace bagis_pro
         public static GeodatabaseNames Layers { get { return new GeodatabaseNames("layers.gdb"); } }
         public static GeodatabaseNames Surfaces { get { return new GeodatabaseNames("surfaces.gdb"); } }
         public static GeodatabaseNames Analysis { get { return new GeodatabaseNames("analysis.gdb"); } }
+        public static GeodatabaseNames Fire { get { return new GeodatabaseNames("fire.gdb"); } }
 
         public static string[] AllNames = { Aoi.Value, Prism.Value, Layers.Value, Surfaces.Value, Analysis.Value };
         public static string[] BasinNames = { Aoi.Value, Surfaces.Value };
