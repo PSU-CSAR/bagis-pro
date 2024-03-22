@@ -1864,18 +1864,31 @@ namespace bagis_pro
                         }
                     }
 
-                    string[] arrUnmanagedBufferInfo = await GeneralTools.QueryBufferDistanceAsync(aoiFolder, GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Aoi),
-                        Constants.FILE_AOI_BUFFERED_VECTOR, false);
-                    string unmanagedBufferDistance = arrUnmanagedBufferInfo[0];
-                    string unmanagedBufferUnits = arrUnmanagedBufferInfo[1];
+                    // Used this when clipping to aoi_b_v
+                    //string[] arrUnmanagedBufferInfo = await GeneralTools.QueryBufferDistanceAsync(aoiFolder, GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Aoi),
+                    //    Constants.FILE_AOI_BUFFERED_VECTOR, false);
+                    //string unmanagedBufferDistance = arrUnmanagedBufferInfo[0];
+                    //string unmanagedBufferUnits = arrUnmanagedBufferInfo[1];
 
                     //Clip fire layers
+                    Webservices ws = new Webservices();
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(RunFireDataImplAsync),
+                        "Contacting webservices server to retrieve layer metadata");
+                    IDictionary<string, dynamic> dictDataSources = await ws.QueryDataSourcesAsync();
+                    string strWsUri = dictDataSources[Constants.DATA_TYPE_FIRE_HISTORY].uri;
+
                     FeatureLayer lyrHistory = null;
                     string strOutputFc = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Layers, true)
                         + Constants.FILE_FIRE_HISTORY;
-                    success = await AnalysisTools.ClipFeatureLayerAsync(aoiFolder, strOutputFc, Constants.DATA_TYPE_FIRE_HISTORY,
-                        unmanagedBufferDistance, unmanagedBufferUnits);
-                    if (success == BA_ReturnCode.Success)
+                    string strClipFile = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Aoi, true)
+                        + Constants.FILE_AOI_VECTOR;
+                    //success = await AnalysisTools.ClipFeatureLayerAsync(aoiFolder, strOutputFc, Constants.DATA_TYPE_FIRE_HISTORY,
+                    //    "0", "Meters");
+                    var environmentsClip = Geoprocessing.MakeEnvironmentArray(workspace: aoiFolder);
+                    var parametersClip = Geoprocessing.MakeValueArray(strWsUri, strClipFile, strOutputFc, "");
+                    var gpResultClip = await Geoprocessing.ExecuteToolAsync("Clip_analysis", parametersClip, environmentsClip,
+                                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                    if (!gpResultClip.IsFailed)
                     {
                         success = await GeoprocessingTools.AddFieldAsync(strOutputFc, Constants.FIELD_YEAR, "SHORT");
                         if (success == BA_ReturnCode.Success)
@@ -1907,12 +1920,13 @@ namespace bagis_pro
                             }
                         }
                     }
-                    
+                    strWsUri = dictDataSources[Constants.DATA_TYPE_FIRE_CURRENT].uri;
                     strOutputFc = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Layers, true)
                         + Constants.FILE_FIRE_CURRENT;
-                    success = await AnalysisTools.ClipFeatureLayerAsync(aoiFolder, strOutputFc, Constants.DATA_TYPE_FIRE_CURRENT,
-                        unmanagedBufferDistance, unmanagedBufferUnits);
-                    if (success == BA_ReturnCode.Success)
+                    parametersClip = Geoprocessing.MakeValueArray(strWsUri, strClipFile, strOutputFc, "");
+                    gpResultClip = await Geoprocessing.ExecuteToolAsync("Clip_analysis", parametersClip, environmentsClip,
+                                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                    if (! gpResultClip.IsFailed)
                     {
                         success = await GeoprocessingTools.AddFieldAsync(strOutputFc, Constants.FIELD_YEAR, "SHORT");
                         if (success == BA_ReturnCode.Success)
