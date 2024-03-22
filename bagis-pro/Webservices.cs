@@ -205,6 +205,15 @@ namespace bagis_pro
             return dictDataSources;
         }
 
+        public async Task<int> QueryFireBaselineYearAsync()
+        {
+            IDictionary<string, dynamic> dictDataSources = new Dictionary<string, dynamic>();
+            EsriHttpResponseMessage response = new EsriHttpClient().Get(Constants.URI_BATCH_TOOL_SETTINGS);
+            JObject jsonVal = JObject.Parse(await response.Content.ReadAsStringAsync()) as JObject;
+            dynamic oSettings = (JObject)jsonVal["BatchSettings"];
+            return (int)oSettings.FireBaselineYear;
+        }
+
         public async Task<BA_ReturnCode> DownloadBatchSettingsAsync(string strSaveToPath)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;

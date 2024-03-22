@@ -1,10 +1,7 @@
-﻿using ArcGIS.Core.CIM;
-using ArcGIS.Core.Data;
-using ArcGIS.Core.Geometry;
+﻿using ArcGIS.Core.Data;
 using ArcGIS.Desktop.Catalog;
 using ArcGIS.Desktop.Core;
 using ArcGIS.Desktop.Editing;
-using ArcGIS.Desktop.Extensions;
 using ArcGIS.Desktop.Framework;
 using ArcGIS.Desktop.Framework.Contracts;
 using ArcGIS.Desktop.Framework.Dialogs;
@@ -18,7 +15,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
-using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -27,7 +23,6 @@ using System.ComponentModel;
 using ArcGIS.Desktop.Core.Geoprocessing;
 using System.Diagnostics;
 using bagis_pro.BA_Objects;
-using ArcGIS.Desktop.Internal.GeoProcessing;
 
 namespace bagis_pro
 {
@@ -37,54 +32,11 @@ namespace bagis_pro
 
         protected DockAdminToolsViewModel() 
         {
-            // Set path to settings file if we need to
-            if (String.IsNullOrEmpty(this.SettingsFile))
-
+            BA_ReturnCode success = GeneralTools.LoadBatchToolSettings();
+            if (success == BA_ReturnCode.Success && Module1.Current.BatchToolSettings != null)
             {
-                // Find batch tool settings file
-                string strSettingsPath = GeneralTools.GetBagisSettingsPath();
-                if (!string.IsNullOrEmpty(strSettingsPath))
-                {
-                    string strFullPath = strSettingsPath + @"\" + Constants.FOLDER_SETTINGS
-                        + @"\" + Constants.FILE_BATCH_TOOL_SETTINGS;
-                    if (!File.Exists(strFullPath))
-                    {
-                        if (!Directory.Exists(strSettingsPath + @"\" + Constants.FOLDER_SETTINGS))
-                        {
-                            var dirInfo = Directory.CreateDirectory(strSettingsPath + @"\" + Constants.FOLDER_SETTINGS);
-                            if (dirInfo == null)
-                            {
-                                MessageBox.Show("Unable to create BAGIS settings folder in " + strSettingsPath +
-                                    "! Process stopped.");
-                                return;
-                            }
-                        }
-                        Webservices ws = new Webservices();
-                        var success = Task.Run(() => ws.DownloadBatchSettingsAsync(strFullPath));
-                        if ((BA_ReturnCode)success.Result == BA_ReturnCode.Success)
-                        {
-                            this.SettingsFile = strFullPath;
-                        }
-                    }
-                    else
-                    {
-                        this.SettingsFile = strFullPath;
-                    }
-
-                    // read JSON directly from a file
-                    using (FileStream fs = File.OpenRead(this.SettingsFile))
-                    {
-                        using (JsonTextReader reader = new JsonTextReader(new StreamReader(fs)))
-                        {
-                            dynamic oBatchSettings = (JObject)JToken.ReadFrom(reader);
-                            if (oBatchSettings != null)
-                            {
-                                Module1.Current.BatchToolSettings = oBatchSettings;
-                            }
-                            Publisher = (string)oBatchSettings.Publisher;
-                        }
-                    }
-                }
+                Publisher = (string)Module1.Current.BatchToolSettings.Publisher;
+                FireIncrementYears = (int)Module1.Current.BatchToolSettings.FireIncrementYears;
             }
             Names = new ObservableCollection<BA_Objects.Aoi>();
             Names.CollectionChanged += ContentCollectionChanged;
@@ -138,6 +90,9 @@ namespace bagis_pro
         private bool _cmdFireReportLogEnabled = false;
         private bool _cmdFireReportEnabled = false;
         private bool _cmdFireDataLogEnabled = false;
+        private int _intFireBaselineYear;
+        private string _strFireBaseYearLabel;
+        private int _intFireIncrementYears;
 
 
         public string Heading
@@ -240,15 +195,6 @@ namespace bagis_pro
             set
             {
                 SetProperty(ref _cmdRunEnabled, value, () => CmdRunEnabled);
-            }
-        }
-
-        public string SettingsFile
-        {
-            get { return _settingsFile; }
-            set
-            {
-                SetProperty(ref _settingsFile, value, () => SettingsFile);
             }
         }
 
@@ -355,6 +301,33 @@ namespace bagis_pro
             set
             {
                 SetProperty(ref _cmdFireReportEnabled, value, () => CmdFireReportEnabled);
+            }
+        }
+
+        public int FireBaselineYear
+        {
+            get { return _intFireBaselineYear; }
+            set
+            {
+                SetProperty(ref _intFireBaselineYear, value, () => FireBaselineYear);
+            }
+        }
+
+        public string FireBaseYearLabel
+        {
+            get { return _strFireBaseYearLabel; }
+            set
+            {
+                SetProperty(ref _strFireBaseYearLabel, value, () => FireBaseYearLabel);
+            }
+        }
+
+        public int FireIncrementYears
+        {
+            get { return _intFireIncrementYears; }
+            set
+            {
+                SetProperty(ref _intFireIncrementYears, value, () => FireIncrementYears);
             }
         }
 
@@ -489,6 +462,12 @@ namespace bagis_pro
                         CmdGenStatisticsEnabled = false;
                         CmdFireReportEnabled = false;
                     }
+                    // Query minimum available fire data year from server; It's here because it's an async call
+                    Webservices ws = new Webservices();
+                    FireBaselineYear = await ws.QueryFireBaselineYearAsync();
+                    FireBaseYearLabel = $@"Fire base year (>= {FireBaselineYear}):";
+                    // Grab the value from the local settings in case it's different
+                    FireBaselineYear = (int)Module1.Current.BatchToolSettings.FireBaselineYear;
                 });
             }
         }
@@ -1010,7 +989,8 @@ namespace bagis_pro
             {
                 Module1.Current.BatchToolSettings.Publisher = Publisher;
                 String json = JsonConvert.SerializeObject(Module1.Current.BatchToolSettings, Formatting.Indented);
-                File.WriteAllText(SettingsFile, json);
+                string strSettingsPath = GeneralTools.GetBagisSettingsPath();
+                File.WriteAllText(strSettingsPath, json);
             }
 
             // Make directory for required folders if they don't exist

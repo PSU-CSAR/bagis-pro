@@ -275,7 +275,7 @@
                 <Grid>
                      <Grid.RowDefinitions>
                         <RowDefinition Height="60"/>
-                        <RowDefinition Height="100"/>
+                        <RowDefinition Height="200"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
                     <GroupBox Margin="5,0,0,5" Padding="2" Grid.Row="0" HorizontalAlignment="Left" IsEnabled="{Binding TasksEnabled}">
@@ -302,19 +302,28 @@
                     </GroupBox.Header>
                     <Grid>
                         <Grid.RowDefinitions>
+                                <RowDefinition Height="25"/>
+                                <RowDefinition Height="25"/>
                                 <RowDefinition Height="30"/>
                                 <RowDefinition Height="30"/>
-                        </Grid.RowDefinitions>
+                            </Grid.RowDefinitions>
                             <StackPanel Orientation="Horizontal" Grid.Row="0">
-                                <TextBlock Name="tbFireReport"
-                                    TextWrapping="WrapWithOverflow" MaxWidth="300" VerticalAlignment="Center" Margin="0, 0, 0, 2">
-                                    Output folder:
-                                </TextBlock>
+                                <DockPanel>
+                                    <Label Content="{Binding FireBaseYearLabel}"/>
+                                    <TextBox Width ="40" Height="20" Text="{Binding FireBaselineYear}"/>
+                                </DockPanel>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Grid.Row="1" >
+                                <Label Content="Increment (in years):"/>
+                                <TextBox Width ="25" Height="20" Text="{Binding FireIncrementYears}"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Grid.Row="2">
+                                <Label Content="Output folder:"/>
                                 <TextBox x:Name="txtFireReportFolder" Text="{Binding FireReportFolder}" HorizontalAlignment="Left" Margin="5, 0, 0, 0" 
                                     VerticalAlignment="Center" Width="210" IsReadOnly="True"
                                     Foreground="Blue" Background="Transparent"/>
                             </StackPanel>
-                            <StackPanel Grid.Row="1" Orientation="Horizontal">
+                            <StackPanel Grid.Row="3" Orientation="Horizontal">
                                 <Button x:Name="btnFireReportLog" Content="View Log" HorizontalAlignment="Left" VerticalAlignment="Center" Width="75" IsEnabled="{Binding CmdFireReportLogEnabled}" Command="{Binding CmdFireReportLog}" Margin="5, 0, 70, 0"/>
                                 <Button x:Name="btnFireReport" Content="Generate" HorizontalAlignment="Right" VerticalAlignment="Center" Width="60" IsEnabled="{Binding CmdFireReportEnabled}" Command="{Binding CmdFireReport}" Margin="70, 0, 0, 0"/>
                         </StackPanel>
