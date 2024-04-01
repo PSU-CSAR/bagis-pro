@@ -41,7 +41,7 @@ namespace bagis_pro
             Names = new ObservableCollection<BA_Objects.Aoi>();
             Names.CollectionChanged += ContentCollectionChanged;
             ArchiveChecked = true;
-            TasksEnabled = false;    
+            TasksEnabled = false;
         }
 
         /// <summary>
@@ -93,7 +93,8 @@ namespace bagis_pro
         private int _intFireBaselineYear;
         private string _strFireBaseYearLabel;
         private int _intFireIncrementYears;
-
+        private bool _bAllTimeChecked = true;   //Default
+        private bool _bSelectedTimeChecked = false;
 
         public string Heading
         {
@@ -328,6 +329,24 @@ namespace bagis_pro
             set
             {
                 SetProperty(ref _intFireIncrementYears, value, () => FireIncrementYears);
+            }
+        }
+
+        public bool AllTimeChecked
+        {
+            get { return _bAllTimeChecked; }
+            set
+            {
+                SetProperty(ref _bAllTimeChecked, value, () => AllTimeChecked);
+            }
+        }
+
+        public bool SelectedTimeChecked
+        {
+            get { return _bSelectedTimeChecked; }
+            set
+            {
+                SetProperty(ref _bSelectedTimeChecked, value, () => SelectedTimeChecked);
             }
         }
 

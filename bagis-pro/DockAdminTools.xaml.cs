@@ -25,5 +25,20 @@ namespace bagis_pro
         {
             InitializeComponent();
         }
+        public void SelectedTime_Checked(object s, RoutedEventArgs e)
+        {
+            var radio = s as RadioButton;
+            string strTag = Convert.ToString(radio.Tag);
+            if (strTag.Equals("SelectedTimeChecked"))
+            {
+                bool bChecked = radio.IsChecked ?? false;
+                ckAnnual.IsEnabled = bChecked;
+                tbSelectMinYear.IsEnabled = bChecked;
+                tbSelectMaxYear.IsEnabled = bChecked;
+                ckPeriods.IsEnabled = bChecked;
+                tbIncrementYears .IsEnabled = bChecked; 
+            }
+
+        }
     }
 }
