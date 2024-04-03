@@ -274,23 +274,32 @@
                 </TabItem.Header>
                 <Grid>
                      <Grid.RowDefinitions>
-                        <RowDefinition Height="60"/>
+                        <RowDefinition Height="120"/>
                         <RowDefinition Height="250"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
                     <GroupBox Margin="5,0,0,5" Padding="2" Grid.Row="0" HorizontalAlignment="Left" IsEnabled="{Binding TasksEnabled}">
                         <GroupBox.Header>
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock FontWeight="Bold">Generate AOI Fire Data</TextBlock>
+                                <TextBlock FontWeight="Bold">Retrieve AOI Fire Data</TextBlock>
                             </StackPanel>
                         </GroupBox.Header>
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="30"/>
+                                <RowDefinition Height="30"/>
+                                <RowDefinition Height="30"/>
                             </Grid.RowDefinitions>
-                            <StackPanel Grid.Row="0" Orientation="Horizontal">
+                            <StackPanel Grid.Row="0" >
+                                <TextBlock Text="From the previous 30 years"/>
+                            </StackPanel>
+                            <StackPanel Grid.Row="1" >
+                                <CheckBox x:Name="ckOverwriteMtbs" Content="Overwrite existing MTBS rasters in AOI" IsChecked="True" />
+
+                            </StackPanel>
+                            <StackPanel Grid.Row="2" Orientation="Horizontal">
                                 <Button x:Name="btnFireDataLog" Content="View Log" HorizontalAlignment="Left" VerticalAlignment="Center" Width="75" IsEnabled="{Binding CmdFireDataLogEnabled}" Command="{Binding CmdFireDataLog}" Margin="5, 0, 70, 0"/>
-                                <Button x:Name="btnFireData" Content="Generate" HorizontalAlignment="Right" VerticalAlignment="Center" Width="60" IsEnabled="{Binding CmdFireReportEnabled}" Command="{Binding CmdFireData}" Margin="70, 0, 0, 0"/>
+                                <Button x:Name="btnFireData" Content="Retrieve" HorizontalAlignment="Right" VerticalAlignment="Center" Width="60" IsEnabled="{Binding CmdFireReportEnabled}" Command="{Binding CmdFireData}" Margin="70, 0, 0, 0"/>
                             </StackPanel>
                         </Grid>
                     </GroupBox>
@@ -303,40 +312,46 @@
                     <Grid>
                         <Grid.RowDefinitions>
                                 <RowDefinition Height="30"/>
+                                <RowDefinition Height="30"/>
                                 <RowDefinition Height="40"/>
                                 <RowDefinition Height="60"/>
                                 <RowDefinition Height="30"/>
                                 <RowDefinition Height="30"/>
                             </Grid.RowDefinitions>
                             <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="0, 0, 0, 2">
-                                <Label Content="Increment (in years):"/>
-                                <TextBox Width ="25" Height="20" Text="{Binding FireIncrementYears}"/>
+                                <Label Content="Baseline year:"/>
+                                <TextBox Width ="40" Height="20" Text="{Binding FireBaselineYear}"/>
                             </StackPanel>
-                            <StackPanel Orientation="Vertical" Grid.Row="1" VerticalAlignment="Center">
-                                <RadioButton GroupName="timePeriod" Tag ="AllTimeChecked" Margin="0, 0, 0, 4" IsChecked="{Binding AllTimeChecked}">Calculate all time periods (1981-2023)</RadioButton>
+                            <StackPanel Orientation="Horizontal" Grid.Row="1" Margin="0, 0, 0, 2">
+                                <Label Content="Increment (in years):"/>
+                                <TextBox Width ="30" Height="20" Text="{Binding FireIncrementYears}"/>
+                            </StackPanel>
+
+                            <StackPanel Orientation="Vertical" Grid.Row="2" VerticalAlignment="Center">
+                                <RadioButton GroupName="timePeriod" Tag ="AllTimeChecked" Margin="0, 0, 0, 4" IsChecked="{Binding AllTimeChecked}">Calculate all time periods</RadioButton>
                                 <RadioButton GroupName="timePeriod" Tag ="SelectedTimeChecked" Margin="0, 0, 0, 2" IsChecked="{Binding SelectedTimeChecked}" Checked="SelectedTime_Checked" Unchecked="SelectedTime_Checked">Calculate selected time periods</RadioButton>
                             </StackPanel>
-                            <StackPanel Orientation="Vertical" Grid.Row="2" Margin="10, 0, 0, 0">
+                            <StackPanel Orientation="Vertical" Grid.Row="3" Margin="10, 0, 0, 0">
                                 <DockPanel HorizontalAlignment="Left" >
-                                    <CheckBox x:Name="ckAnnual" Content="Annual (from " Margin="0, 0, 0, 0" IsEnabled="False" VerticalAlignment="Center" />
-                                    <TextBox x:Name="tbSelectMinYear" Width ="40" Height="20" IsEnabled="False" Margin="0, 0, 0, 0" >1981</TextBox>
+                                    <CheckBox x:Name="ckAnnual" Content="Annual (from " Margin="0, 0, 0, 0" IsEnabled="False" IsChecked="{Binding AnnualDataChecked}" VerticalAlignment="Center" />
+                                    <TextBox x:Name="tbSelectMinYear" Width ="40" Height="20" IsEnabled="False" Margin="0, 0, 0, 0" Text="{Binding SelectedMinYear}"/>
                                     <Label Content="to" Margin="0, 0, 0, 0" />
-                                    <TextBox x:Name="tbSelectMaxYear" Width ="40" Height="20" IsEnabled="False" Margin="0, 0, 0, 0" >2023</TextBox>
+                                    <TextBox x:Name="tbSelectMaxYear" Width ="40" Height="20" IsEnabled="False" Margin="0, 0, 0, 0" Text="{Binding SelectedMaxYear}" />
                                     <Label Content=")" Margin="0, 0, 0, 0" />
                                 </DockPanel>
                                 <DockPanel HorizontalAlignment="Left">
                                     <CheckBox x:Name="ckPeriods" Content="Time periods (the most recent " VerticalAlignment="Center" IsEnabled="False"/>
-                                    <TextBox x:Name="tbIncrementYears" Width ="25" Height="20" Text="{Binding FireIncrementYears}" IsEnabled="False"/>
+                                    <TextBox x:Name="tbTimePeriodCount" Width ="25" Height="20" Text="{Binding FireIncrementYears}" IsEnabled="False"/>
                                     <Label Content="periods)" Margin="0, 0, 0, 0" />
                                 </DockPanel>
                             </StackPanel>
-                            <StackPanel Orientation="Horizontal" Grid.Row="3">
+                            <StackPanel Orientation="Horizontal" Grid.Row="4">
                                 <Label Content="Output folder:"/>
                                 <TextBox x:Name="txtFireReportFolder" Text="{Binding FireReportFolder}" HorizontalAlignment="Left" Margin="5, 0, 0, 0" 
-                                    VerticalAlignment="Center" Width="200" IsReadOnly="True"
+                                    VerticalAlignment="Center" Width="190" IsReadOnly="True"
                                     Foreground="Blue" Background="Transparent"/>
                             </StackPanel>
-                            <StackPanel Grid.Row="4" Orientation="Horizontal">
+                            <StackPanel Grid.Row="5" Orientation="Horizontal">
                                 <Button x:Name="btnFireReportLog" Content="View Log" HorizontalAlignment="Left" VerticalAlignment="Center" Width="75" IsEnabled="{Binding CmdFireReportLogEnabled}" Command="{Binding CmdFireReportLog}" Margin="5, 0, 70, 0"/>
                                 <Button x:Name="btnFireReport" Content="Generate" HorizontalAlignment="Right" VerticalAlignment="Center" Width="60" IsEnabled="{Binding CmdFireReportEnabled}" Command="{Binding CmdFireReport}" Margin="70, 0, 0, 0"/>
                         </StackPanel>

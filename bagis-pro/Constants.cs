@@ -307,6 +307,7 @@ namespace bagis_pro
         public const string FIELD_YEAR = "YEAR";
         public const string FIELD_FIRECURRENT_DATE = "attr_FireDiscoveryDateTime";
         public const string FIELD_FIRE_YEAR = "FIRE_YEAR";
+        public const string FIELD_FIRECURRENT_INCIDENT = "attr_IncidentName";
 
         public const string DATA_TYPE_SWE = "Snotel SWE";
         public const string DATA_TYPE_PRECIPITATION = "Precipitation";

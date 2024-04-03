@@ -36,7 +36,7 @@ namespace bagis_pro
                 tbSelectMinYear.IsEnabled = bChecked;
                 tbSelectMaxYear.IsEnabled = bChecked;
                 ckPeriods.IsEnabled = bChecked;
-                tbIncrementYears .IsEnabled = bChecked; 
+                tbTimePeriodCount.IsEnabled = bChecked; 
             }
 
         }

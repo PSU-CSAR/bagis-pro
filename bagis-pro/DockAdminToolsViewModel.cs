@@ -61,7 +61,6 @@ namespace bagis_pro
         /// </summary>
         private string _heading = "Batch Report Tools";
         private string _parentFolder;
-        private string _settingsFile;
         private string _snodasFolder;
         private string _statisticsFolder;
         private string _publisher;
@@ -91,10 +90,13 @@ namespace bagis_pro
         private bool _cmdFireReportEnabled = false;
         private bool _cmdFireDataLogEnabled = false;
         private int _intFireBaselineYear;
-        private string _strFireBaseYearLabel;
         private int _intFireIncrementYears;
         private bool _bAllTimeChecked = true;   //Default
         private bool _bSelectedTimeChecked = false;
+        private bool _bAnnualDataChecked = false;
+        private int _intSelectedMinYear;
+        private int _intSelectedMaxYear;
+        private int _intFireTimePeriodCount;   
 
         public string Heading
         {
@@ -314,15 +316,6 @@ namespace bagis_pro
             }
         }
 
-        public string FireBaseYearLabel
-        {
-            get { return _strFireBaseYearLabel; }
-            set
-            {
-                SetProperty(ref _strFireBaseYearLabel, value, () => FireBaseYearLabel);
-            }
-        }
-
         public int FireIncrementYears
         {
             get { return _intFireIncrementYears; }
@@ -347,6 +340,42 @@ namespace bagis_pro
             set
             {
                 SetProperty(ref _bSelectedTimeChecked, value, () => SelectedTimeChecked);
+            }
+        }
+
+        public bool AnnualDataChecked
+        {
+            get { return _bAnnualDataChecked; }
+            set
+            {
+                SetProperty(ref _bAnnualDataChecked, value, () => AnnualDataChecked);
+            }
+        }
+
+        public int SelectedMinYear
+        {
+            get { return _intSelectedMinYear; }
+            set
+            {
+                SetProperty(ref _intSelectedMinYear, value, () => SelectedMinYear);
+            }
+        }
+
+        public int SelectedMaxYear
+        {
+            get { return _intSelectedMaxYear; }
+            set
+            {
+                SetProperty(ref _intSelectedMaxYear, value, () => SelectedMaxYear);
+            }
+        }
+
+        public int FireTimePeriodCount
+        {
+            get { return _intFireTimePeriodCount; }
+            set
+            {
+                SetProperty(ref _intFireTimePeriodCount, value, () => FireTimePeriodCount);
             }
         }
 
@@ -482,11 +511,15 @@ namespace bagis_pro
                         CmdFireReportEnabled = false;
                     }
                     // Query minimum available fire data year from server; It's here because it's an async call
-                    Webservices ws = new Webservices();
-                    FireBaselineYear = await ws.QueryFireBaselineYearAsync();
-                    FireBaseYearLabel = $@"Fire base year (>= {FireBaselineYear}):";
-                    // Grab the value from the local settings in case it's different
-                    FireBaselineYear = (int)Module1.Current.BatchToolSettings.FireBaselineYear;
+                    // @ToDo: This needs to change to query the feature service rather than the batch settings
+                    if (FireBaselineYear < 1)   // Only do this the first time an AOI folder is selected
+                    {
+                        Webservices ws = new Webservices();
+                        FireBaselineYear = await ws.QueryFireBaselineYearAsync();
+                        SelectedMaxYear = FireBaselineYear;
+                        SelectedMinYear = SelectedMaxYear - 30;
+                        FireTimePeriodCount = 6;    //@ToDo: Replace this with calculation
+                    }
                 });
             }
         }
@@ -1836,6 +1869,15 @@ namespace bagis_pro
             // Reset batch states
             ResetAoiBatchStateText();
 
+            // Testing to retrieve latest data from fire_current
+            Webservices ws = new Webservices();
+            QueryFilter queryFilter = new QueryFilter();
+            queryFilter.WhereClause = $@"{Constants.FIELD_FIRECURRENT_DATE} >= timestamp '2023-01-01 00:00:00'";
+            Uri wsUri = new Uri("https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Interagency_Perimeters/FeatureServer");
+            string[] arrSearch = { Constants.FIELD_FIRECURRENT_INCIDENT };
+            string[] arrFound = await ws.QueryServiceForValuesAsync(wsUri, "0", arrSearch, queryFilter);
+
+
             for (int idxRow = 0; idxRow < Names.Count; idxRow++)
             {
                 if (Names[idxRow].AoiBatchIsSelected)
@@ -1890,7 +1932,6 @@ namespace bagis_pro
                     //string unmanagedBufferUnits = arrUnmanagedBufferInfo[1];
 
                     //Clip fire layers
-                    Webservices ws = new Webservices();
                     Module1.Current.ModuleLogManager.LogDebug(nameof(RunFireDataImplAsync),
                         "Contacting webservices server to retrieve layer metadata");
                     IDictionary<string, dynamic> dictDataSources = await ws.QueryDataSourcesAsync();
@@ -1973,7 +2014,7 @@ namespace bagis_pro
                         strMergeFc = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Fire, true)
                             + Constants.FILE_NIFC_FIRE;
                         string strIrwinIdMap = $@"{strFieldIrwinId} ""{strFieldIrwinId}"" true true false 50 Text 0 0,First,#,{lyrHistory.Name},{strFieldIrwinId},0,50,{strOutputFc},poly_IRWINID,0,38;";
-                        string strIncidentMap = $@"INCIDENT ""INCIDENT"" true true false 50 Text 0 0,First,#,{lyrHistory.Name},INCIDENT,0,50,{strOutputFc},attr_IncidentName,0,50;";
+                        string strIncidentMap = $@"INCIDENT ""INCIDENT"" true true false 50 Text 0 0,First,#,{lyrHistory.Name},INCIDENT,0,50,{strOutputFc},{Constants.FIELD_FIRECURRENT_INCIDENT},0,50;";
                         string strYearMap = $@"{Constants.FIELD_YEAR} ""{Constants.FIELD_YEAR}"" true true false 2 Short 0 0,First,#,{lyrHistory.Name},{Constants.FIELD_YEAR},-1,-1,{strOutputFc},{Constants.FIELD_YEAR},-1,-1;";
                         string strFieldMap = $@"{strIrwinIdMap}{strIncidentMap}{strYearMap}{strCurrentId} ""{strCurrentId}"" true true false 4 Long 0 0,First,#,{strOutputFc},{strCurrentId},-1,-1";
                         var parameters = Geoprocessing.MakeValueArray(strInputDatasets, strMergeFc, strFieldMap, "NO_SOURCE_INFO");

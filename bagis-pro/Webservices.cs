@@ -13,6 +13,7 @@ using Newtonsoft.Json.Linq;
 using System.Net.Http;
 using Newtonsoft.Json;
 using System.IO;
+using System.Runtime;
 
 namespace bagis_pro
 {
@@ -205,13 +206,38 @@ namespace bagis_pro
             return dictDataSources;
         }
 
-        public async Task<int> QueryFireBaselineYearAsync()
+        public async Task<int> QueryFireBaselineYearAsync(string strDataType)
         {
-            IDictionary<string, dynamic> dictDataSources = new Dictionary<string, dynamic>();
-            EsriHttpResponseMessage response = new EsriHttpClient().Get(Constants.URI_BATCH_TOOL_SETTINGS);
-            JObject jsonVal = JObject.Parse(await response.Content.ReadAsStringAsync()) as JObject;
-            dynamic oSettings = (JObject)jsonVal["BatchSettings"];
-            return (int)oSettings.FireBaselineYear;
+            IDictionary<string, dynamic> dictDatasources = await this.QueryDataSourcesAsync();
+            string wsUri = "";
+            if (dictDatasources != null)
+            {
+                BA_Objects.DataSource dsFire = new BA_Objects.DataSource(dictDatasources[strDataType]);
+                if (dsFire != null)
+                {
+                    wsUri = dsFire.uri;
+                }
+                else
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(QueryFireBaselineYearAsync),
+                        $@"Unable to find element {strDataType} uri in server data sources");
+                }
+                if (!string.IsNullOrEmpty(wsUri))
+                {
+                    string[] arrReturnValues = this.ParseUriAndLayerNumber(wsUri);
+                    if (arrReturnValues.Length == 2 && !string.IsNullOrEmpty(arrReturnValues[0]))
+                    {
+                        QueryFilter queryFilter = new QueryFilter();
+                        queryFilter.WhereClause = $@"{Constants.FIELD_FIRECURRENT_DATE} >= timestamp '2023-01-01 00:00:00'";
+                        string[] arrSearch = { Constants.FIELD_FIRECURRENT_INCIDENT };
+                        string[] arrFound = await this.QueryServiceForValuesAsync(new Uri(arrReturnValues[0]), arrReturnValues[1], arrSearch, queryFilter);
+                        if (arrFound != null && !string.IsNullOrEmpty(arrFound[0]))
+                        {
+
+                        }
+                    }
+                }
+            }
         }
 
         public async Task<BA_ReturnCode> DownloadBatchSettingsAsync(string strSaveToPath)
@@ -678,6 +704,14 @@ namespace bagis_pro
                 objOutput.WriteTo(writer);
             }
             return null;
+        }        
+        public string[] ParseUriAndLayerNumber(string strWsUri)
+        {
+            string[] arrReturnValues = new string[2];
+            arrReturnValues[1] = strWsUri.Split('/').Last();
+            int intTrim = arrReturnValues[1].Length + 1;
+            arrReturnValues[0] = strWsUri.Substring(0, strWsUri.Length - intTrim);
+            return arrReturnValues;
         }
     }
 }
