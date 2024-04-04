@@ -205,7 +205,6 @@ namespace bagis_pro
             }
             return dictDataSources;
         }
-
         public async Task<int> QueryFireBaselineYearAsync(string strDataType)
         {
             IDictionary<string, dynamic> dictDatasources = await this.QueryDataSourcesAsync();
@@ -227,17 +226,28 @@ namespace bagis_pro
                     string[] arrReturnValues = this.ParseUriAndLayerNumber(wsUri);
                     if (arrReturnValues.Length == 2 && !string.IsNullOrEmpty(arrReturnValues[0]))
                     {
+                        int intYear = DateTime.Now.Year;
                         QueryFilter queryFilter = new QueryFilter();
-                        queryFilter.WhereClause = $@"{Constants.FIELD_FIRECURRENT_DATE} >= timestamp '2023-01-01 00:00:00'";
-                        string[] arrSearch = { Constants.FIELD_FIRECURRENT_INCIDENT };
-                        string[] arrFound = await this.QueryServiceForValuesAsync(new Uri(arrReturnValues[0]), arrReturnValues[1], arrSearch, queryFilter);
-                        if (arrFound != null && !string.IsNullOrEmpty(arrFound[0]))
+                        bool bRecordsFound = false;
+                        while (! bRecordsFound)
                         {
-
+                            string strTimeStamp = $@"{intYear}-01-01 00:00:00";
+                            queryFilter.WhereClause = $@"{Constants.FIELD_FIRECURRENT_DATE} >= timestamp '{strTimeStamp}'";
+                            string[] arrSearch = { Constants.FIELD_FIRECURRENT_INCIDENT };
+                            string[] arrFound = await this.QueryServiceForValuesAsync(new Uri(arrReturnValues[0]), arrReturnValues[1], arrSearch, queryFilter);
+                            if (arrFound != null && !string.IsNullOrEmpty(arrFound[0]))
+                            {
+                                bRecordsFound = true;
+                                return intYear;
+                            }
+                            intYear--;
                         }
                     }
                 }
             }
+            Module1.Current.ModuleLogManager.LogError(nameof(QueryFireBaselineYearAsync),
+                $@"Unable to calculate min year from NIFC data!");
+            return 9999;
         }
 
         public async Task<BA_ReturnCode> DownloadBatchSettingsAsync(string strSaveToPath)

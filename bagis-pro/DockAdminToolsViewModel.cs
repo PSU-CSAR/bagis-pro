@@ -96,7 +96,9 @@ namespace bagis_pro
         private bool _bAnnualDataChecked = false;
         private int _intSelectedMinYear;
         private int _intSelectedMaxYear;
-        private int _intFireTimePeriodCount;   
+        private int _intFireTimePeriodCount;
+        private int _intNifcMaxYear;
+        private int _intNifcMinYear;
 
         public string Heading
         {
@@ -510,12 +512,12 @@ namespace bagis_pro
                         CmdGenStatisticsEnabled = false;
                         CmdFireReportEnabled = false;
                     }
-                    // Query minimum available fire data year from server; It's here because it's an async call
-                    // @ToDo: This needs to change to query the feature service rather than the batch settings
+                    // Query minimum available fire data year from webservice; It's here because it's an async call
                     if (FireBaselineYear < 1)   // Only do this the first time an AOI folder is selected
                     {
                         Webservices ws = new Webservices();
-                        FireBaselineYear = await ws.QueryFireBaselineYearAsync();
+                        _intNifcMaxYear = await ws.QueryFireBaselineYearAsync(Constants.DATA_TYPE_FIRE_CURRENT);
+                        FireBaselineYear = _intNifcMaxYear;
                         SelectedMaxYear = FireBaselineYear;
                         SelectedMinYear = SelectedMaxYear - 30;
                         FireTimePeriodCount = 6;    //@ToDo: Replace this with calculation
