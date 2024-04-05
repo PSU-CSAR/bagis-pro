@@ -143,8 +143,10 @@
     "WinterEndMonth": 3,
     "AdminMenu": false,
     "USStateBoundaries": "https://services.arcgis.com/ue9rwulIoeLEI9bj/arcgis/rest/services/US_StateBoundaries/FeatureServer/0",
-    "FireBaselineYear": 2023,
+    "FireNifcMinYear": 780,
+    "FireMtbsMinYear": 1984,
+    "FireDataClipYears": 30,
     "FireIncrementYears": 5,
-    "Version": 13
+    "Version": 14
   }
 }
