@@ -37,6 +37,9 @@ namespace bagis_pro
             {
                 Publisher = (string)Module1.Current.BatchToolSettings.Publisher;
                 FireIncrementYears = (int)Module1.Current.BatchToolSettings.FireIncrementYears;
+                NifcMinYear = (int)Module1.Current.BatchToolSettings.FireNifcMinYear;
+                MtbsMinYear = (int)Module1.Current.BatchToolSettings.FireMtbsMinYear;
+                FireDataClipYears = (int)Module1.Current.BatchToolSettings.FireDataClipYears;
             }
             Names = new ObservableCollection<BA_Objects.Aoi>();
             Names.CollectionChanged += ContentCollectionChanged;
@@ -99,6 +102,11 @@ namespace bagis_pro
         private int _intFireTimePeriodCount;
         private int _intNifcMaxYear;
         private int _intNifcMinYear;
+        private int _intMtbsMaxYear;
+        private int _intMtbsMinYear;
+        private int _intFireDataClipYears;
+        private string _strNifcDataDescr;
+        private string _strMtbsDataDescr;
 
         public string Heading
         {
@@ -380,6 +388,50 @@ namespace bagis_pro
                 SetProperty(ref _intFireTimePeriodCount, value, () => FireTimePeriodCount);
             }
         }
+        public int NifcMinYear
+        {
+            get { return _intNifcMinYear; }
+            set
+            {
+                SetProperty(ref _intNifcMinYear, value, () => NifcMinYear);
+            }
+        }
+        public int MtbsMinYear
+        {
+            get { return _intMtbsMinYear; }
+            set
+            {
+                SetProperty(ref _intMtbsMinYear, value, () => MtbsMinYear);
+            }
+        }
+        public int FireDataClipYears
+        {
+            get { return _intFireDataClipYears; }
+            set
+            {
+                SetProperty(ref _intFireDataClipYears, value, () => FireDataClipYears);
+            }
+        }
+        public string NifcDataDescr
+        {
+            get { return _strNifcDataDescr; }
+            set
+            {
+                SetProperty(ref _strNifcDataDescr, value, () => NifcDataDescr);
+            }
+        }
+        public string MtbsDataDescr
+        {
+            get { return _strMtbsDataDescr; }
+            set
+            {
+                SetProperty(ref _strMtbsDataDescr, value, () => MtbsDataDescr);
+            }
+        }
+        public string FireDataClipDescr
+        {
+            get { return $@"From the previous {_intFireDataClipYears} years"; }
+        }
 
         public ObservableCollection<BA_Objects.Aoi> Names { get; set; }
 
@@ -516,11 +568,14 @@ namespace bagis_pro
                     if (FireBaselineYear < 1)   // Only do this the first time an AOI folder is selected
                     {
                         Webservices ws = new Webservices();
-                        _intNifcMaxYear = await ws.QueryFireBaselineYearAsync(Constants.DATA_TYPE_FIRE_CURRENT);
+                        _intNifcMaxYear = await ws.QueryNifcMinYearAsync(Constants.DATA_TYPE_FIRE_CURRENT);
+                        NifcDataDescr = $@"NIFC data available from {NifcMinYear} to {_intNifcMaxYear}";
                         FireBaselineYear = _intNifcMaxYear;
                         SelectedMaxYear = FireBaselineYear;
                         SelectedMinYear = SelectedMaxYear - 30;
                         FireTimePeriodCount = 6;    //@ToDo: Replace this with calculation
+                        _intMtbsMaxYear = await this.QueryMtbsMaxYearAsync();
+                        MtbsDataDescr = $@"MTBS data available from {MtbsMinYear} to {_intMtbsMaxYear}";
                     }
                 });
             }
@@ -1867,18 +1922,11 @@ namespace bagis_pro
             string strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Starting fire data " + "\r\n";
             File.WriteAllText(_strFireDataLogFile, strLogEntry);    // overwrite file if it exists
             var oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
+            int maxYearClip = DateTime.Now.Year;
+            int minYearClip = maxYearClip - 30;
 
             // Reset batch states
             ResetAoiBatchStateText();
-
-            // Testing to retrieve latest data from fire_current
-            Webservices ws = new Webservices();
-            QueryFilter queryFilter = new QueryFilter();
-            queryFilter.WhereClause = $@"{Constants.FIELD_FIRECURRENT_DATE} >= timestamp '2023-01-01 00:00:00'";
-            Uri wsUri = new Uri("https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Interagency_Perimeters/FeatureServer");
-            string[] arrSearch = { Constants.FIELD_FIRECURRENT_INCIDENT };
-            string[] arrFound = await ws.QueryServiceForValuesAsync(wsUri, "0", arrSearch, queryFilter);
-
 
             for (int idxRow = 0; idxRow < Names.Count; idxRow++)
             {
@@ -1936,6 +1984,7 @@ namespace bagis_pro
                     //Clip fire layers
                     Module1.Current.ModuleLogManager.LogDebug(nameof(RunFireDataImplAsync),
                         "Contacting webservices server to retrieve layer metadata");
+                    Webservices ws = new Webservices();
                     IDictionary<string, dynamic> dictDataSources = await ws.QueryDataSourcesAsync();
                     string strWsUri = dictDataSources[Constants.DATA_TYPE_FIRE_HISTORY].uri;
 
@@ -1977,7 +2026,7 @@ namespace bagis_pro
                                         MapMemberPosition = 0,
                                     };
                                     lyrHistory = LayerFactory.Instance.CreateLayer<FeatureLayer>(historyParams, oMap);
-                                    lyrHistory.SetDefinitionQuery(Constants.FIELD_YEAR + " >= 1981");
+                                    lyrHistory.SetDefinitionQuery($@"{Constants.FIELD_YEAR} >= {minYearClip}");
                                 });
                             }
                         }
@@ -2143,6 +2192,25 @@ namespace bagis_pro
                 success = BA_ReturnCode.Success;
             }
             return success;
+        }
+
+        private async Task<int> QueryMtbsMaxYearAsync()
+        {
+            Webservices ws = new Webservices();
+            IList<string> lstMtbsServiceNames = await ws.QueryMtbsImageServiceNamesAsync();
+            // usgs_mtbs_conus/mtbs_CONUS_1990
+            string sName = lstMtbsServiceNames.Last();
+            string[] arrPieces = sName.Split(new char[] { '_' });
+            int lastPos = arrPieces.Length - 1;
+            int testYear = Convert.ToInt16(arrPieces[lastPos]);
+            if (testYear > 0)
+            {
+                return testYear;
+            }
+            else
+            {
+                return 9999;
+            }
         }
     }
 

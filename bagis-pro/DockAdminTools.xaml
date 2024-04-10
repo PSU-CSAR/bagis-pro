@@ -274,11 +274,16 @@
                 </TabItem.Header>
                 <Grid>
                      <Grid.RowDefinitions>
+                        <RowDefinition Height="50"/>
                         <RowDefinition Height="120"/>
                         <RowDefinition Height="250"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
-                    <GroupBox Margin="5,0,0,5" Padding="2" Grid.Row="0" HorizontalAlignment="Left" IsEnabled="{Binding TasksEnabled}">
+                    <StackPanel Grid.Row="0" Orientation="Vertical" Margin="10,10,5,5">
+                        <TextBlock FontWeight="Bold" Text="{Binding NifcDataDescr}"/>
+                        <TextBlock FontWeight="Bold" Text="{Binding MtbsDataDescr}"/>
+                    </StackPanel>
+                    <GroupBox Margin="5,0,0,5" Padding="2" Grid.Row="1" HorizontalAlignment="Left" IsEnabled="{Binding TasksEnabled}">
                         <GroupBox.Header>
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock FontWeight="Bold">Retrieve AOI Fire Data</TextBlock>
@@ -291,11 +296,10 @@
                                 <RowDefinition Height="30"/>
                             </Grid.RowDefinitions>
                             <StackPanel Grid.Row="0" >
-                                <TextBlock Text="From the previous 30 years"/>
+                                <TextBlock Text="{Binding FireDataClipDescr}"/>
                             </StackPanel>
                             <StackPanel Grid.Row="1" >
                                 <CheckBox x:Name="ckOverwriteMtbs" Content="Overwrite existing MTBS rasters in AOI" IsChecked="True" />
-
                             </StackPanel>
                             <StackPanel Grid.Row="2" Orientation="Horizontal">
                                 <Button x:Name="btnFireDataLog" Content="View Log" HorizontalAlignment="Left" VerticalAlignment="Center" Width="75" IsEnabled="{Binding CmdFireDataLogEnabled}" Command="{Binding CmdFireDataLog}" Margin="5, 0, 70, 0"/>
@@ -303,7 +307,7 @@
                             </StackPanel>
                         </Grid>
                     </GroupBox>
-                    <GroupBox Margin="5,0,0,5" Padding="2" Grid.Row="1" HorizontalAlignment="Left" IsEnabled="{Binding TasksEnabled}">
+                    <GroupBox Margin="5,0,0,5" Padding="2" Grid.Row="2" HorizontalAlignment="Left" IsEnabled="{Binding TasksEnabled}">
                         <GroupBox.Header>
                         <StackPanel Orientation="Horizontal">
                             <TextBlock FontWeight="Bold">Generate AOI Fire Report</TextBlock>

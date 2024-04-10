@@ -205,7 +205,7 @@ namespace bagis_pro
             }
             return dictDataSources;
         }
-        public async Task<int> QueryFireBaselineYearAsync(string strDataType)
+        public async Task<int> QueryNifcMinYearAsync(string strDataType)
         {
             IDictionary<string, dynamic> dictDatasources = await this.QueryDataSourcesAsync();
             string wsUri = "";
@@ -218,7 +218,7 @@ namespace bagis_pro
                 }
                 else
                 {
-                    Module1.Current.ModuleLogManager.LogError(nameof(QueryFireBaselineYearAsync),
+                    Module1.Current.ModuleLogManager.LogError(nameof(QueryNifcMinYearAsync),
                         $@"Unable to find element {strDataType} uri in server data sources");
                 }
                 if (!string.IsNullOrEmpty(wsUri))
@@ -245,7 +245,7 @@ namespace bagis_pro
                     }
                 }
             }
-            Module1.Current.ModuleLogManager.LogError(nameof(QueryFireBaselineYearAsync),
+            Module1.Current.ModuleLogManager.LogError(nameof(QueryNifcMinYearAsync),
                 $@"Unable to calculate min year from NIFC data!");
             return 9999;
         }
@@ -722,6 +722,33 @@ namespace bagis_pro
             int intTrim = arrReturnValues[1].Length + 1;
             arrReturnValues[0] = strWsUri.Substring(0, strWsUri.Length - intTrim);
             return arrReturnValues;
+        }
+
+        public async Task<IList<string>> QueryMtbsImageServiceNamesAsync()
+        {
+            IList<string> returnList = new List<string>();    
+            try
+            {
+                string uriMtbs = "http://bagis.geog.pdx.edu/arcgis/rest/services/usgs_mtbs_conus?f=pjson";
+                EsriHttpResponseMessage response = new EsriHttpClient().Get(uriMtbs);
+                JObject jsonVal = JObject.Parse(await response.Content.ReadAsStringAsync()) as JObject;
+                JArray arrServices = (JArray)jsonVal["services"];
+                foreach (dynamic dService in arrServices)
+                {
+                    string sType = Convert.ToString(dService.type);
+                    if (sType.Equals("ImageServer"))
+                    {
+                        returnList.Add(Convert.ToString(dService.name));
+                    }
+                }
+                return returnList;
+            }
+            catch (Exception)
+            {
+                Module1.Current.ModuleLogManager.LogDebug(nameof(QueryMtbsImageServiceNamesAsync),
+                    "An error occurred while trying to retrieve the batch settings version number from the ebagis server!");
+                return null;
+            }
         }
     }
 }
