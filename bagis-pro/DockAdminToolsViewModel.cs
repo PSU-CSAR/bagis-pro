@@ -107,6 +107,7 @@ namespace bagis_pro
         private int _intFireDataClipYears;
         private string _strNifcDataDescr;
         private string _strMtbsDataDescr;
+        private IDictionary<string, dynamic> _dictDatasources = null;
 
         public string Heading
         {
@@ -564,17 +565,23 @@ namespace bagis_pro
                         CmdGenStatisticsEnabled = false;
                         CmdFireReportEnabled = false;
                     }
+
+                    // Retrieve the data source dictionary if we don't have it already
+                    Webservices ws = new Webservices();
+                    if (_dictDatasources == null || _dictDatasources.Count < 1)
+                    {
+                        _dictDatasources = await ws.QueryDataSourcesAsync();
+                    }
                     // Query minimum available fire data year from webservice; It's here because it's an async call
                     if (FireBaselineYear < 1)   // Only do this the first time an AOI folder is selected
                     {
-                        Webservices ws = new Webservices();
-                        _intNifcMaxYear = await ws.QueryNifcMinYearAsync(Constants.DATA_TYPE_FIRE_CURRENT);
+                        _intNifcMaxYear = await ws.QueryNifcMinYearAsync(_dictDatasources, Constants.DATA_TYPE_FIRE_CURRENT);
                         NifcDataDescr = $@"NIFC data available from {NifcMinYear} to {_intNifcMaxYear}";
                         FireBaselineYear = _intNifcMaxYear;
                         SelectedMaxYear = FireBaselineYear;
                         SelectedMinYear = SelectedMaxYear - 30;
                         FireTimePeriodCount = 6;    //@ToDo: Replace this with calculation
-                        _intMtbsMaxYear = await this.QueryMtbsMaxYearAsync();
+                        _intMtbsMaxYear = await this.QueryMtbsMaxYearAsync(_dictDatasources, Constants.DATA_TYPE_FIRE_BURN_SEVERITY);
                         MtbsDataDescr = $@"MTBS data available from {MtbsMinYear} to {_intMtbsMaxYear}";
                     }
                 });
@@ -1981,7 +1988,7 @@ namespace bagis_pro
                     //string unmanagedBufferDistance = arrUnmanagedBufferInfo[0];
                     //string unmanagedBufferUnits = arrUnmanagedBufferInfo[1];
 
-                    //Clip fire layers
+                    //Clip nifc fire layers
                     Module1.Current.ModuleLogManager.LogDebug(nameof(RunFireDataImplAsync),
                         "Contacting webservices server to retrieve layer metadata");
                     Webservices ws = new Webservices();
@@ -2194,10 +2201,10 @@ namespace bagis_pro
             return success;
         }
 
-        private async Task<int> QueryMtbsMaxYearAsync()
+        private async Task<int> QueryMtbsMaxYearAsync(IDictionary<string, dynamic> dictDatasources, string strDataType)
         {
             Webservices ws = new Webservices();
-            IList<string> lstMtbsServiceNames = await ws.QueryMtbsImageServiceNamesAsync();
+            IList<string> lstMtbsServiceNames = await ws.QueryMtbsImageServiceNamesAsync(dictDatasources, strDataType);
             // usgs_mtbs_conus/mtbs_CONUS_1990
             string sName = lstMtbsServiceNames.Last();
             string[] arrPieces = sName.Split(new char[] { '_' });
