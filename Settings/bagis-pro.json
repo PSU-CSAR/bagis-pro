@@ -104,7 +104,7 @@
       "layerType": "Fire Burn Severity",
       "heading": "MTBS Fire Burn Severity",
       "description": "Monitoring Trends in Burn Severity (MTBS) burn severity and extent of large fires webservices accessed on the report creating date (see the report summary page). See https://mtbs.gov/project-overview for more information.",
-      "uri": "http://bagis.geog.pdx.edu/arcgis/rest/services/usgs_mtbs_conus"
+      "uri": "http://bagis.geog.pdx.edu/arcgis/services/usgs_mtbs_conus/"
     }
 ],
   "BatchSettings": {
@@ -147,6 +147,6 @@
     "FireMtbsMinYear": 1984,
     "FireDataClipYears": 30,
     "FireIncrementYears": 5,
-    "Version": 14
+    "Version": 15
   }
 }
