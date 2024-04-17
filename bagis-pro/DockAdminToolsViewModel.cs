@@ -2093,6 +2093,19 @@ namespace bagis_pro
                         success = await AnalysisTools.DeleteDuplicatesAsync(strMergeFc, strWhere1, strFieldIrwinId, strNotWhere1);
                     }
 
+                    List<string> lstMtbsImageServices = new List<string>();
+                    List<string> lstMtbsLayerNames = new List<string>();
+                    DataSource dsFire = new DataSource(_dictDatasources[Constants.DATA_TYPE_FIRE_BURN_SEVERITY]);
+                    for (int i = minYearClip; i <= _intMtbsMaxYear; i++)
+                    {
+                        lstMtbsImageServices.Add($@"{dsFire.uri}{GeneralTools.GetMtbsLayerFileName(i)}/{Constants.URI_IMAGE_SERVER}");
+                        lstMtbsLayerNames.Add(GeneralTools.GetMtbsLayerFileName(i));
+                    }
+                    if (lstMtbsImageServices.Count> 0)
+                    {
+                        success = await AnalysisTools.ClipMtbsLayersAsync(aoiFolder, Constants.FILE_AOI_VECTOR, lstMtbsImageServices, lstMtbsLayerNames);
+                    }
+
 
                     if (success == BA_ReturnCode.Success && errorCount == 0)
                     {

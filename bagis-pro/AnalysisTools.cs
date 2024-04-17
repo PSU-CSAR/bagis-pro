@@ -1,18 +1,15 @@
 ﻿using ArcGIS.Core.Data;
 using ArcGIS.Core.Data.Exceptions;
 using ArcGIS.Core.Data.Raster;
-using ArcGIS.Core.Data.UtilityNetwork.Trace;
 using ArcGIS.Core.Geometry;
 using ArcGIS.Desktop.Core;
 using ArcGIS.Desktop.Core.Geoprocessing;
 using ArcGIS.Desktop.Editing;
-using ArcGIS.Desktop.Framework.Contracts;
 using ArcGIS.Desktop.Framework.Dialogs;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
 using ArcGIS.Desktop.Internal.GeoProcessing;
 using ArcGIS.Desktop.Mapping;
 using bagis_pro.BA_Objects;
-using Microsoft.Office.Interop.Excel;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -6695,6 +6692,90 @@ namespace bagis_pro
             }
             return success;
         }
+        public static async Task<BA_ReturnCode> ClipMtbsLayersAsync(string strAoiPath, string strClipFile,
+            List<string> lstImageServiceUri, List<string> lstRasterFileName)
+        {
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
+
+            // Check to make sure the buffer file only has one feature; No dangles
+            long featureCount = 0;
+            string[] arrLayersToDelete = new string[1];
+            // Assumes clip file is in aoi.gdb
+            string strClipGdb = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, false);
+            string strClipEnvelope = "";
+            await QueuedTask.Run(() =>
+            {
+                using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(strClipGdb))))
+                using (Table table = geodatabase.OpenDataset<Table>(strClipFile))
+                {
+                    featureCount = table.GetCount();
+                }
+                Module1.Current.ModuleLogManager.LogDebug(nameof(ClipMtbsLayersAsync),
+                    "Number of features in clip file: " + featureCount);
+
+                // If > 1 feature, buffer the clip file
+                if (featureCount > 1)
+                {
+                    string strTempBuffer2 = "tempBuffer2";
+                    var parameters = Geoprocessing.MakeValueArray(strClipGdb + "\\" + strClipFile, strClipGdb + "\\" + strTempBuffer2, "0.5 Meters", "", "", "ALL");
+                    var gpResult = Geoprocessing.ExecuteToolAsync("Buffer_analysis", parameters, null,
+                                     CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                    if (gpResult.Result.IsFailed)
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(ClipMtbsLayersAsync),
+                            "Unable to buffer " + strClipFile + ". Error code: " + gpResult.Result.ErrorCode);
+                        return;
+                    }
+                    strClipFile = strTempBuffer2;
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(ClipMtbsLayersAsync),
+                        "Ran buffer tool again because clip file has > 2 features");
+                }
+
+                // Query the extent for the clip
+                using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(strClipGdb))))
+                using (Table table = geodatabase.OpenDataset<Table>(strClipFile))
+                {
+                    QueryFilter queryFilter = new QueryFilter();
+                    using (RowCursor cursor = table.Search(queryFilter, false))
+                    {
+                        while (cursor.MoveNext())
+                        {
+                            using (Feature feature = (Feature)cursor.Current)
+                            {
+                                Geometry aoiGeo = feature.GetShape();
+                                strClipEnvelope = aoiGeo.Extent.XMin + " " + aoiGeo.Extent.YMin + " " + aoiGeo.Extent.XMax + " " + aoiGeo.Extent.YMax;
+                            }
+                        }
+                    }
+                }
+            });
+
+            var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath, snapRaster: Aoi.SnapRasterPath(strAoiPath),
+                extent: strClipEnvelope);
+            string strTemplateDataset = strClipGdb + "\\" + strClipFile;
+            for (int i = 0; i < lstImageServiceUri.Count; i++)
+            {
+                string strOutputRaster = $@"{GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Fire, true)}{lstRasterFileName[i]}";
+                var parameters = Geoprocessing.MakeValueArray(lstImageServiceUri[i], strClipEnvelope, strOutputRaster, strTemplateDataset,
+                    "", "ClippingGeometry");
+                var gpResult = await Geoprocessing.ExecuteToolAsync("Clip_management", parameters, environments,
+                                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                if (gpResult.IsFailed)
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(ClipMtbsLayersAsync), "Unable to clip " + lstImageServiceUri[i] + " to " + strOutputRaster);
+                    foreach (var objMessage in gpResult.Messages)
+                    {
+                        IGPMessage msg = (IGPMessage)objMessage;
+                        Module1.Current.ModuleLogManager.LogError(nameof(ClipMtbsLayersAsync),
+                            msg.Text);
+                    }
+                }
+            }
+            success = BA_ReturnCode.Success;
+            return success;
+        }
+
+
 
     }
 

@@ -13,7 +13,6 @@ using Newtonsoft.Json.Linq;
 using System.Net.Http;
 using Newtonsoft.Json;
 using System.IO;
-using System.Runtime;
 
 namespace bagis_pro
 {
@@ -732,7 +731,14 @@ namespace bagis_pro
                 BA_Objects.DataSource dsFire = new BA_Objects.DataSource(dictDatasources[strDataType]);
                 if (dsFire != null)
                 {
-                    wsUri = dsFire.uri;
+                    //Derive the rest uri from the imageserver uri
+                    //http://bagis.geog.pdx.edu/arcgis/rest/services/usgs_mtbs_conus
+                    //http://bagis.geog.pdx.edu/arcgis/services/usgs_mtbs_conus/
+                    string[] arrPieces = dsFire.uri.Split("/services");
+                    if (arrPieces.Length == 2)
+                    {
+                        wsUri = $@"{arrPieces[0]}/rest/services{arrPieces[1]}";
+                    }
                 }
                 else
                 {

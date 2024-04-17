@@ -3150,6 +3150,12 @@ namespace bagis_pro
             }
             return notFound;
         }
+
+        public static string GetMtbsLayerFileName(int intYear)
+        {
+            //mtbs_CONUS_1984
+            return $@"mtbs_CONUS_{intYear}";
+        }
     }
 
 }
