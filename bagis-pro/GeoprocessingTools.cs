@@ -240,6 +240,7 @@ namespace bagis_pro
             }
             IGPResult gpResult = await QueuedTask.Run(() =>
             {
+                // Always set the extent when clipping from an image service
                 var environments = Geoprocessing.MakeEnvironmentArray(workspace: strWorkspace, snapRaster: strSnapRaster, extent: strRectangle);
                 var parameters = Geoprocessing.MakeValueArray(strInputRaster, strRectangle, strOutputRaster, strTemplateDataset,
                                     strNoDataValue, strClippingGeometry);
@@ -271,6 +272,7 @@ namespace bagis_pro
             IGPResult gpResult = await QueuedTask.Run(() =>
             {
                 var environments = Geoprocessing.MakeEnvironmentArray(workspace: strWorkspace, snapRaster: strSnapRaster, extent: strRectangle);
+                // Always set the extent when clipping from an image service
                 var parameters = Geoprocessing.MakeValueArray(strLayerName, strRectangle, strOutputRaster, strTemplateDataset,
                                     strNoDataValue, strClippingGeometry);
                 return Geoprocessing.ExecuteToolAsync("Clip_management", parameters, environments,

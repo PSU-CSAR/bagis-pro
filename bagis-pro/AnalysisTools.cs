@@ -980,11 +980,12 @@ namespace bagis_pro
                         {
                             Uri imageServiceUri = new Uri(strWsPrefix + strUri + Constants.URI_IMAGE_SERVER);
                             string strOutputRaster = strOutputGdb + arrClippedFileNames[i];
-                            string strTemplateDataset = strClipGdb + "\\" + strClipFile;
+                            string strTemplateDataset = strClipGdb + "\\" + strClipFile;                     
                             var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath, snapRaster: BA_Objects.Aoi.SnapRasterPath(strAoiPath),
                                 extent: strClipEnvelope);
                             var parameters = Geoprocessing.MakeValueArray(imageServiceUri.AbsoluteUri, strClipEnvelope, strOutputRaster, strTemplateDataset,
                                                 "", "ClippingGeometry");
+                            // Always set the extent when clipping from an image service
                             var gpResult = await Geoprocessing.ExecuteToolAsync("Clip_management", parameters, environments,
                                             CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
                             if (gpResult.IsFailed)
@@ -2961,6 +2962,7 @@ namespace bagis_pro
                         success = await MapTools.DisplayMapServiceLayerAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, strInputRaster, false);
                     }
                     string strTemplateDataset = strClipGdb + "\\" + strClipFile;
+                    // Always set the extent when clipping from an image service
                     var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath, snapRaster: BA_Objects.Aoi.SnapRasterPath(strAoiPath),
                         extent: strClipEnvelope);
                     parameters = Geoprocessing.MakeValueArray(strInputRaster, strClipEnvelope, strOutputRaster, strTemplateDataset,
@@ -6758,6 +6760,7 @@ namespace bagis_pro
                 string strOutputRaster = $@"{GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Fire, true)}{lstRasterFileName[i]}";
                 var parameters = Geoprocessing.MakeValueArray(lstImageServiceUri[i], strClipEnvelope, strOutputRaster, strTemplateDataset,
                     "", "ClippingGeometry");
+                // Always set the extent if clipping from an image service
                 var gpResult = await Geoprocessing.ExecuteToolAsync("Clip_management", parameters, environments,
                                 CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
                 if (gpResult.IsFailed)
