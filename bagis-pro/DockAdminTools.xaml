@@ -299,7 +299,7 @@
                                 <TextBlock Text="{Binding FireDataClipDescr}"/>
                             </StackPanel>
                             <StackPanel Grid.Row="1" >
-                                <CheckBox x:Name="ckOverwriteMtbs" Content="Overwrite existing MTBS rasters in AOI" IsChecked="True" />
+                                <CheckBox x:Name="ckOverwriteMtbs" Content="Overwrite existing MTBS rasters in AOI" IsChecked="{Binding Reclip_MTBS_Checked}" />
                             </StackPanel>
                             <StackPanel Grid.Row="2" Orientation="Horizontal">
                                 <Button x:Name="btnFireDataLog" Content="View Log" HorizontalAlignment="Left" VerticalAlignment="Center" Width="75" IsEnabled="{Binding CmdFireDataLogEnabled}" Command="{Binding CmdFireDataLog}" Margin="5, 0, 70, 0"/>

@@ -6695,7 +6695,7 @@ namespace bagis_pro
             return success;
         }
         public static async Task<BA_ReturnCode> ClipMtbsLayersAsync(string strAoiPath, string strClipFile,
-            List<string> lstImageServiceUri, List<string> lstRasterFileName)
+            List<string> lstImageServiceUri, List<string> lstRasterFileName, bool bReclipMtbs)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
 
@@ -6758,19 +6758,73 @@ namespace bagis_pro
             for (int i = 0; i < lstImageServiceUri.Count; i++)
             {
                 string strOutputRaster = $@"{GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Fire, true)}{lstRasterFileName[i]}";
-                var parameters = Geoprocessing.MakeValueArray(lstImageServiceUri[i], strClipEnvelope, strOutputRaster, strTemplateDataset,
-                    "", "ClippingGeometry");
-                // Always set the extent if clipping from an image service
-                var gpResult = await Geoprocessing.ExecuteToolAsync("Clip_management", parameters, environments,
-                                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                if (gpResult.IsFailed)
+                string strNoDataRaster = $@"{GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Fire, true)}{lstRasterFileName[i]}_{Constants.VALUE_NO_DATA.ToUpper()}";
+                bool bClipThisLayer = true;
+                if (!bReclipMtbs)
                 {
-                    Module1.Current.ModuleLogManager.LogError(nameof(ClipMtbsLayersAsync), "Unable to clip " + lstImageServiceUri[i] + " to " + strOutputRaster);
-                    foreach (var objMessage in gpResult.Messages)
+                    // Check for both regular and NODATA rasters
+                    bool bExists = await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Fire)), lstRasterFileName[i]);
+                    if (bExists)
                     {
-                        IGPMessage msg = (IGPMessage)objMessage;
-                        Module1.Current.ModuleLogManager.LogError(nameof(ClipMtbsLayersAsync),
-                            msg.Text);
+                        bClipThisLayer = false;
+                    }
+                    else
+                    {
+                        bExists = await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Fire)), $@"{lstRasterFileName[i]}_{Constants.VALUE_NO_DATA.ToUpper()}");
+                        if (bExists)
+                        {
+                            bClipThisLayer = false;
+                        }
+                    }
+                }
+                if (bClipThisLayer)
+                {
+                    var parameters = Geoprocessing.MakeValueArray(lstImageServiceUri[i], strClipEnvelope, strOutputRaster, strTemplateDataset,
+                        "", "ClippingGeometry");
+                    // Always set the extent if clipping from an image service
+                    var gpResult = await Geoprocessing.ExecuteToolAsync("Clip_management", parameters, environments,
+                                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                    if (gpResult.IsFailed)
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(ClipMtbsLayersAsync), "Unable to clip " + lstImageServiceUri[i] + " to " + strOutputRaster);
+                        foreach (var objMessage in gpResult.Messages)
+                        {
+                            IGPMessage msg = (IGPMessage)objMessage;
+                            Module1.Current.ModuleLogManager.LogError(nameof(ClipMtbsLayersAsync), msg.Text);
+                        }
+                    }
+                    else
+                    {
+                        parameters = Geoprocessing.MakeValueArray(strOutputRaster, "ALLNODATA");
+                        gpResult = await Geoprocessing.ExecuteToolAsync("GetRasterProperties_management", parameters, null,
+                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                        if (gpResult.IsFailed)
+                        {
+                            Module1.Current.ModuleLogManager.LogError(nameof(ClipMtbsLayersAsync), "Unable to get raster properties!");
+                        }
+                        else
+                        {
+                            int intReturn = Convert.ToInt16(gpResult.ReturnValue);
+                            if (intReturn > 0)  // The raster is ALLNODATA
+                            {
+                                // Delete the original _NODATA dataset if it exists; Rename tool will not overwrite
+                                bool bExists = await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Fire)), $@"{lstRasterFileName[i]}_{Constants.VALUE_NO_DATA.ToUpper()}");
+                                if (bExists)
+                                {
+                                    success = await GeoprocessingTools.DeleteDatasetAsync(strNoDataRaster);
+                                }
+                                if (!bExists || success == BA_ReturnCode.Success)
+                                {
+                                    parameters = Geoprocessing.MakeValueArray(strOutputRaster, strNoDataRaster);
+                                    gpResult = await Geoprocessing.ExecuteToolAsync("Rename_management", parameters, null,
+                                        CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                                    if (gpResult.IsFailed)
+                                    {
+                                        Module1.Current.ModuleLogManager.LogError(nameof(ClipMtbsLayersAsync), "Failed to rename ALLNODATA raster!");
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }

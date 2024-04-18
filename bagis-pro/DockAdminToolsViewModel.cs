@@ -108,6 +108,7 @@ namespace bagis_pro
         private string _strNifcDataDescr;
         private string _strMtbsDataDescr;
         private IDictionary<string, dynamic> _dictDatasources = null;
+        private bool _Reclip_MTBS_Checked = false;  //@ToDo: Change to true before production
 
         public string Heading
         {
@@ -427,6 +428,15 @@ namespace bagis_pro
             set
             {
                 SetProperty(ref _strMtbsDataDescr, value, () => MtbsDataDescr);
+            }
+        }
+
+        public bool Reclip_MTBS_Checked
+        {
+            get { return _Reclip_MTBS_Checked; }
+            set
+            {
+                SetProperty(ref _Reclip_MTBS_Checked, value, () => Reclip_MTBS_Checked);
             }
         }
         public string FireDataClipDescr
@@ -2103,7 +2113,7 @@ namespace bagis_pro
                     }
                     if (lstMtbsImageServices.Count> 0)
                     {
-                        success = await AnalysisTools.ClipMtbsLayersAsync(aoiFolder, Constants.FILE_AOI_VECTOR, lstMtbsImageServices, lstMtbsLayerNames);
+                        success = await AnalysisTools.ClipMtbsLayersAsync(aoiFolder, Constants.FILE_AOI_VECTOR, lstMtbsImageServices, lstMtbsLayerNames, Reclip_MTBS_Checked);
                     }
 
 
