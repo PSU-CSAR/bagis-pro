@@ -2073,7 +2073,6 @@ namespace bagis_pro
                     }
 
                     // Merge features
-                    string strFieldIrwinId = "IRWINID";
                     string strCurrentId = "poly_SourceOID"; // Used to identify records that come from fire_current
                     string strMergeFc = "";
                     if (success == BA_ReturnCode.Success)
@@ -2081,8 +2080,8 @@ namespace bagis_pro
                         string strInputDatasets = $@"{lyrHistory.Name};{strOutputFc}";
                         strMergeFc = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Fire, true)
                             + Constants.FILE_NIFC_FIRE;
-                        string strIrwinIdMap = $@"{strFieldIrwinId} ""{strFieldIrwinId}"" true true false 50 Text 0 0,First,#,{lyrHistory.Name},{strFieldIrwinId},0,50,{strOutputFc},poly_IRWINID,0,38;";
-                        string strIncidentMap = $@"INCIDENT ""INCIDENT"" true true false 50 Text 0 0,First,#,{lyrHistory.Name},INCIDENT,0,50,{strOutputFc},{Constants.FIELD_FIRECURRENT_INCIDENT},0,50;";
+                        string strIrwinIdMap = $@"{Constants.FIELD_IRWIN_ID} ""{Constants.FIELD_IRWIN_ID}"" true true false 50 Text 0 0,First,#,{lyrHistory.Name},{Constants.FIELD_IRWIN_ID},0,50,{strOutputFc},poly_IRWINID,0,38;";
+                        string strIncidentMap = $@"{Constants.FIELD_INCIDENT} ""{Constants.FIELD_INCIDENT}"" true true false 50 Text 0 0,First,#,{lyrHistory.Name},{Constants.FIELD_INCIDENT},0,50,{strOutputFc},{Constants.FIELD_FIRECURRENT_INCIDENT},0,50;";
                         string strYearMap = $@"{Constants.FIELD_YEAR} ""{Constants.FIELD_YEAR}"" true true false 2 Short 0 0,First,#,{lyrHistory.Name},{Constants.FIELD_YEAR},-1,-1,{strOutputFc},{Constants.FIELD_YEAR},-1,-1;";
                         string strFieldMap = $@"{strIrwinIdMap}{strIncidentMap}{strYearMap}{strCurrentId} ""{strCurrentId}"" true true false 4 Long 0 0,First,#,{strOutputFc},{strCurrentId},-1,-1";
                         var parameters = Geoprocessing.MakeValueArray(strInputDatasets, strMergeFc, strFieldMap, "NO_SOURCE_INFO");
@@ -2100,7 +2099,11 @@ namespace bagis_pro
                     {
                         string strWhere1 = $@"{strCurrentId} > 0";    //Identifies features that came from firecurrent
                         string strNotWhere1 = $@"{strCurrentId} IS NULL";                                               
-                        success = await AnalysisTools.DeleteDuplicatesAsync(strMergeFc, strWhere1, strFieldIrwinId, strNotWhere1);
+                        success = await AnalysisTools.DeleteDuplicatesAsync(strMergeFc, strWhere1, Constants.FIELD_IRWIN_ID, strNotWhere1);
+                    }
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        success = await AnalysisTools.DeleteIrwinDuplicatesAsync(aoiFolder);
                     }
 
                     List<string> lstMtbsImageServices = new List<string>();

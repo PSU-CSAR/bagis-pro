@@ -7,6 +7,7 @@ using ArcGIS.Desktop.Core.Geoprocessing;
 using ArcGIS.Desktop.Editing;
 using ArcGIS.Desktop.Framework.Dialogs;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
+using ArcGIS.Desktop.Internal.Core.Conda;
 using ArcGIS.Desktop.Internal.GeoProcessing;
 using ArcGIS.Desktop.Mapping;
 using bagis_pro.BA_Objects;
@@ -6692,6 +6693,79 @@ namespace bagis_pro
                 success = await GeoprocessingTools.DeleteFieldAsync(strFeatureClass, Delete_YN);
                 success = await GeoprocessingTools.DeleteFieldAsync(strFeatureClass, "poly_SourceOID");
             }
+            return success;
+        }
+
+        public async static Task<BA_ReturnCode> DeleteIrwinDuplicatesAsync(string strAoiPath)
+        {
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            string strNifc = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Fire, true) + Constants.FILE_NIFC_FIRE;
+            // Create selection layer
+            FeatureLayer lyrIrwin = null;
+            var oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
+            await QueuedTask.Run(() =>
+            {
+                var historyParams = new FeatureLayerCreationParams(new Uri(strNifc))
+                {
+                    Name = "Irwin Layer",
+                    IsVisible = false,
+                    MapMemberIndex = 0,
+                    MapMemberPosition = 0,
+                };
+                lyrIrwin = LayerFactory.Instance.CreateLayer<FeatureLayer>(historyParams, oMap);
+                lyrIrwin.SetDefinitionQuery($@"{Constants.FIELD_IRWIN_ID} IS NOT NULL");
+            });
+
+            string tmpIrwinFeatures = "tmpIrwin";
+            var parameters = Geoprocessing.MakeValueArray(lyrIrwin.Name, $@"{GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Fire, true)}{tmpIrwinFeatures}");
+            var gpResult = await Geoprocessing.ExecuteToolAsync("ExportFeatures_conversion", parameters, null,
+               CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+            if (gpResult.IsFailed)
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(DeleteIrwinDuplicatesAsync),
+                    $@"Export Features could not create{tmpIrwinFeatures}");
+                success = BA_ReturnCode.UnknownError;
+            }
+            else
+            {
+                success = BA_ReturnCode.Success;
+            }
+            if (success == BA_ReturnCode.Success)
+            {
+                parameters = Geoprocessing.MakeValueArray(lyrIrwin.Name);
+                gpResult = await Geoprocessing.ExecuteToolAsync("DeleteFeatures_management", parameters, null,
+                   CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                if (gpResult.IsFailed)
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(DeleteIrwinDuplicatesAsync),
+                        "Failed to execute DeleteFeatures tool on Irwin Layer");
+                    success = BA_ReturnCode.UnknownError;
+                }
+            }
+            string tmpIrwinDissolve = "tmpIrwinDissolve";
+            if (success == BA_ReturnCode.Success)
+            {
+                parameters = Geoprocessing.MakeValueArray($@"{GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Fire, true)}{tmpIrwinFeatures}",
+                    $@"{GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Fire, true)}{tmpIrwinDissolve}",
+                    $@"{Constants.FIELD_IRWIN_ID};{Constants.FIELD_INCIDENT};{Constants.FIELD_YEAR}");
+                gpResult = await Geoprocessing.ExecuteToolAsync("Dissolve_management", parameters, null,
+                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                if (gpResult.IsFailed)
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(DeleteIrwinDuplicatesAsync), "Unable to generate dissolved tmpIrwin layer");
+                    success = BA_ReturnCode.UnknownError;
+                }
+            }
+            else
+            {
+                return BA_ReturnCode.UnknownError;
+            }
+
+            // Remove temporary layer
+            await QueuedTask.Run(() =>
+            {
+                oMap.RemoveLayer(lyrIrwin);
+            });
             return success;
         }
         public static async Task<BA_ReturnCode> ClipMtbsLayersAsync(string strAoiPath, string strClipFile,
