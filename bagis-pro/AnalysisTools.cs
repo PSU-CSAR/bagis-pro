@@ -6755,10 +6755,26 @@ namespace bagis_pro
                     Module1.Current.ModuleLogManager.LogError(nameof(DeleteIrwinDuplicatesAsync), "Unable to generate dissolved tmpIrwin layer");
                     success = BA_ReturnCode.UnknownError;
                 }
+                else
+                {
+                    success = BA_ReturnCode.Success;
+                }
             }
-            else
+            if (success == BA_ReturnCode.Success)
             {
-                return BA_ReturnCode.UnknownError;
+                parameters = Geoprocessing.MakeValueArray($@"{GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Fire, true)}{tmpIrwinDissolve}", 
+                    strNifc,"TEST");
+                gpResult = await Geoprocessing.ExecuteToolAsync("Append_management", parameters, null,
+                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                if (gpResult.IsFailed)
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(DeleteIrwinDuplicatesAsync), "Unable to append dissolved tmpIrwin layer to nifcfire");
+                    success = BA_ReturnCode.UnknownError;
+                }
+                else
+                {
+                    success = BA_ReturnCode.Success;
+                }
             }
 
             // Remove temporary layer
@@ -6766,6 +6782,16 @@ namespace bagis_pro
             {
                 oMap.RemoveLayer(lyrIrwin);
             });
+
+            // Delete working files
+            string[] arrTempFiles = { tmpIrwinFeatures, tmpIrwinDissolve};
+            for (int i = 0; i < arrTempFiles.Length; i++)
+            {
+                if (await GeodatabaseTools.FeatureClassExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Fire)), arrTempFiles[i]))
+                {
+                    await GeoprocessingTools.DeleteDatasetAsync($@"{GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Fire, true)}{arrTempFiles[i]}");
+                }
+            }
             return success;
         }
         public static async Task<BA_ReturnCode> ClipMtbsLayersAsync(string strAoiPath, string strClipFile,
