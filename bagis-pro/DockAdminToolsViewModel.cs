@@ -2151,7 +2151,8 @@ namespace bagis_pro
             // Create initial log entry
             string strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Starting fire report " + "\r\n";
             File.WriteAllText(_strFireReportLogFile, strLogEntry);    // overwrite file if it exists
-
+            // Dictionary: Key is the year, Value is an ArrayList of the values for that line
+            IDictionary<string, IList<IList<string>>> dictOutput = new Dictionary<string, IList<IList<string>>>();    
             int minYear = FireBaselineYear - FireDataClipYears;
             for (int idxRow = 0; idxRow < Names.Count; idxRow++)
             {
@@ -2172,7 +2173,6 @@ namespace bagis_pro
                             Names[idxRow].Name + "\r\n";
                         File.AppendAllText(_strFireReportLogFile, strLogEntry);       // append
                     }
-                    string strAoiFolder = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Aoi);
                     // Set current AOI
                     Aoi oAoi = await GeneralTools.SetAoiAsync(aoiFolder, Names[idxRow]);
                     if (Module1.Current.CboCurrentAoi != null)
@@ -2186,34 +2186,59 @@ namespace bagis_pro
 
                     for (int i = minYear; i <= FireBaselineYear; i++)
                     {
-                        // Structures to manage data
-                        string strCsvFile = $@"{Path.GetDirectoryName(_strFireReportLogFile)}\{i}_annual_statistics.csv";
-                        string separator = ",";
-                        StringBuilder output = new StringBuilder();
-                        String[] headings = { "stationTriplet", "stationName", $@"{i}_newfireno" };
-                        output.AppendLine(string.Join(separator, headings));
-
                         IList<string> lstElements = await AnalysisTools.GenerateFireStatisticsList(oAoi, _strFireReportLogFile, i);
-                        output.AppendLine(string.Join(separator, lstElements));
-
-
-
-                        try
+                        if (dictOutput.ContainsKey(i.ToString()))
                         {
-                            // Overwrites file with new content
-                            File.WriteAllText(strCsvFile, output.ToString());
+                            dictOutput[i.ToString()].Add(lstElements);
                         }
-                        catch (Exception ex)
+                        else
                         {
-                            strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} Data could not be written to the CSV file!{System.Environment.NewLine}";
-                            File.AppendAllText(_strFireReportLogFile, strLogEntry);
-                            MessageBox.Show("Data could not be written to the CSV file!", "BAGIS-PRO");
-                            return;
-                        }
+                            IList<IList<string>> lstNew = new List<IList<string>>();
+                            lstNew.Add(lstElements);
+                            dictOutput.Add(i.ToString(), lstNew);
+                        }                        
                     }
 
+                    Names[idxRow].AoiBatchStateText = AoiBatchState.Completed.ToString();  // update gui
+                    strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Finished generate fire statistics export for " +
+                        Names[idxRow].Name + "\r\n";
+                    File.AppendAllText(_strFireReportLogFile, strLogEntry);       // append
                 }
             }
+
+            // Write out results from dictionary
+            for (int i = minYear; i <= FireBaselineYear; i++)
+            {
+                // Structures to manage data
+                string strCsvFile = $@"{Path.GetDirectoryName(_strFireReportLogFile)}\{i}_annual_statistics.csv";
+                string separator = ",";
+                StringBuilder output = new StringBuilder();
+                String[] headings = { "stationTriplet", "stationName", $@"{i}_newfireno" };
+                output.AppendLine(string.Join(separator, headings));
+
+                if (dictOutput.ContainsKey(i.ToString()))
+                {
+                    IList<IList<string>> lstYearElements = dictOutput[i.ToString()];
+                    foreach (var item in lstYearElements)
+                    {
+                        output.AppendLine(string.Join(separator, item));
+                    }
+                }
+
+                try
+                {
+                    // Overwrites file with new content
+                    File.WriteAllText(strCsvFile, output.ToString());
+                }
+                catch (Exception ex)
+                {
+                    strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} Data could not be written to the CSV file!{System.Environment.NewLine}";
+                    File.AppendAllText(_strFireReportLogFile, strLogEntry);
+                    MessageBox.Show("Data could not be written to the CSV file!", "BAGIS-PRO");
+                    return;
+                }
+            }
+
 
 
         }
