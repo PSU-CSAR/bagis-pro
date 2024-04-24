@@ -9,6 +9,7 @@ using ArcGIS.Desktop.Framework.Dialogs;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
 using ArcGIS.Desktop.Internal.Core.Conda;
 using ArcGIS.Desktop.Internal.GeoProcessing;
+using ArcGIS.Desktop.Layouts;
 using ArcGIS.Desktop.Mapping;
 using bagis_pro.BA_Objects;
 using Newtonsoft.Json.Linq;
@@ -6932,8 +6933,45 @@ namespace bagis_pro
             return success;
         }
 
+        public static async Task<double> QueryPerimeterStatisticByYearAsync(string aoiPath, int intYear, 
+            FirePerimeterStatType fireStatType)
+        {
+            double dblReturn = -1;
+            string strGdbFire = GeodatabaseTools.GetGeodatabasePath(aoiPath, GeodatabaseNames.Fire);
+            switch (fireStatType)
+            {
+                case FirePerimeterStatType.Count:
+                    await QueuedTask.Run(() =>
+                    {
+                        using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(strGdbFire))))
+                        using (FeatureClass featureClass = geodatabase.OpenDataset<FeatureClass>(Constants.FILE_NIFC_FIRE))
+                        {
+                            QueryFilter queryFilter = new QueryFilter();
+                            queryFilter.WhereClause = $@"{Constants.FIELD_YEAR} = {intYear}";
+                            long count = featureClass.GetCount(queryFilter);
+                            dblReturn = Convert.ToDouble(count);
+                        }
+                    });
+                    break;
+            }
 
+            return dblReturn;
+        }
+
+        public static async Task<IList<string>> GenerateFireStatisticsList(BA_Objects.Aoi oAoi, string strLogFile, int intYear)
+        {
+            IList<string> lstElements = new List<string>();
+            lstElements.Add(oAoi.StationTriplet);   // Station triplet
+            lstElements.Add(oAoi.Name);  //AOI Name
+
+            double dblFireCount = await AnalysisTools.QueryPerimeterStatisticByYearAsync(oAoi.FilePath, intYear, FirePerimeterStatType.Count);
+            lstElements.Add(Convert.ToString(dblFireCount));
+
+
+            return lstElements;
+        }
+
+
+        }
 
     }
-
-}

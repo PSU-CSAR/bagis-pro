@@ -137,4 +137,9 @@ namespace bagis_pro
         Aspect,
         Precipitation
     }
+
+    public enum FirePerimeterStatType
+    {
+        Count
+    }
 }

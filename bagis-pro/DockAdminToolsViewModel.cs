@@ -589,7 +589,7 @@ namespace bagis_pro
                         NifcDataDescr = $@"NIFC data available from {NifcMinYear} to {_intNifcMaxYear}";
                         FireBaselineYear = _intNifcMaxYear;
                         SelectedMaxYear = FireBaselineYear;
-                        SelectedMinYear = SelectedMaxYear - 30;
+                        SelectedMinYear = SelectedMaxYear - FireDataClipYears;
                         FireTimePeriodCount = 6;    //@ToDo: Replace this with calculation
                         _intMtbsMaxYear = await this.QueryMtbsMaxYearAsync(_dictDatasources, Constants.DATA_TYPE_FIRE_BURN_SEVERITY);
                         MtbsDataDescr = $@"MTBS data available from {MtbsMinYear} to {_intMtbsMaxYear}";
@@ -1940,7 +1940,7 @@ namespace bagis_pro
             File.WriteAllText(_strFireDataLogFile, strLogEntry);    // overwrite file if it exists
             var oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
             int maxYearClip = DateTime.Now.Year;
-            int minYearClip = maxYearClip - 30;
+            int minYearClip = maxYearClip - FireDataClipYears;
 
             // Reset batch states
             ResetAoiBatchStateText();
@@ -1981,7 +1981,7 @@ namespace bagis_pro
                     BA_ReturnCode success = BA_ReturnCode.UnknownError;
                     if (!Directory.Exists(GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Fire)))
                     {
-                        var parameters = Geoprocessing.MakeValueArray(ParentFolder, GeodatabaseNames.Fire.Value);
+                        var parameters = Geoprocessing.MakeValueArray(aoiFolder, GeodatabaseNames.Fire.Value);
                         var gpResult = await Geoprocessing.ExecuteToolAsync("CreateFileGDB_management", parameters, environments,
                                 CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
                         if (gpResult.IsFailed)
@@ -2151,6 +2151,71 @@ namespace bagis_pro
             // Create initial log entry
             string strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Starting fire report " + "\r\n";
             File.WriteAllText(_strFireReportLogFile, strLogEntry);    // overwrite file if it exists
+
+            int minYear = FireBaselineYear - FireDataClipYears;
+            for (int idxRow = 0; idxRow < Names.Count; idxRow++)
+            {
+                if (Names[idxRow].AoiBatchIsSelected)
+                {
+                    int errorCount = 0; // keep track of any non-fatal errors
+                    string aoiFolder = Names[idxRow].FilePath;
+                    if (Names[idxRow].AoiBatchStateText.Equals(AoiBatchState.NotReady.ToString()))
+                    {
+                        strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} Skipping fire report for {Names[idxRow].FilePath}. Required station information is missing.{System.Environment.NewLine}";
+                        File.AppendAllText(_strFireReportLogFile, strLogEntry);
+                        continue;
+                    }
+                    else
+                    {
+                        Names[idxRow].AoiBatchStateText = AoiBatchState.Started.ToString();  // update gui
+                        strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Starting fire data for " +
+                            Names[idxRow].Name + "\r\n";
+                        File.AppendAllText(_strFireReportLogFile, strLogEntry);       // append
+                    }
+                    string strAoiFolder = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Aoi);
+                    // Set current AOI
+                    Aoi oAoi = await GeneralTools.SetAoiAsync(aoiFolder, Names[idxRow]);
+                    if (Module1.Current.CboCurrentAoi != null)
+                    {
+                        FrameworkApplication.Current.Dispatcher.Invoke(() =>
+                        {
+                            // Do something on the GUI thread
+                            Module1.Current.CboCurrentAoi.SetAoiName(oAoi.Name);
+                        });
+                    }
+
+                    for (int i = minYear; i <= FireBaselineYear; i++)
+                    {
+                        // Structures to manage data
+                        string strCsvFile = $@"{Path.GetDirectoryName(_strFireReportLogFile)}\{i}_annual_statistics.csv";
+                        string separator = ",";
+                        StringBuilder output = new StringBuilder();
+                        String[] headings = { "stationTriplet", "stationName", $@"{i}_newfireno" };
+                        output.AppendLine(string.Join(separator, headings));
+
+                        IList<string> lstElements = await AnalysisTools.GenerateFireStatisticsList(oAoi, _strFireReportLogFile, i);
+                        output.AppendLine(string.Join(separator, lstElements));
+
+
+
+                        try
+                        {
+                            // Overwrites file with new content
+                            File.WriteAllText(strCsvFile, output.ToString());
+                        }
+                        catch (Exception ex)
+                        {
+                            strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} Data could not be written to the CSV file!{System.Environment.NewLine}";
+                            File.AppendAllText(_strFireReportLogFile, strLogEntry);
+                            MessageBox.Show("Data could not be written to the CSV file!", "BAGIS-PRO");
+                            return;
+                        }
+                    }
+
+                }
+            }
+
+
         }
 
             private string CreateLogEntry(string strAoiPath, string strOldTriplet, string strNewTriplet, string strRemarks)
