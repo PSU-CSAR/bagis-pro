@@ -140,6 +140,9 @@ namespace bagis_pro
 
     public enum FirePerimeterStatType
     {
-        Count
+        Count,
+        AreaSqMiles,
+        NifcBurnedAreaPct,
+        MtbsBurnedAreaPct
     }
 }

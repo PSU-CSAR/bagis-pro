@@ -2184,9 +2184,28 @@ namespace bagis_pro
                         });
                     }
 
+                    Uri aoiUri = new Uri(GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi));
+                    Uri fireUri = new Uri(GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Fire));
+                    double aoiAreaSqMeters = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(aoiUri, Constants.FILE_AOI_VECTOR, null);
+                    double cellSizeSqMeters = -1;
+                    for (int i = _intMtbsMaxYear; i >= MtbsMinYear; --i)
+                    {
+                        string strRasterName = GeneralTools.GetMtbsLayerFileName(i);
+                        if (await GeodatabaseTools.RasterDatasetExistsAsync(fireUri, strRasterName))
+                        {
+                            double dblTest = await GeodatabaseTools.GetCellSizeAsync(fireUri, strRasterName);
+                            if (dblTest > 0)
+                            {
+                                cellSizeSqMeters = Math.Round(dblTest,2);
+                                break;
+                            }
+                        }
+
+                    }
                     for (int i = minYear; i <= FireBaselineYear; i++)
                     {
-                        IList<string> lstElements = await AnalysisTools.GenerateFireStatisticsList(oAoi, _strFireReportLogFile, i);
+                        IList<string> lstElements = await AnalysisTools.GenerateFireStatisticsList(oAoi, _strFireReportLogFile, 
+                            aoiAreaSqMeters,cellSizeSqMeters, i);
                         if (dictOutput.ContainsKey(i.ToString()))
                         {
                             dictOutput[i.ToString()].Add(lstElements);
@@ -2213,7 +2232,8 @@ namespace bagis_pro
                 string strCsvFile = $@"{Path.GetDirectoryName(_strFireReportLogFile)}\{i}_annual_statistics.csv";
                 string separator = ",";
                 StringBuilder output = new StringBuilder();
-                String[] headings = { "stationTriplet", "stationName", $@"{i}_newfireno" };
+                String[] headings = { "stationTriplet", "stationName", $@"{i}_newfireno", $@"{i}_nifc_burnedArea_SqMiles", 
+                    $@"{i}_nifc_burnedArea_pct", $@"{i}_mtbs_burnedArea_pct" };
                 output.AppendLine(string.Join(separator, headings));
 
                 if (dictOutput.ContainsKey(i.ToString()))

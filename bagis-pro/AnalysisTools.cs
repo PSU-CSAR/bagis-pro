@@ -6934,7 +6934,7 @@ namespace bagis_pro
         }
 
         public static async Task<double> QueryPerimeterStatisticByYearAsync(string aoiPath, int intYear, 
-            FirePerimeterStatType fireStatType)
+            double aoiAreaSqMeters, FirePerimeterStatType fireStatType)
         {
             double dblReturn = -1;
             string strGdbFire = GeodatabaseTools.GetGeodatabasePath(aoiPath, GeodatabaseNames.Fire);
@@ -6953,25 +6953,92 @@ namespace bagis_pro
                         }
                     });
                     break;
+                case FirePerimeterStatType.AreaSqMiles:
+                    string strWhere = $@"{Constants.FIELD_YEAR} = {intYear}";
+                    double dblAreaSqMeters = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(new Uri(strGdbFire), Constants.FILE_NIFC_FIRE, strWhere);
+                    if (dblAreaSqMeters > 0)
+                    {
+                        dblReturn  = Math.Round(AreaUnit.SquareMeters.ConvertTo(dblAreaSqMeters, AreaUnit.SquareMiles), 2);
+                    }
+                    else
+                    {
+                        dblReturn = 0;
+                    }
+                    break;
+                case FirePerimeterStatType.NifcBurnedAreaPct:
+                    strWhere = $@"{Constants.FIELD_YEAR} = {intYear}";
+                    dblAreaSqMeters = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(new Uri(strGdbFire), Constants.FILE_NIFC_FIRE, strWhere);
+                    if (dblAreaSqMeters > 0)
+                    {
+                        dblReturn = Math.Round(dblAreaSqMeters/aoiAreaSqMeters * 100, 1);
+                    }
+                    else
+                    {
+                        dblReturn = 0;
+                    }
+                    break;
             }
 
             return dblReturn;
         }
 
-        public static async Task<IList<string>> GenerateFireStatisticsList(BA_Objects.Aoi oAoi, string strLogFile, int intYear)
+        public static async Task<double> QueryMtbsStatisticByYearAsync(string aoiPath, int intYear,
+            double aoiAreaSqMeters, double dblMtbsCellSize, FirePerimeterStatType fireStatType)
+        {
+            double dblReturn = -1;
+            string strGdbFire = GeodatabaseTools.GetGeodatabasePath(aoiPath, GeodatabaseNames.Fire);
+            string strMtbsLayer = GeneralTools.GetMtbsLayerFileName(intYear);
+            switch (fireStatType)
+            {
+                case FirePerimeterStatType.MtbsBurnedAreaPct:
+                    IDictionary<string, long> dictMtbsArea = await GeodatabaseTools.RasterTableToDictionaryAsync(new Uri(strGdbFire), strMtbsLayer);
+                    long lngTotal = 0;
+                    foreach (var strKey in dictMtbsArea.Keys)
+                    {
+                        lngTotal = lngTotal + dictMtbsArea[strKey];
+                    }
+                    double dblAreaSqMeters = lngTotal * dblMtbsCellSize;
+                    if (dblAreaSqMeters > 0)
+                    {
+                        dblReturn = Math.Round(dblAreaSqMeters / aoiAreaSqMeters * 100, 1);
+                    }
+                    else
+                    {
+                        dblReturn = 0;
+                    }
+                    break;
+ 
+            }
+            return dblReturn;
+        }
+
+        public static async Task<IList<string>> GenerateFireStatisticsList(BA_Objects.Aoi oAoi, string strLogFile, double aoiAreaSqMeters,
+                double dblMtbsCellSize, int intYear)
         {
             IList<string> lstElements = new List<string>();
             lstElements.Add(oAoi.StationTriplet);   // Station triplet
             lstElements.Add(oAoi.Name);  //AOI Name
+            string gdbFire = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Fire);
+            bool bMtbsExists = await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(gdbFire), GeneralTools.GetMtbsLayerFileName(intYear));
 
-            double dblFireCount = await AnalysisTools.QueryPerimeterStatisticByYearAsync(oAoi.FilePath, intYear, FirePerimeterStatType.Count);
+            double dblFireCount = await QueryPerimeterStatisticByYearAsync(oAoi.FilePath, intYear, aoiAreaSqMeters, FirePerimeterStatType.Count);
             lstElements.Add(Convert.ToString(dblFireCount));
-
+            double dblAreaSqMiles = await QueryPerimeterStatisticByYearAsync(oAoi.FilePath, intYear, aoiAreaSqMeters, FirePerimeterStatType.AreaSqMiles);
+            lstElements.Add(Convert.ToString(dblAreaSqMiles));
+            double dblBurnedAreaPct = await QueryPerimeterStatisticByYearAsync(oAoi.FilePath, intYear, aoiAreaSqMeters, FirePerimeterStatType.NifcBurnedAreaPct);
+            lstElements.Add(Convert.ToString(dblBurnedAreaPct));
+            double dblMtbsBurnedAreaPct = 0;
+            if (bMtbsExists)
+            {
+                dblMtbsBurnedAreaPct = await QueryMtbsStatisticByYearAsync(oAoi.FilePath, intYear, aoiAreaSqMeters, dblMtbsCellSize,
+                    FirePerimeterStatType.MtbsBurnedAreaPct);
+            }
+            lstElements.Add(Convert.ToString(dblMtbsBurnedAreaPct));
 
             return lstElements;
         }
 
 
-        }
-
     }
+
+}

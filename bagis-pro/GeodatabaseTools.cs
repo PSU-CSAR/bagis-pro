@@ -12,6 +12,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -1009,6 +1010,43 @@ namespace bagis_pro
             });
             return success;
         }
+
+        // key is value, value is count
+        public static async Task<IDictionary<string, long>> RasterTableToDictionaryAsync(Uri gdbUri, string rasterName)
+        {
+            IDictionary<string, long> dictReturn = new Dictionary<string, long>(); 
+            await QueuedTask.Run(() =>
+            {
+                using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(gdbUri)))
+                using (RasterDataset rasterDataset = geodatabase.OpenDataset<RasterDataset>(rasterName))
+                {
+                    RasterBandDefinition bandDefinition = rasterDataset.GetBand(0).GetDefinition();
+                    Raster raster = rasterDataset.CreateDefaultRaster();
+                    using (Table rasterTable = raster.GetAttributeTable())
+                    {
+                        TableDefinition definition = rasterTable.GetDefinition();
+                        int idxValue = definition.FindField(Constants.FIELD_VALUE);
+                        int idxCount = definition.FindField(Constants.FIELD_COUNT);
+                        using (RowCursor cursor = rasterTable.Search())
+                        {
+                            while (cursor.MoveNext())
+                            {
+                                Row row = cursor.Current;
+                                long lngCount = Convert.ToInt64(row[idxCount]);
+                                string strValue = Convert.ToString(row[idxValue]);
+                                if (!string.IsNullOrEmpty(strValue))
+                                {
+                                    dictReturn.Add(strValue, lngCount);
+                                }
+                            }
+                        }
+                    }
+                }
+               });
+            return dictReturn;
+        }
+
+
     }
 
     
