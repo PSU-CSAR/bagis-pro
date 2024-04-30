@@ -8,6 +8,7 @@ using ArcGIS.Desktop.Core.Geoprocessing;
 using ArcGIS.Desktop.Editing;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
 using ArcGIS.Desktop.Mapping;
+using bagis_pro.BA_Objects;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -391,7 +392,6 @@ namespace bagis_pro
                 bool bExists = await GeodatabaseTools.FeatureClassExistsAsync(gdbUri, featureClassName);
                 if (!bExists)
                     return dblRetVal;
-
                 await QueuedTask.Run(() =>
                 {
                     using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(gdbUri)))
@@ -402,15 +402,25 @@ namespace bagis_pro
                         {
                             queryFilter.WhereClause = strWhere;
                         }
+                        TableDefinition definition = table.GetDefinition();
+                        int idxArea = definition.FindField(Constants.FIELD_RECALC_AREA);
                         using (RowCursor aCursor = table.Search(queryFilter, false))
                         {
                             while (aCursor.MoveNext())
                             {
-                                using (Feature feature = (Feature)aCursor.Current)
+                                if (idxArea > -1)
                                 {
-                                    var geometry = feature.GetShape();
-                                    var area = GeometryEngine.Instance.Area(geometry);
-                                    dblRetVal = dblRetVal + area;
+                                    Row row = aCursor.Current;
+                                    dblRetVal = dblRetVal + Convert.ToDouble(row[idxArea]);
+                                }
+                                else
+                                {
+                                    using (Feature feature = (Feature)aCursor.Current)
+                                    {
+                                        var geometry = feature.GetShape();
+                                        var area = GeometryEngine.Instance.Area(geometry);
+                                        dblRetVal = dblRetVal + area;
+                                    }
                                 }
                             }
                         }
@@ -423,7 +433,6 @@ namespace bagis_pro
                     "Exception: " + e.Message);
                 dblRetVal = -1;
             }
-
             return dblRetVal;
         }
 

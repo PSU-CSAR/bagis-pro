@@ -2106,6 +2106,10 @@ namespace bagis_pro
                         success = await AnalysisTools.DeleteIrwinDuplicatesAsync(aoiFolder);
                     }
 
+                    // Recalculate area due to bug in Pro
+                    string strAreaProperties = Constants.FIELD_RECALC_AREA + " AREA_GEODESIC";
+                    success = await GeoprocessingTools.CalculateGeometryAsync(strMergeFc, strAreaProperties, "SQUARE_METERS");
+
                     List<string> lstMtbsImageServices = new List<string>();
                     List<string> lstMtbsLayerNames = new List<string>();
                     DataSource dsFire = new DataSource(_dictDatasources[Constants.DATA_TYPE_FIRE_BURN_SEVERITY]);

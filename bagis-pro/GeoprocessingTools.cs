@@ -1,5 +1,6 @@
 ﻿using ArcGIS.Core.Data;
 using ArcGIS.Core.Geometry;
+using ArcGIS.Core.Internal.CIM;
 using ArcGIS.Desktop.Core.Geoprocessing;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
 using ArcGIS.Desktop.Mapping;
@@ -423,6 +424,23 @@ namespace bagis_pro
                 return BA_ReturnCode.Success;
             }
 
+        }
+
+        public static async Task<BA_ReturnCode> CalculateGeometryAsync(string inFeatures, string strGeometryProperties, string strAreaUnits)
+        {
+            var parameters = Geoprocessing.MakeValueArray(inFeatures, strGeometryProperties, null, strAreaUnits);
+            IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("CalculateGeometryAttributes_management", parameters, null,
+                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+            if (gpResult.IsFailed)
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(CalculateGeometryAsync),
+                    "Geoprocessing failed: " + gpResult.Messages);
+                return BA_ReturnCode.UnknownError;
+            }
+            else
+            {
+                return BA_ReturnCode.Success;
+            }
         }
     }
 }

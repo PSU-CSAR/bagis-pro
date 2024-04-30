@@ -6861,70 +6861,67 @@ namespace bagis_pro
                 string strOutputRaster = $@"{GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Fire, true)}{lstRasterFileName[i]}";
                 string strNoDataRaster = $@"{GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Fire, true)}{lstRasterFileName[i]}_{Constants.VALUE_NO_DATA.ToUpper()}";
                 bool bClipThisLayer = true;
-                if (!bReclipMtbs)
+                // Check for both regular and NODATA rasters
+                bool bExists = await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Fire)), lstRasterFileName[i]);
+                if (bExists)
                 {
-                    // Check for both regular and NODATA rasters
-                    bool bExists = await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Fire)), lstRasterFileName[i]);
+                        bClipThisLayer = false;
+                }
+                else
+                {
+                    bExists = await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Fire)), $@"{lstRasterFileName[i]}_{Constants.VALUE_NO_DATA.ToUpper()}");
                     if (bExists)
                     {
                         bClipThisLayer = false;
                     }
-                    else
-                    {
-                        bExists = await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Fire)), $@"{lstRasterFileName[i]}_{Constants.VALUE_NO_DATA.ToUpper()}");
-                        if (bExists)
-                        {
-                            bClipThisLayer = false;
-                        }
-                    }
                 }
-                if (bClipThisLayer)
+                if (bReclipMtbs || bClipThisLayer)
                 {
-                    var parameters = Geoprocessing.MakeValueArray(lstImageServiceUri[i], strClipEnvelope, strOutputRaster, strTemplateDataset,
-                        "", "ClippingGeometry");
-                    // Always set the extent if clipping from an image service
-                    var gpResult = await Geoprocessing.ExecuteToolAsync("Clip_management", parameters, environments,
-                                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                    if (gpResult.IsFailed)
-                    {
-                        Module1.Current.ModuleLogManager.LogError(nameof(ClipMtbsLayersAsync), "Unable to clip " + lstImageServiceUri[i] + " to " + strOutputRaster);
-                        foreach (var objMessage in gpResult.Messages)
-                        {
-                            IGPMessage msg = (IGPMessage)objMessage;
-                            Module1.Current.ModuleLogManager.LogError(nameof(ClipMtbsLayersAsync), msg.Text);
-                        }
-                    }
-                    else
-                    {
-                        parameters = Geoprocessing.MakeValueArray(strOutputRaster, "ALLNODATA");
-                        gpResult = await Geoprocessing.ExecuteToolAsync("GetRasterProperties_management", parameters, null,
-                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                        var parameters = Geoprocessing.MakeValueArray(lstImageServiceUri[i], strClipEnvelope, strOutputRaster, strTemplateDataset,
+                            "", "ClippingGeometry");
+                        // Always set the extent if clipping from an image service
+                        var gpResult = await Geoprocessing.ExecuteToolAsync("Clip_management", parameters, environments,
+                                        CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
                         if (gpResult.IsFailed)
                         {
-                            Module1.Current.ModuleLogManager.LogError(nameof(ClipMtbsLayersAsync), "Unable to get raster properties!");
+                            Module1.Current.ModuleLogManager.LogError(nameof(ClipMtbsLayersAsync), "Unable to clip " + lstImageServiceUri[i] + " to " + strOutputRaster);
+                            foreach (var objMessage in gpResult.Messages)
+                            {
+                                IGPMessage msg = (IGPMessage)objMessage;
+                                Module1.Current.ModuleLogManager.LogError(nameof(ClipMtbsLayersAsync), msg.Text);
+                            }
                         }
                         else
                         {
-                            int intReturn = Convert.ToInt16(gpResult.ReturnValue);
-                            if (intReturn > 0)  // The raster is ALLNODATA
+                            parameters = Geoprocessing.MakeValueArray(strOutputRaster, "ALLNODATA");
+                            gpResult = await Geoprocessing.ExecuteToolAsync("GetRasterProperties_management", parameters, null,
+                                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                            if (gpResult.IsFailed)
                             {
-                                // Delete the original _NODATA dataset if it exists; Rename tool will not overwrite
-                                bool bExists = await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Fire)), $@"{lstRasterFileName[i]}_{Constants.VALUE_NO_DATA.ToUpper()}");
-                                if (bExists)
+                                Module1.Current.ModuleLogManager.LogError(nameof(ClipMtbsLayersAsync), "Unable to get raster properties!");
+                            }
+                            else
+                            {
+                                int intReturn = Convert.ToInt16(gpResult.ReturnValue);
+                                if (intReturn > 0)  // The raster is ALLNODATA
                                 {
-                                    success = await GeoprocessingTools.DeleteDatasetAsync(strNoDataRaster);
-                                }
-                                if (!bExists || success == BA_ReturnCode.Success)
-                                {
-                                    parameters = Geoprocessing.MakeValueArray(strOutputRaster, strNoDataRaster);
-                                    gpResult = await Geoprocessing.ExecuteToolAsync("Rename_management", parameters, null,
-                                        CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                                    if (gpResult.IsFailed)
+                                    // Delete the original _NODATA dataset if it exists; Rename tool will not overwrite
+                                    bExists = await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Fire)), $@"{lstRasterFileName[i]}_{Constants.VALUE_NO_DATA.ToUpper()}");
+                                    if (bExists)
                                     {
-                                        Module1.Current.ModuleLogManager.LogError(nameof(ClipMtbsLayersAsync), "Failed to rename ALLNODATA raster!");
+                                        success = await GeoprocessingTools.DeleteDatasetAsync(strNoDataRaster);
+                                    }
+                                    if (!bExists || success == BA_ReturnCode.Success)
+                                    {
+                                        parameters = Geoprocessing.MakeValueArray(strOutputRaster, strNoDataRaster);
+                                        gpResult = await Geoprocessing.ExecuteToolAsync("Rename_management", parameters, null,
+                                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                                        if (gpResult.IsFailed)
+                                        {
+                                            Module1.Current.ModuleLogManager.LogError(nameof(ClipMtbsLayersAsync), "Failed to rename ALLNODATA raster!");
+                                        }
                                     }
                                 }
-                            }
                         }
                     }
                 }
@@ -6933,14 +6930,14 @@ namespace bagis_pro
             return success;
         }
 
-        public static async Task<double> QueryPerimeterStatisticByYearAsync(string aoiPath, int intYear, 
-            double aoiAreaSqMeters, FirePerimeterStatType fireStatType)
+        public static async Task<double> QueryPerimeterStatisticsByYearAsync(string aoiPath, int intYear, 
+            double aoiAreaSqMeters, FireStatisticType fireStatType, string strLogFile)
         {
             double dblReturn = -1;
             string strGdbFire = GeodatabaseTools.GetGeodatabasePath(aoiPath, GeodatabaseNames.Fire);
             switch (fireStatType)
             {
-                case FirePerimeterStatType.Count:
+                case FireStatisticType.Count:
                     await QueuedTask.Run(() =>
                     {
                         using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(strGdbFire))))
@@ -6953,7 +6950,7 @@ namespace bagis_pro
                         }
                     });
                     break;
-                case FirePerimeterStatType.AreaSqMiles:
+                case FireStatisticType.AreaSqMiles:
                     string strWhere = $@"{Constants.FIELD_YEAR} = {intYear}";
                     double dblAreaSqMeters = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(new Uri(strGdbFire), Constants.FILE_NIFC_FIRE, strWhere);
                     if (dblAreaSqMeters > 0)
@@ -6965,7 +6962,7 @@ namespace bagis_pro
                         dblReturn = 0;
                     }
                     break;
-                case FirePerimeterStatType.NifcBurnedAreaPct:
+                case FireStatisticType.NifcBurnedAreaPct:
                     strWhere = $@"{Constants.FIELD_YEAR} = {intYear}";
                     dblAreaSqMeters = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(new Uri(strGdbFire), Constants.FILE_NIFC_FIRE, strWhere);
                     if (dblAreaSqMeters > 0)
@@ -6977,27 +6974,73 @@ namespace bagis_pro
                         dblReturn = 0;
                     }
                     break;
+                case FireStatisticType.BurnedForestedArea:
+                    string strGdbAnalysis = GeodatabaseTools.GetGeodatabasePath(aoiPath, GeodatabaseNames.Analysis);
+                    FeatureLayer lyrCurrYear = null;
+                    if (await GeodatabaseTools.FeatureClassExistsAsync(new Uri(strGdbAnalysis), Constants.FILE_FORESTED_ZONE))
+                    {
+                        Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
+                        string strNifcLayer = $@"{strGdbFire}\{Constants.FILE_NIFC_FIRE}";
+                        await QueuedTask.Run(() =>
+                        {
+                            var historyParams = new FeatureLayerCreationParams(new Uri(strNifcLayer))
+                            {
+                                Name = "Intersect Layer",
+                                IsVisible = false,
+                                MapMemberIndex = 0,
+                                MapMemberPosition = 0,
+                            };
+                            lyrCurrYear = LayerFactory.Instance.CreateLayer<FeatureLayer>(historyParams, oMap);
+                            lyrCurrYear.SetDefinitionQuery($@"{Constants.FIELD_YEAR} = {intYear}");
+                        });
+                        int test = lyrCurrYear.SelectionCount;
+                        if (lyrCurrYear.SelectionCount > 0)
+                        {
+                            string strForestedZone = $@"{strGdbAnalysis}\{Constants.FILE_FORESTED_ZONE}";
+                            string strTmpIntersect = "tmpIntersect";
+                            string[] arrInputLayers = { strForestedZone, lyrCurrYear.Name };
+                            BA_ReturnCode success = await GeoprocessingTools.IntersectUnrankedAsync(aoiPath, arrInputLayers,
+                                $@"{strGdbFire}\{strTmpIntersect}", "ONLY_FID");
+                            if (success != BA_ReturnCode.Success)
+                            {
+                                string strLogEntry = "An error occurred while running the Intersect tool. Burned forested area cannot be calculated!" + "\r\n";
+                                File.AppendAllText(strLogFile, strLogEntry);       // append
+                            }
+                        }                       
+
+                        // Remove temporary layer
+                        await QueuedTask.Run(() =>
+                        {
+                            oMap.RemoveLayer(lyrCurrYear);
+                        });
+                    }
+                    else
+                    {
+                        string strLogEntry = "forestedzone is missing. Burned forested area cannot be calculated!" + "\r\n";
+                        File.AppendAllText(strLogFile, strLogEntry);       // append
+                    }
+                    break;
             }
 
             return dblReturn;
         }
 
         public static async Task<double> QueryMtbsStatisticByYearAsync(string aoiPath, int intYear,
-            double aoiAreaSqMeters, double dblMtbsCellSize, FirePerimeterStatType fireStatType)
+            double aoiAreaSqMeters, double dblMtbsCellSize, FireStatisticType fireStatType)
         {
             double dblReturn = -1;
             string strGdbFire = GeodatabaseTools.GetGeodatabasePath(aoiPath, GeodatabaseNames.Fire);
             string strMtbsLayer = GeneralTools.GetMtbsLayerFileName(intYear);
             switch (fireStatType)
             {
-                case FirePerimeterStatType.MtbsBurnedAreaPct:
+                case FireStatisticType.MtbsBurnedAreaPct:
                     IDictionary<string, long> dictMtbsArea = await GeodatabaseTools.RasterTableToDictionaryAsync(new Uri(strGdbFire), strMtbsLayer);
                     long lngTotal = 0;
                     foreach (var strKey in dictMtbsArea.Keys)
                     {
                         lngTotal = lngTotal + dictMtbsArea[strKey];
                     }
-                    double dblAreaSqMeters = lngTotal * dblMtbsCellSize;
+                    double dblAreaSqMeters = lngTotal * dblMtbsCellSize * dblMtbsCellSize;
                     if (dblAreaSqMeters > 0)
                     {
                         dblReturn = Math.Round(dblAreaSqMeters / aoiAreaSqMeters * 100, 1);
@@ -7021,19 +7064,20 @@ namespace bagis_pro
             string gdbFire = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Fire);
             bool bMtbsExists = await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(gdbFire), GeneralTools.GetMtbsLayerFileName(intYear));
 
-            double dblFireCount = await QueryPerimeterStatisticByYearAsync(oAoi.FilePath, intYear, aoiAreaSqMeters, FirePerimeterStatType.Count);
+            double dblFireCount = await QueryPerimeterStatisticsByYearAsync(oAoi.FilePath, intYear, aoiAreaSqMeters, FireStatisticType.Count, strLogFile);
             lstElements.Add(Convert.ToString(dblFireCount));
-            double dblAreaSqMiles = await QueryPerimeterStatisticByYearAsync(oAoi.FilePath, intYear, aoiAreaSqMeters, FirePerimeterStatType.AreaSqMiles);
+            double dblAreaSqMiles = await QueryPerimeterStatisticsByYearAsync(oAoi.FilePath, intYear, aoiAreaSqMeters, FireStatisticType.AreaSqMiles, strLogFile);
             lstElements.Add(Convert.ToString(dblAreaSqMiles));
-            double dblBurnedAreaPct = await QueryPerimeterStatisticByYearAsync(oAoi.FilePath, intYear, aoiAreaSqMeters, FirePerimeterStatType.NifcBurnedAreaPct);
+            double dblBurnedAreaPct = await QueryPerimeterStatisticsByYearAsync(oAoi.FilePath, intYear, aoiAreaSqMeters, FireStatisticType.NifcBurnedAreaPct, strLogFile);
             lstElements.Add(Convert.ToString(dblBurnedAreaPct));
             double dblMtbsBurnedAreaPct = 0;
             if (bMtbsExists)
             {
                 dblMtbsBurnedAreaPct = await QueryMtbsStatisticByYearAsync(oAoi.FilePath, intYear, aoiAreaSqMeters, dblMtbsCellSize,
-                    FirePerimeterStatType.MtbsBurnedAreaPct);
+                    FireStatisticType.MtbsBurnedAreaPct);
             }
             lstElements.Add(Convert.ToString(dblMtbsBurnedAreaPct));
+            double dblForestAreaSqMiles = await QueryPerimeterStatisticsByYearAsync(oAoi.FilePath, intYear, aoiAreaSqMeters, FireStatisticType.BurnedForestedArea, strLogFile);
 
             return lstElements;
         }

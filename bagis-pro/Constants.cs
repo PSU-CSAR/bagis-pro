@@ -267,6 +267,7 @@ namespace bagis_pro
         public const string FIELD_DIRECTION = "BA_DIRECT";
         public const string FIELD_SLOPE = "BA_SLOPE";
         public const string FIELD_SITE_ID = "BA_SITE_ID";
+        public const string FIELD_RECALC_AREA = "BA_AREA";  // Feature area recalculated by BAGIS
         public const string FIELD_OBJECT_ID = "OBJECTID";
         public const string FIELD_STATION_TRIPLET = "stationTriplet";
         public const string FIELD_STATION_NAME = "stationName";

@@ -138,11 +138,12 @@ namespace bagis_pro
         Precipitation
     }
 
-    public enum FirePerimeterStatType
+    public enum FireStatisticType
     {
         Count,
         AreaSqMiles,
         NifcBurnedAreaPct,
-        MtbsBurnedAreaPct
+        MtbsBurnedAreaPct,
+        BurnedForestedArea
     }
 }
