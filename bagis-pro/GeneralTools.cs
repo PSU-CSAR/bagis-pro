@@ -438,7 +438,7 @@ namespace bagis_pro
                     using (var p = new Process())
                     {
                         p.StartInfo.FileName = Module1.Current.ChromePath;
-                        p.StartInfo.Arguments = $"--headless --disable-gpu --print-to-pdf-no-header --print-to-pdf={publishFolder + "\\" + Constants.FILE_TITLE_PAGE_PDF} {url}";
+                        p.StartInfo.Arguments = $"--headless --disable-gpu --no-pdf-header-footer --print-to-pdf={publishFolder + "\\" + Constants.FILE_TITLE_PAGE_PDF} {url}";
                         p.Start();
                         p.WaitForExit();
                     }
@@ -474,7 +474,7 @@ namespace bagis_pro
                     using (var p = new Process())
                     {
                         p.StartInfo.FileName = Module1.Current.ChromePath;
-                        p.StartInfo.Arguments = $"--headless --disable-gpu --print-to-pdf-no-header --print-to-pdf={publishFolder + "\\" + Constants.FILE_DATA_SOURCES_PDF} {url}";
+                        p.StartInfo.Arguments = $"--headless --disable-gpu --no-pdf-header-footer --print-to-pdf={publishFolder + "\\" + Constants.FILE_DATA_SOURCES_PDF} {url}";
                         p.Start();
                         p.WaitForExit();
                     }
@@ -2721,7 +2721,7 @@ namespace bagis_pro
                 using (var p = new Process())
                 {
                     p.StartInfo.FileName = Module1.Current.ChromePath;
-                    p.StartInfo.Arguments = $"--headless --disable-gpu --print-to-pdf-no-header --print-to-pdf={strPublishFile} {url}";
+                    p.StartInfo.Arguments = $"--headless --disable-gpu --no-pdf-header-footer --print-to-pdf={strPublishFile} {url}";
                     p.Start();
                     p.WaitForExit();
                 }
@@ -2770,7 +2770,7 @@ namespace bagis_pro
                     using (var p = new Process())
                     {
                         p.StartInfo.FileName = Module1.Current.ChromePath;
-                        p.StartInfo.Arguments = $"--headless --disable-gpu --print-to-pdf-no-header --print-to-pdf={outputFile} {url}";
+                        p.StartInfo.Arguments = $"--headless --disable-gpu --no-pdf-header-footer --print-to-pdf={outputFile} {url}";
                         p.Start();
                         p.WaitForExit();
                     }

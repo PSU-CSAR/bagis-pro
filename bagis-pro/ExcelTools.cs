@@ -96,7 +96,8 @@ namespace bagis_pro
                                         }
                                         if (idxCount > 0)
                                         {
-                                            interval.Area = cellSize * Convert.ToInt32(row[idxCount]);
+                                            // Square cellSize to calculate area
+                                            interval.Area = cellSize * cellSize * Convert.ToInt32(row[idxCount]);
                                         }
                                         lstInterval.Add(interval);
                                     }

@@ -3902,7 +3902,8 @@ namespace bagis_pro
                             {
                                 string strZone = Convert.ToString(pRow[Constants.FIELD_VALUE]);
                                 double dblSum = Convert.ToDouble(pRow[Constants.FIELD_SUM]);
-                                double dblVolAcreFeet = dblSum * dblCellSize * (1 / (4046.8564224 * 12));
+                                // Square cell size to calculate area for volume in acre feet
+                                double dblVolAcreFeet = dblSum * dblCellSize * dblCellSize * (1 / (4046.8564224 * 12));
                                 if (!dictVolAcreFt.Keys.Contains(strZone))
                                 {
                                     dictVolAcreFt[strZone] = Convert.ToString(Math.Round(dblVolAcreFeet));

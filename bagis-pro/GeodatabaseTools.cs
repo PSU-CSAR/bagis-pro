@@ -803,8 +803,9 @@ namespace bagis_pro
                                     interval.LowerBound = Convert.ToDouble(row[idxLowerBound]);
                                 }
                                 if (idxCount > 0)
-                                {
-                                    interval.Area = cellSize * Convert.ToInt32(row[idxCount]);
+                                {                                    
+                                    // Square cell size to calculate area
+                                    interval.Area = cellSize * cellSize * Convert.ToInt32(row[idxCount]);
                                 }
                                 lstInterval.Add(interval);
                             }
