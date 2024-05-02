@@ -266,7 +266,7 @@
                     </GroupBox>
                 </Grid>
             </TabItem>
-            <TabItem>
+            <TabItem Visibility="Visible">
                 <TabItem.Header>
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="Fire Tasks" Foreground="Black" />

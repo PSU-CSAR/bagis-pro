@@ -109,6 +109,7 @@ namespace bagis_pro
         public const string FILE_SITES_ASPECT = "sites_aspect";
         public const string FILE_SITES_SLOPE = "sites_slope";
         public const string FILE_SETTINGS = "analysis.xml";
+        public const string FILE_FIRE_SETTINGS = "fire_analysis.json";
         public const string FILE_BATCH_TOOL_SETTINGS = "batch_tool_settings.json";
         public const string FILE_BATCH_LOG = "batch_tool_log.txt";
         public const string FILE_SNODAS_GEOJSON_LOG = "snodas_log.txt";

@@ -8,7 +8,6 @@ using ArcGIS.Desktop.Framework.Dialogs;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
 using ArcGIS.Desktop.Layouts;
 using ArcGIS.Desktop.Mapping;
-using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -23,6 +22,9 @@ using System.ComponentModel;
 using ArcGIS.Desktop.Core.Geoprocessing;
 using System.Diagnostics;
 using bagis_pro.BA_Objects;
+using Newtonsoft.Json.Linq;
+using PdfSharp.Pdf.Content.Objects;
+using Microsoft.VisualBasic.Devices;
 
 namespace bagis_pro
 {
@@ -2104,6 +2106,13 @@ namespace bagis_pro
                     if (success == BA_ReturnCode.Success)
                     {
                         success = await AnalysisTools.DeleteIrwinDuplicatesAsync(aoiFolder);
+                    }
+
+                    dynamic oFireSettings = GeneralTools.GetFireSettings(aoiFolder);
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        GeneralTools.UpdateFireSettings(ref oFireSettings, aoiFolder, dictDataSources, Constants.DATA_TYPE_FIRE_HISTORY, false);
+                        GeneralTools.UpdateFireSettings(ref oFireSettings, aoiFolder, dictDataSources, Constants.DATA_TYPE_FIRE_CURRENT, true);
                     }
 
                     // Recalculate area due to bug in Pro

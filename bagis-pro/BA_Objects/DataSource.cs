@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -31,6 +32,17 @@ namespace bagis_pro.BA_Objects
             layerType = dynSource.layerType;
             heading = dynSource.heading;
             shortDescription = dynSource.shortDescription;
+        }
+
+        public static JObject DataSourceJson(dynamic oDataSource)
+        {
+            dynamic newDataSource = new JObject();
+            newDataSource.uri = oDataSource.uri;
+            newDataSource.description = oDataSource.uri;
+            newDataSource.layerType = oDataSource.layerType;
+            newDataSource.heading = oDataSource.heading;
+            newDataSource.dateClippedText = DateTime.Now.ToString("MMMM d, yyyy");
+            return newDataSource;
         }
 
         public string DateClippedText

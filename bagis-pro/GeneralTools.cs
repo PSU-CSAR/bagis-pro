@@ -27,6 +27,7 @@ using ArcGIS.Desktop.Core.Geoprocessing;
 using System.Text;
 using ArcGIS.Core.Data.UtilityNetwork.Trace;
 using System.Runtime.CompilerServices;
+using bagis_pro.BA_Objects;
 
 namespace bagis_pro
 {
@@ -3148,6 +3149,76 @@ namespace bagis_pro
         {
             //mtbs_CONUS_1984
             return $@"mtbs_CONUS_{intYear}";
+        }
+
+        public static dynamic GetFireSettings(string strAoiPath)
+        {
+            // Load batch tool settings; Make sure we have the central BAGIS folder
+            string strMapsFolder = $@"{strAoiPath}\{Constants.FOLDER_MAPS}";
+            if (!Directory.Exists(strMapsFolder))
+            {
+                DirectoryInfo dirInfo = Directory.CreateDirectory(strMapsFolder);
+                if (dirInfo == null)
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(GetFireSettings),
+                        "Unable to create maps folder in " + strAoiPath +
+                                "! Process stopped.");
+                    return BA_ReturnCode.WriteError;
+                }
+            }
+
+            // Load batch tool settings from local file
+            dynamic oFireSettings = new JObject();
+            if (File.Exists(strMapsFolder + @"\" + Constants.FILE_FIRE_SETTINGS))
+            {
+                // read JSON directly from a file
+                using (FileStream fs = File.OpenRead(strMapsFolder + @"\" + Constants.FILE_FIRE_SETTINGS))
+                {
+                    using (JsonTextReader reader = new JsonTextReader(new StreamReader(fs)))
+                    {
+                        oFireSettings = (JObject)JToken.ReadFrom(reader);
+                    }
+                }
+            }
+            return oFireSettings;
+        }
+
+        public static void UpdateFireSettings(ref dynamic oFireSettings, string strFilePath, 
+            IDictionary<string, dynamic> dictDataSources, string strLayerType, bool bSaveFile)
+        {
+            var oDataSources = new JArray();
+            if (oFireSettings.DataSources != null)
+            {
+                oDataSources = oFireSettings.DataSources;
+            }
+            int idxReplace = -1;
+            dynamic oJson = DataSource.DataSourceJson(dictDataSources[strLayerType]);
+            if (oDataSources.Count > 0)
+            {
+                var foundDs = oDataSources.FirstOrDefault(a => a["layerType"].ToString().Equals(strLayerType));
+                if (foundDs != null)
+                {
+                    idxReplace = oDataSources.IndexOf(foundDs);
+                    oDataSources[idxReplace] = oJson;
+                }
+            }
+            if (idxReplace < 0)
+            {
+                oDataSources.Add(oJson);
+            }
+
+            oFireSettings.DataSources = oDataSources;
+            if (bSaveFile)
+            {
+                // serialize JSON directly to a file
+                using (StreamWriter file = File.CreateText($@"{strFilePath}\{Constants.FOLDER_MAPS}\{Constants.FILE_FIRE_SETTINGS}"))
+                {
+                    JsonSerializer serializer = new JsonSerializer();
+                    serializer.Formatting = Newtonsoft.Json.Formatting.Indented;
+                    serializer.Serialize(file, oFireSettings);
+                }
+            }
+
         }
     }
 
