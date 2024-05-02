@@ -7,6 +7,7 @@ using ArcGIS.Desktop.Core.Geoprocessing;
 using ArcGIS.Desktop.Editing;
 using ArcGIS.Desktop.Framework.Dialogs;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
+using ArcGIS.Desktop.Internal.Catalog.PropertyPages.NetworkDataset;
 using ArcGIS.Desktop.Internal.Core.Conda;
 using ArcGIS.Desktop.Internal.GeoProcessing;
 using ArcGIS.Desktop.Layouts;
@@ -6796,8 +6797,8 @@ namespace bagis_pro
             }
             return success;
         }
-        public static async Task<BA_ReturnCode> ClipMtbsLayersAsync(string strAoiPath, string strClipFile,
-            List<string> lstImageServiceUri, List<string> lstRasterFileName, bool bReclipMtbs)
+        public static async Task<BA_ReturnCode> ClipMtbsLayersAsync(string strAoiPath, IDictionary<string, dynamic> dictDataSources,
+            string strClipFile, List<string> lstImageServiceUri, List<string> lstRasterFileName, bool bReclipMtbs)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
 
@@ -6926,6 +6927,18 @@ namespace bagis_pro
                         }
                     }
                 }
+            }
+            // Update settings file
+            if (!bReclipMtbs)
+            {
+                dynamic oFireSettings = GeneralTools.GetFireSettings(strAoiPath);
+                if (oFireSettings.DataSources != null)
+                {
+                    // We know the file exists
+                    oFireSettings.mtbsLegend = Module1.Current.BatchToolSettings.MtbsLegend;
+                }
+                // Updates the MTBS data source and saves the file
+                GeneralTools.UpdateFireDataSourceSettings(ref oFireSettings, strAoiPath, dictDataSources, Constants.DATA_TYPE_FIRE_BURN_SEVERITY, true);
             }
             success = BA_ReturnCode.Success;
             return success;

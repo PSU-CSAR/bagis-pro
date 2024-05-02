@@ -3183,7 +3183,7 @@ namespace bagis_pro
             return oFireSettings;
         }
 
-        public static void UpdateFireSettings(ref dynamic oFireSettings, string strFilePath, 
+        public static void UpdateFireDataSourceSettings(ref dynamic oFireSettings, string strFilePath, 
             IDictionary<string, dynamic> dictDataSources, string strLayerType, bool bSaveFile)
         {
             var oDataSources = new JArray();

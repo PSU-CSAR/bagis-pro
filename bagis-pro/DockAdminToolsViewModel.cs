@@ -2111,8 +2111,8 @@ namespace bagis_pro
                     dynamic oFireSettings = GeneralTools.GetFireSettings(aoiFolder);
                     if (success == BA_ReturnCode.Success)
                     {
-                        GeneralTools.UpdateFireSettings(ref oFireSettings, aoiFolder, dictDataSources, Constants.DATA_TYPE_FIRE_HISTORY, false);
-                        GeneralTools.UpdateFireSettings(ref oFireSettings, aoiFolder, dictDataSources, Constants.DATA_TYPE_FIRE_CURRENT, true);
+                        GeneralTools.UpdateFireDataSourceSettings(ref oFireSettings, aoiFolder, dictDataSources, Constants.DATA_TYPE_FIRE_HISTORY, false);
+                        GeneralTools.UpdateFireDataSourceSettings(ref oFireSettings, aoiFolder, dictDataSources, Constants.DATA_TYPE_FIRE_CURRENT, true);
                     }
 
                     // Recalculate area due to bug in Pro
@@ -2129,7 +2129,7 @@ namespace bagis_pro
                     }
                     if (lstMtbsImageServices.Count> 0)
                     {
-                        success = await AnalysisTools.ClipMtbsLayersAsync(aoiFolder, Constants.FILE_AOI_VECTOR, lstMtbsImageServices, lstMtbsLayerNames, Reclip_MTBS_Checked);
+                        success = await AnalysisTools.ClipMtbsLayersAsync(aoiFolder, dictDataSources, Constants.FILE_AOI_VECTOR, lstMtbsImageServices, lstMtbsLayerNames, Reclip_MTBS_Checked);
                     }
 
 
