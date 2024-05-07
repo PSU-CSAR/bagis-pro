@@ -6991,9 +6991,10 @@ namespace bagis_pro
                 case FireStatisticType.BurnedForestedArea:
                     string strGdbAnalysis = GeodatabaseTools.GetGeodatabasePath(aoiPath, GeodatabaseNames.Analysis);
                     FeatureLayer lyrCurrYear = null;
+                    Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
+                    long lCount = -1;
                     if (await GeodatabaseTools.FeatureClassExistsAsync(new Uri(strGdbAnalysis), Constants.FILE_FORESTED_ZONE))
                     {
-                        Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
                         string strNifcLayer = $@"{strGdbFire}\{Constants.FILE_NIFC_FIRE}";
                         await QueuedTask.Run(() =>
                         {
@@ -7005,14 +7006,23 @@ namespace bagis_pro
                                 MapMemberPosition = 0,
                             };
                             lyrCurrYear = LayerFactory.Instance.CreateLayer<FeatureLayer>(historyParams, oMap);
-                            lyrCurrYear.SetDefinitionQuery($@"{Constants.FIELD_YEAR} = {intYear}");
+                            string strWhere = $@"{Constants.FIELD_YEAR} = {intYear}";
+                            lyrCurrYear.SetDefinitionQuery(strWhere);
+                            // This is a workaround because layer.getCount() always returns 0
+                            Table table = lyrCurrYear.GetTable();
+                            QueryFilter qf = new QueryFilter()
+                            {
+                                WhereClause = strWhere
+                            };
+                            lCount = table.GetCount(qf);
                         });
-                        int test = lyrCurrYear.SelectionCount;
-                        if (lyrCurrYear.SelectionCount > 0)
+
+                        if (lCount > 0)
                         {
                             string strForestedZone = $@"{strGdbAnalysis}\{Constants.FILE_FORESTED_ZONE}";
                             string strTmpIntersect = "tmpIntersect";
-                            string[] arrInputLayers = { strForestedZone, lyrCurrYear.Name };
+                            // Feature layer name needs to be surrounded by single quotes
+                            string[] arrInputLayers = {strForestedZone, $@"'{lyrCurrYear.Name}'"};
                             BA_ReturnCode success = await GeoprocessingTools.IntersectUnrankedAsync(aoiPath, arrInputLayers,
                                 $@"{strGdbFire}\{strTmpIntersect}", "ONLY_FID");
                             if (success != BA_ReturnCode.Success)
@@ -7020,7 +7030,20 @@ namespace bagis_pro
                                 string strLogEntry = "An error occurred while running the Intersect tool. Burned forested area cannot be calculated!" + "\r\n";
                                 File.AppendAllText(strLogFile, strLogEntry);       // append
                             }
-                        }                       
+                            else
+                            {
+                                dblAreaSqMeters = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(new Uri(strGdbFire), strTmpIntersect, "");
+                                if (dblAreaSqMeters > 0)
+                                {
+                                    dblReturn = Math.Round(AreaUnit.SquareMeters.ConvertTo(dblAreaSqMeters, AreaUnit.SquareMiles), 2);
+                                }
+                                else
+                                {
+                                    dblReturn = 0;
+                                }
+
+                            }
+                        }
 
                         // Remove temporary layer
                         await QueuedTask.Run(() =>
@@ -7114,6 +7137,7 @@ namespace bagis_pro
             }
             lstElements.Add(Convert.ToString(dblMtbsBurnedAreaPct));
             double dblForestAreaSqMiles = await QueryPerimeterStatisticsByYearAsync(oAoi.FilePath, intYear, aoiAreaSqMeters, FireStatisticType.BurnedForestedArea, strLogFile);
+            lstElements.Add(Convert.ToString(dblForestAreaSqMiles));
 
             return lstElements;
         }

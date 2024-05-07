@@ -283,7 +283,7 @@
                         <TextBlock FontWeight="Bold" Text="{Binding NifcDataDescr}"/>
                         <TextBlock FontWeight="Bold" Text="{Binding MtbsDataDescr}"/>
                     </StackPanel>
-                    <GroupBox Margin="5,0,0,5" Padding="2" Grid.Row="1" HorizontalAlignment="Left" IsEnabled="{Binding TasksEnabled}">
+                    <GroupBox Margin="5,0,0,5" Padding="2" Grid.Row="1" HorizontalAlignment="Left" IsEnabled="{Binding FireTasksEnabled}">
                         <GroupBox.Header>
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock FontWeight="Bold">Retrieve AOI Fire Data</TextBlock>
@@ -307,7 +307,7 @@
                             </StackPanel>
                         </Grid>
                     </GroupBox>
-                    <GroupBox Margin="5,0,0,5" Padding="2" Grid.Row="2" HorizontalAlignment="Left" IsEnabled="{Binding TasksEnabled}">
+                    <GroupBox Margin="5,0,0,5" Padding="2" Grid.Row="2" HorizontalAlignment="Left" IsEnabled="{Binding FireTasksEnabled}">
                         <GroupBox.Header>
                         <StackPanel Orientation="Horizontal">
                             <TextBlock FontWeight="Bold">Generate AOI Fire Report</TextBlock>

@@ -47,6 +47,7 @@ namespace bagis_pro
             Names.CollectionChanged += ContentCollectionChanged;
             ArchiveChecked = true;
             TasksEnabled = false;
+            FireTasksEnabled = false;
         }
 
         /// <summary>
@@ -90,6 +91,7 @@ namespace bagis_pro
         private bool _alwaysNearChecked = false;
         private bool _mergeAoiVChecked = true;
         private bool _updateStationDataChecked = false;
+        private bool _fireTasksEnabled = false;
         private string _fireReportFolder;
         private bool _cmdFireReportLogEnabled = false;
         private bool _cmdFireReportEnabled = false;
@@ -203,6 +205,15 @@ namespace bagis_pro
             set
             {
                 SetProperty(ref _tasksEnabled, value, () => TasksEnabled);
+            }
+        }
+
+        public bool FireTasksEnabled
+        {
+            get { return _fireTasksEnabled; }
+            set
+            {
+                SetProperty(ref _fireTasksEnabled, value, () => FireTasksEnabled);
             }
         }
 
@@ -573,7 +584,8 @@ namespace bagis_pro
                         CmdSnodasEnabled = false;
                         CmdForecastEnabled = false;
                         CmdToggleEnabled = false;
-                        TasksEnabled = false; 
+                        TasksEnabled = false;
+                        FireTasksEnabled = false;
                         CmdGenStatisticsEnabled = false;
                         CmdFireReportEnabled = false;
                     }
@@ -595,6 +607,7 @@ namespace bagis_pro
                         FireTimePeriodCount = 6;    //@ToDo: Replace this with calculation
                         _intMtbsMaxYear = await this.QueryMtbsMaxYearAsync(_dictDatasources, Constants.DATA_TYPE_FIRE_BURN_SEVERITY);
                         MtbsDataDescr = $@"MTBS data available from {MtbsMinYear} to {_intMtbsMaxYear}";
+                        FireTasksEnabled = true;
                     }
                 });
             }
@@ -2246,7 +2259,7 @@ namespace bagis_pro
                 string separator = ",";
                 StringBuilder output = new StringBuilder();
                 String[] headings = { "stationTriplet", "stationName", $@"{i}_newfireno", $@"{i}_nifc_burnedArea_SqMiles", 
-                    $@"{i}_nifc_burnedArea_pct", $@"{i}_mtbs_burnedArea_pct" };
+                    $@"{i}_nifc_burnedArea_pct", $@"{i}_mtbs_burnedArea_pct", $@"{i}_burnedForestedArea_SqMiles" };
                 output.AppendLine(string.Join(separator, headings));
 
                 if (dictOutput.ContainsKey(i.ToString()))
