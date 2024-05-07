@@ -7048,7 +7048,29 @@ namespace bagis_pro
             switch (fireStatType)
             {
                 case FireStatisticType.MtbsBurnedAreaPct:
-                    IDictionary<string, long> dictMtbsArea = await GeodatabaseTools.RasterTableToDictionaryAsync(new Uri(strGdbFire), strMtbsLayer);
+                    StringBuilder sb = new StringBuilder();
+                    dynamic oFireSettings = GeneralTools.GetFireSettings(aoiPath);
+                    JArray arrMtbsLegend = oFireSettings.mtbsLegend;
+                    string[] arrIncludeSeverities = {Constants.VALUE_MTBS_SEVERITY_LOW, Constants.VALUE_MTBS_SEVERITY_MODERATE, Constants.VALUE_MTBS_SEVERITY_HIGH };
+                    QueryFilter queryFilter = new QueryFilter();
+                    if (arrMtbsLegend != null)
+                    {
+                        foreach (dynamic item in arrMtbsLegend)
+                        {
+                            string severity = Convert.ToString(item.Severity);
+                            if (arrIncludeSeverities.Contains(severity))
+                            {
+                                sb.Append($@"{Convert.ToString(item.Value)}");
+                                sb.Append(",");
+                            }
+                        }
+                        if (sb.Length > 0)
+                        {
+                            string strWhere = $@"{Constants.FIELD_VALUE} IN ({sb.ToString().TrimEnd(',')})";
+                            queryFilter.WhereClause = strWhere;
+                        }
+                    }
+                    IDictionary<string, long> dictMtbsArea = await GeodatabaseTools.RasterTableToDictionaryAsync(new Uri(strGdbFire), strMtbsLayer, queryFilter);
                     long lngTotal = 0;
                     foreach (var strKey in dictMtbsArea.Keys)
                     {

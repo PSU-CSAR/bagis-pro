@@ -1022,7 +1022,8 @@ namespace bagis_pro
         }
 
         // key is value, value is count
-        public static async Task<IDictionary<string, long>> RasterTableToDictionaryAsync(Uri gdbUri, string rasterName)
+        public static async Task<IDictionary<string, long>> RasterTableToDictionaryAsync(Uri gdbUri, 
+            string rasterName, QueryFilter queryFilter)
         {
             IDictionary<string, long> dictReturn = new Dictionary<string, long>(); 
             await QueuedTask.Run(() =>
@@ -1037,7 +1038,7 @@ namespace bagis_pro
                         TableDefinition definition = rasterTable.GetDefinition();
                         int idxValue = definition.FindField(Constants.FIELD_VALUE);
                         int idxCount = definition.FindField(Constants.FIELD_COUNT);
-                        using (RowCursor cursor = rasterTable.Search())
+                        using (RowCursor cursor = rasterTable.Search(queryFilter))
                         {
                             while (cursor.MoveNext())
                             {
