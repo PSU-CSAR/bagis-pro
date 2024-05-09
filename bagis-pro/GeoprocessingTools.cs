@@ -279,13 +279,17 @@ namespace bagis_pro
                 return Geoprocessing.ExecuteToolAsync("Clip_management", parameters, environments,
                             CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
             });
+
             // Remove the temp layer
             var oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
             Layer oLayer =
                 oMap.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(strLayerName, StringComparison.CurrentCultureIgnoreCase));
             if (oLayer != null)
             {
-                oMap.RemoveLayer(oLayer);
+                await QueuedTask.Run(() =>
+                {
+                    oMap.RemoveLayer(oLayer);
+                });
             }
             if (gpResult.IsFailed)
             {

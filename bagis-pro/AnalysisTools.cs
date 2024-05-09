@@ -4977,8 +4977,6 @@ namespace bagis_pro
         {
             Webservices ws = new Webservices();
             string demUri = await ws.GetDem30UriAsync();
-
-            BA_ReturnCode success = BA_ReturnCode.UnknownError;
             string clipEnvelope = "";
             string strOutputFeatures = GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Analysis, true) +
                 "tmpBuffer";
@@ -5011,40 +5009,36 @@ namespace bagis_pro
                     }
                 });
             }
-            if (!String.IsNullOrEmpty(clipEnvelope))
-            {
-                success = await GeoprocessingTools.DeleteDatasetAsync(strOutputFeatures);
-            }
             string outputRaster = GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Analysis, true) + Constants.FILE_SITES_DEM;
             var environments = Geoprocessing.MakeEnvironmentArray(workspace: aoiFolderPath,
                 snapRaster: BA_Objects.Aoi.SnapRasterPath(aoiFolderPath));
             IGPResult gpResult = null;
+
+            BA_ReturnCode success = await GeoprocessingTools.ClipRasterAsync(demUri, clipEnvelope, outputRaster, null, null, false,
+                    aoiFolderPath, BA_Objects.Aoi.SnapRasterPath(aoiFolderPath));
+            if (success != BA_ReturnCode.Success)
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(ReclipSurfacesAsync),
+                    "Failed to clip DEM for buffered sites layer using ClipRasterAsync. Attempting ClipRasterToLayerAsync");
+                success = await GeoprocessingTools.ClipRasterAsLayerAsync(demUri, clipEnvelope, outputRaster, null, null, false,
+                aoiFolderPath, BA_Objects.Aoi.SnapRasterPath(aoiFolderPath));
+            }
             if (success == BA_ReturnCode.Success)
             {
-                success = await GeoprocessingTools.ClipRasterAsync(demUri, clipEnvelope, outputRaster, null, null, false,
-                    aoiFolderPath, BA_Objects.Aoi.SnapRasterPath(aoiFolderPath));
-                if (success != BA_ReturnCode.Success)
+                // Recalculate slope layer on clipped DEM
+                parameters = Geoprocessing.MakeValueArray(outputRaster, GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Analysis, true) +
+                    Constants.FILE_SITES_SLOPE, "PERCENT_RISE");
+                gpResult = await Geoprocessing.ExecuteToolAsync("Slope_sa", parameters, environments,
+                                                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                if (gpResult.IsFailed)
                 {
                     Module1.Current.ModuleLogManager.LogError(nameof(ReclipSurfacesAsync),
-                        "Failed to clip DEM for buffered sites layer using ClipRasterAsync. Attempting ClipRasterToLayerAsync");
-                    success = await GeoprocessingTools.ClipRasterAsLayerAsync(demUri, clipEnvelope, outputRaster, null, null, false,
-                    aoiFolderPath, BA_Objects.Aoi.SnapRasterPath(aoiFolderPath));
-                    ;
+                        "Slope tool failed to create sites_slope layer. Error code: " + gpResult.ErrorCode);
                 }
-                if (success == BA_ReturnCode.Success)
-                {
-                    // Recalculate slope layer on clipped DEM
-                    parameters = Geoprocessing.MakeValueArray(outputRaster, GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Analysis, true) +
-                        Constants.FILE_SITES_SLOPE, "PERCENT_RISE");
-                    gpResult = await Geoprocessing.ExecuteToolAsync("Slope_sa", parameters, environments,
-                                                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                    if (gpResult.IsFailed)
-                    {
-                        Module1.Current.ModuleLogManager.LogError(nameof(ReclipSurfacesAsync),
-                            "Slope tool failed to create sites_slope layer. Error code: " + gpResult.ErrorCode);
-                    }
-                }
-
+            }
+            if (!String.IsNullOrEmpty(clipEnvelope))
+            {
+                success = await GeoprocessingTools.DeleteDatasetAsync(strOutputFeatures);
             }
 
             // Recalculate aspect layer on clipped DEM
