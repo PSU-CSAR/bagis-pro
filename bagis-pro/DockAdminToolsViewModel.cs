@@ -2260,7 +2260,8 @@ namespace bagis_pro
                 StringBuilder output = new StringBuilder();
                 String[] headings = { "stationTriplet", "stationName", $@"{i}_newfireno", $@"{i}_nifc_burnedArea_SqMiles", 
                     $@"{i}_nifc_burnedArea_pct", $@"{i}_mtbs_burnedArea_pct", $@"{i}_burnedForestedArea_SqMiles",
-                    $@"{i}_burnedForestedArea_pct"};
+                    $@"{i}_burnedForestedArea_pct",$@"{i}_lowburnedSeverityArea_SqMiles", $@"{i}_lowburnedSeverityArea_pct",
+                    $@"{i}_mediumburnedSeverityArea_SqMiles", $@"{i}_mediumburnedSeverityArea_pct",$@"{i}_highburnedSeverityArea_SqMiles", $@"{i}_highburnedSeverityArea_pct" };
                 output.AppendLine(string.Join(separator, headings));
 
                 if (dictOutput.ContainsKey(i.ToString()))

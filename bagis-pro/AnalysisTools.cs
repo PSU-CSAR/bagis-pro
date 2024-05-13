@@ -7123,10 +7123,133 @@ namespace bagis_pro
                     {
                         dblReturn = 0;
                     }
-                    break;
- 
+                    break; 
             }
             return dblReturn;
+        }
+
+        public static async Task<IList<double>> QueryMtbsAreasByYearAsync(string aoiPath, int intYear, double aoiAreaSqMeters, double dblMtbsCellSize)
+        {
+            IList<double> lstReturn = new List<double>();
+            dynamic oFireSettings = GeneralTools.GetFireSettings(aoiPath);
+            JArray arrMtbsLegend = oFireSettings.mtbsLegend;
+            string[] arrIncludeSeverities = { Constants.VALUE_MTBS_SEVERITY_LOW, Constants.VALUE_MTBS_SEVERITY_MODERATE, Constants.VALUE_MTBS_SEVERITY_HIGH };
+            QueryFilter queryFilter = new QueryFilter();
+            string strGdbFire = GeodatabaseTools.GetGeodatabasePath(aoiPath, GeodatabaseNames.Fire);
+            string strMtbsLayer = GeneralTools.GetMtbsLayerFileName(intYear);
+            if (arrMtbsLegend != null)
+            {
+                StringBuilder sb2 = new StringBuilder();
+                foreach (dynamic item in arrMtbsLegend)
+                {
+                    string severity = Convert.ToString(item.Severity);
+                    if (arrIncludeSeverities.Contains(severity))
+                    {
+                        sb2.Append($@"{Convert.ToString(item.Value)}");
+                        sb2.Append(",");
+                    }
+                }
+                if (sb2.Length > 0)
+                {
+                    string strWhere = $@"{Constants.FIELD_VALUE} IN ({sb2.ToString().TrimEnd(',')})";
+                    queryFilter.WhereClause = strWhere;
+                }
+                IDictionary<string, long> dictMtbsAreas = await GeodatabaseTools.RasterTableToDictionaryAsync(new Uri(strGdbFire), strMtbsLayer, queryFilter);
+                // Low severity
+                IList<string> lstSelectedValues = new List<string>();
+                foreach (dynamic item in arrMtbsLegend)
+                {
+                    string severity = Convert.ToString(item.Severity);
+                    if (Constants.VALUE_MTBS_SEVERITY_LOW.Equals(severity))
+                    {
+                        lstSelectedValues.Add(Convert.ToString(item.Value));
+                    }
+                }
+                long lngTotal = 0;
+                double dblLowBurnedAreaSqMiles = 0;
+                double dblLowBurnedAreaPct = 0;
+                if (lstSelectedValues.Count > 0)
+                {
+                    foreach (var key in dictMtbsAreas.Keys)
+                    {
+                        if (lstSelectedValues.Contains(key))
+                        {
+                            lngTotal = lngTotal + dictMtbsAreas[key];
+                        }
+                    }
+                    if (lngTotal > 0)
+                    {
+                        double dblAreaSqMeters = lngTotal * dblMtbsCellSize * dblMtbsCellSize;
+                        dblLowBurnedAreaSqMiles = Math.Round(AreaUnit.SquareMeters.ConvertTo(dblAreaSqMeters, AreaUnit.SquareMiles),2);
+                        dblLowBurnedAreaPct = Math.Round(dblAreaSqMeters / aoiAreaSqMeters * 100, 1);
+                    }
+                }
+                lstReturn.Add(dblLowBurnedAreaSqMiles);
+                lstReturn.Add(dblLowBurnedAreaPct);
+                // Moderate severity
+                lstSelectedValues.Clear();
+                foreach (dynamic item in arrMtbsLegend)
+                {
+                    string severity = Convert.ToString(item.Severity);
+                    if (Constants.VALUE_MTBS_SEVERITY_MODERATE.Equals(severity))
+                    {
+                        lstSelectedValues.Add(Convert.ToString(item.Value));
+                    }
+                }
+                lngTotal = 0;
+                double dblMedBurnedAreaSqMiles = 0;
+                double dblMedBurnedAreaPct = 0;
+                if (lstSelectedValues.Count > 0)
+                {
+                    foreach (var key in dictMtbsAreas.Keys)
+                    {
+                        if (lstSelectedValues.Contains(key))
+                        {
+                            lngTotal = lngTotal + dictMtbsAreas[key];
+                        }
+                    }
+                    if (lngTotal > 0)
+                    {
+                        double dblAreaSqMeters = lngTotal * dblMtbsCellSize * dblMtbsCellSize;
+                        dblMedBurnedAreaSqMiles = Math.Round(AreaUnit.SquareMeters.ConvertTo(dblAreaSqMeters, AreaUnit.SquareMiles), 2);
+                        dblMedBurnedAreaPct = Math.Round(dblAreaSqMeters / aoiAreaSqMeters * 100, 1);
+                    }
+                }
+                lstReturn.Add(dblMedBurnedAreaSqMiles);
+                lstReturn.Add(dblMedBurnedAreaPct);
+                // High severity
+                lstSelectedValues.Clear();
+                foreach (dynamic item in arrMtbsLegend)
+                {
+                    string severity = Convert.ToString(item.Severity);
+                    if (Constants.VALUE_MTBS_SEVERITY_HIGH.Equals(severity))
+                    {
+                        lstSelectedValues.Add(Convert.ToString(item.Value));
+                    }
+                }
+                lngTotal = 0;
+                double dblHighBurnedAreaSqMiles = 0;
+                double dblHighBurnedAreaPct = 0;
+                if (lstSelectedValues.Count > 0)
+                {
+                    foreach (var key in dictMtbsAreas.Keys)
+                    {
+                        if (lstSelectedValues.Contains(key))
+                        {
+                            lngTotal = lngTotal + dictMtbsAreas[key];
+                        }
+                    }
+                    if (lngTotal > 0)
+                    {
+                        double dblAreaSqMeters = lngTotal * dblMtbsCellSize * dblMtbsCellSize;
+                        dblHighBurnedAreaSqMiles = Math.Round(AreaUnit.SquareMeters.ConvertTo(dblAreaSqMeters, AreaUnit.SquareMiles), 2);
+                        dblHighBurnedAreaPct = Math.Round(dblAreaSqMeters / aoiAreaSqMeters * 100, 1);
+                    }
+                }
+                lstReturn.Add(dblHighBurnedAreaSqMiles);
+                lstReturn.Add(dblHighBurnedAreaPct);
+            }
+            return lstReturn;
         }
 
         public static async Task<IList<string>> GenerateFireStatisticsList(BA_Objects.Aoi oAoi, string strLogFile, double aoiAreaSqMeters,
@@ -7159,6 +7282,31 @@ namespace bagis_pro
                 dblForestBurnedAreaPct = await QueryPerimeterStatisticsByYearAsync(oAoi.FilePath, intYear, aoiAreaSqMeters, FireStatisticType.BurnedForestedAreaPct, strLogFile);
             }
             lstElements.Add(Convert.ToString(dblForestBurnedAreaPct));
+            string strLowSevArea = "0";
+            string strLowSevPct = "0";
+            string strModSevArea = "0";
+            string strModSevPct = "0";
+            string strHighSevArea = "0";
+            string strHighSevPct = "0";
+            if (bMtbsExists)
+            {
+                IList<double> lstMtbsAreas = await QueryMtbsAreasByYearAsync(oAoi.FilePath, intYear, aoiAreaSqMeters, dblMtbsCellSize);
+                if (lstMtbsAreas.Count == 6)
+                {
+                    strLowSevArea = Convert.ToString(lstMtbsAreas[0]);
+                    strLowSevPct = Convert.ToString(lstMtbsAreas[1]);
+                    strModSevArea = Convert.ToString(lstMtbsAreas[2]);
+                    strModSevPct = Convert.ToString(lstMtbsAreas[3]);
+                    strHighSevArea = Convert.ToString(lstMtbsAreas[4]);
+                    strHighSevPct = Convert.ToString(lstMtbsAreas[5]);
+                }
+            }
+            lstElements.Add(strLowSevArea);
+            lstElements.Add(strLowSevPct);
+            lstElements.Add(strModSevArea);
+            lstElements.Add(strModSevPct);
+            lstElements.Add(strHighSevArea);
+            lstElements.Add(strHighSevPct);
 
             return lstElements;
         }
