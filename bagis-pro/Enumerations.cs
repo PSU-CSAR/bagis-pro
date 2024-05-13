@@ -144,6 +144,7 @@ namespace bagis_pro
         AreaSqMiles,
         NifcBurnedAreaPct,
         MtbsBurnedAreaPct,
-        BurnedForestedArea
+        BurnedForestedArea,
+        BurnedForestedAreaPct
     }
 }

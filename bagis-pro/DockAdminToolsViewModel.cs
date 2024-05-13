@@ -2259,7 +2259,8 @@ namespace bagis_pro
                 string separator = ",";
                 StringBuilder output = new StringBuilder();
                 String[] headings = { "stationTriplet", "stationName", $@"{i}_newfireno", $@"{i}_nifc_burnedArea_SqMiles", 
-                    $@"{i}_nifc_burnedArea_pct", $@"{i}_mtbs_burnedArea_pct", $@"{i}_burnedForestedArea_SqMiles" };
+                    $@"{i}_nifc_burnedArea_pct", $@"{i}_mtbs_burnedArea_pct", $@"{i}_burnedForestedArea_SqMiles",
+                    $@"{i}_burnedForestedArea_pct"};
                 output.AppendLine(string.Join(separator, headings));
 
                 if (dictOutput.ContainsKey(i.ToString()))

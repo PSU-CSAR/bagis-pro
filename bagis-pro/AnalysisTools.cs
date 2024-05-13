@@ -6943,6 +6943,7 @@ namespace bagis_pro
         {
             double dblReturn = -1;
             string strGdbFire = GeodatabaseTools.GetGeodatabasePath(aoiPath, GeodatabaseNames.Fire);
+            string strTmpIntersect = "tmpIntersect";
             switch (fireStatType)
             {
                 case FireStatisticType.Count:
@@ -7002,7 +7003,7 @@ namespace bagis_pro
                             lyrCurrYear = LayerFactory.Instance.CreateLayer<FeatureLayer>(historyParams, oMap);
                             string strWhere = $@"{Constants.FIELD_YEAR} = {intYear}";
                             lyrCurrYear.SetDefinitionQuery(strWhere);
-                            // This is a workaround because layer.getCount() always returns 0
+                            // This is a workaround because I can't find an api to get the correct count when using a definition query
                             Table table = lyrCurrYear.GetTable();
                             QueryFilter qf = new QueryFilter()
                             {
@@ -7014,7 +7015,6 @@ namespace bagis_pro
                         if (lCount > 0)
                         {
                             string strForestedZone = $@"{strGdbAnalysis}\{Constants.FILE_FORESTED_ZONE}";
-                            string strTmpIntersect = "tmpIntersect";
                             // Feature layer name needs to be surrounded by single quotes
                             string[] arrInputLayers = {strForestedZone, $@"'{lyrCurrYear.Name}'"};
                             BA_ReturnCode success = await GeoprocessingTools.IntersectUnrankedAsync(aoiPath, arrInputLayers,
@@ -7049,6 +7049,27 @@ namespace bagis_pro
                     {
                         string strLogEntry = "forestedzone is missing. Burned forested area cannot be calculated!" + "\r\n";
                         File.AppendAllText(strLogFile, strLogEntry);       // append
+                    }
+                    break;
+                case FireStatisticType.BurnedForestedAreaPct:
+                    double burnedForestAreaSqMeters = -1;                    
+                    if (await GeodatabaseTools.FeatureClassExistsAsync(new Uri(strGdbFire), strTmpIntersect))
+                    {
+                        burnedForestAreaSqMeters = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(new Uri(strGdbFire), strTmpIntersect, "");
+                    }
+                    else
+                    {
+                        double burnedForestAreaSqMiles = await QueryPerimeterStatisticsByYearAsync(aoiPath, intYear, aoiAreaSqMeters, FireStatisticType.BurnedForestedArea, strLogFile);
+                        burnedForestAreaSqMeters = AreaUnit.SquareMiles.ConvertTo(burnedForestAreaSqMiles, AreaUnit.SquareMeters);
+                    }
+                    if (burnedForestAreaSqMeters > 0)
+                    {
+                        dblReturn = Math.Round(burnedForestAreaSqMeters / aoiAreaSqMeters * 100, 1);
+                    }
+                    if (await GeodatabaseTools.FeatureClassExistsAsync(new Uri(strGdbFire), strTmpIntersect)) 
+                    {
+                        // Clean up temporary file
+                        BA_ReturnCode success = await GeoprocessingTools.DeleteDatasetAsync($@"{strGdbFire}\{strTmpIntersect}");
                     }
                     break;
             }
@@ -7132,6 +7153,12 @@ namespace bagis_pro
             lstElements.Add(Convert.ToString(dblMtbsBurnedAreaPct));
             double dblForestAreaSqMiles = await QueryPerimeterStatisticsByYearAsync(oAoi.FilePath, intYear, aoiAreaSqMeters, FireStatisticType.BurnedForestedArea, strLogFile);
             lstElements.Add(Convert.ToString(dblForestAreaSqMiles));
+            double dblForestBurnedAreaPct = 0;
+            if (dblForestAreaSqMiles > 0)
+            {
+                dblForestBurnedAreaPct = await QueryPerimeterStatisticsByYearAsync(oAoi.FilePath, intYear, aoiAreaSqMeters, FireStatisticType.BurnedForestedAreaPct, strLogFile);
+            }
+            lstElements.Add(Convert.ToString(dblForestBurnedAreaPct));
 
             return lstElements;
         }
