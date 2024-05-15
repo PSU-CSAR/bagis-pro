@@ -6792,7 +6792,7 @@ namespace bagis_pro
             return success;
         }
         public static async Task<BA_ReturnCode> ClipMtbsLayersAsync(string strAoiPath, IDictionary<string, dynamic> dictDataSources,
-            string strClipFile, List<string> lstImageServiceUri, List<string> lstRasterFileName, bool bReclipMtbs)
+            string strClipFile, List<string> lstImageServiceUri, List<string> lstRasterFileName, int intLastMtbsYear, bool bReclipMtbs)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
 
@@ -6923,13 +6923,15 @@ namespace bagis_pro
                 }
             }
             // Update settings file
-            if (!bReclipMtbs)
+            if (bReclipMtbs)
             {
                 dynamic oFireSettings = GeneralTools.GetFireSettings(strAoiPath);
                 if (oFireSettings.DataSources != null)
                 {
                     // We know the file exists
                     oFireSettings.mtbsLegend = Module1.Current.BatchToolSettings.MtbsLegend;
+                    oFireSettings.lastMtbsYear = intLastMtbsYear;
+                    oFireSettings.currentYear = DateTime.Now.Year;
                 }
                 // Updates the MTBS data source and saves the file
                 GeneralTools.UpdateFireDataSourceSettings(ref oFireSettings, strAoiPath, dictDataSources, Constants.DATA_TYPE_FIRE_BURN_SEVERITY, true);
@@ -7080,7 +7082,7 @@ namespace bagis_pro
         public static async Task<double> QueryMtbsStatisticByYearAsync(string aoiPath, int intYear,
             double aoiAreaSqMeters, double dblMtbsCellSize, FireStatisticType fireStatType)
         {
-            double dblReturn = -1;
+            double dblReturn = 0;
             string strGdbFire = GeodatabaseTools.GetGeodatabasePath(aoiPath, GeodatabaseNames.Fire);
             string strMtbsLayer = GeneralTools.GetMtbsLayerFileName(intYear);
             switch (fireStatType)
