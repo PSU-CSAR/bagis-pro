@@ -2198,7 +2198,7 @@ namespace bagis_pro
                     else
                     {
                         Names[idxRow].AoiBatchStateText = AoiBatchState.Started.ToString();  // update gui
-                        strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Starting fire data for " +
+                        strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Starting fire report for " +
                             Names[idxRow].Name + "\r\n";
                         File.AppendAllText(_strFireReportLogFile, strLogEntry);       // append
                     }
@@ -2245,6 +2245,29 @@ namespace bagis_pro
                             lstNew.Add(lstElements);
                             dictOutput.Add(i.ToString(), lstNew);
                         }                        
+                    }
+
+                    try
+                    {
+                        dynamic oFireSettings = GeneralTools.GetFireSettings(oAoi.FilePath);
+                        if (oFireSettings.DataSources != null)
+                        {
+                            // We know the file exists
+                            oFireSettings.baseYear = FireBaselineYear;
+                            // serialize JSON directly to a file
+                            using (StreamWriter file = File.CreateText($@"{oAoi.FilePath}\{Constants.FOLDER_MAPS}\{Constants.FILE_FIRE_SETTINGS}"))
+                            {
+                                JsonSerializer serializer = new JsonSerializer();
+                                serializer.Formatting = Newtonsoft.Json.Formatting.Indented;
+                                serializer.Serialize(file, oFireSettings);
+                            }
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Unable to update fire_analysis.json for " +
+                            Names[idxRow].Name + "\r\n";
+                        File.AppendAllText(_strFireReportLogFile, strLogEntry);       // append
                     }
 
                     Names[idxRow].AoiBatchStateText = AoiBatchState.Completed.ToString();  // update gui

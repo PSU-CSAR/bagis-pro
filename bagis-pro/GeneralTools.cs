@@ -3182,7 +3182,6 @@ namespace bagis_pro
             }
             return oFireSettings;
         }
-
         public static void UpdateFireDataSourceSettings(ref dynamic oFireSettings, string strFilePath, 
             IDictionary<string, dynamic> dictDataSources, string strLayerType, bool bSaveFile)
         {
@@ -3192,32 +3191,41 @@ namespace bagis_pro
                 oDataSources = oFireSettings.DataSources;
             }
             int idxReplace = -1;
-            dynamic oJson = DataSource.DataSourceJson(dictDataSources[strLayerType]);
-            if (oDataSources.Count > 0)
+            try
             {
-                var foundDs = oDataSources.FirstOrDefault(a => a["layerType"].ToString().Equals(strLayerType));
-                if (foundDs != null)
+                dynamic oJson = DataSource.DataSourceJson(dictDataSources[strLayerType]);
+                if (oDataSources.Count > 0)
                 {
-                    idxReplace = oDataSources.IndexOf(foundDs);
-                    oDataSources[idxReplace] = oJson;
+                    var foundDs = oDataSources.FirstOrDefault(a => a["layerType"].ToString().Equals(strLayerType));
+                    if (foundDs != null)
+                    {
+                        idxReplace = oDataSources.IndexOf(foundDs);
+                        oDataSources[idxReplace] = oJson;
+                    }
+                }
+                if (idxReplace < 0)
+                {
+                    oDataSources.Add(oJson);
+                }
+
+                oFireSettings.DataSources = oDataSources;
+                if (bSaveFile)
+                {
+                    // serialize JSON directly to a file
+                    using (StreamWriter file = File.CreateText($@"{strFilePath}\{Constants.FOLDER_MAPS}\{Constants.FILE_FIRE_SETTINGS}"))
+                    {
+                        JsonSerializer serializer = new JsonSerializer();
+                        serializer.Formatting = Newtonsoft.Json.Formatting.Indented;
+                        serializer.Serialize(file, oFireSettings);
+                    }
                 }
             }
-            if (idxReplace < 0)
+            catch (Exception)
             {
-                oDataSources.Add(oJson);
+                // munch
             }
 
-            oFireSettings.DataSources = oDataSources;
-            if (bSaveFile)
-            {
-                // serialize JSON directly to a file
-                using (StreamWriter file = File.CreateText($@"{strFilePath}\{Constants.FOLDER_MAPS}\{Constants.FILE_FIRE_SETTINGS}"))
-                {
-                    JsonSerializer serializer = new JsonSerializer();
-                    serializer.Formatting = Newtonsoft.Json.Formatting.Indented;
-                    serializer.Serialize(file, oFireSettings);
-                }
-            }
+
 
         }
     }

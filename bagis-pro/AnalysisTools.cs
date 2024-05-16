@@ -7040,6 +7040,10 @@ namespace bagis_pro
 
                             }
                         }
+                        else
+                        {
+                            dblReturn = 0;
+                        }
 
                         // Remove temporary layer
                         await QueuedTask.Run(() =>
@@ -7269,13 +7273,16 @@ namespace bagis_pro
             lstElements.Add(Convert.ToString(dblAreaSqMiles));
             double dblBurnedAreaPct = await QueryPerimeterStatisticsByYearAsync(oAoi.FilePath, intYear, aoiAreaSqMeters, FireStatisticType.NifcBurnedAreaPct, strLogFile);
             lstElements.Add(Convert.ToString(dblBurnedAreaPct));
-            double dblMtbsBurnedAreaPct = 0;
             if (bMtbsExists)
             {
-                dblMtbsBurnedAreaPct = await QueryMtbsStatisticByYearAsync(oAoi.FilePath, intYear, aoiAreaSqMeters, dblMtbsCellSize,
+                double dblMtbsBurnedAreaPct = await QueryMtbsStatisticByYearAsync(oAoi.FilePath, intYear, aoiAreaSqMeters, dblMtbsCellSize,
                     FireStatisticType.MtbsBurnedAreaPct);
+                lstElements.Add(Convert.ToString(dblMtbsBurnedAreaPct));
             }
-            lstElements.Add(Convert.ToString(dblMtbsBurnedAreaPct));
+            else
+            {
+                lstElements.Add("");    // leave cell null if missing values
+            }
             double dblForestAreaSqMiles = await QueryPerimeterStatisticsByYearAsync(oAoi.FilePath, intYear, aoiAreaSqMeters, FireStatisticType.BurnedForestedArea, strLogFile);
             lstElements.Add(Convert.ToString(dblForestAreaSqMiles));
             double dblForestBurnedAreaPct = 0;
@@ -7284,31 +7291,36 @@ namespace bagis_pro
                 dblForestBurnedAreaPct = await QueryPerimeterStatisticsByYearAsync(oAoi.FilePath, intYear, aoiAreaSqMeters, FireStatisticType.BurnedForestedAreaPct, strLogFile);
             }
             lstElements.Add(Convert.ToString(dblForestBurnedAreaPct));
-            string strLowSevArea = "0";
-            string strLowSevPct = "0";
-            string strModSevArea = "0";
-            string strModSevPct = "0";
-            string strHighSevArea = "0";
-            string strHighSevPct = "0";
+            bool bMtbsError = true;
             if (bMtbsExists)
             {
                 IList<double> lstMtbsAreas = await QueryMtbsAreasByYearAsync(oAoi.FilePath, intYear, aoiAreaSqMeters, dblMtbsCellSize);
                 if (lstMtbsAreas.Count == 6)
                 {
-                    strLowSevArea = Convert.ToString(lstMtbsAreas[0]);
-                    strLowSevPct = Convert.ToString(lstMtbsAreas[1]);
-                    strModSevArea = Convert.ToString(lstMtbsAreas[2]);
-                    strModSevPct = Convert.ToString(lstMtbsAreas[3]);
-                    strHighSevArea = Convert.ToString(lstMtbsAreas[4]);
-                    strHighSevPct = Convert.ToString(lstMtbsAreas[5]);
+                    bMtbsError = false;
+                    string strLowSevArea = Convert.ToString(lstMtbsAreas[0]);
+                    string strLowSevPct = Convert.ToString(lstMtbsAreas[1]);
+                    string strModSevArea = Convert.ToString(lstMtbsAreas[2]);
+                    string strModSevPct = Convert.ToString(lstMtbsAreas[3]);
+                    string strHighSevArea = Convert.ToString(lstMtbsAreas[4]);
+                    string strHighSevPct = Convert.ToString(lstMtbsAreas[5]);
+                    lstElements.Add(strLowSevArea);
+                    lstElements.Add(strLowSevPct);
+                    lstElements.Add(strModSevArea);
+                    lstElements.Add(strModSevPct);
+                    lstElements.Add(strHighSevArea);
+                    lstElements.Add(strHighSevPct);
                 }
             }
-            lstElements.Add(strLowSevArea);
-            lstElements.Add(strLowSevPct);
-            lstElements.Add(strModSevArea);
-            lstElements.Add(strModSevPct);
-            lstElements.Add(strHighSevArea);
-            lstElements.Add(strHighSevPct);
+            if (!bMtbsExists || bMtbsError)
+            {
+                lstElements.Add("");
+                lstElements.Add("");
+                lstElements.Add("");
+                lstElements.Add("");
+                lstElements.Add("");
+                lstElements.Add("");
+            }
 
             return lstElements;
         }
