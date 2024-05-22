@@ -6791,6 +6791,101 @@ namespace bagis_pro
             }
             return success;
         }
+
+        public static async Task<BA_ReturnCode> DeleteDuplicatesByLocationAsync(string strAoiPath)
+        {
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            Uri uriFire = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Fire));
+            string nifcPath = $@"{uriFire.LocalPath}\{Constants.FILE_NIFC_FIRE}";
+            string tmpOverlap = "tmpOverlap";
+            string tmpCentroid = "tmpCentroid";
+            var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath);
+            //IGPResult gpResult = await QueuedTask.Run(() =>
+            //{               
+            //    var parameters = Geoprocessing.MakeValueArray(nifcPath, $@"{uriFire.LocalPath}\{tmpOverlap}",
+            //        $@"{uriFire.LocalPath}\{tmpCentroid}", Constants.FIELD_YEAR);
+            //    return Geoprocessing.ExecuteToolAsync("FindOverlaps", parameters, environments,
+            //                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+            //});
+            //if (gpResult.IsFailed)
+            //{
+            //    return success;
+            //}
+            //else
+            //{
+            //    if (await GeodatabaseTools.FeatureClassExistsAsync(uriFire, tmpCentroid))
+            //    {
+            //        success = await GeoprocessingTools.DeleteDatasetAsync($@"{uriFire.LocalPath}\{tmpCentroid}");
+            //    }
+            //}
+            IGPResult gpResult = await QueuedTask.Run(() =>
+            {
+                var parameters = Geoprocessing.MakeValueArray(nifcPath, $@"{uriFire.LocalPath}\{tmpOverlap}",
+                    $@"{uriFire.LocalPath}\{tmpCentroid}", Constants.FIELD_YEAR);
+                return Geoprocessing.ExecuteToolAsync("SelectLayerByLocation", parameters, environments,
+                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+            });
+            IList<string> lstObjectIds = await GeodatabaseTools.QueryTableForDistinctValuesAsync(uriFire, tmpOverlap,
+                Constants.FIELD_OBJECT_ID, new QueryFilter());
+            IList<string> lstAreas = await GeodatabaseTools.QueryTableForDistinctValuesAsync(uriFire, tmpOverlap,
+                "Shape_Area", new QueryFilter());
+            if (lstObjectIds.Count != lstAreas.Count)
+            {
+                return BA_ReturnCode.UnknownError;
+            }
+
+            FeatureLayer lyrOverlap = null;
+            var oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
+            for (int i = 0; i < lstObjectIds.Count; i++)
+            {
+                string strOid = lstObjectIds[i];
+                await QueuedTask.Run(() =>
+                {
+                    var historyParams = new FeatureLayerCreationParams(new Uri($@"{uriFire.LocalPath}\{tmpOverlap}"))
+                    {
+                        Name = "Overlap Layer",
+                        IsVisible = false,
+                        MapMemberIndex = 0,
+                        MapMemberPosition = 0,
+                    };
+                    lyrOverlap = LayerFactory.Instance.CreateLayer<FeatureLayer>(historyParams, oMap);
+                    lyrOverlap.SetDefinitionQuery($@"{Constants.FIELD_OBJECT_ID} >= {strOid}");
+                });
+                gpResult = await QueuedTask.Run(() =>
+                {
+                    var parameters = Geoprocessing.MakeValueArray(nifcPath, "CONTAINS",
+                        $@"{uriFire.LocalPath}\{tmpOverlap}", Constants.FIELD_YEAR);
+                    return Geoprocessing.ExecuteToolAsync("SelectLayerByLocation", parameters, environments,
+                                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                });
+                if (gpResult.IsFailed)
+                {
+                    return BA_ReturnCode.UnknownError;
+                }
+                // Similar size can be defined as the area of nifcfire_overlap polygon is more than 80% the area of the nifcfire polygon
+                double dblMaxArea = Convert.ToDouble(lstAreas[i]) * .8;
+                gpResult = await QueuedTask.Run(() =>
+                {
+                    string strWhere = $@"{Constants.FIELD_IRWIN_ID} IS NULL";
+                    var parameters = Geoprocessing.MakeValueArray(nifcPath, "SUBSET_SELECTION", strWhere);
+                    return Geoprocessing.ExecuteToolAsync("SelectLayerByAttribute", parameters, environments,
+                                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                });
+                if (gpResult.IsFailed)
+                {
+                    return BA_ReturnCode.UnknownError;
+                }
+
+                // Remove temporary layer
+                await QueuedTask.Run(() =>
+                {
+                    oMap.RemoveLayer(lyrOverlap);
+                });
+            }
+
+
+            return success;
+        }
         public static async Task<BA_ReturnCode> ClipMtbsLayersAsync(string strAoiPath, IDictionary<string, dynamic> dictDataSources,
             string strClipFile, List<string> lstImageServiceUri, List<string> lstRasterFileName, int intLastMtbsYear, bool bReclipMtbs)
         {

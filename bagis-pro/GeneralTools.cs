@@ -3224,9 +3224,27 @@ namespace bagis_pro
             {
                 // munch
             }
+        }
+        public static IList<Interval> CalculateFireTimePeriods(int intMinYear, int intMaxYear, int intIncrement)
+        {
+            IList<Interval> lstReturn = new List<Interval>();
+            int intRemainderFlag = 0;
+            int intRemainder = (intMaxYear - intMinYear) % intIncrement;
+            if (intRemainder > 0)
+            {
+                intRemainderFlag = 1;
+            }
+            double dblPeriods = Math.Ceiling((double) ((intMaxYear-intMinYear)/intIncrement) + intRemainderFlag);
+            double intUpperBound = Math.Ceiling((double) ((intMaxYear - intMinYear) / intIncrement) * intIncrement + intMaxYear);
+            for (int i = 0; i <= dblPeriods; i++)
+            {
+                Interval oInterval = new Interval();
+                oInterval.Value = i;
+                oInterval.LowerBound = (intMaxYear - intIncrement) * i + 1;
+                oInterval.UpperBound = intMaxYear;
+            }
 
-
-
+            return lstReturn;
         }
     }
 

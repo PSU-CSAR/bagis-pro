@@ -174,18 +174,20 @@ namespace bagis_pro
                         Table table = geodatabase.OpenDataset<Table>(featureClassName);
                         using (RowCursor cursor = table.Search(queryFilter, false))
                         {
-                            cursor.MoveNext();
-                            Feature aFeature = (Feature)cursor.Current;
-                            if (aFeature != null)
+                            while (cursor.MoveNext())
                             {
-                                int idx = aFeature.FindField(fieldName);
-                                if (idx > -1)
+                                Feature aFeature = (Feature)cursor.Current;
+                                if (aFeature != null)
                                 {
-                                    string strValue = Convert.ToString(aFeature[idx]);
-                                    if (!string.IsNullOrEmpty(strValue) &&
-                                        !lstReturn.Contains(strValue))
+                                    int idx = aFeature.FindField(fieldName);
+                                    if (idx > -1)
                                     {
-                                        lstReturn.Add(strValue);
+                                        string strValue = Convert.ToString(aFeature[idx]);
+                                        if (!string.IsNullOrEmpty(strValue) &&
+                                            !lstReturn.Contains(strValue))
+                                        {
+                                            lstReturn.Add(strValue);
+                                        }
                                     }
                                 }
                             }

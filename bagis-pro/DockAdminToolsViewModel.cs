@@ -2120,6 +2120,10 @@ namespace bagis_pro
                     {
                         success = await AnalysisTools.DeleteIrwinDuplicatesAsync(aoiFolder);
                     }
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        success = await AnalysisTools.DeleteDuplicatesByLocationAsync(aoiFolder);
+                    }
 
                     dynamic oFireSettings = GeneralTools.GetFireSettings(aoiFolder);
                     if (success == BA_ReturnCode.Success)
@@ -2181,7 +2185,9 @@ namespace bagis_pro
             string strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Starting fire report " + "\r\n";
             File.WriteAllText(_strFireReportLogFile, strLogEntry);    // overwrite file if it exists
             // Dictionary: Key is the year, Value is an ArrayList of the values for that line
-            IDictionary<string, IList<IList<string>>> dictOutput = new Dictionary<string, IList<IList<string>>>();    
+            IDictionary<string, IList<IList<string>>> dictOutput = new Dictionary<string, IList<IList<string>>>();
+            IDictionary<string, IList<IList<string>>> dictIncrementOutput = new Dictionary<string, IList<IList<string>>>();
+            IList<Interval> intervalList = GeneralTools.CalculateFireTimePeriods(SelectedMinYear, SelectedMaxYear, FireIncrementYears);
             int minYear = FireBaselineYear - FireDataClipYears;
             for (int idxRow = 0; idxRow < Names.Count; idxRow++)
             {
@@ -2231,6 +2237,8 @@ namespace bagis_pro
                         }
 
                     }
+                    
+                    // Generating annual statistics
                     for (int i = minYear; i <= FireBaselineYear; i++)
                     {
                         IList<string> lstElements = await AnalysisTools.GenerateFireStatisticsList(oAoi, _strFireReportLogFile, 
@@ -2269,7 +2277,7 @@ namespace bagis_pro
                             Names[idxRow].Name + "\r\n";
                         File.AppendAllText(_strFireReportLogFile, strLogEntry);       // append
                     }
-
+                                       
                     Names[idxRow].AoiBatchStateText = AoiBatchState.Completed.ToString();  // update gui
                     strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Finished generate fire statistics export for " +
                         Names[idxRow].Name + "\r\n";
@@ -2277,7 +2285,7 @@ namespace bagis_pro
                 }
             }
 
-            // Write out results from dictionary
+            // Write out annual statistics from dictionary
             for (int i = minYear; i <= FireBaselineYear; i++)
             {
                 // Structures to manage data
