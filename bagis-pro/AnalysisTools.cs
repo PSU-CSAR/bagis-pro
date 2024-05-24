@@ -7,6 +7,7 @@ using ArcGIS.Desktop.Core.Geoprocessing;
 using ArcGIS.Desktop.Editing;
 using ArcGIS.Desktop.Framework.Dialogs;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
+using ArcGIS.Desktop.Internal.Catalog;
 using ArcGIS.Desktop.Internal.Catalog.PropertyPages.NetworkDataset;
 using ArcGIS.Desktop.Internal.Core.Conda;
 using ArcGIS.Desktop.Internal.GeoProcessing;
@@ -6825,10 +6826,11 @@ namespace bagis_pro
                 return Geoprocessing.ExecuteToolAsync("SelectLayerByLocation", parameters, environments,
                             CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
             });
+            string fieldShapeArea = "Shape_Area";
             IList<string> lstObjectIds = await GeodatabaseTools.QueryTableForDistinctValuesAsync(uriFire, tmpOverlap,
                 Constants.FIELD_OBJECT_ID, new QueryFilter());
             IList<string> lstAreas = await GeodatabaseTools.QueryTableForDistinctValuesAsync(uriFire, tmpOverlap,
-                "Shape_Area", new QueryFilter());
+                fieldShapeArea, new QueryFilter());
             if (lstObjectIds.Count != lstAreas.Count)
             {
                 return BA_ReturnCode.UnknownError;
@@ -6849,32 +6851,67 @@ namespace bagis_pro
                         MapMemberPosition = 0,
                     };
                     lyrOverlap = LayerFactory.Instance.CreateLayer<FeatureLayer>(historyParams, oMap);
-                    lyrOverlap.SetDefinitionQuery($@"{Constants.FIELD_OBJECT_ID} >= {strOid}");
+                    lyrOverlap.SetDefinitionQuery($@"{Constants.FIELD_OBJECT_ID} = {strOid}");
                 });
+                
                 gpResult = await QueuedTask.Run(() =>
                 {
                     var parameters = Geoprocessing.MakeValueArray(nifcPath, "CONTAINS",
-                        $@"{uriFire.LocalPath}\{tmpOverlap}", Constants.FIELD_YEAR);
+                        lyrOverlap, Constants.FIELD_YEAR);
                     return Geoprocessing.ExecuteToolAsync("SelectLayerByLocation", parameters, environments,
                                 CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
                 });
-                if (gpResult.IsFailed)
+
+
+                string strLocationLayer = "";
+                long lngCount = -1;
+                if (! gpResult.IsFailed)
+                {
+                   strLocationLayer = Convert.ToString(gpResult.Values[0]);
+                   lngCount = Convert.ToUInt16(gpResult.Values[2]); 
+                }
+                else
                 {
                     return BA_ReturnCode.UnknownError;
                 }
+
                 // Similar size can be defined as the area of nifcfire_overlap polygon is more than 80% the area of the nifcfire polygon
-                double dblMaxArea = Convert.ToDouble(lstAreas[i]) * .8;
-                gpResult = await QueuedTask.Run(() =>
+                // This still doesn't work. It's acting on the feature class
+                if (lngCount > 0)
                 {
-                    string strWhere = $@"{Constants.FIELD_IRWIN_ID} IS NULL";
-                    var parameters = Geoprocessing.MakeValueArray(nifcPath, "SUBSET_SELECTION", strWhere);
-                    return Geoprocessing.ExecuteToolAsync("SelectLayerByAttribute", parameters, environments,
-                                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                });
-                if (gpResult.IsFailed)
-                {
-                    return BA_ReturnCode.UnknownError;
+                    double dblMaxArea = Convert.ToDouble(lstAreas[i]) * .8;
+                    gpResult = await QueuedTask.Run(() =>
+                    {
+                        string strWhere = $@"{Constants.FIELD_IRWIN_ID} IS NULL And {fieldShapeArea} > {dblMaxArea}";
+                        var parameters = Geoprocessing.MakeValueArray(nifcPath, "SUBSET_SELECTION", strWhere);
+                        return Geoprocessing.ExecuteToolAsync("SelectLayerByAttribute", parameters, environments,
+                                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                    });
+                    if (!gpResult.IsFailed)
+                    {
+                        strLocationLayer = Convert.ToString(gpResult.Values[0]);
+                        lngCount = Convert.ToUInt16(gpResult.Values[1]);
+                    }
+                    else
+                    {
+                        return BA_ReturnCode.UnknownError;
+                    }
                 }
+
+                if (lngCount > 0)
+                {
+                    gpResult = await QueuedTask.Run(() =>
+                    {
+                        var parameters = Geoprocessing.MakeValueArray(nifcPath);
+                        return Geoprocessing.ExecuteToolAsync("DeleteFeatures_management", parameters, environments,
+                                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                    });
+                    if (gpResult.IsFailed)
+                    {
+                        return BA_ReturnCode.UnknownError;
+                    }
+                }
+
 
                 // Remove temporary layer
                 await QueuedTask.Run(() =>
@@ -6882,8 +6919,6 @@ namespace bagis_pro
                     oMap.RemoveLayer(lyrOverlap);
                 });
             }
-
-
             return success;
         }
         public static async Task<BA_ReturnCode> ClipMtbsLayersAsync(string strAoiPath, IDictionary<string, dynamic> dictDataSources,

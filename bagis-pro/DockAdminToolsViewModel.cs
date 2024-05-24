@@ -2124,6 +2124,7 @@ namespace bagis_pro
                     {
                         success = await AnalysisTools.DeleteDuplicatesByLocationAsync(aoiFolder);
                     }
+                    return;
 
                     dynamic oFireSettings = GeneralTools.GetFireSettings(aoiFolder);
                     if (success == BA_ReturnCode.Success)
