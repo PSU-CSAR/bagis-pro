@@ -1275,57 +1275,65 @@ namespace bagis_pro
             Uri analysisUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false));
             double minPrecipValue = 999.0F;
             await QueuedTask.Run(() => {
-                using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(analysisUri)))
-                using (Table statisticsTable = geodatabase.OpenDataset<Table>(Constants.FILE_PREC_MEAN_ELEV_V))
+                try
                 {
-                    TableDefinition definition = statisticsTable.GetDefinition();
-                    int idxPrecipTableCol = definition.FindField(Constants.FIELD_SAMPLE_INPUT_2);
-                    int idxElevTableCol = definition.FindField(Constants.FIELD_SAMPLE_INPUT_3);
-                    int idxAspectTableCol = definition.FindField(Constants.FIELD_DIRECTION);
+                    using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(analysisUri)))
+                    using (Table statisticsTable = geodatabase.OpenDataset<Table>(Constants.FILE_PREC_MEAN_ELEV_V))
+                    {
+                        TableDefinition definition = statisticsTable.GetDefinition();
+                        int idxPrecipTableCol = definition.FindField(Constants.FIELD_SAMPLE_INPUT_2);
+                        int idxElevTableCol = definition.FindField(Constants.FIELD_SAMPLE_INPUT_3);
+                        int idxAspectTableCol = definition.FindField(Constants.FIELD_DIRECTION);
 
-                    if(idxPrecipTableCol < 0)
-                    {
-                        Module1.Current.ModuleLogManager.LogError(nameof(CreateRepresentPrecipTableAsync), 
-                            "The " + Constants.FIELD_SAMPLE_INPUT_2 + " field could not be found in " + Constants.FILE_PREC_MEAN_ELEV_V +
-                            ". The most likely cause is that this table was created in ArcMap. Try creating the table in Pro"); 
-                    }
-                    else if (idxElevTableCol > -1 && idxAspectTableCol > -1)
-                    {
-                        QueryFilter pQFilter = new QueryFilter();
-                        pQFilter.WhereClause = Constants.FIELD_SAMPLE_INPUT_2 + " is not null and " + Constants.FIELD_SAMPLE_INPUT_3 + " is not null";
-                        int idxRow = 2;
-                        using (RowCursor cursor = statisticsTable.Search(pQFilter, false))
+                        if (idxPrecipTableCol < 0)
                         {
-                            while (cursor.MoveNext())
+                            Module1.Current.ModuleLogManager.LogError(nameof(CreateRepresentPrecipTableAsync),
+                                "The " + Constants.FIELD_SAMPLE_INPUT_2 + " field could not be found in " + Constants.FILE_PREC_MEAN_ELEV_V +
+                                ". The most likely cause is that this table was created in ArcMap. Try creating the table in Pro");
+                        }
+                        else if (idxElevTableCol > -1 && idxAspectTableCol > -1)
+                        {
+                            QueryFilter pQFilter = new QueryFilter();
+                            pQFilter.WhereClause = Constants.FIELD_SAMPLE_INPUT_2 + " is not null and " + Constants.FIELD_SAMPLE_INPUT_3 + " is not null";
+                            int idxRow = 2;
+                            using (RowCursor cursor = statisticsTable.Search(pQFilter, false))
                             {
-                                Row pRow = cursor.Current;
-                                double precip = Convert.ToDouble(pRow[idxPrecipTableCol]);
-                                pworksheet.Cells[idxRow, idxPrecipExcelCol] = precip;
-                                if (precip < minPrecipValue)
-                                    minPrecipValue = precip;
-                                double elevation = Convert.ToDouble(pRow[idxElevTableCol]);
-                                if (strDemDisplayUnits.Equals("Meters") &&
-                                    strDemUnits.Equals("Feet"))
+                                while (cursor.MoveNext())
                                 {
-                                    elevation = LinearUnit.Feet.ConvertTo(elevation, LinearUnit.Meters);
+                                    Row pRow = cursor.Current;
+                                    double precip = Convert.ToDouble(pRow[idxPrecipTableCol]);
+                                    pworksheet.Cells[idxRow, idxPrecipExcelCol] = precip;
+                                    if (precip < minPrecipValue)
+                                        minPrecipValue = precip;
+                                    double elevation = Convert.ToDouble(pRow[idxElevTableCol]);
+                                    if (strDemDisplayUnits.Equals("Meters") &&
+                                        strDemUnits.Equals("Feet"))
+                                    {
+                                        elevation = LinearUnit.Feet.ConvertTo(elevation, LinearUnit.Meters);
+                                    }
+                                    else if (strDemDisplayUnits.Equals("Feet") &&
+                                             strDemUnits.Equals("Meters"))
+                                    {
+                                        elevation = LinearUnit.Meters.ConvertTo(elevation, LinearUnit.Feet);
+                                    }
+                                    pworksheet.Cells[idxRow, idxElevExcelCol] = elevation;
+                                    string aspect = Convert.ToString(pRow[idxAspectTableCol]);
+                                    if (string.IsNullOrEmpty(aspect))
+                                    {
+                                        aspect = "Unknown";
+                                    }
+                                    pworksheet.Cells[idxRow, idxAspectExcelCol] = aspect;
+                                    idxRow++;
                                 }
-                                else if (strDemDisplayUnits.Equals("Feet") &&
-                                         strDemUnits.Equals("Meters"))
-                                {
-                                    elevation = LinearUnit.Meters.ConvertTo(elevation, LinearUnit.Feet);
-                                }
-                                pworksheet.Cells[idxRow, idxElevExcelCol] = elevation;
-                                string aspect = Convert.ToString(pRow[idxAspectTableCol]);
-                                if (string.IsNullOrEmpty(aspect))
-                                {
-                                    aspect = "Unknown";
-                                }
-                                pworksheet.Cells[idxRow, idxAspectExcelCol] = aspect;
-                                idxRow++;
                             }
                         }
                     }
                 }
+                catch (Exception e)
+                {
+                    MessageBox.Show(e.StackTrace);
+                }
+
             });
             return (int)minPrecipValue;
         }
