@@ -23,6 +23,7 @@ using System.Linq;
 using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Ink;
 
 namespace bagis_pro
 {
@@ -6802,7 +6803,7 @@ namespace bagis_pro
             string tmpCentroid = "tmpCentroid";
             var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath);
             //IGPResult gpResult = await QueuedTask.Run(() =>
-            //{               
+            //{
             //    var parameters = Geoprocessing.MakeValueArray(nifcPath, $@"{uriFire.LocalPath}\{tmpOverlap}",
             //        $@"{uriFire.LocalPath}\{tmpCentroid}", Constants.FIELD_YEAR);
             //    return Geoprocessing.ExecuteToolAsync("FindOverlaps", parameters, environments,
@@ -6819,13 +6820,22 @@ namespace bagis_pro
             //        success = await GeoprocessingTools.DeleteDatasetAsync($@"{uriFire.LocalPath}\{tmpCentroid}");
             //    }
             //}
-            IGPResult gpResult = await QueuedTask.Run(() =>
+            // Add nifc feature layer to map
+            var oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
+            FeatureLayer lyrNifc = null;
+            FeatureLayer lyrOverlap = null;
+            await QueuedTask.Run(() =>
             {
-                var parameters = Geoprocessing.MakeValueArray(nifcPath, $@"{uriFire.LocalPath}\{tmpOverlap}",
-                    $@"{uriFire.LocalPath}\{tmpCentroid}", Constants.FIELD_YEAR);
-                return Geoprocessing.ExecuteToolAsync("SelectLayerByLocation", parameters, environments,
-                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                var historyParams = new FeatureLayerCreationParams(new Uri($@"{uriFire.LocalPath}\{tmpOverlap}"))
+                {
+                    Name = "Overlap Layer",
+                    IsVisible = true,
+                    MapMemberIndex = 0,
+                    MapMemberPosition = 0,
+                };
+                lyrOverlap = LayerFactory.Instance.CreateLayer<FeatureLayer>(historyParams, oMap);
             });
+
             string fieldShapeArea = "Shape_Area";
             IList<string> lstObjectIds = await GeodatabaseTools.QueryTableForDistinctValuesAsync(uriFire, tmpOverlap,
                 Constants.FIELD_OBJECT_ID, new QueryFilter());
@@ -6836,73 +6846,74 @@ namespace bagis_pro
                 return BA_ReturnCode.UnknownError;
             }
 
-            FeatureLayer lyrOverlap = null;
-            var oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
             for (int i = 0; i < lstObjectIds.Count; i++)
             {
                 string strOid = lstObjectIds[i];
+                string strWhere = $@"{Constants.FIELD_OBJECT_ID} = {strOid}";
+                QueryFilter qf = new QueryFilter();
+                qf.WhereClause = strWhere;
                 await QueuedTask.Run(() =>
                 {
-                    var historyParams = new FeatureLayerCreationParams(new Uri($@"{uriFire.LocalPath}\{tmpOverlap}"))
+                    lyrOverlap.Select(qf);
+
+                    var historyParams = new FeatureLayerCreationParams(new Uri(nifcPath))
                     {
-                        Name = "Overlap Layer",
-                        IsVisible = false,
+                        Name = "Nifc Layer",
+                        IsVisible = true,
                         MapMemberIndex = 0,
                         MapMemberPosition = 0,
                     };
-                    lyrOverlap = LayerFactory.Instance.CreateLayer<FeatureLayer>(historyParams, oMap);
-                    lyrOverlap.SetDefinitionQuery($@"{Constants.FIELD_OBJECT_ID} = {strOid}");
+                    lyrNifc = LayerFactory.Instance.CreateLayer<FeatureLayer>(historyParams, oMap);
                 });
-                
-                gpResult = await QueuedTask.Run(() =>
+
+                IGPResult gpResult = await QueuedTask.Run(() =>
                 {
-                    var parameters = Geoprocessing.MakeValueArray(nifcPath, "CONTAINS",
-                        lyrOverlap, Constants.FIELD_YEAR);
+                    var parameters = Geoprocessing.MakeValueArray(lyrNifc, "CONTAINS",
+                        lyrOverlap);
                     return Geoprocessing.ExecuteToolAsync("SelectLayerByLocation", parameters, environments,
                                 CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
                 });
 
+                List<long> lstOIDs = new List<long>();
+                await QueuedTask.Run(() =>
+                {
+                    var gsSelection = lyrNifc.GetSelection();
+                    IReadOnlyList<long> selectedOIDs = gsSelection.GetObjectIDs();
+                    foreach (var oid in selectedOIDs)
+                    {
+                        lstOIDs.Add(oid);
+                    }
+                });
 
-                string strLocationLayer = "";
-                long lngCount = -1;
-                if (! gpResult.IsFailed)
-                {
-                   strLocationLayer = Convert.ToString(gpResult.Values[0]);
-                   lngCount = Convert.ToUInt16(gpResult.Values[2]); 
-                }
-                else
-                {
-                    return BA_ReturnCode.UnknownError;
-                }
 
-                // Similar size can be defined as the area of nifcfire_overlap polygon is more than 80% the area of the nifcfire polygon
-                // This still doesn't work. It's acting on the feature class
-                if (lngCount > 0)
+                List<long> lstDeleteOIDs = new List<long>();
+                long lngDeleteCount = 0;
+                double dblMaxArea = Convert.ToDouble(lstAreas[i]) * .8;
+                if (lstOIDs.Count > 0)
                 {
-                    double dblMaxArea = Convert.ToDouble(lstAreas[i]) * .8;
                     gpResult = await QueuedTask.Run(() =>
                     {
                         string strWhere = $@"{Constants.FIELD_IRWIN_ID} IS NULL And {fieldShapeArea} > {dblMaxArea}";
-                        var parameters = Geoprocessing.MakeValueArray(nifcPath, "SUBSET_SELECTION", strWhere);
+                        var parameters = Geoprocessing.MakeValueArray(lyrNifc, "SUBSET_SELECTION", strWhere);
                         return Geoprocessing.ExecuteToolAsync("SelectLayerByAttribute", parameters, environments,
-                                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                        CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
                     });
-                    if (!gpResult.IsFailed)
+                    await QueuedTask.Run(() =>
                     {
-                        strLocationLayer = Convert.ToString(gpResult.Values[0]);
-                        lngCount = Convert.ToUInt16(gpResult.Values[1]);
-                    }
-                    else
-                    {
-                        return BA_ReturnCode.UnknownError;
-                    }
+                        var gsSelection = lyrNifc.GetSelection();
+                        IReadOnlyList<long> selectedOIDs = gsSelection.GetObjectIDs();
+                        foreach (var oid in selectedOIDs)
+                        {
+                            lngDeleteCount++;
+                        }
+                    });
                 }
 
-                if (lngCount > 0)
+                if (lngDeleteCount > 0)
                 {
                     gpResult = await QueuedTask.Run(() =>
                     {
-                        var parameters = Geoprocessing.MakeValueArray(nifcPath);
+                        var parameters = Geoprocessing.MakeValueArray(lyrNifc);
                         return Geoprocessing.ExecuteToolAsync("DeleteFeatures_management", parameters, environments,
                                     CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
                     });
@@ -6912,13 +6923,16 @@ namespace bagis_pro
                     }
                 }
 
-
-                // Remove temporary layer
                 await QueuedTask.Run(() =>
                 {
-                    oMap.RemoveLayer(lyrOverlap);
+                    oMap.RemoveLayer(lyrNifc);
                 });
             }
+            // Remove temporary layer
+            await QueuedTask.Run(() =>
+            {
+                oMap.RemoveLayer(lyrOverlap);
+            });
             return success;
         }
         public static async Task<BA_ReturnCode> ClipMtbsLayersAsync(string strAoiPath, IDictionary<string, dynamic> dictDataSources,
