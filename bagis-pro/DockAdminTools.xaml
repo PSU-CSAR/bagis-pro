@@ -323,8 +323,8 @@
                                 <RowDefinition Height="30"/>
                             </Grid.RowDefinitions>
                             <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="0, 0, 0, 2">
-                                <Label Content="Baseline year:"/>
-                                <TextBox Width ="40" Height="20" Text="{Binding FireBaselineYear}"/>
+                                <Label Content="Report end year:"/>
+                                <TextBox Width ="40" Height="20" Text="{Binding ReportEndYear}"/>
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Grid.Row="1" Margin="0, 0, 0, 2">
                                 <Label Content="Increment (in years):"/>

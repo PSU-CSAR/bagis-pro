@@ -96,7 +96,7 @@ namespace bagis_pro
         private bool _cmdFireReportLogEnabled = false;
         private bool _cmdFireReportEnabled = false;
         private bool _cmdFireDataLogEnabled = false;
-        private int _intFireBaselineYear;
+        private int _intReportEndYear;
         private int _intFireIncrementYears;
         private bool _bAllTimeChecked = true;   //Default
         private bool _bSelectedTimeChecked = false;
@@ -332,12 +332,12 @@ namespace bagis_pro
             }
         }
 
-        public int FireBaselineYear
+        public int ReportEndYear
         {
-            get { return _intFireBaselineYear; }
+            get { return _intReportEndYear; }
             set
             {
-                SetProperty(ref _intFireBaselineYear, value, () => FireBaselineYear);
+                SetProperty(ref _intReportEndYear, value, () => ReportEndYear);
             }
         }
 
@@ -597,12 +597,12 @@ namespace bagis_pro
                         _dictDatasources = await ws.QueryDataSourcesAsync();
                     }
                     // Query minimum available fire data year from webservice; It's here because it's an async call
-                    if (FireBaselineYear < 1)   // Only do this the first time an AOI folder is selected
+                    if (ReportEndYear < 1)   // Only do this the first time an AOI folder is selected
                     {
                         _intNifcMaxYear = await ws.QueryNifcMinYearAsync(_dictDatasources, Constants.DATA_TYPE_FIRE_CURRENT);
                         NifcDataDescr = $@"NIFC data available from {NifcMinYear} to {_intNifcMaxYear}";
-                        FireBaselineYear = _intNifcMaxYear;
-                        SelectedMaxYear = FireBaselineYear;
+                        ReportEndYear = _intNifcMaxYear;
+                        SelectedMaxYear = ReportEndYear;
                         SelectedMinYear = SelectedMaxYear - FireDataClipYears;
                         FireTimePeriodCount = 6;    //@ToDo: Replace this with calculation
                         _intMtbsMaxYear = await this.QueryMtbsMaxYearAsync(_dictDatasources, Constants.DATA_TYPE_FIRE_BURN_SEVERITY);
@@ -2188,7 +2188,7 @@ namespace bagis_pro
             IDictionary<string, IList<IList<string>>> dictOutput = new Dictionary<string, IList<IList<string>>>();
             IDictionary<string, IList<IList<string>>> dictIncrementOutput = new Dictionary<string, IList<IList<string>>>();
             IList<Interval> intervalList = GeneralTools.CalculateFireTimePeriods(SelectedMinYear, SelectedMaxYear, FireIncrementYears);
-            int minYear = FireBaselineYear - FireDataClipYears;
+            int minYear = _intNifcMaxYear - FireDataClipYears;
             for (int idxRow = 0; idxRow < Names.Count; idxRow++)
             {
                 if (Names[idxRow].AoiBatchIsSelected)
@@ -2239,7 +2239,7 @@ namespace bagis_pro
                     }
                     
                     // Generating annual statistics
-                    for (int i = minYear; i <= FireBaselineYear; i++)
+                    for (int i = minYear; i <= _intNifcMaxYear; i++)
                     {
                         IList<string> lstElements = await AnalysisTools.GenerateFireStatisticsList(oAoi, _strFireReportLogFile, 
                             aoiAreaSqMeters,cellSizeSqMeters, i);
@@ -2261,7 +2261,7 @@ namespace bagis_pro
                         if (oFireSettings.DataSources != null)
                         {
                             // We know the file exists
-                            oFireSettings.baseYear = FireBaselineYear;
+                            oFireSettings.reportEndYear = _intNifcMaxYear;
                             // serialize JSON directly to a file
                             using (StreamWriter file = File.CreateText($@"{oAoi.FilePath}\{Constants.FOLDER_MAPS}\{Constants.FILE_FIRE_SETTINGS}"))
                             {
@@ -2286,7 +2286,7 @@ namespace bagis_pro
             }
 
             // Write out annual statistics from dictionary
-            for (int i = minYear; i <= FireBaselineYear; i++)
+            for (int i = minYear; i <= _intNifcMaxYear; i++)
             {
                 // Structures to manage data
                 string strCsvFile = $@"{Path.GetDirectoryName(_strFireReportLogFile)}\{i}_annual_statistics.csv";
