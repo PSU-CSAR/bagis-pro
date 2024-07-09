@@ -6802,24 +6802,24 @@ namespace bagis_pro
             string tmpOverlap = "tmpOverlap";
             string tmpCentroid = "tmpCentroid";
             var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath);
-            //IGPResult gpResult = await QueuedTask.Run(() =>
-            //{
-            //    var parameters = Geoprocessing.MakeValueArray(nifcPath, $@"{uriFire.LocalPath}\{tmpOverlap}",
-            //        $@"{uriFire.LocalPath}\{tmpCentroid}", Constants.FIELD_YEAR);
-            //    return Geoprocessing.ExecuteToolAsync("FindOverlaps", parameters, environments,
-            //                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-            //});
-            //if (gpResult.IsFailed)
-            //{
-            //    return success;
-            //}
-            //else
-            //{
-            //    if (await GeodatabaseTools.FeatureClassExistsAsync(uriFire, tmpCentroid))
-            //    {
-            //        success = await GeoprocessingTools.DeleteDatasetAsync($@"{uriFire.LocalPath}\{tmpCentroid}");
-            //    }
-            //}
+            IGPResult gpResult = await QueuedTask.Run(() =>
+            {
+                var parameters = Geoprocessing.MakeValueArray(nifcPath, $@"{uriFire.LocalPath}\{tmpOverlap}",
+                    $@"{uriFire.LocalPath}\{tmpCentroid}", Constants.FIELD_YEAR);
+                return Geoprocessing.ExecuteToolAsync("FindOverlaps", parameters, environments,
+                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+            });
+            if (gpResult.IsFailed)
+            {
+                return success;
+            }
+            else
+            {
+                if (await GeodatabaseTools.FeatureClassExistsAsync(uriFire, tmpCentroid))
+                {
+                    success = await GeoprocessingTools.DeleteDatasetAsync($@"{uriFire.LocalPath}\{tmpCentroid}");
+                }
+            }
             // Add nifc feature layer to map
             var oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
             FeatureLayer lyrNifc = null;
@@ -6866,7 +6866,7 @@ namespace bagis_pro
                     lyrNifc = LayerFactory.Instance.CreateLayer<FeatureLayer>(historyParams, oMap);
                 });
 
-                IGPResult gpResult = await QueuedTask.Run(() =>
+                gpResult = await QueuedTask.Run(() =>
                 {
                     var parameters = Geoprocessing.MakeValueArray(lyrNifc, "CONTAINS",
                         lyrOverlap);

@@ -2120,10 +2120,10 @@ namespace bagis_pro
                     {
                         success = await AnalysisTools.DeleteIrwinDuplicatesAsync(aoiFolder);
                     }
-                    if (success == BA_ReturnCode.Success)
-                    {
-                        success = await AnalysisTools.DeleteDuplicatesByLocationAsync(aoiFolder);
-                    }
+                    //if (success == BA_ReturnCode.Success)
+                    //{
+                    //    success = await AnalysisTools.DeleteDuplicatesByLocationAsync(aoiFolder);
+                    //}
 
                     dynamic oFireSettings = GeneralTools.GetFireSettings(aoiFolder);
                     if (success == BA_ReturnCode.Success)
