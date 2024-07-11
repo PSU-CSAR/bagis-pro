@@ -2187,7 +2187,6 @@ namespace bagis_pro
             // Dictionary: Key is the year, Value is an ArrayList of the values for that line
             IDictionary<string, IList<IList<string>>> dictOutput = new Dictionary<string, IList<IList<string>>>();
             IDictionary<string, IList<IList<string>>> dictIncrementOutput = new Dictionary<string, IList<IList<string>>>();
-            IList<Interval> intervalList = GeneralTools.CalculateFireTimePeriods(SelectedMinYear, SelectedMaxYear, FireIncrementYears);
             int minYear = _intNifcMaxYear - FireDataClipYears;
             for (int idxRow = 0; idxRow < Names.Count; idxRow++)
             {
@@ -2237,20 +2236,24 @@ namespace bagis_pro
                         }
 
                     }
-                    
+
+                    // Are dataBeginYear and dataRetrieveStart year the same value? Can't find a place where analyst sets dataBegin year
+                    // Test #1: 1994, 2014, 1985, 5
+                    // Test #2: 1995, 2024, 1995, 10
+                    IList<Interval> lstInterval = GeneralTools.GetFireStatisticsIntervals(minYear, ReportEndYear, minYear, FireIncrementYears);
                     // Generating annual statistics
                     for (int i = minYear; i <= _intNifcMaxYear; i++)
                     {
-                        IList<string> lstElements = await AnalysisTools.GenerateFireStatisticsList(oAoi, _strFireReportLogFile, 
+                        IList<string> lstAnnualElements = await AnalysisTools.GenerateAnnualFireStatisticsList(oAoi, _strFireReportLogFile, 
                             aoiAreaSqMeters,cellSizeSqMeters, i);
                         if (dictOutput.ContainsKey(i.ToString()))
                         {
-                            dictOutput[i.ToString()].Add(lstElements);
+                            dictOutput[i.ToString()].Add(lstAnnualElements);
                         }
                         else
                         {
                             IList<IList<string>> lstNew = new List<IList<string>>();
-                            lstNew.Add(lstElements);
+                            lstNew.Add(lstAnnualElements);
                             dictOutput.Add(i.ToString(), lstNew);
                         }                        
                     }

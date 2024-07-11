@@ -3225,26 +3225,36 @@ namespace bagis_pro
                 // munch
             }
         }
-        public static IList<Interval> CalculateFireTimePeriods(int intMinYear, int intMaxYear, int intIncrement)
+        public static IList<Interval> GetFireStatisticsIntervals(int intDataBeginYear, int intReportEndYear, int intDataRetrieveStartYear,
+            int intIncrement)
         {
-            IList<Interval> lstReturn = new List<Interval>();
+            IList<Interval> lstIntervals = new List<Interval>();
+            int intRemainder = 0;
             int intRemainderFlag = 0;
-            int intRemainder = (intMaxYear - intMinYear) % intIncrement;
+            if (intDataBeginYear >= intReportEndYear)
+            {
+                return lstIntervals;
+            }
+            else if (intIncrement < 1)
+            {
+                return lstIntervals;
+            }
+
+            intRemainder = Convert.ToInt16(Math.Ceiling((intReportEndYear - intDataBeginYear) % Convert.ToDouble(intIncrement) / intIncrement));
             if (intRemainder > 0)
             {
                 intRemainderFlag = 1;
             }
-            double dblPeriods = Math.Ceiling((double) ((intMaxYear-intMinYear)/intIncrement) + intRemainderFlag);
-            double intUpperBound = Math.Ceiling((double) ((intMaxYear - intMinYear) / intIncrement) * intIncrement + intMaxYear);
-            for (int i = 0; i <= dblPeriods; i++)
+            double dblPeriods = Math.Ceiling((intReportEndYear - intDataRetrieveStartYear) / Convert.ToDouble(intIncrement)) + intRemainderFlag;
+            for (int i = 1; i <= dblPeriods; i++)
             {
                 Interval oInterval = new Interval();
                 oInterval.Value = i;
-                oInterval.LowerBound = (intMaxYear - intIncrement) * i + 1;
-                oInterval.UpperBound = intMaxYear;
+                oInterval.LowerBound = intReportEndYear - intIncrement * i + 1;
+                oInterval.UpperBound = intReportEndYear;
+                lstIntervals.Add(oInterval);
             }
-
-            return lstReturn;
+            return lstIntervals;
         }
     }
 

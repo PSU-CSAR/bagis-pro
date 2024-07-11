@@ -7402,7 +7402,7 @@ namespace bagis_pro
             return lstReturn;
         }
 
-        public static async Task<IList<string>> GenerateFireStatisticsList(BA_Objects.Aoi oAoi, string strLogFile, double aoiAreaSqMeters,
+        public static async Task<IList<string>> GenerateAnnualFireStatisticsList(BA_Objects.Aoi oAoi, string strLogFile, double aoiAreaSqMeters,
                 double dblMtbsCellSize, int intYear)
         {
             IList<string> lstElements = new List<string>();
@@ -7470,6 +7470,8 @@ namespace bagis_pro
         }
 
 
-    }
+
+
+        }
 
 }
