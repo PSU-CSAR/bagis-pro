@@ -2186,7 +2186,9 @@ namespace bagis_pro
             File.WriteAllText(_strFireReportLogFile, strLogEntry);    // overwrite file if it exists
             // Dictionary: Key is the year, Value is an ArrayList of the values for that line
             IDictionary<string, IList<IList<string>>> dictOutput = new Dictionary<string, IList<IList<string>>>();
-            IDictionary<string, IList<IList<string>>> dictIncrementOutput = new Dictionary<string, IList<IList<string>>>();
+            IList<IList<string>> lstIncrementOutput = new List<IList<string>>();    
+            int intIncrementPeriods = 0;
+            IList<Interval> lstInterval = null;
             int minYear = _intNifcMaxYear - FireDataClipYears;
             for (int idxRow = 0; idxRow < Names.Count; idxRow++)
             {
@@ -2237,27 +2239,33 @@ namespace bagis_pro
 
                     }
 
-                    // Are dataBeginYear and dataRetrieveStart year the same value? Can't find a place where analyst sets dataBegin year
-                    // Test #1: 1994, 2014, 1985, 5
-                    // Test #2: 1995, 2024, 1995, 10
-                    IList<Interval> lstInterval = GeneralTools.GetFireStatisticsIntervals(minYear, ReportEndYear, minYear, FireIncrementYears);
                     // Generating annual statistics
-                    for (int i = minYear; i <= _intNifcMaxYear; i++)
+                    //for (int i = minYear; i <= ReportEndYear; i++)
+                    //{
+                    //    IList<string> lstAnnualElements = await AnalysisTools.GenerateAnnualFireStatisticsList(oAoi, _strFireReportLogFile, 
+                    //        aoiAreaSqMeters,cellSizeSqMeters, i);
+                    //    if (dictOutput.ContainsKey(i.ToString()))
+                    //    {
+                    //        dictOutput[i.ToString()].Add(lstAnnualElements);
+                    //    }
+                    //    else
+                    //    {
+                    //        IList<IList<string>> lstNew = new List<IList<string>>();
+                    //        lstNew.Add(lstAnnualElements);
+                    //        dictOutput.Add(i.ToString(), lstNew);
+                    //    }                        
+                    //}
+                    // Generating increment statistics
+                    // Are dataBeginYear and dataRetrieveStart year the same value? Can't find a place where analyst sets dataBegin year
+                    // Test #1: 2014, 1985, 5
+                    // Test #2: 2024, 1995, 10
+                    lstInterval = GeneralTools.GetFireStatisticsIntervals(ReportEndYear, minYear, FireIncrementYears, out intIncrementPeriods);
+                    foreach (var oInterval in lstInterval)
                     {
-                        IList<string> lstAnnualElements = await AnalysisTools.GenerateAnnualFireStatisticsList(oAoi, _strFireReportLogFile, 
-                            aoiAreaSqMeters,cellSizeSqMeters, i);
-                        if (dictOutput.ContainsKey(i.ToString()))
-                        {
-                            dictOutput[i.ToString()].Add(lstAnnualElements);
-                        }
-                        else
-                        {
-                            IList<IList<string>> lstNew = new List<IList<string>>();
-                            lstNew.Add(lstAnnualElements);
-                            dictOutput.Add(i.ToString(), lstNew);
-                        }                        
+                        IList<string>  lstOutput = await AnalysisTools.GenerateIncrementFireStatisticsList(oAoi, _strFireReportLogFile,
+                        aoiAreaSqMeters, cellSizeSqMeters, oInterval);
+                        lstIncrementOutput.Add(lstOutput);
                     }
-
                     try
                     {
                         dynamic oFireSettings = GeneralTools.GetFireSettings(oAoi.FilePath);
@@ -2289,12 +2297,13 @@ namespace bagis_pro
             }
 
             // Write out annual statistics from dictionary
+            string strCsvFile = "";
+            StringBuilder output = new StringBuilder();
+            string separator = ",";
             for (int i = minYear; i <= _intNifcMaxYear; i++)
             {
                 // Structures to manage data
-                string strCsvFile = $@"{Path.GetDirectoryName(_strFireReportLogFile)}\{i}_annual_statistics.csv";
-                string separator = ",";
-                StringBuilder output = new StringBuilder();
+                strCsvFile = $@"{Path.GetDirectoryName(_strFireReportLogFile)}\{i}_annual_statistics.csv";
                 String[] headings = { "stationTriplet", "stationName", $@"{i}_newfireno", $@"{i}_nifc_burnedArea_SqMiles", 
                     $@"{i}_nifc_burnedArea_pct", $@"{i}_mtbs_burnedArea_pct", $@"{i}_burnedForestedArea_SqMiles",
                     $@"{i}_burnedForestedArea_pct",$@"{i}_lowburnedSeverityArea_SqMiles", $@"{i}_lowburnedSeverityArea_pct",
@@ -2324,8 +2333,39 @@ namespace bagis_pro
                 }
             }
 
+            strCsvFile = $@"{Path.GetDirectoryName(_strFireReportLogFile)}\increment_statistics.csv";
+            output.Clear();
+            IList<string> lstHeadings = new List<string>() { "stationTriplet", "stationName" };
+            string fmt = "00";
+            for (int i = 1; i < intIncrementPeriods; i++)
+            {
+                int yearsLabel = i * FireIncrementYears;
+                string strYearsLabel = $@"Last{yearsLabel.ToString(fmt)}_newfireno";
+                lstHeadings.Add(strYearsLabel);
+            }
+            String[] incrementHeadings = lstHeadings.ToArray();
+            output.AppendLine(string.Join(separator, incrementHeadings));
 
+            // Test #1: 2014, 1985, 5
+            // Test #2: 2024, 1995, 10
+            lstInterval = GeneralTools.GetFireStatisticsIntervals(ReportEndYear, minYear, FireIncrementYears, out intIncrementPeriods);
+            foreach (var item in lstIncrementOutput)
+            {
+                 output.AppendLine(string.Join(separator, item));
+            }
 
+            try
+            {
+                // Overwrites file with new content
+                File.WriteAllText(strCsvFile, output.ToString());
+            }
+            catch (Exception ex)
+            {
+                strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} Data could not be written to the CSV file!{System.Environment.NewLine}";
+                File.AppendAllText(_strFireReportLogFile, strLogEntry);
+                MessageBox.Show("Data could not be written to the CSV file!", "BAGIS-PRO");
+                return;
+            }
         }
 
             private string CreateLogEntry(string strAoiPath, string strOldTriplet, string strNewTriplet, string strRemarks)

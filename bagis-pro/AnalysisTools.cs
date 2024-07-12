@@ -7227,6 +7227,31 @@ namespace bagis_pro
             return dblReturn;
         }
 
+        public static async Task<double> QueryPerimeterStatisticsByIncrementAsync(string aoiPath, Interval oInterval,
+            double aoiAreaSqMeters, FireStatisticType fireStatType, string strLogFile)
+        {
+            double dblReturn = -1;
+            string strGdbFire = GeodatabaseTools.GetGeodatabasePath(aoiPath, GeodatabaseNames.Fire);
+            string strTmpIntersect = "tmpIntersect";
+            switch (fireStatType)
+            {
+                case FireStatisticType.Count:
+                    await QueuedTask.Run(() =>
+                    {
+                        using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(strGdbFire))))
+                        using (FeatureClass featureClass = geodatabase.OpenDataset<FeatureClass>(Constants.FILE_NIFC_FIRE))
+                        {
+                            QueryFilter queryFilter = new QueryFilter();
+                            queryFilter.WhereClause = $@"{Constants.FIELD_YEAR} > {oInterval.LowerBound-1} And {Constants.FIELD_YEAR} < {oInterval.LowerBound + 1}";
+                            long count = featureClass.GetCount(queryFilter);
+                            dblReturn = Convert.ToDouble(count);
+                        }
+                    });
+                    break;
+            }
+            return dblReturn;
+        }
+
         public static async Task<double> QueryMtbsStatisticByYearAsync(string aoiPath, int intYear,
             double aoiAreaSqMeters, double dblMtbsCellSize, FireStatisticType fireStatType)
         {
@@ -7469,9 +7494,24 @@ namespace bagis_pro
             return lstElements;
         }
 
+        public static async Task<IList<string>> GenerateIncrementFireStatisticsList(BA_Objects.Aoi oAoi, string strLogFile, double aoiAreaSqMeters,
+            double dblMtbsCellSize, Interval oInterval)
+        {
+            IList<string> lstElements = new List<string>();
+            lstElements.Add(oAoi.StationTriplet);   // Station triplet
+            lstElements.Add(oAoi.Name);  //AOI Name
+            string gdbFire = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Fire);
 
+            double dblFireCount = await QueryPerimeterStatisticsByIncrementAsync(oAoi.FilePath, oInterval, aoiAreaSqMeters, FireStatisticType.Count, strLogFile);
+            lstElements.Add(Convert.ToString(dblFireCount));
 
+            return lstElements;
 
         }
+
+
+
+
+    }
 
 }

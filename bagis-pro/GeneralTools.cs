@@ -3225,13 +3225,14 @@ namespace bagis_pro
                 // munch
             }
         }
-        public static IList<Interval> GetFireStatisticsIntervals(int intDataBeginYear, int intReportEndYear, int intDataRetrieveStartYear,
-            int intIncrement)
+        public static IList<Interval> GetFireStatisticsIntervals(int intReportEndYear, int intDataRetrieveStartYear,
+            int intIncrement, out int intPeriods)
         {
             IList<Interval> lstIntervals = new List<Interval>();
             int intRemainder = 0;
             int intRemainderFlag = 0;
-            if (intDataBeginYear >= intReportEndYear)
+            intPeriods = 0;
+            if (intDataRetrieveStartYear >= intReportEndYear)
             {
                 return lstIntervals;
             }
@@ -3240,13 +3241,13 @@ namespace bagis_pro
                 return lstIntervals;
             }
 
-            intRemainder = Convert.ToInt16(Math.Ceiling((intReportEndYear - intDataBeginYear) % Convert.ToDouble(intIncrement) / intIncrement));
+            intRemainder = Convert.ToInt16(Math.Ceiling((intReportEndYear - intDataRetrieveStartYear) % Convert.ToDouble(intIncrement) / intIncrement));
             if (intRemainder > 0)
             {
                 intRemainderFlag = 1;
             }
-            double dblPeriods = Math.Ceiling((intReportEndYear - intDataRetrieveStartYear) / Convert.ToDouble(intIncrement)) + intRemainderFlag;
-            for (int i = 1; i <= dblPeriods; i++)
+            intPeriods = (int) Math.Ceiling((intReportEndYear - intDataRetrieveStartYear) / Convert.ToDouble(intIncrement)) + intRemainderFlag;
+            for (int i = 1; i <= intPeriods; i++)
             {
                 Interval oInterval = new Interval();
                 oInterval.Value = i;
