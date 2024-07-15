@@ -7248,6 +7248,19 @@ namespace bagis_pro
                         }
                     });
                     break;
+                case FireStatisticType.AreaSqMiles:
+                    string strWhere = $@"{Constants.FIELD_YEAR} > {oInterval.LowerBound - 1} And {Constants.FIELD_YEAR} < {oInterval.UpperBound} + 1";
+                    double dblAreaSqMeters = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(new Uri(strGdbFire), Constants.FILE_NIFC_FIRE, strWhere);
+                    if (dblAreaSqMeters > 0)
+                    {
+                        dblReturn = Math.Round(AreaUnit.SquareMeters.ConvertTo(dblAreaSqMeters, AreaUnit.SquareMiles), 2);
+                    }
+                    else
+                    {
+                        dblReturn = 0;
+                    }
+                    break;
+
             }
             return dblReturn;
         }
@@ -7505,6 +7518,11 @@ namespace bagis_pro
             {
                 double dblFireCount = await QueryPerimeterStatisticsByIncrementAsync(oAoi.FilePath, oInterval, aoiAreaSqMeters, FireStatisticType.Count, strLogFile);
                 lstElements.Add(Convert.ToString(dblFireCount));
+            }
+            foreach (var oInterval in lstInterval)
+            {
+                double dblAreaSqMiles = await QueryPerimeterStatisticsByIncrementAsync(oAoi.FilePath, oInterval, aoiAreaSqMeters, FireStatisticType.AreaSqMiles, strLogFile);
+                lstElements.Add(Convert.ToString(dblAreaSqMiles));
             }
 
 
