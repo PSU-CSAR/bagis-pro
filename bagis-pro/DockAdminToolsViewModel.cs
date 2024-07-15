@@ -2260,12 +2260,9 @@ namespace bagis_pro
                     // Test #1: 2014, 1985, 5
                     // Test #2: 2024, 1995, 10
                     lstInterval = GeneralTools.GetFireStatisticsIntervals(ReportEndYear, minYear, FireIncrementYears, out intIncrementPeriods);
-                    foreach (var oInterval in lstInterval)
-                    {
-                        IList<string>  lstOutput = await AnalysisTools.GenerateIncrementFireStatisticsList(oAoi, _strFireReportLogFile,
-                        aoiAreaSqMeters, cellSizeSqMeters, oInterval);
-                        lstIncrementOutput.Add(lstOutput);
-                    }
+                    IList<string> lstOutput = await AnalysisTools.GenerateIncrementFireStatisticsList(oAoi, _strFireReportLogFile,
+                        aoiAreaSqMeters, cellSizeSqMeters, lstInterval);
+                    lstIncrementOutput.Add(lstOutput);
                     try
                     {
                         dynamic oFireSettings = GeneralTools.GetFireSettings(oAoi.FilePath);
@@ -2337,7 +2334,7 @@ namespace bagis_pro
             output.Clear();
             IList<string> lstHeadings = new List<string>() { "stationTriplet", "stationName" };
             string fmt = "00";
-            for (int i = 1; i < intIncrementPeriods; i++)
+            for (int i = 1; i <= intIncrementPeriods; i++)
             {
                 int yearsLabel = i * FireIncrementYears;
                 string strYearsLabel = $@"Last{yearsLabel.ToString(fmt)}_newfireno";
@@ -2346,9 +2343,6 @@ namespace bagis_pro
             String[] incrementHeadings = lstHeadings.ToArray();
             output.AppendLine(string.Join(separator, incrementHeadings));
 
-            // Test #1: 2014, 1985, 5
-            // Test #2: 2024, 1995, 10
-            lstInterval = GeneralTools.GetFireStatisticsIntervals(ReportEndYear, minYear, FireIncrementYears, out intIncrementPeriods);
             foreach (var item in lstIncrementOutput)
             {
                  output.AppendLine(string.Join(separator, item));

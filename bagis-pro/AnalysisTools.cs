@@ -7495,15 +7495,19 @@ namespace bagis_pro
         }
 
         public static async Task<IList<string>> GenerateIncrementFireStatisticsList(BA_Objects.Aoi oAoi, string strLogFile, double aoiAreaSqMeters,
-            double dblMtbsCellSize, Interval oInterval)
+            double dblMtbsCellSize, IList<Interval> lstInterval)
         {
             IList<string> lstElements = new List<string>();
             lstElements.Add(oAoi.StationTriplet);   // Station triplet
             lstElements.Add(oAoi.Name);  //AOI Name
             string gdbFire = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Fire);
+            foreach (var oInterval in lstInterval)
+            {
+                double dblFireCount = await QueryPerimeterStatisticsByIncrementAsync(oAoi.FilePath, oInterval, aoiAreaSqMeters, FireStatisticType.Count, strLogFile);
+                lstElements.Add(Convert.ToString(dblFireCount));
+            }
 
-            double dblFireCount = await QueryPerimeterStatisticsByIncrementAsync(oAoi.FilePath, oInterval, aoiAreaSqMeters, FireStatisticType.Count, strLogFile);
-            lstElements.Add(Convert.ToString(dblFireCount));
+
 
             return lstElements;
 
