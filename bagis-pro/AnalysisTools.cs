@@ -7242,7 +7242,7 @@ namespace bagis_pro
                         using (FeatureClass featureClass = geodatabase.OpenDataset<FeatureClass>(Constants.FILE_NIFC_FIRE))
                         {
                             QueryFilter queryFilter = new QueryFilter();
-                            queryFilter.WhereClause = $@"{Constants.FIELD_YEAR} > {oInterval.LowerBound-1} And {Constants.FIELD_YEAR} < {oInterval.LowerBound + 1}";
+                            queryFilter.WhereClause = $@"{Constants.FIELD_YEAR} > {oInterval.LowerBound-1} And {Constants.FIELD_YEAR} < {oInterval.UpperBound} + 1";
                             long count = featureClass.GetCount(queryFilter);
                             dblReturn = Convert.ToDouble(count);
                         }

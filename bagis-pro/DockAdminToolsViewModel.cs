@@ -2240,21 +2240,21 @@ namespace bagis_pro
                     }
 
                     // Generating annual statistics
-                    //for (int i = minYear; i <= ReportEndYear; i++)
-                    //{
-                    //    IList<string> lstAnnualElements = await AnalysisTools.GenerateAnnualFireStatisticsList(oAoi, _strFireReportLogFile, 
-                    //        aoiAreaSqMeters,cellSizeSqMeters, i);
-                    //    if (dictOutput.ContainsKey(i.ToString()))
-                    //    {
-                    //        dictOutput[i.ToString()].Add(lstAnnualElements);
-                    //    }
-                    //    else
-                    //    {
-                    //        IList<IList<string>> lstNew = new List<IList<string>>();
-                    //        lstNew.Add(lstAnnualElements);
-                    //        dictOutput.Add(i.ToString(), lstNew);
-                    //    }                        
-                    //}
+                    for (int i = minYear; i <= ReportEndYear; i++)
+                    {
+                        IList<string> lstAnnualElements = await AnalysisTools.GenerateAnnualFireStatisticsList(oAoi, _strFireReportLogFile,
+                            aoiAreaSqMeters, cellSizeSqMeters, i);
+                        if (dictOutput.ContainsKey(i.ToString()))
+                        {
+                            dictOutput[i.ToString()].Add(lstAnnualElements);
+                        }
+                        else
+                        {
+                            IList<IList<string>> lstNew = new List<IList<string>>();
+                            lstNew.Add(lstAnnualElements);
+                            dictOutput.Add(i.ToString(), lstNew);
+                        }
+                    }
                     // Generating increment statistics
                     // Are dataBeginYear and dataRetrieveStart year the same value? Can't find a place where analyst sets dataBegin year
                     // Test #1: 2014, 1985, 5
