@@ -7233,7 +7233,7 @@ namespace bagis_pro
         {
             double dblReturn = -1;
             string strGdbFire = GeodatabaseTools.GetGeodatabasePath(aoiPath, GeodatabaseNames.Fire);
-            string strTmpIntersect = "tmpIntersect";
+            string strDissolveFc = $@"tmpDiss{Convert.ToString(oInterval.Value)}";
             switch (fireStatType)
             {
                 case FireStatisticType.Count:
@@ -7243,7 +7243,7 @@ namespace bagis_pro
                         using (FeatureClass featureClass = geodatabase.OpenDataset<FeatureClass>(Constants.FILE_NIFC_FIRE))
                         {
                             QueryFilter queryFilter = new QueryFilter();
-                            queryFilter.WhereClause = $@"{Constants.FIELD_YEAR} > {oInterval.LowerBound-1} And {Constants.FIELD_YEAR} < {oInterval.UpperBound} + 1";
+                            queryFilter.WhereClause = $@"{Constants.FIELD_YEAR} > {oInterval.LowerBound - 1} And {Constants.FIELD_YEAR} < {oInterval.UpperBound} + 1";
                             long count = featureClass.GetCount(queryFilter);
                             dblReturn = Convert.ToDouble(count);
                         }
@@ -7256,7 +7256,6 @@ namespace bagis_pro
                     string strNifc = $@"{strGdbFire}\{Constants.FILE_NIFC_FIRE}";
                     string strIntervalFc = $@"tmpInterval_{Convert.ToString(oInterval.Value)}";
                     string strTmpSelect = $@"{strGdbFire}\{strIntervalFc}";
-                    string strDissolveFc = $@"tmpDiss{Convert.ToString(oInterval.Value)}";
                     string strTmpDissolve = $@"{strGdbFire}\{strDissolveFc}";
                     success = await GeoprocessingTools.ExportSelectedFeatures(strNifc, strWhere, strTmpSelect);
                     if (success == BA_ReturnCode.Success)
@@ -7296,10 +7295,10 @@ namespace bagis_pro
                             }
                             if (success == BA_ReturnCode.Success)
                             {
-                                double dblAreaSqMeters = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(new Uri(strGdbFire), strDissolveFc, "");
-                                if (dblAreaSqMeters > 0)
+                                double dblAreaSqMeters1 = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(new Uri(strGdbFire), strDissolveFc, "");
+                                if (dblAreaSqMeters1 > 0)
                                 {
-                                    dblReturn = Math.Round(AreaUnit.SquareMeters.ConvertTo(dblAreaSqMeters, AreaUnit.SquareMiles), 2);
+                                    dblReturn = Math.Round(AreaUnit.SquareMeters.ConvertTo(dblAreaSqMeters1, AreaUnit.SquareMiles), 2);
                                 }
                                 else
                                 {
@@ -7309,7 +7308,22 @@ namespace bagis_pro
                         }
                     }
                     break;
-
+                case FireStatisticType.NifcBurnedAreaPct:
+                    // This feature class should already be there if the previous statistic succeeded
+                    if (! await GeodatabaseTools.FeatureClassExistsAsync(new Uri(strGdbFire), strDissolveFc))
+                    {
+                        return 0;
+                    }
+                    double dblAreaSqMeters = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(new Uri(strGdbFire), strDissolveFc, "");
+                    if (dblAreaSqMeters > 0)
+                    {
+                        dblReturn = Math.Round(dblAreaSqMeters / aoiAreaSqMeters * 100, 1);
+                    }
+                    else
+                    {
+                        dblReturn = 0;
+                    }
+                    break;
             }
             return dblReturn;
         }
@@ -7573,6 +7587,12 @@ namespace bagis_pro
                 double dblAreaSqMiles = await QueryPerimeterStatisticsByIncrementAsync(oAoi.FilePath, oInterval, aoiAreaSqMeters, FireStatisticType.AreaSqMiles, strLogFile);
                 lstElements.Add(Convert.ToString(dblAreaSqMiles));
             }
+            foreach (var oInterval in lstInterval)
+            {
+                double dblBurnedAreaPct = await QueryPerimeterStatisticsByIncrementAsync(oAoi.FilePath, oInterval, aoiAreaSqMeters, FireStatisticType.NifcBurnedAreaPct, strLogFile);
+                lstElements.Add(Convert.ToString(dblBurnedAreaPct));
+            }
+
 
 
 
