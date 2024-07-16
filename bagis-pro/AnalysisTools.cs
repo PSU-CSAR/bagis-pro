@@ -17,6 +17,7 @@ using bagis_pro.BA_Objects;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -7249,15 +7250,63 @@ namespace bagis_pro
                     });
                     break;
                 case FireStatisticType.AreaSqMiles:
+                    // Create selection layer
+                    BA_ReturnCode success = BA_ReturnCode.UnknownError;
                     string strWhere = $@"{Constants.FIELD_YEAR} > {oInterval.LowerBound - 1} And {Constants.FIELD_YEAR} < {oInterval.UpperBound} + 1";
-                    double dblAreaSqMeters = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(new Uri(strGdbFire), Constants.FILE_NIFC_FIRE, strWhere);
-                    if (dblAreaSqMeters > 0)
+                    string strNifc = $@"{strGdbFire}\{Constants.FILE_NIFC_FIRE}";
+                    string strIntervalFc = $@"tmpInterval_{Convert.ToString(oInterval.Value)}";
+                    string strTmpSelect = $@"{strGdbFire}\{strIntervalFc}";
+                    string strDissolveFc = $@"tmpDiss{Convert.ToString(oInterval.Value)}";
+                    string strTmpDissolve = $@"{strGdbFire}\{strDissolveFc}";
+                    success = await GeoprocessingTools.ExportSelectedFeatures(strNifc, strWhere, strTmpSelect);
+                    if (success == BA_ReturnCode.Success)
                     {
-                        dblReturn = Math.Round(AreaUnit.SquareMeters.ConvertTo(dblAreaSqMeters, AreaUnit.SquareMiles), 2);
-                    }
-                    else
-                    {
-                        dblReturn = 0;
+                        string fieldDissolve = "DISS1";
+                        success = await GeoprocessingTools.AddFieldAsync(strTmpSelect, fieldDissolve, "INTEGER");
+                        if (success == BA_ReturnCode.Success)
+                        {
+                            QueryFilter qf = new QueryFilter();
+                            qf.WhereClause = "OID > -1";
+                            success = await GeodatabaseTools.UpdateFeatureAttributeNumericAsync(new Uri(strGdbFire), strIntervalFc,
+                                new QueryFilter(), fieldDissolve, 1);
+                        }
+                        if (success == BA_ReturnCode.Success)
+                        {
+                            IGPResult gpResult = await QueuedTask.Run(() =>
+                            {
+                                var parameters = Geoprocessing.MakeValueArray(strTmpSelect, strTmpDissolve, fieldDissolve);
+                                return Geoprocessing.ExecuteToolAsync("Dissolve_management", parameters, null,
+                                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                            });
+                            if (gpResult.IsFailed)
+                            {
+                                success = BA_ReturnCode.UnknownError;
+                            }
+                        }
+                        if (success == BA_ReturnCode.Success)
+                        {
+                            success = await GeoprocessingTools.DeleteDatasetAsync(strTmpSelect);
+                            success = await GeoprocessingTools.AddFieldAsync(strTmpDissolve, Constants.FIELD_RECALC_AREA, "Double");
+                            if (success == BA_ReturnCode.Success)
+                            {
+                                // Recalculate area due to bug in Pro
+                                string strAreaProperties = Constants.FIELD_RECALC_AREA + " AREA_GEODESIC";
+                                success = await GeoprocessingTools.CalculateGeometryAsync(strTmpDissolve, strAreaProperties, "SQUARE_METERS");
+
+                            }
+                            if (success == BA_ReturnCode.Success)
+                            {
+                                double dblAreaSqMeters = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(new Uri(strGdbFire), strDissolveFc, "");
+                                if (dblAreaSqMeters > 0)
+                                {
+                                    dblReturn = Math.Round(AreaUnit.SquareMeters.ConvertTo(dblAreaSqMeters, AreaUnit.SquareMiles), 2);
+                                }
+                                else
+                                {
+                                    dblReturn = 0;
+                                }
+                            }
+                        }
                     }
                     break;
 

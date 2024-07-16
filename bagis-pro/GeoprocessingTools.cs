@@ -446,5 +446,45 @@ namespace bagis_pro
                 return BA_ReturnCode.Success;
             }
         }
+
+        public static async Task<BA_ReturnCode> ExportSelectedFeatures (string sourceFc, string whereClause, string strTargetFc)
+        {
+            // Create selection layer
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            FeatureLayer lyrSelect = null;
+            var oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
+            await QueuedTask.Run(() =>
+            {
+                var historyParams = new FeatureLayerCreationParams(new Uri(sourceFc))
+                {
+                    Name = "Select Layer",
+                    IsVisible = false,
+                    MapMemberIndex = 0,
+                    MapMemberPosition = 0,
+                };
+                lyrSelect = LayerFactory.Instance.CreateLayer<FeatureLayer>(historyParams, oMap);
+                lyrSelect.SetDefinitionQuery($@"{whereClause}");
+            });
+
+            var parameters = Geoprocessing.MakeValueArray(lyrSelect.Name, strTargetFc);
+            var gpResult = await Geoprocessing.ExecuteToolAsync("ExportFeatures_conversion", parameters, null,
+               CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+            if (gpResult.IsFailed)
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(ExportSelectedFeatures),
+                    $@"Export Features could not create{strTargetFc}");
+                success = BA_ReturnCode.UnknownError;
+            }
+            else
+            {
+                success = BA_ReturnCode.Success;
+            }
+            // Remove temporary layer
+            await QueuedTask.Run(() =>
+            {
+                oMap.RemoveLayer(lyrSelect);
+            });
+            return success;
+        }
     }
 }
