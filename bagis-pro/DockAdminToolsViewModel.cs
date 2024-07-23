@@ -97,6 +97,7 @@ namespace bagis_pro
         private bool _cmdFireReportEnabled = false;
         private bool _cmdFireDataLogEnabled = false;
         private int _intReportEndYear;
+        private int _intMinYear;
         private int _intFireIncrementYears;
         private bool _bAllTimeChecked = true;   //Default
         private bool _bSelectedTimeChecked = false;
@@ -603,8 +604,11 @@ namespace bagis_pro
                         NifcDataDescr = $@"NIFC data available from {NifcMinYear} to {_intNifcMaxYear}";
                         ReportEndYear = _intNifcMaxYear;
                         SelectedMaxYear = ReportEndYear;
-                        SelectedMinYear = SelectedMaxYear - FireDataClipYears;
-                        FireTimePeriodCount = 6;    //@ToDo: Replace this with calculation
+                        _intMinYear = (DateTime.Now.Year - FireDataClipYears) + 1;
+                        SelectedMinYear = _intMinYear;
+                        int intIncrementPeriods;
+                        IList<Interval> lstInterval = GeneralTools.GetFireStatisticsIntervals(ReportEndYear, _intMinYear, FireIncrementYears, out intIncrementPeriods);
+                        FireTimePeriodCount = intIncrementPeriods;  
                         _intMtbsMaxYear = await this.QueryMtbsMaxYearAsync(_dictDatasources, Constants.DATA_TYPE_FIRE_BURN_SEVERITY);
                         MtbsDataDescr = $@"MTBS data available from {MtbsMinYear} to {_intMtbsMaxYear}";
                         FireTasksEnabled = true;
@@ -2129,7 +2133,6 @@ namespace bagis_pro
                     if (success == BA_ReturnCode.Success)
                     {
                         oFireSettings.lastNifcYear = _intNifcMaxYear;
-                        oFireSettings.currentYear = DateTime.Now.Year;
                         GeneralTools.UpdateFireDataSourceSettings(ref oFireSettings, aoiFolder, dictDataSources, Constants.DATA_TYPE_FIRE_HISTORY, false);
                         GeneralTools.UpdateFireDataSourceSettings(ref oFireSettings, aoiFolder, dictDataSources, Constants.DATA_TYPE_FIRE_CURRENT, true);
                     }
@@ -2189,7 +2192,6 @@ namespace bagis_pro
             IList<IList<string>> lstIncrementOutput = new List<IList<string>>();    
             int intIncrementPeriods = 0;
             IList<Interval> lstInterval = null;
-            int minYear = _intNifcMaxYear - FireDataClipYears;
             for (int idxRow = 0; idxRow < Names.Count; idxRow++)
             {
                 if (Names[idxRow].AoiBatchIsSelected)
@@ -2259,17 +2261,30 @@ namespace bagis_pro
                     // Are dataBeginYear and dataRetrieveStart year the same value? Can't find a place where analyst sets dataBegin year
                     // Test #1: 2014, 1985, 5
                     // Test #2: 2024, 1995, 10
-                    lstInterval = GeneralTools.GetFireStatisticsIntervals(ReportEndYear, minYear, FireIncrementYears, out intIncrementPeriods);
+                    lstInterval = GeneralTools.GetFireStatisticsIntervals(ReportEndYear, _intMinYear, FireIncrementYears, out intIncrementPeriods);
                     IList<string> lstOutput = await AnalysisTools.GenerateIncrementFireStatisticsList(oAoi, _strFireReportLogFile,
                         aoiAreaSqMeters, cellSizeSqMeters, lstInterval);
                     lstIncrementOutput.Add(lstOutput);
+
                     try
                     {
                         dynamic oFireSettings = GeneralTools.GetFireSettings(oAoi.FilePath);
                         if (oFireSettings.DataSources != null)
                         {
                             // We know the file exists
+                            oFireSettings.dataRetrieveStartYear = _intMinYear;
                             oFireSettings.reportEndYear = _intNifcMaxYear;
+                            oFireSettings.increment = FireIncrementYears;
+                            if (AllTimeChecked)
+                            {
+                                oFireSettings.noPeriodsReported = lstInterval.Count;
+                            }
+                            else
+                            {
+                                oFireSettings.noPeriodsReported = FireTimePeriodCount;
+                            }
+                            
+
                             // serialize JSON directly to a file
                             using (StreamWriter file = File.CreateText($@"{oAoi.FilePath}\{Constants.FOLDER_MAPS}\{Constants.FILE_FIRE_SETTINGS}"))
                             {
@@ -2285,7 +2300,7 @@ namespace bagis_pro
                             Names[idxRow].Name + "\r\n";
                         File.AppendAllText(_strFireReportLogFile, strLogEntry);       // append
                     }
-                                       
+
                     Names[idxRow].AoiBatchStateText = AoiBatchState.Completed.ToString();  // update gui
                     strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Finished generate fire statistics export for " +
                         Names[idxRow].Name + "\r\n";
@@ -2297,7 +2312,7 @@ namespace bagis_pro
             string strCsvFile = "";
             StringBuilder output = new StringBuilder();
             string separator = ",";
-            for (int i = minYear; i <= _intNifcMaxYear; i++)
+            for (int i = _intMinYear; i <= _intNifcMaxYear; i++)
             {
                 // Structures to manage data
                 strCsvFile = $@"{Path.GetDirectoryName(_strFireReportLogFile)}\{i}_annual_statistics.csv";
@@ -2343,13 +2358,25 @@ namespace bagis_pro
             for (int i = 1; i <= intIncrementPeriods; i++)
             {
                 int yearsLabel = i * FireIncrementYears;
-                string strYearsLabel = $@"Last{yearsLabel.ToString(fmt)}_burnedArea_SqMiles";
+                string strYearsLabel = $@"Last{yearsLabel.ToString(fmt)}_nifc_burnedArea_SqMiles";
                 lstHeadings.Add(strYearsLabel);
             }
             for (int i = 1; i <= intIncrementPeriods; i++)
             {
                 int yearsLabel = i * FireIncrementYears;
                 string strYearsLabel = $@"Last{yearsLabel.ToString(fmt)}_nifc_burnedArea_pct";
+                lstHeadings.Add(strYearsLabel);
+            }
+            for (int i = 1; i <= intIncrementPeriods; i++)
+            {
+                int yearsLabel = i * FireIncrementYears;
+                string strYearsLabel = $@"Last{yearsLabel.ToString(fmt)}_burnedForestedArea_SqMiles";
+                lstHeadings.Add(strYearsLabel);
+            }
+            for (int i = 1; i <= intIncrementPeriods; i++)
+            {
+                int yearsLabel = i * FireIncrementYears;
+                string strYearsLabel = $@"Last{yearsLabel.ToString(fmt)}_burnedForestedArea_pct";
                 lstHeadings.Add(strYearsLabel);
             }
             String[] incrementHeadings = lstHeadings.ToArray();
@@ -2372,6 +2399,7 @@ namespace bagis_pro
                 MessageBox.Show("Data could not be written to the CSV file!", "BAGIS-PRO");
                 return;
             }
+
         }
 
             private string CreateLogEntry(string strAoiPath, string strOldTriplet, string strNewTriplet, string strRemarks)

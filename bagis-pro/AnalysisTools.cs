@@ -7076,7 +7076,6 @@ namespace bagis_pro
                     // We know the file exists
                     oFireSettings.mtbsLegend = Module1.Current.BatchToolSettings.MtbsLegend;
                     oFireSettings.lastMtbsYear = intLastMtbsYear;
-                    oFireSettings.currentYear = DateTime.Now.Year;
                 }
                 // Updates the MTBS data source and saves the file
                 GeneralTools.UpdateFireDataSourceSettings(ref oFireSettings, strAoiPath, dictDataSources, Constants.DATA_TYPE_FIRE_BURN_SEVERITY, true);
@@ -7234,6 +7233,8 @@ namespace bagis_pro
             double dblReturn = -1;
             string strGdbFire = GeodatabaseTools.GetGeodatabasePath(aoiPath, GeodatabaseNames.Fire);
             string strDissolveFc = $@"tmpDiss{Convert.ToString(oInterval.Value)}";
+            string strTmpDissolve = $@"{strGdbFire}\{strDissolveFc}";
+            string strTmpIntersect = $@"tmpIntersect_{Convert.ToString(oInterval.Value)}";
             switch (fireStatType)
             {
                 case FireStatisticType.Count:
@@ -7256,7 +7257,6 @@ namespace bagis_pro
                     string strNifc = $@"{strGdbFire}\{Constants.FILE_NIFC_FIRE}";
                     string strIntervalFc = $@"tmpInterval_{Convert.ToString(oInterval.Value)}";
                     string strTmpSelect = $@"{strGdbFire}\{strIntervalFc}";
-                    string strTmpDissolve = $@"{strGdbFire}\{strDissolveFc}";
                     success = await GeoprocessingTools.ExportSelectedFeatures(strNifc, strWhere, strTmpSelect);
                     if (success == BA_ReturnCode.Success)
                     {
@@ -7322,6 +7322,87 @@ namespace bagis_pro
                     else
                     {
                         dblReturn = 0;
+                    }
+                    break;
+                case FireStatisticType.BurnedForestedArea:
+                    string strGdbAnalysis = GeodatabaseTools.GetGeodatabasePath(aoiPath, GeodatabaseNames.Analysis);
+                    Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
+                    if (await GeodatabaseTools.FeatureClassExistsAsync(new Uri(strGdbAnalysis), Constants.FILE_FORESTED_ZONE) &&
+                        await GeodatabaseTools.FeatureClassExistsAsync(new Uri(strGdbFire), strDissolveFc))
+                    {
+                        string strNifcLayer = $@"{strGdbFire}\{Constants.FILE_NIFC_FIRE}";
+                        long polyCount = await GeodatabaseTools.CountFeaturesAsync(new Uri(strGdbFire), strDissolveFc);
+                        if (polyCount > 0)
+                        {
+                            string strForestedZone = $@"{strGdbAnalysis}\{Constants.FILE_FORESTED_ZONE}";
+                            // Feature layer name needs to be surrounded by single quotes
+                            string[] arrInputLayers = { strForestedZone, strTmpDissolve };
+                            string strIntersectFull = $@"{strGdbFire}\{strTmpIntersect}";
+                            success = await GeoprocessingTools.IntersectUnrankedAsync(aoiPath, arrInputLayers,
+                               strIntersectFull, "ONLY_FID");
+                            if (success != BA_ReturnCode.Success)
+                            {
+                                string strLogEntry = "An error occurred while running the Intersect tool. Burned forested area cannot be calculated!" + "\r\n";
+                                File.AppendAllText(strLogFile, strLogEntry);       // append
+                            }
+                            else
+                            {
+                                // Recalculate area due to bug in Pro
+                                success = await GeoprocessingTools.AddFieldAsync(strIntersectFull, Constants.FIELD_RECALC_AREA, "Double");
+                                if (success == BA_ReturnCode.Success)
+                                {
+                                    // Recalculate area due to bug in Pro
+                                    string strAreaProperties = Constants.FIELD_RECALC_AREA + " AREA_GEODESIC";
+                                    success = await GeoprocessingTools.CalculateGeometryAsync(strIntersectFull, strAreaProperties, "SQUARE_METERS");
+
+                                }
+                                dblAreaSqMeters = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(new Uri(strGdbFire), strTmpIntersect, "");
+                                if (dblAreaSqMeters > 0)
+                                {
+                                    dblReturn = Math.Round(AreaUnit.SquareMeters.ConvertTo(dblAreaSqMeters, AreaUnit.SquareMiles), 2);
+                                }
+                                else
+                                {
+                                    dblReturn = 0;
+                                }
+
+                            }
+                        }
+                        else
+                        {
+                            dblReturn = 0;
+                        }
+                    }
+                    else
+                    {
+                        string strLogEntry = "forestedzone is missing. Burned forested area cannot be calculated!" + "\r\n";
+                        File.AppendAllText(strLogFile, strLogEntry);       // append
+                    }
+                    break;
+                case FireStatisticType.BurnedForestedAreaPct:
+                    double burnedForestAreaSqMeters = -1;
+                    if (await GeodatabaseTools.FeatureClassExistsAsync(new Uri(strGdbFire), strTmpIntersect))
+                    {
+                        burnedForestAreaSqMeters = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(new Uri(strGdbFire), strTmpIntersect, "");
+                    }
+                    else
+                    {
+                        double burnedForestAreaSqMiles = await QueryPerimeterStatisticsByIncrementAsync(aoiPath, oInterval, aoiAreaSqMeters, FireStatisticType.BurnedForestedArea, strLogFile);
+                        burnedForestAreaSqMeters = AreaUnit.SquareMiles.ConvertTo(burnedForestAreaSqMiles, AreaUnit.SquareMeters);
+                    }
+                    if (burnedForestAreaSqMeters > 0)
+                    {
+                        dblReturn = Math.Round(burnedForestAreaSqMeters / aoiAreaSqMeters * 100, 1);
+                    }
+                    if (await GeodatabaseTools.FeatureClassExistsAsync(new Uri(strGdbFire), strDissolveFc))
+                    {
+                        // Clean up temporary file
+                        success = await GeoprocessingTools.DeleteDatasetAsync($@"{strGdbFire}\{strDissolveFc}");
+                    }
+                    if (await GeodatabaseTools.FeatureClassExistsAsync(new Uri(strGdbFire), strTmpIntersect))
+                    {
+                        // Clean up temporary file
+                        success = await GeoprocessingTools.DeleteDatasetAsync($@"{strGdbFire}\{strTmpIntersect}");
                     }
                     break;
             }
@@ -7592,7 +7673,11 @@ namespace bagis_pro
                 double dblBurnedAreaPct = await QueryPerimeterStatisticsByIncrementAsync(oAoi.FilePath, oInterval, aoiAreaSqMeters, FireStatisticType.NifcBurnedAreaPct, strLogFile);
                 lstElements.Add(Convert.ToString(dblBurnedAreaPct));
             }
-
+            foreach (var oInterval in lstInterval)
+            {
+                double dblBurnedForestedArea = await QueryPerimeterStatisticsByIncrementAsync(oAoi.FilePath, oInterval, aoiAreaSqMeters, FireStatisticType.BurnedForestedArea, strLogFile);
+                lstElements.Add(Convert.ToString(dblBurnedForestedArea));
+            }
 
 
 
