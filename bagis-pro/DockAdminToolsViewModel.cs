@@ -607,7 +607,7 @@ namespace bagis_pro
                         _intMinYear = (DateTime.Now.Year - FireDataClipYears) + 1;
                         SelectedMinYear = _intMinYear;
                         int intIncrementPeriods;
-                        IList<Interval> lstInterval = GeneralTools.GetFireStatisticsIntervals(ReportEndYear, _intMinYear, FireIncrementYears, out intIncrementPeriods);
+                        IList<Interval> lstInterval = GeneralTools.GetFireStatisticsIntervals(ReportEndYear, FireDataClipYears, FireIncrementYears, out intIncrementPeriods);
                         FireTimePeriodCount = intIncrementPeriods;  
                         _intMtbsMaxYear = await this.QueryMtbsMaxYearAsync(_dictDatasources, Constants.DATA_TYPE_FIRE_BURN_SEVERITY);
                         MtbsDataDescr = $@"MTBS data available from {MtbsMinYear} to {_intMtbsMaxYear}";
@@ -2261,7 +2261,7 @@ namespace bagis_pro
                     // Are dataBeginYear and dataRetrieveStart year the same value? Can't find a place where analyst sets dataBegin year
                     // Test #1: 2014, 1985, 5
                     // Test #2: 2024, 1995, 10
-                    lstInterval = GeneralTools.GetFireStatisticsIntervals(ReportEndYear, _intMinYear, FireIncrementYears, out intIncrementPeriods);
+                    lstInterval = GeneralTools.GetFireStatisticsIntervals(ReportEndYear, FireDataClipYears, FireIncrementYears, out intIncrementPeriods);
                     IList<string> lstOutput = await AnalysisTools.GenerateIncrementFireStatisticsList(oAoi, _strFireReportLogFile,
                         aoiAreaSqMeters, cellSizeSqMeters, lstInterval);
                     lstIncrementOutput.Add(lstOutput);
