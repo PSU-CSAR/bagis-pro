@@ -7043,9 +7043,9 @@ namespace bagis_pro
                             }
                             else
                             {
-                                int intReturn = Convert.ToInt16(gpResult.ReturnValue);
-                                if (intReturn > 0)  // The raster is ALLNODATA
-                                {
+                            int intReturn = Convert.ToInt16(gpResult.ReturnValue);
+                            if (intReturn > 0)  // The raster is ALLNODATA                                
+                            {
                                     // Delete the original _NODATA dataset if it exists; Rename tool will not overwrite
                                     bExists = await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Fire)), $@"{lstRasterFileName[i]}_{Constants.VALUE_NO_DATA.ToUpper()}");
                                     if (bExists)
@@ -7063,6 +7063,38 @@ namespace bagis_pro
                                         }
                                     }
                                 }
+                            else
+                            {
+                                // Reclassify 5 and 6 values to 1 to make future functions easier
+                                //Sample reclass string: 1 1; 2 2; 3 3; 4 4; 5 1; 6 1
+                                JArray arrMtbsLegend = Module1.Current.BatchToolSettings.MtbsLegend;
+                                StringBuilder sb = new StringBuilder();
+                                foreach (dynamic item in arrMtbsLegend)
+                                {
+                                    string severity = Convert.ToString(item.Severity);
+                                    string value = Convert.ToString(item.Value);
+                                    if (Constants.MTBS_INCLUDE_SEVERITIES.Contains(severity))
+                                    {
+                                        sb.Append($@"{Convert.ToString(value)} {Convert.ToString(value)}");
+                                        sb.Append(";");
+                                    }
+                                    else
+                                    {
+                                        sb.Append($@"{Convert.ToString(value)} 1");
+                                        sb.Append(";");
+                                    }
+                                }
+                                string strReclass = sb.ToString().TrimEnd(';');
+                                string strOutputLayer = $@"{strOutputRaster}_RECL";
+                                parameters = Geoprocessing.MakeValueArray(strOutputRaster, "VALUE", strReclass, strOutputLayer);
+                                gpResult = await Geoprocessing.ExecuteToolAsync("Reclassify_sa", parameters, environments,
+                                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                                if (gpResult.IsFailed)
+                                {
+                                    Module1.Current.ModuleLogManager.LogError(nameof(ClipMtbsLayersAsync), "Failed to reclass raster!");
+                                }
+
+                            }
                         }
                     }
                 }
@@ -7421,14 +7453,13 @@ namespace bagis_pro
                     StringBuilder sb = new StringBuilder();
                     dynamic oFireSettings = GeneralTools.GetFireSettings(aoiPath);
                     JArray arrMtbsLegend = oFireSettings.mtbsLegend;
-                    string[] arrIncludeSeverities = {Constants.VALUE_MTBS_SEVERITY_LOW, Constants.VALUE_MTBS_SEVERITY_MODERATE, Constants.VALUE_MTBS_SEVERITY_HIGH };
                     QueryFilter queryFilter = new QueryFilter();
                     if (arrMtbsLegend != null)
                     {
                         foreach (dynamic item in arrMtbsLegend)
                         {
                             string severity = Convert.ToString(item.Severity);
-                            if (arrIncludeSeverities.Contains(severity))
+                            if (Constants.MTBS_INCLUDE_SEVERITIES.Contains(severity))
                             {
                                 sb.Append($@"{Convert.ToString(item.Value)}");
                                 sb.Append(",");
