@@ -2379,6 +2379,31 @@ namespace bagis_pro
                 string strYearsLabel = $@"Last{yearsLabel.ToString(fmt)}_burnedForestedArea_pct";
                 lstHeadings.Add(strYearsLabel);
             }
+            for (int i = 1; i <= intIncrementPeriods; i++)
+            {
+                int yearsLabel = i * FireIncrementYears;
+                string strYearsLabel = $@"Last{yearsLabel.ToString(fmt)}_lowburnedSeverityArea_SqMiles";
+                lstHeadings.Add(strYearsLabel);
+            }
+            for (int i = 1; i <= intIncrementPeriods; i++)
+            {
+                int yearsLabel = i * FireIncrementYears;
+                string strYearsLabel = $@"Last{yearsLabel.ToString(fmt)}_lowburnedSeverityArea_pct";
+                lstHeadings.Add(strYearsLabel);
+            }
+            for (int i = 1; i <= intIncrementPeriods; i++)
+            {
+                int yearsLabel = i * FireIncrementYears;
+                string strYearsLabel = $@"Last{yearsLabel.ToString(fmt)}_mediumburnedSeverityArea_SqMiles";
+                lstHeadings.Add(strYearsLabel);
+            }
+            for (int i = 1; i <= intIncrementPeriods; i++)
+            {
+                int yearsLabel = i * FireIncrementYears;
+                string strYearsLabel = $@"Last{yearsLabel.ToString(fmt)}_mediumburnedSeverityArea_pct";
+                lstHeadings.Add(strYearsLabel);
+            }
+
             String[] incrementHeadings = lstHeadings.ToArray();
             output.AppendLine(string.Join(separator, incrementHeadings));
 
