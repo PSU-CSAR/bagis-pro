@@ -2370,6 +2370,12 @@ namespace bagis_pro
             for (int i = 1; i <= intIncrementPeriods; i++)
             {
                 int yearsLabel = i * FireIncrementYears;
+                string strYearsLabel = $@"Last{yearsLabel.ToString(fmt)}_mtbs_burnedArea_pct";
+                lstHeadings.Add(strYearsLabel);
+            }
+            for (int i = 1; i <= intIncrementPeriods; i++)
+            {
+                int yearsLabel = i * FireIncrementYears;
                 string strYearsLabel = $@"Last{yearsLabel.ToString(fmt)}_burnedForestedArea_SqMiles";
                 lstHeadings.Add(strYearsLabel);
             }
@@ -2401,6 +2407,18 @@ namespace bagis_pro
             {
                 int yearsLabel = i * FireIncrementYears;
                 string strYearsLabel = $@"Last{yearsLabel.ToString(fmt)}_mediumburnedSeverityArea_pct";
+                lstHeadings.Add(strYearsLabel);
+            }
+            for (int i = 1; i <= intIncrementPeriods; i++)
+            {
+                int yearsLabel = i * FireIncrementYears;
+                string strYearsLabel = $@"Last{yearsLabel.ToString(fmt)}_highburnedSeverityArea_SqMiles";
+                lstHeadings.Add(strYearsLabel);
+            }
+            for (int i = 1; i <= intIncrementPeriods; i++)
+            {
+                int yearsLabel = i * FireIncrementYears;
+                string strYearsLabel = $@"Last{yearsLabel.ToString(fmt)}_highburnedSeverityArea_pct";
                 lstHeadings.Add(strYearsLabel);
             }
 

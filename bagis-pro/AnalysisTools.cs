@@ -7706,6 +7706,13 @@ namespace bagis_pro
                 double dblBurnedAreaPct = await QueryPerimeterStatisticsByIncrementAsync(oAoi.FilePath, oInterval, aoiAreaSqMeters, FireStatisticType.NifcBurnedAreaPct, strLogFile);
                 lstElements.Add(Convert.ToString(dblBurnedAreaPct));
             }
+            // Need mtbs burned area pct here
+            foreach (var oInterval in lstInterval)
+            {
+                double dblBurnedAreaPct = await QueryMtbsAreaPctByIncrementAsync(oAoi.FilePath, oInterval, aoiAreaSqMeters, dblMtbsCellSize);
+                lstElements.Add(Convert.ToString(dblBurnedAreaPct));
+            }
+
             foreach (var oInterval in lstInterval)
             {
                 double dblBurnedForestedArea = await QueryPerimeterStatisticsByIncrementAsync(oAoi.FilePath, oInterval, aoiAreaSqMeters, FireStatisticType.BurnedForestedArea, strLogFile);
@@ -7720,23 +7727,25 @@ namespace bagis_pro
             IList<string> lstLowSevPcts = new List<string>();
             IList<string> lstModSevAreas = new List<string>();
             IList<string> lstModSevPcts = new List<string>();
+            IList<string> lstHighSevAreas = new List<string>();
+            IList<string> lstHighSevPcts = new List<string>();
             foreach (var oInterval in lstInterval)
             {
                 IList<double> lstMtbsAreas = await AnalysisTools.QueryMtbsAreasByIncrementAsync(oAoi.FilePath, oInterval, aoiAreaSqMeters, dblMtbsCellSize);
-                if (lstMtbsAreas.Count == 4)
+                if (lstMtbsAreas.Count == 6)
                 {
                     string strLowSevArea = Convert.ToString(lstMtbsAreas[0]);
                     string strLowSevPct = Convert.ToString(lstMtbsAreas[1]);
                     string strModSevArea = Convert.ToString(lstMtbsAreas[2]);
                     string strModSevPct = Convert.ToString(lstMtbsAreas[3]);
-                    //string strHighSevArea = Convert.ToString(lstMtbsAreas[4]);
-                    //string strHighSevPct = Convert.ToString(lstMtbsAreas[5]);
+                    string strHighSevArea = Convert.ToString(lstMtbsAreas[4]);
+                    string strHighSevPct = Convert.ToString(lstMtbsAreas[5]);
                     lstLowSevAreas.Add(strLowSevArea);
                     lstLowSevPcts.Add(strLowSevPct);
                     lstModSevAreas.Add(strModSevArea);
                     lstModSevPcts.Add(strModSevPct);
-                    //lstElements.Add(strHighSevArea);
-                    //lstElements.Add(strHighSevPct);
+                    lstHighSevAreas.Add(strHighSevArea);
+                    lstHighSevPcts.Add(strHighSevPct);
                 }
             }
 
@@ -7744,10 +7753,12 @@ namespace bagis_pro
             lstElements.AddRange(lstLowSevPcts);
             lstElements.AddRange(lstModSevAreas);
             lstElements.AddRange(lstModSevPcts);
+            lstElements.AddRange(lstHighSevAreas);
+            lstElements.AddRange(lstHighSevPcts);
             return lstElements;
         }
 
-        public static async Task<IList<double>> QueryMtbsAreasByIncrementAsync(string aoiPath, Interval oInterval, double aoiAreaSqMeters, double dblMtbsCellSize)
+        public static async Task<IList<double>> QueryMtbsAreasByIncrementAsync(string aoiPath, Interval oInterval, double aoiAreaSqMeters, double dblMtbsCellSize)        
         {
             IList<double> lstReturn = new List<double>();
             dynamic oFireSettings = GeneralTools.GetFireSettings(aoiPath);
@@ -7755,8 +7766,147 @@ namespace bagis_pro
             string[] arrIncludeSeverities = { Constants.VALUE_MTBS_SEVERITY_LOW, Constants.VALUE_MTBS_SEVERITY_MODERATE, Constants.VALUE_MTBS_SEVERITY_HIGH };
             QueryFilter queryFilter = new QueryFilter();
             string strGdbFire = GeodatabaseTools.GetGeodatabasePath(aoiPath, GeodatabaseNames.Fire);
+            string strMaxFileName = $@"tmpMax_{oInterval.Value}";
+            if (await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(strGdbFire), strMaxFileName))
+            {
+                if (arrMtbsLegend != null)
+                {
+                    StringBuilder sb2 = new StringBuilder();
+                    foreach (dynamic item in arrMtbsLegend)
+                    {
+                        string severity = Convert.ToString(item.Severity);
+                        if (arrIncludeSeverities.Contains(severity))
+                        {
+                            sb2.Append($@"{Convert.ToString(item.Value)}");
+                            sb2.Append(",");
+                        }
+                    }
+                    if (sb2.Length > 0)
+                    {
+                        string strWhere = $@"{Constants.FIELD_VALUE} IN ({sb2.ToString().TrimEnd(',')})";
+                        queryFilter.WhereClause = strWhere;
+                    }
+                    IDictionary<string, long> dictMtbsAreas = await GeodatabaseTools.RasterTableToDictionaryAsync(new Uri(strGdbFire), strMaxFileName, queryFilter);
+                    // Low severity
+                    IList<string> lstSelectedValues = new List<string>();
+                    foreach (dynamic item in arrMtbsLegend)
+                    {
+                        string severity = Convert.ToString(item.Severity);
+                        if (Constants.VALUE_MTBS_SEVERITY_LOW.Equals(severity))
+                        {
+                            lstSelectedValues.Add(Convert.ToString(item.Value));
+                        }
+                    }
+                    long lngTotal = 0;
+                    double dblLowBurnedAreaSqMiles = 0;
+                    double dblLowBurnedAreaPct = 0;
+                    if (lstSelectedValues.Count > 0)
+                    {
+                        foreach (var key in dictMtbsAreas.Keys)
+                        {
+                            if (lstSelectedValues.Contains(key))
+                            {
+                                lngTotal = lngTotal + dictMtbsAreas[key];
+                            }
+                        }
+                        if (lngTotal > 0)
+                        {
+                            double dblAreaSqMeters = lngTotal * dblMtbsCellSize * dblMtbsCellSize;
+                            dblLowBurnedAreaSqMiles = Math.Round(AreaUnit.SquareMeters.ConvertTo(dblAreaSqMeters, AreaUnit.SquareMiles), 2);
+                            dblLowBurnedAreaPct = Math.Round(dblAreaSqMeters / aoiAreaSqMeters * 100, 1);
+                        }
+                    }
+                    lstReturn.Add(dblLowBurnedAreaSqMiles);
+                    lstReturn.Add(dblLowBurnedAreaPct);
+                    // Moderate severity
+                    lstSelectedValues.Clear();
+                    foreach (dynamic item in arrMtbsLegend)
+                    {
+                        string severity = Convert.ToString(item.Severity);
+                        if (Constants.VALUE_MTBS_SEVERITY_MODERATE.Equals(severity))
+                        {
+                            lstSelectedValues.Add(Convert.ToString(item.Value));
+                        }
+                    }
+                    lngTotal = 0;
+                    double dblMedBurnedAreaSqMiles = 0;
+                    double dblMedBurnedAreaPct = 0;
+                    if (lstSelectedValues.Count > 0)
+                    {
+                        foreach (var key in dictMtbsAreas.Keys)
+                        {
+                            if (lstSelectedValues.Contains(key))
+                            {
+                                lngTotal = lngTotal + dictMtbsAreas[key];
+                            }
+                        }
+                        if (lngTotal > 0)
+                        {
+                            double dblAreaSqMeters = lngTotal * dblMtbsCellSize * dblMtbsCellSize;
+                            dblMedBurnedAreaSqMiles = Math.Round(AreaUnit.SquareMeters.ConvertTo(dblAreaSqMeters, AreaUnit.SquareMiles), 2);
+                            dblMedBurnedAreaPct = Math.Round(dblAreaSqMeters / aoiAreaSqMeters * 100, 1);
+                        }
+                    }
+                    lstReturn.Add(dblMedBurnedAreaSqMiles);
+                    lstReturn.Add(dblMedBurnedAreaPct);
+                    // High severity
+                    lstSelectedValues.Clear();
+                    foreach (dynamic item in arrMtbsLegend)
+                    {
+                        string severity = Convert.ToString(item.Severity);
+                        if (Constants.VALUE_MTBS_SEVERITY_HIGH.Equals(severity))
+                        {
+                            lstSelectedValues.Add(Convert.ToString(item.Value));
+                        }
+                    }
+                    lngTotal = 0;
+                    double dblHighBurnedAreaSqMiles = 0;
+                    double dblHighBurnedAreaPct = 0;
+                    if (lstSelectedValues.Count > 0)
+                    {
+                        foreach (var key in dictMtbsAreas.Keys)
+                        {
+                            if (lstSelectedValues.Contains(key))
+                            {
+                                lngTotal = lngTotal + dictMtbsAreas[key];
+                            }
+                        }
+                        if (lngTotal > 0)
+                        {
+                            double dblAreaSqMeters = lngTotal * dblMtbsCellSize * dblMtbsCellSize;
+                            dblHighBurnedAreaSqMiles = Math.Round(AreaUnit.SquareMeters.ConvertTo(dblAreaSqMeters, AreaUnit.SquareMiles), 2);
+                            dblHighBurnedAreaPct = Math.Round(dblAreaSqMeters / aoiAreaSqMeters * 100, 1);
+                        }
+                    }
+                    lstReturn.Add(dblHighBurnedAreaSqMiles);
+                    lstReturn.Add(dblHighBurnedAreaPct);
+                    BA_ReturnCode success = await GeoprocessingTools.DeleteDatasetAsync($@"{strGdbFire}\{strMaxFileName}");
+                }
+            }
+            else
+            {
+                lstReturn.Add(0);
+                lstReturn.Add(0);
+                lstReturn.Add(0);
+                lstReturn.Add(0);
+                lstReturn.Add(0);
+                lstReturn.Add(0);
+            }
+
+
+            return lstReturn;
+        }
+
+        public static async Task<double> QueryMtbsAreaPctByIncrementAsync(string aoiPath, Interval oInterval, double aoiAreaSqMeters, double dblMtbsCellSize)
+        {
+            double dblReturn = 0;
+            dynamic oFireSettings = GeneralTools.GetFireSettings(aoiPath);
+            JArray arrMtbsLegend = oFireSettings.mtbsLegend;
+            string[] arrIncludeSeverities = { Constants.VALUE_MTBS_SEVERITY_LOW, Constants.VALUE_MTBS_SEVERITY_MODERATE, Constants.VALUE_MTBS_SEVERITY_HIGH };
+            QueryFilter queryFilter = new QueryFilter();
+            string strGdbFire = GeodatabaseTools.GetGeodatabasePath(aoiPath, GeodatabaseNames.Fire);
             StringBuilder sb = new StringBuilder();
-            for (int i = (int) oInterval.LowerBound; i <= (int) oInterval.UpperBound; i++)
+            for (int i = (int)oInterval.LowerBound; i <= (int)oInterval.UpperBound; i++)
             {
                 string strLayerName = $@"{GeneralTools.GetMtbsLayerFileName(i)}_RECL";
                 if (await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(strGdbFire), strLayerName))
@@ -7764,13 +7914,13 @@ namespace bagis_pro
                     sb.Append($@"{strGdbFire}\{strLayerName};");
                 }
             }
-            string strTmpMax = "tmpMax";
+            string strMaxFileName = $@"tmpMax_{oInterval.Value}";
             if (sb.Length > 0)
             {
                 string strInputLayerPaths = sb.ToString();
                 // Remove the ; at the end of the string
                 strInputLayerPaths = strInputLayerPaths.Substring(0, strInputLayerPaths.Length - 1);
-                string strMtbsLayer = $@"{strGdbFire}\{strTmpMax}";
+                string strMtbsLayer = $@"{strGdbFire}\{strMaxFileName}";
                 // Calculate maximum of all 4 layers using Cell Statistics
                 var parameters = Geoprocessing.MakeValueArray(strInputLayerPaths, strMtbsLayer, "MAXIMUM");
                 var environments = Geoprocessing.MakeEnvironmentArray(workspace: aoiPath);
@@ -7778,127 +7928,45 @@ namespace bagis_pro
                                                 CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
                 if (gpResult.IsFailed)
                 {
-                    Module1.Current.ModuleLogManager.LogError(nameof(QueryMtbsAreasByIncrementAsync),
+                    Module1.Current.ModuleLogManager.LogError(nameof(QueryMtbsAreaPctByIncrementAsync),
                         "Error Code: " + gpResult.ErrorCode + ". Unable to calculate Cell Statistics for increment!");
                 }
-            }
-
-            if (arrMtbsLegend != null)
-            {
-                StringBuilder sb2 = new StringBuilder();
-                foreach (dynamic item in arrMtbsLegend)
+                else
                 {
-                    string severity = Convert.ToString(item.Severity);
-                    if (arrIncludeSeverities.Contains(severity))
+                    if (arrMtbsLegend != null)
                     {
-                        sb2.Append($@"{Convert.ToString(item.Value)}");
-                        sb2.Append(",");
-                    }
-                }
-                if (sb2.Length > 0)
-                {
-                    string strWhere = $@"{Constants.FIELD_VALUE} IN ({sb2.ToString().TrimEnd(',')})";
-                    queryFilter.WhereClause = strWhere;
-                }
-                IDictionary<string, long> dictMtbsAreas = await GeodatabaseTools.RasterTableToDictionaryAsync(new Uri(strGdbFire), strTmpMax, queryFilter);
-                // Low severity
-                IList<string> lstSelectedValues = new List<string>();
-                foreach (dynamic item in arrMtbsLegend)
-                {
-                    string severity = Convert.ToString(item.Severity);
-                    if (Constants.VALUE_MTBS_SEVERITY_LOW.Equals(severity))
-                    {
-                        lstSelectedValues.Add(Convert.ToString(item.Value));
-                    }
-                }
-                long lngTotal = 0;
-                double dblLowBurnedAreaSqMiles = 0;
-                double dblLowBurnedAreaPct = 0;
-                if (lstSelectedValues.Count > 0)
-                {
-                    foreach (var key in dictMtbsAreas.Keys)
-                    {
-                        if (lstSelectedValues.Contains(key))
+                        StringBuilder sb2 = new StringBuilder();
+                        foreach (dynamic item in arrMtbsLegend)
                         {
-                            lngTotal = lngTotal + dictMtbsAreas[key];
+                            string severity = Convert.ToString(item.Severity);
+                            if (arrIncludeSeverities.Contains(severity))
+                            {
+                                sb2.Append($@"{Convert.ToString(item.Value)}");
+                                sb2.Append(",");
+                            }
+                        }
+                        if (sb2.Length > 0)
+                        {
+                            string strWhere = $@"{Constants.FIELD_VALUE} IN ({sb2.ToString().TrimEnd(',')})";
+                            queryFilter.WhereClause = strWhere;
+                        }
+                        IDictionary<string, long> dictMtbsAreas = await GeodatabaseTools.RasterTableToDictionaryAsync(new Uri(strGdbFire), strMaxFileName, queryFilter);
+                        if (dictMtbsAreas.Keys.Count > 0)
+                        {
+                            double dblTotalBurnedArea = 0;
+                            foreach (var key in dictMtbsAreas.Keys)
+                            {
+                                long cellCount = dictMtbsAreas[key];
+                                double dblAreaSqMeters = cellCount * dblMtbsCellSize * dblMtbsCellSize;
+                                dblTotalBurnedArea = dblTotalBurnedArea + dblAreaSqMeters;
+                            }
+                            dblReturn = Math.Round(dblTotalBurnedArea / aoiAreaSqMeters * 100, 1);
                         }
                     }
-                    if (lngTotal > 0)
-                    {
-                        double dblAreaSqMeters = lngTotal * dblMtbsCellSize * dblMtbsCellSize;
-                        dblLowBurnedAreaSqMiles = Math.Round(AreaUnit.SquareMeters.ConvertTo(dblAreaSqMeters, AreaUnit.SquareMiles), 2);
-                        dblLowBurnedAreaPct = Math.Round(dblAreaSqMeters / aoiAreaSqMeters * 100, 1);
-                    }
                 }
-                lstReturn.Add(dblLowBurnedAreaSqMiles);
-                lstReturn.Add(dblLowBurnedAreaPct);
-                // Moderate severity
-                lstSelectedValues.Clear();
-                foreach (dynamic item in arrMtbsLegend)
-                {
-                    string severity = Convert.ToString(item.Severity);
-                    if (Constants.VALUE_MTBS_SEVERITY_MODERATE.Equals(severity))
-                    {
-                        lstSelectedValues.Add(Convert.ToString(item.Value));
-                    }
-                }
-                lngTotal = 0;
-                double dblMedBurnedAreaSqMiles = 0;
-                double dblMedBurnedAreaPct = 0;
-                if (lstSelectedValues.Count > 0)
-                {
-                    foreach (var key in dictMtbsAreas.Keys)
-                    {
-                        if (lstSelectedValues.Contains(key))
-                        {
-                            lngTotal = lngTotal + dictMtbsAreas[key];
-                        }
-                    }
-                    if (lngTotal > 0)
-                    {
-                        double dblAreaSqMeters = lngTotal * dblMtbsCellSize * dblMtbsCellSize;
-                        dblMedBurnedAreaSqMiles = Math.Round(AreaUnit.SquareMeters.ConvertTo(dblAreaSqMeters, AreaUnit.SquareMiles), 2);
-                        dblMedBurnedAreaPct = Math.Round(dblAreaSqMeters / aoiAreaSqMeters * 100, 1);
-                    }
-                }
-                lstReturn.Add(dblMedBurnedAreaSqMiles);
-                lstReturn.Add(dblMedBurnedAreaPct);
-                //// High severity
-                //lstSelectedValues.Clear();
-                //foreach (dynamic item in arrMtbsLegend)
-                //{
-                //    string severity = Convert.ToString(item.Severity);
-                //    if (Constants.VALUE_MTBS_SEVERITY_HIGH.Equals(severity))
-                //    {
-                //        lstSelectedValues.Add(Convert.ToString(item.Value));
-                //    }
-                //}
-                //lngTotal = 0;
-                //double dblHighBurnedAreaSqMiles = 0;
-                //double dblHighBurnedAreaPct = 0;
-                //if (lstSelectedValues.Count > 0)
-                //{
-                //    foreach (var key in dictMtbsAreas.Keys)
-                //    {
-                //        if (lstSelectedValues.Contains(key))
-                //        {
-                //            lngTotal = lngTotal + dictMtbsAreas[key];
-                //        }
-                //    }
-                //    if (lngTotal > 0)
-                //    {
-                //        double dblAreaSqMeters = lngTotal * dblMtbsCellSize * dblMtbsCellSize;
-                //        dblHighBurnedAreaSqMiles = Math.Round(AreaUnit.SquareMeters.ConvertTo(dblAreaSqMeters, AreaUnit.SquareMiles), 2);
-                //        dblHighBurnedAreaPct = Math.Round(dblAreaSqMeters / aoiAreaSqMeters * 100, 1);
-                //    }
-                //}
-                //lstReturn.Add(dblHighBurnedAreaSqMiles);
-                //lstReturn.Add(dblHighBurnedAreaPct);
             }
-            return lstReturn;
+            return dblReturn;
         }
-
-
     }
 
 }
