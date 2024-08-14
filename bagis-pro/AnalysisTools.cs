@@ -6796,6 +6796,105 @@ namespace bagis_pro
             return success;
         }
 
+        public async static Task<BA_ReturnCode> DissolveIncidentDuplicatesAsync(string strAoiPath)
+        {
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            string strNifc = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Fire, true) + Constants.FILE_NIFC_FIRE;
+            // Create selection layer
+            FeatureLayer lyrIrwin = null;
+            var oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
+            await QueuedTask.Run(() =>
+            {
+                var historyParams = new FeatureLayerCreationParams(new Uri(strNifc))
+                {
+                    Name = "Irwin Layer",
+                    IsVisible = false,
+                    MapMemberIndex = 0,
+                    MapMemberPosition = 0,
+                };
+                lyrIrwin = LayerFactory.Instance.CreateLayer<FeatureLayer>(historyParams, oMap);
+                lyrIrwin.SetDefinitionQuery($@"{Constants.FIELD_IRWIN_ID} IS NULL");
+            });
+
+            string tmpIrwinFeatures = "tmpIrwinNull";
+            var parameters = Geoprocessing.MakeValueArray(lyrIrwin.Name, $@"{GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Fire, true)}{tmpIrwinFeatures}");
+            var gpResult = await Geoprocessing.ExecuteToolAsync("ExportFeatures_conversion", parameters, null,
+               CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+            if (gpResult.IsFailed)
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(DissolveIncidentDuplicatesAsync),
+                    $@"Export Features could not create{tmpIrwinFeatures}");
+                success = BA_ReturnCode.UnknownError;
+            }
+            else
+            {
+                success = BA_ReturnCode.Success;
+            }
+            if (success == BA_ReturnCode.Success)
+            {
+                parameters = Geoprocessing.MakeValueArray(lyrIrwin.Name);
+                gpResult = await Geoprocessing.ExecuteToolAsync("DeleteFeatures_management", parameters, null,
+                   CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                if (gpResult.IsFailed)
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(DissolveIncidentDuplicatesAsync),
+                        "Failed to execute DeleteFeatures tool on Irwin Layer");
+                    success = BA_ReturnCode.UnknownError;
+                }
+            }
+            string tmpIrwinDissolve = "tmpIrwinDissolve";
+            if (success == BA_ReturnCode.Success)
+            {
+                parameters = Geoprocessing.MakeValueArray($@"{GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Fire, true)}{tmpIrwinFeatures}",
+                    $@"{GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Fire, true)}{tmpIrwinDissolve}",
+                    $@"{Constants.FIELD_IRWIN_ID};{Constants.FIELD_INCIDENT};{Constants.FIELD_YEAR}");
+                gpResult = await Geoprocessing.ExecuteToolAsync("Dissolve_management", parameters, null,
+                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                if (gpResult.IsFailed)
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(DissolveIncidentDuplicatesAsync), "Unable to generate dissolved tmpIrwinNull layer");
+                    success = BA_ReturnCode.UnknownError;
+                }
+                else
+                {
+                    success = BA_ReturnCode.Success;
+                }
+            }
+            if (success == BA_ReturnCode.Success)
+            {
+                parameters = Geoprocessing.MakeValueArray($@"{GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Fire, true)}{tmpIrwinDissolve}",
+                    strNifc, "TEST");
+                gpResult = await Geoprocessing.ExecuteToolAsync("Append_management", parameters, null,
+                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                if (gpResult.IsFailed)
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(DissolveIncidentDuplicatesAsync), "Unable to append dissolved tmpIrwinNull layer to nifcfire");
+                    success = BA_ReturnCode.UnknownError;
+                }
+                else
+                {
+                    success = BA_ReturnCode.Success;
+                }
+            }
+
+            // Remove temporary layer
+            await QueuedTask.Run(() =>
+            {
+                oMap.RemoveLayer(lyrIrwin);
+            });
+
+            // Delete working files
+            string[] arrTempFiles = { tmpIrwinFeatures, tmpIrwinDissolve };
+            for (int i = 0; i < arrTempFiles.Length; i++)
+            {
+                if (await GeodatabaseTools.FeatureClassExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Fire)), arrTempFiles[i]))
+                {
+                    await GeoprocessingTools.DeleteDatasetAsync($@"{GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Fire, true)}{arrTempFiles[i]}");
+                }
+            }
+            return success;
+        }
+
         public static async Task<BA_ReturnCode> DeleteDuplicatesByLocationAsync(string strAoiPath)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
