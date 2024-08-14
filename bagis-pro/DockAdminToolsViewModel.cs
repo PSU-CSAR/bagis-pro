@@ -2134,6 +2134,11 @@ namespace bagis_pro
                     if (success == BA_ReturnCode.Success)
                     {
                         oFireSettings.lastNifcYear = _intNifcMaxYear;
+                        oFireSettings.dataBeginYear = _intMinYear;
+                        oFireSettings.fireDataClipYears = FireDataClipYears;
+                        oFireSettings.reportEndYear = "";   // Clear report related settings so we don't get out of sync
+                        oFireSettings.increment = "";
+                        oFireSettings.noPeriodsReported = "";
                         GeneralTools.UpdateFireDataSourceSettings(ref oFireSettings, aoiFolder, dictDataSources, Constants.DATA_TYPE_FIRE_HISTORY, false);
                         GeneralTools.UpdateFireDataSourceSettings(ref oFireSettings, aoiFolder, dictDataSources, Constants.DATA_TYPE_FIRE_CURRENT, true);
                     }
@@ -2273,7 +2278,6 @@ namespace bagis_pro
                         if (oFireSettings.DataSources != null)
                         {
                             // We know the file exists
-                            oFireSettings.dataRetrieveStartYear = _intMinYear;
                             oFireSettings.reportEndYear = _intNifcMaxYear;
                             oFireSettings.increment = FireIncrementYears;
                             if (AllTimeChecked)
