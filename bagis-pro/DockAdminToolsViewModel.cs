@@ -542,10 +542,10 @@ namespace bagis_pro
                     _strGenStatisticsLogFile = $@"{ParentFolder}\{Constants.FOLDER_MAP_PACKAGE}\{Constants.FILE_GEN_STATISTICS_LOG}";
                     CmdGenStatisticsLogEnabled = File.Exists(_strGenStatisticsLogFile);
 
-                    _strFireDataLogFile = $@"{ParentFolder}\{Constants.FOLDER_MAP_PACKAGE}\{Constants.FILE_FIRE_DATA_LOG}";
+                    _strFireDataLogFile = $@"{ParentFolder}\{Constants.FOLDER_MAP_PACKAGE}\{Constants.FOLDER_FIRE_STATISTICS}\{Constants.FILE_FIRE_DATA_LOG}";
                     CmdFireDataLogEnabled = File.Exists(_strFireDataLogFile);
 
-                    _strFireReportLogFile = $@"{ParentFolder}\{Constants.FOLDER_MAP_PACKAGE}\{Constants.FILE_FIRE_REPORT_LOG}";
+                    _strFireReportLogFile = $@"{ParentFolder}\{Constants.FOLDER_MAP_PACKAGE}\{Constants.FOLDER_FIRE_STATISTICS}\{Constants.FILE_FIRE_REPORT_LOG}";
                     CmdFireReportLogEnabled = File.Exists(_strFireReportLogFile);
 
 
@@ -1948,7 +1948,12 @@ namespace bagis_pro
 
         private async void RunFireDataImplAsync(object param)
         {
-            // Make sure the maps_publish folder exists under the selected folder
+            // Make sure the maps_publish\fire_statistics folder exists under the selected folder
+            string strParentPath = Path.GetDirectoryName(Path.GetDirectoryName(_strFireDataLogFile));
+            if (!Directory.Exists(strParentPath))
+            {
+                Directory.CreateDirectory(strParentPath);
+            }
             if (!Directory.Exists(Path.GetDirectoryName(_strFireDataLogFile)))
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(_strFireDataLogFile));
@@ -2138,7 +2143,6 @@ namespace bagis_pro
                         oFireSettings.fireDataClipYears = FireDataClipYears;
                         oFireSettings.reportEndYear = "";   // Clear report related settings so we don't get out of sync
                         oFireSettings.increment = "";
-                        oFireSettings.noPeriodsReported = "";
                         GeneralTools.UpdateFireDataSourceSettings(ref oFireSettings, aoiFolder, dictDataSources, Constants.DATA_TYPE_FIRE_HISTORY, false);
                         GeneralTools.UpdateFireDataSourceSettings(ref oFireSettings, aoiFolder, dictDataSources, Constants.DATA_TYPE_FIRE_CURRENT, true);
                     }
@@ -2185,9 +2189,15 @@ namespace bagis_pro
         private async void RunFireReportImplAsync(object param)
         {
             // Make sure the maps_publish folder exists under the selected folder
-            if (!Directory.Exists(Path.GetDirectoryName(_strFireReportLogFile)))
+            // Make sure the maps_publish\fire_statistics folder exists under the selected folder
+            string strParentPath = Path.GetDirectoryName(Path.GetDirectoryName(_strFireDataLogFile));
+            if (!Directory.Exists(strParentPath))
             {
-                Directory.CreateDirectory(Path.GetDirectoryName(_strFireReportLogFile));
+                Directory.CreateDirectory(strParentPath);
+            }
+            if (!Directory.Exists(Path.GetDirectoryName(_strFireDataLogFile)))
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(_strFireDataLogFile));
             }
 
             // Create initial log entry
@@ -2248,26 +2258,24 @@ namespace bagis_pro
                     }
 
                     // Generating annual statistics
-                    //for (int i = minYear; i <= ReportEndYear; i++)
-                    //{
-                    //    IList<string> lstAnnualElements = await AnalysisTools.GenerateAnnualFireStatisticsList(oAoi, _strFireReportLogFile,
-                    //        aoiAreaSqMeters, cellSizeSqMeters, i);
-                    //    if (dictOutput.ContainsKey(i.ToString()))
-                    //    {
-                    //        dictOutput[i.ToString()].Add(lstAnnualElements);
-                    //    }
-                    //    else
-                    //    {
-                    //        IList<IList<string>> lstNew = new List<IList<string>>();
-                    //        lstNew.Add(lstAnnualElements);
-                    //        dictOutput.Add(i.ToString(), lstNew);
-                    //    }
-                    //}
+                    for (int i = _intMinYear; i <= ReportEndYear; i++)
+                    {
+                        IList<string> lstAnnualElements = await AnalysisTools.GenerateAnnualFireStatisticsList(oAoi, _strFireReportLogFile,
+                            aoiAreaSqMeters, cellSizeSqMeters, i);
+                        if (dictOutput.ContainsKey(i.ToString()))
+                        {
+                            dictOutput[i.ToString()].Add(lstAnnualElements);
+                        }
+                        else
+                        {
+                            IList<IList<string>> lstNew = new List<IList<string>>();
+                            lstNew.Add(lstAnnualElements);
+                            dictOutput.Add(i.ToString(), lstNew);
+                        }
+                    }
+
                     // Generating increment statistics
-                    // Are dataBeginYear and dataRetrieveStart year the same value? Can't find a place where analyst sets dataBegin year
-                    // Test #1: 2014, 1985, 5
-                    // Test #2: 2024, 1995, 10
-                    lstInterval = GeneralTools.GetFireStatisticsIntervals(ReportEndYear, FireDataClipYears, FireIncrementYears, out intIncrementPeriods);
+                     lstInterval = GeneralTools.GetFireStatisticsIntervals(ReportEndYear, FireDataClipYears, FireIncrementYears, out intIncrementPeriods);
                     IList<string> lstOutput = await AnalysisTools.GenerateIncrementFireStatisticsList(oAoi, _strFireReportLogFile,
                         aoiAreaSqMeters, cellSizeSqMeters, lstInterval);
                     lstIncrementOutput.Add(lstOutput);
@@ -2280,15 +2288,6 @@ namespace bagis_pro
                             // We know the file exists
                             oFireSettings.reportEndYear = _intNifcMaxYear;
                             oFireSettings.increment = FireIncrementYears;
-                            if (AllTimeChecked)
-                            {
-                                oFireSettings.noPeriodsReported = lstInterval.Count;
-                            }
-                            else
-                            {
-                                oFireSettings.noPeriodsReported = FireTimePeriodCount;
-                            }
-                            
 
                             // serialize JSON directly to a file
                             using (StreamWriter file = File.CreateText($@"{oAoi.FilePath}\{Constants.FOLDER_MAPS}\{Constants.FILE_FIRE_SETTINGS}"))
@@ -2319,6 +2318,7 @@ namespace bagis_pro
             string separator = ",";
             for (int i = _intMinYear; i <= _intNifcMaxYear; i++)
             {
+                output.Clear();
                 // Structures to manage data
                 strCsvFile = $@"{Path.GetDirectoryName(_strFireReportLogFile)}\{i}_annual_statistics.csv";
                 String[] headings = { "stationTriplet", "stationName", $@"{i}_newfireno", $@"{i}_nifc_burnedArea_SqMiles", 
