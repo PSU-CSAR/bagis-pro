@@ -102,6 +102,7 @@ namespace bagis_pro
         private bool _bAllTimeChecked = true;   //Default
         private bool _bSelectedTimeChecked = false;
         private bool _bAnnualDataChecked = false;
+        private bool _bIncrementDataChecked = false;
         private int _intSelectedMinYear;
         private int _intSelectedMaxYear;
         private int _intFireTimePeriodCount;
@@ -378,6 +379,15 @@ namespace bagis_pro
             }
         }
 
+        public bool IncrementDataChecked
+        {
+            get { return _bIncrementDataChecked; }
+            set
+            {
+                SetProperty(ref _bIncrementDataChecked, value, () => IncrementDataChecked);
+            }
+        }
+
         public int SelectedMinYear
         {
             get { return _intSelectedMinYear; }
@@ -607,7 +617,7 @@ namespace bagis_pro
                         _intMinYear = (DateTime.Now.Year - FireDataClipYears) + 1;
                         SelectedMinYear = _intMinYear;
                         int intIncrementPeriods;
-                        IList<Interval> lstInterval = GeneralTools.GetFireStatisticsIntervals(ReportEndYear, FireDataClipYears, FireIncrementYears, out intIncrementPeriods);
+                        IList<Interval> lstInterval = GeneralTools.GetFireStatisticsIntervals(ReportEndYear, FireDataClipYears, FireIncrementYears, false, 0, out intIncrementPeriods);
                         FireTimePeriodCount = intIncrementPeriods;  
                         _intMtbsMaxYear = await this.QueryMtbsMaxYearAsync(_dictDatasources, Constants.DATA_TYPE_FIRE_BURN_SEVERITY);
                         MtbsDataDescr = $@"MTBS data available from {MtbsMinYear} to {_intMtbsMaxYear}";
@@ -2208,6 +2218,9 @@ namespace bagis_pro
             IList<IList<string>> lstIncrementOutput = new List<IList<string>>();    
             int intIncrementPeriods = 0;
             IList<Interval> lstInterval = null;
+            int overrideMinYear = _intMinYear;
+            bool bAnnualStatistics = true;
+            bool bIncrementStatistics = true;
             for (int idxRow = 0; idxRow < Names.Count; idxRow++)
             {
                 if (Names[idxRow].AoiBatchIsSelected)
@@ -2258,27 +2271,49 @@ namespace bagis_pro
                     }
 
                     // Generating annual statistics
-                    for (int i = _intMinYear; i <= ReportEndYear; i++)
+                    if (SelectedTimeChecked)
                     {
-                        IList<string> lstAnnualElements = await AnalysisTools.GenerateAnnualFireStatisticsList(oAoi, _strFireReportLogFile,
-                            aoiAreaSqMeters, cellSizeSqMeters, i);
-                        if (dictOutput.ContainsKey(i.ToString()))
+                        overrideMinYear = SelectedMinYear;
+                        if (!AnnualDataChecked)
                         {
-                            dictOutput[i.ToString()].Add(lstAnnualElements);
+                            bAnnualStatistics = false;
                         }
-                        else
+                        if (!IncrementDataChecked)
                         {
-                            IList<IList<string>> lstNew = new List<IList<string>>();
-                            lstNew.Add(lstAnnualElements);
-                            dictOutput.Add(i.ToString(), lstNew);
+                            bIncrementStatistics = false;
                         }
                     }
-
-                    // Generating increment statistics
-                     lstInterval = GeneralTools.GetFireStatisticsIntervals(ReportEndYear, FireDataClipYears, FireIncrementYears, out intIncrementPeriods);
-                    IList<string> lstOutput = await AnalysisTools.GenerateIncrementFireStatisticsList(oAoi, _strFireReportLogFile,
-                        aoiAreaSqMeters, cellSizeSqMeters, lstInterval);
-                    lstIncrementOutput.Add(lstOutput);
+                    if (bAnnualStatistics)
+                    {
+                        for (int i = overrideMinYear; i <= ReportEndYear; i++)
+                        {
+                            IList<string> lstAnnualElements = await AnalysisTools.GenerateAnnualFireStatisticsList(oAoi, _strFireReportLogFile,
+                                aoiAreaSqMeters, cellSizeSqMeters, i);
+                            if (dictOutput.ContainsKey(i.ToString()))
+                            {
+                                dictOutput[i.ToString()].Add(lstAnnualElements);
+                            }
+                            else
+                            {
+                                IList<IList<string>> lstNew = new List<IList<string>>();
+                                lstNew.Add(lstAnnualElements);
+                                dictOutput.Add(i.ToString(), lstNew);
+                            }
+                        }
+                    }
+                    if (bIncrementStatistics)
+                    {
+                        // Generating increment statistics
+                        bool bRequestPeriods = false;
+                        if (IncrementDataChecked)
+                        {
+                            bRequestPeriods = true;
+                        }
+                        lstInterval = GeneralTools.GetFireStatisticsIntervals(ReportEndYear, FireDataClipYears, FireIncrementYears, bRequestPeriods, FireTimePeriodCount, out intIncrementPeriods);
+                        IList<string> lstOutput = await AnalysisTools.GenerateIncrementFireStatisticsList(oAoi, _strFireReportLogFile,
+                            aoiAreaSqMeters, cellSizeSqMeters, lstInterval);
+                        lstIncrementOutput.Add(lstOutput);
+                    }
 
                     try
                     {
@@ -2316,24 +2351,128 @@ namespace bagis_pro
             string strCsvFile = "";
             StringBuilder output = new StringBuilder();
             string separator = ",";
-            for (int i = _intMinYear; i <= _intNifcMaxYear; i++)
+            if (bAnnualStatistics)
             {
-                output.Clear();
-                // Structures to manage data
-                strCsvFile = $@"{Path.GetDirectoryName(_strFireReportLogFile)}\{i}_annual_statistics.csv";
-                String[] headings = { "stationTriplet", "stationName", $@"{i}_newfireno", $@"{i}_nifc_burnedArea_SqMiles", 
+                for (int i = overrideMinYear; i <= ReportEndYear; i++)
+                {
+                    output.Clear();
+                    // Structures to manage data
+                    strCsvFile = $@"{Path.GetDirectoryName(_strFireReportLogFile)}\{i}_annual_statistics.csv";
+                    String[] headings = { "stationTriplet", "stationName", $@"{i}_newfireno", $@"{i}_nifc_burnedArea_SqMiles",
                     $@"{i}_nifc_burnedArea_pct", $@"{i}_mtbs_burnedArea_pct", $@"{i}_burnedForestedArea_SqMiles",
                     $@"{i}_burnedForestedArea_pct",$@"{i}_lowburnedSeverityArea_SqMiles", $@"{i}_lowburnedSeverityArea_pct",
                     $@"{i}_mediumburnedSeverityArea_SqMiles", $@"{i}_mediumburnedSeverityArea_pct",$@"{i}_highburnedSeverityArea_SqMiles", $@"{i}_highburnedSeverityArea_pct" };
-                output.AppendLine(string.Join(separator, headings));
+                    output.AppendLine(string.Join(separator, headings));
 
-                if (dictOutput.ContainsKey(i.ToString()))
-                {
-                    IList<IList<string>> lstYearElements = dictOutput[i.ToString()];
-                    foreach (var item in lstYearElements)
+                    if (dictOutput.ContainsKey(i.ToString()))
                     {
-                        output.AppendLine(string.Join(separator, item));
+                        IList<IList<string>> lstYearElements = dictOutput[i.ToString()];
+                        foreach (var item in lstYearElements)
+                        {
+                            output.AppendLine(string.Join(separator, item));
+                        }
                     }
+
+                    try
+                    {
+                        // Overwrites file with new content
+                        File.WriteAllText(strCsvFile, output.ToString());
+                    }
+                    catch (Exception ex)
+                    {
+                        strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} Data could not be written to the CSV file!{System.Environment.NewLine}";
+                        File.AppendAllText(_strFireReportLogFile, strLogEntry);
+                        MessageBox.Show("Data could not be written to the CSV file!", "BAGIS-PRO");
+                        return;
+                    }
+                }
+            }
+
+            if (bIncrementStatistics)
+            {
+                strCsvFile = $@"{Path.GetDirectoryName(_strFireReportLogFile)}\increment_statistics.csv";
+                output.Clear();
+                IList<string> lstHeadings = new List<string>() { "stationTriplet", "stationName" };
+                string fmt = "00";
+                for (int i = 1; i <= intIncrementPeriods; i++)
+                {
+                    int yearsLabel = i * FireIncrementYears;
+                    string strYearsLabel = $@"Last{yearsLabel.ToString(fmt)}_newfireno";
+                    lstHeadings.Add(strYearsLabel);
+                }
+                for (int i = 1; i <= intIncrementPeriods; i++)
+                {
+                    int yearsLabel = i * FireIncrementYears;
+                    string strYearsLabel = $@"Last{yearsLabel.ToString(fmt)}_nifc_burnedArea_SqMiles";
+                    lstHeadings.Add(strYearsLabel);
+                }
+                for (int i = 1; i <= intIncrementPeriods; i++)
+                {
+                    int yearsLabel = i * FireIncrementYears;
+                    string strYearsLabel = $@"Last{yearsLabel.ToString(fmt)}_nifc_burnedArea_pct";
+                    lstHeadings.Add(strYearsLabel);
+                }
+                for (int i = 1; i <= intIncrementPeriods; i++)
+                {
+                    int yearsLabel = i * FireIncrementYears;
+                    string strYearsLabel = $@"Last{yearsLabel.ToString(fmt)}_mtbs_burnedArea_pct";
+                    lstHeadings.Add(strYearsLabel);
+                }
+                for (int i = 1; i <= intIncrementPeriods; i++)
+                {
+                    int yearsLabel = i * FireIncrementYears;
+                    string strYearsLabel = $@"Last{yearsLabel.ToString(fmt)}_burnedForestedArea_SqMiles";
+                    lstHeadings.Add(strYearsLabel);
+                }
+                for (int i = 1; i <= intIncrementPeriods; i++)
+                {
+                    int yearsLabel = i * FireIncrementYears;
+                    string strYearsLabel = $@"Last{yearsLabel.ToString(fmt)}_burnedForestedArea_pct";
+                    lstHeadings.Add(strYearsLabel);
+                }
+                for (int i = 1; i <= intIncrementPeriods; i++)
+                {
+                    int yearsLabel = i * FireIncrementYears;
+                    string strYearsLabel = $@"Last{yearsLabel.ToString(fmt)}_lowburnedSeverityArea_SqMiles";
+                    lstHeadings.Add(strYearsLabel);
+                }
+                for (int i = 1; i <= intIncrementPeriods; i++)
+                {
+                    int yearsLabel = i * FireIncrementYears;
+                    string strYearsLabel = $@"Last{yearsLabel.ToString(fmt)}_lowburnedSeverityArea_pct";
+                    lstHeadings.Add(strYearsLabel);
+                }
+                for (int i = 1; i <= intIncrementPeriods; i++)
+                {
+                    int yearsLabel = i * FireIncrementYears;
+                    string strYearsLabel = $@"Last{yearsLabel.ToString(fmt)}_mediumburnedSeverityArea_SqMiles";
+                    lstHeadings.Add(strYearsLabel);
+                }
+                for (int i = 1; i <= intIncrementPeriods; i++)
+                {
+                    int yearsLabel = i * FireIncrementYears;
+                    string strYearsLabel = $@"Last{yearsLabel.ToString(fmt)}_mediumburnedSeverityArea_pct";
+                    lstHeadings.Add(strYearsLabel);
+                }
+                for (int i = 1; i <= intIncrementPeriods; i++)
+                {
+                    int yearsLabel = i * FireIncrementYears;
+                    string strYearsLabel = $@"Last{yearsLabel.ToString(fmt)}_highburnedSeverityArea_SqMiles";
+                    lstHeadings.Add(strYearsLabel);
+                }
+                for (int i = 1; i <= intIncrementPeriods; i++)
+                {
+                    int yearsLabel = i * FireIncrementYears;
+                    string strYearsLabel = $@"Last{yearsLabel.ToString(fmt)}_highburnedSeverityArea_pct";
+                    lstHeadings.Add(strYearsLabel);
+                }
+
+                String[] incrementHeadings = lstHeadings.ToArray();
+                output.AppendLine(string.Join(separator, incrementHeadings));
+
+                foreach (var item in lstIncrementOutput)
+                {
+                    output.AppendLine(string.Join(separator, item));
                 }
 
                 try
@@ -2349,105 +2488,6 @@ namespace bagis_pro
                     return;
                 }
             }
-
-            strCsvFile = $@"{Path.GetDirectoryName(_strFireReportLogFile)}\increment_statistics.csv";
-            output.Clear();
-            IList<string> lstHeadings = new List<string>() { "stationTriplet", "stationName" };
-            string fmt = "00";
-            for (int i = 1; i <= intIncrementPeriods; i++)
-            {
-                int yearsLabel = i * FireIncrementYears;
-                string strYearsLabel = $@"Last{yearsLabel.ToString(fmt)}_newfireno";
-                lstHeadings.Add(strYearsLabel);
-            }
-            for (int i = 1; i <= intIncrementPeriods; i++)
-            {
-                int yearsLabel = i * FireIncrementYears;
-                string strYearsLabel = $@"Last{yearsLabel.ToString(fmt)}_nifc_burnedArea_SqMiles";
-                lstHeadings.Add(strYearsLabel);
-            }
-            for (int i = 1; i <= intIncrementPeriods; i++)
-            {
-                int yearsLabel = i * FireIncrementYears;
-                string strYearsLabel = $@"Last{yearsLabel.ToString(fmt)}_nifc_burnedArea_pct";
-                lstHeadings.Add(strYearsLabel);
-            }
-            for (int i = 1; i <= intIncrementPeriods; i++)
-            {
-                int yearsLabel = i * FireIncrementYears;
-                string strYearsLabel = $@"Last{yearsLabel.ToString(fmt)}_mtbs_burnedArea_pct";
-                lstHeadings.Add(strYearsLabel);
-            }
-            for (int i = 1; i <= intIncrementPeriods; i++)
-            {
-                int yearsLabel = i * FireIncrementYears;
-                string strYearsLabel = $@"Last{yearsLabel.ToString(fmt)}_burnedForestedArea_SqMiles";
-                lstHeadings.Add(strYearsLabel);
-            }
-            for (int i = 1; i <= intIncrementPeriods; i++)
-            {
-                int yearsLabel = i * FireIncrementYears;
-                string strYearsLabel = $@"Last{yearsLabel.ToString(fmt)}_burnedForestedArea_pct";
-                lstHeadings.Add(strYearsLabel);
-            }
-            for (int i = 1; i <= intIncrementPeriods; i++)
-            {
-                int yearsLabel = i * FireIncrementYears;
-                string strYearsLabel = $@"Last{yearsLabel.ToString(fmt)}_lowburnedSeverityArea_SqMiles";
-                lstHeadings.Add(strYearsLabel);
-            }
-            for (int i = 1; i <= intIncrementPeriods; i++)
-            {
-                int yearsLabel = i * FireIncrementYears;
-                string strYearsLabel = $@"Last{yearsLabel.ToString(fmt)}_lowburnedSeverityArea_pct";
-                lstHeadings.Add(strYearsLabel);
-            }
-            for (int i = 1; i <= intIncrementPeriods; i++)
-            {
-                int yearsLabel = i * FireIncrementYears;
-                string strYearsLabel = $@"Last{yearsLabel.ToString(fmt)}_mediumburnedSeverityArea_SqMiles";
-                lstHeadings.Add(strYearsLabel);
-            }
-            for (int i = 1; i <= intIncrementPeriods; i++)
-            {
-                int yearsLabel = i * FireIncrementYears;
-                string strYearsLabel = $@"Last{yearsLabel.ToString(fmt)}_mediumburnedSeverityArea_pct";
-                lstHeadings.Add(strYearsLabel);
-            }
-            for (int i = 1; i <= intIncrementPeriods; i++)
-            {
-                int yearsLabel = i * FireIncrementYears;
-                string strYearsLabel = $@"Last{yearsLabel.ToString(fmt)}_highburnedSeverityArea_SqMiles";
-                lstHeadings.Add(strYearsLabel);
-            }
-            for (int i = 1; i <= intIncrementPeriods; i++)
-            {
-                int yearsLabel = i * FireIncrementYears;
-                string strYearsLabel = $@"Last{yearsLabel.ToString(fmt)}_highburnedSeverityArea_pct";
-                lstHeadings.Add(strYearsLabel);
-            }
-
-            String[] incrementHeadings = lstHeadings.ToArray();
-            output.AppendLine(string.Join(separator, incrementHeadings));
-
-            foreach (var item in lstIncrementOutput)
-            {
-                 output.AppendLine(string.Join(separator, item));
-            }
-
-            try
-            {
-                // Overwrites file with new content
-                File.WriteAllText(strCsvFile, output.ToString());
-            }
-            catch (Exception ex)
-            {
-                strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} Data could not be written to the CSV file!{System.Environment.NewLine}";
-                File.AppendAllText(_strFireReportLogFile, strLogEntry);
-                MessageBox.Show("Data could not be written to the CSV file!", "BAGIS-PRO");
-                return;
-            }
-
         }
 
             private string CreateLogEntry(string strAoiPath, string strOldTriplet, string strNewTriplet, string strRemarks)

@@ -344,7 +344,7 @@
                                     <Label Content=")" Margin="0, 0, 0, 0" />
                                 </DockPanel>
                                 <DockPanel HorizontalAlignment="Left">
-                                    <CheckBox x:Name="ckPeriods" Content="Time periods (the most recent " VerticalAlignment="Center" IsEnabled="False"/>
+                                    <CheckBox x:Name="ckPeriods" Content="Time periods (the most recent " VerticalAlignment="Center" IsEnabled="False" IsChecked="{Binding IncrementDataChecked}"/>
                                     <TextBox x:Name="tbTimePeriodCount" Width ="25" Height="20" Text="{Binding FireTimePeriodCount}" IsEnabled="False"/>
                                     <Label Content="periods)" Margin="0, 0, 0, 0" />
                                 </DockPanel>

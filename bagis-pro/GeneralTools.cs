@@ -3226,8 +3226,9 @@ namespace bagis_pro
             }
         }
         public static IList<Interval> GetFireStatisticsIntervals(int intReportEndYear,
-            int intFireDataClipYears, int intIncrement, out int intPeriods)
+            int intFireDataClipYears, int intIncrement, bool bRequestPeriods, int intRequestedPeriods, out int intPeriods)
         {
+            IList<Interval> lstTempIntervals = new List<Interval>();
             IList<Interval> lstIntervals = new List<Interval>();
             int intRemainder = 0;
             int intRemainderFlag = 1;
@@ -3251,7 +3252,19 @@ namespace bagis_pro
                 oInterval.Value = i;
                 oInterval.LowerBound = intReportEndYear - intIncrement * i + 1;
                 oInterval.UpperBound = intReportEndYear;
-                lstIntervals.Add(oInterval);
+                lstTempIntervals.Add(oInterval);
+            }
+            if (bRequestPeriods && intRequestedPeriods < intPeriods)
+            {
+                intPeriods = intRequestedPeriods;
+                for (int j = 0; j < intRequestedPeriods; j++)
+                {
+                    lstIntervals.Add(lstTempIntervals[j]);
+                }
+            }
+            else
+            {
+                lstIntervals = lstTempIntervals;
             }
             return lstIntervals;
         }
