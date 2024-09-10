@@ -7097,6 +7097,7 @@ namespace bagis_pro
             var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath, snapRaster: Aoi.SnapRasterPath(strAoiPath),
                 extent: strClipEnvelope);
             string strTemplateDataset = strClipGdb + "\\" + strClipFile;
+            int clippedLayersCount = 0;
             for (int i = 0; i < lstImageServiceUri.Count; i++)
             {
                 string strOutputRaster = $@"{GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Fire, true)}{lstRasterFileName[i]}";
@@ -7118,7 +7119,8 @@ namespace bagis_pro
                 }
                 if (bReclipMtbs || bClipThisLayer)
                 {
-                        var parameters = Geoprocessing.MakeValueArray(lstImageServiceUri[i], strClipEnvelope, strOutputRaster, strTemplateDataset,
+                    clippedLayersCount++;    
+                    var parameters = Geoprocessing.MakeValueArray(lstImageServiceUri[i], strClipEnvelope, strOutputRaster, strTemplateDataset,
                             "", "ClippingGeometry");
                         // Always set the extent if clipping from an image service
                         var gpResult = await Geoprocessing.ExecuteToolAsync("Clip_management", parameters, environments,
@@ -7201,7 +7203,7 @@ namespace bagis_pro
                 }
             }
             // Update settings file
-            if (bReclipMtbs)
+            if (clippedLayersCount > 0)
             {
                 dynamic oFireSettings = GeneralTools.GetFireSettings(strAoiPath);
                 if (oFireSettings.DataSources != null)
