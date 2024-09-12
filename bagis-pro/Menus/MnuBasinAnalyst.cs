@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO.Compression;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -53,9 +55,59 @@ namespace bagis_pro.Menus
 
     internal class MnuBasinAnalyst_AOIShapefile : Button
     {
-        protected override void OnClick()
+        protected override async void OnClick()
         {
-            MessageBox.Show("Create AOI from a shapefile");
+            OpenItemDialog dlgShapefile = new OpenItemDialog()
+            {
+                Title = "Select a polygon shapefile",
+                MultiSelect = false,
+                Filter = ItemFilters.Shapefiles
+            };
+            if (dlgShapefile.ShowDialog() == true)
+            {
+                IEnumerable<Item> selectedItems = dlgShapefile.Items;
+                var e = selectedItems.FirstOrDefault();
+                string strName = e.Name;
+                string strDirectory = Path.GetDirectoryName(e.Path);
+                if (strName.Contains(' '))
+                {
+                    MessageBox.Show("An AOI cannot be created from a shapefile with a space in the name. Please " +
+                        "rename the shapefile and try again.", "BAGIS-Pro", System.Windows.MessageBoxButton.OK, 
+                        System.Windows.MessageBoxImage.Error);
+                    return;
+                }
+
+                string strProjection = "Missing";
+                Boolean bIsPolygon = false;
+                await QueuedTask.Run(() =>
+                {
+                    using (FileSystemDatastore shapefile = new FileSystemDatastore(new FileSystemConnectionPath(new Uri(strDirectory), FileSystemDatastoreType.Shapefile)))
+                    {
+                        FeatureClass featureClass = shapefile.OpenDataset<FeatureClass>(strName);
+                        var classDefinition = featureClass.GetDefinition() as FeatureClassDefinition;
+                        var spatialReference = classDefinition.GetSpatialReference();
+                        if (spatialReference != null)
+                        {
+                            strProjection = spatialReference.Name;
+                        }
+                        if (classDefinition.GetShapeType() == GeometryType.Polygon)
+                        {
+                            bIsPolygon = true;
+                        }
+                    }
+                });
+                string strMessage = $@"The input shapefile must be in the same projection as the source DEM specified in the BAGIS settings! The projection of the selected shapefile is: {strProjection}";
+                MessageBox.Show(strMessage, "BAGIS-Pro", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+                if (bIsPolygon)
+                {
+
+                }
+                else
+                {
+                    MessageBox.Show("Please select a polygon shapefile as the input!", "BAGIS-Pro", System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Error);
+                }
+            }
         }
     }
 
