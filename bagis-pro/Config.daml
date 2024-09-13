@@ -30,6 +30,7 @@
           <toolbar refID="BAGIS_V4_Toolbar1" /> 
           <tool refID="bagis_pro_Basin_SetDEMExtenttTool" size="large" />
           <button refID="bagis_pro_Maps_Tables_Button1" size="large" /> -->
+          <button refID="bagis_pro_DockCreateAOIfromExistingBND_ShowButton" size="large" />
         </group>
         <group id="bagis_pro_Groups_Basin" appearsOnAddInTab="false" caption=" " keytip="G2">
           <menu refID="bagis_pro_Menus_MnuBasin" size="middle" />
@@ -136,7 +137,7 @@
             Click to generate interactive Excel tables<disabledText /></tooltip>
         </button>
         <button id="MapButtonPalette_BtnElevation" caption="Basin Elevation" className="bagis_pro.Buttons.MapButtonPalette_BtnElevation" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnElevation_Condition" keytip="B16">
-          <tooltip heading="Basin Elevation">Display Basin Elevation<disabledText/>>
+          <tooltip heading="Basin Elevation">Display Basin Elevation<disabledText />&gt;
         </tooltip>
         </button>
         <button id="MapButtonPalette_BtnSlope" caption="Slope Distribution" className="bagis_pro.Buttons.MapButtonPalette_BtnSlope" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ActivateMapFrame32.png" condition="MapButtonPalette_BtnSlope_Condition" keytip="B17">
@@ -204,12 +205,10 @@
         </comboBox>
         <labelControl id="bagis_pro_Buttons_LblCurrentAoi" caption="  Selected AOI" />
         <button id="bagis_pro_DockpaneLayers_ShowButton" caption="Clip Layers" className="DockpaneLayers_ShowButton" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/PaperClip32.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/PaperClip32.png" condition="AdminMenu_ShowButton_Condition" keytip="B55">
-          <tooltip heading="Clip Layers">Clip Layers<disabledText>Contact your administrator for permissions to run this tool</disabledText>
-        </tooltip>
+          <tooltip heading="Clip Layers">Clip Layers<disabledText>Contact your administrator for permissions to run this tool</disabledText></tooltip>
         </button>
         <button id="bagis_pro_DockAnalysisLayers_ShowButton" caption="Generate Analysis Layers" className="DockAnalysisLayers_ShowButton" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/CalculateGeometry16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/CalculateGeometry32.png" condition="AdminMenu_ShowButton_Condition" keytip="B56">
-          <tooltip heading="Generate Analysis Layers">Generate Analysis Layers<disabledText>Contact your administrator for permissions to run this tool</disabledText>
-        </tooltip>
+          <tooltip heading="Generate Analysis Layers">Generate Analysis Layers<disabledText>Contact your administrator for permissions to run this tool</disabledText></tooltip>
         </button>
         <!--<button id="bagis_pro_DockBatchPdfExport_ShowButton" caption="Batch PDF Export" className="DockBatchPdfExport_ShowButton" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/JobExport16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/JobExport16.png" keytip="B57">
           <tooltip heading="Batch PDF Export">Batch PDF Export<disabledText /></tooltip> 
@@ -218,15 +217,14 @@
           <tooltip heading="Migrate to FGDB">Migrate to FGDB<disabledText /></tooltip>
         </button>
         <button id="bagis_pro_DockMapPackage_ShowButton" caption="Configure Map Package" className="DockMapPackage_ShowButton" loadOnClick="true" condition="DockMapPackage_ShowButton_Condition" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/Picture16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/Picture32.png" keytip="B59">
-          <tooltip heading="Configure Map Package">Configure Map Package<disabledText>Contact your administrator for permissions to run this tool</disabledText>
-        </tooltip>
+          <tooltip heading="Configure Map Package">Configure Map Package<disabledText>Contact your administrator for permissions to run this tool</disabledText></tooltip>
         </button>
         <!--<button id="bagis_pro_Buttons_BtnTest" caption="Update PDF Files" className="bagis_pro.Buttons.BtnTest" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericButtonBlue16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericButtonBlue32.png" keytip="B60">
           <tooltip heading="Tooltip Heading">Update PDF Files<disabledText /></tooltip>
         </button> -->
         <button id="bagis_pro_DockExportForSnodas_ShowButton" caption="Export For Snodas" className="DockExportForSnodas_ShowButton" loadOnClick="true" smallImage="Images\snowflake.png" largeImage="Images\snowflake.png" condition="AdminMenu_NoAoiRequired_Condition" keytip="B61">
           <tooltip heading="Export For Snodas">Export For Snodas<disabledText>Contact your administrator for permissions to run this tool</disabledText>
-        ></tooltip>
+        &gt;</tooltip>
         </button>
         <button id="bagis_pro_DockAdminTools_ShowButton" caption="Batch Tools" className="DockAdminTools_ShowButton" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/JobExport16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/JobExport16.png" keytip="B57">
           <tooltip heading="Batch Tools">
@@ -237,7 +235,7 @@
             Export Map Package to PDF<disabledText />
           </tooltip>
         </button> -->
-        <button id="bagis_pro_WinExportPdf" caption="Export Map Package" className="BtnWinExportPdf" loadOnClick="true" smallImage="Images\PdfIcon.png" largeImage="Images\PdfIcon.png" condition="BtnExportToPdf_Condition" keytip="B14" >
+        <button id="bagis_pro_WinExportPdf" caption="Export Map Package" className="BtnWinExportPdf" loadOnClick="true" smallImage="Images\PdfIcon.png" largeImage="Images\PdfIcon.png" condition="BtnExportToPdf_Condition" keytip="B14">
           <tooltip heading="Export Map Package">Click to export Map Package to PDF<disabledText /></tooltip>
         </button>
       </controls>
@@ -283,6 +281,9 @@
         </dockPane>
         <dockPane id="bagis_pro_DockAdminTools" caption="Batch Tools" className="DockAdminToolsViewModel" dock="group" dockWith="esri_core_projectDockPane">
           <content className="DockAdminToolsView" />
+        </dockPane>
+        <dockPane id="bagis_pro_DockCreateAOIfromExistingBND" caption="Create AOI from a shapefile" className="DockCreateAOIfromExistingBNDViewModel" dock="group" dockWith="esri_core_projectDockPane">
+          <content className="DockCreateAOIfromExistingBNDView" />
         </dockPane>
       </dockPanes>
     </insertModule>

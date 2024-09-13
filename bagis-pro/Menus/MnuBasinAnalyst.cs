@@ -100,7 +100,11 @@ namespace bagis_pro.Menus
                 MessageBox.Show(strMessage, "BAGIS-Pro", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
                 if (bIsPolygon)
                 {
-
+                    var pane = (DockCreateAOIfromExistingBNDViewModel) FrameworkApplication.DockPaneManager.Find("bagis_pro_DockCreateAOIfromExistingBND");
+                    pane.SourceFile = strDirectory;
+                    string newAoiName = Path.GetFileNameWithoutExtension(e.Path);
+                    pane.AoiName = newAoiName;
+                    DockCreateAOIfromExistingBNDViewModel.Show();
                 }
                 else
                 {
