@@ -63,6 +63,8 @@ namespace bagis_pro
         private string _sourceFile = "";
         private string _outputWorkspace = "";
         private string _aoiName = "";
+        private bool _dem10Checked;
+        private bool _dem30Checked = true;
 
         public string Heading
         {
@@ -83,6 +85,16 @@ namespace bagis_pro
         {
             get => _aoiName;
             set => SetProperty(ref _aoiName, value);
+        }
+        public bool Dem10Checked
+        {
+            get => _dem10Checked;
+            set => SetProperty(ref _dem10Checked, value);
+        }
+        public bool Dem30Checked
+        {
+            get => _dem30Checked;
+            set => SetProperty(ref _dem30Checked, value);
         }
 
         public System.Windows.Input.ICommand CmdOutputWorkspace
