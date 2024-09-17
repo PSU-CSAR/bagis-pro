@@ -6,7 +6,7 @@
              xmlns:ui="clr-namespace:bagis_pro"
              xmlns:extensions="clr-namespace:ArcGIS.Desktop.Extensions;assembly=ArcGIS.Desktop.Extensions"
              mc:Ignorable="d" 
-             d:DesignHeight="300" d:DesignWidth="325"
+             d:DesignHeight="650" d:DesignWidth="325"
              d:DataContext="{Binding Path=ui.DockCreateAOIfromExistingBNDViewModel}">
   <UserControl.Resources>
         <ResourceDictionary/>
@@ -14,7 +14,7 @@
   <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="90"/>
-            <RowDefinition Height="200"/>
+            <RowDefinition Height="500"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
         <StackPanel Grid.Row="0" Width="325">
@@ -33,7 +33,7 @@
                     </TextBlock>
                 </DockPanel>
                 <DockPanel Grid.Row="0" Grid.Column="1" LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Margin="2,0,2,0">
-                    <TextBox x:Name="txtSourceFile" Text="{Binding SourceFile}" HorizontalAlignment="Right"  Width="210" Height="25" IsReadOnly="True" Margin="5,0,0,0"
+                    <TextBox x:Name="txtSourceFile" Text="{Binding SourceFile}" HorizontalAlignment="Right"  Width="210" Height="20" IsReadOnly="True" Margin="5,0,0,0"
                     Background="Transparent"/>
                 </DockPanel>
                 <DockPanel Grid.Row="1" LastChildFill="true" KeyboardNavigation.TabNavigation="Local">
@@ -41,7 +41,7 @@
                     </TextBlock>
                 </DockPanel>
                 <DockPanel Grid.Row="1" Grid.Column="1" LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Margin="2,0,2,0">
-                    <TextBox x:Name="txtOutputWorkspace" Text="{Binding OutputWorkspace}" Width="160" Height="25" IsReadOnly="True" Margin="5,0,0,0"
+                    <TextBox x:Name="txtOutputWorkspace" Text="{Binding OutputWorkspace}" Width="160" Height="20" IsReadOnly="True" Margin="5,0,0,0"
                     HorizontalAlignment="Left" Background="Transparent"/>
                     <Button x:Name="btnAoiFolder" Content="Open" HorizontalAlignment="Left"  VerticalAlignment="Center" Width="50" Command="{Binding CmdOutputWorkspace}" Margin="5, 0, 0, 0"/>
                 </DockPanel>
@@ -50,7 +50,7 @@
                     </TextBlock>
                 </DockPanel>
                 <DockPanel Grid.Row="2" Grid.Column="1" LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Margin="2,0,2,0">
-                    <TextBox x:Name="txtAoiName" Text="{Binding AoiName}" Width="160" Height="25" Margin="5,0,0,0"
+                    <TextBox x:Name="txtAoiName" Text="{Binding AoiName}" Width="160" Height="20" Margin="5,0,0,0"
                     HorizontalAlignment="Left"/>
 
                 </DockPanel>
@@ -59,16 +59,30 @@
         <StackPanel Grid.Row="1" Width="325">
             <Grid>
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="35"/>
-                    <RowDefinition Height="35"/>
+                    <RowDefinition Height="20"/>
+                    <RowDefinition Height="50"/>
+                    <RowDefinition Height="20"/>
+                    <RowDefinition Height="30"/>
+                    <RowDefinition Height="20"/>
+                    <RowDefinition Height="20"/>
+                    <RowDefinition Height="20"/>
+                    <RowDefinition Height="20"/>
+                    <RowDefinition Height="20"/>
+                    <RowDefinition Height="20"/>
+                    <RowDefinition Height="20"/>
+                    <RowDefinition Height="20"/>
+                    <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
-                <GroupBox Grid.Row="0" HorizontalAlignment="Left" Grid.RowSpan="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <GroupBox Grid.Row="0" Grid.Column="0" HorizontalAlignment="Left" Grid.RowSpan="2">
                     <GroupBox.Header>
                         <StackPanel Orientation="Horizontal">
                             <TextBlock FontWeight="Bold">Source DEM:</TextBlock>
                         </StackPanel>
                     </GroupBox.Header>
-
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="20"/>
@@ -76,13 +90,57 @@
                         </Grid.RowDefinitions>
                         <DockPanel Grid.Row="0">
                             <RadioButton GroupName="sourceDem" Tag="Dem10Checked" IsChecked="{Binding Dem10Checked}">10 meters</RadioButton>
-                        
-                    </DockPanel>
+                        </DockPanel>
                         <DockPanel Grid.Row="1">
                             <RadioButton GroupName="sourceDem" Tag="Dem30Checked" IsChecked="{Binding Dem30Checked}">30 meters</RadioButton>
                         </DockPanel>
                     </Grid>
                 </GroupBox>
+                <DockPanel Grid.Row="0" Grid.Column="1">
+                    <CheckBox x:Name="ckSmoothDem" Content="Smooth DEM" IsChecked="{Binding SmoothDemChecked}"/>
+                    <TextBlock x:Name="lblSmooth" Margin="15,1,0,0" FontWeight="Bold" Foreground="Blue" MouseLeftButtonUp="LblSmooth_MouseLeftButtonUp"> Why ?</TextBlock>
+                </DockPanel>
+                <GroupBox  Grid.Row="1" Grid.Column="1">
+                    <GroupBox.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock >Filter size (pixels):</TextBlock>
+                        </StackPanel>
+                    </GroupBox.Header>
+                    <DockPanel>
+                        <TextBlock VerticalAlignment="Center">Height</TextBlock>
+                        <TextBox Height="20" Width="30" IsEnabled="False" Margin="5,0,5,0" Text="{Binding FilterCellHeight}"></TextBox>
+                        <TextBlock VerticalAlignment="Center">Width</TextBlock>
+                        <TextBox Height="20" Width="30" IsEnabled="False" Margin="5,0,5,0" Text="{Binding FilterCellWidth}"></TextBox>
+                    </DockPanel>
+                </GroupBox>
+                <DockPanel Grid.Row="2" Grid.Column="0" Margin="5,0,0,0" Grid.ColumnSpan="2">
+                    <TextBlock TextWrapping="Wrap">Select the output layer(s) to view:</TextBlock>
+                </DockPanel>
+                <DockPanel Grid.Row="3" Grid.Column="0" Margin="5,0,0,0">
+                    <Button x:Name="btnSelectAll" Content="Select All" HorizontalAlignment="Left"  VerticalAlignment="Center" Width="75" Margin="0,0,12,0" Command="{Binding CmdSelectAll}"  />
+                    <Button x:Name="btnSelectNone" Content="Select None" HorizontalAlignment="Left"  VerticalAlignment="Center" Width="75" Command="{Binding CmdSelectNone}" />
+                </DockPanel>
+                <DockPanel Grid.Row="4" Grid.Column="0" Margin="5,0,0,0">
+                    <CheckBox x:Name="ckDemExtent" Content="DEM Extent" IsChecked="{Binding DemExtentChecked}"/>
+                </DockPanel>
+                <DockPanel Grid.Row="5" Grid.Column="0" Margin="5,0,0,0">
+                    <CheckBox x:Name="ckFilledDem" Content="Filled DEM" IsChecked="{Binding FilledDemChecked}"/>
+                </DockPanel>
+                <DockPanel Grid.Row="6" Grid.Column="0" Margin="5,0,0,0">
+                    <CheckBox x:Name="ckFlowDirect" Content="Flow Direction" IsChecked="{Binding FlowDirectChecked}"/>
+                </DockPanel>
+                <DockPanel Grid.Row="7" Grid.Column="0" Margin="5,0,0,0">
+                    <CheckBox x:Name="ckFlowAccum" Content="Flow Accumulation" IsChecked="{Binding FlowAccumChecked}"/>
+                </DockPanel>
+                <DockPanel Grid.Row="8" Grid.Column="0" Margin="5,0,0,0">
+                    <CheckBox x:Name="ckSlope" Content="Slope" IsChecked="{Binding SlopeChecked}"/>
+                </DockPanel>
+                <DockPanel Grid.Row="9" Grid.Column="0" Margin="5,0,0,0">
+                    <CheckBox x:Name="ckAspect" Content="Aspect" IsChecked="{Binding AspectChecked}"/>
+                </DockPanel>
+                <DockPanel Grid.Row="10" Grid.Column="0" Margin="5,0,0,0">
+                    <CheckBox x:Name="ckHillshade" Content="Hillshade" IsChecked="{Binding HillshadeChecked}"/>
+                </DockPanel>
             </Grid>
         </StackPanel>
  

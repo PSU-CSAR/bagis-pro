@@ -19,6 +19,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Controls;
 
 
 namespace bagis_pro
@@ -65,6 +66,16 @@ namespace bagis_pro
         private string _aoiName = "";
         private bool _dem10Checked;
         private bool _dem30Checked = true;
+        private bool _smoothDemChecked;
+        private int _filterCellHeight = 3;
+        private int _filterCellWidth = 7;
+        private bool _demExtentChecked = true;
+        private bool _filledDemChecked = true;
+        private bool _flowDirectChecked = true;
+        private bool _flowAccumChecked = true;
+        private bool _slopeChecked = true;
+        private bool _aspectChecked = true;
+        private bool _hillshadeChecked = true;
 
         public string Heading
         {
@@ -96,6 +107,56 @@ namespace bagis_pro
             get => _dem30Checked;
             set => SetProperty(ref _dem30Checked, value);
         }
+        public bool SmoothDemChecked
+        {
+            get => _smoothDemChecked;
+            set => SetProperty(ref _smoothDemChecked, value);
+        }
+        public int FilterCellHeight
+        {
+            get => _filterCellHeight;
+            set => SetProperty(ref _filterCellHeight, value);
+        }
+        public int FilterCellWidth
+        {
+            get => _filterCellWidth;
+            set => SetProperty(ref _filterCellWidth, value);
+        }
+        public bool DemExtentChecked
+        {
+            get => _demExtentChecked;
+            set => SetProperty(ref _demExtentChecked, value);
+        }
+        public bool FilledDemChecked
+        {
+            get => _filledDemChecked;
+            set => SetProperty(ref _filledDemChecked, value);
+        }
+        public bool FlowDirectChecked
+        {
+            get => _flowDirectChecked;
+            set => SetProperty(ref _flowDirectChecked, value);
+        }
+        public bool FlowAccumChecked
+        {
+            get => _flowAccumChecked;
+            set => SetProperty(ref _flowAccumChecked, value);
+        }
+        public bool SlopeChecked
+        {
+            get => _slopeChecked;
+            set => SetProperty(ref _slopeChecked, value);
+        }
+        public bool AspectChecked
+        {
+            get => _aspectChecked;
+            set => SetProperty(ref _aspectChecked, value);
+        }
+        public bool HillshadeChecked
+        {
+            get => _hillshadeChecked;
+            set => SetProperty(ref _hillshadeChecked, value);
+        }
 
         public System.Windows.Input.ICommand CmdOutputWorkspace
         {
@@ -124,5 +185,38 @@ namespace bagis_pro
                 });
             }
         }
+        public System.Windows.Input.ICommand CmdSelectAll
+        {
+            get
+            {
+                return new RelayCommand(() =>
+                {
+                    DemExtentChecked = true; 
+                    FilledDemChecked = true;
+                    FlowAccumChecked = true;
+                    FlowDirectChecked = true;
+                    SlopeChecked = true;
+                    AspectChecked = true;
+                    HillshadeChecked = true;
+                });
+            }
+        }
+        public System.Windows.Input.ICommand CmdSelectNone
+        {
+            get
+            {
+                return new RelayCommand(() =>
+                {
+                    DemExtentChecked = false;
+                    FilledDemChecked = false;
+                    FlowAccumChecked = false;
+                    FlowDirectChecked = false;
+                    SlopeChecked = false;
+                    AspectChecked = false;
+                    HillshadeChecked = false;
+                });
+            }
+        }
+
     }
 }
