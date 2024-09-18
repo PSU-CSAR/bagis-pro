@@ -28,7 +28,21 @@ namespace bagis_pro
     {
         private const string _dockPaneID = "bagis_pro_DockCreateAOIfromExistingBND";
 
-        protected DockCreateAOIfromExistingBNDViewModel() { }
+        protected DockCreateAOIfromExistingBNDViewModel() 
+        {
+            BA_ReturnCode success = GeneralTools.LoadBatchToolSettings();
+            BufferDistance = Convert.ToDouble((string) Module1.Current.BatchToolSettings.AoiBufferDistance);
+            string prismBufferUnits = (string)Module1.Current.BatchToolSettings.PrecipBufferUnits;
+            double prismBufferDist = (double)Module1.Current.BatchToolSettings.PrecipBufferDistance;
+            if (!string.IsNullOrEmpty(prismBufferUnits) && prismBufferUnits.Equals("Kilometers"))
+            {
+                PrismBufferDist = LinearUnit.Kilometers.ConvertTo(prismBufferDist, LinearUnit.Meters);
+            }
+            else
+            {
+                PrismBufferDist = prismBufferDist;
+            }
+        }
 
         /// <summary>
         /// Show the DockPane.
@@ -76,6 +90,10 @@ namespace bagis_pro
         private bool _slopeChecked = true;
         private bool _aspectChecked = true;
         private bool _hillshadeChecked = true;
+        private bool _smoothAoiChecked = true;
+        private int _zFactor = 1;
+        private double _bufferDistance;
+        private double _prismBufferDist;
 
         public string Heading
         {
@@ -156,6 +174,26 @@ namespace bagis_pro
         {
             get => _hillshadeChecked;
             set => SetProperty(ref _hillshadeChecked, value);
+        }
+        public int ZFactor
+        {
+            get => _zFactor;
+            set => SetProperty(ref _zFactor, value);
+        }
+        public bool SmoothAoiChecked
+        {
+            get => _smoothAoiChecked;
+            set => SetProperty(ref _smoothAoiChecked, value);
+        }
+        public double BufferDistance
+        {
+            get => _bufferDistance;
+            set => SetProperty(ref _bufferDistance, value);
+        }
+        public double PrismBufferDist
+        {
+            get => _prismBufferDist;
+            set => SetProperty(ref _prismBufferDist, value);
         }
 
         public System.Windows.Input.ICommand CmdOutputWorkspace

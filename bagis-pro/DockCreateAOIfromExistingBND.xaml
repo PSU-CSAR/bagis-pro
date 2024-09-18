@@ -6,7 +6,7 @@
              xmlns:ui="clr-namespace:bagis_pro"
              xmlns:extensions="clr-namespace:ArcGIS.Desktop.Extensions;assembly=ArcGIS.Desktop.Extensions"
              mc:Ignorable="d" 
-             d:DesignHeight="650" d:DesignWidth="325"
+             d:DesignHeight="650" d:DesignWidth="350"
              d:DataContext="{Binding Path=ui.DockCreateAOIfromExistingBNDViewModel}">
   <UserControl.Resources>
         <ResourceDictionary/>
@@ -17,7 +17,7 @@
             <RowDefinition Height="500"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-        <StackPanel Grid.Row="0" Width="325">
+        <StackPanel Grid.Row="0" Width="350">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="30"/>
@@ -56,7 +56,7 @@
                 </DockPanel>
             </Grid>
         </StackPanel>
-        <StackPanel Grid.Row="1" Width="325">
+        <StackPanel Grid.Row="1" Width="350">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="20"/>
@@ -65,7 +65,7 @@
                     <RowDefinition Height="30"/>
                     <RowDefinition Height="20"/>
                     <RowDefinition Height="20"/>
-                    <RowDefinition Height="20"/>
+                    <RowDefinition Height="30"/>
                     <RowDefinition Height="20"/>
                     <RowDefinition Height="20"/>
                     <RowDefinition Height="20"/>
@@ -96,7 +96,7 @@
                         </DockPanel>
                     </Grid>
                 </GroupBox>
-                <DockPanel Grid.Row="0" Grid.Column="1">
+                <DockPanel Grid.Row="0" Grid.Column="1" Margin="5,0,0,0">
                     <CheckBox x:Name="ckSmoothDem" Content="Smooth DEM" IsChecked="{Binding SmoothDemChecked}"/>
                     <TextBlock x:Name="lblSmooth" Margin="15,1,0,0" FontWeight="Bold" Foreground="Blue" MouseLeftButtonUp="LblSmooth_MouseLeftButtonUp"> Why ?</TextBlock>
                 </DockPanel>
@@ -108,27 +108,46 @@
                     </GroupBox.Header>
                     <DockPanel>
                         <TextBlock VerticalAlignment="Center">Height</TextBlock>
-                        <TextBox Height="20" Width="30" IsEnabled="False" Margin="5,0,5,0" Text="{Binding FilterCellHeight}"></TextBox>
+                        <TextBox Height="20" Width="20" IsEnabled="False" FontWeight="Bold" Margin="5,0,5,0" Text="{Binding FilterCellHeight}"></TextBox>
                         <TextBlock VerticalAlignment="Center">Width</TextBlock>
-                        <TextBox Height="20" Width="30" IsEnabled="False" Margin="5,0,5,0" Text="{Binding FilterCellWidth}"></TextBox>
+                        <TextBox Height="20" Width="20" IsEnabled="False" FontWeight="Bold" Margin="5,0,5,0" Text="{Binding FilterCellWidth}"></TextBox>
                     </DockPanel>
                 </GroupBox>
                 <DockPanel Grid.Row="2" Grid.Column="0" Margin="5,0,0,0" Grid.ColumnSpan="2">
                     <TextBlock TextWrapping="Wrap">Select the output layer(s) to view:</TextBlock>
                 </DockPanel>
-                <DockPanel Grid.Row="3" Grid.Column="0" Margin="5,0,0,0">
-                    <Button x:Name="btnSelectAll" Content="Select All" HorizontalAlignment="Left"  VerticalAlignment="Center" Width="75" Margin="0,0,12,0" Command="{Binding CmdSelectAll}"  />
-                    <Button x:Name="btnSelectNone" Content="Select None" HorizontalAlignment="Left"  VerticalAlignment="Center" Width="75" Command="{Binding CmdSelectNone}" />
+                <DockPanel Grid.Row="3" Grid.Column="0" Margin="2,0,0,0">
+                    <Button x:Name="btnSelectAll" Content="Select All" HorizontalAlignment="Left"  VerticalAlignment="Center" Width="55" Margin="0,0,6,0" Command="{Binding CmdSelectAll}"  />
+                    <Button x:Name="btnSelectNone" Content="Select None" HorizontalAlignment="Left"  VerticalAlignment="Center" Width="70" Command="{Binding CmdSelectNone}" />
+                </DockPanel>
+                <DockPanel Grid.Row="3" Grid.Column="1" Margin="5,0,0,0">
+                    <CheckBox x:Name="ckBufferAoi" Content="Buffer AOI to clip layers" VerticalAlignment="Center" IsChecked="{Binding SmoothAoiChecked}"/>
                 </DockPanel>
                 <DockPanel Grid.Row="4" Grid.Column="0" Margin="5,0,0,0">
                     <CheckBox x:Name="ckDemExtent" Content="DEM Extent" IsChecked="{Binding DemExtentChecked}"/>
                 </DockPanel>
+                <DockPanel Grid.Row="4" Grid.Column="1" Margin="5,0,0,0">
+                    <TextBlock x:Name="lblBufferAoi" Margin="15,1,0,0" FontWeight="Bold" Foreground="Blue" MouseLeftButtonUp="LblBuffer_MouseLeftButtonUp">(Why use a buffer?)</TextBlock>
+                </DockPanel>
                 <DockPanel Grid.Row="5" Grid.Column="0" Margin="5,0,0,0">
                     <CheckBox x:Name="ckFilledDem" Content="Filled DEM" IsChecked="{Binding FilledDemChecked}"/>
+                </DockPanel>
+                <DockPanel Grid.Row="5" Grid.Column="1" Margin="5,0,0,0">
+                    <TextBlock Text="AOI Buffer Distance:" VerticalAlignment="Center"/>
+                    <TextBox x:Name="txtBufferDistance" Text="{Binding BufferDistance}" Width="30" Height="20"
+                     HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                    <TextBlock Text="Meters" VerticalAlignment="Center"/>
                 </DockPanel>
                 <DockPanel Grid.Row="6" Grid.Column="0" Margin="5,0,0,0">
                     <CheckBox x:Name="ckFlowDirect" Content="Flow Direction" IsChecked="{Binding FlowDirectChecked}"/>
                 </DockPanel>
+                <DockPanel Grid.Row="6" Grid.Column="1" Margin="5,0,0,0">
+                    <TextBlock Text="PRISM Buffer Distance:" VerticalAlignment="Center"/>
+                    <TextBox x:Name="txtPrismBufferDist" Text="{Binding PrismBufferDist}" VerticalAlignment="Center" Width="30" Height="20"
+                     HorizontalAlignment="Left"/>
+                    <TextBlock Text="Meters" VerticalAlignment="Center"/>
+                </DockPanel>
+
                 <DockPanel Grid.Row="7" Grid.Column="0" Margin="5,0,0,0">
                     <CheckBox x:Name="ckFlowAccum" Content="Flow Accumulation" IsChecked="{Binding FlowAccumChecked}"/>
                 </DockPanel>
@@ -140,6 +159,10 @@
                 </DockPanel>
                 <DockPanel Grid.Row="10" Grid.Column="0" Margin="5,0,0,0">
                     <CheckBox x:Name="ckHillshade" Content="Hillshade" IsChecked="{Binding HillshadeChecked}"/>
+                </DockPanel>
+                <DockPanel Grid.Row="11" Grid.Column="0" Margin="5,0,0,0">
+                    <TextBlock VerticalAlignment="Center">Hillshade Z Factor:</TextBlock>
+                    <TextBox x:Name="txtZFactor" Height="20" Width="20" Margin="5,0,5,0" Text="{Binding ZFactor}"></TextBox>
                 </DockPanel>
             </Grid>
         </StackPanel>
