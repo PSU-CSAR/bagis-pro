@@ -63,14 +63,14 @@
                     <RowDefinition Height="50"/>
                     <RowDefinition Height="20"/>
                     <RowDefinition Height="30"/>
-                    <RowDefinition Height="20"/>
-                    <RowDefinition Height="20"/>
                     <RowDefinition Height="30"/>
-                    <RowDefinition Height="20"/>
-                    <RowDefinition Height="20"/>
-                    <RowDefinition Height="20"/>
-                    <RowDefinition Height="20"/>
-                    <RowDefinition Height="20"/>
+                    <RowDefinition Height="30"/>
+                    <RowDefinition Height="30"/>
+                    <RowDefinition Height="30"/>
+                    <RowDefinition Height="30"/>
+                    <RowDefinition Height="30"/>
+                    <RowDefinition Height="30"/>
+                    <RowDefinition Height="40"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
@@ -103,7 +103,7 @@
                 <GroupBox  Grid.Row="1" Grid.Column="1">
                     <GroupBox.Header>
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock >Filter size (pixels):</TextBlock>
+                            <TextBlock FontWeight="Bold" >Filter size (pixels):</TextBlock>
                         </StackPanel>
                     </GroupBox.Header>
                     <DockPanel>
@@ -160,10 +160,26 @@
                 <DockPanel Grid.Row="10" Grid.Column="0" Margin="5,0,0,0">
                     <CheckBox x:Name="ckHillshade" Content="Hillshade" IsChecked="{Binding HillshadeChecked}"/>
                 </DockPanel>
+                <DockPanel Grid.Row="10" Grid.Column="1" Margin="5,0,0,0">
+                    <TextBlock Text="Slope Unit:"/>
+                </DockPanel>
                 <DockPanel Grid.Row="11" Grid.Column="0" Margin="5,0,0,0">
                     <TextBlock VerticalAlignment="Center">Hillshade Z Factor:</TextBlock>
                     <TextBox x:Name="txtZFactor" Height="20" Width="20" Margin="5,0,5,0" Text="{Binding ZFactor}"></TextBox>
                 </DockPanel>
+                <GroupBox Grid.Row="11" Grid.Column="1" HorizontalAlignment="Left" Grid.RowSpan="2">
+                    <GroupBox.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock FontWeight="Bold">PRISM Depth Unit:</TextBlock>
+                        </StackPanel>
+                    </GroupBox.Header>
+                    <DockPanel>
+                        <RadioButton GroupName="depthUnit" Tag="InchesChecked" IsChecked="{Binding InchesChecked}">Inches</RadioButton>
+                        <RadioButton GroupName="depthUnit" Tag="MmChecked" IsChecked="{Binding MnChecked}" Margin="5,0,0,0">Millimeters</RadioButton>
+                    </DockPanel>
+                </GroupBox>
+
+
             </Grid>
         </StackPanel>
  

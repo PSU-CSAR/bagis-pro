@@ -94,6 +94,8 @@ namespace bagis_pro
         private int _zFactor = 1;
         private double _bufferDistance;
         private double _prismBufferDist;
+        private bool _inchesChecked = true;
+        private bool _mmChecked;
 
         public string Heading
         {
@@ -194,6 +196,16 @@ namespace bagis_pro
         {
             get => _prismBufferDist;
             set => SetProperty(ref _prismBufferDist, value);
+        }
+        public bool InchesChecked
+        {
+            get => _inchesChecked;
+            set => SetProperty(ref _inchesChecked, value);
+        }
+        public bool MmChecked
+        {
+            get => _mmChecked;
+            set => SetProperty(ref _mmChecked, value);
         }
 
         public System.Windows.Input.ICommand CmdOutputWorkspace
