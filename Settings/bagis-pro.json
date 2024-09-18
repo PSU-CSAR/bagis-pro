@@ -123,6 +123,8 @@
         "SnotelBufferUnits": "Kilometers",
         "RoadsAnalysisBufferDistance": 300,
         "RoadsAnalysisBufferUnits": "Feet",
+        "AoiBufferDistance": 100,
+        "AoiBufferUnits": "Meters",
         "Publisher": "nwcc_nrcs",
         "SiteElevRangeFeet": 500,
         "SiteBufferDistMiles": 5.642,
@@ -179,6 +181,6 @@
                 "Severity": "None"
             }
         ],
-        "Version": 16
+        "Version": 17
     }
 }
