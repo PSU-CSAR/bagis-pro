@@ -51,5 +51,21 @@ namespace bagis_pro
         " Using any value smaller than 1000 could result in missing PRISM pixel values within the AOI boundaries.";
             MessageBox.Show(strMessage, "Why Smooth DEM", MessageBoxButton.OK, MessageBoxImage.Information);
         }
+
+        public void BufferAOI_Checked(object s, RoutedEventArgs e)
+        {
+            var chkBox = s as CheckBox;
+            bool bChecked = chkBox.IsChecked ?? false;
+            txtBufferDistance.IsEnabled = bChecked;
+            txtPrismBufferDist.IsEnabled = bChecked;
+        }
+        public void SmoothDem_Checked(object s, RoutedEventArgs e)
+        {
+            var chkBox = s as CheckBox;
+            bool bChecked = chkBox.IsChecked ?? false;
+            txtFilterHeight.IsEnabled = bChecked;
+            txtFilterWidth.IsEnabled = bChecked;
+        }
+
     }
 }

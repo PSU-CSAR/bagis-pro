@@ -97,7 +97,7 @@
                     </Grid>
                 </GroupBox>
                 <DockPanel Grid.Row="0" Grid.Column="1" Margin="5,0,0,0">
-                    <CheckBox x:Name="ckSmoothDem" Content="Smooth DEM" IsChecked="{Binding SmoothDemChecked}"/>
+                    <CheckBox x:Name="ckSmoothDem" Content="Smooth DEM" IsChecked="{Binding SmoothDemChecked}" Checked="SmoothDem_Checked" Unchecked="SmoothDem_Checked"/>
                     <TextBlock x:Name="lblSmooth" Margin="15,1,0,0" FontWeight="Bold" Foreground="Blue" MouseLeftButtonUp="LblSmooth_MouseLeftButtonUp"> Why ?</TextBlock>
                 </DockPanel>
                 <GroupBox  Grid.Row="1" Grid.Column="1">
@@ -108,9 +108,9 @@
                     </GroupBox.Header>
                     <DockPanel>
                         <TextBlock VerticalAlignment="Center">Height</TextBlock>
-                        <TextBox Height="20" Width="20" IsEnabled="False" FontWeight="Bold" Margin="5,0,5,0" Text="{Binding FilterCellHeight}"></TextBox>
+                        <TextBox x:Name="txtFilterHeight" Height="20" Width="25" Margin="5,0,5,0" Text="{Binding FilterCellHeight}" IsEnabled="{Binding SmoothDemChecked}"></TextBox>
                         <TextBlock VerticalAlignment="Center">Width</TextBlock>
-                        <TextBox Height="20" Width="20" IsEnabled="False" FontWeight="Bold" Margin="5,0,5,0" Text="{Binding FilterCellWidth}"></TextBox>
+                        <TextBox x:Name="txtFilterWidth" Height="20" Width="25" Text="{Binding FilterCellWidth}" IsEnabled="{Binding SmoothDemChecked}"></TextBox>
                     </DockPanel>
                 </GroupBox>
                 <DockPanel Grid.Row="2" Grid.Column="0" Margin="5,0,0,0" Grid.ColumnSpan="2">
@@ -121,7 +121,7 @@
                     <Button x:Name="btnSelectNone" Content="Select None" HorizontalAlignment="Left"  VerticalAlignment="Center" Width="70" Command="{Binding CmdSelectNone}" />
                 </DockPanel>
                 <DockPanel Grid.Row="3" Grid.Column="1" Margin="5,0,0,0">
-                    <CheckBox x:Name="ckBufferAoi" Content="Buffer AOI to clip layers" VerticalAlignment="Center" IsChecked="{Binding SmoothAoiChecked}"/>
+                    <CheckBox x:Name="ckBufferAoi" Content="Buffer AOI to clip layers" VerticalAlignment="Center" IsChecked="{Binding BufferAoiChecked}" Checked="BufferAOI_Checked" Unchecked="BufferAOI_Checked"/>
                 </DockPanel>
                 <DockPanel Grid.Row="4" Grid.Column="0" Margin="5,0,0,0">
                     <CheckBox x:Name="ckDemExtent" Content="DEM Extent" IsChecked="{Binding DemExtentChecked}"/>

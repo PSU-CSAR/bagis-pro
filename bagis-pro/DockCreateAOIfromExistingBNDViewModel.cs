@@ -14,6 +14,7 @@ using ArcGIS.Desktop.Mapping;
 using bagis_pro.BA_Objects;
 using ExtensionMethod;
 using System;
+using System.Windows;
 using System.Windows.Input;
 
 namespace bagis_pro
@@ -87,7 +88,7 @@ namespace bagis_pro
         private bool _slopeChecked = true;
         private bool _aspectChecked = true;
         private bool _hillshadeChecked = true;
-        private bool _smoothAoiChecked = true;
+        private bool _bufferAoiChecked = true;
         private int _zFactor = 1;
         private double _bufferDistance;
         private double _prismBufferDist;
@@ -181,10 +182,10 @@ namespace bagis_pro
             get => _zFactor;
             set => SetProperty(ref _zFactor, value);
         }
-        public bool SmoothAoiChecked
+        public bool BufferAoiChecked
         {
-            get => _smoothAoiChecked;
-            set => SetProperty(ref _smoothAoiChecked, value);
+            get => _bufferAoiChecked;
+            set => SetProperty(ref _bufferAoiChecked, value);
         }
         public double BufferDistance
         {
@@ -291,7 +292,53 @@ namespace bagis_pro
 
         private async void RunGenerateAoiImplAsync(object param)
         {
-            MessageBox.Show("Generate AOI");
+            // Validation
+            if (string.IsNullOrEmpty(OutputWorkspace) || string.IsNullOrEmpty(AoiName))
+            {
+                System.Windows.MessageBox.Show("Missing output workspace or AOI name!", "BAGIS-Pro", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            if (!System.IO.Directory.Exists(OutputWorkspace))
+            {
+                System.Windows.MessageBox.Show("Output workspace does not exist!", "BAGIS-Pro", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            //verify filter size parameters
+            if (SmoothDemChecked)
+            {
+                if (FilterCellHeight <= 0 || FilterCellWidth <= 0)
+                {
+                    System.Windows.MessageBox.Show("Invalid filter size! Please reenter.", "BAGIS-Pro", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+            }
+
+            //verify AOI buffer distance
+            if (BufferAoiChecked)
+            {               
+                if (BufferDistance <= 0)
+                {
+                    // Switch back to default
+                    BufferDistance = Convert.ToDouble((string)Module1.Current.BatchToolSettings.AoiBufferDistance);
+                }
+                if (PrismBufferDist <= 0)
+                {
+                    // Switch back to default
+                    string prismBufferUnits = (string)Module1.Current.BatchToolSettings.PrecipBufferUnits;
+                    double prismBufferDist = (double)Module1.Current.BatchToolSettings.PrecipBufferDistance;
+                    if (!string.IsNullOrEmpty(prismBufferUnits) && prismBufferUnits.Equals("Kilometers"))
+                    {
+                        PrismBufferDist = LinearUnit.Kilometers.ConvertTo(prismBufferDist, LinearUnit.Meters);
+                    }
+                    else
+                    {
+                        PrismBufferDist = prismBufferDist;
+                    }
+                }
+            }
+
         }
 
     }
