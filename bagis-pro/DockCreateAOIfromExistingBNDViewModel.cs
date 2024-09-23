@@ -12,15 +12,9 @@ using ArcGIS.Desktop.Framework.Threading.Tasks;
 using ArcGIS.Desktop.Layouts;
 using ArcGIS.Desktop.Mapping;
 using bagis_pro.BA_Objects;
-using Microsoft.Office.Interop.Excel;
+using ExtensionMethod;
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Controls;
-
+using System.Windows.Input;
 
 namespace bagis_pro
 {
@@ -42,6 +36,9 @@ namespace bagis_pro
             {
                 PrismBufferDist = prismBufferDist;
             }
+            SlopeUnit defaultSlope = SlopeUnit.PctSlope; //BAGIS generates Slope in Degree
+            SlopeUnitDescr = defaultSlope.GetEnumDescription();
+            // DemElevUnit value is set before we get here in the BtnClick method because it is async
         }
 
         /// <summary>
@@ -79,7 +76,7 @@ namespace bagis_pro
         private string _outputWorkspace = "";
         private string _aoiName = "";
         private bool _dem10Checked;
-        private bool _dem30Checked = true;
+        private bool _dem30Checked;
         private bool _smoothDemChecked;
         private int _filterCellHeight = 3;
         private int _filterCellWidth = 7;
@@ -96,6 +93,8 @@ namespace bagis_pro
         private double _prismBufferDist;
         private bool _inchesChecked = true;
         private bool _mmChecked;
+        private string _slopeUnitDescr;
+        private string _demElevUnit;
 
         public string Heading
         {
@@ -208,6 +207,17 @@ namespace bagis_pro
             set => SetProperty(ref _mmChecked, value);
         }
 
+        public string SlopeUnitDescr
+        {
+            get => _slopeUnitDescr;
+            set => SetProperty(ref _slopeUnitDescr, value);
+        }
+        public string DemElevUnit
+        {
+            get => _demElevUnit;
+            set => SetProperty(ref _demElevUnit, value);
+        }
+
         public System.Windows.Input.ICommand CmdOutputWorkspace
         {
             get
@@ -266,6 +276,22 @@ namespace bagis_pro
                     HillshadeChecked = false;
                 });
             }
+        }
+
+        private RelayCommand _runGenerateAoiCommand;
+        public ICommand CmdGenerateAoi
+        {
+            get
+            {
+                if (_runGenerateAoiCommand == null)
+                    _runGenerateAoiCommand = new RelayCommand(RunGenerateAoiImplAsync, () => true);
+                return _runGenerateAoiCommand;
+            }
+        }
+
+        private async void RunGenerateAoiImplAsync(object param)
+        {
+            MessageBox.Show("Generate AOI");
         }
 
     }

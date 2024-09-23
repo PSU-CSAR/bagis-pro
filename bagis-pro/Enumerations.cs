@@ -1,5 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
+using ExtensionMethod;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -146,5 +147,30 @@ namespace bagis_pro
         MtbsBurnedAreaPct,
         BurnedForestedArea,
         BurnedForestedAreaPct
+    }
+    public enum SlopeUnit
+    {        
+        [Description("Missing")]
+        Missing,
+        [Description("Degree")]
+        Degree,
+        [Description("% Slope")]
+        PctSlope
+    }
+}
+
+namespace ExtensionMethod
+{
+    public static class Extension
+    {
+        public static string GetEnumDescription(this Enum enumValue)
+        {
+            var field = enumValue.GetType().GetField(enumValue.ToString());
+            if (Attribute.GetCustomAttribute(field, typeof(DescriptionAttribute)) is DescriptionAttribute attribute)
+            {
+                return attribute.Description;
+            }
+            throw new ArgumentException("Item not found.", nameof(enumValue));
+        }
     }
 }

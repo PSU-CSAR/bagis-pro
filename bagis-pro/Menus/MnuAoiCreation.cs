@@ -20,7 +20,7 @@ using ArcGIS.Desktop.Mapping;
 
 namespace bagis_pro.Menus
 {
-    internal class MnuBasinAnalyst_AddRefLayers : Button
+    internal class MnuAoiCreation_AddRefLayers : Button
     {
         protected override void OnClick()
         {
@@ -28,32 +28,7 @@ namespace bagis_pro.Menus
             MessageBox.Show("Add reference layers");
         }
     }
-
-    internal class MnuBasinAnalyst_SaveMxd : Button
-    {
-        protected override void OnClick()
-        {
-            MessageBox.Show("Save AOI MXD");
-        }
-    }
-
-    internal class MnuBasinAnalyst_BasinInfo : Button
-    {
-        protected override void OnClick()
-        {
-            MessageBox.Show("Basin info");
-        }
-    }
-
-    internal class MnuBasinAnalyst_AoiUtilities : Button
-    {
-        protected override void OnClick()
-        {
-            MessageBox.Show("AOI Utilities");
-        }
-    }
-
-    internal class MnuBasinAnalyst_AOIShapefile : Button
+    internal class MnuAoiCreation_AOIShapefile : Button
     {
         protected override async void OnClick()
         {
@@ -104,6 +79,14 @@ namespace bagis_pro.Menus
                     pane.SourceFile = strDirectory;
                     string newAoiName = Path.GetFileNameWithoutExtension(e.Path);
                     pane.AoiName = newAoiName;
+                    Webservices ws = new Webservices();
+                    pane.DemElevUnit = await ws.GetDemElevUnitAsync();
+                    string strPreferredDem = await ws.GetPreferredDemAsync();
+                    pane.Dem30Checked = true;
+                    if (strPreferredDem.Equals("dem10"))
+                    {
+                        pane.Dem10Checked = true;   
+                    }
                     DockCreateAOIfromExistingBNDViewModel.Show();
                 }
                 else
@@ -115,7 +98,7 @@ namespace bagis_pro.Menus
         }
     }
 
-    internal class MnuBasinAnalyst_Options : Button
+    internal class MnuAoiCreation_Options : Button
     {
         protected override void OnClick()
         {
@@ -123,11 +106,4 @@ namespace bagis_pro.Menus
         }
     }
 
-    internal class MnuBasinAnalyst_About : Button
-    {
-        protected override void OnClick()
-        {
-            MessageBox.Show("About BAGIS");
-        }
-    }
 }

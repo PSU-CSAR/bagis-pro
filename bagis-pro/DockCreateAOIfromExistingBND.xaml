@@ -70,7 +70,7 @@
                     <RowDefinition Height="30"/>
                     <RowDefinition Height="30"/>
                     <RowDefinition Height="30"/>
-                    <RowDefinition Height="40"/>
+                    <RowDefinition Height="50"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
@@ -157,27 +157,36 @@
                 <DockPanel Grid.Row="9" Grid.Column="0" Margin="5,0,0,0">
                     <CheckBox x:Name="ckAspect" Content="Aspect" IsChecked="{Binding AspectChecked}"/>
                 </DockPanel>
+                <DockPanel Grid.Row="9" Grid.Column="1" Margin="5,0,0,0">
+                    <TextBlock Text="DEM Elevation Unit:" VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding DemElevUnit}" Margin="5,0,0,0" VerticalAlignment="Center"/>
+                </DockPanel>
+
                 <DockPanel Grid.Row="10" Grid.Column="0" Margin="5,0,0,0">
                     <CheckBox x:Name="ckHillshade" Content="Hillshade" IsChecked="{Binding HillshadeChecked}"/>
                 </DockPanel>
                 <DockPanel Grid.Row="10" Grid.Column="1" Margin="5,0,0,0">
-                    <TextBlock Text="Slope Unit:"/>
+                    <TextBlock Text="Slope Unit:" VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding SlopeUnitDescr}" Margin="5,0,0,0" VerticalAlignment="Center"/>
                 </DockPanel>
                 <DockPanel Grid.Row="11" Grid.Column="0" Margin="5,0,0,0">
                     <TextBlock VerticalAlignment="Center">Hillshade Z Factor:</TextBlock>
-                    <TextBox x:Name="txtZFactor" Height="20" Width="20" Margin="5,0,5,0" Text="{Binding ZFactor}"></TextBox>
+                    <TextBox x:Name="txtZFactor" Height="20" Width="20" Margin="5,0,5,0" Text="{Binding ZFactor}" VerticalAlignment="Center"></TextBox>
                 </DockPanel>
-                <GroupBox Grid.Row="11" Grid.Column="1" HorizontalAlignment="Left" Grid.RowSpan="2">
+                <GroupBox Grid.Row="11" Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Center">
                     <GroupBox.Header>
                         <StackPanel Orientation="Horizontal">
                             <TextBlock FontWeight="Bold">PRISM Depth Unit:</TextBlock>
                         </StackPanel>
                     </GroupBox.Header>
                     <DockPanel>
-                        <RadioButton GroupName="depthUnit" Tag="InchesChecked" IsChecked="{Binding InchesChecked}">Inches</RadioButton>
-                        <RadioButton GroupName="depthUnit" Tag="MmChecked" IsChecked="{Binding MnChecked}" Margin="5,0,0,0">Millimeters</RadioButton>
+                        <RadioButton GroupName="depthUnit" Tag="InchesChecked" IsChecked="{Binding InchesChecked}" VerticalAlignment="Bottom">Inches</RadioButton>
+                        <RadioButton GroupName="depthUnit" Tag="MmChecked" IsChecked="{Binding MnChecked}" VerticalAlignment="Bottom" Margin="5,0,0,0">Millimeters</RadioButton>
                     </DockPanel>
                 </GroupBox>
+                <DockPanel Grid.Row="13" Grid.Column="1" Margin="5,0,0,0">
+                    <Button x:Name="btnCreateAoi" Content="Generate AOI" HorizontalAlignment="Right" Width="130" FontWeight="Bold" VerticalAlignment="Bottom" Command="{Binding CmdGenerateAoi}" />
+                </DockPanel>
 
 
             </Grid>
