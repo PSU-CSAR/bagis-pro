@@ -388,7 +388,7 @@ namespace bagis_pro
                 }
         }
 
-        public async Task<string> GetDem30UriAsync()
+        public async Task<string> GetDem30UriFromDatasourcesAsync()
         {
             IDictionary<string, BA_Objects.DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
             if (!dictLocalDataSources.ContainsKey(BA_Objects.DataSource.GetDemKey))
@@ -403,14 +403,14 @@ namespace bagis_pro
                     }
                     else
                     {
-                        Module1.Current.ModuleLogManager.LogError(nameof(GetDem30UriAsync),
+                        Module1.Current.ModuleLogManager.LogError(nameof(GetDem30UriFromDatasourcesAsync),
                             $@"Unable to find element 30m DEM in server data sources");
                         return "";
                     }
                 }
                 else
                 {
-                    Module1.Current.ModuleLogManager.LogError(nameof(GetDem30UriAsync),
+                    Module1.Current.ModuleLogManager.LogError(nameof(GetDem30UriFromDatasourcesAsync),
                         $@"Unable to retrieve data sources from server!");
                     return "";
                 }
@@ -453,6 +453,40 @@ namespace bagis_pro
                 return Convert.ToString(oSettings.preferredDem);
             }
         }
+        public async Task<string> GetDemUriAsync(bool b10meters)
+        {
+            var response = new EsriHttpClient().Get(Constants.URI_DESKTOP_SETTINGS);
+            var json = await response.Content.ReadAsStringAsync();
+            dynamic oSettings = JObject.Parse(json);
+            if (b10meters)
+            {
+                if (oSettings == null || String.IsNullOrEmpty(Convert.ToString(oSettings.dem10)))
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(GetDemUriAsync),
+                        "Unable to retrieve settings from " + Constants.URI_DESKTOP_SETTINGS);
+                    return "";
+                }
+                else
+                {
+                    return Convert.ToString(oSettings.dem10);
+                }
+            }
+            else
+            {
+                if (oSettings == null || String.IsNullOrEmpty(Convert.ToString(oSettings.dem30)))
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(GetDemUriAsync),
+                        "Unable to retrieve settings from " + Constants.URI_DESKTOP_SETTINGS);
+                    return "";
+                }
+                else
+                {
+                    return Convert.ToString(oSettings.dem30);
+                }
+            }
+
+        }
+
         public async Task<BA_ReturnCode> UpdateAoiItemsAsync(string stationTriplet)
         {
             string nwccAoiName = "";

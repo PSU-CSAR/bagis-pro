@@ -2,6 +2,7 @@
 using ArcGIS.Core.Data;
 using ArcGIS.Core.Data.Exceptions;
 using ArcGIS.Core.Data.Raster;
+using ArcGIS.Core.Data.UtilityNetwork.Trace;
 using ArcGIS.Core.Geometry;
 using ArcGIS.Desktop.Core;
 using ArcGIS.Desktop.Framework;
@@ -3951,6 +3952,48 @@ namespace bagis_pro
                 }
             }
             return BA_ReturnCode.Success;
+        }
+
+        public static async Task<int> RemoveLayersInFolderAsync(string folderPath)
+        {
+            if (string.IsNullOrEmpty(folderPath))
+            {
+                return 0;
+            }
+            int layersRemoved = 0;
+            foreach (var mapPane in ProApp.Panes.OfType<IMapPane>())
+            {
+                if (mapPane != null)
+                {
+                    var oMap = mapPane.MapView.Map;
+                    IEnumerable<Layer> allLayers = oMap.GetLayersAsFlattenedList();
+                    IList<string> lstRemove = new List<string>();   
+                    foreach (var oLayer in allLayers)
+                    {
+                        Uri layerPath = await QueuedTask.Run(() => oLayer.GetPath());
+                        int idx = layerPath.LocalPath.IndexOf(folderPath);
+                        if (idx >= 0)
+                        {
+                            lstRemove.Add(oLayer.Name);
+                        }
+                    }
+                    await QueuedTask.Run(() =>
+                    {
+                        for (int i = 0; i < lstRemove.Count; i++)
+                        {
+                            Layer oLayer =
+                                oMap.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(lstRemove[i], StringComparison.CurrentCultureIgnoreCase));
+                            if (oLayer != null)
+                            {
+
+                                oMap.RemoveLayer(oLayer);
+                                layersRemoved++;
+                            }
+                        }
+                    });
+                }
+            }
+            return layersRemoved;
         }
 
     }

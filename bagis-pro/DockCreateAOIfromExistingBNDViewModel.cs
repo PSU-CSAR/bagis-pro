@@ -14,7 +14,9 @@ using ArcGIS.Desktop.Mapping;
 using bagis_pro.BA_Objects;
 using ExtensionMethod;
 using System;
+using System.IO;
 using System.Windows;
+using System.Windows.Forms;
 using System.Windows.Input;
 
 namespace bagis_pro
@@ -292,6 +294,7 @@ namespace bagis_pro
 
         private async void RunGenerateAoiImplAsync(object param)
         {
+            int nStep;
             // Validation
             if (string.IsNullOrEmpty(OutputWorkspace) || string.IsNullOrEmpty(AoiName))
             {
@@ -339,6 +342,30 @@ namespace bagis_pro
                 }
             }
 
+            // Start populating aoi object
+            Aoi oAoi = new Aoi();
+            oAoi.FilePath = $@"{OutputWorkspace}\{AoiName}";
+            //@ToDo: checking to see if we need to support GenerateAOIOnly; This also affects display of prism buffer in load method
+            int internalLayerCount = 32;
+            nStep = internalLayerCount; // step counter for frmmessage
+
+            Webservices ws = new Webservices();
+            string strDem = await ws.GetDemUriAsync(Dem10Checked);
+            if (Directory.Exists(oAoi.FilePath))
+            {
+                MessageBoxResult res = 
+                    System.Windows.MessageBox.Show($@"{oAoi.FilePath} folder already exists. Overwrite?", "BAGIS-Pro", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                if (res == MessageBoxResult.Yes)
+                {
+                    int layersRemoved = await MapTools.RemoveLayersInFolderAsync(oAoi.FilePath);
+                    Directory.Delete(oAoi.FilePath, true);
+                    Directory.CreateDirectory(oAoi.FilePath);
+                }
+            }
+            else
+            {
+                DirectoryInfo di = Directory.CreateDirectory(oAoi.FilePath);
+            }
         }
 
     }

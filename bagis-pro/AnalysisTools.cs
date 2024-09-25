@@ -4980,7 +4980,7 @@ namespace bagis_pro
         public static async Task<BA_ReturnCode> ReclipSurfacesAsync(string aoiFolderPath, string strSitesPath)
         {
             Webservices ws = new Webservices();
-            string demUri = await ws.GetDem30UriAsync();
+            string demUri = await ws.GetDem30UriFromDatasourcesAsync();
             string clipEnvelope = "";
             string strOutputFeatures = GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Analysis, true) +
                 "tmpBuffer";
