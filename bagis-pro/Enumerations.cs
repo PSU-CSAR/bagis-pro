@@ -157,6 +157,14 @@ namespace bagis_pro
         [Description("% Slope")]
         PctSlope
     }
+
+    public enum WorkspaceType
+    {
+        Raster,
+        Geodatabase,
+        ImageServer,
+        FeatureServer
+    }
 }
 
 namespace ExtensionMethod

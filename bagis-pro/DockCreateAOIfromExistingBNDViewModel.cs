@@ -1,5 +1,6 @@
 ﻿using ArcGIS.Core.CIM;
 using ArcGIS.Core.Data;
+using ArcGIS.Core.Data.Raster;
 using ArcGIS.Core.Geometry;
 using ArcGIS.Desktop.Catalog;
 using ArcGIS.Desktop.Core;
@@ -16,7 +17,6 @@ using ExtensionMethod;
 using System;
 using System.IO;
 using System.Windows;
-using System.Windows.Forms;
 using System.Windows.Input;
 
 namespace bagis_pro
@@ -294,7 +294,7 @@ namespace bagis_pro
 
         private async void RunGenerateAoiImplAsync(object param)
         {
-            int nStep;
+            uint nStep;
             // Validation
             if (string.IsNullOrEmpty(OutputWorkspace) || string.IsNullOrEmpty(AoiName))
             {
@@ -346,7 +346,7 @@ namespace bagis_pro
             Aoi oAoi = new Aoi();
             oAoi.FilePath = $@"{OutputWorkspace}\{AoiName}";
             //@ToDo: checking to see if we need to support GenerateAOIOnly; This also affects display of prism buffer in load method
-            int internalLayerCount = 32;
+            uint internalLayerCount = 32;
             nStep = internalLayerCount; // step counter for frmmessage
 
             Webservices ws = new Webservices();
@@ -358,14 +358,50 @@ namespace bagis_pro
                 if (res == MessageBoxResult.Yes)
                 {
                     int layersRemoved = await MapTools.RemoveLayersInFolderAsync(oAoi.FilePath);
-                    Directory.Delete(oAoi.FilePath, true);
+                    Directory.Delete(oAoi.FilePath, true);  // recursive delete removes everything in directory
                     Directory.CreateDirectory(oAoi.FilePath);
                 }
             }
             else
             {
-                DirectoryInfo di = Directory.CreateDirectory(oAoi.FilePath);
+                Directory.CreateDirectory(oAoi.FilePath);
             }
+
+            BA_ReturnCode success = await GeodatabaseTools.CreateGeodatabaseFoldersAsync(oAoi.FilePath, FolderType.AOI);
+            if (success != BA_ReturnCode.Success)
+            {
+                System.Windows.MessageBox.Show("Unable to create GDBs! Please check disk space", "BAGIS-Pro", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            var progress = new ProgressDialog("Clipping DEM to AOI Folder", "Cancel", nStep + 2, true);
+            var status = new CancelableProgressorSource(progress);
+            status.Max = nStep + 2;
+            progress.Show();
+            await QueuedTask.Run(() =>
+            {
+                status.Progressor.Value += 1;
+                status.Progressor.Status = (status.Progressor.Value * 100 / status.Progressor.Max) + @" % Completed";
+            }, status.Progressor);
+
+            double cellSize = await GeodatabaseTools.GetCellSizeAsync(new Uri(strDem), "", WorkspaceType.ImageServer);
+            // If DEMCellSize could not be calculated, the DEM is likely invalid
+            if (cellSize <= 0)
+            {
+                System.Windows.MessageBox.Show($@"{strDem} is invalid and cannot be used as the DEM layer. Check your BAGIS settings.", "BAGIS-Pro", MessageBoxButton.OK, MessageBoxImage.Error);
+                progress.Hide();
+                return;
+            }
+
+            //create a raster version of the AOI boundary
+            success = await GeoprocessingTools.AddFieldAsync(SourceFile, "RASTERID", "INTEGER");
+            if (success == BA_ReturnCode.Success)
+            {
+                success = await GeodatabaseTools.UpdateFeatureAttributeNumericAsync(new Uri(Path.GetDirectoryName(SourceFile)), 
+                    Path.GetFileName(SourceFile), new QueryFilter(), "RASTERID", 1);
+            }
+
+
         }
 
     }

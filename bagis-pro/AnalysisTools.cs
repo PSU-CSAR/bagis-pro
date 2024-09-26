@@ -2567,8 +2567,8 @@ namespace bagis_pro
             Uri uriSurfaces = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Surfaces));
             Uri uriAnalysis = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Analysis));
             Uri uriLayers = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers));
-            double dblDemCellSize = await GeodatabaseTools.GetCellSizeAsync(uriSurfaces, Constants.FILE_DEM_CLIPPED);
-            double dblPrismCellSize = await GeodatabaseTools.GetCellSizeAsync(uriPrism, prismFile);
+            double dblDemCellSize = await GeodatabaseTools.GetCellSizeAsync(uriSurfaces, Constants.FILE_DEM_CLIPPED, WorkspaceType.Raster);
+            double dblPrismCellSize = await GeodatabaseTools.GetCellSizeAsync(uriPrism, prismFile, WorkspaceType.Raster);
             if (dblPrismCellSize < 0)
             {
                 Module1.Current.ModuleLogManager.LogError(nameof(CalculateElevPrecipCorrAsync),
@@ -2604,7 +2604,7 @@ namespace bagis_pro
 
                 if (success == BA_ReturnCode.Success)
                 {
-                    double dblAspectCellSize = await GeodatabaseTools.GetCellSizeAsync(uriAnalysis, Constants.FILE_ASPECT_ZONE);
+                    double dblAspectCellSize = await GeodatabaseTools.GetCellSizeAsync(uriAnalysis, Constants.FILE_ASPECT_ZONE, WorkspaceType.Raster);
                     string aspectZonesPath = uriAnalysis.LocalPath + "\\" + Constants.FILE_ASPECT_ZONE;
                     if (dblPrismCellSize != dblAspectCellSize)
                     {
@@ -3865,7 +3865,7 @@ namespace bagis_pro
             }
 
             double dblCellSize = await GeodatabaseTools.GetCellSizeAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Analysis)),
-                Constants.FILE_PRECIPITATION_CONTRIBUTION);
+                Constants.FILE_PRECIPITATION_CONTRIBUTION, WorkspaceType.Raster);
             if (dblCellSize < 1)
             {
                 Module1.Current.ModuleLogManager.LogDebug(nameof(CalculatePrecipitationContributionAsync),

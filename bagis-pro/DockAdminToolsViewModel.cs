@@ -2260,7 +2260,7 @@ namespace bagis_pro
                         string strRasterName = GeneralTools.GetMtbsLayerFileName(i);
                         if (await GeodatabaseTools.RasterDatasetExistsAsync(fireUri, strRasterName))
                         {
-                            double dblTest = await GeodatabaseTools.GetCellSizeAsync(fireUri, strRasterName);
+                            double dblTest = await GeodatabaseTools.GetCellSizeAsync(fireUri, strRasterName, WorkspaceType.Raster);
                             if (dblTest > 0)
                             {
                                 cellSizeSqMeters = Math.Round(dblTest,2);

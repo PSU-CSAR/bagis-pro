@@ -76,7 +76,7 @@ namespace bagis_pro.Menus
                 if (bIsPolygon)
                 {
                     var pane = (DockCreateAOIfromExistingBNDViewModel) FrameworkApplication.DockPaneManager.Find("bagis_pro_DockCreateAOIfromExistingBND");
-                    pane.SourceFile = strDirectory;
+                    pane.SourceFile = e.Path;
                     string newAoiName = Path.GetFileNameWithoutExtension(e.Path);
                     pane.AoiName = newAoiName;
                     Webservices ws = new Webservices();

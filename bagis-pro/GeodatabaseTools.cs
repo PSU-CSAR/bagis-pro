@@ -591,49 +591,72 @@ namespace bagis_pro
 
         public static async Task<BA_ReturnCode> UpdateFeatureAttributeNumericAsync(Uri gdbUri, string featureClassName, QueryFilter oQueryFilter, string strFieldName, double dblNewValue)
         {
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            // Geodatabase
+            if (gdbUri.LocalPath.IndexOf(".gdb") > -1)
+            { 
+                await QueuedTask.Run(async () =>
+                {
+                    using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(gdbUri)))
+                    using (FeatureClass featureClass = geodatabase.OpenDataset<FeatureClass>(featureClassName))
+                    {
+                        success = await UpdateFeatureAttributeNumericAsync(featureClass, oQueryFilter, strFieldName, dblNewValue);
+                    }
+                });
+            }
+            else
+            {
+                // Shapefile
+                FileSystemConnectionPath fileConnection = new FileSystemConnectionPath(new Uri(gdbUri.LocalPath), FileSystemDatastoreType.Shapefile);
+                await QueuedTask.Run(async () =>
+                {
+                    using (FileSystemDatastore shapefile = new FileSystemDatastore(fileConnection))
+                    {
+                        FeatureClass featureClass = shapefile.OpenDataset<FeatureClass>(featureClassName);
+                        success = await UpdateFeatureAttributeNumericAsync(featureClass, oQueryFilter, strFieldName, dblNewValue);
+                    }
+                });
+            }
+            return success;
+        }
+
+        private static async Task<BA_ReturnCode> UpdateFeatureAttributeNumericAsync(FeatureClass featureClass, QueryFilter oQueryFilter,
+            string strFieldName, double dblNewValue)
+        {
             bool modificationResult = false;
             string errorMsg = "";
-            await QueuedTask.Run(() =>
-            {
-                using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(gdbUri)))
-                using (FeatureClass featureClass = geodatabase.OpenDataset<FeatureClass>(featureClassName))
+            FeatureClassDefinition featureClassDefinition = featureClass.GetDefinition();
+            EditOperation editOperation = new EditOperation();
+            editOperation.Callback(context => {
+                using (RowCursor rowCursor = featureClass.Search(oQueryFilter, false))
                 {
-                    FeatureClassDefinition featureClassDefinition = featureClass.GetDefinition();
-
-                    EditOperation editOperation = new EditOperation();
-                    editOperation.Callback(context => {
-                        using (RowCursor rowCursor = featureClass.Search(oQueryFilter, false))
+                    while (rowCursor.MoveNext())
+                    {
+                        using (Feature feature = (Feature)rowCursor.Current)
                         {
-                            while (rowCursor.MoveNext())
+                            // In order to update the the attribute table has to be called before any changes are made to the row
+                            context.Invalidate(feature);
+                            int idxRow = featureClassDefinition.FindField(strFieldName);
+                            if (idxRow > -1)
                             {
-                                using (Feature feature = (Feature)rowCursor.Current)
-                                {
-                                    // In order to update the the attribute table has to be called before any changes are made to the row
-                                    context.Invalidate(feature);
-                                    int idxRow = featureClassDefinition.FindField(strFieldName);
-                                    if (idxRow > -1)
-                                    {
-                                        feature[idxRow] = dblNewValue;
-                                    }
-                                    feature.Store();
-                                    // Has to be called after the store too
-                                    context.Invalidate(feature);
-                                }
+                                feature[idxRow] = dblNewValue;
                             }
+                            feature.Store();
+                            // Has to be called after the store too
+                            context.Invalidate(feature);
                         }
-                    }, featureClass);
-
-                    try
-                    {
-                        modificationResult = editOperation.Execute();
-                        if (!modificationResult) errorMsg = editOperation.ErrorMessage;
-                    }
-                    catch (GeodatabaseException exObj)
-                    {
-                        errorMsg = exObj.Message;
                     }
                 }
-            });
+            }, featureClass);
+            try
+            {
+                modificationResult = editOperation.Execute();
+                if (!modificationResult) errorMsg = editOperation.ErrorMessage;
+            }
+            catch (GeodatabaseException exObj)
+            {
+                errorMsg = exObj.Message;
+            }
             if (String.IsNullOrEmpty(errorMsg))
             {
                 await Project.Current.SaveEditsAsync();
@@ -820,25 +843,56 @@ namespace bagis_pro
             return lstInterval;
         }
 
-        public static async Task<double> GetCellSizeAsync(Uri gdbUri, string rasterName)
+        public static async Task<double> GetCellSizeAsync(Uri gdbUri, string rasterName, WorkspaceType workspaceType)
         {
             double cellSize = -1.0F;
-            if (await GeodatabaseTools.RasterDatasetExistsAsync(gdbUri, rasterName))
+            switch (workspaceType)
             {
-                await QueuedTask.Run(() => {
-                    using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(gdbUri)))
-                    using (RasterDataset rasterDataset = geodatabase.OpenDataset<RasterDataset>(rasterName))
+                case WorkspaceType.Raster:
+                    if (await GeodatabaseTools.RasterDatasetExistsAsync(gdbUri, rasterName))
                     {
-                        RasterBandDefinition bandDefinition = rasterDataset.GetBand(0).GetDefinition();
-                        Tuple<double, double> tupleSize = bandDefinition.GetMeanCellSize();
-                        cellSize = (tupleSize.Item1 + tupleSize.Item2) / 2;
+                        await QueuedTask.Run(() => {
+                            using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(gdbUri)))
+                            using (RasterDataset rasterDataset = geodatabase.OpenDataset<RasterDataset>(rasterName))
+                            {
+                                RasterBandDefinition bandDefinition = rasterDataset.GetBand(0).GetDefinition();
+                                Tuple<double, double> tupleSize = bandDefinition.GetMeanCellSize();
+                                cellSize = (tupleSize.Item1 + tupleSize.Item2) / 2;
+                            }
+                        });
                     }
-                });
-            }
-            else
-            {
-                Module1.Current.ModuleLogManager.LogDebug(nameof(GetCellSizeAsync),
-                    $@"Unable to calculate cell size for {gdbUri.LocalPath}\{rasterName}. Raster does not exist!");
+                    else
+                    {
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(GetCellSizeAsync),
+                            $@"Unable to calculate cell size for {gdbUri.LocalPath}\{rasterName}. Raster does not exist!");
+                    }
+                    break;
+                case WorkspaceType.ImageServer:
+                    var oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
+                    await QueuedTask.Run(() =>
+                    {
+                        // Create an image service layer using the url for an image service.
+                        var isLayer = LayerFactory.Instance.CreateLayer(gdbUri, oMap) as ImageServiceLayer;
+                        if (isLayer != null)
+                        {
+                            isLayer.SetVisibility(false);
+                            var oRaster = isLayer.GetRaster();
+                            if (oRaster != null)
+                            {
+                                var oRasterBand = oRaster.GetBand(0);
+                                if (oRasterBand != null)
+                                {
+                                    Tuple<double, double> tupleSize = oRasterBand.GetDefinition().GetMeanCellSize();
+                                    cellSize = (tupleSize.Item1 + tupleSize.Item2) / 2;
+                                }
+                            }
+                            oMap.RemoveLayer(isLayer);
+                        }
+                    });
+                    break;
+                default:
+                    Module1.Current.ModuleLogManager.LogError(nameof(GetCellSizeAsync), "Invalid workspaceType provided!");
+                    break;
             }
             return cellSize;
         }
