@@ -1113,7 +1113,33 @@ namespace bagis_pro
             return dictReturn;
         }
 
-
+        public static async Task<BA_ReturnCode> AddAOIVectorAttributesAsync(Uri uriAoiGdb, string aoiName)
+        {
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            string[] arrAddFields = new string[] { Constants.FIELD_AOINAME, Constants.FIELD_AWDB_ID, Constants.FIELD_BASIN };
+            string[] arrNewFieldTypes = new string[] { "TEXT", "TEXT", "TEXT" };
+            string[] arrNewFieldValues = new string[] { aoiName, "", "" };
+            for (int i = 0; i < arrAddFields.Length; i++)
+            {
+                bool bExists = await GeodatabaseTools.AttributeExistsAsync(uriAoiGdb, Constants.FILE_AOI_VECTOR,arrAddFields[i]);
+                if (! bExists)
+                {
+                    success = await GeoprocessingTools.AddFieldAsync($@"{uriAoiGdb.LocalPath}\{Constants.FILE_AOI_VECTOR}", arrAddFields[i], 
+                        arrNewFieldTypes[i]);
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        IDictionary<string,string> dictUpdate = new Dictionary<string,string>();
+                        dictUpdate.Add(arrAddFields[i], arrNewFieldValues[i]);
+                        success = await GeodatabaseTools.UpdateFeatureAttributesAsync(uriAoiGdb, Constants.FILE_AOI_VECTOR, new QueryFilter(), dictUpdate);
+                    }
+                    else
+                    {
+                        return success;
+                    }
+                }
+            }
+            return success;
+        }
     }
 
     

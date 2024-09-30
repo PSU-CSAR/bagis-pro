@@ -313,6 +313,8 @@ namespace bagis_pro
         public const string FIELD_FIRECURRENT_INCIDENT = "attr_IncidentName";
         public const string FIELD_IRWIN_ID = "IRWINID";
         public const string FIELD_INCIDENT = "INCIDENT";
+        public const string FIELD_AOINAME = "AOINAME";
+        public const string FIELD_BASIN = "BASIN";
 
         public const string DATA_TYPE_SWE = "Snotel SWE";
         public const string DATA_TYPE_PRECIPITATION = "Precipitation";

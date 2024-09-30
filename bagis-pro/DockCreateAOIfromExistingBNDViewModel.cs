@@ -4,6 +4,7 @@ using ArcGIS.Core.Data.Raster;
 using ArcGIS.Core.Geometry;
 using ArcGIS.Desktop.Catalog;
 using ArcGIS.Desktop.Core;
+using ArcGIS.Desktop.Core.Geoprocessing;
 using ArcGIS.Desktop.Editing;
 using ArcGIS.Desktop.Extensions;
 using ArcGIS.Desktop.Framework;
@@ -394,11 +395,67 @@ namespace bagis_pro
             }
 
             //create a raster version of the AOI boundary
-            success = await GeoprocessingTools.AddFieldAsync(SourceFile, "RASTERID", "INTEGER");
+            string fieldRasterId = "RASTERID";
+            if (! await GeodatabaseTools.AttributeExistsAsync(new Uri(Path.GetDirectoryName(SourceFile)), 
+                Path.GetFileName(SourceFile),fieldRasterId))
+            {
+                success = await GeoprocessingTools.AddFieldAsync(SourceFile, fieldRasterId, "INTEGER");
+                if (success == BA_ReturnCode.Success)
+                {
+                    success = await GeodatabaseTools.UpdateFeatureAttributeNumericAsync(new Uri(Path.GetDirectoryName(SourceFile)),
+                        Path.GetFileName(SourceFile), new QueryFilter(), fieldRasterId, 1);
+                    if (success != BA_ReturnCode.Success)
+                    {
+                        System.Windows.MessageBox.Show("Input shapefile does not contain valid polygons! Please visually inspect the file.", "BAGIS-Pro", MessageBoxButton.OK, MessageBoxImage.Error);
+                        progress.Hide();
+                        return;
+                    }
+                }
+            }
+  
+            string aoiRasterPath = $@"{GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi, true)}{Constants.FILE_AOI_RASTER}";
             if (success == BA_ReturnCode.Success)
             {
-                success = await GeodatabaseTools.UpdateFeatureAttributeNumericAsync(new Uri(Path.GetDirectoryName(SourceFile)), 
-                    Path.GetFileName(SourceFile), new QueryFilter(), "RASTERID", 1);
+                IGPResult gpResult = await QueuedTask.Run(() =>
+                {
+                    var environments = Geoprocessing.MakeEnvironmentArray(workspace: oAoi.FilePath);
+                    var parameters = Geoprocessing.MakeValueArray(SourceFile, fieldRasterId, aoiRasterPath, cellSize);
+                    return Geoprocessing.ExecuteToolAsync("FeatureToRaster_conversion", parameters, environments,
+                                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                });
+                if (gpResult.IsFailed)
+                {
+                    System.Windows.MessageBox.Show("Unable to convert input polygon to raster.", "BAGIS-Pro", MessageBoxButton.OK, MessageBoxImage.Error);
+                    success = BA_ReturnCode.WriteError;
+                    progress.Hide();
+                    return;
+                }
+            }
+
+            //rasterize the raster to vector
+            if (success == BA_ReturnCode.Success)
+            {
+                string aoiVectorPath = $@"{GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi, true)}{Constants.FILE_AOI_VECTOR}";
+                IGPResult gpResult = await QueuedTask.Run(() =>
+                {
+                    var environments = Geoprocessing.MakeEnvironmentArray(workspace: oAoi.FilePath);
+                    var parameters = Geoprocessing.MakeValueArray(aoiRasterPath, aoiVectorPath);
+                    return Geoprocessing.ExecuteToolAsync("RasterToPolygon_conversion", parameters, environments,
+                                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                });
+                if (gpResult.IsFailed)
+                {
+                    System.Windows.MessageBox.Show("Unable to convert input raster to polygon.", "BAGIS-Pro", MessageBoxButton.OK, MessageBoxImage.Error);
+                    success = BA_ReturnCode.WriteError;
+                    progress.Hide();
+                    return;
+                }
+                else
+                {
+                    success = await GeodatabaseTools.AddAOIVectorAttributesAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi)), AoiName);
+                }
+
+  
             }
 
 
