@@ -495,7 +495,6 @@ namespace bagis_pro
             }
             return bExists;
         }
-
         public static async Task<bool> AttributeExistsAsync(Uri gdbUri, string featureClassName, string fieldName)
         {
             bool bExists = false;
@@ -519,6 +518,35 @@ namespace bagis_pro
                 catch (Exception e)
                 {
                     Module1.Current.ModuleLogManager.LogError(nameof(AttributeExistsAsync),
+                        "Exception: " + e.Message);
+                }
+            });
+            return bExists;
+        }
+        public static async Task<bool> AttributeExistsShapefileAsync(Uri gdbUri, string shapefileName, string fieldName)
+        {
+            bool bExists = false;
+            await QueuedTask.Run(() =>
+            {
+                try
+                {
+                    FileSystemConnectionPath fileConnection = new FileSystemConnectionPath(new Uri(gdbUri.LocalPath), FileSystemDatastoreType.Shapefile);
+                    using (FileSystemDatastore shapefile = new FileSystemDatastore(fileConnection))
+                    {
+                        using (Table table = shapefile.OpenDataset<Table>(shapefileName))
+                        {
+                            TableDefinition definition = table.GetDefinition();
+                            int idxField = definition.FindField(fieldName);
+                            if (idxField > -1)
+                            {
+                                bExists = true;
+                            }
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(AttributeExistsShapefileAsync),
                         "Exception: " + e.Message);
                 }
             });
@@ -1116,7 +1144,7 @@ namespace bagis_pro
         public static async Task<BA_ReturnCode> AddAOIVectorAttributesAsync(Uri uriAoiGdb, string aoiName)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
-            string[] arrAddFields = new string[] { Constants.FIELD_AOINAME, Constants.FIELD_AWDB_ID, Constants.FIELD_BASIN };
+            string[] arrAddFields = new string[] { Constants.FIELD_STATION_NAME, Constants.FIELD_STATION_TRIPLET, Constants.FIELD_BASIN };
             string[] arrNewFieldTypes = new string[] { "TEXT", "TEXT", "TEXT" };
             string[] arrNewFieldValues = new string[] { aoiName, "", "" };
             for (int i = 0; i < arrAddFields.Length; i++)
@@ -1126,7 +1154,7 @@ namespace bagis_pro
                 {
                     success = await GeoprocessingTools.AddFieldAsync($@"{uriAoiGdb.LocalPath}\{Constants.FILE_AOI_VECTOR}", arrAddFields[i], 
                         arrNewFieldTypes[i]);
-                    if (success == BA_ReturnCode.Success)
+                    if (success == BA_ReturnCode.Success && !string.IsNullOrEmpty(arrNewFieldValues[i]))
                     {
                         IDictionary<string,string> dictUpdate = new Dictionary<string,string>();
                         dictUpdate.Add(arrAddFields[i], arrNewFieldValues[i]);

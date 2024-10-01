@@ -65,6 +65,7 @@ namespace bagis_pro
         public const string FILE_AOI_BUFFERED_VECTOR = "aoib_v";
         public const string FILE_AOI_PRISM_VECTOR = "p_aoi_v";
         public const string FILE_AOI_RASTER = "aoibagis";
+        public const string FILE_AOI_PRISM_GRID = "p_aoi";
         public const string FILE_STREAMS = "aoi_streams";
         public const string FILE_SNOTEL = "snotel_sites";
         public const string FILE_SNOW_COURSE = "snowcourse_sites";
@@ -313,7 +314,6 @@ namespace bagis_pro
         public const string FIELD_FIRECURRENT_INCIDENT = "attr_IncidentName";
         public const string FIELD_IRWIN_ID = "IRWINID";
         public const string FIELD_INCIDENT = "INCIDENT";
-        public const string FIELD_AOINAME = "AOINAME";
         public const string FIELD_BASIN = "BASIN";
 
         public const string DATA_TYPE_SWE = "Snotel SWE";
