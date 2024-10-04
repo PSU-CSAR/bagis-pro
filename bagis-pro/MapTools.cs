@@ -3874,6 +3874,7 @@ namespace bagis_pro
                         }
                     });
             }
+            
             success = CloseMapPanes(arrMapFrames);
 
             // Pro 3.x did not properly apply the camera without touching the map frames a second time
@@ -3898,18 +3899,26 @@ namespace bagis_pro
 
         private static BA_ReturnCode CloseMapPanes(string[] arrMapPaneNames)
         {
-            foreach (var sName in arrMapPaneNames)
+            try
             {
-                foreach (var pane in ProApp.Panes)
+                foreach (var sName in arrMapPaneNames)
                 {
-                    if (!(pane is IMapPane mapPane))  //if not a map view, continue to the next pane    
-                        continue;
-                    if (mapPane.Caption == sName) //if there is a match, close the view  
+                    foreach (var pane in ProApp.Panes)
                     {
-                        (mapPane as Pane).Close();
+                        if (!(pane is IMapPane mapPane))  //if not a map view, continue to the next pane    
+                            continue;
+                        if (mapPane.Caption == sName) //if there is a match, close the view  
+                        {
+                            (mapPane as Pane).Close();
+                        }
                     }
                 }
             }
+            catch (Exception e)
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(CloseMapPanes), @$"An error occurred when closing the map panes {e.StackTrace}");
+            }
+
             return BA_ReturnCode.Success;
         }
 

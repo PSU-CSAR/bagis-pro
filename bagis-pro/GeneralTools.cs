@@ -127,6 +127,7 @@ namespace bagis_pro
         public static async Task<BA_ReturnCode> GenerateMapsTitlePageAsync(ReportType rType,
             string strPublisher, string strComments)
         {
+            string publishFolder = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE;
             try
             {
                 // Download the runoff csv file from the NRCS Portal                
@@ -410,7 +411,6 @@ namespace bagis_pro
                     lstDataSources.CopyTo(data_sources, 0);
                     tPage.data_sources = data_sources;
                 }
-                string publishFolder = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE;
                 string myXmlFile = publishFolder + "\\" + Constants.FILE_TITLE_PAGE_XML;
                 System.Xml.Serialization.XmlSerializer writer = new System.Xml.Serialization.XmlSerializer(tPage.GetType());
                 using (System.IO.FileStream fs = System.IO.File.Create(myXmlFile))
@@ -435,14 +435,27 @@ namespace bagis_pro
                     //PdfSharp.Pdf.PdfDocument titlePageDoc = TheArtOfDev.HtmlRenderer.PdfSharp.PdfGenerator.GeneratePdf(System.IO.File.ReadAllText(htmlFilePath),
                     //    PdfSharp.PageSize.Letter);
                     //titlePageDoc.Save(publishFolder + "\\" + Constants.FILE_TITLE_PAGE_PDF);
+                    if (!Directory.Exists($@"{publishFolder}\{Constants.FOLDER_CHROME_USER_DATA}"))
+                    {
+                        var dirInfo = Directory.CreateDirectory($@"{publishFolder}\{Constants.FOLDER_CHROME_USER_DATA}");
+                        if (!dirInfo.Exists)
+                        {
+                            Module1.Current.ModuleLogManager.LogError(nameof(GenerateMapsTitlePageAsync), 
+                                "Unable to create working directory for Chrome. PDF conversion failed!");
+                            return BA_ReturnCode.WriteError;
+                        }
+                    }
                     var url = $@"file:///{htmlFilePath}";
                     using (var p = new Process())
                     {
                         p.StartInfo.FileName = Module1.Current.ChromePath;
-                        p.StartInfo.Arguments = $"--headless --disable-gpu --no-pdf-header-footer --print-to-pdf={publishFolder + "\\" + Constants.FILE_TITLE_PAGE_PDF} {url}";
+                        p.StartInfo.Arguments = $"--headless --disable-gpu --no-pdf-header-footer --user-data-dir={publishFolder}\\{Constants.FOLDER_CHROME_USER_DATA} --print-to-pdf={publishFolder + "\\" + Constants.FILE_TITLE_PAGE_PDF} {url}";
                         p.Start();
                         p.WaitForExit();
                     }
+
+                    // Clean up Chrome work directory; It leaves a bunch of garbage here
+                    Directory.Delete($@"{publishFolder}\{Constants.FOLDER_CHROME_USER_DATA}", true);
                 }
                 Module1.Current.ModuleLogManager.LogDebug(nameof(GenerateMapsTitlePageAsync),
                     "Title page created!!");
@@ -475,7 +488,7 @@ namespace bagis_pro
                     using (var p = new Process())
                     {
                         p.StartInfo.FileName = Module1.Current.ChromePath;
-                        p.StartInfo.Arguments = $"--headless --disable-gpu --no-pdf-header-footer --print-to-pdf={publishFolder + "\\" + Constants.FILE_DATA_SOURCES_PDF} {url}";
+                        p.StartInfo.Arguments = $"--headless --disable-gpu --no-pdf-header-footer --user-data-dir={publishFolder}\\{Constants.FOLDER_CHROME_USER_DATA} --print-to-pdf={publishFolder + "\\" + Constants.FILE_DATA_SOURCES_PDF} {url}";
                         p.Start();
                         p.WaitForExit();
                     }
@@ -490,6 +503,14 @@ namespace bagis_pro
                     "Exception: " + e.Message);
                 MessageBox.Show("An error occurred while trying to parse the XML!! " + e.Message, "BAGIS PRO");
                 return BA_ReturnCode.UnknownError;
+            }
+            finally
+            {
+                // Clean up Chrome work directory; It leaves a bunch of garbage here                
+                if (Directory.Exists($@"{publishFolder}\{Constants.FOLDER_CHROME_USER_DATA}"))
+                {
+                    Directory.Delete($@"{publishFolder}\{Constants.FOLDER_CHROME_USER_DATA}", true);
+                }
             }
         }
 
@@ -1971,12 +1992,11 @@ namespace bagis_pro
         {
             // Initialize output document
             PdfDocument outputDocument = new PdfDocument();
-            //Iterate through files
-            string[] arrAllFiles = Constants.FILES_EXPORT_WATERSHED_PDF;
-            // Create intro section of report
+            
             int idx = 0;
             int i = 0;
             PdfDocument combineDocument = new PdfDocument();
+            //Iterate through files
             foreach (var strFileName in Constants.FILES_EXPORT_WATERSHED_PDF)
             {
                 string fullPath = GetFullPdfFileName(strFileName);
@@ -2718,14 +2738,29 @@ namespace bagis_pro
             // Convert the sites table to PDF
             if (File.Exists(htmlFilePath))
             {
+                if (!Directory.Exists($@"{publishFolder}\{Constants.FOLDER_CHROME_USER_DATA}"))
+                {
+                    var dirInfo = Directory.CreateDirectory($@"{publishFolder}\{Constants.FOLDER_CHROME_USER_DATA}");
+                    if (!dirInfo.Exists)
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(GenerateSitePage),
+                            "Unable to create working directory for Chrome. PDF conversion failed!");
+                        return BA_ReturnCode.WriteError;
+                    }
+                }
                 var url = $@"file:///{htmlFilePath}";
                 using (var p = new Process())
                 {
                     p.StartInfo.FileName = Module1.Current.ChromePath;
-                    p.StartInfo.Arguments = $"--headless --disable-gpu --no-pdf-header-footer --print-to-pdf={strPublishFile} {url}";
+                    p.StartInfo.Arguments = $"--headless --disable-gpu --no-pdf-header-footer --user-data-dir={publishFolder}\\{Constants.FOLDER_CHROME_USER_DATA} --print-to-pdf={strPublishFile} {url}";
                     p.Start();
                     p.WaitForExit();
                 }
+            }
+            // Clean up Chrome work directory; It leaves a bunch of garbage here                
+            if (Directory.Exists($@"{publishFolder}\{Constants.FOLDER_CHROME_USER_DATA}"))
+            {
+                Directory.Delete($@"{publishFolder}\{Constants.FOLDER_CHROME_USER_DATA}", true);
             }
             success = BA_ReturnCode.Success;
             return success;
@@ -2734,6 +2769,8 @@ namespace bagis_pro
         public static BA_ReturnCode GenerateBlankPage(string pageContent, string outputFile)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            string publishFolder = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE;
+
             try
             {
                 // Initialize the blank page object
@@ -2741,8 +2778,6 @@ namespace bagis_pro
                 {
                     page_content = pageContent.ToUpper()
                 };
-
-                string publishFolder = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE;
                 string myXmlFile = publishFolder + "\\" + Constants.FILE_BLANK_PAGE_XML;
                 System.Xml.Serialization.XmlSerializer writer = new System.Xml.Serialization.XmlSerializer(tPage.GetType());
                 using (FileStream fs = File.Create(myXmlFile))
@@ -2767,11 +2802,21 @@ namespace bagis_pro
                     //PdfSharp.Pdf.PdfDocument sitesPageDoc = TheArtOfDev.HtmlRenderer.PdfSharp.PdfGenerator.GeneratePdf(File.ReadAllText(htmlFilePath),
                     //    PdfSharp.PageSize.Letter);
                     //sitesPageDoc.Save(outputFile);
+                    if (!Directory.Exists($@"{publishFolder}\{Constants.FOLDER_CHROME_USER_DATA}"))
+                    {
+                        var dirInfo = Directory.CreateDirectory($@"{publishFolder}\{Constants.FOLDER_CHROME_USER_DATA}");
+                        if (!dirInfo.Exists)
+                        {
+                            Module1.Current.ModuleLogManager.LogError(nameof(GenerateSitePage),
+                                "Unable to create working directory for Chrome. PDF conversion failed!");
+                            return BA_ReturnCode.WriteError;
+                        }
+                    }
                     var url = $@"file:///{htmlFilePath}";
                     using (var p = new Process())
                     {
                         p.StartInfo.FileName = Module1.Current.ChromePath;
-                        p.StartInfo.Arguments = $"--headless --disable-gpu --no-pdf-header-footer --print-to-pdf={outputFile} {url}";
+                        p.StartInfo.Arguments = $"--headless --disable-gpu --no-pdf-header-footer --user-data-dir={publishFolder}\\{Constants.FOLDER_CHROME_USER_DATA}  --print-to-pdf={outputFile} {url}";
                         p.Start();
                         p.WaitForExit();
                     }
@@ -2786,6 +2831,14 @@ namespace bagis_pro
                     "Exception: " + e.Message);
                 MessageBox.Show("An error occurred while trying to parse the XML!! " + e.Message, "BAGIS PRO");
                 return success;
+            }
+            finally
+            {
+                // Clean up Chrome work directory; It leaves a bunch of garbage here                
+                if (Directory.Exists($@"{publishFolder}\{Constants.FOLDER_CHROME_USER_DATA}"))
+                {
+                    Directory.Delete($@"{publishFolder}\{Constants.FOLDER_CHROME_USER_DATA}", true);
+                }
             }
             return success;
         }

@@ -260,6 +260,7 @@ namespace bagis_pro
         public const string FOLDER_SETTINGS = "BAGIS";
         public const string FOLDER_SNODAS_GEOJSON = "snodas_geojson";
         public const string FOLDER_FIRE_STATISTICS = "fire_statistics";
+        public const string FOLDER_CHROME_USER_DATA = "chrome_user_data";
 
         public const string FIELD_AOI_AREA = "AOISHPAREA";
         public const string FIELD_SITE_ELEV = "BA_SELEV";
