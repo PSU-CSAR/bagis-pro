@@ -107,7 +107,7 @@
             "uri": "http://bagis.geog.pdx.edu/arcgis/services/usgs_mtbs_conus/"
         }
     ],
-    "BatchSettings": {
+    "BagisSettings": {
         "SweDisplayUnits": "Inches",
         "DemUnits": "Meters",
         "DefaultDemInterval": 1000,
