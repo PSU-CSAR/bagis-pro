@@ -35,7 +35,7 @@ namespace bagis_pro
                 if (!string.IsNullOrEmpty(strSettingsPath))
                 {
                     string strFullPath = strSettingsPath + @"\" + Constants.FOLDER_SETTINGS
-                        + @"\" + Constants.FILE_BATCH_TOOL_SETTINGS;
+                        + @"\" + Constants.FILE_BAGIS_SETTINGS;
                     if (!File.Exists(strFullPath))
                     {
                         if (!Directory.Exists(strSettingsPath + @"\" + Constants.FOLDER_SETTINGS))
@@ -49,7 +49,7 @@ namespace bagis_pro
                             }
                         }
                         Webservices ws = new Webservices();
-                        var success = Task.Run(() => ws.DownloadBatchSettingsAsync(strFullPath));
+                        var success = Task.Run(() => ws.DownloadBagisSettingsAsync(strFullPath));
                         if ((BA_ReturnCode)success.Result == BA_ReturnCode.Success)
                         {
                             this.SettingsFile = strFullPath;
@@ -65,12 +65,12 @@ namespace bagis_pro
                     {
                         using (JsonTextReader reader = new JsonTextReader(new StreamReader(fs)))
                         {
-                            dynamic oBatchSettings = (JObject)JToken.ReadFrom(reader);
-                            if (oBatchSettings != null)
+                            dynamic oBagisSettings = (JObject)JToken.ReadFrom(reader);
+                            if (oBagisSettings != null)
                             {
-                                Module1.Current.BatchToolSettings = oBatchSettings;
+                                Module1.Current.BagisSettings = oBagisSettings;
                             }
-                            Publisher = (string)oBatchSettings.Publisher;
+                            Publisher = (string)oBagisSettings.Publisher;
                         }
                     }
                 }

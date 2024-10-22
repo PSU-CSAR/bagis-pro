@@ -28,8 +28,8 @@ namespace bagis_pro
         public static async Task<BA_ReturnCode> CreateElevationTableAsync(Worksheet pworksheet, double aoiDemMin)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
-            string strDemDisplayUnits = (string)Module1.Current.BatchToolSettings.DemDisplayUnits;
-            string strDemUnits = (string)Module1.Current.BatchToolSettings.DemUnits;
+            string strDemDisplayUnits = (string)Module1.Current.BagisSettings.DemDisplayUnits;
+            string strDemUnits = (string)Module1.Current.BagisSettings.DemUnits;
 
             await QueuedTask.Run(() =>
             {
@@ -350,8 +350,8 @@ namespace bagis_pro
 
                     double percentArea = 0;
                     int i = 0;
-                    string strDemDisplayUnits = (string)Module1.Current.BatchToolSettings.DemDisplayUnits;
-                    string strDemUnits = (string)Module1.Current.BatchToolSettings.DemUnits;
+                    string strDemDisplayUnits = (string)Module1.Current.BagisSettings.DemDisplayUnits;
+                    string strDemUnits = (string)Module1.Current.BagisSettings.DemUnits;
                     using (RowCursor rowCursor = statisticsTable.Search(new QueryFilter(), false))
                     {
                         while (rowCursor.MoveNext())
@@ -401,8 +401,8 @@ namespace bagis_pro
         public static async Task<long> CreatePrecipitationTableAsync(Worksheet pworksheet, string precipPath,
             double aoiDemMin)
         {
-            string strDemDisplayUnits = (string)Module1.Current.BatchToolSettings.DemDisplayUnits;
-            string strDemUnits = (string)Module1.Current.BatchToolSettings.DemUnits;
+            string strDemDisplayUnits = (string)Module1.Current.BagisSettings.DemDisplayUnits;
+            string strDemUnits = (string)Module1.Current.BagisSettings.DemUnits;
             Uri uriElevZones = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false));
             IList<BA_Objects.Interval> lstInterval = await GeodatabaseTools.ReadReclassRasterAttribute(uriElevZones, Constants.FILE_ELEV_ZONE);
 
@@ -644,8 +644,8 @@ namespace bagis_pro
                                                         double Y_Unit, double maxPrismValue, bool bCumulativeVolume)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
-            string strDemDisplayUnits = (string)Module1.Current.BatchToolSettings.DemDisplayUnits;
-            string strDemUnits = (string)Module1.Current.BatchToolSettings.DemUnits;
+            string strDemDisplayUnits = (string)Module1.Current.BagisSettings.DemDisplayUnits;
+            string strDemUnits = (string)Module1.Current.BagisSettings.DemUnits;
 
             long nrecords = ExcelTools.CountRecords(pElvWorksheet, 2);
             long ElevReturn = nrecords + 2;
@@ -1265,8 +1265,8 @@ namespace bagis_pro
             int idxPrecipExcelCol = 1;
             int idxElevExcelCol = 2;
             int idxAspectExcelCol = 3;
-            string strDemDisplayUnits = (string)Module1.Current.BatchToolSettings.DemDisplayUnits;
-            string strDemUnits = (string)Module1.Current.BatchToolSettings.DemUnits;
+            string strDemDisplayUnits = (string)Module1.Current.BagisSettings.DemDisplayUnits;
+            string strDemUnits = (string)Module1.Current.BagisSettings.DemUnits;
 
             pworksheet.Cells[1, idxPrecipExcelCol] = "Precipitation (" + Constants.UNITS_INCHES + ")";
             pworksheet.Cells[1, idxElevExcelCol] = "Elevation (" + strDemDisplayUnits + ")";
@@ -1408,8 +1408,8 @@ namespace bagis_pro
                                         }
                                     }
                             }
-                                string strDemDisplayUnits = (string)Module1.Current.BatchToolSettings.DemDisplayUnits;
-                                string strDemUnits = (string)Module1.Current.BatchToolSettings.DemUnits;
+                                string strDemDisplayUnits = (string)Module1.Current.BagisSettings.DemDisplayUnits;
+                                string strDemUnits = (string)Module1.Current.BagisSettings.DemUnits;
                                 if (bAddRow == true)
                                 {
                                     pworksheet.Cells[idxRow, idxPrecipExcelCol] = Convert.ToDouble(pRow[idxPrecipTableCol]);
@@ -1562,7 +1562,7 @@ namespace bagis_pro
             Axis categoryAxis = (Axis)myChart.Axes(Microsoft.Office.Interop.Excel.XlAxisType.xlCategory,
                 Microsoft.Office.Interop.Excel.XlAxisGroup.xlPrimary);
             categoryAxis.HasTitle = true;
-            categoryAxis.AxisTitle.Text = "Elevation (" + Module1.Current.BatchToolSettings.DemDisplayUnits + ")";
+            categoryAxis.AxisTitle.Text = "Elevation (" + Module1.Current.BagisSettings.DemDisplayUnits + ")";
             categoryAxis.AxisTitle.Orientation = 0;
             categoryAxis.AxisTitle.Font.Bold = true;
             // minValue was already converted to display units by the calling function

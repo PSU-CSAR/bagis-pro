@@ -144,7 +144,7 @@ namespace bagis_pro.Buttons
                 }
 
                 int sitesAppendixCount = await GeneralTools.GenerateSitesTableAsync(Module1.Current.Aoi);
-                string strPublisher = (string)Module1.Current.BatchToolSettings.Publisher;
+                string strPublisher = (string)Module1.Current.BagisSettings.Publisher;
                 success = await GeneralTools.GenerateMapsTitlePageAsync(rType, strPublisher, "");
                 string[] arrPieces = Module1.Current.Aoi.StationTriplet.Split(':');
                 string outputPath = GeneralTools.GetFullPdfFileName(Constants.FILE_EXPORT_WATERSHED_REPORT_PDF);

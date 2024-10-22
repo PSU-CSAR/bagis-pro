@@ -131,10 +131,10 @@ namespace bagis_pro
             try
             {
                 // Download the runoff csv file from the NRCS Portal                
-                string documentId = (string)Module1.Current.BatchToolSettings.AnnualRunoffItemId;
-                string annualRunoffDataDescr = (string)Module1.Current.BatchToolSettings.AnnualRunoffDataDescr;
-                string annualRunoffDataYear = (string)Module1.Current.BatchToolSettings.AnnualRunoffDataYear;
-                string annualRunoffField = (string)Module1.Current.BatchToolSettings.AnnualRunoffDataField;
+                string documentId = (string)Module1.Current.BagisSettings.AnnualRunoffItemId;
+                string annualRunoffDataDescr = (string)Module1.Current.BagisSettings.AnnualRunoffDataDescr;
+                string annualRunoffDataYear = (string)Module1.Current.BagisSettings.AnnualRunoffDataYear;
+                string annualRunoffField = (string)Module1.Current.BagisSettings.AnnualRunoffDataField;
 
                 Webservices ws = new Webservices();
                 var success = await ws.GetPortalFile(BA_Objects.AGSPortalProperties.PORTAL_ORGANIZATION, documentId, Module1.Current.SettingsPath + "\\" + Constants.FOLDER_SETTINGS +
@@ -248,8 +248,8 @@ namespace bagis_pro
                 double aoiArea = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(gdbUri, Constants.FILE_AOI_VECTOR, null);
                 bool hasSnotelSites = false;
                 bool hasScosSites = false;
-                string snotelSitesBufferSize = (string)Module1.Current.BatchToolSettings.SnotelBufferDistance + " " +
-                    (string)Module1.Current.BatchToolSettings.SnotelBufferUnits;
+                string snotelSitesBufferSize = (string)Module1.Current.BagisSettings.SnotelBufferDistance + " " +
+                    (string)Module1.Current.BagisSettings.SnotelBufferUnits;
                 string snowCourseSitesBufferSize = snotelSitesBufferSize;
                 var layersPane = (DockpaneLayersViewModel)FrameworkApplication.DockPaneManager.Find("bagis_pro_DockpaneLayers");
                 if (layersPane != null)
@@ -316,8 +316,8 @@ namespace bagis_pro
                 }
 
                 // Read roads buffer settings
-                string roadsBufferDistance = (string)Module1.Current.BatchToolSettings.RoadsAnalysisBufferDistance;
-                string roadsBufferUnits = (string)Module1.Current.BatchToolSettings.RoadsAnalysisBufferUnits;
+                string roadsBufferDistance = (string)Module1.Current.BagisSettings.RoadsAnalysisBufferDistance;
+                string roadsBufferUnits = (string)Module1.Current.BagisSettings.RoadsAnalysisBufferUnits;
                 Uri uriAnalysis = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis));
                 string strRoadsPath = uriAnalysis.LocalPath + "\\" + Constants.FILE_ROADS_ZONE;
                 if (await GeodatabaseTools.FeatureClassExistsAsync(uriAnalysis, Constants.FILE_ROADS_ZONE))
@@ -763,7 +763,7 @@ namespace bagis_pro
                     }
                 }
 
-                string strPrecipPath = Module1.Current.Aoi.FilePath + "\\" + Module1.Current.BatchToolSettings.AoiPrecipFile;
+                string strPrecipPath = Module1.Current.Aoi.FilePath + "\\" + Module1.Current.BagisSettings.AoiPrecipFile;
                 long lngZones = await ExcelTools.CreatePrecipitationTableAsync(pPRISMWorkSheet,
                    strPrecipPath, elevMinMeters);
 
@@ -784,8 +784,8 @@ namespace bagis_pro
                     // Update table with Critical Precipitation Zone information
                     Uri uriElevZones = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, false));
                     IList<BA_Objects.Interval> lstIntervals = await GeodatabaseTools.ReadReclassRasterAttribute(uriElevZones, Constants.FILE_ELEV_ZONE);
-                    double dblMinVolume = (double)Module1.Current.BatchToolSettings.CriticalPrecipMinMeanVolInches;
-                    double dblMaxPctVolume = (double)Module1.Current.BatchToolSettings.CriticalPrecipTotalMaxVolPct;
+                    double dblMinVolume = (double)Module1.Current.BagisSettings.CriticalPrecipMinMeanVolInches;
+                    double dblMaxPctVolume = (double)Module1.Current.BagisSettings.CriticalPrecipTotalMaxVolPct;
                     IList<string> lstCriticalZoneValues = ExcelTools.CreateCriticalPrecipitationZones(pPRISMWorkSheet, lstIntervals, dblMinVolume, dblMaxPctVolume, lngZones);
 
                     // Add textbox comments to worksheet
@@ -837,7 +837,7 @@ namespace bagis_pro
                         oAnalysis = (BA_Objects.Analysis)reader.Deserialize(file);
                     }
                 }
-                double Y_Unit = Convert.ToDouble(Module1.Current.BatchToolSettings.DefaultDemInterval);
+                double Y_Unit = Convert.ToDouble(Module1.Current.BagisSettings.DefaultDemInterval);
                 if (oAnalysis.ElevationZonesInterval > 0)
                 {
                     Y_Unit = oAnalysis.ElevationZonesInterval;
@@ -847,7 +847,7 @@ namespace bagis_pro
                 double maxValue = elevMaxMeters;
                 int leftPosition = Constants.EXCEL_CHART_WIDTH + (Constants.EXCEL_CHART_SPACING * 15);
                 //aoiDemMin is always in meters
-                string strDemDisplayUnits = (string)Module1.Current.BatchToolSettings.DemDisplayUnits;
+                string strDemDisplayUnits = (string)Module1.Current.BagisSettings.DemDisplayUnits;
                 if (strDemDisplayUnits.Equals("Feet"))
                 {
                     minValue = ArcGIS.Core.Geometry.LinearUnit.Meters.ConvertTo(elevMinMeters, ArcGIS.Core.Geometry.LinearUnit.Feet);
@@ -1255,7 +1255,7 @@ namespace bagis_pro
             var layersPane = (DockpaneLayersViewModel)FrameworkApplication.DockPaneManager.Find("bagis_pro_DockpaneLayers");
             try
             {
-                BA_ReturnCode success = LoadBatchToolSettings();
+                BA_ReturnCode success = LoadBagisSettings();
 
                 // Set logger to AOI directory
                 string logFolderName = strAoiPath + "\\" + Constants.FOLDER_LOGS;
@@ -1299,22 +1299,22 @@ namespace bagis_pro
                             {
                                 oAoi.WinterStartMonth = Convert.ToInt32(arrResults[1]);
                             }
-                            else if (Module1.Current.BatchToolSettings != null)
+                            else if (Module1.Current.BagisSettings != null)
                             {
-                                if (Module1.Current.BatchToolSettings.WinterStartMonth != null)
+                                if (Module1.Current.BagisSettings.WinterStartMonth != null)
                                 {
-                                    oAoi.WinterStartMonth = Convert.ToInt32(Module1.Current.BatchToolSettings.WinterStartMonth);
+                                    oAoi.WinterStartMonth = Convert.ToInt32(Module1.Current.BagisSettings.WinterStartMonth);
                                 }
                             }
                             if (!string.IsNullOrEmpty(arrResults[2]))
                             {
                                 oAoi.WinterEndMonth = Convert.ToInt32(arrResults[2]);
                             }
-                            else if (Module1.Current.BatchToolSettings != null)
+                            else if (Module1.Current.BagisSettings != null)
                             {
-                                if (Module1.Current.BatchToolSettings.WinterEndMonth != null)
+                                if (Module1.Current.BagisSettings.WinterEndMonth != null)
                                 {
-                                    oAoi.WinterEndMonth = Convert.ToInt32(Module1.Current.BatchToolSettings.WinterEndMonth);
+                                    oAoi.WinterEndMonth = Convert.ToInt32(Module1.Current.BagisSettings.WinterEndMonth);
                                 }
                             }
                         }
@@ -1622,7 +1622,7 @@ namespace bagis_pro
                 }
                 MapTools.DeactivateMapButtons();
                 // Activate Admin Menu state for some buttons
-                if (Module1.Current.BatchToolSettings.AdminMenu == true)
+                if (Module1.Current.BagisSettings.AdminMenu == true)
                 {
                     Module1.ActivateState("Admin_Menu_State");
                 }
@@ -2638,7 +2638,7 @@ namespace bagis_pro
                     date_created = DateTime.Now
                 };
                 //DEM is always in meters
-                string strDemDisplayUnits = (string)Module1.Current.BatchToolSettings.DemDisplayUnits;
+                string strDemDisplayUnits = (string)Module1.Current.BagisSettings.DemDisplayUnits;
                 IList<BA_Objects.Site> lstAllSites = new List<BA_Objects.Site>();
                 if (bHasSnotel || bHasSnowCourse)
                 {
@@ -2843,7 +2843,7 @@ namespace bagis_pro
             return success;
         }
 
-        public static BA_ReturnCode LoadBatchToolSettings()
+        public static BA_ReturnCode LoadBagisSettings()
         {
             // Load batch tool settings; Make sure we have the central BAGIS folder
             string strSettingsPath = GetBagisSettingsPath();
@@ -2855,7 +2855,7 @@ namespace bagis_pro
                     DirectoryInfo dirInfo = Directory.CreateDirectory(strTempPath);
                     if (dirInfo == null)
                     {
-                        Module1.Current.ModuleLogManager.LogError(nameof(LoadBatchToolSettings),
+                        Module1.Current.ModuleLogManager.LogError(nameof(LoadBagisSettings),
                             "Unable to create BAGIS settings folder in " + strSettingsPath +
                                     "! Process stopped.");
                         return BA_ReturnCode.WriteError;
@@ -2863,69 +2863,69 @@ namespace bagis_pro
                 }
                 strSettingsPath = strTempPath;
             }
-            // Check to see if batch tool settings are already there
+            // Check to see if bagis settings are already there
             Webservices ws = new Webservices();
-            if (!File.Exists(strSettingsPath + @"\" + Constants.FILE_BATCH_TOOL_SETTINGS))
+            if (!File.Exists(strSettingsPath + @"\" + Constants.FILE_BAGIS_SETTINGS))
             {
-                var success = Task.Run(() => ws.DownloadBatchSettingsAsync(strSettingsPath + @"\" + Constants.FILE_BATCH_TOOL_SETTINGS));
+                var success = Task.Run(() => ws.DownloadBagisSettingsAsync(strSettingsPath + @"\" + Constants.FILE_BAGIS_SETTINGS));
                 if ((BA_ReturnCode)success.Result == BA_ReturnCode.Success)
                 {
-                    Module1.Current.ModuleLogManager.LogDebug(nameof(LoadBatchToolSettings),
-                        "Copied default batch tool settings to BAGIS folder");
+                    Module1.Current.ModuleLogManager.LogDebug(nameof(LoadBagisSettings),
+                        "Copied default bagis settings to BAGIS folder");
                 }
                 else
                 {
-                    Module1.Current.ModuleLogManager.LogError(nameof(LoadBatchToolSettings),
-                        "Unable to copy default batch tool settings to BAGIS folder");
+                    Module1.Current.ModuleLogManager.LogError(nameof(LoadBagisSettings),
+                        "Unable to copy default bagis settings to BAGIS folder");
                 }
 
             }
             // Load batch tool settings from local file
-            dynamic oBatchSettings = null;
-            if (File.Exists(strSettingsPath + @"\" + Constants.FILE_BATCH_TOOL_SETTINGS))
+            dynamic oBagisSettings = null;
+            if (File.Exists(strSettingsPath + @"\" + Constants.FILE_BAGIS_SETTINGS))
             {
                 // read JSON directly from a file
-                using (FileStream fs = File.OpenRead(strSettingsPath + @"\" + Constants.FILE_BATCH_TOOL_SETTINGS))
+                using (FileStream fs = File.OpenRead(strSettingsPath + @"\" + Constants.FILE_BAGIS_SETTINGS))
                 {
                     using (JsonTextReader reader = new JsonTextReader(new StreamReader(fs)))
                     {
-                        oBatchSettings = (JObject)JToken.ReadFrom(reader);
+                        oBagisSettings = (JObject)JToken.ReadFrom(reader);
                     }
                 }
                 // Check for most current server version
-                var result = Task.Run(() => ws.QueryBatchToolSettingsVersionAsync());
+                var result = Task.Run(() => ws.QueryBagisSettingsVersionAsync());
                 double dblServerVersion = (double)result.Result;
-                if ((oBatchSettings != null) && ((double)oBatchSettings.Version < dblServerVersion))
+                if ((oBagisSettings != null) && ((double)oBagisSettings.Version < dblServerVersion))
                 {
-                    var success = Task.Run(() => ws.DownloadBatchSettingsAsync(strSettingsPath + @"\" + Constants.FILE_BATCH_TOOL_SETTINGS));
+                    var success = Task.Run(() => ws.DownloadBagisSettingsAsync(strSettingsPath + @"\" + Constants.FILE_BAGIS_SETTINGS));
                     if ((BA_ReturnCode)success.Result == BA_ReturnCode.Success)
                     {
-                        Module1.Current.ModuleLogManager.LogDebug(nameof(LoadBatchToolSettings),
-                            "Downloaded updated batch tool settings to BAGIS folder");
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(LoadBagisSettings),
+                            "Downloaded updated bagis settings to BAGIS folder");
                     }
                     else
                     {
-                        Module1.Current.ModuleLogManager.LogError(nameof(LoadBatchToolSettings),
-                            "Unable to update batch tool settings to BAGIS folder");
+                        Module1.Current.ModuleLogManager.LogError(nameof(LoadBagisSettings),
+                            "Unable to update batch bagis to BAGIS folder");
                     }
                     // read JSON directly from the new file
-                    using (FileStream fs = File.OpenRead(strSettingsPath + @"\" + Constants.FILE_BATCH_TOOL_SETTINGS))
+                    using (FileStream fs = File.OpenRead(strSettingsPath + @"\" + Constants.FILE_BAGIS_SETTINGS))
                     {
                         using (JsonTextReader reader = new JsonTextReader(new StreamReader(fs)))
                         {
-                            oBatchSettings = (JObject)JToken.ReadFrom(reader);
+                            oBagisSettings = (JObject)JToken.ReadFrom(reader);
                         }
                     }
                 }
-                if (oBatchSettings != null)
+                if (oBagisSettings != null)
                 {
-                    Module1.Current.BatchToolSettings = oBatchSettings;
+                    Module1.Current.BagisSettings = oBagisSettings;
                 }
                 return BA_ReturnCode.Success;
             }
             else
             {
-                Module1.Current.ModuleLogManager.LogError(nameof(LoadBatchToolSettings),
+                Module1.Current.ModuleLogManager.LogError(nameof(LoadBagisSettings),
                     "Unable to locate batch tool settings in BAGIS folder");
                 return BA_ReturnCode.ReadError;
             }

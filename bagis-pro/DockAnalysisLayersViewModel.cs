@@ -266,8 +266,8 @@ namespace bagis_pro
 
                 if (calculateRepresented)
                 {
-                    double siteBufferDistanceMiles = (double)Module1.Current.BatchToolSettings.SiteBufferDistMiles;
-                    double siteElevRangeFeet = (double)Module1.Current.BatchToolSettings.SiteElevRangeFeet;
+                    double siteBufferDistanceMiles = (double)Module1.Current.BagisSettings.SiteBufferDistMiles;
+                    double siteElevRangeFeet = (double)Module1.Current.BagisSettings.SiteElevRangeFeet;
                     success = await AnalysisTools.GenerateSiteLayersAsync(siteBufferDistanceMiles, siteElevRangeFeet);
                     if (success == BA_ReturnCode.Success)
                     {
@@ -282,7 +282,7 @@ namespace bagis_pro
                 if (calculatePrism)
                 {
                     string strLayer = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Prism, true) +
-                        Path.GetFileName((string)Module1.Current.BatchToolSettings.AoiPrecipFile);
+                        Path.GetFileName((string)Module1.Current.BagisSettings.AoiPrecipFile);
                     string strZonesRaster = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) +
                         Constants.FILE_PRECIP_ZONE;
                     success = await AnalysisTools.CalculatePrecipitationZonesAsync(strLayer, strZonesRaster);
@@ -382,8 +382,8 @@ namespace bagis_pro
                     }
 
                     // This could come from the UI eventually
-                    string strDistance = Module1.Current.BatchToolSettings.RoadsAnalysisBufferDistance + " " +
-                        Module1.Current.BatchToolSettings.RoadsAnalysisBufferUnits;
+                    string strDistance = Module1.Current.BagisSettings.RoadsAnalysisBufferDistance + " " +
+                        Module1.Current.BagisSettings.RoadsAnalysisBufferUnits;
                     success = await AnalysisTools.GenerateProximityRoadsLayerAsync(uri, strDistance);
                     if (success == BA_ReturnCode.Success)
                     {
@@ -440,11 +440,11 @@ namespace bagis_pro
                 if (elevPrecipCorr == true)
                 {
                     string strLayer = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Prism, true) +
-                        Path.GetFileName((string)Module1.Current.BatchToolSettings.AoiPrecipFile);
+                        Path.GetFileName((string)Module1.Current.BagisSettings.AoiPrecipFile);
 
                     Uri uriPrism = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Prism));
                     success = await AnalysisTools.CalculateElevPrecipCorrAsync(Module1.Current.Aoi.FilePath, uriPrism, 
-                        Path.GetFileName((string)Module1.Current.BatchToolSettings.AoiPrecipFile));
+                        Path.GetFileName((string)Module1.Current.BagisSettings.AoiPrecipFile));
 
 
                     if (success == BA_ReturnCode.Success)

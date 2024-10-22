@@ -248,15 +248,16 @@ namespace bagis_pro
             return 9999;
         }
 
-        public async Task<BA_ReturnCode> DownloadBatchSettingsAsync(string strSaveToPath)
+        public async Task<BA_ReturnCode> DownloadBagisSettingsAsync(string strSaveToPath)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
             EsriHttpResponseMessage response = new EsriHttpClient().Get(Constants.URI_BATCH_TOOL_SETTINGS);
             JObject jsonVal = JObject.Parse(await response.Content.ReadAsStringAsync()) as JObject;
-            dynamic oSettings = (JObject) jsonVal["BatchSettings"];
+            dynamic oSettings = (JObject) jsonVal["BagisSettings"];
             using (System.IO.StreamWriter file = File.CreateText(strSaveToPath))
             using (JsonTextWriter writer = new JsonTextWriter(file))
             {
+                writer.Formatting = Formatting.Indented;
                 oSettings.WriteTo(writer);
             }
             success = BA_ReturnCode.Success;
@@ -492,7 +493,7 @@ namespace bagis_pro
             string nwccAoiName = "";
             string huc = "";
             string aoiSummaryTag="";
-            BA_ReturnCode success = GeneralTools.LoadBatchToolSettings();
+            BA_ReturnCode success = GeneralTools.LoadBagisSettings();
             if (success != BA_ReturnCode.Success)
             {
                 MessageBox.Show("Batch tool settings could not be loaded. The portal files cannot be updated!!");
@@ -677,19 +678,19 @@ namespace bagis_pro
             }
         }
 
-        public async Task<double> QueryBatchToolSettingsVersionAsync()
+        public async Task<double> QueryBagisSettingsVersionAsync()
         {
             try
             {
                 IDictionary<string, dynamic> dictDataSources = new Dictionary<string, dynamic>();
                 EsriHttpResponseMessage response = new EsriHttpClient().Get(Constants.URI_BATCH_TOOL_SETTINGS);
                 JObject jsonVal = JObject.Parse(await response.Content.ReadAsStringAsync()) as JObject;
-                dynamic oSettings = (JObject)jsonVal["BatchSettings"];
+                dynamic oSettings = (JObject)jsonVal["BagisSettings"];
                 return (double)oSettings.Version;
             }
             catch (Exception)
             {
-                Module1.Current.ModuleLogManager.LogDebug(nameof(QueryBatchToolSettingsVersionAsync),
+                Module1.Current.ModuleLogManager.LogDebug(nameof(QueryBagisSettingsVersionAsync),
                     "An error occurred while trying to retrieve the batch settings version number from the ebagis server!");
                 return -1;
             }

@@ -463,8 +463,8 @@ namespace bagis_pro
                 // Apply default buffer if left null
                 if (string.IsNullOrEmpty(PrismBufferDistance))
                 {
-                    PrismBufferDistance = (string)Module1.Current.BatchToolSettings.PrecipBufferDistance;
-                    PrismBufferUnits = (string)Module1.Current.BatchToolSettings.PrecipBufferUnits;
+                    PrismBufferDistance = (string)Module1.Current.BagisSettings.PrecipBufferDistance;
+                    PrismBufferUnits = (string)Module1.Current.BagisSettings.PrecipBufferUnits;
                 }
 
                 if (clipPrism)

@@ -29,10 +29,10 @@ namespace bagis_pro
 
         protected DockCreateAOIfromExistingBNDViewModel() 
         {
-            BA_ReturnCode success = GeneralTools.LoadBatchToolSettings();
-            BufferDistance = Convert.ToDouble((string) Module1.Current.BatchToolSettings.AoiBufferDistance);
-            string prismBufferUnits = (string)Module1.Current.BatchToolSettings.PrecipBufferUnits;
-            double prismBufferDist = (double)Module1.Current.BatchToolSettings.PrecipBufferDistance;
+            BA_ReturnCode success = GeneralTools.LoadBagisSettings();
+            BufferDistance = Convert.ToDouble((string) Module1.Current.BagisSettings.AoiBufferDistance);
+            string prismBufferUnits = (string)Module1.Current.BagisSettings.PrecipBufferUnits;
+            double prismBufferDist = (double)Module1.Current.BagisSettings.PrecipBufferDistance;
             if (!string.IsNullOrEmpty(prismBufferUnits) && prismBufferUnits.Equals("Kilometers"))
             {
                 PrismBufferDist = LinearUnit.Kilometers.ConvertTo(prismBufferDist, LinearUnit.Meters);
@@ -326,13 +326,13 @@ namespace bagis_pro
                 if (BufferDistance <= 0)
                 {
                     // Switch back to default
-                    BufferDistance = Convert.ToDouble((string)Module1.Current.BatchToolSettings.AoiBufferDistance);
+                    BufferDistance = Convert.ToDouble((string)Module1.Current.BagisSettings.AoiBufferDistance);
                 }
                 if (PrismBufferDist <= 0)
                 {
                     // Switch back to default
-                    string prismBufferUnits = (string)Module1.Current.BatchToolSettings.PrecipBufferUnits;
-                    double prismBufferDist = (double)Module1.Current.BatchToolSettings.PrecipBufferDistance;
+                    string prismBufferUnits = (string)Module1.Current.BagisSettings.PrecipBufferUnits;
+                    double prismBufferDist = (double)Module1.Current.BagisSettings.PrecipBufferDistance;
                     if (!string.IsNullOrEmpty(prismBufferUnits) && prismBufferUnits.Equals("Kilometers"))
                     {
                         PrismBufferDist = LinearUnit.Kilometers.ConvertTo(prismBufferDist, LinearUnit.Meters);

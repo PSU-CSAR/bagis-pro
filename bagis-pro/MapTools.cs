@@ -175,8 +175,8 @@ namespace bagis_pro
                     }
 
                     //Put roads buffer distance into session variable; Needed for Site Locations maps
-                    string roadsBufferDistance = (string)Module1.Current.BatchToolSettings.RoadsAnalysisBufferDistance;
-                    string roadsBufferUnits = (string)Module1.Current.BatchToolSettings.RoadsAnalysisBufferUnits;
+                    string roadsBufferDistance = (string)Module1.Current.BagisSettings.RoadsAnalysisBufferDistance;
+                    string roadsBufferUnits = (string)Module1.Current.BagisSettings.RoadsAnalysisBufferUnits;
                     Uri uriAnalysis = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis));
                     string strRoadsPath = uriAnalysis.LocalPath + "\\" + Constants.FILE_ROADS_ZONE;
                     if (await GeodatabaseTools.FeatureClassExistsAsync(uriAnalysis, Constants.FILE_ROADS_ZONE))
@@ -1858,7 +1858,7 @@ namespace bagis_pro
                     lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
                     lstLegendLayers.Add(Constants.MAPS_ELEV_ZONE);
 
-                    string strDemDisplayUnits = (string)Module1.Current.BatchToolSettings.DemDisplayUnits;
+                    string strDemDisplayUnits = (string)Module1.Current.BagisSettings.DemDisplayUnits;
                     mapDefinition = new BA_Objects.MapDefinition(Constants.TITLE_BASIN_ELEVATION,
                         "Elevation Units = " + strDemDisplayUnits, Constants.FILE_EXPORT_MAP_ELEV_PDF,
                         Constants.TEXT_SITES_TABLE_DESCR);
@@ -1999,7 +1999,7 @@ namespace bagis_pro
                     lstLegendLayers.Add(Constants.MAPS_AUTOMATED_SITES_REPRESENTED);
                     lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
                     lstLegendLayers.Add(Constants.MAPS_ELEV_ZONE);
-                    strDemDisplayUnits = (string)Module1.Current.BatchToolSettings.DemDisplayUnits;
+                    strDemDisplayUnits = (string)Module1.Current.BagisSettings.DemDisplayUnits;
                     string strBufferParams = "";
                     if (oAnalysis != null)
                     {
@@ -2039,7 +2039,7 @@ namespace bagis_pro
                     lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE_REPRESENTED);
                     lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
                     lstLegendLayers.Add(Constants.MAPS_ELEV_ZONE);
-                    strDemDisplayUnits = (string)Module1.Current.BatchToolSettings.DemDisplayUnits;
+                    strDemDisplayUnits = (string)Module1.Current.BagisSettings.DemDisplayUnits;
                     strBufferParams = "";
                     if (oAnalysis != null)
                     {
@@ -2093,7 +2093,7 @@ namespace bagis_pro
                     lstLegendLayers.Add(Constants.MAPS_ALL_SITES_REPRESENTED);
                     lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
                     lstLegendLayers.Add(Constants.MAPS_ELEV_ZONE);
-                    strDemDisplayUnits = (string)Module1.Current.BatchToolSettings.DemDisplayUnits;
+                    strDemDisplayUnits = (string)Module1.Current.BagisSettings.DemDisplayUnits;
                     strBufferParams = "";
                     if (oAnalysis != null)
                     {
@@ -2149,7 +2149,7 @@ namespace bagis_pro
                     lstLegendLayers.Add(Constants.MAPS_ROADS);
                     lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
                     lstLegendLayers.Add(Constants.MAPS_ELEV_ZONE);
-                    strDemDisplayUnits = (string)Module1.Current.BatchToolSettings.DemDisplayUnits;
+                    strDemDisplayUnits = (string)Module1.Current.BagisSettings.DemDisplayUnits;
                     mapDefinition = new BA_Objects.MapDefinition(Constants.TITLE_ROADS_AND_TRIBAL,
                         "Elevation Units = " + strDemDisplayUnits, Constants.FILE_EXPORT_MAP_PUBLIC_LAND_ZONES_PDF,
                         "Suitable land ownership includes federal non-wilderness and tribal lands.");
@@ -2185,7 +2185,7 @@ namespace bagis_pro
                     lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
                     lstLegendLayers.Add(Constants.MAPS_FORESTED_LAND_COVER);
                     lstLegendLayers.Add(Constants.MAPS_ELEV_ZONE);
-                    strDemDisplayUnits = (string)Module1.Current.BatchToolSettings.DemDisplayUnits;
+                    strDemDisplayUnits = (string)Module1.Current.BagisSettings.DemDisplayUnits;
                     dataSourceDesc = "";
                     if (dictLocalDataSources.Keys.Contains(BA_Objects.DataSource.GetLandCoverKey))
                     {
@@ -2229,7 +2229,7 @@ namespace bagis_pro
                     lstLegendLayers.Add(Constants.MAPS_POTENTIAL_LOCATIONS);
                     lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
                     lstLegendLayers.Add(Constants.MAPS_ELEV_ZONE);
-                    strDemDisplayUnits = (string)Module1.Current.BatchToolSettings.DemDisplayUnits;
+                    strDemDisplayUnits = (string)Module1.Current.BagisSettings.DemDisplayUnits;
                     strDescr = $@"Potential new sites locations are on federal non-wilderness and {Environment.NewLine}tribal lands, forested land types, and within {Module1.Current.RoadsBufferDistance} of access roads.";
                     mapDefinition = new BA_Objects.MapDefinition(Constants.TITLE_POTENTIAL_SITE_LOC,
                         "Elevation Units = " + strDemDisplayUnits, Constants.FILE_EXPORT_MAP_SITES_LOCATION_PDF,
@@ -2371,7 +2371,7 @@ namespace bagis_pro
                     lstLegendLayers.Add(Constants.MAPS_CRITICAL_PRECIPITATION_ZONES);
                     lstLegendLayers.Add(Constants.MAPS_WATERBODIES);
                     lstLegendLayers.Add(Constants.MAPS_ELEV_ZONE);
-                    strDemDisplayUnits = (string)Module1.Current.BatchToolSettings.DemDisplayUnits;
+                    strDemDisplayUnits = (string)Module1.Current.BagisSettings.DemDisplayUnits;
                     strDescr = $@"The critical precipitation zone indicates the basin area that {Environment.NewLine}has the potential for delivering the most significant runoff.";
                     mapDefinition = new BA_Objects.MapDefinition(Constants.TITLE_CRITICAL_PRECIPITATION,
                         "Elevation Units = " + strDemDisplayUnits, Constants.FILE_EXPORT_MAP_CRITICAL_PRECIPITATION_ZONES_PDF,
@@ -2697,7 +2697,7 @@ namespace bagis_pro
                 string strPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers, true) +
                     Constants.FILES_SNODAS_SWE[idxDefaultMonth];
                 string layerUnits = await QuerySweLayerUnitsAsync(strPath);
-                string strSweDisplayUnits = Module1.Current.BatchToolSettings.SweDisplayUnits;
+                string strSweDisplayUnits = Module1.Current.BagisSettings.SweDisplayUnits;
                 if (layerUnits != null && !strSweDisplayUnits.Equals(layerUnits))
                 {
                     double dblLabelMin = dblStretchMin;
@@ -3056,14 +3056,14 @@ namespace bagis_pro
             // Calculate interval list
             List<BA_Objects.Interval> lstIntervals = new List<BA_Objects.Interval>();
             int intZones = -1;
-            if (Module1.Current.BatchToolSettings.SnotelSweZonesCount != null)
+            if (Module1.Current.BagisSettings.SnotelSweZonesCount != null)
             {
-                intZones = (int)Module1.Current.BatchToolSettings.SnotelSweZonesCount;
+                intZones = (int)Module1.Current.BagisSettings.SnotelSweZonesCount;
             }
             else
             {
                 Module1.Current.ModuleLogManager.LogError(nameof(CalculateSweZonesAsync),
-                    "Unable to retrieve SnotelSweZonesCount from batch_tool_settings.json. Calculation halted!");
+                    "Unable to retrieve SnotelSweZonesCount from bagis_settings.json. Calculation halted!");
                 return null;
             }
             intZones = intZones - 2;  //Subtract the 2 zones on the bottom that we create
@@ -3163,7 +3163,7 @@ namespace bagis_pro
                     }
                 }
                 // Reset lower and upper bound to layer units
-                string strDisplayUnits = Module1.Current.BatchToolSettings.SweDisplayUnits;
+                string strDisplayUnits = Module1.Current.BagisSettings.SweDisplayUnits;
                 if (!dataSourceUnits.Equals(strDisplayUnits))
                 {
                     foreach (var nextInterval in lstIntervals)
@@ -3292,7 +3292,7 @@ namespace bagis_pro
                     }
                     idx++;
                 }
-                string strDisplayUnits = Module1.Current.BatchToolSettings.SweDisplayUnits;
+                string strDisplayUnits = Module1.Current.BagisSettings.SweDisplayUnits;
                 if (!dataSourceUnits.Equals(strDisplayUnits))
                 {
                     foreach (var nextInterval in lstNegInterval)
@@ -3322,11 +3322,11 @@ namespace bagis_pro
         public static async Task<BA_ReturnCode> GetSystemFilesFromPortalAsync()
         {
             string[] documentIds = new string[5];
-            documentIds[0] = (string) Module1.Current.BatchToolSettings.NLCDLandCoverLayerItemId;
-            documentIds[1] = (string) Module1.Current.BatchToolSettings.SnodasSweLayoutItemId;
-            documentIds[2] = (string) Module1.Current.BatchToolSettings.SnodasDeltaLayoutItemId;
-            documentIds[3] = (string) Module1.Current.BatchToolSettings.SeasonalPrecipLayoutItemId;
-            documentIds[4] = (string) Module1.Current.BatchToolSettings.PublicAndTribalLandsLayerItemId;
+            documentIds[0] = (string) Module1.Current.BagisSettings.NLCDLandCoverLayerItemId;
+            documentIds[1] = (string) Module1.Current.BagisSettings.SnodasSweLayoutItemId;
+            documentIds[2] = (string) Module1.Current.BagisSettings.SnodasDeltaLayoutItemId;
+            documentIds[3] = (string) Module1.Current.BagisSettings.SeasonalPrecipLayoutItemId;
+            documentIds[4] = (string) Module1.Current.BagisSettings.PublicAndTribalLandsLayerItemId;
             string[] layerFileNames = new string[] { Constants.LAYER_FILE_NLCD_LAND_COVER, Constants.LAYOUT_FILE_SNODAS_SWE,
                 Constants.LAYOUT_FILE_SNODAS_DELTA_SWE, Constants.LAYOUT_FILE_SEASONAL_PRECIP_CONTRIB, Constants.LAYER_FILE_PUBLIC_TRIBAL_LANDS };
             Webservices ws = new Webservices();

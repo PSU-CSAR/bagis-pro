@@ -34,14 +34,15 @@ namespace bagis_pro
 
         protected DockAdminToolsViewModel() 
         {
-            BA_ReturnCode success = GeneralTools.LoadBatchToolSettings();
-            if (success == BA_ReturnCode.Success && Module1.Current.BatchToolSettings != null)
+            BA_ReturnCode success = GeneralTools.LoadBagisSettings();
+            if (success == BA_ReturnCode.Success && Module1.Current.BagisSettings != null)
             {
-                Publisher = (string)Module1.Current.BatchToolSettings.Publisher;
-                FireIncrementYears = (int)Module1.Current.BatchToolSettings.FireIncrementYears;
-                NifcMinYear = (int)Module1.Current.BatchToolSettings.FireNifcMinYear;
-                MtbsMinYear = (int)Module1.Current.BatchToolSettings.FireMtbsMinYear;
-                FireDataClipYears = (int)Module1.Current.BatchToolSettings.FireDataClipYears;
+                Publisher = (string)Module1.Current.BagisSettings.Publisher;
+                FireIncrementYears = (int)Module1.Current.BagisSettings.FireIncrementYears;
+                NifcMinYear = (int)Module1.Current.BagisSettings.FireNifcMinYear;
+                MtbsMinYear = (int)Module1.Current.BagisSettings.FireMtbsMinYear;
+                FireDataClipYears = (int)Module1.Current.BagisSettings.FireDataClipYears;
+                SettingsFile = $@"{GeneralTools.GetBagisSettingsPath()}\{Constants.FOLDER_SETTINGS}\{Constants.FILE_BAGIS_SETTINGS}";
             }
             Names = new ObservableCollection<BA_Objects.Aoi>();
             Names.CollectionChanged += ContentCollectionChanged;
@@ -115,6 +116,7 @@ namespace bagis_pro
         private string _strMtbsDataDescr;
         private IDictionary<string, dynamic> _dictDatasources = null;
         private bool _Reclip_MTBS_Checked = false;  //@ToDo: Change to true before production
+        private string _strSettingsFile;
 
         public string Heading
         {
@@ -466,6 +468,14 @@ namespace bagis_pro
         public string FireDataClipDescr
         {
             get { return $@"From the previous {_intFireDataClipYears} years"; }
+        }
+        public string SettingsFile
+        {
+            get { return _strSettingsFile; }
+            set 
+            {
+                SetProperty(ref _strSettingsFile, value, () => SettingsFile);
+            }
         }
 
         public ObservableCollection<BA_Objects.Aoi> Names { get; set; }
@@ -851,9 +861,9 @@ namespace bagis_pro
             ResetAoiBatchStateText();
 
             // Download the runoff csv file from the NRCS Portal                
-            string documentId = (string)Module1.Current.BatchToolSettings.AnnualRunoffItemId;
-            string annualRunoffDataDescr = (string)Module1.Current.BatchToolSettings.AnnualRunoffDataDescr;
-            string annualRunoffDataYear = (string)Module1.Current.BatchToolSettings.AnnualRunoffDataYear;
+            string documentId = (string)Module1.Current.BagisSettings.AnnualRunoffItemId;
+            string annualRunoffDataDescr = (string)Module1.Current.BagisSettings.AnnualRunoffDataDescr;
+            string annualRunoffDataYear = (string)Module1.Current.BagisSettings.AnnualRunoffDataYear;
             Webservices ws = new Webservices();
             var runOffSuccess = await ws.GetPortalFile(BA_Objects.AGSPortalProperties.PORTAL_ORGANIZATION, documentId, Module1.Current.SettingsPath + "\\" + Constants.FOLDER_SETTINGS +
                 "\\" + Constants.FILE_ANNUAL_RUNOFF_CSV);
@@ -1139,11 +1149,11 @@ namespace bagis_pro
             }
 
             // Save off the publisher name if it is different than previous
-            string strPublisher = (string)Module1.Current.BatchToolSettings.Publisher;
+            string strPublisher = (string)Module1.Current.BagisSettings.Publisher;
             if (!Publisher.Trim().Equals(strPublisher))
             {
-                Module1.Current.BatchToolSettings.Publisher = Publisher;
-                String json = JsonConvert.SerializeObject(Module1.Current.BatchToolSettings, Formatting.Indented);
+                Module1.Current.BagisSettings.Publisher = Publisher;
+                String json = JsonConvert.SerializeObject(Module1.Current.BagisSettings, Formatting.Indented);
                 string strSettingsPath = GeneralTools.GetBagisSettingsPath();
                 File.WriteAllText(strSettingsPath, json);
             }
@@ -1245,8 +1255,8 @@ namespace bagis_pro
                         string pBufferUnits = arrPrismBufferInfo[1];
 
                         // Clip PRISM
-                        string strDefaultBufferDistance = (string)Module1.Current.BatchToolSettings.PrecipBufferDistance;
-                        string strDefaultBufferUnits = (string)Module1.Current.BatchToolSettings.PrecipBufferUnits;
+                        string strDefaultBufferDistance = (string)Module1.Current.BagisSettings.PrecipBufferDistance;
+                        string strDefaultBufferUnits = (string)Module1.Current.BagisSettings.PrecipBufferUnits;
                         success = await AnalysisTools.ClipLayersAsync(aoiFolder, BA_Objects.DataSource.GetPrecipitationKey,
                             pBufferDistance, pBufferUnits, strDefaultBufferDistance, strDefaultBufferUnits);
                         if (success != BA_ReturnCode.Success)
@@ -1256,7 +1266,7 @@ namespace bagis_pro
 
                         // PRISM Zones
                         strLayer = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Prism, true) +
-                            Path.GetFileName((string)Module1.Current.BatchToolSettings.AoiPrecipFile);
+                            Path.GetFileName((string)Module1.Current.BagisSettings.AoiPrecipFile);
                         strZonesRaster = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) +
                             Constants.FILE_PRECIP_ZONE;
                         success = await AnalysisTools.CalculatePrecipitationZonesAsync(strLayer, strZonesRaster);
@@ -1285,13 +1295,13 @@ namespace bagis_pro
 
                         // Clip Snotel and Snow Course
                         double dblDistance = -1;
-                        bool isDouble = Double.TryParse((string)Module1.Current.BatchToolSettings.SnotelBufferDistance, out dblDistance);
+                        bool isDouble = Double.TryParse((string)Module1.Current.BagisSettings.SnotelBufferDistance, out dblDistance);
                         if (!isDouble)
                         {
                             dblDistance = 0;
                         }
                         Module1.Current.ModuleLogManager.LogDebug(nameof(RunImplAsync), "Buffer distance from settings: " + dblDistance);
-                        string snoBufferDistance = dblDistance + " " + (string)Module1.Current.BatchToolSettings.SnotelBufferUnits;
+                        string snoBufferDistance = dblDistance + " " + (string)Module1.Current.BagisSettings.SnotelBufferUnits;
                         Module1.Current.ModuleLogManager.LogDebug(nameof(RunImplAsync), "Sites buffer distance string: " + snoBufferDistance);
                         success = success = await AnalysisTools.ClipSnoLayersAsync(Module1.Current.Aoi.FilePath, true, snoBufferDistance,
                             true, snoBufferDistance);
@@ -1303,8 +1313,8 @@ namespace bagis_pro
                         // Represented Area
                         if (success == BA_ReturnCode.Success)
                         {
-                            double siteBufferDistanceMiles = (double)Module1.Current.BatchToolSettings.SiteBufferDistMiles;
-                            double siteElevRangeFeet = (double)Module1.Current.BatchToolSettings.SiteElevRangeFeet;
+                            double siteBufferDistanceMiles = (double)Module1.Current.BagisSettings.SiteBufferDistMiles;
+                            double siteElevRangeFeet = (double)Module1.Current.BagisSettings.SiteElevRangeFeet;
                             success = await AnalysisTools.GenerateSiteLayersAsync(siteBufferDistanceMiles, siteElevRangeFeet);
                             if (success != BA_ReturnCode.Success)
                             {
@@ -1398,8 +1408,8 @@ namespace bagis_pro
                                 }
                                 else
                                 {
-                                    string strDistance = Module1.Current.BatchToolSettings.RoadsAnalysisBufferDistance + " " +
-                                        Module1.Current.BatchToolSettings.RoadsAnalysisBufferUnits;
+                                    string strDistance = Module1.Current.BagisSettings.RoadsAnalysisBufferDistance + " " +
+                                        Module1.Current.BagisSettings.RoadsAnalysisBufferUnits;
                                     success = await AnalysisTools.GenerateProximityRoadsLayerAsync(uri, strDistance);
                                     if (success != BA_ReturnCode.Success)
                                     {
@@ -1453,10 +1463,10 @@ namespace bagis_pro
 
                         // Generate Elevation Precipitation Correlation layer
                         strLayer = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Prism, true) +
-                            Path.GetFileName((string)Module1.Current.BatchToolSettings.AoiPrecipFile);
+                            Path.GetFileName((string)Module1.Current.BagisSettings.AoiPrecipFile);
                         Uri uriPrism = new Uri(GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Prism));
                         success = await AnalysisTools.CalculateElevPrecipCorrAsync(aoiFolder, uriPrism,
-                            Path.GetFileName((string)Module1.Current.BatchToolSettings.AoiPrecipFile));
+                            Path.GetFileName((string)Module1.Current.BagisSettings.AoiPrecipFile));
                         if (success != BA_ReturnCode.Success)
                         {
                             errorCount++;
@@ -1541,9 +1551,9 @@ namespace bagis_pro
                             }
 
                             int pdfExportResolution = Constants.PDF_EXPORT_RESOLUTION;
-                            if (Module1.Current.BatchToolSettings.PdfExportResolution != null)
+                            if (Module1.Current.BagisSettings.PdfExportResolution != null)
                             {
-                                pdfExportResolution = (int)Module1.Current.BatchToolSettings.PdfExportResolution;
+                                pdfExportResolution = (int)Module1.Current.BagisSettings.PdfExportResolution;
                             }
 
                             success = await MapTools.PublishMapsAsync(ReportType.Watershed, pdfExportResolution); // export the watershed maps to pdf
@@ -2358,10 +2368,10 @@ namespace bagis_pro
                     output.Clear();
                     // Structures to manage data
                     strCsvFile = $@"{Path.GetDirectoryName(_strFireReportLogFile)}\{i}_annual_statistics.csv";
-                    String[] headings = { "stationTriplet", "stationName", $@"{i}_newfireno", $@"{i}_nifc_burnedArea_SqMiles",
-                    $@"{i}_nifc_burnedArea_pct", $@"{i}_mtbs_burnedArea_pct", $@"{i}_burnedForestedArea_SqMiles",
-                    $@"{i}_burnedForestedArea_pct",$@"{i}_lowburnedSeverityArea_SqMiles", $@"{i}_lowburnedSeverityArea_pct",
-                    $@"{i}_mediumburnedSeverityArea_SqMiles", $@"{i}_mediumburnedSeverityArea_pct",$@"{i}_highburnedSeverityArea_SqMiles", $@"{i}_highburnedSeverityArea_pct" };
+                    String[] headings = { "stationTriplet", "stationName", $@"newfireno_{i}", $@"nifc_burnedArea_SqMiles_{i}",
+                    $@"nifc_burnedArea_pct_{i}", $@"mtbs_burnedArea_pct_{i}", $@"burnedForestedArea_SqMiles_{i}",
+                    $@"burnedForestedArea_pct_{i}",$@"lowburnedSeverityArea_SqMiles_{i}", $@"lowburnedSeverityArea_pct_{i}",
+                    $@"mediumburnedSeverityArea_SqMiles_{i}", $@"mediumburnedSeverityArea_pct_{i}",$@"highburnedSeverityArea_SqMiles_{i}", $@"highburnedSeverityArea_pct_{i}" };
                     output.AppendLine(string.Join(separator, headings));
 
                     if (dictOutput.ContainsKey(i.ToString()))

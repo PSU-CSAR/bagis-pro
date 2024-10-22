@@ -1580,7 +1580,7 @@ namespace bagis_pro
             {
                 foreach (var nextInterval in lstIntervals)
                 {
-                    string strDemUnits = Convert.ToString(Module1.Current.BatchToolSettings.DemUnits);
+                    string strDemUnits = Convert.ToString(Module1.Current.BagisSettings.DemUnits);
                     if (strDisplayUnits.Equals("Feet"))
                     {
                         nextInterval.LowerBound = LinearUnit.Feet.ConvertTo(nextInterval.LowerBound, LinearUnit.Meters);
@@ -2560,7 +2560,7 @@ namespace bagis_pro
         public static async Task<BA_ReturnCode> CalculateElevPrecipCorrAsync(string strAoiPath, Uri uriPrism, string prismFile)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
-            int intAspectCount = Convert.ToInt16(Module1.Current.BatchToolSettings.AspectDirectionsCount);
+            int intAspectCount = Convert.ToInt16(Module1.Current.BagisSettings.AspectDirectionsCount);
             IList<BA_Objects.Interval> lstAspectInterval = AnalysisTools.GetAspectClasses(intAspectCount);
 
             // Create the elevation-precipitation layer
@@ -3099,8 +3099,8 @@ namespace bagis_pro
             double aoiElevMax = demElevMaxMeters;
             Module1.Current.ModuleLogManager.LogInfo(nameof(CalculateElevationZonesAsync),
                 "Elevations before conversion: min: " + aoiElevMin + " max: " + aoiElevMax);
-            string strDemUnits = (string)Module1.Current.BatchToolSettings.DemUnits;
-            string strDemDisplayUnits = (string)Module1.Current.BatchToolSettings.DemDisplayUnits;
+            string strDemUnits = (string)Module1.Current.BagisSettings.DemUnits;
+            string strDemDisplayUnits = (string)Module1.Current.BagisSettings.DemDisplayUnits;
             if (!strDemUnits.Equals(strDemDisplayUnits))
             {
                 if (strDemDisplayUnits.Equals("Feet"))
@@ -3128,7 +3128,7 @@ namespace bagis_pro
                 double dblZoneCount = range / testInterval;
                 Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateElevationZonesAsync),
                     "Test interval: " + testInterval + " Zone count: " + dblZoneCount);
-                if (dblZoneCount >= (int)Module1.Current.BatchToolSettings.MinElevationZonesCount)
+                if (dblZoneCount >= (int)Module1.Current.BagisSettings.MinElevationZonesCount)
                 {
                     bestInterval = testInterval;
                     Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateElevationZonesAsync),
@@ -3299,8 +3299,8 @@ namespace bagis_pro
                 if (success == BA_ReturnCode.Success)
                 {
                     // Save buffer distance and units in metadata
-                    string strBufferDistance = (string)Module1.Current.BatchToolSettings.RoadsAnalysisBufferDistance;
-                    string strBufferUnits = (string)Module1.Current.BatchToolSettings.RoadsAnalysisBufferUnits;
+                    string strBufferDistance = (string)Module1.Current.BagisSettings.RoadsAnalysisBufferDistance;
+                    string strBufferUnits = (string)Module1.Current.BagisSettings.RoadsAnalysisBufferUnits;
                     // We need to add a new tag at "/metadata/dataIdInfo/searchKeys/keyword"
                     StringBuilder sb = new StringBuilder();
                     sb.Append(Constants.META_TAG_PREFIX);
@@ -3465,7 +3465,7 @@ namespace bagis_pro
         public static async Task<BA_ReturnCode> CalculatePrecipitationZonesAsync(string strLayer, string strZonesRaster)
         {
             string strMaskPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_PRISM_VECTOR;
-            int prismZonesCount = (int)Module1.Current.BatchToolSettings.PrecipZonesCount;
+            int prismZonesCount = (int)Module1.Current.BagisSettings.PrecipZonesCount;
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
             IList<BA_Objects.Interval> lstInterval = await AnalysisTools.GetPrismClassesAsync(Module1.Current.Aoi.FilePath,
                 strLayer, prismZonesCount, "PRISM");
@@ -3515,7 +3515,7 @@ namespace bagis_pro
             string strZonesRaster = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) +
                 Constants.FILE_ASPECT_ZONE;
             string strMaskPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_BUFFERED_VECTOR;
-            int aspectDirectionsCount = Convert.ToInt16(Module1.Current.BatchToolSettings.AspectDirectionsCount);
+            int aspectDirectionsCount = Convert.ToInt16(Module1.Current.BagisSettings.AspectDirectionsCount);
             IList<BA_Objects.Interval> lstInterval = AnalysisTools.GetAspectClasses(aspectDirectionsCount);
             BA_ReturnCode success = await AnalysisTools.CalculateZonesAsync(Module1.Current.Aoi.FilePath, strLayer,
                 lstInterval, strZonesRaster, strMaskPath, "ASPECT");
@@ -4480,7 +4480,7 @@ namespace bagis_pro
                     if (string.IsNullOrEmpty(prismImageUri))
                     {
                         lstUri.Add(GeodatabaseTools.GetGeodatabasePath(strAoiFilePath, GeodatabaseNames.Prism));
-                        lstInputRasters.Add(Path.GetFileName((string)Module1.Current.BatchToolSettings.AoiPrecipFile));
+                        lstInputRasters.Add(Path.GetFileName((string)Module1.Current.BagisSettings.AoiPrecipFile));
                         lstIsImageService.Add(false);
                     }
                     else
@@ -4589,7 +4589,7 @@ namespace bagis_pro
                 }
                 if (success == BA_ReturnCode.Success)
                 {
-                    int intAspectCount = Convert.ToInt16(Module1.Current.BatchToolSettings.AspectDirectionsCount);
+                    int intAspectCount = Convert.ToInt16(Module1.Current.BagisSettings.AspectDirectionsCount);
                     IList<BA_Objects.Interval> lstAspectInterval = AnalysisTools.GetAspectClasses(intAspectCount);
                     success = await UpdateAspectDirectionsAsync(uriAnalysis, Constants.FILE_MERGED_SITES,
                         lstAspectInterval, Constants.FIELD_ASPECT);
@@ -4816,7 +4816,7 @@ namespace bagis_pro
             string[] arrUri = { GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Prism),
                                     GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Surfaces),
                                     GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Surfaces)};
-            string[] arrInputRasters = {Path.GetFileName((string)Module1.Current.BatchToolSettings.AoiPrecipFile),
+            string[] arrInputRasters = {Path.GetFileName((string)Module1.Current.BagisSettings.AoiPrecipFile),
                                             Constants.FILE_ASPECT,
                                             Constants.FILE_SLOPE};
             bool[] arrIsImageService = { false, false, false };
@@ -4929,7 +4929,7 @@ namespace bagis_pro
                 success = await GeoprocessingTools.AddFieldAsync(returnPath, Constants.FIELD_DIRECTION, "TEXT");
                 if (success == BA_ReturnCode.Success)
                 {
-                    int intAspectCount = Convert.ToInt16(Module1.Current.BatchToolSettings.AspectDirectionsCount);
+                    int intAspectCount = Convert.ToInt16(Module1.Current.BagisSettings.AspectDirectionsCount);
                     IList<BA_Objects.Interval> lstAspectInterval = AnalysisTools.GetAspectClasses(intAspectCount);
                     success = await UpdateAspectDirectionsAsync(uriAnalysis, Constants.FILE_MERGED_SITES,
                             lstAspectInterval, Constants.FIELD_ASPECT);
@@ -4985,10 +4985,10 @@ namespace bagis_pro
             string strOutputFeatures = GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Analysis, true) +
                 "tmpBuffer";
             string strDistance = "5 Kilometers";
-            if (Module1.Current.BatchToolSettings.SnotelBufferDistance != null)
+            if (Module1.Current.BagisSettings.SnotelBufferDistance != null)
             {
-                strDistance = (string)Module1.Current.BatchToolSettings.SnotelBufferDistance + " " +
-                    (string)Module1.Current.BatchToolSettings.PrecipBufferUnits;
+                strDistance = (string)Module1.Current.BagisSettings.SnotelBufferDistance + " " +
+                    (string)Module1.Current.BagisSettings.PrecipBufferUnits;
             }
 
             string strAoiPath = GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_VECTOR;
@@ -5141,7 +5141,7 @@ namespace bagis_pro
                 string strWsPrefix = dictDataSources[BA_Objects.DataSource.GetPrecipitationKey].uri;
                 if (!string.IsNullOrEmpty(strWsPrefix))
                 {
-                    string localLayerName = Path.GetFileName((string)Module1.Current.BatchToolSettings.AoiPrecipFile);
+                    string localLayerName = Path.GetFileName((string)Module1.Current.BagisSettings.AoiPrecipFile);
                     PrismFile prismFile = (PrismFile)Enum.Parse(typeof(PrismFile), localLayerName);
                     int index = Array.IndexOf(Enum.GetValues(prismFile.GetType()), prismFile);
                     PrismServiceNames serviceName = (PrismServiceNames)index;
@@ -5155,7 +5155,7 @@ namespace bagis_pro
 
         public static async Task<bool> TooManySitesAsync(string strAoiPath)
         {
-            int maxSitesAllowed = (int)Module1.Current.BatchToolSettings.MaximumSitesAllowed;
+            int maxSitesAllowed = (int)Module1.Current.BagisSettings.MaximumSitesAllowed;
             Webservices ws = new Webservices();
             IDictionary<string, dynamic> dictDataSources =
                 await ws.QueryDataSourcesAsync();
@@ -5719,7 +5719,7 @@ namespace bagis_pro
             if (runOffData == BA_ReturnCode.Success && oAnalysis != null)
             {
                 // Query for the annual runoff value
-                string annualRunoffField = (string)Module1.Current.BatchToolSettings.AnnualRunoffDataField;
+                string annualRunoffField = (string)Module1.Current.BagisSettings.AnnualRunoffDataField;
                 double dblAnnualRunoff = GeneralTools.QueryAnnualRunoffValue(oAoi.StationTriplet, annualRunoffField);
                 double dblRunoffRatio = -1;
                 if (dblAnnualRunoff >= 0)
@@ -5804,9 +5804,9 @@ namespace bagis_pro
             // state_codes
             string strStateCodes = "Not Found";
             string strPctAreaOutsideUsa = "Not Found";
-            if (Module1.Current.BatchToolSettings.USStateBoundaries != null)
+            if (Module1.Current.BagisSettings.USStateBoundaries != null)
             {
-                string strStatesUrl = Convert.ToString(Module1.Current.BatchToolSettings.USStateBoundaries);
+                string strStatesUrl = Convert.ToString(Module1.Current.BagisSettings.USStateBoundaries);
                 string strTmpStates = "tmpStates";
                 strOutputFeature = $@"{aoiUri.LocalPath}\{strTmpStates}";
                 parameters = Geoprocessing.MakeValueArray(strStatesUrl, strInputFeatures, strOutputFeature);
@@ -5913,7 +5913,7 @@ namespace bagis_pro
                 string strTmpMedian = "tmpMedian";
                 strOutputFeature = $@"{aoiUri.LocalPath}\{strTmpMedian}";
                 string strFilledDem = $@"{GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Surfaces)}\{Constants.FILE_DEM_FILLED}";
-                parameters = Geoprocessing.MakeValueArray(strInputFeatures, "AOINAME", strFilledDem, strOutputFeature, "DATA", "MEDIAN");
+                parameters = Geoprocessing.MakeValueArray(strInputFeatures, Constants.FIELD_STATION_NAME, strFilledDem, strOutputFeature, "DATA", "MEDIAN");
                 gpResult = await Geoprocessing.ExecuteToolAsync("ZonalStatisticsAsTable_sa", parameters, null,
                     CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
                 if (gpResult.IsFailed)
@@ -6190,8 +6190,8 @@ namespace bagis_pro
                     dblMinFt > -1 && dblMaxFt > -1)
                 {
                     StringBuilder sb = new StringBuilder();
-                    string strDemUnits = (string)Module1.Current.BatchToolSettings.DemUnits;
-                    string strDemDisplayUnits = (string)Module1.Current.BatchToolSettings.DemDisplayUnits;
+                    string strDemUnits = (string)Module1.Current.BagisSettings.DemUnits;
+                    string strDemDisplayUnits = (string)Module1.Current.BagisSettings.DemDisplayUnits;
                     lstInterval = GetElevationClasses(dblMinFt, dblMaxFt, oAnalysis.ElevationZonesInterval,
                         strDemUnits, strDemDisplayUnits);
                     for (int i = 0; i < lstInterval.Count; i++)
@@ -6403,8 +6403,8 @@ namespace bagis_pro
                     lngScosSitesCount = lngScosSitesCount + lngCount;
                 }
                 double dblAutoSitesAreaSqMi = -1;
-                string strDistance = (string)Module1.Current.BatchToolSettings.SnotelBufferDistance;
-                string strUnits = (string)Module1.Current.BatchToolSettings.SnotelBufferUnits;
+                string strDistance = (string)Module1.Current.BagisSettings.SnotelBufferDistance;
+                string strUnits = (string)Module1.Current.BagisSettings.SnotelBufferUnits;
                 string strDefaultSitesBuffer = $@"{strDistance} {strUnits}";
                 if (lngAutoSitesCount > 0)
                 {
@@ -7169,7 +7169,7 @@ namespace bagis_pro
                             {
                                 // Reclassify 5 and 6 values to 1 to make future functions easier
                                 //Sample reclass string: 1 1; 2 2; 3 3; 4 4; 5 1; 6 1
-                                JArray arrMtbsLegend = Module1.Current.BatchToolSettings.MtbsLegend;
+                                JArray arrMtbsLegend = Module1.Current.BagisSettings.MtbsLegend;
                                 StringBuilder sb = new StringBuilder();
                                 foreach (dynamic item in arrMtbsLegend)
                                 {
@@ -7209,7 +7209,7 @@ namespace bagis_pro
                 if (oFireSettings.DataSources != null)
                 {
                     // We know the file exists
-                    oFireSettings.mtbsLegend = Module1.Current.BatchToolSettings.MtbsLegend;
+                    oFireSettings.mtbsLegend = Module1.Current.BagisSettings.MtbsLegend;
                     oFireSettings.lastMtbsYear = intLastMtbsYear;
                 }
                 // Updates the MTBS data source and saves the file
