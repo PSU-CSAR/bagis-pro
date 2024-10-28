@@ -22,9 +22,6 @@ using System.ComponentModel;
 using ArcGIS.Desktop.Core.Geoprocessing;
 using System.Diagnostics;
 using bagis_pro.BA_Objects;
-using Newtonsoft.Json.Linq;
-using PdfSharp.Pdf.Content.Objects;
-using Microsoft.VisualBasic.Devices;
 
 namespace bagis_pro
 {
@@ -2295,7 +2292,7 @@ namespace bagis_pro
                     }
                     if (bAnnualStatistics)
                     {
-                        for (int i = overrideMinYear; i <= ReportEndYear; i++)
+                        for (int i = overrideMinYear; i <= SelectedMaxYear; i++)
                         {
                             IList<string> lstAnnualElements = await AnalysisTools.GenerateAnnualFireStatisticsList(oAoi, _strFireReportLogFile,
                                 aoiAreaSqMeters, cellSizeSqMeters, i);
@@ -2363,15 +2360,17 @@ namespace bagis_pro
             string separator = ",";
             if (bAnnualStatistics)
             {
-                for (int i = overrideMinYear; i <= ReportEndYear; i++)
+                for (int i = overrideMinYear; i <= SelectedMaxYear; i++)
                 {
                     output.Clear();
+                    string strYear = Convert.ToString(i);
+                    string strYearPrefix = $@"YY{strYear.Substring(strYear.Length - 2)}_";
                     // Structures to manage data
                     strCsvFile = $@"{Path.GetDirectoryName(_strFireReportLogFile)}\{i}_annual_statistics.csv";
-                    String[] headings = { "stationTriplet", "stationName", $@"newfireno_{i}", $@"nifc_burnedArea_SqMiles_{i}",
-                    $@"nifc_burnedArea_pct_{i}", $@"mtbs_burnedArea_pct_{i}", $@"burnedForestedArea_SqMiles_{i}",
-                    $@"burnedForestedArea_pct_{i}",$@"lowburnedSeverityArea_SqMiles_{i}", $@"lowburnedSeverityArea_pct_{i}",
-                    $@"mediumburnedSeverityArea_SqMiles_{i}", $@"mediumburnedSeverityArea_pct_{i}",$@"highburnedSeverityArea_SqMiles_{i}", $@"highburnedSeverityArea_pct_{i}" };
+                    String[] headings = { "stationTriplet", "stationName", $@"{strYearPrefix}newfireno", $@"{strYearPrefix}nifc_burnedArea_SqMiles",
+                    $@"{strYearPrefix}nifc_burnedArea_pct", $@"{strYearPrefix}mtbs_burnedArea_pct", $@"{strYearPrefix}burnedForestedArea_SqMiles",
+                    $@"{strYearPrefix}burnedForestedArea_pct",$@"{strYearPrefix}lowburnedSeverityArea_SqMiles", $@"{strYearPrefix}lowburnedSeverityArea_pct",
+                    $@"{strYearPrefix}mediumburnedSeverityArea_SqMiles", $@"{strYearPrefix}mediumburnedSeverityArea_pct",$@"{strYearPrefix}highburnedSeverityArea_SqMiles", $@"{strYearPrefix}highburnedSeverityArea_pct" };
                     output.AppendLine(string.Join(separator, headings));
 
                     if (dictOutput.ContainsKey(i.ToString()))
