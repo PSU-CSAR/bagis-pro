@@ -109,6 +109,8 @@
     ],
     "BagisSettings": {
         "SweDisplayUnits": "Inches",
+        "DemUri": "http://bagis.geog.pdx.edu/arcgis/services/BAGIS_GISLayers/DEM_westus_bc_30m/ImageServer",
+        "GaugeStationUri": "https://services.arcgis.com/SXbDpmb7xQkk44JV/arcgis/rest/services/stations_FCST_ACTIVE/FeatureServer/0",
         "DemUnits": "Meters",
         "DefaultDemInterval": 1000,
         "DemDisplayUnits": "Feet",
@@ -181,6 +183,6 @@
                 "Severity": "None"
             }
         ],
-        "Version": 17
+        "Version": 18
     }
 }
