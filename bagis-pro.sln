@@ -4,8 +4,6 @@ VisualStudioVersion = 17.10.35027.167
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "bagis-pro", "bagis-pro\bagis-pro.csproj", "{BFEF0CD1-E877-48DC-8B78-40DE4825C346}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "bagis-print", "..\bagis-print\bagis-print\bagis-print.csproj", "{F57D4DB5-14A7-46E6-A18B-56988BC44B58}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -16,10 +14,6 @@ Global
 		{BFEF0CD1-E877-48DC-8B78-40DE4825C346}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BFEF0CD1-E877-48DC-8B78-40DE4825C346}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BFEF0CD1-E877-48DC-8B78-40DE4825C346}.Release|Any CPU.Build.0 = Release|Any CPU
-		{F57D4DB5-14A7-46E6-A18B-56988BC44B58}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F57D4DB5-14A7-46E6-A18B-56988BC44B58}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{F57D4DB5-14A7-46E6-A18B-56988BC44B58}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F57D4DB5-14A7-46E6-A18B-56988BC44B58}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
