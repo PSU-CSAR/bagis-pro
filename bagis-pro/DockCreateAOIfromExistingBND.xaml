@@ -77,30 +77,12 @@
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <GroupBox Grid.Row="0" Grid.Column="0" HorizontalAlignment="Left" Grid.RowSpan="2">
-                    <GroupBox.Header>
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock FontWeight="Bold">Source DEM:</TextBlock>
-                        </StackPanel>
-                    </GroupBox.Header>
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="20"/>
-                            <RowDefinition Height="20"/>
-                        </Grid.RowDefinitions>
-                        <DockPanel Grid.Row="0">
-                            <RadioButton GroupName="sourceDem" Tag="Dem10Checked" IsChecked="{Binding Dem10Checked}">10 meters</RadioButton>
-                        </DockPanel>
-                        <DockPanel Grid.Row="1">
-                            <RadioButton GroupName="sourceDem" Tag="Dem30Checked" IsChecked="{Binding Dem30Checked}">30 meters</RadioButton>
-                        </DockPanel>
-                    </Grid>
-                </GroupBox>
-                <DockPanel Grid.Row="0" Grid.Column="1" Margin="5,0,0,0">
+
+                <DockPanel Grid.Row="0" Grid.Column="0" Margin="5,0,0,0">
                     <CheckBox x:Name="ckSmoothDem" Content="Smooth DEM" IsChecked="{Binding SmoothDemChecked}" Checked="SmoothDem_Checked" Unchecked="SmoothDem_Checked"/>
                     <TextBlock x:Name="lblSmooth" Margin="15,1,0,0" FontWeight="Bold" Foreground="Blue" MouseLeftButtonUp="LblSmooth_MouseLeftButtonUp"> Why ?</TextBlock>
                 </DockPanel>
-                <GroupBox  Grid.Row="1" Grid.Column="1">
+                <GroupBox  Grid.Row="1" Grid.Column="0">
                     <GroupBox.Header>
                         <StackPanel Orientation="Horizontal">
                             <TextBlock FontWeight="Bold" >Filter size (pixels):</TextBlock>

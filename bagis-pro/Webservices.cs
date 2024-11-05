@@ -438,55 +438,6 @@ namespace bagis_pro
                 return Convert.ToString(oSettings.demElevUnit);
             }
         }
-        public async Task<string> GetPreferredDemAsync()
-        {
-            var response = new EsriHttpClient().Get(Constants.URI_DESKTOP_SETTINGS);
-            var json = await response.Content.ReadAsStringAsync();
-            dynamic oSettings = JObject.Parse(json);
-            if (oSettings == null || String.IsNullOrEmpty(Convert.ToString(oSettings.preferredDem)))
-            {
-                Module1.Current.ModuleLogManager.LogError(nameof(GetPreferredDemAsync),
-                    "Unable to retrieve settings from " + Constants.URI_DESKTOP_SETTINGS);
-                return "";
-            }
-            else
-            {
-                return Convert.ToString(oSettings.preferredDem);
-            }
-        }
-        public async Task<string> GetDemUriAsync(bool b10meters)
-        {
-            var response = new EsriHttpClient().Get(Constants.URI_DESKTOP_SETTINGS);
-            var json = await response.Content.ReadAsStringAsync();
-            dynamic oSettings = JObject.Parse(json);
-            if (b10meters)
-            {
-                if (oSettings == null || String.IsNullOrEmpty(Convert.ToString(oSettings.dem10)))
-                {
-                    Module1.Current.ModuleLogManager.LogError(nameof(GetDemUriAsync),
-                        "Unable to retrieve settings from " + Constants.URI_DESKTOP_SETTINGS);
-                    return "";
-                }
-                else
-                {
-                    return Convert.ToString(oSettings.dem10);
-                }
-            }
-            else
-            {
-                if (oSettings == null || String.IsNullOrEmpty(Convert.ToString(oSettings.dem30)))
-                {
-                    Module1.Current.ModuleLogManager.LogError(nameof(GetDemUriAsync),
-                        "Unable to retrieve settings from " + Constants.URI_DESKTOP_SETTINGS);
-                    return "";
-                }
-                else
-                {
-                    return Convert.ToString(oSettings.dem30);
-                }
-            }
-
-        }
 
         public async Task<BA_ReturnCode> UpdateAoiItemsAsync(string stationTriplet)
         {

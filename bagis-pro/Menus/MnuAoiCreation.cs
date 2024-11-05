@@ -81,12 +81,6 @@ namespace bagis_pro.Menus
                     pane.AoiName = newAoiName;
                     Webservices ws = new Webservices();
                     pane.DemElevUnit = await ws.GetDemElevUnitAsync();
-                    string strPreferredDem = await ws.GetPreferredDemAsync();
-                    pane.Dem30Checked = true;
-                    if (strPreferredDem.Equals("dem10"))
-                    {
-                        pane.Dem10Checked = true;   
-                    }
                     DockCreateAOIfromExistingBNDViewModel.Show();
                 }
                 else

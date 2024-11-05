@@ -80,8 +80,6 @@ namespace bagis_pro
         private string _sourceFile = "";
         private string _outputWorkspace = "";
         private string _aoiName = "";
-        private bool _dem10Checked;
-        private bool _dem30Checked;
         private bool _smoothDemChecked;
         private int _filterCellHeight = 3;
         private int _filterCellWidth = 7;
@@ -121,16 +119,7 @@ namespace bagis_pro
             get => _aoiName;
             set => SetProperty(ref _aoiName, value);
         }
-        public bool Dem10Checked
-        {
-            get => _dem10Checked;
-            set => SetProperty(ref _dem10Checked, value);
-        }
-        public bool Dem30Checked
-        {
-            get => _dem30Checked;
-            set => SetProperty(ref _dem30Checked, value);
-        }
+
         public bool SmoothDemChecked
         {
             get => _smoothDemChecked;
@@ -320,6 +309,24 @@ namespace bagis_pro
                 }
             }
 
+            // verify dem is available
+            Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
+            Webservices ws = new Webservices();
+            string strDem = (string)Module1.Current.BagisSettings.DemUri;
+            await QueuedTask.Run(() =>
+            {
+                var aLayer = LayerFactory.Instance.CreateLayer(new Uri(strDem), oMap) as ImageServiceLayer;
+                if (aLayer == null)
+                {
+                    System.Windows.MessageBox.Show("DEM uri is invalid. AOI cannot be created", "BAGIS-Pro", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+                else
+                {
+                    oMap.RemoveLayer(aLayer);
+                }
+            });
+
             //verify AOI buffer distance
             if (BufferAoiChecked)
             {               
@@ -351,8 +358,6 @@ namespace bagis_pro
             uint internalLayerCount = 32;
             nStep = internalLayerCount; // step counter for frmmessage
 
-            Webservices ws = new Webservices();
-            string strDem = await ws.GetDemUriAsync(Dem10Checked);
             if (Directory.Exists(oAoi.FilePath))
             {
                 MessageBoxResult res = 
@@ -362,6 +367,10 @@ namespace bagis_pro
                     int layersRemoved = await MapTools.RemoveLayersInFolderAsync(oAoi.FilePath);
                     Directory.Delete(oAoi.FilePath, true);  // recursive delete removes everything in directory
                     Directory.CreateDirectory(oAoi.FilePath);
+                }
+                else
+                {
+                    return;
                 }
             }
             else
@@ -463,8 +472,7 @@ namespace bagis_pro
                 }  
             }
 
-            // Display DEM Extent layer - aoi_v
-            Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
+            // Display DEM Extent layer - aoi_v            
             string strPath = "";
             if (oMap != null)
             {
