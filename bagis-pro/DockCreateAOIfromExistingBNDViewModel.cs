@@ -1,5 +1,4 @@
-﻿using ArcGIS.Core.CIM;
-using ArcGIS.Core.Data;
+﻿using ArcGIS.Core.Data;
 using ArcGIS.Core.Data.Raster;
 using ArcGIS.Core.Geometry;
 using ArcGIS.Desktop.Catalog;
@@ -31,16 +30,6 @@ namespace bagis_pro
         {
             BA_ReturnCode success = GeneralTools.LoadBagisSettings();
             BufferDistance = Convert.ToDouble((string) Module1.Current.BagisSettings.AoiBufferDistance);
-            string prismBufferUnits = (string)Module1.Current.BagisSettings.PrecipBufferUnits;
-            double prismBufferDist = (double)Module1.Current.BagisSettings.PrecipBufferDistance;
-            if (!string.IsNullOrEmpty(prismBufferUnits) && prismBufferUnits.Equals("Kilometers"))
-            {
-                PrismBufferDist = LinearUnit.Kilometers.ConvertTo(prismBufferDist, LinearUnit.Meters);
-            }
-            else
-            {
-                PrismBufferDist = prismBufferDist;
-            }
             SlopeUnit defaultSlope = SlopeUnit.PctSlope; //BAGIS generates Slope in Degree
             SlopeUnitDescr = defaultSlope.GetEnumDescription();
             // DemElevUnit value is set before we get here in the BtnClick method because it is async
@@ -93,9 +82,6 @@ namespace bagis_pro
         private bool _bufferAoiChecked = true;
         private int _zFactor = 1;
         private double _bufferDistance;
-        private double _prismBufferDist;
-        private bool _inchesChecked = true;
-        private bool _mmChecked;
         private string _slopeUnitDescr;
         private string _demElevUnit;
 
@@ -185,22 +171,6 @@ namespace bagis_pro
             get => _bufferDistance;
             set => SetProperty(ref _bufferDistance, value);
         }
-        public double PrismBufferDist
-        {
-            get => _prismBufferDist;
-            set => SetProperty(ref _prismBufferDist, value);
-        }
-        public bool InchesChecked
-        {
-            get => _inchesChecked;
-            set => SetProperty(ref _inchesChecked, value);
-        }
-        public bool MmChecked
-        {
-            get => _mmChecked;
-            set => SetProperty(ref _mmChecked, value);
-        }
-
         public string SlopeUnitDescr
         {
             get => _slopeUnitDescr;
@@ -310,22 +280,29 @@ namespace bagis_pro
             }
 
             // verify dem is available
-            Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
             Webservices ws = new Webservices();
             string strDem = (string)Module1.Current.BagisSettings.DemUri;
-            await QueuedTask.Run(() =>
+            bool bDemImageService = false;
+            bool bDemRaster = false;
+            if (!string.IsNullOrEmpty(strDem))
             {
-                var aLayer = LayerFactory.Instance.CreateLayer(new Uri(strDem), oMap) as ImageServiceLayer;
-                if (aLayer == null)
+                bDemImageService = await Webservices.ValidateImageService(strDem);
+                if (!bDemImageService)
                 {
-                    System.Windows.MessageBox.Show("DEM uri is invalid. AOI cannot be created", "BAGIS-Pro", MessageBoxButton.OK, MessageBoxImage.Error);
-                    return;
+                    string strDirectory = Path.GetDirectoryName(strDem);
+                    string strRaster = Path.GetFileName(strDem);
+                    if (!string.IsNullOrEmpty(strDirectory) && !string.IsNullOrEmpty(strRaster))
+                    {
+                        Uri gdbUri = new Uri(strDirectory);
+                        bDemRaster = await GeodatabaseTools.RasterDatasetExistsAsync(gdbUri, strRaster);
+                    }                    
                 }
-                else
-                {
-                    oMap.RemoveLayer(aLayer);
-                }
-            });
+            }
+            if (bDemImageService == false && bDemRaster == false)
+            {
+                System.Windows.MessageBox.Show("Invalid DEM. AOI cannot be created!", "BAGIS-Pro", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
 
             //verify AOI buffer distance
             if (BufferAoiChecked)
@@ -334,20 +311,6 @@ namespace bagis_pro
                 {
                     // Switch back to default
                     BufferDistance = Convert.ToDouble((string)Module1.Current.BagisSettings.AoiBufferDistance);
-                }
-                if (PrismBufferDist <= 0)
-                {
-                    // Switch back to default
-                    string prismBufferUnits = (string)Module1.Current.BagisSettings.PrecipBufferUnits;
-                    double prismBufferDist = (double)Module1.Current.BagisSettings.PrecipBufferDistance;
-                    if (!string.IsNullOrEmpty(prismBufferUnits) && prismBufferUnits.Equals("Kilometers"))
-                    {
-                        PrismBufferDist = LinearUnit.Kilometers.ConvertTo(prismBufferDist, LinearUnit.Meters);
-                    }
-                    else
-                    {
-                        PrismBufferDist = prismBufferDist;
-                    }
                 }
             }
 
@@ -474,6 +437,7 @@ namespace bagis_pro
 
             // Display DEM Extent layer - aoi_v            
             string strPath = "";
+            Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
             if (oMap != null)
             {
                 strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi, true) +
@@ -496,118 +460,17 @@ namespace bagis_pro
             }, status.Progressor);
 
             string aoiGdbPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi);
+            string strOutputFeatures = "";
             if (success == BA_ReturnCode.Success)
             {
-                // use Buffer GP to perform buffer and save the result as a feature class - Prism
-                string strTmpBuffer = "tmpBuffer";  // save to a temp buffer in case there are dangles
-                string strOutputFeatures = aoiGdbPath + "\\" + strTmpBuffer;
-                string strDistance = PrismBufferDist + " Meters";   // Meters is the default
-                var parameters = Geoprocessing.MakeValueArray(strPath, strOutputFeatures, strDistance, "",
-                                                                  "", "ALL");
-                var gpResult = Geoprocessing.ExecuteToolAsync("Buffer_analysis", parameters, null,
-                                     CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                if (gpResult.Result.IsFailed)
+                string aoiBufferDistance = $@"{BufferDistance} Meters"; // Default buffer distance is meters
+                if (!BufferAoiChecked)
                 {
-                    System.Windows.MessageBox.Show("Unable to clip PRISM buffer", "BAGIS-Pro", MessageBoxButton.OK, MessageBoxImage.Error);
-                    progress.Hide();
-                    return;
+                    aoiBufferDistance = "1 Meters"; //one meter buffer to dissolve polygons connected at a point
                 }
-
-                // Check to make sure the buffer file only has one feature; No dangles
-                long featureCount = 0;
-                await QueuedTask.Run( () =>
-                {
-                    using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(aoiGdbPath))))
-                    using (Table table = geodatabase.OpenDataset<Table>(strTmpBuffer))
-                    {
-                        featureCount = table.GetCount();
-                    }
-                });
-                if (featureCount > 1)
-                {
-                    parameters = Geoprocessing.MakeValueArray(aoiGdbPath + "\\" + strTmpBuffer,
-                        aoiGdbPath + "\\" + Constants.FILE_AOI_PRISM_VECTOR, "0.5 Meters", "", "", "ALL");
-                    gpResult = Geoprocessing.ExecuteToolAsync("Buffer_analysis", parameters, null,
-                                         CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                    if (gpResult.Result.IsFailed)
-                    {
-                        System.Windows.MessageBox.Show("Unable to clip PRISM buffer with > 1 feature", "BAGIS-Pro", MessageBoxButton.OK, MessageBoxImage.Error);
-                        progress.Hide();
-                        return;
-                    }
-                }
-                else
-                {
-                    success = await GeoprocessingTools.CopyFeaturesAsync(oAoi.FilePath, $@"{aoiGdbPath}\{strTmpBuffer}", $@"{aoiGdbPath}\{Constants.FILE_AOI_PRISM_VECTOR}");
-                }
-                success = await GeoprocessingTools.DeleteDatasetAsync($@"{aoiGdbPath}\{strTmpBuffer}");
-
-                // create a raster version of the buffered AOI
-                if (success == BA_ReturnCode.Success)
-                {
-                    if (!await GeodatabaseTools.AttributeExistsAsync(new Uri(aoiGdbPath), Constants.FILE_AOI_PRISM_VECTOR, fieldRasterId))
-                    {
-                        success = await GeoprocessingTools.AddFieldAsync($@"{aoiGdbPath}\{Constants.FILE_AOI_PRISM_VECTOR}", fieldRasterId, "INTEGER");
-                        if (success == BA_ReturnCode.Success)
-                        {
-                            success = await GeodatabaseTools.UpdateFeatureAttributeNumericAsync(new Uri(aoiGdbPath),
-                                Constants.FILE_AOI_PRISM_VECTOR, new QueryFilter(), fieldRasterId, 1);
-                            if (success != BA_ReturnCode.Success)
-                            {
-                                System.Windows.MessageBox.Show("p_aoi_v does not contain valid polygons! Please visually inspect the file.", "BAGIS-Pro", MessageBoxButton.OK, MessageBoxImage.Error);
-                                progress.Hide();
-                                return;
-                            }
-                        }
-                    }
-                    var environments = Geoprocessing.MakeEnvironmentArray(workspace: oAoi.FilePath, snapRaster: aoiRasterPath);
-                    parameters = Geoprocessing.MakeValueArray($@"{aoiGdbPath}\{Constants.FILE_AOI_PRISM_VECTOR}", fieldRasterId, 
-                        $@"{aoiGdbPath}\{Constants.FILE_AOI_PRISM_GRID}", cellSize);
-                    gpResult =  Geoprocessing.ExecuteToolAsync("FeatureToRaster_conversion", parameters, environments,
-                                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                    if (gpResult.Result.IsFailed)
-                    {
-                        System.Windows.MessageBox.Show($@"Unable to generate {aoiGdbPath}\{Constants.FILE_AOI_PRISM_GRID}", "BAGIS-Pro", MessageBoxButton.OK, MessageBoxImage.Error);
-                        progress.Hide();
-                        return;
-                    }
-                }
-
-                if (success == BA_ReturnCode.Success)
-                {
-                    string aoiBufferDistance = $@"{BufferDistance} Meters"; // Default buffer distance is meters
-                    if (!BufferAoiChecked)
-                    {
-                        aoiBufferDistance = "1 Meters"; //one meter buffer to dissolve polygons connected at a point
-                    }
-                    strOutputFeatures = aoiGdbPath + "\\" + strTmpBuffer;
-                    success = await GeoprocessingTools.BufferAsync(strPath, strOutputFeatures, aoiBufferDistance, "ALL");
-                    if (success == BA_ReturnCode.Success)
-                    {
-                        await QueuedTask.Run(() =>
-                        {
-                            using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(aoiGdbPath))))
-                            using (Table table = geodatabase.OpenDataset<Table>(strTmpBuffer))
-                            {
-                                featureCount = table.GetCount();
-                            }
-                        });
-                        if (featureCount > 1)
-                        {
-                            success = await GeoprocessingTools.BufferAsync(strOutputFeatures, $@"{aoiGdbPath}\{Constants.FILE_AOI_BUFFERED_VECTOR}", "0.5 Meters", "ALL");
-                        }
-                        else 
-                        {
-                            success = await GeoprocessingTools.CopyFeaturesAsync(oAoi.FilePath, $@"{aoiGdbPath}\{strTmpBuffer}", $@"{aoiGdbPath}\{Constants.FILE_AOI_BUFFERED_VECTOR}");
-
-                        }
-                        success = await GeoprocessingTools.DeleteDatasetAsync($@"{aoiGdbPath}\{strTmpBuffer}");
-                    }
-                }
-
-
+                strOutputFeatures = $@"{aoiGdbPath}\{Constants.FILE_AOI_BUFFERED_VECTOR}";
+                success = await GeoprocessingTools.BufferAsync(strPath, strOutputFeatures, aoiBufferDistance, "ALL");                
             }
-
         }
 
     }

@@ -123,13 +123,6 @@
                 <DockPanel Grid.Row="6" Grid.Column="0" Margin="5,0,0,0">
                     <CheckBox x:Name="ckFlowDirect" Content="Flow Direction" IsChecked="{Binding FlowDirectChecked}"/>
                 </DockPanel>
-                <DockPanel Grid.Row="6" Grid.Column="1" Margin="5,0,0,0">
-                    <TextBlock Text="PRISM Buffer Distance:" VerticalAlignment="Center"/>
-                    <TextBox x:Name="txtPrismBufferDist" Text="{Binding PrismBufferDist}" VerticalAlignment="Center" Width="30" Height="20"
-                     HorizontalAlignment="Left"/>
-                    <TextBlock Text="Meters" VerticalAlignment="Center"/>
-                </DockPanel>
-
                 <DockPanel Grid.Row="7" Grid.Column="0" Margin="5,0,0,0">
                     <CheckBox x:Name="ckFlowAccum" Content="Flow Accumulation" IsChecked="{Binding FlowAccumChecked}"/>
                 </DockPanel>
@@ -155,19 +148,8 @@
                     <TextBlock VerticalAlignment="Center">Hillshade Z Factor:</TextBlock>
                     <TextBox x:Name="txtZFactor" Height="20" Width="20" Margin="5,0,5,0" Text="{Binding ZFactor}" VerticalAlignment="Center"></TextBox>
                 </DockPanel>
-                <GroupBox Grid.Row="11" Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Center">
-                    <GroupBox.Header>
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock FontWeight="Bold">PRISM Depth Unit:</TextBlock>
-                        </StackPanel>
-                    </GroupBox.Header>
-                    <DockPanel>
-                        <RadioButton GroupName="depthUnit" Tag="InchesChecked" IsChecked="{Binding InchesChecked}" VerticalAlignment="Bottom">Inches</RadioButton>
-                        <RadioButton GroupName="depthUnit" Tag="MmChecked" IsChecked="{Binding MnChecked}" VerticalAlignment="Bottom" Margin="5,0,0,0">Millimeters</RadioButton>
-                    </DockPanel>
-                </GroupBox>
-                <DockPanel Grid.Row="13" Grid.Column="1" Margin="5,0,0,0">
-                    <Button x:Name="btnCreateAoi" Content="Generate AOI" HorizontalAlignment="Right" Width="130" FontWeight="Bold" VerticalAlignment="Bottom" Command="{Binding CmdGenerateAoi}" />
+                <DockPanel Grid.Row="11" Grid.Column="1" Margin="5,0,0,0">
+                    <Button x:Name="btnCreateAoi" Content="Generate AOI" HorizontalAlignment="Right" Width="130" FontWeight="Bold" VerticalAlignment="Center" Command="{Binding CmdGenerateAoi}" />
                 </DockPanel>
 
 

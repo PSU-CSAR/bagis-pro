@@ -787,5 +787,40 @@ namespace bagis_pro
                 return null;
             }
         }
+
+        public static async Task<bool> ValidateImageService(string imageServerUri)
+        {
+            //Derive the rest uri from the imageserver uri
+            string wsUri = "";
+            string[] arrPieces = imageServerUri.Split("/services");
+            if (arrPieces.Length == 2)
+            {
+                wsUri = $@"{arrPieces[0]}/rest/services{arrPieces[1]}";
+            }
+            else
+            {
+                return false;
+            }
+            if (!string.IsNullOrEmpty(wsUri))            
+            {
+                string uriTest = $@"{wsUri}/info/iteminfo?f=pjson";
+                EsriHttpResponseMessage response = new EsriHttpClient().Get(uriTest);
+                JObject jsonVal = JObject.Parse(await response.Content.ReadAsStringAsync()) as JObject;
+                JValue jsonType = (JValue)jsonVal["type"];
+                if (jsonType != null)
+                {
+                    string strType = jsonType.ToString();
+                    if (strType.Equals("Image Service"))
+                    {
+                        return true;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+            }
+            return false;
+        }
     }
 }
