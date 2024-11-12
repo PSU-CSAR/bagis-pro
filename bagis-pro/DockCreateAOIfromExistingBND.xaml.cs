@@ -57,7 +57,6 @@ namespace bagis_pro
             var chkBox = s as CheckBox;
             bool bChecked = chkBox.IsChecked ?? false;
             txtBufferDistance.IsEnabled = bChecked;
-            txtPrismBufferDist.IsEnabled = bChecked;
         }
         public void SmoothDem_Checked(object s, RoutedEventArgs e)
         {

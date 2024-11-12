@@ -3980,10 +3980,13 @@ namespace bagis_pro
                     foreach (var oLayer in allLayers)
                     {
                         Uri layerPath = await QueuedTask.Run(() => oLayer.GetPath());
-                        int idx = layerPath.LocalPath.IndexOf(folderPath);
-                        if (idx >= 0)
+                        if (layerPath != null)
                         {
-                            lstRemove.Add(oLayer.Name);
+                            int idx = layerPath.LocalPath.IndexOf(folderPath);
+                            if (idx >= 0)
+                            {
+                                lstRemove.Add(oLayer.Name);
+                            }
                         }
                     }
                     await QueuedTask.Run(() =>

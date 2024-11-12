@@ -3074,6 +3074,41 @@ namespace bagis_pro
             return success;
         }
 
+        public static async Task<BA_ReturnCode> ClipRasterLayerNoBufferAsync(string strAoiPath, string strClipPath, string strClipExtent, 
+            string inputRaster, string outputRaster)
+        {
+            // Query the extent for the clip
+            string strClipGdb = Path.GetDirectoryName(strClipPath);
+            string strClipFile = Path.GetFileName(strClipPath);
+            string strClipEnvelope = await GeodatabaseTools.GetEnvelope(strClipGdb, strClipFile);
+            if (String.IsNullOrEmpty(strClipEnvelope))
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(ClipRasterLayerAsync),
+                    "Unable obtain clipping envelope from " + strClipGdb + "\\" + strClipFile);
+                return BA_ReturnCode.ReadError;
+            }
+            var parameters = Geoprocessing.MakeValueArray(inputRaster, strClipEnvelope, outputRaster, strClipPath,
+                "", "ClippingGeometry");
+            // Always set the extent if clipping from an image service
+            var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath, extent: strClipEnvelope);
+            var gpResult = await Geoprocessing.ExecuteToolAsync("Clip_management", parameters, environments,
+                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+            if (gpResult.IsFailed)
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(ClipRasterLayerAsync), "Unable to clip " + inputRaster + " to " + outputRaster);
+                foreach (var objMessage in gpResult.Messages)
+                {
+                    IGPMessage msg = (IGPMessage)objMessage;
+                    Module1.Current.ModuleLogManager.LogError(nameof(ClipRasterLayerAsync), msg.Text);
+                }
+                return BA_ReturnCode.ReadError;
+            }
+            else
+            {
+                return BA_ReturnCode.Success;
+            }
+        }
+
         public static async Task<BA_ReturnCode> CalculateElevationZonesAsync(string aoiFilePath)
         {
             Module1.Current.ModuleLogManager.LogDebug(nameof(CalculateElevationZonesAsync),

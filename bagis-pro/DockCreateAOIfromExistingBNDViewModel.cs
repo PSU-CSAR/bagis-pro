@@ -1,5 +1,6 @@
 ﻿using ArcGIS.Core.Data;
 using ArcGIS.Core.Data.Raster;
+using ArcGIS.Core.Data.UtilityNetwork.Trace;
 using ArcGIS.Core.Geometry;
 using ArcGIS.Desktop.Catalog;
 using ArcGIS.Desktop.Core;
@@ -10,13 +11,17 @@ using ArcGIS.Desktop.Framework;
 using ArcGIS.Desktop.Framework.Contracts;
 using ArcGIS.Desktop.Framework.Dialogs;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
+using ArcGIS.Desktop.Internal.GeoProcessing;
 using ArcGIS.Desktop.Internal.Mapping.Controls.Histogram;
 using ArcGIS.Desktop.Layouts;
 using ArcGIS.Desktop.Mapping;
 using bagis_pro.BA_Objects;
 using ExtensionMethod;
+using Microsoft.Office.Interop.Excel;
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using System.Windows;
 using System.Windows.Input;
 
@@ -281,16 +286,16 @@ namespace bagis_pro
 
             // verify dem is available
             Webservices ws = new Webservices();
-            string strDem = (string)Module1.Current.BagisSettings.DemUri;
+            string strSourceDem = (string)Module1.Current.BagisSettings.DemUri;
             bool bDemImageService = false;
             bool bDemRaster = false;
-            if (!string.IsNullOrEmpty(strDem))
+            if (!string.IsNullOrEmpty(strSourceDem))
             {
-                bDemImageService = await Webservices.ValidateImageService(strDem);
+                bDemImageService = await Webservices.ValidateImageService(strSourceDem);
                 if (!bDemImageService)
                 {
-                    string strDirectory = Path.GetDirectoryName(strDem);
-                    string strRaster = Path.GetFileName(strDem);
+                    string strDirectory = Path.GetDirectoryName(strSourceDem);
+                    string strRaster = Path.GetFileName(strSourceDem);
                     if (!string.IsNullOrEmpty(strDirectory) && !string.IsNullOrEmpty(strRaster))
                     {
                         Uri gdbUri = new Uri(strDirectory);
@@ -358,11 +363,11 @@ namespace bagis_pro
                 status.Progressor.Status = (status.Progressor.Value * 100 / status.Progressor.Max) + @" % Completed";
             }, status.Progressor);
 
-            double cellSize = await GeodatabaseTools.GetCellSizeAsync(new Uri(strDem), "", WorkspaceType.ImageServer);
+            double cellSize = await GeodatabaseTools.GetCellSizeAsync(new Uri(strSourceDem), "", WorkspaceType.ImageServer);
             // If DEMCellSize could not be calculated, the DEM is likely invalid
             if (cellSize <= 0)
             {
-                System.Windows.MessageBox.Show($@"{strDem} is invalid and cannot be used as the DEM layer. Check your BAGIS settings.", "BAGIS-Pro", MessageBoxButton.OK, MessageBoxImage.Error);
+                System.Windows.MessageBox.Show($@"{strSourceDem} is invalid and cannot be used as the DEM layer. Check your BAGIS settings.", "BAGIS-Pro", MessageBoxButton.OK, MessageBoxImage.Error);
                 progress.Hide();
                 return;
             }
@@ -461,16 +466,97 @@ namespace bagis_pro
 
             string aoiGdbPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi);
             string strOutputFeatures = "";
+            string aoiBufferDistance = Convert.ToString(BufferDistance); // Default buffer distance is meters
             if (success == BA_ReturnCode.Success)
             {
-                string aoiBufferDistance = $@"{BufferDistance} Meters"; // Default buffer distance is meters
                 if (!BufferAoiChecked)
                 {
-                    aoiBufferDistance = "1 Meters"; //one meter buffer to dissolve polygons connected at a point
+                    aoiBufferDistance = "1"; //one meter buffer to dissolve polygons connected at a point
                 }
                 strOutputFeatures = $@"{aoiGdbPath}\{Constants.FILE_AOI_BUFFERED_VECTOR}";
-                success = await GeoprocessingTools.BufferAsync(strPath, strOutputFeatures, aoiBufferDistance, "ALL");                
+                success = await GeoprocessingTools.BufferAsync(strPath, strOutputFeatures, $@"{aoiBufferDistance} {Constants.UNITS_METERS}", "ALL");                
             }
+
+            string surfacesGdbPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Surfaces);
+            if (success == BA_ReturnCode.Success)
+            {
+                string tempDem = "originaldem";
+                string tempOutput = $@"{surfacesGdbPath}\{tempDem}";
+                if (bDemImageService)
+                {
+                    success = await AnalysisTools.ClipRasterLayerNoBufferAsync(oAoi.FilePath, strOutputFeatures, Constants.FILE_AOI_BUFFERED_VECTOR,
+                        strSourceDem, tempOutput);
+                }
+                else
+                {
+
+                }
+                if (success == BA_ReturnCode.Success)
+                {
+                    string strDem = $@"{surfacesGdbPath}\{Constants.FILE_DEM}";
+                    if (SmoothDemChecked)
+                    {
+                        string envExtent = await GeodatabaseTools.GetEnvelope(aoiGdbPath, Constants.FILE_AOI_BUFFERED_VECTOR);
+                        string neighborhood = "Rectangle " + FilterCellWidth + " " + FilterCellHeight + " CELL";
+                        var parameters = Geoprocessing.MakeValueArray(tempOutput, strDem, neighborhood, "MEAN", "DATA");
+                        var environments = Geoprocessing.MakeEnvironmentArray(workspace: oAoi.FilePath, extent: envExtent, mask: $@"{surfacesGdbPath}\{tempDem}");
+                        var gpResult = await Geoprocessing.ExecuteToolAsync("FocalStatistics_sa", parameters, environments,
+                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                        if (gpResult.IsFailed)
+                        {
+                            success = BA_ReturnCode.UnknownError;
+                        }
+                        else
+                        {
+                            success = BA_ReturnCode.Success;
+                            // delete original dem
+                            success = await GeoprocessingTools.DeleteDatasetAsync(tempOutput);
+                        }
+                    }
+                    else
+                    {
+                        var parameters = Geoprocessing.MakeValueArray(tempOutput, strDem);
+                        var gpResult = await Geoprocessing.ExecuteToolAsync("Rename_management", parameters, null,
+                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                        if (gpResult.IsFailed)
+                        {
+                            success = BA_ReturnCode.UnknownError;
+                        }
+                        else
+                        {
+                            success = BA_ReturnCode.Success;
+                        }
+                    }
+                    if (!String.IsNullOrEmpty(aoiBufferDistance) && success == BA_ReturnCode.Success)
+                    {
+                        //Update the metadata if there is a custom buffer
+                        //We need to add a new tag at "/metadata/dataIdInfo/searchKeys/keyword"
+                        StringBuilder sb = new StringBuilder();
+                        sb.Append(Constants.META_TAG_PREFIX);
+                        // Buffer Distance
+                        sb.Append(Constants.META_TAG_BUFFER_DISTANCE + aoiBufferDistance + "; ");
+                        // X Units
+                        sb.Append(Constants.META_TAG_XUNIT_VALUE + Constants.UNITS_METERS + "; ");
+                        sb.Append(Constants.META_TAG_SUFFIX);
+
+                        //Update the metadata
+                        await QueuedTask.Run(() =>
+                        {
+                            var fc = ItemFactory.Instance.Create(strDem,
+                            ItemFactory.ItemType.PathItem);
+                            if (fc != null)
+                            {
+                                string strXml = string.Empty;
+                                strXml = fc.GetXml();
+                                System.Xml.XmlDocument xmlDocument = GeneralTools.UpdateMetadata(strXml, Constants.META_TAG_XPATH, sb.ToString(),
+                                    Constants.META_TAG_PREFIX.Length);
+                                fc.SetXml(xmlDocument.OuterXml);
+                            }
+                        });
+                    }
+                }
+            }
+
         }
 
     }

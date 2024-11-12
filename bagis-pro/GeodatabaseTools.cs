@@ -1168,6 +1168,30 @@ namespace bagis_pro
             }
             return success;
         }
+        public static async Task<string> GetEnvelope(string strGdb, string strFile)
+        {
+            string strClipEnvelope = "";
+            await QueuedTask.Run(() =>
+            {
+                using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(strGdb))))
+                using (Table table = geodatabase.OpenDataset<Table>(strFile))
+                {
+                    QueryFilter queryFilter = new QueryFilter();
+                    using (RowCursor cursor = table.Search(queryFilter, false))
+                    {
+                        while (cursor.MoveNext())
+                        {
+                            using (Feature feature = (Feature)cursor.Current)
+                            {
+                                Geometry aoiGeo = feature.GetShape();
+                                strClipEnvelope = aoiGeo.Extent.XMin + " " + aoiGeo.Extent.YMin + " " + aoiGeo.Extent.XMax + " " + aoiGeo.Extent.YMax;
+                            }
+                        }
+                    }
+                }
+            });
+            return strClipEnvelope;
+        }
     }
 
     
