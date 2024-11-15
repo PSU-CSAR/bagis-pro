@@ -17,7 +17,6 @@ using ArcGIS.Desktop.Layouts;
 using ArcGIS.Desktop.Mapping;
 using bagis_pro.BA_Objects;
 using ExtensionMethod;
-using Microsoft.Office.Interop.Excel;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -451,7 +450,7 @@ namespace bagis_pro
             // Display DEM Extent layer - aoi_v            
             string strPath = "";
             Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
-            if (oMap != null)
+            if (oMap != null && DemExtentChecked)
             {
                 strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi, true) +
                  Constants.FILE_AOI_VECTOR;
@@ -500,9 +499,9 @@ namespace bagis_pro
                     success = await AnalysisTools.ClipRasterLayerNoBufferAsync(oAoi.FilePath, strOutputFeatures, Constants.FILE_AOI_BUFFERED_VECTOR,
                         strSourceDem, tempOutput);
                 }
+                string strDem = $@"{surfacesGdbPath}\{Constants.FILE_DEM}";
                 if (success == BA_ReturnCode.Success)
                 {
-                    string strDem = $@"{surfacesGdbPath}\{Constants.FILE_DEM}";
                     if (SmoothDemChecked)
                     {
                         string envExtent = await GeodatabaseTools.GetEnvelope(aoiGdbPath, Constants.FILE_AOI_BUFFERED_VECTOR);
@@ -536,18 +535,18 @@ namespace bagis_pro
                             success = BA_ReturnCode.Success;
                         }
                     }
+
+                    StringBuilder sbDem = new StringBuilder();
+                    //Update the metadata if there is a custom buffer
+                    //We need to add a new tag at "/metadata/dataIdInfo/searchKeys/keyword"
+                    sbDem.Append(Constants.META_TAG_PREFIX);
+                    // Buffer Distance
+                    sbDem.Append(Constants.META_TAG_BUFFER_DISTANCE + aoiBufferDistance + "; ");
+                    // X Units
+                    sbDem.Append(Constants.META_TAG_XUNIT_VALUE + Constants.UNITS_METERS + "; ");
+                    sbDem.Append(Constants.META_TAG_SUFFIX);
                     if (!String.IsNullOrEmpty(aoiBufferDistance) && success == BA_ReturnCode.Success)
                     {
-                        //Update the metadata if there is a custom buffer
-                        //We need to add a new tag at "/metadata/dataIdInfo/searchKeys/keyword"
-                        StringBuilder sb = new StringBuilder();
-                        sb.Append(Constants.META_TAG_PREFIX);
-                        // Buffer Distance
-                        sb.Append(Constants.META_TAG_BUFFER_DISTANCE + aoiBufferDistance + "; ");
-                        // X Units
-                        sb.Append(Constants.META_TAG_XUNIT_VALUE + Constants.UNITS_METERS + "; ");
-                        sb.Append(Constants.META_TAG_SUFFIX);
-
                         //Update the metadata
                         await QueuedTask.Run(() =>
                         {
@@ -557,13 +556,36 @@ namespace bagis_pro
                             {
                                 string strXml = string.Empty;
                                 strXml = fc.GetXml();
-                                System.Xml.XmlDocument xmlDocument = GeneralTools.UpdateMetadata(strXml, Constants.META_TAG_XPATH, sb.ToString(),
+                                System.Xml.XmlDocument xmlDocument = GeneralTools.UpdateMetadata(strXml, Constants.META_TAG_XPATH, sbDem.ToString(),
                                     Constants.META_TAG_PREFIX.Length);
                                 fc.SetXml(xmlDocument.OuterXml);
                             }
                         });
                     }
                 }
+                Uri uri = null;
+                if (success == BA_ReturnCode.Success)
+                {
+                    var parameters = Geoprocessing.MakeValueArray(strDem, $@"{surfacesGdbPath}\{Constants.FILE_DEM_FILLED}");
+                    var environments = Geoprocessing.MakeEnvironmentArray(workspace: oAoi.FilePath, mask: $@"{strDem}");
+                    var gpResult = await Geoprocessing.ExecuteToolAsync("Fill_sa", parameters, environments,
+                        CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                    if (gpResult.IsFailed)
+                    {
+                        success = BA_ReturnCode.UnknownError;
+                        return;
+                    }
+                    else
+                    {
+                        success = BA_ReturnCode.Success;
+                    }
+                    if (FilledDemChecked)
+                    {
+                        uri = new Uri($@"{surfacesGdbPath}\{Constants.FILE_DEM_FILLED}");
+                        await MapTools.DisplayRasterStretchSymbolAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, "Filled DEM", "ArcGIS Colors", "Black to White", 0);
+                    }
+                }
+
             }
 
         }
