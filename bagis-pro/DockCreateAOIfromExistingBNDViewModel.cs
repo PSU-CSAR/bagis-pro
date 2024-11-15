@@ -322,7 +322,6 @@ namespace bagis_pro
             // Start populating aoi object
             Aoi oAoi = new Aoi();
             oAoi.FilePath = $@"{OutputWorkspace}\{AoiName}";
-            //@ToDo: checking to see if we need to support GenerateAOIOnly; This also affects display of prism buffer in load method
             uint internalLayerCount = 32;
             nStep = internalLayerCount; // step counter for frmmessage
 
@@ -363,8 +362,17 @@ namespace bagis_pro
                 status.Progressor.Status = (status.Progressor.Value * 100 / status.Progressor.Max) + @" % Completed";
             }, status.Progressor);
 
-            double cellSize = await GeodatabaseTools.GetCellSizeAsync(new Uri(strSourceDem), "", WorkspaceType.ImageServer);
-            // If DEMCellSize could not be calculated, the DEM is likely invalid
+            double cellSize = -1;
+            if (bDemImageService)
+            {
+                cellSize = await GeodatabaseTools.GetCellSizeAsync(new Uri(strSourceDem), "", WorkspaceType.ImageServer);
+            }
+            else
+            {
+                string strGdb = Path.GetDirectoryName(strSourceDem);
+                cellSize = await GeodatabaseTools.GetCellSizeAsync(new Uri(strGdb), Path.GetFileName(strSourceDem), WorkspaceType.Raster);
+            }
+            // If DEM CellSize could not be calculated, the DEM is likely invalid
             if (cellSize <= 0)
             {
                 System.Windows.MessageBox.Show($@"{strSourceDem} is invalid and cannot be used as the DEM layer. Check your BAGIS settings.", "BAGIS-Pro", MessageBoxButton.OK, MessageBoxImage.Error);
@@ -489,7 +497,8 @@ namespace bagis_pro
                 }
                 else
                 {
-
+                    success = await AnalysisTools.ClipRasterLayerNoBufferAsync(oAoi.FilePath, strOutputFeatures, Constants.FILE_AOI_BUFFERED_VECTOR,
+                        strSourceDem, tempOutput);
                 }
                 if (success == BA_ReturnCode.Success)
                 {
