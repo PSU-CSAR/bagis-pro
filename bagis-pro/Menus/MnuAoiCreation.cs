@@ -79,8 +79,7 @@ namespace bagis_pro.Menus
                     pane.SourceFile = e.Path;
                     string newAoiName = Path.GetFileNameWithoutExtension(e.Path);
                     pane.AoiName = newAoiName;
-                    Webservices ws = new Webservices();
-                    pane.DemElevUnit = await ws.GetDemElevUnitAsync();
+                    pane.DemElevUnit = (string) Module1.Current.BagisSettings.DemUnits;
                     DockCreateAOIfromExistingBNDViewModel.Show();
                 }
                 else

@@ -95,7 +95,6 @@ namespace bagis_pro
                 return BA_ReturnCode.Success;
             }
         }
-
         public static async Task<BA_ReturnCode> DeleteFeatureClassFieldsAsync(string featureClassPath, string[] arrFieldsToDelete)
         {
             var parameters = Geoprocessing.MakeValueArray(featureClassPath, arrFieldsToDelete);
@@ -485,6 +484,21 @@ namespace bagis_pro
                 oMap.RemoveLayer(lyrSelect);
             });
             return success;
+        }
+
+        public static async Task<BA_ReturnCode> CalculateStatisticsAsync(string datasetPath)
+        {
+            var parameters = Geoprocessing.MakeValueArray(datasetPath);
+            IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("CalculateStatistics_management", parameters, null,
+                ArcGIS.Desktop.Framework.Threading.Tasks.CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+            if (gpResult.IsFailed)
+            {
+                return BA_ReturnCode.UnknownError;
+            }
+            else
+            {
+                return BA_ReturnCode.Success;
+            }
         }
     }
 }

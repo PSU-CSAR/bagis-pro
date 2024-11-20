@@ -422,23 +422,6 @@ namespace bagis_pro
                 return dsDem.uri;
             }
         }
-        public async Task<string> GetDemElevUnitAsync()
-        {
-            var response = new EsriHttpClient().Get(Constants.URI_DESKTOP_SETTINGS);
-            var json = await response.Content.ReadAsStringAsync();
-            dynamic oSettings = JObject.Parse(json);
-            if (oSettings == null || String.IsNullOrEmpty(Convert.ToString(oSettings.demElevUnit)))
-            {
-                Module1.Current.ModuleLogManager.LogError(nameof(GetDemElevUnitAsync),
-                    "Unable to retrieve settings from " + Constants.URI_DESKTOP_SETTINGS);
-                return "";
-            }
-            else
-            {
-                return Convert.ToString(oSettings.demElevUnit);
-            }
-        }
-
         public async Task<BA_ReturnCode> UpdateAoiItemsAsync(string stationTriplet)
         {
             string nwccAoiName = "";

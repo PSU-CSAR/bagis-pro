@@ -2875,7 +2875,7 @@ namespace bagis_pro
                         Name = displayName,
                         MapMemberIndex = idxLayer
                     };
-                    RasterLayer rasterLayer = LayerFactory.Instance.CreateLayer<RasterLayer>(rasterLayerCreationParams, MapView.Active.Map);
+                    RasterLayer rasterLayer = LayerFactory.Instance.CreateLayer<RasterLayer>(rasterLayerCreationParams, oMap);
                     rasterLayer.SetTransparency(transparency);
                 });
             }

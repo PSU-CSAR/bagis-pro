@@ -1,4 +1,5 @@
-﻿using ArcGIS.Core.Data;
+﻿using ArcGIS.Core.CIM;
+using ArcGIS.Core.Data;
 using ArcGIS.Core.Data.Raster;
 using ArcGIS.Core.Data.UtilityNetwork.Trace;
 using ArcGIS.Core.Geometry;
@@ -11,15 +12,13 @@ using ArcGIS.Desktop.Framework;
 using ArcGIS.Desktop.Framework.Contracts;
 using ArcGIS.Desktop.Framework.Dialogs;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
-using ArcGIS.Desktop.Internal.GeoProcessing;
-using ArcGIS.Desktop.Internal.Mapping.Controls.Histogram;
-using ArcGIS.Desktop.Layouts;
 using ArcGIS.Desktop.Mapping;
 using bagis_pro.BA_Objects;
 using ExtensionMethod;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Security.Policy;
 using System.Text;
 using System.Windows;
 using System.Windows.Input;
@@ -455,7 +454,7 @@ namespace bagis_pro
                 strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi, true) +
                  Constants.FILE_AOI_VECTOR;
                 Uri aoiUri = new Uri(strPath);
-                success = await MapTools.AddAoiBoundaryToMapAsync(aoiUri, ColorFactory.Instance.BlackRGB, Constants.MAPS_DEFAULT_MAP_NAME, Constants.MAPS_BASIN_BOUNDARY);
+                success = await MapTools.AddAoiBoundaryToMapAsync(aoiUri, ColorFactory.Instance.RedRGB, Constants.MAPS_DEFAULT_MAP_NAME, Constants.MAPS_BASIN_BOUNDARY);
                 if (success != BA_ReturnCode.Success)
                 {
                     System.Windows.MessageBox.Show("Unable to add the extent layer", "BAGIS-Pro", MessageBoxButton.OK, MessageBoxImage.Error);
@@ -564,6 +563,11 @@ namespace bagis_pro
                     }
                 }
                 Uri uri = null;
+                await QueuedTask.Run(() =>
+                {
+                    status.Progressor.Value += 1;
+                    status.Progressor.Message = $@"Filling DEM... (step 2 of {nStep})";
+                }, status.Progressor);
                 if (success == BA_ReturnCode.Success)
                 {
                     var parameters = Geoprocessing.MakeValueArray(strDem, $@"{surfacesGdbPath}\{Constants.FILE_DEM_FILLED}");
@@ -573,16 +577,96 @@ namespace bagis_pro
                     if (gpResult.IsFailed)
                     {
                         success = BA_ReturnCode.UnknownError;
+                        progress.Hide();
                         return;
                     }
                     else
                     {
+                        StringBuilder sbDem = new StringBuilder();
+                        //Update the metadata if there is a custom buffer
+                        //We need to add a new tag at "/metadata/dataIdInfo/searchKeys/keyword"
+                        sbDem.Append(Constants.META_TAG_PREFIX);
+                        // Buffer Distance
+                        sbDem.Append(Constants.META_TAG_BUFFER_DISTANCE + aoiBufferDistance + "; ");
+                        // X Units
+                        sbDem.Append(Constants.META_TAG_XUNIT_VALUE + Constants.UNITS_METERS + "; ");
+                        sbDem.Append(Constants.META_TAG_SUFFIX);
+                        if (!String.IsNullOrEmpty(aoiBufferDistance) && success == BA_ReturnCode.Success)
+                        {
+                            //Update the metadata
+                            await QueuedTask.Run(() =>
+                            {
+                                var fc = ItemFactory.Instance.Create($@"{surfacesGdbPath}\{Constants.FILE_DEM_FILLED}",
+                                ItemFactory.ItemType.PathItem);
+                                if (fc != null)
+                                {
+                                    string strXml = string.Empty;
+                                    strXml = fc.GetXml();
+                                    System.Xml.XmlDocument xmlDocument = GeneralTools.UpdateMetadata(strXml, Constants.META_TAG_XPATH, sbDem.ToString(),
+                                        Constants.META_TAG_PREFIX.Length);
+                                    fc.SetXml(xmlDocument.OuterXml);
+                                }
+                            });
+                        }
                         success = BA_ReturnCode.Success;
                     }
                     if (FilledDemChecked)
                     {
                         uri = new Uri($@"{surfacesGdbPath}\{Constants.FILE_DEM_FILLED}");
-                        await MapTools.DisplayRasterStretchSymbolAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, "Filled DEM", "ArcGIS Colors", "Black to White", 0);
+                        await QueuedTask.Run(() =>
+                        {
+                            var rasterLayerCreationParams = new RasterLayerCreationParams(uri)
+                            {
+                                Name = "Filled DEM",
+                            };
+                        RasterLayer rasterLayer = LayerFactory.Instance.CreateLayer<RasterLayer>(rasterLayerCreationParams, oMap);
+                        });
+                    }
+                }
+                await QueuedTask.Run(() =>
+                {
+                    status.Progressor.Value += 1;
+                    status.Progressor.Message = $@"Calculating Slope... (step 4 of {nStep})";
+                }, status.Progressor);
+
+                if (success == BA_ReturnCode.Success)
+                {
+                    double zFactor = 1;
+                    if (!DemElevUnit.Equals("Meters"))
+                    {
+                        zFactor = 0.3048;
+                    }
+                    var parameters = Geoprocessing.MakeValueArray($@"{surfacesGdbPath}\{Constants.FILE_DEM_FILLED}",
+                        $@"{surfacesGdbPath}\{Constants.FILE_SLOPE}","PERCENT_RISE", zFactor);
+                    var environments = Geoprocessing.MakeEnvironmentArray(workspace: oAoi.FilePath, snapRaster: Aoi.SnapRasterPath(oAoi.FilePath));
+                    var gpResult = await Geoprocessing.ExecuteToolAsync("Slope_sa", parameters, environments,
+                        CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                    if (gpResult.IsFailed)
+                    {
+                        success = BA_ReturnCode.UnknownError;
+                        progress.Hide();
+                        return;
+                    }
+                    else
+                    {
+                        success = await GeoprocessingTools.CalculateStatisticsAsync($@"{surfacesGdbPath}\{Constants.FILE_SLOPE}");
+                    }
+                    if (SlopeChecked)
+                    {
+                        uri = new Uri($@"{surfacesGdbPath}\{Constants.FILE_SLOPE}");
+
+                        //await MapTools.DisplayRasterStretchSymbolAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, "Slope", "ArcGIS Colors", "Black to White", 0);
+                        // Create a new stretch colorizer definition using default constructor.
+                        StretchColorizerDefinition stretchColorizerDef = new StretchColorizerDefinition();
+                        await QueuedTask.Run(() =>
+                        {
+                            var rasterCreationParams = new RasterLayerCreationParams(uri);
+                            rasterCreationParams.Name = "Slope";
+                            rasterCreationParams.ColorizerDefinition = stretchColorizerDef;
+                            // Create a raster layer using the colorizer definition created above.
+                            // Note: You can create a raster layer from a url, project item, or data connection.
+                            RasterLayer rasterLayerfromURL = LayerFactory.Instance.CreateLayer<RasterLayer>(rasterCreationParams, oMap);
+                        });
                     }
                 }
 
