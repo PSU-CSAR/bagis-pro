@@ -15,6 +15,7 @@ using ArcGIS.Desktop.Framework.Threading.Tasks;
 using ArcGIS.Desktop.Mapping;
 using bagis_pro.BA_Objects;
 using ExtensionMethod;
+using NLog.Config;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -563,6 +564,7 @@ namespace bagis_pro
                     }
                 }
                 Uri uri = null;
+                string filledDemPath = $@"{surfacesGdbPath}\{Constants.FILE_DEM_FILLED}";
                 await QueuedTask.Run(() =>
                 {
                     status.Progressor.Value += 1;
@@ -570,7 +572,7 @@ namespace bagis_pro
                 }, status.Progressor);
                 if (success == BA_ReturnCode.Success)
                 {
-                    var parameters = Geoprocessing.MakeValueArray(strDem, $@"{surfacesGdbPath}\{Constants.FILE_DEM_FILLED}");
+                    var parameters = Geoprocessing.MakeValueArray(strDem, filledDemPath);
                     var environments = Geoprocessing.MakeEnvironmentArray(workspace: oAoi.FilePath, mask: $@"{strDem}");
                     var gpResult = await Geoprocessing.ExecuteToolAsync("Fill_sa", parameters, environments,
                         CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
@@ -596,7 +598,7 @@ namespace bagis_pro
                             //Update the metadata
                             await QueuedTask.Run(() =>
                             {
-                                var fc = ItemFactory.Instance.Create($@"{surfacesGdbPath}\{Constants.FILE_DEM_FILLED}",
+                                var fc = ItemFactory.Instance.Create(filledDemPath,
                                 ItemFactory.ItemType.PathItem);
                                 if (fc != null)
                                 {
@@ -612,7 +614,7 @@ namespace bagis_pro
                     }
                     if (FilledDemChecked)
                     {
-                        uri = new Uri($@"{surfacesGdbPath}\{Constants.FILE_DEM_FILLED}");
+                        uri = new Uri(filledDemPath);
                         await QueuedTask.Run(() =>
                         {
                             var rasterLayerCreationParams = new RasterLayerCreationParams(uri)
@@ -636,8 +638,8 @@ namespace bagis_pro
                     {
                         zFactor = 0.3048;
                     }
-                    var parameters = Geoprocessing.MakeValueArray($@"{surfacesGdbPath}\{Constants.FILE_DEM_FILLED}",
-                        $@"{surfacesGdbPath}\{Constants.FILE_SLOPE}","PERCENT_RISE", zFactor);
+                    var parameters = Geoprocessing.MakeValueArray(filledDemPath, $@"{surfacesGdbPath}\{Constants.FILE_SLOPE}",
+                        "PERCENT_RISE", zFactor);
                     var environments = Geoprocessing.MakeEnvironmentArray(workspace: oAoi.FilePath, snapRaster: Aoi.SnapRasterPath(oAoi.FilePath));
                     var gpResult = await Geoprocessing.ExecuteToolAsync("Slope_sa", parameters, environments,
                         CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
@@ -654,19 +656,37 @@ namespace bagis_pro
                     if (SlopeChecked)
                     {
                         uri = new Uri($@"{surfacesGdbPath}\{Constants.FILE_SLOPE}");
+                        await MapTools.DisplayRasterStretchSymbolAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, "Slope", "ArcGIS Colors", "Black to White", 0);
+                    }
+                }
 
-                        //await MapTools.DisplayRasterStretchSymbolAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, "Slope", "ArcGIS Colors", "Black to White", 0);
-                        // Create a new stretch colorizer definition using default constructor.
-                        StretchColorizerDefinition stretchColorizerDef = new StretchColorizerDefinition();
-                        await QueuedTask.Run(() =>
-                        {
-                            var rasterCreationParams = new RasterLayerCreationParams(uri);
-                            rasterCreationParams.Name = "Slope";
-                            rasterCreationParams.ColorizerDefinition = stretchColorizerDef;
-                            // Create a raster layer using the colorizer definition created above.
-                            // Note: You can create a raster layer from a url, project item, or data connection.
-                            RasterLayer rasterLayerfromURL = LayerFactory.Instance.CreateLayer<RasterLayer>(rasterCreationParams, oMap);
-                        });
+                await QueuedTask.Run(() =>
+                {
+                    status.Progressor.Value += 1;
+                    status.Progressor.Message = $@"Calculating Aspect... (step 6 of {nStep})";
+                }, status.Progressor);
+
+                if (success == BA_ReturnCode.Success)
+                {
+                    var parameters = Geoprocessing.MakeValueArray(filledDemPath,
+                        $@"{surfacesGdbPath}\{Constants.FILE_ASPECT}");
+                    var environments = Geoprocessing.MakeEnvironmentArray(workspace: oAoi.FilePath, snapRaster: Aoi.SnapRasterPath(oAoi.FilePath));
+                    var gpResult = await Geoprocessing.ExecuteToolAsync("Aspect_sa", parameters, environments,
+                        CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                    if (gpResult.IsFailed)
+                    {
+                        success = BA_ReturnCode.UnknownError;
+                        progress.Hide();
+                        return;
+                    }
+                    else
+                    {
+                        success = await GeoprocessingTools.CalculateStatisticsAsync($@"{surfacesGdbPath}\{Constants.FILE_ASPECT}");
+                    }
+                    if (AspectChecked)
+                    {
+                        uri = new Uri($@"{surfacesGdbPath}\{Constants.FILE_ASPECT}");
+                        await MapTools.DisplayRasterStretchSymbolAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, "Aspect", "ArcGIS Colors", "Black to White", 0);
                     }
                 }
 
