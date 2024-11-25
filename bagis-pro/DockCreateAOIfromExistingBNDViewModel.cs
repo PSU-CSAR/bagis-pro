@@ -15,7 +15,6 @@ using ArcGIS.Desktop.Framework.Threading.Tasks;
 using ArcGIS.Desktop.Mapping;
 using bagis_pro.BA_Objects;
 using ExtensionMethod;
-using NLog.Config;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -424,7 +423,7 @@ namespace bagis_pro
                 IGPResult gpResult = await QueuedTask.Run(() =>
                 {
                     var environments = Geoprocessing.MakeEnvironmentArray(workspace: oAoi.FilePath);
-                    var parameters = Geoprocessing.MakeValueArray(aoiRasterPath, aoiVectorPath);
+                    var parameters = Geoprocessing.MakeValueArray(aoiRasterPath, aoiVectorPath, "NO_SIMPLIFY");
                     return Geoprocessing.ExecuteToolAsync("RasterToPolygon_conversion", parameters, environments,
                                 CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
                 });
@@ -650,9 +649,6 @@ namespace bagis_pro
                         return;
                     }
                     else
-                    {
-                        success = await GeoprocessingTools.CalculateStatisticsAsync($@"{surfacesGdbPath}\{Constants.FILE_SLOPE}");
-                    }
                     if (SlopeChecked)
                     {
                         uri = new Uri($@"{surfacesGdbPath}\{Constants.FILE_SLOPE}");
@@ -679,10 +675,6 @@ namespace bagis_pro
                         progress.Hide();
                         return;
                     }
-                    else
-                    {
-                        success = await GeoprocessingTools.CalculateStatisticsAsync($@"{surfacesGdbPath}\{Constants.FILE_ASPECT}");
-                    }
                     if (AspectChecked)
                     {
                         uri = new Uri($@"{surfacesGdbPath}\{Constants.FILE_ASPECT}");
@@ -690,6 +682,54 @@ namespace bagis_pro
                     }
                 }
 
+                await QueuedTask.Run(() =>
+                {
+                    status.Progressor.Value += 1;
+                    status.Progressor.Message = $@"Calculating Flow Direction... (step 8 of {nStep})";
+                }, status.Progressor);
+                if (success == BA_ReturnCode.Success)
+                {
+                    var parameters = Geoprocessing.MakeValueArray(filledDemPath,
+                        $@"{surfacesGdbPath}\{Constants.FILE_FLOW_DIRECTION}");
+                    var environments = Geoprocessing.MakeEnvironmentArray(workspace: oAoi.FilePath, snapRaster: Aoi.SnapRasterPath(oAoi.FilePath));
+                    var gpResult = await Geoprocessing.ExecuteToolAsync("FlowDirection_sa", parameters, environments,
+                        CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                    if (gpResult.IsFailed)
+                    {
+                        success = BA_ReturnCode.UnknownError;
+                        progress.Hide();
+                        return;
+                    }
+                    if (FlowDirectChecked)
+                    {
+                        uri = new Uri($@"{surfacesGdbPath}\{Constants.FILE_FLOW_DIRECTION}");
+                        await MapTools.DisplayRasterStretchSymbolAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, "Flow Direction", "ArcGIS Colors", "Black to White", 0);
+                    }
+                }
+                await QueuedTask.Run(() =>
+                {
+                    status.Progressor.Value += 1;
+                    status.Progressor.Message = $@"Calculating Flow Accumulation... (step 10 of {nStep})";
+                }, status.Progressor);
+                if (success == BA_ReturnCode.Success)
+                {
+                    var parameters = Geoprocessing.MakeValueArray($@"{surfacesGdbPath}\{Constants.FILE_FLOW_DIRECTION}",
+                        $@"{surfacesGdbPath}\{ Constants.FILE_FLOW_ACCUMULATION}");
+                    var environments = Geoprocessing.MakeEnvironmentArray(workspace: oAoi.FilePath, snapRaster: Aoi.SnapRasterPath(oAoi.FilePath));
+                    var gpResult = await Geoprocessing.ExecuteToolAsync("FlowAccumulation_sa", parameters, environments,
+                        CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                    if (gpResult.IsFailed)
+                    {
+                        success = BA_ReturnCode.UnknownError;
+                        progress.Hide();
+                        return;
+                    }
+                    if (FlowAccumChecked)
+                    {
+                        uri = new Uri($@"{surfacesGdbPath}\{Constants.FILE_FLOW_ACCUMULATION}");
+                        await MapTools.DisplayRasterStretchSymbolAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, "Flow Accumulation", "ArcGIS Colors", "Black to White", 0);
+                    }
+                }
             }
 
         }
