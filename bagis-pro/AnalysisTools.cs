@@ -823,63 +823,50 @@ namespace bagis_pro
                         {
                             strBufferDistance = "0";
                         }
+                        // if no buffer distance selected use the AOI buffer distance
+                        if (strBufferDistance.Equals("0"))
+                        {
+                            string[] arrResult = await GeneralTools.QueryBufferDistanceAsync(strAoiPath, strClipGdb, Constants.FILE_AOI_BUFFERED_VECTOR, false);
+                            strBufferDistance = arrResult[0];
+                            strBufferUnits = arrResult[1];
+                        }
                         if (!strBufferDistance.Trim().Equals(prismBufferDistance.Trim()) ||
                             !strBufferUnits.Trim().Equals(prismBufferUnits.Trim()))
                         {
-                            // Allow for possibility of unbuffered PRISM layer
-                            if (Convert.ToInt16(strBufferDistance) == 0)
+                            string strAoiBoundaryPath = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, true) +
+                                Constants.FILE_AOI_VECTOR;
+                            string strOutputFeatures = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, true) +
+                                 strTempBuffer;
+                            string strDistance = strBufferDistance + " " + strBufferUnits;
+                            var parameters = Geoprocessing.MakeValueArray(strAoiBoundaryPath, strOutputFeatures, strDistance, "",
+                                                                              "", "ALL");
+                            var gpResult = Geoprocessing.ExecuteToolAsync("Buffer_analysis", parameters, null,
+                                                 CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                            if (gpResult.Result.IsFailed)
+                            {
+                                Module1.Current.ModuleLogManager.LogError(nameof(ClipLayersAsync),
+                                   "Unable to buffer aoi_v. Error code: " + gpResult.Result.ErrorCode);
+                                return;
+                            }
+
+                            strClipFile = strTempBuffer;
+                            arrLayersToDelete[0] = strTempBuffer;
+                            if (strDataType.Equals(BA_Objects.DataSource.GetPrecipitationKey))
                             {
                                 // Copy the updated buffered file into the aoi.gdb
-                                var parameters = Geoprocessing.MakeValueArray(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, true) +
-                                    Constants.FILE_AOI_BUFFERED_VECTOR, GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, true) +
+                                parameters = Geoprocessing.MakeValueArray(strOutputFeatures, GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, true) +
                                     Constants.FILE_AOI_PRISM_VECTOR);
-                                var gpResult = Geoprocessing.ExecuteToolAsync("CopyFeatures", parameters, null,
+                                gpResult = Geoprocessing.ExecuteToolAsync("CopyFeatures", parameters, null,
                                     CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
                                 if (gpResult.Result.IsFailed)
                                 {
-                                    Module1.Current.ModuleLogManager.LogError(nameof(ClipLayersAsync),
-                                       "Unable to copy aoib_v to p_aoi_v. Error code: " + gpResult.Result.ErrorCode);
+                                    MessageBox.Show("Unable to update p_aoi_v. Clipping cancelled!!", "BAGIS-PRO");
                                     return;
                                 }
-                                strClipFile = Constants.FILE_AOI_PRISM_VECTOR;
-                            }
-                            else
-                            {
-                                string strAoiBoundaryPath = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, true) +
-                                    Constants.FILE_AOI_VECTOR;
-                                string strOutputFeatures = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, true) +
-                                    strTempBuffer;
-                                string strDistance = strBufferDistance + " " + strBufferUnits;
-                                var parameters = Geoprocessing.MakeValueArray(strAoiBoundaryPath, strOutputFeatures, strDistance, "",
-                                                                                  "", "ALL");
-                                var gpResult = Geoprocessing.ExecuteToolAsync("Buffer_analysis", parameters, null,
-                                                     CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                                if (gpResult.Result.IsFailed)
+                                else
                                 {
-                                    Module1.Current.ModuleLogManager.LogError(nameof(ClipLayersAsync),
-                                       "Unable to buffer aoi_v. Error code: " + gpResult.Result.ErrorCode);
-                                    return;
-                                }
-
-                                strClipFile = strTempBuffer;
-                                arrLayersToDelete[0] = strTempBuffer;
-                                if (strDataType.Equals(BA_Objects.DataSource.GetPrecipitationKey))
-                                {
-                                    // Copy the updated buffered file into the aoi.gdb
-                                    parameters = Geoprocessing.MakeValueArray(strOutputFeatures, GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, true) +
-                                        Constants.FILE_AOI_PRISM_VECTOR);
-                                    gpResult = Geoprocessing.ExecuteToolAsync("CopyFeatures", parameters, null,
-                                        CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                                    if (gpResult.Result.IsFailed)
-                                    {
-                                        MessageBox.Show("Unable to update p_aoi_v. Clipping cancelled!!", "BAGIS-PRO");
-                                        return;
-                                    }
-                                    else
-                                    {
-                                        Module1.Current.ModuleLogManager.LogDebug(nameof(ClipLayersAsync),
-                                            "Saved updated p_aoi_v to aoi.gdb");
-                                    }
+                                   Module1.Current.ModuleLogManager.LogDebug(nameof(ClipLayersAsync),
+                                       "Saved updated p_aoi_v to aoi.gdb");
                                 }
                             }
 
@@ -898,9 +885,9 @@ namespace bagis_pro
                             if (featureCount > 1)
                             {
                                 strTempBuffer2 = "tempBuffer2";
-                                var parameters = Geoprocessing.MakeValueArray(strClipGdb + "\\" + strClipFile,
+                                parameters = Geoprocessing.MakeValueArray(strClipGdb + "\\" + strClipFile,
                                     strClipGdb + "\\" + strTempBuffer2, "0.5 Meters", "", "", "ALL");
-                                var gpResult = Geoprocessing.ExecuteToolAsync("Buffer_analysis", parameters, null,
+                                gpResult = Geoprocessing.ExecuteToolAsync("Buffer_analysis", parameters, null,
                                                      CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
                                 if (gpResult.Result.IsFailed)
                                 {
