@@ -18,6 +18,7 @@ using ExtensionMethod;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Security.Policy;
 using System.Text;
 using System.Windows;
@@ -402,7 +403,7 @@ namespace bagis_pro
             {
                 IGPResult gpResult = await QueuedTask.Run(() =>
                 {
-                    var environments = Geoprocessing.MakeEnvironmentArray(workspace: oAoi.FilePath);
+                    var environments = Geoprocessing.MakeEnvironmentArray(workspace: oAoi.FilePath, snapRaster: strSourceDem);
                     var parameters = Geoprocessing.MakeValueArray(SourceFile, fieldRasterId, aoiRasterPath, cellSize);
                     return Geoprocessing.ExecuteToolAsync("FeatureToRaster_conversion", parameters, environments,
                                 CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
@@ -491,12 +492,12 @@ namespace bagis_pro
                 if (bDemImageService)
                 {
                     success = await AnalysisTools.ClipRasterLayerNoBufferAsync(oAoi.FilePath, strOutputFeatures, Constants.FILE_AOI_BUFFERED_VECTOR,
-                        strSourceDem, tempOutput);
+                        strSourceDem, tempOutput, strSourceDem);
                 }
                 else
                 {
                     success = await AnalysisTools.ClipRasterLayerNoBufferAsync(oAoi.FilePath, strOutputFeatures, Constants.FILE_AOI_BUFFERED_VECTOR,
-                        strSourceDem, tempOutput);
+                        strSourceDem, tempOutput, strSourceDem);
                 }
                 string strDem = $@"{surfacesGdbPath}\{Constants.FILE_DEM}";
                 if (success == BA_ReturnCode.Success)
@@ -506,7 +507,7 @@ namespace bagis_pro
                         string envExtent = await GeodatabaseTools.GetEnvelope(aoiGdbPath, Constants.FILE_AOI_BUFFERED_VECTOR);
                         string neighborhood = "Rectangle " + FilterCellWidth + " " + FilterCellHeight + " CELL";
                         var parameters = Geoprocessing.MakeValueArray(tempOutput, strDem, neighborhood, "MEAN", "DATA");
-                        var environments = Geoprocessing.MakeEnvironmentArray(workspace: oAoi.FilePath, extent: envExtent, mask: $@"{surfacesGdbPath}\{tempDem}");
+                        var environments = Geoprocessing.MakeEnvironmentArray(workspace: oAoi.FilePath, extent: envExtent, mask: $@"{surfacesGdbPath}\{tempDem}", snapRaster: strSourceDem);
                         var gpResult = await Geoprocessing.ExecuteToolAsync("FocalStatistics_sa", parameters, environments,
                             CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
                         if (gpResult.IsFailed)
@@ -572,7 +573,7 @@ namespace bagis_pro
                 if (success == BA_ReturnCode.Success)
                 {
                     var parameters = Geoprocessing.MakeValueArray(strDem, filledDemPath);
-                    var environments = Geoprocessing.MakeEnvironmentArray(workspace: oAoi.FilePath, mask: $@"{strDem}");
+                    var environments = Geoprocessing.MakeEnvironmentArray(workspace: oAoi.FilePath, mask: $@"{strDem}", snapRaster: strSourceDem);
                     var gpResult = await Geoprocessing.ExecuteToolAsync("Fill_sa", parameters, environments,
                         CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
                     if (gpResult.IsFailed)
@@ -639,7 +640,7 @@ namespace bagis_pro
                     }
                     var parameters = Geoprocessing.MakeValueArray(filledDemPath, $@"{surfacesGdbPath}\{Constants.FILE_SLOPE}",
                         "PERCENT_RISE", zFactor);
-                    var environments = Geoprocessing.MakeEnvironmentArray(workspace: oAoi.FilePath, snapRaster: Aoi.SnapRasterPath(oAoi.FilePath));
+                    var environments = Geoprocessing.MakeEnvironmentArray(workspace: oAoi.FilePath, snapRaster: strSourceDem);
                     var gpResult = await Geoprocessing.ExecuteToolAsync("Slope_sa", parameters, environments,
                         CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
                     if (gpResult.IsFailed)
@@ -666,7 +667,7 @@ namespace bagis_pro
                 {
                     var parameters = Geoprocessing.MakeValueArray(filledDemPath,
                         $@"{surfacesGdbPath}\{Constants.FILE_ASPECT}");
-                    var environments = Geoprocessing.MakeEnvironmentArray(workspace: oAoi.FilePath, snapRaster: Aoi.SnapRasterPath(oAoi.FilePath));
+                    var environments = Geoprocessing.MakeEnvironmentArray(workspace: oAoi.FilePath, snapRaster: strSourceDem);
                     var gpResult = await Geoprocessing.ExecuteToolAsync("Aspect_sa", parameters, environments,
                         CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
                     if (gpResult.IsFailed)
@@ -691,7 +692,7 @@ namespace bagis_pro
                 {
                     var parameters = Geoprocessing.MakeValueArray(filledDemPath,
                         $@"{surfacesGdbPath}\{Constants.FILE_FLOW_DIRECTION}");
-                    var environments = Geoprocessing.MakeEnvironmentArray(workspace: oAoi.FilePath, snapRaster: Aoi.SnapRasterPath(oAoi.FilePath));
+                    var environments = Geoprocessing.MakeEnvironmentArray(workspace: oAoi.FilePath, snapRaster: strSourceDem);
                     var gpResult = await Geoprocessing.ExecuteToolAsync("FlowDirection_sa", parameters, environments,
                         CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
                     if (gpResult.IsFailed)
@@ -715,7 +716,7 @@ namespace bagis_pro
                 {
                     var parameters = Geoprocessing.MakeValueArray($@"{surfacesGdbPath}\{Constants.FILE_FLOW_DIRECTION}",
                         $@"{surfacesGdbPath}\{ Constants.FILE_FLOW_ACCUMULATION}");
-                    var environments = Geoprocessing.MakeEnvironmentArray(workspace: oAoi.FilePath, snapRaster: Aoi.SnapRasterPath(oAoi.FilePath));
+                    var environments = Geoprocessing.MakeEnvironmentArray(workspace: oAoi.FilePath, snapRaster: strSourceDem);
                     var gpResult = await Geoprocessing.ExecuteToolAsync("FlowAccumulation_sa", parameters, environments,
                         CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
                     if (gpResult.IsFailed)
@@ -728,6 +729,21 @@ namespace bagis_pro
                     {
                         uri = new Uri($@"{surfacesGdbPath}\{Constants.FILE_FLOW_ACCUMULATION}");
                         await MapTools.DisplayRasterStretchSymbolAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, "Flow Accumulation", "ArcGIS Colors", "Black to White", 0);
+                        await QueuedTask.Run(() =>
+                        {
+                            var rasterLayer = oMap.GetLayersAsFlattenedList().OfType<RasterLayer>().Where(f =>
+                                f.Name == "Flow Accumulation").FirstOrDefault();                            
+                            CIMRasterColorizer rColorizer = rasterLayer.GetColorizer();
+                            // Check if the colorizer is an RGB colorizer.
+                            if (rColorizer is CIMRasterStretchColorizer stretchColorizer)
+                            {
+                                // Update RGB colorizer properties.
+                                stretchColorizer.StretchType = RasterStretchType.HistogramEqualize;
+                                stretchColorizer.StatsType = RasterStretchStatsType.AreaOfView;
+                                // Update the raster layer with the changed colorizer.
+                                rasterLayer.SetColorizer(stretchColorizer);
+                            }
+                        });
                     }
                 }
             }

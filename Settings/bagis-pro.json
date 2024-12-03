@@ -145,7 +145,7 @@
         "MaximumSitesAllowed": 50,
         "WinterStartMonth": 11,
         "WinterEndMonth": 3,
-        "AdminMenu": false,
+        "AdminMenu": true,
         "USStateBoundaries": "https://services.arcgis.com/ue9rwulIoeLEI9bj/arcgis/rest/services/US_StateBoundaries/FeatureServer/0",
         "FireNifcMinYear": 780,
         "FireMtbsMinYear": 1984,
@@ -183,6 +183,6 @@
                 "Severity": "None"
             }
         ],
-        "Version": 18
+        "Version": 19
     }
 }

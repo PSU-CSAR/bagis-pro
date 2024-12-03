@@ -3062,7 +3062,7 @@ namespace bagis_pro
         }
 
         public static async Task<BA_ReturnCode> ClipRasterLayerNoBufferAsync(string strAoiPath, string strClipPath, string strClipExtent, 
-            string inputRaster, string outputRaster)
+            string inputRaster, string outputRaster, string snapRasterPath)
         {
             // Query the extent for the clip
             string strClipGdb = Path.GetDirectoryName(strClipPath);
@@ -3077,7 +3077,7 @@ namespace bagis_pro
             var parameters = Geoprocessing.MakeValueArray(inputRaster, strClipEnvelope, outputRaster, strClipPath,
                 "", "ClippingGeometry");
             // Always set the extent if clipping from an image service
-            var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath, extent: strClipEnvelope);
+            var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath, snapRaster: snapRasterPath, extent: strClipEnvelope);
             var gpResult = await Geoprocessing.ExecuteToolAsync("Clip_management", parameters, environments,
                             CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
             if (gpResult.IsFailed)

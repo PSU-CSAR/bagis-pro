@@ -42,9 +42,9 @@
           <button refID="bagis_pro_Menus_MnuMaps_BtnSelectAoi" size="middle" />
           <button refID="bagis_pro_DockpaneLayers_ShowButton" size="middle" />
           <button refID="bagis_pro_DockAnalysisLayers_ShowButton" size="middle" />
+          <button refID="bagis_pro_WinExportPdf" size="middle" />
           <button refID="bagis_pro_Menus_MnuMaps_BtnMapLoad" size="middle" />
           <buttonPalette refID="bagis_pro_Buttons_MapButtonPalette" size="middle" />
-          <button refID="bagis_pro_WinExportPdf" size="middle" />
           <button refID="bagis_pro_Buttons_BtnExcelTables" size="middle" />
           <button refID="bagis_pro_DockMapPackage_ShowButton" size="middle" />
         </group>
@@ -190,10 +190,10 @@
           <tooltip heading="Tooltip Heading">Selected AOI<disabledText /></tooltip>
         </comboBox>
         <labelControl id="bagis_pro_Buttons_LblCurrentAoi" caption="  Selected AOI" />
-        <button id="bagis_pro_DockpaneLayers_ShowButton" caption="Clip Layers" className="DockpaneLayers_ShowButton" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/PaperClip32.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/PaperClip32.png" condition="AdminMenu_ShowButton_Condition" keytip="B55">
+        <button id="bagis_pro_DockpaneLayers_ShowButton" caption="1. Clip Layers" className="DockpaneLayers_ShowButton" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/PaperClip32.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/PaperClip32.png" condition="AdminMenu_ShowButton_Condition" keytip="B55">
           <tooltip heading="Clip Layers">Clip Layers<disabledText>Contact your administrator for permissions to run this tool</disabledText></tooltip>
         </button>
-        <button id="bagis_pro_DockAnalysisLayers_ShowButton" caption="Generate Analysis Layers" className="DockAnalysisLayers_ShowButton" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/CalculateGeometry16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/CalculateGeometry32.png" condition="AdminMenu_ShowButton_Condition" keytip="B56">
+        <button id="bagis_pro_DockAnalysisLayers_ShowButton" caption="2. Generate Analysis Layers" className="DockAnalysisLayers_ShowButton" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/CalculateGeometry16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/CalculateGeometry32.png" condition="AdminMenu_ShowButton_Condition" keytip="B56">
           <tooltip heading="Generate Analysis Layers">Generate Analysis Layers<disabledText>Contact your administrator for permissions to run this tool</disabledText></tooltip>
         </button>
         <!--<button id="bagis_pro_DockBatchPdfExport_ShowButton" caption="Batch PDF Export" className="DockBatchPdfExport_ShowButton" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/JobExport16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/JobExport16.png" keytip="B57">
@@ -221,7 +221,7 @@
             Export Map Package to PDF<disabledText />
           </tooltip>
         </button> -->
-        <button id="bagis_pro_WinExportPdf" caption="Export Map Package" className="BtnWinExportPdf" loadOnClick="true" smallImage="Images\PdfIcon.png" largeImage="Images\PdfIcon.png" condition="BtnExportToPdf_Condition" keytip="B14">
+        <button id="bagis_pro_WinExportPdf" caption="3. Export Map Package" className="BtnWinExportPdf" loadOnClick="true" smallImage="Images\PdfIcon.png" largeImage="Images\PdfIcon.png" condition="BtnExportToPdf_Condition" keytip="B14">
           <tooltip heading="Export Map Package">Click to export Map Package to PDF<disabledText /></tooltip>
         </button>
       </controls>
