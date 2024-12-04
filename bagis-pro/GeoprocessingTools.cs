@@ -485,11 +485,26 @@ namespace bagis_pro
             });
             return success;
         }
-
-        public static async Task<BA_ReturnCode> CalculateStatisticsAsync(string datasetPath)
+        public static async Task<BA_ReturnCode> ConAsync(string inputRaster, string outputValue, string outputRaster, double cellValue)
         {
-            var parameters = Geoprocessing.MakeValueArray(datasetPath);
-            IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("CalculateStatistics_management", parameters, null,
+            string strWhereClause = $@"value = {Convert.ToString(cellValue)}";
+            var parameters = Geoprocessing.MakeValueArray(inputRaster, outputValue, outputRaster, "", strWhereClause);
+            IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("Con_sa", parameters, null,
+                ArcGIS.Desktop.Framework.Threading.Tasks.CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+            if (gpResult.IsFailed)
+            {
+                return BA_ReturnCode.UnknownError;
+            }
+            else
+            {
+                return BA_ReturnCode.Success;
+            }
+        }
+
+        public static async Task<BA_ReturnCode> RasterToPointAsync(string inputRaster, string strField, string outputName)
+        {
+            var parameters = Geoprocessing.MakeValueArray(inputRaster, outputName, strField);
+            IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("RasterToPoint", parameters, null,
                 ArcGIS.Desktop.Framework.Threading.Tasks.CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
             if (gpResult.IsFailed)
             {

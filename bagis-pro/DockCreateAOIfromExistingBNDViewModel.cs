@@ -746,6 +746,40 @@ namespace bagis_pro
                         });
                     }
                 }
+                //create pourpoint using the max of flow_acc value within the AOI
+                if (success == BA_ReturnCode.Success)
+                {
+                    //get the max of flow acc
+                    double dblMax = -1;
+                    var parameters = Geoprocessing.MakeValueArray($@"{surfacesGdbPath}\{Constants.FILE_FLOW_ACCUMULATION}", "MAXIMUM");
+                    IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("GetRasterProperties_management", parameters, null,
+                        CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                    if (gpResult.IsFailed)
+                    {
+                        success = BA_ReturnCode.UnknownError;
+                        progress.Hide();
+                        return;
+                    }
+                    else
+                    {
+                        bool bSuccess = Double.TryParse(Convert.ToString(gpResult.ReturnValue), out dblMax);
+                        string ppRaster = "ppraster";
+                        if (bSuccess)
+                        {                            
+                            success = await GeoprocessingTools.ConAsync($@"{surfacesGdbPath}\{Constants.FILE_FLOW_ACCUMULATION}", "1",
+                                $@"{surfacesGdbPath}\{ppRaster}", dblMax);
+                            if (success == BA_ReturnCode.Success)
+                            {
+                                success = await GeoprocessingTools.RasterToPointAsync($@"{surfacesGdbPath}\{ppRaster}", Constants.FIELD_VALUE,
+                                   $@"{aoiGdbPath}\{Constants.FILE_POURPOINT}");
+                            }
+                        }
+                        if (await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(surfacesGdbPath),ppRaster))
+                        {
+                            success = await GeoprocessingTools.DeleteDatasetAsync($@"{surfacesGdbPath}\{ppRaster}");
+                        }
+                    }
+                }
             }
 
         }
