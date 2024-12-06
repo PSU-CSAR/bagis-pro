@@ -263,6 +263,7 @@ namespace bagis_pro
         public const string FOLDER_CHROME_USER_DATA = "chrome_user_data";
 
         public const string FIELD_AOI_AREA = "AOISHPAREA";
+        public const string FIELD_AOI_AREA_UNIT = "AOISHPUNIT";
         public const string FIELD_SITE_ELEV = "BA_SELEV";
         public const string FIELD_SITE_NAME = "BA_SNAME";
         public const string FIELD_SITE_TYPE = "BA_STYPE";
@@ -350,11 +351,11 @@ namespace bagis_pro
         public const string VALUE_MTBS_SEVERITY_HIGH = "High";
         public static string[] MTBS_INCLUDE_SEVERITIES = { Constants.VALUE_MTBS_SEVERITY_LOW, Constants.VALUE_MTBS_SEVERITY_MODERATE, Constants.VALUE_MTBS_SEVERITY_HIGH };
 
-
         public const string UNITS_INCHES = "Inches";
         public const string UNITS_MILLIMETERS = "Millimeters";
         public const string UNITS_FEET = "Feet";
         public const string UNITS_METERS = "Meters";
+        public const string UNITS_SQUARE_KM = "Square Km";
         public const double MAP_BUFFER_FACTOR = 1.3;
         public const string TEXT_SITES_TABLE_DESCR = "See Active Sites Table for characteristics of each snow monitoring site.";
         public const int PDF_EXPORT_RESOLUTION = 300;

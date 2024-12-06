@@ -324,25 +324,35 @@ namespace bagis_pro
             uint internalLayerCount = 32;
             nStep = internalLayerCount; // step counter for frmmessage
 
-            if (Directory.Exists(oAoi.FilePath))
+            try
             {
-                MessageBoxResult res = 
-                    System.Windows.MessageBox.Show($@"{oAoi.FilePath} folder already exists. Overwrite?", "BAGIS-Pro", MessageBoxButton.YesNo, MessageBoxImage.Question);
-                if (res == MessageBoxResult.Yes)
+                if (Directory.Exists(oAoi.FilePath))
                 {
-                    int layersRemoved = await MapTools.RemoveLayersInFolderAsync(oAoi.FilePath);
-                    Directory.Delete(oAoi.FilePath, true);  // recursive delete removes everything in directory
-                    Directory.CreateDirectory(oAoi.FilePath);
+                    MessageBoxResult res =
+                        System.Windows.MessageBox.Show($@"{oAoi.FilePath} folder already exists. Overwrite?", "BAGIS-Pro", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                    if (res == MessageBoxResult.Yes)
+                    {
+                        int layersRemoved = await MapTools.RemoveLayersInFolderAsync(oAoi.FilePath);
+                        Directory.Delete(oAoi.FilePath, true);  // recursive delete removes everything in directory
+                        Directory.CreateDirectory(oAoi.FilePath);
+                    }
+                    else
+                    {
+                        return;
+                    }
                 }
                 else
                 {
-                    return;
+                    Directory.CreateDirectory(oAoi.FilePath);
                 }
             }
-            else
+            catch (Exception e)
             {
-                Directory.CreateDirectory(oAoi.FilePath);
+                System.Windows.MessageBox.Show("An unknown error occurred while trying to create the AOI directory!", "BAGIS-Pro", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+
             }
+
 
             BA_ReturnCode success = await GeodatabaseTools.CreateGeodatabaseFoldersAsync(oAoi.FilePath, FolderType.AOI);
             if (success != BA_ReturnCode.Success)
@@ -773,6 +783,10 @@ namespace bagis_pro
                                 success = await GeoprocessingTools.RasterToPointAsync($@"{surfacesGdbPath}\{ppRaster}", Constants.FIELD_VALUE,
                                    $@"{aoiGdbPath}\{Constants.FILE_POURPOINT}");
                             }
+                        }
+                        if (success == BA_ReturnCode.Success)
+                        {
+                            success = await GeodatabaseTools.AddPourpointAttributesAsync(new Uri(aoiGdbPath), AoiName, "");
                         }
                         if (await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(surfacesGdbPath),ppRaster))
                         {

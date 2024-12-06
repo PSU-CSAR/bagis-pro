@@ -89,7 +89,7 @@ namespace bagis_pro.BA_Objects
         {
             get
             {
-                return Math.Round(ShapeAreaKm, 3).ToString("#0.000") + " Square KM";
+                return Math.Round(ShapeAreaKm, 3).ToString("#0.000") + " " + Constants.UNITS_SQUARE_KM;
             }
             set
             {

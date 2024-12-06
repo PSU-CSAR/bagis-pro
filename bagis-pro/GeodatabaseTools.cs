@@ -1140,7 +1140,6 @@ namespace bagis_pro
                });
             return dictReturn;
         }
-
         public static async Task<BA_ReturnCode> AddAOIVectorAttributesAsync(Uri uriAoiGdb, string aoiName)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
@@ -1160,11 +1159,38 @@ namespace bagis_pro
                         dictUpdate.Add(arrAddFields[i], arrNewFieldValues[i]);
                         success = await GeodatabaseTools.UpdateFeatureAttributesAsync(uriAoiGdb, Constants.FILE_AOI_VECTOR, new QueryFilter(), dictUpdate);
                     }
-                    else
+                }
+            }
+            return success;
+        }
+
+        public static async Task<BA_ReturnCode> AddPourpointAttributesAsync(Uri uriAoiGdb, string aoiName, string basinName)
+        {
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            string[] arrAddFields = new string[] { Constants.FIELD_STATION_NAME, Constants.FIELD_STATION_TRIPLET, Constants.FIELD_BASIN, Constants.FIELD_HUC2,
+                Constants.FIELD_AOI_AREA, Constants.FIELD_AOI_AREA_UNIT};
+            string[] arrNewFieldTypes = new string[] { "TEXT", "TEXT", "TEXT", "INTEGER", "DOUBLE", "TEXT" };
+            string[] arrNewFieldValues = new string[] { aoiName, "", basinName, "", "", Constants.UNITS_SQUARE_KM };
+            for (int i = 0; i < arrAddFields.Length; i++)
+            {
+                bool bExists = await AttributeExistsAsync(uriAoiGdb, Constants.FILE_POURPOINT, arrAddFields[i]);
+                if (!bExists)
+                {
+                    success = await GeoprocessingTools.AddFieldAsync($@"{uriAoiGdb.LocalPath}\{Constants.FILE_POURPOINT}", arrAddFields[i],
+                        arrNewFieldTypes[i]);
+                    if (success == BA_ReturnCode.Success && !string.IsNullOrEmpty(arrNewFieldValues[i]))
                     {
-                        return success;
+                        IDictionary<string, string> dictUpdate = new Dictionary<string, string>();
+                        dictUpdate.Add(arrAddFields[i], arrNewFieldValues[i]);
+                        success = await UpdateFeatureAttributesAsync(uriAoiGdb, Constants.FILE_POURPOINT, new QueryFilter(), dictUpdate);
                     }
                 }
+            }
+            double areaSqM = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(uriAoiGdb, Constants.FILE_AOI_VECTOR, "");
+            if (areaSqM > 0)
+            {
+                double areaSqKm = AreaUnit.SquareMeters.ConvertTo(areaSqM, AreaUnit.SquareKilometers);
+                success = await GeodatabaseTools.UpdateFeatureAttributeNumericAsync(uriAoiGdb, Constants.FILE_POURPOINT, null, Constants.FIELD_AOI_AREA, areaSqKm);
             }
             return success;
         }
