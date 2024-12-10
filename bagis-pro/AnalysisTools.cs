@@ -568,7 +568,6 @@ namespace bagis_pro
         public static async Task<string[]> GetStationValues(string aoiFilePath)
         {
             string strTriplet = "";
-            string strAwdbId = "";
             string strStationName = "";
             string[] arrReturnValues = new string[] { strTriplet, strStationName };
             Uri ppUri = new Uri(GeodatabaseTools.GetGeodatabasePath(aoiFilePath, GeodatabaseNames.Aoi));
@@ -594,7 +593,6 @@ namespace bagis_pro
             Uri wsUri = new Uri(fcstTempString);
 
             bool bUpdateTriplet = false;
-            bool bUpdateAwdb = false;
             bool bUpdateStationName = false;
             if (await GeodatabaseTools.FeatureClassExistsAsync(ppUri, Constants.FILE_POURPOINT))
             {
@@ -638,7 +636,7 @@ namespace bagis_pro
                         QueryFilter queryFilter = new QueryFilter();
                         string strNearId = await GeodatabaseTools.QueryTableForSingleValueAsync(ppUri, Constants.FILE_POURPOINT,
                             Constants.FIELD_NEAR_ID, queryFilter);
-                        string[] arrSearch = { Constants.FIELD_STATION_TRIPLET, Constants.FIELD_USGS_ID, (string)oSettings.gaugeStationName };
+                        string[] arrSearch = { Constants.FIELD_STATION_TRIPLET, (string)oSettings.gaugeStationName };
                         string[] arrFound = new string[arrSearch.Length];
                         if (!String.IsNullOrEmpty(strNearId))
                         {
@@ -647,8 +645,7 @@ namespace bagis_pro
                             if (arrFound != null && arrFound.Length == 3 && arrFound[0] != null)
                             {
                                 strTriplet = arrFound[0];
-                                strAwdbId = arrFound[1];
-                                strStationName = arrFound[2];
+                                strStationName = arrFound[1];
                             }
                             else
                             {
@@ -659,10 +656,6 @@ namespace bagis_pro
                             if (!String.IsNullOrEmpty(strTriplet))
                             {
                                 bUpdateTriplet = true;
-                            }
-                            if (!String.IsNullOrEmpty(strAwdbId))
-                            {
-                                bUpdateAwdb = true;
                             }
                             if (!string.IsNullOrEmpty(strStationName))
                             {
@@ -680,13 +673,11 @@ namespace bagis_pro
                         "Triplet retrieved using the NEAR tool and AOI Master forecast list: " + strTriplet);
                 }
                 //Save the new values to the pourpoint layer if needed
-                if (bUpdateAwdb == true || bUpdateTriplet == true || bUpdateStationName == true)
+                if (bUpdateTriplet == true || bUpdateStationName == true)
                 {
                     Module1.Current.ModuleLogManager.LogDebug(nameof(GetStationValues),
                         "Updating pourpoint layer attributes");
                     IDictionary<string, string> dictEdits = new Dictionary<string, string>();
-                    if (bUpdateAwdb)
-                        dictEdits.Add(Constants.FIELD_AWDB_ID, strAwdbId);
                     if (bUpdateTriplet)
                         dictEdits.Add(Constants.FIELD_STATION_TRIPLET, strTriplet);
                     if (bUpdateStationName)
@@ -696,7 +687,7 @@ namespace bagis_pro
 
                     //Save the new values to aoi_v
                     string strAoiVPath = ppUri.LocalPath + "\\" + Constants.FILE_AOI_VECTOR;
-                    string[] arrPpFields = { Constants.FIELD_STATION_TRIPLET, Constants.FIELD_STATION_NAME, Constants.FIELD_AWDB_ID };
+                    string[] arrPpFields = { Constants.FIELD_STATION_TRIPLET, Constants.FIELD_STATION_NAME };
                     foreach (var strField in arrPpFields)
                     {
                         if (!await GeodatabaseTools.AttributeExistsAsync(ppUri, Constants.FILE_AOI_VECTOR, strField))

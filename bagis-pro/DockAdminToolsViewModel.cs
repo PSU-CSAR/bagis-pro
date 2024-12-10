@@ -1736,10 +1736,8 @@ namespace bagis_pro
                     Uri ppUri = new Uri(GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Aoi));
                     string strTriplet = "";
                     string strStationName = "";
-                    string strAwdbId = "";
                     string strNearTriplet = "";
                     string strNearStationName = "";
-                    string strNearAwdbId = "";
                     int intNearHuc2 = -1;
                     int intHuc2 = -1;   
                     string strRemark = "";
@@ -1747,13 +1745,12 @@ namespace bagis_pro
                     // GET THE STATION TRIPLET FROM THE POURPOINT
                     IDictionary<string, string> dictEdits = new Dictionary<string, string>()
                     { { Constants.FIELD_STATION_TRIPLET, ""},
-                      { Constants.FIELD_STATION_NAME, ""},
-                      { Constants.FIELD_AWDB_ID, ""}
+                      { Constants.FIELD_STATION_NAME, ""}
                     };
                     QueryFilter queryFilter = new QueryFilter();
                     if (await GeodatabaseTools.FeatureClassExistsAsync(ppUri, Constants.FILE_POURPOINT))
                     {
-                        string[] arrFields = new string[] { Constants.FIELD_STATION_TRIPLET, Constants.FIELD_STATION_NAME, Constants.FIELD_AWDB_ID, Constants.FIELD_HUC2 };
+                        string[] arrFields = new string[] { Constants.FIELD_STATION_TRIPLET, Constants.FIELD_STATION_NAME, Constants.FIELD_HUC2 };
                         foreach (string strField in arrFields)
                         {
                             // Check for the field, if it exists query the value
@@ -1770,10 +1767,6 @@ namespace bagis_pro
                                     case Constants.FIELD_STATION_NAME:
                                         strStationName = strValue;
                                         dictEdits[Constants.FIELD_STATION_NAME] = strStationName;
-                                        break;
-                                    case Constants.FIELD_AWDB_ID:
-                                        strAwdbId = strValue;
-                                        dictEdits[Constants.FIELD_AWDB_ID] = strAwdbId;
                                         break;
                                 }
                             }
@@ -1800,7 +1793,7 @@ namespace bagis_pro
                     }
 
                     // QUERY THE MASTER LIST FOR THE STATION TRIPLET
-                    string[] arrSearch = { Constants.FIELD_STATION_TRIPLET, Constants.FIELD_AWDB_ID, Constants.FIELD_NAME, Constants.FIELD_HUC2 };
+                    string[] arrSearch = { Constants.FIELD_STATION_TRIPLET, Constants.FIELD_NAME, Constants.FIELD_HUC2 };
                     string[] arrFound = new string[arrSearch.Length];
                     string strWsUri = await ws.GetForecastStationsUriAsync();
                     string strWsUriTrimmed = "";
@@ -1822,9 +1815,8 @@ namespace bagis_pro
                             if (UpdateStationDataChecked)
                             {
                                 strRemark = UPDATED_STATION_DATA;
-                                strAwdbId = arrFound[1];
-                                strStationName = arrFound[2];
-                                intHuc2 = Convert.ToInt16(arrFound[3]);
+                                strStationName = arrFound[1];
+                                intHuc2 = Convert.ToInt16(arrFound[2]);
                             }
                         }
                     }
@@ -1844,15 +1836,11 @@ namespace bagis_pro
                             {
                                 queryFilter.WhereClause = Constants.FIELD_OBJECT_ID + " = " + strNearId;
                                 arrFound = await ws.QueryServiceForValuesAsync(new Uri(strWsUriTrimmed), layerId, arrSearch, queryFilter);
-                                if (arrFound != null && arrFound.Length == 4 && arrFound[0] != null)
+                                if (arrFound != null && arrFound.Length == arrSearch.Length && arrFound[0] != null)
                                 {
                                     strNearTriplet = arrFound[0];
-                                    if (!string.IsNullOrEmpty(arrFound[1]))
-                                    {
-                                        strNearAwdbId = arrFound[1].Trim('"');
-                                    }
-                                    strNearStationName = arrFound[2];
-                                    intNearHuc2 = Convert.ToInt16(arrFound[3]);
+                                    strNearStationName = arrFound[1];
+                                    intNearHuc2 = Convert.ToInt16(arrFound[2]);
                                     if (!string.IsNullOrEmpty(strNearTriplet))
                                     {
                                         strRemark = UPDATED_NEAR;
@@ -1875,7 +1863,6 @@ namespace bagis_pro
                     switch (strRemark)
                     {
                         case UPDATED_NEAR:
-                            dictEdits[Constants.FIELD_AWDB_ID] = strNearAwdbId;
                             dictEdits[Constants.FIELD_STATION_TRIPLET] = strNearTriplet;
                             dictEdits[Constants.FIELD_STATION_NAME] = strNearStationName;
                             success = await GeodatabaseTools.UpdateFeatureAttributesAsync(ppUri, Constants.FILE_POURPOINT,
@@ -1887,8 +1874,7 @@ namespace bagis_pro
                             Names[idxRow].Huc2 = intNearHuc2;   
                             break;
                         case UPDATED_STATION_DATA:
-                            dictEdits[Constants.FIELD_AWDB_ID] = strAwdbId;
-                            dictEdits[Constants.FIELD_STATION_NAME] = strStationName;
+                                dictEdits[Constants.FIELD_STATION_NAME] = strStationName;
                             success = await GeodatabaseTools.UpdateFeatureAttributesAsync(ppUri, Constants.FILE_POURPOINT,
                                 new QueryFilter(), dictEdits);
                             success = await GeodatabaseTools.UpdateFeatureAttributeNumericAsync(ppUri, Constants.FILE_POURPOINT, new QueryFilter(), Constants.FIELD_HUC2, intHuc2);
@@ -1902,7 +1888,7 @@ namespace bagis_pro
                     }
                     // DO WE NEED TO UPDATE AOI_V?
                     string strAoiVPath = ppUri.LocalPath + "\\" + Constants.FILE_AOI_VECTOR;
-                    string[] arrPpFields = { Constants.FIELD_STATION_TRIPLET, Constants.FIELD_STATION_NAME, Constants.FIELD_AWDB_ID };
+                    string[] arrPpFields = { Constants.FIELD_STATION_TRIPLET, Constants.FIELD_STATION_NAME };
                     foreach (var strField in arrPpFields)
                     {
                         if (!await GeodatabaseTools.AttributeExistsAsync(ppUri, Constants.FILE_AOI_VECTOR, strField))
