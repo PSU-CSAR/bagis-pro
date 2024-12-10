@@ -105,6 +105,12 @@
             "heading": "MTBS Fire Burn Severity",
             "description": "Monitoring Trends in Burn Severity (MTBS) burn severity and extent of large fires webservices accessed on the report creating date (see the report summary page). See https://mtbs.gov/project-overview for more information.",
             "uri": "http://bagis.geog.pdx.edu/arcgis/services/usgs_mtbs_conus/"
+        },
+        {
+            "layerType": "Alaska Fire Burn Severity",
+            "heading": "MTBS Fire Burn Severity",
+            "description": "Monitoring Trends in Burn Severity (MTBS) burn severity and extent of large fires webservices accessed on the report creating date (see the report summary page). See https://mtbs.gov/project-overview for more information.",
+            "uri": "http://bagis.geog.pdx.edu/arcgis/services/usgs_mtbs_ak/"
         }
     ],
     "BagisSettings": {
@@ -183,6 +189,6 @@
                 "Severity": "None"
             }
         ],
-        "Version": 19
+        "Version": 20
     }
 }
