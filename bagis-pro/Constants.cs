@@ -335,6 +335,7 @@ namespace bagis_pro
         public const string DATA_TYPE_FIRE_HISTORY = "Fire History";
         public const string DATA_TYPE_FIRE_CURRENT = "Fire Current";
         public const string DATA_TYPE_FIRE_BURN_SEVERITY = "Fire Burn Severity";
+        public const string DATA_TYPE_ALASKA_FIRE_BURN_SEVERITY = "Alaska Fire Burn Severity";
 
         public const int VALUE_NO_DATA_9999 = -9999;
         public const string VALUE_NO_DATA = "NoData";

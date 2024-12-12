@@ -84,7 +84,6 @@ namespace bagis_pro.BA_Objects
             }
 
         }
-
         public static string GetLandCoverKey
         {
             get
@@ -100,5 +99,19 @@ namespace bagis_pro.BA_Objects
 
         }
 
+        public static string GetFireBurnSeverityKey
+        {
+            get
+            {
+                switch (Module1.Current.DataSourceGroup)
+                {
+                    case Constants.DATA_SOURCES_ALASKA:
+                        return Constants.DATA_TYPE_ALASKA_FIRE_BURN_SEVERITY;
+                    default:
+                        return Constants.DATA_TYPE_FIRE_BURN_SEVERITY;
+                }
+            }
+
+        }
     }
 }

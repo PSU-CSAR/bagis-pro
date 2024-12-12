@@ -3197,11 +3197,18 @@ namespace bagis_pro
             }
             return notFound;
         }
-
         public static string GetMtbsLayerFileName(int intYear)
         {
             //mtbs_CONUS_1984
-            return $@"mtbs_CONUS_{intYear}";
+            string strReturn = $@"mtbs_CONUS_{intYear}";
+            switch (Module1.Current.DataSourceGroup)
+            {
+                case Constants.DATA_SOURCES_ALASKA:
+                    //mtbs_AK_YYYY
+                    strReturn = $@"mtbs_AK_{intYear}";
+                    break;
+            }
+            return strReturn;
         }
 
         public static dynamic GetFireSettings(string strAoiPath)

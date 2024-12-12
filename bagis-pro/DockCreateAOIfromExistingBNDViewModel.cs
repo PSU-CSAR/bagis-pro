@@ -794,6 +794,31 @@ namespace bagis_pro
                         }
                     }
                 }
+                await QueuedTask.Run(() =>
+                {
+                    status.Progressor.Value += 1;
+                    status.Progressor.Message = $@"Calculating Hillshade... (step 12 of {nStep})";
+                }, status.Progressor);
+                // Create Hillshade layer
+                if (success == BA_ReturnCode.Success)
+                {
+                    var parameters = Geoprocessing.MakeValueArray($@"{surfacesGdbPath}\{Constants.FILE_DEM_FILLED}",
+                        $@"{surfacesGdbPath}\{Constants.FILE_HILLSHADE}", "","","", ZFactor);
+                    var environments = Geoprocessing.MakeEnvironmentArray(workspace: oAoi.FilePath, snapRaster: strSourceDem);
+                    var gpResult = await Geoprocessing.ExecuteToolAsync("Hillshade_sa", parameters, environments,
+                        CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                    if (gpResult.IsFailed)
+                    {
+                        success = BA_ReturnCode.UnknownError;
+                        progress.Hide();
+                        return;
+                    }
+                    if (HillshadeChecked)
+                    {
+                        uri = new Uri($@"{surfacesGdbPath}\{Constants.FILE_HILLSHADE}");
+                        await MapTools.DisplayRasterStretchSymbolAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, Constants.MAPS_HILLSHADE, "ArcGIS Colors", "Black to White", 0);
+                    }
+                }
             }
 
         }

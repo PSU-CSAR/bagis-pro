@@ -2156,7 +2156,7 @@ namespace bagis_pro
 
                     List<string> lstMtbsImageServices = new List<string>();
                     List<string> lstMtbsLayerNames = new List<string>();
-                    DataSource dsFire = new DataSource(_dictDatasources[Constants.DATA_TYPE_FIRE_BURN_SEVERITY]);
+                    DataSource dsFire = new DataSource(_dictDatasources[DataSource.GetFireBurnSeverityKey]);
                     for (int i = minYearClip; i <= _intMtbsMaxYear; i++)
                     {
                         lstMtbsImageServices.Add($@"{dsFire.uri}{GeneralTools.GetMtbsLayerFileName(i)}/{Constants.URI_IMAGE_SERVER}");
