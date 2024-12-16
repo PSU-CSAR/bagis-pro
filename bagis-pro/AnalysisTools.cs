@@ -7106,11 +7106,13 @@ namespace bagis_pro
                     }
                 }
             });
-
+            
             var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath, snapRaster: Aoi.SnapRasterPath(strAoiPath),
                 extent: strClipEnvelope);
             string strTemplateDataset = strClipGdb + "\\" + strClipFile;
             int clippedLayersCount = 0;
+            bool bNoDataRasterExists = false;
+            string tempNoData = "tmpNoData";
             for (int i = 0; i < lstImageServiceUri.Count; i++)
             {
                 string strOutputRaster = $@"{GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Fire, true)}{lstRasterFileName[i]}";
@@ -7135,49 +7137,87 @@ namespace bagis_pro
                     clippedLayersCount++;    
                     var parameters = Geoprocessing.MakeValueArray(lstImageServiceUri[i], strClipEnvelope, strOutputRaster, strTemplateDataset,
                             "", "ClippingGeometry");
-                        // Always set the extent if clipping from an image service
-                        var gpResult = await Geoprocessing.ExecuteToolAsync("Clip_management", parameters, environments,
-                                        CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                        if (gpResult.IsFailed)
+                    // Always set the extent if clipping from an image service
+                    var gpResult = await Geoprocessing.ExecuteToolAsync("Clip_management", parameters, environments,
+                                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                    if (gpResult.IsFailed)
+                    {
+                        // A common error for Alaska MTBS is that the aoi is outside of the imageservice extent. The imageservice
+                        // extent is bounded by the envelops of the fire perimeter so it is variable. We need to handle this.
+                        string searchString = "clip feature is outside the raster extent";
+                        bool bOutsideExtent = false;
+                        foreach (var objMessage in gpResult.Messages)
                         {
-                            Module1.Current.ModuleLogManager.LogError(nameof(ClipMtbsLayersAsync), "Unable to clip " + lstImageServiceUri[i] + " to " + strOutputRaster);
-                            foreach (var objMessage in gpResult.Messages)
+                            IGPMessage msg = (IGPMessage)objMessage;
+                            if (msg.Text.ToLower().Contains(searchString))
                             {
-                                IGPMessage msg = (IGPMessage)objMessage;
-                                Module1.Current.ModuleLogManager.LogError(nameof(ClipMtbsLayersAsync), msg.Text);
+                                Module1.Current.ModuleLogManager.LogInfo(nameof(ClipMtbsLayersAsync), "AOI polygon is not within " + lstImageServiceUri[i]);
+                                bOutsideExtent = true;
+                                break;
+                            }
+                        }
+                        if (bOutsideExtent && !bNoDataRasterExists)
+                        {
+                            string sourceRaster = $@"{GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi)}\{Constants.FILE_AOI_RASTER}";
+                            parameters = Geoprocessing.MakeValueArray(sourceRaster, sourceRaster, $@"{GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Fire)}\{tempNoData}");
+                            gpResult = await Geoprocessing.ExecuteToolAsync("SetNull_sa", parameters, environments,
+                                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                            if (gpResult.IsFailed)
+                            {
+                                Module1.Current.ModuleLogManager.LogError(nameof(ClipMtbsLayersAsync), "Unable to create NODATA raster dataset");
+                            }
+                            else
+                            {
+                                bNoDataRasterExists = true;
+                            }
+                        }
+                        if (bOutsideExtent && bNoDataRasterExists)
+                        {
+                            parameters = Geoprocessing.MakeValueArray($@"{GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Fire)}\{tempNoData}",
+                                strNoDataRaster);
+                            gpResult = await Geoprocessing.ExecuteToolAsync("CopyRaster_management", parameters, null,
+                                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                            if (gpResult.IsFailed)
+                            {
+                                Module1.Current.ModuleLogManager.LogError(nameof(ClipMtbsLayersAsync), $@"Unable to create NODATA raster dataset {strNoDataRaster}");
                             }
                         }
                         else
                         {
-                            parameters = Geoprocessing.MakeValueArray(strOutputRaster, "ALLNODATA");
-                            gpResult = await Geoprocessing.ExecuteToolAsync("GetRasterProperties_management", parameters, null,
-                                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                            if (gpResult.IsFailed)
-                            {
-                                Module1.Current.ModuleLogManager.LogError(nameof(ClipMtbsLayersAsync), "Unable to get raster properties!");
-                            }
-                            else
-                            {
+                            Module1.Current.ModuleLogManager.LogError(nameof(ClipMtbsLayersAsync), "Unable to clip " + lstImageServiceUri[i] + " to " + strOutputRaster);
+                        }
+                    }
+                    else
+                    {
+                        parameters = Geoprocessing.MakeValueArray(strOutputRaster, "ALLNODATA");
+                        gpResult = await Geoprocessing.ExecuteToolAsync("GetRasterProperties_management", parameters, null,
+                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                        if (gpResult.IsFailed)
+                        {
+                            Module1.Current.ModuleLogManager.LogError(nameof(ClipMtbsLayersAsync), "Unable to get raster properties!");
+                        }
+                        else
+                        {
                             int intReturn = Convert.ToInt16(gpResult.ReturnValue);
                             if (intReturn > 0)  // The raster is ALLNODATA                                
                             {
-                                    // Delete the original _NODATA dataset if it exists; Rename tool will not overwrite
-                                    bExists = await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Fire)), $@"{lstRasterFileName[i]}_{Constants.VALUE_NO_DATA.ToUpper()}");
-                                    if (bExists)
+                                // Delete the original _NODATA dataset if it exists; Rename tool will not overwrite
+                                bExists = await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Fire)), $@"{lstRasterFileName[i]}_{Constants.VALUE_NO_DATA.ToUpper()}");
+                                if (bExists)
+                                {
+                                    success = await GeoprocessingTools.DeleteDatasetAsync(strNoDataRaster);
+                                }
+                                if (!bExists || success == BA_ReturnCode.Success)
+                                {
+                                    parameters = Geoprocessing.MakeValueArray(strOutputRaster, strNoDataRaster);
+                                    gpResult = await Geoprocessing.ExecuteToolAsync("Rename_management", parameters, null,
+                                        CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                                    if (gpResult.IsFailed)
                                     {
-                                        success = await GeoprocessingTools.DeleteDatasetAsync(strNoDataRaster);
-                                    }
-                                    if (!bExists || success == BA_ReturnCode.Success)
-                                    {
-                                        parameters = Geoprocessing.MakeValueArray(strOutputRaster, strNoDataRaster);
-                                        gpResult = await Geoprocessing.ExecuteToolAsync("Rename_management", parameters, null,
-                                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                                        if (gpResult.IsFailed)
-                                        {
-                                            Module1.Current.ModuleLogManager.LogError(nameof(ClipMtbsLayersAsync), "Failed to rename ALLNODATA raster!");
-                                        }
+                                        Module1.Current.ModuleLogManager.LogError(nameof(ClipMtbsLayersAsync), "Failed to rename ALLNODATA raster!");
                                     }
                                 }
+                            }
                             else
                             {
                                 // Reclassify 5 and 6 values to 1 to make future functions easier
@@ -7214,6 +7254,11 @@ namespace bagis_pro
                         }
                     }
                 }
+            }
+            // Delete tmpNoData layer if it exists
+            if (await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Fire)), tempNoData))
+            {
+                success = await GeoprocessingTools.DeleteDatasetAsync($@"{GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Fire)}\{tempNoData}");
             }
             // Update settings file
             if (clippedLayersCount > 0)
