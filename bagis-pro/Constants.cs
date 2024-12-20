@@ -345,6 +345,7 @@ namespace bagis_pro
         public const int VALUE_ALASKA_HUC2 = 19;
         public const string VALUE_FORECAST_STATION_SEARCH_RADIUS = "500 Meters";
         public const string VALUE_NOT_SPECIFIED = "Not Specified";
+        public const string VALUE_MISSING = "Missing";
         public const string VALUE_MTBS_SEVERITY_LOW = "Low";
         public const string VALUE_MTBS_SEVERITY_MODERATE = "Moderate";
         public const string VALUE_MTBS_SEVERITY_HIGH = "High";

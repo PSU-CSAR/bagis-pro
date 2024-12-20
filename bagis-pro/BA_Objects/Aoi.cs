@@ -171,8 +171,8 @@ namespace bagis_pro.BA_Objects
         {
             get
             {
-                if (StationTriplet.Equals(Constants.VALUE_NOT_SPECIFIED) ||
-                    StationName.Equals(Constants.VALUE_NOT_SPECIFIED) ||
+                if (StationTriplet.Equals(Constants.VALUE_MISSING) ||
+                    StationName.Equals(Constants.VALUE_MISSING) ||
                     Huc2 == -1)
                 {
                     return false;

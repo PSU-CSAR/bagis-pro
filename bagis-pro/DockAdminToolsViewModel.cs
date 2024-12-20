@@ -947,8 +947,8 @@ namespace bagis_pro
             for (int idxRow = 0; idxRow < Names.Count; idxRow++)
             {
                 BA_Objects.Aoi oAoi = Names[idxRow];
-                if (oAoi.StationTriplet.Equals(Constants.VALUE_NOT_SPECIFIED) ||
-                    oAoi.StationName.Equals(Constants.VALUE_NOT_SPECIFIED) ||
+                if (oAoi.StationTriplet.Equals(Constants.VALUE_MISSING) ||
+                    oAoi.StationName.Equals(Constants.VALUE_MISSING) ||
                     oAoi.Huc2 == -1)
                 {
                     oAoi.AoiBatchStateText = AoiBatchState.NotReady.ToString();

@@ -719,9 +719,9 @@ namespace bagis_pro
 
         public static async Task<string[]> QueryLocalStationValues(string aoiFilePath)
         {
-            string strTriplet = Constants.VALUE_NOT_SPECIFIED;
+            string strTriplet = Constants.VALUE_MISSING;
             string strTempHuc2 = "-1";
-            string strStationName = Constants.VALUE_NOT_SPECIFIED;
+            string strStationName = Constants.VALUE_MISSING;
             Uri ppUri = new Uri(GeodatabaseTools.GetGeodatabasePath(aoiFilePath, GeodatabaseNames.Aoi));
             string strPourpointClassPath = ppUri.LocalPath + "\\" + Constants.FILE_POURPOINT;
             if (await GeodatabaseTools.FeatureClassExistsAsync(ppUri, Constants.FILE_POURPOINT))
@@ -7407,7 +7407,9 @@ namespace bagis_pro
                     }
                     if (burnedForestAreaSqMeters > 0)
                     {
-                        dblReturn = Math.Round(burnedForestAreaSqMeters / aoiAreaSqMeters * 100, 1);
+                        double forestedAreaSqMeters =
+                            await GeodatabaseTools.CalculateTotalPolygonAreaAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(aoiPath, GeodatabaseNames.Analysis)), Constants.FILE_FORESTED_ZONE, "");
+                        dblReturn = Math.Round(burnedForestAreaSqMeters / forestedAreaSqMeters * 100, 1);
                     }
                     if (await GeodatabaseTools.FeatureClassExistsAsync(new Uri(strGdbFire), strTmpIntersect)) 
                     {
@@ -7585,7 +7587,9 @@ namespace bagis_pro
                     }
                     if (burnedForestAreaSqMeters > 0)
                     {
-                        dblReturn = Math.Round(burnedForestAreaSqMeters / aoiAreaSqMeters * 100, 1);
+                        double forestedAreaSqMeters = 
+                            await GeodatabaseTools.CalculateTotalPolygonAreaAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(aoiPath, GeodatabaseNames.Analysis)), Constants.FILE_FORESTED_ZONE, "");
+                        dblReturn = Math.Round(burnedForestAreaSqMeters / forestedAreaSqMeters * 100, 1);
                     }
                     if (await GeodatabaseTools.FeatureClassExistsAsync(new Uri(strGdbFire), strDissolveFc))
                     {
