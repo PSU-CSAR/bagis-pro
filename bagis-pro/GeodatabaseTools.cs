@@ -1164,13 +1164,14 @@ namespace bagis_pro
             return success;
         }
 
-        public static async Task<BA_ReturnCode> AddPourpointAttributesAsync(Uri uriAoiGdb, string aoiName, string basinName)
+        public static async Task<BA_ReturnCode> AddPourpointAttributesAsync(string aoiPath, string aoiName, string basinName)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
             string[] arrAddFields = new string[] { Constants.FIELD_STATION_NAME, Constants.FIELD_STATION_TRIPLET, Constants.FIELD_BASIN, Constants.FIELD_HUC2,
                 Constants.FIELD_AOI_AREA, Constants.FIELD_AOI_AREA_UNIT};
             string[] arrNewFieldTypes = new string[] { "TEXT", "TEXT", "TEXT", "INTEGER", "DOUBLE", "TEXT" };
             string[] arrNewFieldValues = new string[] { aoiName, "", basinName, "", "", Constants.UNITS_SQUARE_KM };
+            Uri uriAoiGdb = new Uri(GeodatabaseTools.GetGeodatabasePath(aoiPath, GeodatabaseNames.Aoi));
             for (int i = 0; i < arrAddFields.Length; i++)
             {
                 bool bExists = await AttributeExistsAsync(uriAoiGdb, Constants.FILE_POURPOINT, arrAddFields[i]);
@@ -1192,6 +1193,8 @@ namespace bagis_pro
                 double areaSqKm = AreaUnit.SquareMeters.ConvertTo(areaSqM, AreaUnit.SquareKilometers);
                 success = await GeodatabaseTools.UpdateFeatureAttributeNumericAsync(uriAoiGdb, Constants.FILE_POURPOINT, null, Constants.FIELD_AOI_AREA, areaSqKm);
             }
+            int huc2 = await Webservices.QueryHuc2Async(aoiPath);
+            success = await GeodatabaseTools.UpdateFeatureAttributeNumericAsync(uriAoiGdb, Constants.FILE_POURPOINT, null, Constants.FIELD_HUC2, huc2);
             return success;
         }
         public static async Task<string> GetEnvelope(string strGdb, string strFile)
@@ -1217,6 +1220,20 @@ namespace bagis_pro
                 }
             });
             return strClipEnvelope;
+        }
+        public static async Task<SpatialReference> GetSpatialReferenceAsync(string strGdb, string strFile)
+        {
+            SpatialReference spatialReference = null;
+            await QueuedTask.Run( () =>
+            {
+                using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(strGdb))))
+                using (FeatureClass fc = geodatabase.OpenDataset<FeatureClass>(strFile))
+                {
+                    var classDefinition = fc.GetDefinition() as FeatureClassDefinition;
+                    spatialReference = classDefinition.GetSpatialReference();
+                }
+            });
+            return spatialReference;
         }
     }
 

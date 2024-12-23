@@ -13,6 +13,11 @@ using Newtonsoft.Json.Linq;
 using System.Net.Http;
 using Newtonsoft.Json;
 using System.IO;
+using ArcGIS.Desktop.Core.Geoprocessing;
+using ArcGIS.Core.Geometry;
+using System.Web;
+using System.Text.Json.Nodes;
+using System.Windows.Forms.VisualStyles;
 
 namespace bagis_pro
 {
@@ -227,7 +232,7 @@ namespace bagis_pro
                         int intYear = DateTime.Now.Year;
                         QueryFilter queryFilter = new QueryFilter();
                         bool bRecordsFound = false;
-                        while (! bRecordsFound)
+                        while (!bRecordsFound)
                         {
                             string strTimeStamp = $@"{intYear}-01-01 00:00:00";
                             queryFilter.WhereClause = $@"{Constants.FIELD_FIRECURRENT_DATE} >= timestamp '{strTimeStamp}'";
@@ -253,7 +258,7 @@ namespace bagis_pro
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
             EsriHttpResponseMessage response = new EsriHttpClient().Get(Constants.URI_BATCH_TOOL_SETTINGS);
             JObject jsonVal = JObject.Parse(await response.Content.ReadAsStringAsync()) as JObject;
-            dynamic oSettings = (JObject) jsonVal["BagisSettings"];
+            dynamic oSettings = (JObject)jsonVal["BagisSettings"];
             using (System.IO.StreamWriter file = File.CreateText(strSaveToPath))
             using (JsonTextWriter writer = new JsonTextWriter(file))
             {
@@ -337,7 +342,7 @@ namespace bagis_pro
                     Module1.Current.ModuleLogManager.LogError(nameof(GetPortalFile),
                         "The requested file cannot be downloaded from the Portal! ArcGIS Pro will " +
                         "use a previous version of the file if it exists");
-                        return BA_ReturnCode.UnknownError;
+                    return BA_ReturnCode.UnknownError;
                 }
             }
             catch (Exception e)
@@ -374,19 +379,19 @@ namespace bagis_pro
 
         public async Task<string> GetForecastStationsUriAsync()
         {
-                var response = new EsriHttpClient().Get(Constants.URI_DESKTOP_SETTINGS);
-                var json = await response.Content.ReadAsStringAsync();
-                dynamic oSettings = JObject.Parse(json);
-                if (oSettings == null || String.IsNullOrEmpty(Convert.ToString(oSettings.gaugeStation)))
-                {
-                    Module1.Current.ModuleLogManager.LogError(nameof(GetForecastStationsUriAsync),
-                        "Unable to retrieve settings from " + Constants.URI_DESKTOP_SETTINGS);
-                    return "";
-                }
-                else
-                {                    
-                    return Convert.ToString(oSettings.gaugeStation);
-                }
+            var response = new EsriHttpClient().Get(Constants.URI_DESKTOP_SETTINGS);
+            var json = await response.Content.ReadAsStringAsync();
+            dynamic oSettings = JObject.Parse(json);
+            if (oSettings == null || String.IsNullOrEmpty(Convert.ToString(oSettings.gaugeStation)))
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(GetForecastStationsUriAsync),
+                    "Unable to retrieve settings from " + Constants.URI_DESKTOP_SETTINGS);
+                return "";
+            }
+            else
+            {
+                return Convert.ToString(oSettings.gaugeStation);
+            }
         }
 
         public async Task<string> GetDem30UriFromDatasourcesAsync()
@@ -426,7 +431,7 @@ namespace bagis_pro
         {
             string nwccAoiName = "";
             string huc = "";
-            string aoiSummaryTag="";
+            string aoiSummaryTag = "";
             BA_ReturnCode success = GeneralTools.LoadBagisSettings();
             if (success != BA_ReturnCode.Success)
             {
@@ -522,7 +527,7 @@ namespace bagis_pro
                 "BAGIS",
                 "SNOTEL",
                 "eBagis",
-                huc, 
+                huc,
                 aoiSummaryTag
             };
             List<dynamic> resultItemList = new List<dynamic>();
@@ -680,19 +685,19 @@ namespace bagis_pro
             if (o3 != null)
             {
                 dynamic esriDefinition = (JObject)o3;
-                
+
                 JArray arrFeatures = (JArray)esriDefinition.features;
                 if (arrFeatures.Count > 0)
                 {
                     int idx = 0;
                     dynamic firstFeature = arrFeatures[idx];
-                    dynamic allFeatures = (JObject) firstFeature.DeepClone();   // Clone the first feature so we have a scaffold object
+                    dynamic allFeatures = (JObject)firstFeature.DeepClone();   // Clone the first feature so we have a scaffold object
                     allFeatures.geometry.type = "MultiPolygon"; // Set the geometry type
                     allFeatures.geometry.coordinates.Clear();   // Clear the existing coordinates
                     for (int i = idx; i < arrFeatures.Count; i++)
                     {
                         dynamic nextFeature = arrFeatures[i];
-                        JArray arrCoordinates = (JArray) nextFeature.geometry.coordinates;
+                        JArray arrCoordinates = (JArray)nextFeature.geometry.coordinates;
                         allFeatures.geometry.coordinates.Add(arrCoordinates);   // Add the coordinates for each feature
                     }
                     arrGeometries.Add(allFeatures.geometry);    // Add the multipolygon feature to the geometries    
@@ -712,7 +717,7 @@ namespace bagis_pro
                 objOutput.WriteTo(writer);
             }
             return null;
-        }        
+        }
         public string[] ParseUriAndLayerNumber(string strWsUri)
         {
             string[] arrReturnValues = new string[2];
@@ -784,7 +789,7 @@ namespace bagis_pro
             {
                 return false;
             }
-            if (!string.IsNullOrEmpty(wsUri))            
+            if (!string.IsNullOrEmpty(wsUri))
             {
                 string uriTest = $@"{wsUri}/info/iteminfo?f=pjson";
                 EsriHttpResponseMessage response = new EsriHttpClient().Get(uriTest);
@@ -804,6 +809,89 @@ namespace bagis_pro
                 }
             }
             return false;
+        }
+        public static async Task<int> QueryHuc2Async(string strAoiPath)
+        {
+            string aoiGdbPath = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi);
+            string strInputFeatures = $@"{aoiGdbPath}\{Constants.FILE_AOI_VECTOR}";
+            string strCentroid = "tmpCentroid";
+            string strCentroidProj = "tmpCentroidProj";
+            string strOutputFeatures = $@"{aoiGdbPath}\{strCentroid}";
+            string strOutputFeaturesProj = $@"{aoiGdbPath}\{strCentroidProj}";
+            var parameters = Geoprocessing.MakeValueArray(strInputFeatures, strOutputFeatures, "INSIDE");
+            IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("FeatureToPoint_management", parameters, null,
+                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+            double dblX = -1;
+            double dblY = -1;
+            if (gpResult.IsFailed)
+            {
+                return -1;
+            }
+            else
+            {
+                parameters = Geoprocessing.MakeValueArray(strOutputFeatures, strOutputFeaturesProj, SpatialReferences.WGS84, "NAD_1983_To_WGS_1984_1");
+                gpResult = await Geoprocessing.ExecuteToolAsync("Project_management", parameters, null,
+                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                if (gpResult.IsFailed)
+                {
+                    return -1;
+                }
+            }
+            string strPointX = "POINT_X";
+            string strPointY = "POINT_Y";
+            string strProperties = @$"{strPointX} {strPointX};{strPointY} {strPointY}";
+            parameters = Geoprocessing.MakeValueArray(strOutputFeaturesProj, strProperties);
+            gpResult = await Geoprocessing.ExecuteToolAsync("CalculateGeometryAttributes_management", parameters, null,
+                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+            if (gpResult.IsFailed)
+            {
+                return -1;
+            }
+            else
+            {
+                dblX = Convert.ToDouble(await GeodatabaseTools.QueryTableForSingleValueAsync(new Uri(aoiGdbPath), strCentroidProj, strPointX, new QueryFilter()));
+                dblY = Convert.ToDouble(await GeodatabaseTools.QueryTableForSingleValueAsync(new Uri(aoiGdbPath), strCentroidProj, strPointY, new QueryFilter()));
+            }
+
+            int retVal = -1;
+            string encodedGeometry = HttpUtility.UrlEncode($@"'{dblX},{dblY}'");
+            string query = $@"/query?where=&geometry={encodedGeometry}&geometryType=esriGeometryPoint&inSR={SpatialReferences.WGS84.Wkid}&spatialRel=esriSpatialRelWithin&outFields=huc2&returnGeometry=false&f=json";
+            string wsUri = Module1.Current.BagisSettings.HydrologicUnitBoundaries;
+            if (!string.IsNullOrEmpty(wsUri))
+            {
+                wsUri = wsUri + query;
+                try
+                {
+                    HttpClient _httpClient = new();
+                    HttpResponseMessage _httpResponse = await _httpClient.GetAsync(wsUri);
+                    if (!_httpResponse.IsSuccessStatusCode)
+                        return -1;
+                    string _response = await _httpResponse.Content.ReadAsStringAsync();
+                    JObject jsonVal = JObject.Parse(_response);
+                    if (jsonVal != null)
+                    {
+                        JArray arrFeatures = (JArray)jsonVal["features"];
+                        if (arrFeatures != null && arrFeatures.Count > 0)
+                        {
+                            dynamic oFeature = arrFeatures[0];
+                            if (oFeature != null && oFeature.attributes != null)
+                            {
+                                JObject oAttributes = (JObject)oFeature.attributes;
+                                string strHuc2 = Convert.ToString(oAttributes.Value<string>("huc2"));
+                                if (!string.IsNullOrEmpty(strHuc2))
+                                {
+                                    bool bSuccess = Int32.TryParse(strHuc2, out retVal);
+                                }
+                            }
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    return -1;
+                }
+            }
+            return retVal;
         }
     }
 }
