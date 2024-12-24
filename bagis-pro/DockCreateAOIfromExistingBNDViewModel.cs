@@ -786,7 +786,7 @@ namespace bagis_pro
                         }
                         if (success == BA_ReturnCode.Success)
                         {
-                            success = await GeodatabaseTools.AddPourpointAttributesAsync(oAoi.FilePath, AoiName, "");
+                            success = await GeodatabaseTools.AddPourpointAttributesAsync(oAoi.FilePath, AoiName, Constants.VALUE_NOT_SPECIFIED, "");
                         }
                         if (await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(surfacesGdbPath),ppRaster))
                         {

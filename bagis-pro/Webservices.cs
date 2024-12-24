@@ -814,10 +814,9 @@ namespace bagis_pro
         {
             string aoiGdbPath = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi);
             string strInputFeatures = $@"{aoiGdbPath}\{Constants.FILE_AOI_VECTOR}";
-            string strCentroid = "tmpCentroid";
-            string strCentroidProj = "tmpCentroidProj";
-            string strOutputFeatures = $@"{aoiGdbPath}\{strCentroid}";
-            string strOutputFeaturesProj = $@"{aoiGdbPath}\{strCentroidProj}";
+            string[] arrCentroid = new string[] { "tmpCentroid", "tmpCentroidProj" };
+            string strOutputFeatures = $@"{aoiGdbPath}\{arrCentroid[0]}";
+            string strOutputFeaturesProj = $@"{aoiGdbPath}\{arrCentroid[1]}";
             var parameters = Geoprocessing.MakeValueArray(strInputFeatures, strOutputFeatures, "INSIDE");
             IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("FeatureToPoint_management", parameters, null,
                 CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
@@ -849,8 +848,17 @@ namespace bagis_pro
             }
             else
             {
-                dblX = Convert.ToDouble(await GeodatabaseTools.QueryTableForSingleValueAsync(new Uri(aoiGdbPath), strCentroidProj, strPointX, new QueryFilter()));
-                dblY = Convert.ToDouble(await GeodatabaseTools.QueryTableForSingleValueAsync(new Uri(aoiGdbPath), strCentroidProj, strPointY, new QueryFilter()));
+                dblX = Convert.ToDouble(await GeodatabaseTools.QueryTableForSingleValueAsync(new Uri(aoiGdbPath), arrCentroid[1], strPointX, new QueryFilter()));
+                dblY = Convert.ToDouble(await GeodatabaseTools.QueryTableForSingleValueAsync(new Uri(aoiGdbPath), arrCentroid[1], strPointY, new QueryFilter()));
+            }
+
+            BA_ReturnCode success;
+            for (int i = 0; i <= arrCentroid.Length-1; i++)
+            {
+                if (await GeodatabaseTools.FeatureClassExistsAsync(new Uri(aoiGdbPath), arrCentroid[i]))
+                {
+                    success = await GeoprocessingTools.DeleteDatasetAsync($@"{aoiGdbPath}\{arrCentroid[i]}");
+                }
             }
 
             int retVal = -1;

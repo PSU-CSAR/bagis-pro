@@ -821,8 +821,20 @@ namespace bagis_pro
                             strBufferDistance = arrResult[0];
                             strBufferUnits = arrResult[1];
                         }
-                        if (!strBufferDistance.Trim().Equals(prismBufferDistance.Trim()) ||
-                            !strBufferUnits.Trim().Equals(prismBufferUnits.Trim()))
+                        bool bCreateClipLayer = false;
+                        if (string.IsNullOrEmpty(prismBufferDistance) || string.IsNullOrEmpty(prismBufferUnits))
+                        {
+                            bCreateClipLayer = true;
+                        }
+                        else if (!strBufferDistance.Trim().Equals(prismBufferDistance.Trim()))
+                        {
+                            bCreateClipLayer = true;
+                        }
+                        else if (!strBufferUnits.Trim().Equals(prismBufferUnits.Trim()))
+                        {
+                            bCreateClipLayer = true;
+                        }
+                        if (bCreateClipLayer)
                         {
                             string strAoiBoundaryPath = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, true) +
                                 Constants.FILE_AOI_VECTOR;
