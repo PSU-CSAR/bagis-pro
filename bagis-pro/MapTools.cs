@@ -697,6 +697,10 @@ namespace bagis_pro
             }
             Map oMap = await MapTools.SetDefaultMapNameAsync(mapName);
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            if (!await GeodatabaseTools.FeatureClassExistsAsync(new Uri(strFolderPath), strFileName))
+            {
+                return success;
+            }
             await QueuedTask.Run(() =>
             {
                 FeatureClass fClass = null;

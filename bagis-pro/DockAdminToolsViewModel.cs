@@ -1254,6 +1254,18 @@ namespace bagis_pro
                         // Clip PRISM
                         string strDefaultBufferDistance = (string)Module1.Current.BagisSettings.PrecipBufferDistance;
                         string strDefaultBufferUnits = (string)Module1.Current.BagisSettings.PrecipBufferUnits;
+                        if (! await GeodatabaseTools.FeatureClassExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi)),Constants.FILE_AOI_PRISM_VECTOR))  
+                        {
+                            string strInputFeatures = $@"{GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi)}\{Constants.FILE_AOI_VECTOR}";
+                            string strOutputFeatures = $@"{GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi)}\{Constants.FILE_AOI_PRISM_VECTOR}";
+                            string strDistance = $@"{strDefaultBufferDistance} {strDefaultBufferUnits}";
+                            success =  await GeoprocessingTools.BufferAsync(strInputFeatures, strOutputFeatures, strDistance, "ALL");
+                            if (success == BA_ReturnCode.Success)
+                            {
+                                pBufferDistance = strDefaultBufferDistance;
+                                pBufferUnits = strDefaultBufferUnits;
+                            }
+                        }   
                         success = await AnalysisTools.ClipLayersAsync(aoiFolder, BA_Objects.DataSource.GetPrecipitationKey,
                             pBufferDistance, pBufferUnits, strDefaultBufferDistance, strDefaultBufferUnits);
                         if (success != BA_ReturnCode.Success)

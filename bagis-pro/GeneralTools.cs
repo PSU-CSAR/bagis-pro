@@ -2934,6 +2934,11 @@ namespace bagis_pro
         public static async Task<string[]> QueryBufferDistanceAsync(string aoiPath, string strInputGdb, string strInputFile, bool overWriteMetadata)
         {
             string[] arrBuffer = new string[2];
+            Uri uriTest = new Uri(strInputGdb);
+            if (!await GeodatabaseTools.FeatureClassExistsAsync(uriTest, strInputFile)) 
+            { 
+                return arrBuffer; 
+            }   
             string strBagisTag = await GeneralTools.GetBagisTagAsync(strInputGdb + "\\" + strInputFile, Constants.META_TAG_XPATH);
             if (!overWriteMetadata && !String.IsNullOrEmpty(strBagisTag))
             {

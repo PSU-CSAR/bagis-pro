@@ -469,6 +469,18 @@ namespace bagis_pro
 
                 if (clipPrism)
                 {
+                    if (!await GeodatabaseTools.FeatureClassExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi)), Constants.FILE_AOI_PRISM_VECTOR))
+                    {
+                        string strInputFeatures = $@"{GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi)}\{Constants.FILE_AOI_VECTOR}";
+                        string strOutputFeatures = $@"{GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi)}\{Constants.FILE_AOI_PRISM_VECTOR}";
+                        string strDistance = $@"{PrismBufferDistance} {PrismBufferUnits}";
+                        success = await GeoprocessingTools.BufferAsync(strInputFeatures, strOutputFeatures, strDistance, "ALL");
+                        if (success == BA_ReturnCode.Success)
+                        {
+                            pBufferDistance = PrismBufferDistance;
+                            pBufferUnits = PrismBufferUnits;
+                        }
+                    }
                     success = await AnalysisTools.ClipLayersAsync(Module1.Current.Aoi.FilePath, BA_Objects.DataSource.GetPrecipitationKey,
                         pBufferDistance, pBufferUnits, PrismBufferDistance, PrismBufferUnits);
                     if (success == BA_ReturnCode.Success)
