@@ -7134,7 +7134,7 @@ namespace bagis_pro
                 bool bExists = await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Fire)), lstRasterFileName[i]);
                 if (bExists)
                 {
-                        bClipThisLayer = false;
+                    bClipThisLayer = false;
                 }
                 else
                 {
