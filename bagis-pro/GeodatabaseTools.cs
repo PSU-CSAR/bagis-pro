@@ -1,5 +1,4 @@
-﻿using ArcGIS.Core.CIM;
-using ArcGIS.Core.Data;
+﻿using ArcGIS.Core.Data;
 using ArcGIS.Core.Data.Exceptions;
 using ArcGIS.Core.Data.Raster;
 using ArcGIS.Core.Geometry;
@@ -11,9 +10,7 @@ using ArcGIS.Desktop.Mapping;
 using bagis_pro.BA_Objects;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -1168,10 +1165,9 @@ namespace bagis_pro
             string stationTriplet, string basinName)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
-            string[] arrAddFields = new string[] { Constants.FIELD_STATION_NAME, Constants.FIELD_STATION_TRIPLET, Constants.FIELD_BASIN, Constants.FIELD_HUC2,
-                Constants.FIELD_AOI_AREA, Constants.FIELD_AOI_AREA_UNIT};
-            string[] arrNewFieldTypes = new string[] { "TEXT", "TEXT", "TEXT", "INTEGER", "DOUBLE", "TEXT" };
-            string[] arrNewFieldValues = new string[] { aoiName, stationTriplet, basinName, "", "", Constants.UNITS_SQUARE_KM };
+            string[] arrAddFields = new string[] { Constants.FIELD_STATION_NAME, Constants.FIELD_STATION_TRIPLET, Constants.FIELD_BASIN, Constants.FIELD_HUC2};
+            string[] arrNewFieldTypes = new string[] { "TEXT", "TEXT", "TEXT", "INTEGER" };
+            string[] arrNewFieldValues = new string[] { aoiName, stationTriplet, basinName, "" };
             Uri uriAoiGdb = new Uri(GeodatabaseTools.GetGeodatabasePath(aoiPath, GeodatabaseNames.Aoi));
             for (int i = 0; i < arrAddFields.Length; i++)
             {
@@ -1187,12 +1183,6 @@ namespace bagis_pro
                         success = await UpdateFeatureAttributesAsync(uriAoiGdb, Constants.FILE_POURPOINT, new QueryFilter(), dictUpdate);
                     }
                 }
-            }
-            double areaSqM = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(uriAoiGdb, Constants.FILE_AOI_VECTOR, "");
-            if (areaSqM > 0)
-            {
-                double areaSqKm = AreaUnit.SquareMeters.ConvertTo(areaSqM, AreaUnit.SquareKilometers);
-                success = await GeodatabaseTools.UpdateFeatureAttributeNumericAsync(uriAoiGdb, Constants.FILE_POURPOINT, null, Constants.FIELD_AOI_AREA, areaSqKm);
             }
             int huc2 = await Webservices.QueryHuc2Async(aoiPath);
             success = await GeodatabaseTools.UpdateFeatureAttributeNumericAsync(uriAoiGdb, Constants.FILE_POURPOINT, null, Constants.FIELD_HUC2, huc2);
@@ -1235,6 +1225,34 @@ namespace bagis_pro
                 }
             });
             return spatialReference;
+        }
+        public static async Task<double> CalculateAoiAreaSqMetersAsync(string aoiPath, double inAreaSqM)
+        {
+            double areaSqM = inAreaSqM;
+            SpatialReference sr = await GetSpatialReferenceAsync(GetGeodatabasePath(aoiPath, GeodatabaseNames.Aoi), Constants.FILE_AOI_VECTOR);
+            if (sr != null)
+            {
+                double areaUndefined = await CalculateTotalPolygonAreaAsync(new Uri(GetGeodatabasePath(aoiPath, GeodatabaseNames.Aoi)), Constants.FILE_AOI_VECTOR, "");
+                var oUnit = sr.Unit;
+                // Definition of ESRI Factory codes
+                // https://pro.arcgis.com/en/pro-app/3.3/sdk/api-reference/topic8349.html
+                switch (oUnit.FactoryCode)
+                {
+                    case 9001:
+                        // meters
+                        areaSqM = areaUndefined;
+                        break;
+                    case 9002:
+                        // feet
+                        areaSqM = AreaUnit.SquareFeet.ConvertTo(areaUndefined, AreaUnit.SquareMeters);
+                        break;
+                    default:
+                        // meters
+                        areaSqM = areaUndefined;
+                        break;
+                }
+            }
+            return areaSqM;
         }
     }
 

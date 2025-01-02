@@ -262,8 +262,6 @@ namespace bagis_pro
         public const string FOLDER_FIRE_STATISTICS = "fire_statistics";
         public const string FOLDER_CHROME_USER_DATA = "chrome_user_data";
 
-        public const string FIELD_AOI_AREA = "AOISHPAREA";
-        public const string FIELD_AOI_AREA_UNIT = "AOISHPUNIT";
         public const string FIELD_SITE_ELEV = "BA_SELEV";
         public const string FIELD_SITE_NAME = "BA_SNAME";
         public const string FIELD_SITE_TYPE = "BA_STYPE";

@@ -5722,21 +5722,18 @@ namespace bagis_pro
             string strLogEntry;
 
             // aoiArea_SqMeters
-            string strAreaSqM = "Not Found";
+            double areaSqM = -1;
+            string strAreaSqM = Convert.ToString(areaSqM);
             string strAreaSqMiles = strAreaSqM;
             string strAnnRunoffRatioPct = strAreaSqM;
-            QueryFilter queryFilter = new QueryFilter();
             Uri aoiUri = new Uri(GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi));
-            string strAreaSqKm = await GeodatabaseTools.QueryTableForSingleValueAsync(aoiUri, Constants.FILE_POURPOINT,
-                                    Constants.FIELD_AOI_AREA, new QueryFilter());
-            double dblAreaSqKm = -1;
-            bool isDouble = Double.TryParse(strAreaSqKm, out dblAreaSqKm);
-            if (isDouble)
+            // Calculate AOI area in SqM
+            areaSqM = await GeodatabaseTools.CalculateAoiAreaSqMetersAsync(oAoi.FilePath, areaSqM);
+            if (areaSqM != -1)
             {
-                strAreaSqM = String.Format("{0:0.00}", AreaUnit.SquareKilometers.ConvertTo(dblAreaSqKm, AreaUnit.SquareMeters));
+                strAreaSqM = String.Format("{0:0.00}", areaSqM);
                 // aoiArea_SqMiles
-                strAreaSqMiles = String.Format("{0:0.00}", AreaUnit.SquareKilometers.ConvertTo(dblAreaSqKm, AreaUnit.SquareMiles));
-
+                strAreaSqMiles = String.Format("{0:0.00}", AreaUnit.SquareMeters.ConvertTo(areaSqM, AreaUnit.SquareMiles));
             }
             lstElements.Add(strAreaSqM);
             lstElements.Add(strAreaSqMiles);
@@ -5876,7 +5873,7 @@ namespace bagis_pro
                         if (dblArea > 0)
                         {
                             double dblAreaSqM = -1;
-                            isDouble = Double.TryParse(strAreaSqM, out dblAreaSqM);
+                            bool isDouble = Double.TryParse(strAreaSqM, out dblAreaSqM);
                             if (isDouble)
                             {
 
@@ -8072,7 +8069,7 @@ namespace bagis_pro
             return lstReturn;
         }
 
-        public static async Task<double> QueryMtbsAreaPctByIncrementAsync(string aoiPath, Interval oInterval, double aoiAreaSqMeters, double dblMtbsCellSize)
+        public static async Task<double> QueryMtbsAreaPctByIncrementAsync(string aoiPath, Interval oInterval, double aoiAreaSqMeters, double dblMtbsCellSize)        
         {
             double dblReturn = 0;
             dynamic oFireSettings = GeneralTools.GetFireSettings(aoiPath);

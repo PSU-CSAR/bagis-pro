@@ -165,11 +165,10 @@ namespace bagis_pro
                 }
 
                 // Query for the drainage area
+                double dblAreaSqM = await GeodatabaseTools.CalculateAoiAreaSqMetersAsync(Module1.Current.Aoi.FilePath, -1);
                 Uri gdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi));
-                string strAreaSqKm = await GeodatabaseTools.QueryTableForSingleValueAsync(gdbUri, Constants.FILE_POURPOINT,
-                                        Constants.FIELD_AOI_AREA, new QueryFilter());
-                double areaSqKm = -1;
-                bool isDouble = Double.TryParse(strAreaSqKm, out areaSqKm);
+                double areaSqKm = ArcGIS.Core.Geometry.AreaUnit.SquareMeters.ConvertTo(dblAreaSqM, 
+                    ArcGIS.Core.Geometry.AreaUnit.SquareKilometers);
 
                 //Query min/max from dem
                 string sMask = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_VECTOR;
