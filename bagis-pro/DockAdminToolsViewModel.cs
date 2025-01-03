@@ -870,7 +870,7 @@ namespace bagis_pro
             string strCsvFile =$@"{Path.GetDirectoryName(_strGenStatisticsLogFile)}\{Constants.FILE_AOI_STATISTICS}";
             string separator = ",";
             StringBuilder output = new StringBuilder();
-            String[] headings = { "stationTriplet","stationName","aoiArea_SqMeters", "aoiArea_SqMiles", "ann_runoff_ratio_pct",
+            String[] headings = { "stationTriplet","stationName","report_end_year","aoiArea_SqMeters", "aoiArea_SqMiles", "ann_runoff_ratio_pct",
                 "centroid_x_dd","centroid_y_dd","state_codes","elev_min_ft","elev_max_ft","elev_range_ft","elev_median_ft",
                 "auto_sites_buffer","scos_sites_buffer","snotel_sites_all","snolite_sites_all","scos_sites_all","coop_sites_all","snotel_sites_inside",
                 "snolite_sites_inside","scos_sites_inside","coop_sites_inside","snotel_sites_outside","snolite_sites_outside",
@@ -2218,19 +2218,20 @@ namespace bagis_pro
             // Create initial log entry
             string strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Starting fire report " + "\r\n";
             File.WriteAllText(_strFireReportLogFile, strLogEntry);    // overwrite file if it exists
+
             // Dictionary: Key is the year, Value is an ArrayList of the values for that line
             IDictionary<string, IList<IList<string>>> dictOutput = new Dictionary<string, IList<IList<string>>>();
             IList<IList<string>> lstIncrementOutput = new List<IList<string>>();    
             int intIncrementPeriods = 0;
             IList<Interval> lstInterval = null;
             int overrideMinYear = _intMinYear;
+            int overrideMaxYear = ReportEndYear;
             bool bAnnualStatistics = true;
             bool bIncrementStatistics = true;
             for (int idxRow = 0; idxRow < Names.Count; idxRow++)
             {
                 if (Names[idxRow].AoiBatchIsSelected)
                 {
-                    int errorCount = 0; // keep track of any non-fatal errors
                     string aoiFolder = Names[idxRow].FilePath;
                     if (Names[idxRow].AoiBatchStateText.Equals(AoiBatchState.NotReady.ToString()))
                     {
@@ -2240,6 +2241,28 @@ namespace bagis_pro
                     }
                     else
                     {
+                        bool bMissingFireSettings = false;
+                        string strFireSettingsPath = $@"{aoiFolder}\{Constants.FOLDER_MAPS}\{Constants.FILE_FIRE_SETTINGS}";
+                        if (File.Exists(strFireSettingsPath))
+                        {
+                            dynamic oFireSettings = GeneralTools.GetFireSettings(aoiFolder);
+                            if (oFireSettings.DataSources == null)
+                            {
+                                bMissingFireSettings = true;
+                            }
+                        }
+                        else
+                        {
+                            bMissingFireSettings = true;
+                        }
+                        if (bMissingFireSettings)
+                        {
+                            Names[idxRow].AoiBatchStateText = AoiBatchState.Failed.ToString();  // update gui
+                            strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Missing fire_analysis.json file for " +
+                                Names[idxRow].Name + "! Retrieve fire data before running report. \r\n";
+                            File.AppendAllText(_strFireReportLogFile, strLogEntry);       // append
+                            break;
+                        }
                         Names[idxRow].AoiBatchStateText = AoiBatchState.Started.ToString();  // update gui
                         strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Starting fire report for " +
                             Names[idxRow].Name + "\r\n";
@@ -2279,6 +2302,7 @@ namespace bagis_pro
                     if (SelectedTimeChecked)
                     {
                         overrideMinYear = SelectedMinYear;
+                        overrideMaxYear = SelectedMaxYear;
                         if (!AnnualDataChecked)
                         {
                             bAnnualStatistics = false;
@@ -2290,10 +2314,10 @@ namespace bagis_pro
                     }
                     if (bAnnualStatistics)
                     {
-                        for (int i = overrideMinYear; i <= SelectedMaxYear; i++)
+                        for (int i = overrideMinYear; i <= overrideMaxYear; i++)
                         {
                             IList<string> lstAnnualElements = await AnalysisTools.GenerateAnnualFireStatisticsList(oAoi, _strFireReportLogFile,
-                                aoiAreaSqMeters, cellSizeSqMeters, i);
+                                aoiAreaSqMeters, cellSizeSqMeters, i, ReportEndYear);
                             if (dictOutput.ContainsKey(i.ToString()))
                             {
                                 dictOutput[i.ToString()].Add(lstAnnualElements);
@@ -2314,9 +2338,9 @@ namespace bagis_pro
                         {
                             bRequestPeriods = true;
                         }
-                        lstInterval = GeneralTools.GetFireStatisticsIntervals(ReportEndYear, FireDataClipYears, FireIncrementYears, bRequestPeriods, FireTimePeriodCount, out intIncrementPeriods);
+                        lstInterval = GeneralTools.GetFireStatisticsIntervals(overrideMaxYear, FireDataClipYears, FireIncrementYears, bRequestPeriods, FireTimePeriodCount, out intIncrementPeriods);
                         IList<string> lstOutput = await AnalysisTools.GenerateIncrementFireStatisticsList(oAoi, _strFireReportLogFile,
-                            aoiAreaSqMeters, cellSizeSqMeters, lstInterval);
+                            aoiAreaSqMeters, cellSizeSqMeters, lstInterval, ReportEndYear);
                         lstIncrementOutput.Add(lstOutput);
                     }
 
@@ -2358,14 +2382,14 @@ namespace bagis_pro
             string separator = ",";
             if (bAnnualStatistics)
             {
-                for (int i = overrideMinYear; i <= SelectedMaxYear; i++)
+                for (int i = overrideMinYear; i <= overrideMaxYear; i++)
                 {
                     output.Clear();
                     string strYear = Convert.ToString(i);
                     string strYearPrefix = $@"YY{strYear.Substring(strYear.Length - 2)}_";
                     // Structures to manage data
                     strCsvFile = $@"{Path.GetDirectoryName(_strFireReportLogFile)}\{i}_annual_statistics.csv";
-                    String[] headings = { "stationTriplet", "stationName", $@"{strYearPrefix}newfireno", $@"{strYearPrefix}nifc_burnedArea_SqMiles",
+                    String[] headings = { "stationTriplet", "stationName", "report_end_year", $@"{strYearPrefix}newfireno", $@"{strYearPrefix}nifc_burnedArea_SqMiles",
                     $@"{strYearPrefix}nifc_burnedArea_pct", $@"{strYearPrefix}mtbs_burnedArea_pct", $@"{strYearPrefix}burnedForestedArea_SqMiles",
                     $@"{strYearPrefix}burnedForestedArea_pct",$@"{strYearPrefix}lowburnedSeverityArea_SqMiles", $@"{strYearPrefix}lowburnedSeverityArea_pct",
                     $@"{strYearPrefix}mediumburnedSeverityArea_SqMiles", $@"{strYearPrefix}mediumburnedSeverityArea_pct",$@"{strYearPrefix}highburnedSeverityArea_SqMiles", $@"{strYearPrefix}highburnedSeverityArea_pct" };
@@ -2399,7 +2423,7 @@ namespace bagis_pro
             {
                 strCsvFile = $@"{Path.GetDirectoryName(_strFireReportLogFile)}\increment_statistics.csv";
                 output.Clear();
-                IList<string> lstHeadings = new List<string>() { "stationTriplet", "stationName" };
+                IList<string> lstHeadings = new List<string>() { "stationTriplet", "stationName", "report_end_year" };
                 string fmt = "00";
                 for (int i = 1; i <= intIncrementPeriods; i++)
                 {
