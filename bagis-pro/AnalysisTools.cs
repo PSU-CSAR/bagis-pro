@@ -7623,39 +7623,13 @@ namespace bagis_pro
             double aoiAreaSqMeters, double dblMtbsCellSize, FireStatisticType fireStatType)
         {
             double dblReturn = 0;
+            double dblAreaSqMeters = 0;
             string strGdbFire = GeodatabaseTools.GetGeodatabasePath(aoiPath, GeodatabaseNames.Fire);
             string strMtbsLayer = GeneralTools.GetMtbsLayerFileName(intYear);
             switch (fireStatType)
             {
                 case FireStatisticType.MtbsBurnedAreaPct:
-                    StringBuilder sb = new StringBuilder();
-                    dynamic oFireSettings = GeneralTools.GetFireSettings(aoiPath);
-                    JArray arrMtbsLegend = oFireSettings.mtbsLegend;
-                    QueryFilter queryFilter = new QueryFilter();
-                    if (arrMtbsLegend != null)
-                    {
-                        foreach (dynamic item in arrMtbsLegend)
-                        {
-                            string severity = Convert.ToString(item.Severity);
-                            if (Constants.MTBS_INCLUDE_SEVERITIES.Contains(severity))
-                            {
-                                sb.Append($@"{Convert.ToString(item.Value)}");
-                                sb.Append(",");
-                            }
-                        }
-                        if (sb.Length > 0)
-                        {
-                            string strWhere = $@"{Constants.FIELD_VALUE} IN ({sb.ToString().TrimEnd(',')})";
-                            queryFilter.WhereClause = strWhere;
-                        }
-                    }
-                    IDictionary<string, long> dictMtbsArea = await GeodatabaseTools.RasterTableToDictionaryAsync(new Uri(strGdbFire), strMtbsLayer, queryFilter);
-                    long lngTotal = 0;
-                    foreach (var strKey in dictMtbsArea.Keys)
-                    {
-                        lngTotal = lngTotal + dictMtbsArea[strKey];
-                    }
-                    double dblAreaSqMeters = lngTotal * dblMtbsCellSize * dblMtbsCellSize;
+                    dblAreaSqMeters = await QueryMtbsAreaSqMetersAsync(aoiPath, strMtbsLayer, dblMtbsCellSize);
                     if (dblAreaSqMeters > 0)
                     {
                         dblReturn = Math.Round(dblAreaSqMeters / aoiAreaSqMeters * 100, 1);
@@ -7664,7 +7638,11 @@ namespace bagis_pro
                     {
                         dblReturn = 0;
                     }
-                    break; 
+                    break;
+                case FireStatisticType.MtbsBurnedAreaSqMiles:
+                    dblAreaSqMeters = await QueryMtbsAreaSqMetersAsync(aoiPath, strMtbsLayer, dblMtbsCellSize);
+                    dblReturn = Math.Round(AreaUnit.SquareMeters.ConvertTo(dblAreaSqMeters, AreaUnit.SquareMiles), 2);
+                    break;
             }
             return dblReturn;
         }
@@ -7807,6 +7785,16 @@ namespace bagis_pro
             lstElements.Add(Convert.ToString(dblFireCount));
             double dblAreaSqMiles = await QueryPerimeterStatisticsByYearAsync(oAoi.FilePath, intYear, aoiAreaSqMeters, FireStatisticType.AreaSqMiles, strLogFile);
             lstElements.Add(Convert.ToString(dblAreaSqMiles));
+            if (bMtbsExists)
+            {
+                double dblMtbsAreaSqMiles = await QueryMtbsStatisticByYearAsync(oAoi.FilePath, intYear, aoiAreaSqMeters, dblMtbsCellSize,
+                        FireStatisticType.MtbsBurnedAreaSqMiles); 
+                lstElements.Add(Convert.ToString(dblMtbsAreaSqMiles));
+            }
+            else
+            {
+                lstElements.Add("");    // leave cell null if missing values
+            }
             double dblBurnedAreaPct = await QueryPerimeterStatisticsByYearAsync(oAoi.FilePath, intYear, aoiAreaSqMeters, FireStatisticType.NifcBurnedAreaPct, strLogFile);
             lstElements.Add(Convert.ToString(dblBurnedAreaPct));
             if (bMtbsExists)
@@ -7881,16 +7869,19 @@ namespace bagis_pro
             }
             foreach (var oInterval in lstInterval)
             {
+                double dblBurnedMtbsArea = await QueryMtbsAreaPctByIncrementAsync(oAoi.FilePath, oInterval, aoiAreaSqMeters, dblMtbsCellSize, FireStatisticType.MtbsBurnedAreaSqMiles);
+                lstElements.Add(Convert.ToString(dblBurnedMtbsArea));
+            }
+            foreach (var oInterval in lstInterval)
+            {
                 double dblBurnedAreaPct = await QueryPerimeterStatisticsByIncrementAsync(oAoi.FilePath, oInterval, aoiAreaSqMeters, FireStatisticType.NifcBurnedAreaPct, strLogFile);
                 lstElements.Add(Convert.ToString(dblBurnedAreaPct));
             }
-            // Need mtbs burned area pct here
             foreach (var oInterval in lstInterval)
             {
-                double dblBurnedAreaPct = await QueryMtbsAreaPctByIncrementAsync(oAoi.FilePath, oInterval, aoiAreaSqMeters, dblMtbsCellSize);
+                double dblBurnedAreaPct = await QueryMtbsAreaPctByIncrementAsync(oAoi.FilePath, oInterval, aoiAreaSqMeters, dblMtbsCellSize, FireStatisticType.MtbsBurnedAreaPct);
                 lstElements.Add(Convert.ToString(dblBurnedAreaPct));
             }
-
             foreach (var oInterval in lstInterval)
             {
                 double dblBurnedForestedArea = await QueryPerimeterStatisticsByIncrementAsync(oAoi.FilePath, oInterval, aoiAreaSqMeters, FireStatisticType.BurnedForestedArea, strLogFile);
@@ -8075,7 +8066,8 @@ namespace bagis_pro
             return lstReturn;
         }
 
-        public static async Task<double> QueryMtbsAreaPctByIncrementAsync(string aoiPath, Interval oInterval, double aoiAreaSqMeters, double dblMtbsCellSize)        
+        public static async Task<double> QueryMtbsAreaPctByIncrementAsync(string aoiPath, Interval oInterval, double aoiAreaSqMeters, double dblMtbsCellSize,
+            FireStatisticType oStatisticType)        
         {
             double dblReturn = 0;
             dynamic oFireSettings = GeneralTools.GetFireSettings(aoiPath);
@@ -8138,12 +8130,49 @@ namespace bagis_pro
                                 double dblAreaSqMeters = cellCount * dblMtbsCellSize * dblMtbsCellSize;
                                 dblTotalBurnedArea = dblTotalBurnedArea + dblAreaSqMeters;
                             }
-                            dblReturn = Math.Round(dblTotalBurnedArea / aoiAreaSqMeters * 100, 1);
+                            dblReturn = Math.Round(AreaUnit.SquareMeters.ConvertTo(dblTotalBurnedArea, AreaUnit.SquareMiles), 2);
+                            if (oStatisticType == FireStatisticType.MtbsBurnedAreaPct)
+                            {
+                                dblReturn = Math.Round(dblTotalBurnedArea / aoiAreaSqMeters * 100, 1);
+                            }                            
                         }
                     }
                 }
             }
             return dblReturn;
+        }
+        public static async Task<double> QueryMtbsAreaSqMetersAsync(string aoiPath, string strMtbsLayer, double dblMtbsCellSize)
+        {
+            StringBuilder sb = new StringBuilder();
+            dynamic oFireSettings = GeneralTools.GetFireSettings(aoiPath);
+            JArray arrMtbsLegend = oFireSettings.mtbsLegend;
+            QueryFilter queryFilter = new QueryFilter();
+            if (arrMtbsLegend != null)
+            {
+                foreach (dynamic item in arrMtbsLegend)
+                {
+                    string severity = Convert.ToString(item.Severity);
+                    if (Constants.MTBS_INCLUDE_SEVERITIES.Contains(severity))
+                    {
+                        sb.Append($@"{Convert.ToString(item.Value)}");
+                        sb.Append(",");
+                    }
+                }
+                if (sb.Length > 0)
+                {
+                    string strWhere = $@"{Constants.FIELD_VALUE} IN ({sb.ToString().TrimEnd(',')})";
+                    queryFilter.WhereClause = strWhere;
+                }
+            }
+            Uri uriFire = new Uri(GeodatabaseTools.GetGeodatabasePath(aoiPath, GeodatabaseNames.Fire));
+            IDictionary<string, long> dictMtbsArea = await GeodatabaseTools.RasterTableToDictionaryAsync(uriFire, strMtbsLayer, queryFilter);
+            long lngTotal = 0;
+            foreach (var strKey in dictMtbsArea.Keys)
+            {
+                lngTotal = lngTotal + dictMtbsArea[strKey];
+            }
+            double dblAreaSqMeters = lngTotal * dblMtbsCellSize * dblMtbsCellSize;
+            return dblAreaSqMeters;
         }
     }
 

@@ -190,7 +190,7 @@ namespace bagis_pro
         {
             get
             {
-                return new RelayCommand(async () =>
+                return new RelayCommand( () =>
                 {
                     //Display the filter in an Open Item dialog
                     OpenItemDialog aNewFilter = new OpenItemDialog

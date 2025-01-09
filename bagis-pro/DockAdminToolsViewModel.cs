@@ -2390,7 +2390,7 @@ namespace bagis_pro
                     // Structures to manage data
                     strCsvFile = $@"{Path.GetDirectoryName(_strFireReportLogFile)}\{i}_annual_statistics.csv";
                     String[] headings = { "stationTriplet", "stationName", "report_end_year", $@"{strYearPrefix}newfireno", $@"{strYearPrefix}nifc_burnedArea_SqMiles",
-                    $@"{strYearPrefix}nifc_burnedArea_pct", $@"{strYearPrefix}mtbs_burnedArea_pct", $@"{strYearPrefix}burnedForestedArea_SqMiles",
+                    $@"{strYearPrefix}mtbs_burnedArea_SqMiles", $@"{strYearPrefix}nifc_burnedArea_pct", $@"{strYearPrefix}mtbs_burnedArea_pct", $@"{strYearPrefix}burnedForestedArea_SqMiles",
                     $@"{strYearPrefix}burnedForestedArea_pct",$@"{strYearPrefix}lowburnedSeverityArea_SqMiles", $@"{strYearPrefix}lowburnedSeverityArea_pct",
                     $@"{strYearPrefix}mediumburnedSeverityArea_SqMiles", $@"{strYearPrefix}mediumburnedSeverityArea_pct",$@"{strYearPrefix}highburnedSeverityArea_SqMiles", $@"{strYearPrefix}highburnedSeverityArea_pct" };
                     output.AppendLine(string.Join(separator, headings));
@@ -2435,6 +2435,12 @@ namespace bagis_pro
                 {
                     int yearsLabel = i * FireIncrementYears;
                     string strYearsLabel = $@"Last{yearsLabel.ToString(fmt)}_nifc_burnedArea_SqMiles";
+                    lstHeadings.Add(strYearsLabel);
+                }
+                for (int i = 1; i <= intIncrementPeriods; i++)
+                {
+                    int yearsLabel = i * FireIncrementYears;
+                    string strYearsLabel = $@"Last{yearsLabel.ToString(fmt)}_mtbs_burnedArea_SqMiles";
                     lstHeadings.Add(strYearsLabel);
                 }
                 for (int i = 1; i <= intIncrementPeriods; i++)
