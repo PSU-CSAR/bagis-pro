@@ -1226,33 +1226,30 @@ namespace bagis_pro
             });
             return spatialReference;
         }
-        public static async Task<double> CalculateAoiAreaSqMetersAsync(string aoiPath, double inAreaSqM)
+        public static async Task<(double,bool)> CalculateAoiAreaSqMetersAsync(string aoiPath, double inAreaSqM)
         {
             double areaSqM = inAreaSqM;
+            bool bIsMeters = false;
             SpatialReference sr = await GetSpatialReferenceAsync(GetGeodatabasePath(aoiPath, GeodatabaseNames.Aoi), Constants.FILE_AOI_VECTOR);
             if (sr != null)
             {
                 double areaUndefined = await CalculateTotalPolygonAreaAsync(new Uri(GetGeodatabasePath(aoiPath, GeodatabaseNames.Aoi)), Constants.FILE_AOI_VECTOR, "");
                 var oUnit = sr.Unit;
-                // Definition of ESRI Factory codes
-                // https://pro.arcgis.com/en/pro-app/3.3/sdk/api-reference/topic8349.html
-                switch (oUnit.FactoryCode)
+                if (oUnit.Name.ToUpper().Equals("METER"))
                 {
-                    case 9001:
-                        // meters
-                        areaSqM = areaUndefined;
-                        break;
-                    case 9002:
-                        // feet
-                        areaSqM = AreaUnit.SquareFeet.ConvertTo(areaUndefined, AreaUnit.SquareMeters);
-                        break;
-                    default:
-                        // meters
-                        areaSqM = areaUndefined;
-                        break;
+                    areaSqM = areaUndefined;
+                    bIsMeters = true;
+                }
+                else if (oUnit.Name.ToUpper().Equals("FOOT"))
+                {
+                    areaSqM = AreaUnit.SquareFeet.ConvertTo(areaUndefined, AreaUnit.SquareMeters);
+                }
+                else
+                {
+                    areaSqM = -1;    
                 }
             }
-            return areaSqM;
+            return (areaSqM, bIsMeters);
         }
     }
 

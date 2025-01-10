@@ -165,10 +165,17 @@ namespace bagis_pro
                 }
 
                 // Query for the drainage area
-                double dblAreaSqM = await GeodatabaseTools.CalculateAoiAreaSqMetersAsync(Module1.Current.Aoi.FilePath, -1);
+                var result = await GeodatabaseTools.CalculateAoiAreaSqMetersAsync(Module1.Current.Aoi.FilePath, -1);
+                double dblAreaSqM = result.Item1;
                 Uri gdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi));
                 double areaSqKm = ArcGIS.Core.Geometry.AreaUnit.SquareMeters.ConvertTo(dblAreaSqM, 
                     ArcGIS.Core.Geometry.AreaUnit.SquareKilometers);
+
+                if (!result.Item2)
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(GenerateMapsTitlePageAsync),
+                        "Projection mismatch: Linear units for aoi_v are NOT in meters!");
+                }
 
                 //Query min/max from dem
                 string sMask = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_VECTOR;

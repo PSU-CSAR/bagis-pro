@@ -5723,17 +5723,26 @@ namespace bagis_pro
 
             // aoiArea_SqMeters
             double areaSqM = -1;
+            bool bIsMeters = false;
             string strAreaSqM = Convert.ToString(areaSqM);
             string strAreaSqMiles = strAreaSqM;
             string strAnnRunoffRatioPct = strAreaSqM;
             Uri aoiUri = new Uri(GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi));
             // Calculate AOI area in SqM
-            areaSqM = await GeodatabaseTools.CalculateAoiAreaSqMetersAsync(oAoi.FilePath, areaSqM);
+            var result = await GeodatabaseTools.CalculateAoiAreaSqMetersAsync(oAoi.FilePath, areaSqM);
+            areaSqM = result.Item1;
+            bIsMeters = result.Item2;
             if (areaSqM != -1)
             {
                 strAreaSqM = String.Format("{0:0.00}", areaSqM);
                 // aoiArea_SqMiles
                 strAreaSqMiles = String.Format("{0:0.00}", AreaUnit.SquareMeters.ConvertTo(areaSqM, AreaUnit.SquareMiles));
+            }
+            if (!bIsMeters)
+            {
+                strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Projection mismatch: Linear units for aoi_v are NOT in meters! \r\n";
+                File.AppendAllText(strLogFile, strLogEntry);       // append
+
             }
             lstElements.Add(strAreaSqM);
             lstElements.Add(strAreaSqMiles);

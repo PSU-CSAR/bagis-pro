@@ -18,7 +18,8 @@ namespace bagis_pro.BA_Objects
         //configuration information
         public LoggerManager(string nLogConfigLocation)
         {
-            LogManager.LoadConfiguration(nLogConfigLocation);
+            //LogManager.LoadConfiguration(nLogConfigLocation);
+            LogManager.Setup().LoadConfigurationFromFile(nLogConfigLocation);
             this.logger = LogManager.GetCurrentClassLogger();
         }
 
