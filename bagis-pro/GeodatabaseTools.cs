@@ -463,7 +463,6 @@ namespace bagis_pro
             }
             return bExists;
         }
-
         public static async Task<bool> RasterDatasetExistsAsync(Uri gdbUri, string rasterName)
         {
             bool bExists = false;
@@ -1250,6 +1249,46 @@ namespace bagis_pro
                 }
             }
             return (areaSqM, bIsMeters);
+        }
+
+        public static async Task<IList<string>> QueryMissingMtbsRasters(string aoiPath, int minYear, int maxYear)
+        {
+            IList<string> result = new List<string>();
+            IList<string> layerNames = new List<string>();
+            IList<int> allYears = new List<int>();
+            for (int i = minYear; i <= maxYear; i++)
+            {
+                string layerName = GeneralTools.GetMtbsLayerFileName(i);
+                layerNames.Add(layerName);
+                allYears.Add(i);
+;           }
+            Uri uriFire = new Uri(GeodatabaseTools.GetGeodatabasePath(aoiPath, GeodatabaseNames.Fire));
+            await QueuedTask.Run(() =>
+            {
+
+                using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(uriFire)))
+                {
+                    IReadOnlyList<RasterDatasetDefinition> definitions = geodatabase.GetDefinitions<RasterDatasetDefinition>();
+                    for (int i = 0; i < layerNames.Count; i++)
+                    {
+                        string rasterName = layerNames[i];
+                        bool bExists = false;
+                        foreach (RasterDatasetDefinition def in definitions)
+                        {
+                            if (def.GetName().Equals(rasterName))
+                            {
+                                bExists = true;
+                                break;
+                            }
+                        }
+                        if (!bExists)
+                        {
+                            result.Add(Convert.ToString(allYears[i]));
+                        }
+                    }
+                }
+            });
+            return result;
         }
     }
 

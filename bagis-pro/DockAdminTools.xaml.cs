@@ -40,5 +40,13 @@ namespace bagis_pro
             }
 
         }
+        private void ReportEndYear_textChangedEventHandler(object sender, TextChangedEventArgs args)
+        {
+            var textBox = sender as TextBox;
+            if (tbSelectMaxYear != null)
+            {
+                tbSelectMaxYear.Text = textBox.Text;
+            }
+        }
     }
 }

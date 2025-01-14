@@ -2312,12 +2312,13 @@ namespace bagis_pro
                             bIncrementStatistics = false;
                         }
                     }
+                    IList<string> lstMissingMtbsYears = await GeodatabaseTools.QueryMissingMtbsRasters(oAoi.FilePath, overrideMinYear, overrideMaxYear);
                     if (bAnnualStatistics)
                     {
                         for (int i = overrideMinYear; i <= overrideMaxYear; i++)
                         {
                             IList<string> lstAnnualElements = await AnalysisTools.GenerateAnnualFireStatisticsList(oAoi, _strFireReportLogFile,
-                                aoiAreaSqMeters, cellSizeSqMeters, i, ReportEndYear);
+                                aoiAreaSqMeters, cellSizeSqMeters, i, overrideMaxYear, lstMissingMtbsYears);
                             if (dictOutput.ContainsKey(i.ToString()))
                             {
                                 dictOutput[i.ToString()].Add(lstAnnualElements);
@@ -2340,7 +2341,7 @@ namespace bagis_pro
                         }
                         lstInterval = GeneralTools.GetFireStatisticsIntervals(overrideMaxYear, FireDataClipYears, FireIncrementYears, bRequestPeriods, FireTimePeriodCount, out intIncrementPeriods);
                         IList<string> lstOutput = await AnalysisTools.GenerateIncrementFireStatisticsList(oAoi, _strFireReportLogFile,
-                            aoiAreaSqMeters, cellSizeSqMeters, lstInterval, ReportEndYear);
+                            aoiAreaSqMeters, cellSizeSqMeters, lstInterval, overrideMaxYear, lstMissingMtbsYears);
                         lstIncrementOutput.Add(lstOutput);
                     }
 
@@ -2423,7 +2424,7 @@ namespace bagis_pro
             {
                 strCsvFile = $@"{Path.GetDirectoryName(_strFireReportLogFile)}\increment_statistics.csv";
                 output.Clear();
-                IList<string> lstHeadings = new List<string>() { "stationTriplet", "stationName", "report_end_year" };
+                IList<string> lstHeadings = new List<string>() { "stationTriplet", "stationName", "report_end_year", "mtbs_missing_years" };
                 string fmt = "00";
                 for (int i = 1; i <= intIncrementPeriods; i++)
                 {

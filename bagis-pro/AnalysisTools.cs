@@ -7781,14 +7781,18 @@ namespace bagis_pro
         }
 
         public static async Task<IList<string>> GenerateAnnualFireStatisticsList(BA_Objects.Aoi oAoi, string strLogFile, double aoiAreaSqMeters,
-                double dblMtbsCellSize, int intYear, int intReportEndYear)
+                double dblMtbsCellSize, int intYear, int intReportEndYear, IList<string> lstMissingMtbsYears)
         {
             IList<string> lstElements = new List<string>();
             lstElements.Add(oAoi.StationTriplet);   // Station triplet
             lstElements.Add(oAoi.Name);  //AOI Name
             lstElements.Add(Convert.ToString(intReportEndYear));
             string gdbFire = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Fire);
-            bool bMtbsExists = await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(gdbFire), GeneralTools.GetMtbsLayerFileName(intYear));
+            bool bMtbsExists = true;
+            if (lstMissingMtbsYears.Contains(Convert.ToString(intYear)))
+            {
+                bMtbsExists = false;
+            }
 
             double dblFireCount = await QueryPerimeterStatisticsByYearAsync(oAoi.FilePath, intYear, aoiAreaSqMeters, FireStatisticType.Count, strLogFile);
             lstElements.Add(Convert.ToString(dblFireCount));
@@ -7859,12 +7863,24 @@ namespace bagis_pro
         }
 
         public static async Task<IList<string>> GenerateIncrementFireStatisticsList(BA_Objects.Aoi oAoi, string strLogFile, double aoiAreaSqMeters,
-            double dblMtbsCellSize, IList<Interval> lstInterval, int intReportYear)
+            double dblMtbsCellSize, IList<Interval> lstInterval, int intReportEndYear, IList<string> lstMtbsMissingYears)
         {
             IList<string> lstElements = new List<string>();
             lstElements.Add(oAoi.StationTriplet);   // Station triplet
             lstElements.Add(oAoi.Name);  //AOI Name
-            lstElements.Add(Convert.ToString(intReportYear));
+            lstElements.Add(Convert.ToString(intReportEndYear));
+            StringBuilder sb = new StringBuilder();
+            foreach(string year in lstMtbsMissingYears)
+            {
+                sb.Append($@"{year},");
+            }
+            string missingYears = "";
+            if (sb.ToString().Length > 0)
+            {
+                missingYears = sb.ToString().TrimEnd(',');
+                missingYears = "\"" + missingYears + "\""; // wrap csv string in quotes           
+            }
+            lstElements.Add(missingYears);
             string gdbFire = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Fire);
             foreach (var oInterval in lstInterval)
             {

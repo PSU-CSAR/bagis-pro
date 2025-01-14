@@ -324,11 +324,11 @@
                             </Grid.RowDefinitions>
                             <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="0, 0, 0, 2">
                                 <Label Content="Report end year:"/>
-                                <TextBox Width ="40" Height="20" Text="{Binding ReportEndYear}"/>
+                                <TextBox Width ="40" Height="20" Text="{Binding ReportEndYear}" TextChanged="ReportEndYear_textChangedEventHandler"/>
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Grid.Row="1" Margin="0, 0, 0, 2">
                                 <Label Content="Increment (in years):"/>
-                                <TextBox Width ="30" Height="20" Text="{Binding FireIncrementYears}"/>
+                                <TextBox Width ="30" Height="20" Text="{Binding FireIncrementYears}" />
                             </StackPanel>
 
                             <StackPanel Orientation="Vertical" Grid.Row="2" VerticalAlignment="Center">
