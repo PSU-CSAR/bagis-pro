@@ -75,8 +75,8 @@ namespace bagis_pro.Menus
                                 MessageBox.Show(sb.ToString(), "BAGIS PRO");
                             }
                         }
-                        var pane = (DockCreateAOIfromExistingBNDViewModel)FrameworkApplication.DockPaneManager.Find("bagis_pro_DockCreateAOIfromExistingBND");
-                        DockAoiInfoViewModel.Show();
+                        // @ToDo: Re-enable when I'm ready to work on DockAoiInfo
+                        //DockAoiInfoViewModel.Show();
 
                     }
                 }

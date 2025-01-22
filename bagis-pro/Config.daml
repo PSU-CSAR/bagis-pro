@@ -31,7 +31,6 @@
           <tool refID="bagis_pro_Basin_SetDEMExtenttTool" size="large" />
           <button refID="bagis_pro_Maps_Tables_Button1" size="large" /> -->
           <button refID="bagis_pro_DockCreateAOIfromExistingBND_ShowButton" size="large" />
-          <button refID="bagis_pro_DockAoiInfo_ShowButton" size="large" />
         </group>
         <group id="bagis_pro_Groups_Basin" appearsOnAddInTab="false" caption=" " keytip="G2">
           <menu refID="bagis_pro_Menus_MnuBasin" size="middle" />
@@ -224,9 +223,6 @@
         </button> -->
         <button id="bagis_pro_WinExportPdf" caption="3. Export Map Package" className="BtnWinExportPdf" loadOnClick="true" smallImage="Images\PdfIcon.png" largeImage="Images\PdfIcon.png" condition="BtnExportToPdf_Condition" keytip="B14">
           <tooltip heading="Export Map Package">Click to export Map Package to PDF<disabledText /></tooltip>
-        </button>
-        <button id="bagis_pro_DockAoiInfo_ShowButton" caption="Show DockAoiInfo" className="DockAoiInfo_ShowButton" loadOnClick="true" smallImage="GenericButtonPurple16" largeImage="GenericButtonPurple32">
-          <tooltip heading="Show Dockpane">Show Dockpane<disabledText /></tooltip>
         </button>
       </controls>
       <menus>
