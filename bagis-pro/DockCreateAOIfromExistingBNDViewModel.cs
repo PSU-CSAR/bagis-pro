@@ -88,6 +88,7 @@ namespace bagis_pro
         private double _bufferDistance;
         private string _slopeUnitDescr;
         private string _demElevUnit;
+        private string _aoiBufferUnits;
 
         public string Heading
         {
@@ -184,6 +185,12 @@ namespace bagis_pro
         {
             get => _demElevUnit;
             set => SetProperty(ref _demElevUnit, value);
+        }
+
+        public string AoiBufferUnits
+        {
+            get => _aoiBufferUnits;
+            set => SetProperty(ref _aoiBufferUnits, value);
         }
 
         public System.Windows.Input.ICommand CmdOutputWorkspace
@@ -545,33 +552,6 @@ namespace bagis_pro
                             success = BA_ReturnCode.Success;
                         }
                     }
-
-                    StringBuilder sbDem = new StringBuilder();
-                    //Update the metadata if there is a custom buffer
-                    //We need to add a new tag at "/metadata/dataIdInfo/searchKeys/keyword"
-                    sbDem.Append(Constants.META_TAG_PREFIX);
-                    // Buffer Distance
-                    sbDem.Append(Constants.META_TAG_BUFFER_DISTANCE + aoiBufferDistance + "; ");
-                    // X Units
-                    sbDem.Append(Constants.META_TAG_XUNIT_VALUE + Constants.UNITS_METERS + "; ");
-                    sbDem.Append(Constants.META_TAG_SUFFIX);
-                    if (!String.IsNullOrEmpty(aoiBufferDistance) && success == BA_ReturnCode.Success)
-                    {
-                        //Update the metadata
-                        await QueuedTask.Run(() =>
-                        {
-                            var fc = ItemFactory.Instance.Create(strDem,
-                            ItemFactory.ItemType.PathItem);
-                            if (fc != null)
-                            {
-                                string strXml = string.Empty;
-                                strXml = fc.GetXml();
-                                System.Xml.XmlDocument xmlDocument = GeneralTools.UpdateMetadata(strXml, Constants.META_TAG_XPATH, sbDem.ToString(),
-                                    Constants.META_TAG_PREFIX.Length);
-                                fc.SetXml(xmlDocument.OuterXml);
-                            }
-                        });
-                    }
                 }
                 Uri uri = null;
                 string filledDemPath = $@"{surfacesGdbPath}\{Constants.FILE_DEM_FILLED}";
@@ -595,15 +575,17 @@ namespace bagis_pro
                     else
                     {
                         StringBuilder sbDem = new StringBuilder();
-                        //Update the metadata if there is a custom buffer
                         //We need to add a new tag at "/metadata/dataIdInfo/searchKeys/keyword"
                         sbDem.Append(Constants.META_TAG_PREFIX);
+                        // Elevation Units
+                        sbDem.Append(Constants.META_TAG_ZUNIT_CATEGORY + MeasurementUnitType.Elevation + "; ");
+                        sbDem.Append(Constants.META_TAG_ZUNIT_VALUE + DemElevUnit + "; ");
                         // Buffer Distance
                         sbDem.Append(Constants.META_TAG_BUFFER_DISTANCE + aoiBufferDistance + "; ");
                         // X Units
-                        sbDem.Append(Constants.META_TAG_XUNIT_VALUE + Constants.UNITS_METERS + "; ");
+                        sbDem.Append(Constants.META_TAG_XUNIT_VALUE + AoiBufferUnits + "; ");
                         sbDem.Append(Constants.META_TAG_SUFFIX);
-                        if (!String.IsNullOrEmpty(aoiBufferDistance) && success == BA_ReturnCode.Success)
+                        if (success == BA_ReturnCode.Success)
                         {
                             //Update the metadata
                             await QueuedTask.Run(() =>
@@ -658,6 +640,30 @@ namespace bagis_pro
                         success = BA_ReturnCode.UnknownError;
                         progress.Hide();
                         return;
+                    }
+                    StringBuilder sbDem = new StringBuilder();
+                    //We need to add a new tag at "/metadata/dataIdInfo/searchKeys/keyword"
+                    sbDem.Append(Constants.META_TAG_PREFIX);
+                    // Elevation Units
+                    sbDem.Append(Constants.META_TAG_ZUNIT_CATEGORY + MeasurementUnitType.Slope + "; ");
+                    sbDem.Append(Constants.META_TAG_ZUNIT_VALUE + SlopeUnitDescr + "; ");
+                    sbDem.Append(Constants.META_TAG_SUFFIX);
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        //Update the metadata
+                        await QueuedTask.Run(() =>
+                        {
+                            var fc = ItemFactory.Instance.Create($@"{surfacesGdbPath}\{Constants.FILE_SLOPE}",
+                            ItemFactory.ItemType.PathItem);
+                            if (fc != null)
+                            {
+                                string strXml = string.Empty;
+                                strXml = fc.GetXml();
+                                System.Xml.XmlDocument xmlDocument = GeneralTools.UpdateMetadata(strXml, Constants.META_TAG_XPATH, sbDem.ToString(),
+                                    Constants.META_TAG_PREFIX.Length);
+                                fc.SetXml(xmlDocument.OuterXml);
+                            }
+                        });
                     }
                     else
                     if (SlopeChecked)
@@ -820,7 +826,7 @@ namespace bagis_pro
                     }
                 }
             }
-
+            System.Windows.Forms.MessageBox.Show("AOI was created!", "BAGIS-Pro");
         }
 
     }

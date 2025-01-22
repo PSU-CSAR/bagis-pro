@@ -80,6 +80,7 @@ namespace bagis_pro.Menus
                     string newAoiName = Path.GetFileNameWithoutExtension(e.Path);
                     pane.AoiName = newAoiName;
                     pane.DemElevUnit = (string) Module1.Current.BagisSettings.DemUnits;
+                    pane.AoiBufferUnits = (string)Module1.Current.BagisSettings.AoiBufferUnits;
                     DockCreateAOIfromExistingBNDViewModel.Show();
                 }
                 else

@@ -1,9 +1,5 @@
 ﻿using System;
-using ExtensionMethod;
 using System.ComponentModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace bagis_pro
 {
@@ -165,6 +161,15 @@ namespace bagis_pro
         Geodatabase,
         ImageServer,
         FeatureServer
+    }
+
+    public enum MeasurementUnitType
+    {
+        Missing,
+        Slope,
+        Elevation,
+        Depth,
+        Temperature
     }
 }
 

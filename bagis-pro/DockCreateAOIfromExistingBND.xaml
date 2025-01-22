@@ -118,7 +118,7 @@
                     <TextBlock Text="AOI Buffer Distance:" VerticalAlignment="Center"/>
                     <TextBox x:Name="txtBufferDistance" Text="{Binding BufferDistance}" Width="30" Height="20"
                      HorizontalAlignment="Left" VerticalAlignment="Center"/>
-                    <TextBlock Text="Meters" VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding AoiBufferUnits}" VerticalAlignment="Center"/>
                 </DockPanel>
                 <DockPanel Grid.Row="6" Grid.Column="0" Margin="5,0,0,0">
                     <CheckBox x:Name="ckFlowDirect" Content="Flow Direction" IsChecked="{Binding FlowDirectChecked}"/>
