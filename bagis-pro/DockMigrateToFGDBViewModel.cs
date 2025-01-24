@@ -596,7 +596,7 @@ namespace bagis_pro
                     }
 
                     // Create new geodatabases
-                    BA_ReturnCode success = await GeodatabaseTools.CreateGeodatabaseFoldersAsync(oAoi.FilePath, fType);
+                    BA_ReturnCode success = await GeodatabaseTools.CreateGeodatabaseFoldersAsync(oAoi.FilePath, fType, CancelableProgressor.None);
                     if (success == BA_ReturnCode.Success)
                     {
                         Module1.Current.ModuleLogManager.LogInfo(nameof(RunImplAsync),

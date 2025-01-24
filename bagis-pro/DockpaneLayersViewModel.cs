@@ -474,7 +474,7 @@ namespace bagis_pro
                         string strInputFeatures = $@"{GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi)}\{Constants.FILE_AOI_VECTOR}";
                         string strOutputFeatures = $@"{GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi)}\{Constants.FILE_AOI_PRISM_VECTOR}";
                         string strDistance = $@"{PrismBufferDistance} {PrismBufferUnits}";
-                        success = await GeoprocessingTools.BufferAsync(strInputFeatures, strOutputFeatures, strDistance, "ALL");
+                        success = await GeoprocessingTools.BufferAsync(strInputFeatures, strOutputFeatures, strDistance, "ALL", CancelableProgressor.None);
                         if (success == BA_ReturnCode.Success)
                         {
                             pBufferDistance = PrismBufferDistance;

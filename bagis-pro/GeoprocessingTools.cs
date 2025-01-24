@@ -95,6 +95,21 @@ namespace bagis_pro
                 return BA_ReturnCode.Success;
             }
         }
+
+        public static async Task<BA_ReturnCode> DeleteDatasetAsync(string datasetPath, CancelableProgressor prog)
+        {
+            var parameters = Geoprocessing.MakeValueArray(datasetPath);
+            IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("Delete_management", parameters, null,
+                prog, GPExecuteToolFlags.AddToHistory);
+            if (gpResult.IsFailed)
+            {
+                return BA_ReturnCode.UnknownError;
+            }
+            else
+            {
+                return BA_ReturnCode.Success;
+            }
+        }
         public static async Task<BA_ReturnCode> DeleteFeatureClassFieldsAsync(string featureClassPath, string[] arrFieldsToDelete)
         {
             var parameters = Geoprocessing.MakeValueArray(featureClassPath, arrFieldsToDelete);
@@ -110,13 +125,19 @@ namespace bagis_pro
             }
         }
 
-        public static async Task<BA_ReturnCode> AddFieldAsync(string featureClassPath, string fieldName, string dataType)
+        public static async Task<BA_ReturnCode> AddFieldAsync(string featureClassPath, string fieldName, string dataType,
+            CancelableProgressorSource status)
         {
             IGPResult gpResult = await QueuedTask.Run(() =>
             {
                 var parameters = Geoprocessing.MakeValueArray(featureClassPath, fieldName, dataType);
+                CancelableProgressor prog = CancelableProgressor.None;
+                if (status != null)
+                {
+                    prog = status.Progressor;
+                }
                 return Geoprocessing.ExecuteToolAsync("AddField_management", parameters, null,
-                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                            prog, GPExecuteToolFlags.AddToHistory);
             });
             if (gpResult.IsFailed)
             {
@@ -165,7 +186,7 @@ namespace bagis_pro
         }
 
         public static async Task<BA_ReturnCode> BufferAsync (string strInputFeatures, string strOutputFeatures, string strDistance,
-                                                             string p_strDissolveOption)
+                                                             string p_strDissolveOption, CancelableProgressor prog)
         {
             string strLineSide = "FULL";
             string strLineEndType = "ROUND";
@@ -179,7 +200,7 @@ namespace bagis_pro
                 var parameters = Geoprocessing.MakeValueArray(strInputFeatures, strOutputFeatures, strDistance, strLineSide,
                                                               strLineEndType, strDissolveOption);
                 return Geoprocessing.ExecuteToolAsync("Buffer_analysis", parameters, null,
-                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                            prog, GPExecuteToolFlags.AddToHistory);
             });
             if (gpResult.IsFailed)
             {
@@ -485,12 +506,13 @@ namespace bagis_pro
             });
             return success;
         }
-        public static async Task<BA_ReturnCode> ConAsync(string inputRaster, string outputValue, string outputRaster, double cellValue)
+        public static async Task<BA_ReturnCode> ConAsync(string inputRaster, string outputValue, string outputRaster, double cellValue,
+            CancelableProgressor prog)
         {
             string strWhereClause = $@"value = {Convert.ToString(cellValue)}";
             var parameters = Geoprocessing.MakeValueArray(inputRaster, outputValue, outputRaster, "", strWhereClause);
             IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("Con_sa", parameters, null,
-                ArcGIS.Desktop.Framework.Threading.Tasks.CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                prog, GPExecuteToolFlags.AddToHistory);
             if (gpResult.IsFailed)
             {
                 return BA_ReturnCode.UnknownError;
@@ -501,11 +523,12 @@ namespace bagis_pro
             }
         }
 
-        public static async Task<BA_ReturnCode> RasterToPointAsync(string inputRaster, string strField, string outputName)
+        public static async Task<BA_ReturnCode> RasterToPointAsync(string inputRaster, string strField, 
+            string outputName, CancelableProgressor prog)
         {
             var parameters = Geoprocessing.MakeValueArray(inputRaster, outputName, strField);
             IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("RasterToPoint", parameters, null,
-                ArcGIS.Desktop.Framework.Threading.Tasks.CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                prog, GPExecuteToolFlags.AddToHistory);
             if (gpResult.IsFailed)
             {
                 return BA_ReturnCode.UnknownError;

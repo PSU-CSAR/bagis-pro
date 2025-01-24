@@ -613,7 +613,8 @@ namespace bagis_pro
             }
         }
 
-        public static async Task<BA_ReturnCode> UpdateFeatureAttributeNumericAsync(Uri gdbUri, string featureClassName, QueryFilter oQueryFilter, string strFieldName, double dblNewValue)
+        public static async Task<BA_ReturnCode> UpdateFeatureAttributeNumericAsync(Uri gdbUri, string featureClassName, QueryFilter oQueryFilter, 
+            string strFieldName, double dblNewValue)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
             // Geodatabase
@@ -708,7 +709,7 @@ namespace bagis_pro
             {
                 if (await AttributeExistsAsync(uriFeatureClass, strFeatureClassName, arrReclassFields[i]) == false)
                 {
-                    success = await GeoprocessingTools.AddFieldAsync(strFeatureClassPath, arrReclassFields[i], arrReclassFieldTypes[i]);
+                    success = await GeoprocessingTools.AddFieldAsync(strFeatureClassPath, arrReclassFields[i], arrReclassFieldTypes[i], null);
                 }
             }
             if (success != BA_ReturnCode.Success)
@@ -1068,7 +1069,8 @@ namespace bagis_pro
             return lstInterval;
         }
 
-        public static async Task<BA_ReturnCode> CreateGeodatabaseFoldersAsync(string strAoiPath, FolderType fType)
+        public static async Task<BA_ReturnCode> CreateGeodatabaseFoldersAsync(string strAoiPath, FolderType fType,
+            CancelableProgressor prog)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
             await QueuedTask.Run(() =>
@@ -1084,7 +1086,7 @@ namespace bagis_pro
                     {
                         var parameters = Geoprocessing.MakeValueArray(strAoiPath, item);
                         var gpResult = Geoprocessing.ExecuteToolAsync("CreateFileGDB_management", parameters, environments,
-                                                        CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                                                        prog, GPExecuteToolFlags.AddToHistory);
 
                         if (gpResult.Result.IsFailed)
                         {
@@ -1136,7 +1138,7 @@ namespace bagis_pro
                });
             return dictReturn;
         }
-        public static async Task<BA_ReturnCode> AddAOIVectorAttributesAsync(Uri uriAoiGdb, string aoiName)
+        public static async Task<BA_ReturnCode> AddAOIVectorAttributesAsync(Uri uriAoiGdb, string aoiName, CancelableProgressorSource source)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
             string[] arrAddFields = new string[] { Constants.FIELD_STATION_NAME, Constants.FIELD_STATION_TRIPLET, Constants.FIELD_BASIN };
@@ -1148,7 +1150,7 @@ namespace bagis_pro
                 if (! bExists)
                 {
                     success = await GeoprocessingTools.AddFieldAsync($@"{uriAoiGdb.LocalPath}\{Constants.FILE_AOI_VECTOR}", arrAddFields[i], 
-                        arrNewFieldTypes[i]);
+                        arrNewFieldTypes[i], source);
                     if (success == BA_ReturnCode.Success && !string.IsNullOrEmpty(arrNewFieldValues[i]))
                     {
                         IDictionary<string,string> dictUpdate = new Dictionary<string,string>();
@@ -1161,7 +1163,7 @@ namespace bagis_pro
         }
 
         public static async Task<BA_ReturnCode> AddPourpointAttributesAsync(string aoiPath, string aoiName, 
-            string stationTriplet, string basinName)
+            string stationTriplet, string basinName, CancelableProgressorSource status)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
             string[] arrAddFields = new string[] { Constants.FIELD_STATION_NAME, Constants.FIELD_STATION_TRIPLET, Constants.FIELD_BASIN, Constants.FIELD_HUC2};
@@ -1174,7 +1176,7 @@ namespace bagis_pro
                 if (!bExists)
                 {
                     success = await GeoprocessingTools.AddFieldAsync($@"{uriAoiGdb.LocalPath}\{Constants.FILE_POURPOINT}", arrAddFields[i],
-                        arrNewFieldTypes[i]);
+                        arrNewFieldTypes[i], status);
                     if (success == BA_ReturnCode.Success && !string.IsNullOrEmpty(arrNewFieldValues[i]))
                     {
                         IDictionary<string, string> dictUpdate = new Dictionary<string, string>();

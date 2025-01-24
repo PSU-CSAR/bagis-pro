@@ -21,6 +21,7 @@ using System.IO;
 using System.Linq;
 using System.Security.Policy;
 using System.Text;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 
@@ -131,31 +132,7 @@ namespace bagis_pro
             get => _demExtentChecked;
             set => SetProperty(ref _demExtentChecked, value);
         }
-        public bool FilledDemChecked
-        {
-            get => _filledDemChecked;
-            set => SetProperty(ref _filledDemChecked, value);
-        }
-        public bool FlowDirectChecked
-        {
-            get => _flowDirectChecked;
-            set => SetProperty(ref _flowDirectChecked, value);
-        }
-        public bool FlowAccumChecked
-        {
-            get => _flowAccumChecked;
-            set => SetProperty(ref _flowAccumChecked, value);
-        }
-        public bool SlopeChecked
-        {
-            get => _slopeChecked;
-            set => SetProperty(ref _slopeChecked, value);
-        }
-        public bool AspectChecked
-        {
-            get => _aspectChecked;
-            set => SetProperty(ref _aspectChecked, value);
-        }
+
         public bool HillshadeChecked
         {
             get => _hillshadeChecked;
@@ -227,11 +204,11 @@ namespace bagis_pro
                 return new RelayCommand(() =>
                 {
                     DemExtentChecked = true; 
-                    FilledDemChecked = true;
-                    FlowAccumChecked = true;
-                    FlowDirectChecked = true;
-                    SlopeChecked = true;
-                    AspectChecked = true;
+                    //FilledDemChecked = true;
+                    //FlowAccumChecked = true;
+                    //FlowDirectChecked = true;
+                    //SlopeChecked = true;
+                    //AspectChecked = true;
                     HillshadeChecked = true;
                 });
             }
@@ -243,11 +220,11 @@ namespace bagis_pro
                 return new RelayCommand(() =>
                 {
                     DemExtentChecked = false;
-                    FilledDemChecked = false;
-                    FlowAccumChecked = false;
-                    FlowDirectChecked = false;
-                    SlopeChecked = false;
-                    AspectChecked = false;
+                    //FilledDemChecked = false;
+                    //FlowAccumChecked = false;
+                    //FlowDirectChecked = false;
+                    //SlopeChecked = false;
+                    //AspectChecked = false;
                     HillshadeChecked = false;
                 });
             }
@@ -266,7 +243,8 @@ namespace bagis_pro
 
         private async void RunGenerateAoiImplAsync(object param)
         {
-            uint nStep;
+            uint nStep= 8;
+            int intWait = 1000;
             // Validation
             if (string.IsNullOrEmpty(OutputWorkspace) || string.IsNullOrEmpty(AoiName))
             {
@@ -326,11 +304,9 @@ namespace bagis_pro
             }
 
             // Start populating aoi object
+            Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
             Aoi oAoi = new Aoi();
             oAoi.FilePath = $@"{OutputWorkspace}\{AoiName}";
-            uint internalLayerCount = 32;
-            nStep = internalLayerCount; // step counter for frmmessage
-
             try
             {
                 if (Directory.Exists(oAoi.FilePath))
@@ -360,23 +336,26 @@ namespace bagis_pro
 
             }
 
-
-            BA_ReturnCode success = await GeodatabaseTools.CreateGeodatabaseFoldersAsync(oAoi.FilePath, FolderType.AOI);
-            if (success != BA_ReturnCode.Success)
-            {
-                System.Windows.MessageBox.Show("Unable to create GDBs! Please check disk space", "BAGIS-Pro", MessageBoxButton.OK, MessageBoxImage.Error);
-                return;
-            }
-
-            var progress = new ProgressDialog("Clipping DEM to AOI Folder", "Cancel", nStep + 2, true);
+            var progress = new ProgressDialog("Processing ...", "Cancel", nStep + 2, false);
             var status = new CancelableProgressorSource(progress);
             status.Max = nStep + 2;
             progress.Show();
             await QueuedTask.Run(() =>
             {
                 status.Progressor.Value += 1;
-                status.Progressor.Status = (status.Progressor.Value * 100 / status.Progressor.Max) + @" % Completed";
+                //status.Progressor.Status = (status.Progressor.Value * 100 / status.Progressor.Max) + @" % Completed";
+                status.Progressor.Message = $@"Generating AOI boundary... (step 1 of {nStep})";
+                //block the CIM for a second
+                Task.Delay(intWait).Wait();
+
             }, status.Progressor);
+
+            BA_ReturnCode success = await GeodatabaseTools.CreateGeodatabaseFoldersAsync(oAoi.FilePath, FolderType.AOI, status.Progressor);
+            if (success != BA_ReturnCode.Success)
+            {
+                System.Windows.MessageBox.Show("Unable to create GDBs! Please check disk space", "BAGIS-Pro", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
 
             double cellSize = -1;
             if (bDemImageService)
@@ -401,7 +380,7 @@ namespace bagis_pro
             if (!await GeodatabaseTools.AttributeExistsShapefileAsync(new Uri(Path.GetDirectoryName(SourceFile)), 
                 Path.GetFileName(SourceFile),fieldRasterId))
             {
-                success = await GeoprocessingTools.AddFieldAsync(SourceFile, fieldRasterId, "INTEGER");
+                success = await GeoprocessingTools.AddFieldAsync(SourceFile, fieldRasterId, "INTEGER", status);
                 if (success == BA_ReturnCode.Success)
                 {
                     success = await GeodatabaseTools.UpdateFeatureAttributeNumericAsync(new Uri(Path.GetDirectoryName(SourceFile)),
@@ -423,7 +402,7 @@ namespace bagis_pro
                     var environments = Geoprocessing.MakeEnvironmentArray(workspace: oAoi.FilePath, snapRaster: strSourceDem);
                     var parameters = Geoprocessing.MakeValueArray(SourceFile, fieldRasterId, aoiRasterPath, cellSize);
                     return Geoprocessing.ExecuteToolAsync("FeatureToRaster_conversion", parameters, environments,
-                                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                                status.Progressor, GPExecuteToolFlags.AddToHistory);
                 });
                 if (gpResult.IsFailed)
                 {
@@ -443,7 +422,7 @@ namespace bagis_pro
                     var environments = Geoprocessing.MakeEnvironmentArray(workspace: oAoi.FilePath);
                     var parameters = Geoprocessing.MakeValueArray(aoiRasterPath, aoiVectorPath, "NO_SIMPLIFY");
                     return Geoprocessing.ExecuteToolAsync("RasterToPolygon_conversion", parameters, environments,
-                                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                                status.Progressor, GPExecuteToolFlags.AddToHistory);
                 });
                 if (gpResult.IsFailed)
                 {
@@ -454,7 +433,7 @@ namespace bagis_pro
                 }
                 else
                 {
-                    success = await GeodatabaseTools.AddAOIVectorAttributesAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi)), AoiName);
+                    success = await GeodatabaseTools.AddAOIVectorAttributesAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi)), AoiName, status);
                     if (success != BA_ReturnCode.Success)
                     {
                         System.Windows.MessageBox.Show("Unable to add or populate fields to aoi_v", "BAGIS-Pro", MessageBoxButton.OK, MessageBoxImage.Error);
@@ -464,28 +443,16 @@ namespace bagis_pro
                 }  
             }
 
-            // Display DEM Extent layer - aoi_v            
-            string strPath = "";
-            Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
-            if (oMap != null && DemExtentChecked)
-            {
-                strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi, true) +
-                 Constants.FILE_AOI_VECTOR;
-                Uri aoiUri = new Uri(strPath);
-                success = await MapTools.AddAoiBoundaryToMapAsync(aoiUri, ColorFactory.Instance.RedRGB, Constants.MAPS_DEFAULT_MAP_NAME, Constants.MAPS_BASIN_BOUNDARY);
-                if (success != BA_ReturnCode.Success)
-                {
-                    System.Windows.MessageBox.Show("Unable to add the extent layer", "BAGIS-Pro", MessageBoxButton.OK, MessageBoxImage.Error);
-                    progress.Hide();
-                    return;
-                }
-            }
-
             // clip DEM then save it
+            string strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi, true) +
+                         Constants.FILE_AOI_VECTOR;
             await QueuedTask.Run(() =>
             {
                 status.Progressor.Value += 1;
-                status.Progressor.Message = $@"Clipping DEM... (step 1 of {nStep})";
+                status.Progressor.Message = $@"Clipping DEM... (step 2 of {nStep})";
+                //block the CIM for a second
+                Task.Delay(intWait).Wait();
+
             }, status.Progressor);
 
             string aoiGdbPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi);
@@ -498,7 +465,7 @@ namespace bagis_pro
                     aoiBufferDistance = "1"; //one meter buffer to dissolve polygons connected at a point
                 }
                 strOutputFeatures = $@"{aoiGdbPath}\{Constants.FILE_AOI_BUFFERED_VECTOR}";
-                success = await GeoprocessingTools.BufferAsync(strPath, strOutputFeatures, $@"{aoiBufferDistance} {Constants.UNITS_METERS}", "ALL");                
+                success = await GeoprocessingTools.BufferAsync(strPath, strOutputFeatures, $@"{aoiBufferDistance} {Constants.UNITS_METERS}", "ALL", status.Progressor);                
             }
 
             string surfacesGdbPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Surfaces);
@@ -506,16 +473,9 @@ namespace bagis_pro
             {
                 string tempDem = "originaldem";
                 string tempOutput = $@"{surfacesGdbPath}\{tempDem}";
-                if (bDemImageService)
-                {
-                    success = await AnalysisTools.ClipRasterLayerNoBufferAsync(oAoi.FilePath, strOutputFeatures, Constants.FILE_AOI_BUFFERED_VECTOR,
-                        strSourceDem, tempOutput, strSourceDem);
-                }
-                else
-                {
-                    success = await AnalysisTools.ClipRasterLayerNoBufferAsync(oAoi.FilePath, strOutputFeatures, Constants.FILE_AOI_BUFFERED_VECTOR,
-                        strSourceDem, tempOutput, strSourceDem);
-                }
+                success = await AnalysisTools.ClipRasterLayerNoBufferAsync(oAoi.FilePath, strOutputFeatures, Constants.FILE_AOI_BUFFERED_VECTOR,
+                    strSourceDem, tempOutput, strSourceDem, status.Progressor);
+
                 string strDem = $@"{surfacesGdbPath}\{Constants.FILE_DEM}";
                 if (success == BA_ReturnCode.Success)
                 {
@@ -526,7 +486,7 @@ namespace bagis_pro
                         var parameters = Geoprocessing.MakeValueArray(tempOutput, strDem, neighborhood, "MEAN", "DATA");
                         var environments = Geoprocessing.MakeEnvironmentArray(workspace: oAoi.FilePath, extent: envExtent, mask: $@"{surfacesGdbPath}\{tempDem}", snapRaster: strSourceDem);
                         var gpResult = await Geoprocessing.ExecuteToolAsync("FocalStatistics_sa", parameters, environments,
-                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                            status.Progressor, GPExecuteToolFlags.AddToHistory);
                         if (gpResult.IsFailed)
                         {
                             success = BA_ReturnCode.UnknownError;
@@ -535,14 +495,14 @@ namespace bagis_pro
                         {
                             success = BA_ReturnCode.Success;
                             // delete original dem
-                            success = await GeoprocessingTools.DeleteDatasetAsync(tempOutput);
+                            success = await GeoprocessingTools.DeleteDatasetAsync(tempOutput, status.Progressor);
                         }
                     }
                     else
                     {
                         var parameters = Geoprocessing.MakeValueArray(tempOutput, strDem);
                         var gpResult = await Geoprocessing.ExecuteToolAsync("Rename_management", parameters, null,
-                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                            status.Progressor, GPExecuteToolFlags.AddToHistory);
                         if (gpResult.IsFailed)
                         {
                             success = BA_ReturnCode.UnknownError;
@@ -558,14 +518,17 @@ namespace bagis_pro
                 await QueuedTask.Run(() =>
                 {
                     status.Progressor.Value += 1;
-                    status.Progressor.Message = $@"Filling DEM... (step 2 of {nStep})";
+                    status.Progressor.Message = $@"Filling DEM... (step 3 of {nStep})";
+                    //block the CIM for a second
+                    Task.Delay(intWait).Wait();
+
                 }, status.Progressor);
                 if (success == BA_ReturnCode.Success)
                 {
                     var parameters = Geoprocessing.MakeValueArray(strDem, filledDemPath);
                     var environments = Geoprocessing.MakeEnvironmentArray(workspace: oAoi.FilePath, mask: $@"{strDem}", snapRaster: strSourceDem);
                     var gpResult = await Geoprocessing.ExecuteToolAsync("Fill_sa", parameters, environments,
-                        CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                        status.Progressor, GPExecuteToolFlags.AddToHistory);
                     if (gpResult.IsFailed)
                     {
                         success = BA_ReturnCode.UnknownError;
@@ -604,23 +567,25 @@ namespace bagis_pro
                         }
                         success = BA_ReturnCode.Success;
                     }
-                    if (FilledDemChecked)
-                    {
-                        uri = new Uri(filledDemPath);
-                        await QueuedTask.Run(() =>
-                        {
-                            var rasterLayerCreationParams = new RasterLayerCreationParams(uri)
-                            {
-                                Name = "Filled DEM",
-                            };
-                        RasterLayer rasterLayer = LayerFactory.Instance.CreateLayer<RasterLayer>(rasterLayerCreationParams, oMap);
-                        });
-                    }
+                    //if (FilledDemChecked)
+                    //{
+                    //    uri = new Uri(filledDemPath);
+                    //    await QueuedTask.Run(() =>
+                    //    {
+                    //        var rasterLayerCreationParams = new RasterLayerCreationParams(uri)
+                    //        {
+                    //            Name = "Filled DEM",
+                    //        };
+                    //    RasterLayer rasterLayer = LayerFactory.Instance.CreateLayer<RasterLayer>(rasterLayerCreationParams, oMap);
+                    //    });
+                    //}
                 }
                 await QueuedTask.Run(() =>
                 {
                     status.Progressor.Value += 1;
                     status.Progressor.Message = $@"Calculating Slope... (step 4 of {nStep})";
+                    //block the CIM for a second
+                    Task.Delay(intWait).Wait();
                 }, status.Progressor);
 
                 if (success == BA_ReturnCode.Success)
@@ -634,7 +599,7 @@ namespace bagis_pro
                         "PERCENT_RISE", zFactor);
                     var environments = Geoprocessing.MakeEnvironmentArray(workspace: oAoi.FilePath, snapRaster: strSourceDem);
                     var gpResult = await Geoprocessing.ExecuteToolAsync("Slope_sa", parameters, environments,
-                        CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                        status.Progressor, GPExecuteToolFlags.AddToHistory);
                     if (gpResult.IsFailed)
                     {
                         success = BA_ReturnCode.UnknownError;
@@ -664,19 +629,24 @@ namespace bagis_pro
                                 fc.SetXml(xmlDocument.OuterXml);
                             }
                         });
+
+                        //if (SlopeChecked)
+                        //{
+                        //    uri = new Uri($@"{surfacesGdbPath}\{Constants.FILE_SLOPE}");
+                        //    await MapTools.DisplayRasterStretchSymbolAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, "Slope", "ArcGIS Colors", "Black to White", 0);
+                        //}
                     }
-                    else
-                    if (SlopeChecked)
-                    {
-                        uri = new Uri($@"{surfacesGdbPath}\{Constants.FILE_SLOPE}");
-                        await MapTools.DisplayRasterStretchSymbolAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, "Slope", "ArcGIS Colors", "Black to White", 0);
-                    }
+                    //else
+
                 }
 
                 await QueuedTask.Run(() =>
                 {
                     status.Progressor.Value += 1;
-                    status.Progressor.Message = $@"Calculating Aspect... (step 6 of {nStep})";
+                    status.Progressor.Message = $@"Calculating Aspect... (step 5 of {nStep})";
+                    //block the CIM for a second
+                    Task.Delay(intWait).Wait();
+
                 }, status.Progressor);
 
                 if (success == BA_ReturnCode.Success)
@@ -685,24 +655,27 @@ namespace bagis_pro
                         $@"{surfacesGdbPath}\{Constants.FILE_ASPECT}");
                     var environments = Geoprocessing.MakeEnvironmentArray(workspace: oAoi.FilePath, snapRaster: strSourceDem);
                     var gpResult = await Geoprocessing.ExecuteToolAsync("Aspect_sa", parameters, environments,
-                        CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                        status.Progressor, GPExecuteToolFlags.AddToHistory);
                     if (gpResult.IsFailed)
                     {
                         success = BA_ReturnCode.UnknownError;
                         progress.Hide();
                         return;
                     }
-                    if (AspectChecked)
-                    {
-                        uri = new Uri($@"{surfacesGdbPath}\{Constants.FILE_ASPECT}");
-                        await MapTools.DisplayRasterStretchSymbolAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, "Aspect", "ArcGIS Colors", "Black to White", 0);
-                    }
+                    //if (AspectChecked)
+                    //{
+                    //    uri = new Uri($@"{surfacesGdbPath}\{Constants.FILE_ASPECT}");
+                    //    await MapTools.DisplayRasterStretchSymbolAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, "Aspect", "ArcGIS Colors", "Black to White", 0);
+                    //}
                 }
 
                 await QueuedTask.Run(() =>
                 {
                     status.Progressor.Value += 1;
-                    status.Progressor.Message = $@"Calculating Flow Direction... (step 8 of {nStep})";
+                    status.Progressor.Message = $@"Calculating Flow Direction... (step 6 of {nStep})";
+                    //block the CIM for a second
+                    Task.Delay(intWait).Wait();
+
                 }, status.Progressor);
                 if (success == BA_ReturnCode.Success)
                 {
@@ -710,23 +683,25 @@ namespace bagis_pro
                         $@"{surfacesGdbPath}\{Constants.FILE_FLOW_DIRECTION}");
                     var environments = Geoprocessing.MakeEnvironmentArray(workspace: oAoi.FilePath, snapRaster: strSourceDem);
                     var gpResult = await Geoprocessing.ExecuteToolAsync("FlowDirection_sa", parameters, environments,
-                        CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                        status.Progressor, GPExecuteToolFlags.AddToHistory);
                     if (gpResult.IsFailed)
                     {
                         success = BA_ReturnCode.UnknownError;
                         progress.Hide();
                         return;
                     }
-                    if (FlowDirectChecked)
-                    {
-                        uri = new Uri($@"{surfacesGdbPath}\{Constants.FILE_FLOW_DIRECTION}");
-                        await MapTools.DisplayRasterStretchSymbolAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, "Flow Direction", "ArcGIS Colors", "Black to White", 0);
-                    }
+                    //if (FlowDirectChecked)
+                    //{
+                    //    uri = new Uri($@"{surfacesGdbPath}\{Constants.FILE_FLOW_DIRECTION}");
+                    //    await MapTools.DisplayRasterStretchSymbolAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, "Flow Direction", "ArcGIS Colors", "Black to White", 0);
+                    //}
                 }
                 await QueuedTask.Run(() =>
                 {
                     status.Progressor.Value += 1;
-                    status.Progressor.Message = $@"Calculating Flow Accumulation... (step 10 of {nStep})";
+                    status.Progressor.Message = $@"Calculating Flow Accumulation... (step 7 of {nStep})";
+                    //block the CIM for a second
+                    Task.Delay(intWait).Wait();
                 }, status.Progressor);
                 if (success == BA_ReturnCode.Success)
                 {
@@ -734,33 +709,33 @@ namespace bagis_pro
                         $@"{surfacesGdbPath}\{ Constants.FILE_FLOW_ACCUMULATION}");
                     var environments = Geoprocessing.MakeEnvironmentArray(workspace: oAoi.FilePath, snapRaster: strSourceDem);
                     var gpResult = await Geoprocessing.ExecuteToolAsync("FlowAccumulation_sa", parameters, environments,
-                        CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                        status.Progressor, GPExecuteToolFlags.AddToHistory);
                     if (gpResult.IsFailed)
                     {
                         success = BA_ReturnCode.UnknownError;
                         progress.Hide();
                         return;
                     }
-                    if (FlowAccumChecked)
-                    {
-                        uri = new Uri($@"{surfacesGdbPath}\{Constants.FILE_FLOW_ACCUMULATION}");
-                        await MapTools.DisplayRasterStretchSymbolAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, "Flow Accumulation", "ArcGIS Colors", "Black to White", 0);
-                        await QueuedTask.Run(() =>
-                        {
-                            var rasterLayer = oMap.GetLayersAsFlattenedList().OfType<RasterLayer>().Where(f =>
-                                f.Name == "Flow Accumulation").FirstOrDefault();                            
-                            CIMRasterColorizer rColorizer = rasterLayer.GetColorizer();
-                            // Check if the colorizer is an RGB colorizer.
-                            if (rColorizer is CIMRasterStretchColorizer stretchColorizer)
-                            {
-                                // Update RGB colorizer properties.
-                                stretchColorizer.StretchType = RasterStretchType.HistogramEqualize;
-                                stretchColorizer.StatsType = RasterStretchStatsType.AreaOfView;
-                                // Update the raster layer with the changed colorizer.
-                                rasterLayer.SetColorizer(stretchColorizer);
-                            }
-                        });
-                    }
+                    //if (FlowAccumChecked)
+                    //{
+                    //    uri = new Uri($@"{surfacesGdbPath}\{Constants.FILE_FLOW_ACCUMULATION}");
+                    //    await MapTools.DisplayRasterStretchSymbolAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, "Flow Accumulation", "ArcGIS Colors", "Black to White", 0);
+                    //    await QueuedTask.Run(() =>
+                    //    {
+                    //        var rasterLayer = oMap.GetLayersAsFlattenedList().OfType<RasterLayer>().Where(f =>
+                    //            f.Name == "Flow Accumulation").FirstOrDefault();                            
+                    //        CIMRasterColorizer rColorizer = rasterLayer.GetColorizer();
+                    //        // Check if the colorizer is an RGB colorizer.
+                    //        if (rColorizer is CIMRasterStretchColorizer stretchColorizer)
+                    //        {
+                    //            // Update RGB colorizer properties.
+                    //            stretchColorizer.StretchType = RasterStretchType.HistogramEqualize;
+                    //            stretchColorizer.StatsType = RasterStretchStatsType.AreaOfView;
+                    //            // Update the raster layer with the changed colorizer.
+                    //            rasterLayer.SetColorizer(stretchColorizer);
+                    //        }
+                    //    });
+                    //}
                 }
                 //create pourpoint using the max of flow_acc value within the AOI
                 if (success == BA_ReturnCode.Success)
@@ -769,7 +744,7 @@ namespace bagis_pro
                     double dblMax = -1;
                     var parameters = Geoprocessing.MakeValueArray($@"{surfacesGdbPath}\{Constants.FILE_FLOW_ACCUMULATION}", "MAXIMUM");
                     IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("GetRasterProperties_management", parameters, null,
-                        CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                        status.Progressor, GPExecuteToolFlags.AddToHistory);
                     if (gpResult.IsFailed)
                     {
                         success = BA_ReturnCode.UnknownError;
@@ -783,27 +758,30 @@ namespace bagis_pro
                         if (bSuccess)
                         {                            
                             success = await GeoprocessingTools.ConAsync($@"{surfacesGdbPath}\{Constants.FILE_FLOW_ACCUMULATION}", "1",
-                                $@"{surfacesGdbPath}\{ppRaster}", dblMax);
+                                $@"{surfacesGdbPath}\{ppRaster}", dblMax, status.Progressor);
                             if (success == BA_ReturnCode.Success)
                             {
                                 success = await GeoprocessingTools.RasterToPointAsync($@"{surfacesGdbPath}\{ppRaster}", Constants.FIELD_VALUE,
-                                   $@"{aoiGdbPath}\{Constants.FILE_POURPOINT}");
+                                   $@"{aoiGdbPath}\{Constants.FILE_POURPOINT}", status.Progressor);
                             }
                         }
                         if (success == BA_ReturnCode.Success)
                         {
-                            success = await GeodatabaseTools.AddPourpointAttributesAsync(oAoi.FilePath, AoiName, Constants.VALUE_NOT_SPECIFIED, "");
+                            success = await GeodatabaseTools.AddPourpointAttributesAsync(oAoi.FilePath, AoiName, Constants.VALUE_NOT_SPECIFIED, "", status);
                         }
                         if (await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(surfacesGdbPath),ppRaster))
                         {
-                            success = await GeoprocessingTools.DeleteDatasetAsync($@"{surfacesGdbPath}\{ppRaster}");
+                            success = await GeoprocessingTools.DeleteDatasetAsync($@"{surfacesGdbPath}\{ppRaster}", status.Progressor);
                         }
                     }
                 }
                 await QueuedTask.Run(() =>
                 {
                     status.Progressor.Value += 1;
-                    status.Progressor.Message = $@"Calculating Hillshade... (step 12 of {nStep})";
+                    status.Progressor.Message = $@"Calculating Hillshade... (step 8 of {nStep})";
+                    //block the CIM for a second
+                    Task.Delay(intWait).Wait();
+
                 }, status.Progressor);
                 // Create Hillshade layer
                 if (success == BA_ReturnCode.Success)
@@ -812,13 +790,29 @@ namespace bagis_pro
                         $@"{surfacesGdbPath}\{Constants.FILE_HILLSHADE}", "","","", ZFactor);
                     var environments = Geoprocessing.MakeEnvironmentArray(workspace: oAoi.FilePath, snapRaster: strSourceDem);
                     var gpResult = await Geoprocessing.ExecuteToolAsync("Hillshade_sa", parameters, environments,
-                        CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                        status.Progressor, GPExecuteToolFlags.AddToHistory);
                     if (gpResult.IsFailed)
                     {
                         success = BA_ReturnCode.UnknownError;
                         progress.Hide();
                         return;
                     }
+                    progress.Hide();
+
+                    // Display DEM Extent layer - aoi_v            
+                    if (oMap != null && DemExtentChecked)
+                    {
+                        strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi, true) +
+                         Constants.FILE_AOI_VECTOR;
+                        Uri aoiUri = new Uri(strPath);
+                        success = await MapTools.AddAoiBoundaryToMapAsync(aoiUri, ColorFactory.Instance.RedRGB, Constants.MAPS_DEFAULT_MAP_NAME, Constants.MAPS_BASIN_BOUNDARY);
+                        if (success != BA_ReturnCode.Success)
+                        {
+                            System.Windows.MessageBox.Show("Unable to add the extent layer", "BAGIS-Pro", MessageBoxButton.OK, MessageBoxImage.Error);
+                            return;
+                        }
+                    }
+
                     if (HillshadeChecked)
                     {
                         uri = new Uri($@"{surfacesGdbPath}\{Constants.FILE_HILLSHADE}");

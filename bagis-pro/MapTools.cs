@@ -3979,34 +3979,37 @@ namespace bagis_pro
                 if (mapPane != null)
                 {
                     var oMap = mapPane.MapView.Map;
-                    IEnumerable<Layer> allLayers = oMap.GetLayersAsFlattenedList();
-                    IList<string> lstRemove = new List<string>();   
-                    foreach (var oLayer in allLayers)
+                    if (oMap != null)
                     {
-                        Uri layerPath = await QueuedTask.Run(() => oLayer.GetPath());
-                        if (layerPath != null)
+                        IEnumerable<Layer> allLayers = oMap.GetLayersAsFlattenedList();
+                        IList<string> lstRemove = new List<string>();
+                        foreach (var oLayer in allLayers)
                         {
-                            int idx = layerPath.LocalPath.IndexOf(folderPath);
-                            if (idx >= 0)
+                            Uri layerPath = await QueuedTask.Run(() => oLayer.GetPath());
+                            if (layerPath != null)
                             {
-                                lstRemove.Add(oLayer.Name);
+                                int idx = layerPath.LocalPath.IndexOf(folderPath);
+                                if (idx >= 0)
+                                {
+                                    lstRemove.Add(oLayer.Name);
+                                }
                             }
                         }
-                    }
-                    await QueuedTask.Run(() =>
-                    {
-                        for (int i = 0; i < lstRemove.Count; i++)
+                        await QueuedTask.Run(() =>
                         {
-                            Layer oLayer =
-                                oMap.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(lstRemove[i], StringComparison.CurrentCultureIgnoreCase));
-                            if (oLayer != null)
+                            for (int i = 0; i < lstRemove.Count; i++)
                             {
+                                Layer oLayer =
+                                    oMap.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(lstRemove[i], StringComparison.CurrentCultureIgnoreCase));
+                                if (oLayer != null)
+                                {
 
-                                oMap.RemoveLayer(oLayer);
-                                layersRemoved++;
+                                    oMap.RemoveLayer(oLayer);
+                                    layersRemoved++;
+                                }
                             }
-                        }
-                    });
+                        });
+                    }
                 }
             }
             return layersRemoved;

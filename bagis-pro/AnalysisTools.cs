@@ -618,7 +618,7 @@ namespace bagis_pro
                     // Add the field if it is missing
                     else
                     {
-                        BA_ReturnCode success = await GeoprocessingTools.AddFieldAsync(strPourpointClassPath, strField, "TEXT");
+                        BA_ReturnCode success = await GeoprocessingTools.AddFieldAsync(strPourpointClassPath, strField, "TEXT", null);
                     }
                 }
 
@@ -692,7 +692,7 @@ namespace bagis_pro
                     {
                         if (!await GeodatabaseTools.AttributeExistsAsync(ppUri, Constants.FILE_AOI_VECTOR, strField))
                         {
-                            success = await GeoprocessingTools.AddFieldAsync(strAoiVPath, strField, "TEXT");
+                            success = await GeoprocessingTools.AddFieldAsync(strAoiVPath, strField, "TEXT", null);
                         }
                     }
                     if (success != BA_ReturnCode.Success)
@@ -757,11 +757,11 @@ namespace bagis_pro
                         BA_ReturnCode success = BA_ReturnCode.UnknownError;
                         if (strField.Equals(Constants.FIELD_HUC2))
                         {
-                            success = await GeoprocessingTools.AddFieldAsync(strPourpointClassPath, strField, "INTEGER");
+                            success = await GeoprocessingTools.AddFieldAsync(strPourpointClassPath, strField, "INTEGER", null);
                         }
                         else
                         {
-                            success = await GeoprocessingTools.AddFieldAsync(strPourpointClassPath, strField, "TEXT");
+                            success = await GeoprocessingTools.AddFieldAsync(strPourpointClassPath, strField, "TEXT", null);
                         }
                         if (success != BA_ReturnCode.Success)
                         {
@@ -1829,13 +1829,13 @@ namespace bagis_pro
                 string strFc = strOutputFc[i];
                 if (bHasSites[i])
                 {
-                    success = await GeoprocessingTools.AddFieldAsync(strFc, Constants.FIELD_SITE_NAME, "TEXT");
+                    success = await GeoprocessingTools.AddFieldAsync(strFc, Constants.FIELD_SITE_NAME, "TEXT", null);
                     if (success == BA_ReturnCode.Success)
                     {
-                        success = await GeoprocessingTools.AddFieldAsync(strFc, Constants.FIELD_SITE_ELEV, "DOUBLE");
+                        success = await GeoprocessingTools.AddFieldAsync(strFc, Constants.FIELD_SITE_ELEV, "DOUBLE", null);
                         if (success == BA_ReturnCode.Success)
                         {
-                            success = await GeoprocessingTools.AddFieldAsync(strFc, Constants.FIELD_SITE_TYPE, "TEXT");
+                            success = await GeoprocessingTools.AddFieldAsync(strFc, Constants.FIELD_SITE_TYPE, "TEXT", null);
                         }
 
                     }
@@ -2237,7 +2237,7 @@ namespace bagis_pro
                         {
                             strTempBuffer2 = "tempBuffer2";
                             success = await GeoprocessingTools.BufferAsync(strClipGdb + "\\" + strClipFile,
-                                strClipGdb + "\\" + strTempBuffer2, "0.5 Meters", "ALL");
+                                strClipGdb + "\\" + strTempBuffer2, "0.5 Meters", "ALL", CancelableProgressor.None);
                             if (success != BA_ReturnCode.Success)
                             {
                                 Module1.Current.ModuleLogManager.LogError(nameof(ClipFeatureLayerAsync),
@@ -2648,7 +2648,7 @@ namespace bagis_pro
                             "Sample tool run successfully");
                     }
 
-                    success = await GeoprocessingTools.AddFieldAsync(uriAnalysis.LocalPath + "\\" + Constants.FILE_PREC_MEAN_ELEV_V, Constants.FIELD_DIRECTION, "TEXT");
+                    success = await GeoprocessingTools.AddFieldAsync(uriAnalysis.LocalPath + "\\" + Constants.FILE_PREC_MEAN_ELEV_V, Constants.FIELD_DIRECTION, "TEXT", null);
                     if (success == BA_ReturnCode.Success)
                     {
                         success = await UpdateAspectDirectionsFromZonesAsync(uriAnalysis, Constants.FILE_PREC_MEAN_ELEV_V,
@@ -3065,7 +3065,7 @@ namespace bagis_pro
         }
 
         public static async Task<BA_ReturnCode> ClipRasterLayerNoBufferAsync(string strAoiPath, string strClipPath, string strClipExtent, 
-            string inputRaster, string outputRaster, string snapRasterPath)
+            string inputRaster, string outputRaster, string snapRasterPath, CancelableProgressor prog)
         {
             // Query the extent for the clip
             string strClipGdb = Path.GetDirectoryName(strClipPath);
@@ -3082,7 +3082,7 @@ namespace bagis_pro
             // Always set the extent if clipping from an image service
             var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath, snapRaster: snapRasterPath, extent: strClipEnvelope);
             var gpResult = await Geoprocessing.ExecuteToolAsync("Clip_management", parameters, environments,
-                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                            prog, GPExecuteToolFlags.AddToHistory);
             if (gpResult.IsFailed)
             {
                 Module1.Current.ModuleLogManager.LogError(nameof(ClipRasterLayerAsync), "Unable to clip " + inputRaster + " to " + outputRaster);
@@ -3952,7 +3952,7 @@ namespace bagis_pro
             }
 
             // Add field to feature class to hold value
-            BA_ReturnCode success = await GeoprocessingTools.AddFieldAsync(watershedOutputPath, Constants.FIELD_VOL_ACRE_FT, "INTEGER");
+            BA_ReturnCode success = await GeoprocessingTools.AddFieldAsync(watershedOutputPath, Constants.FIELD_VOL_ACRE_FT, "INTEGER", null);
             if (success != BA_ReturnCode.Success)
             {
                 Module1.Current.ModuleLogManager.LogDebug(nameof(CalculatePrecipitationContributionAsync),
@@ -4525,7 +4525,7 @@ namespace bagis_pro
                 }
                 else
                 {
-                    success = await GeoprocessingTools.AddFieldAsync(featureClassToUpdate, lstFields[i], lstFieldDataTypes[i]);
+                    success = await GeoprocessingTools.AddFieldAsync(featureClassToUpdate, lstFields[i], lstFieldDataTypes[i], null);
                 }
                 if (success == BA_ReturnCode.Success)
                 {
@@ -4610,7 +4610,7 @@ namespace bagis_pro
                 Uri uriAnalysis = new Uri(analysisPath);
                 if (!await GeodatabaseTools.AttributeExistsAsync(new Uri(analysisPath), Constants.FILE_MERGED_SITES, Constants.FIELD_DIRECTION))
                 {
-                    success = await GeoprocessingTools.AddFieldAsync(featureClassToUpdate, Constants.FIELD_DIRECTION, "TEXT");
+                    success = await GeoprocessingTools.AddFieldAsync(featureClassToUpdate, Constants.FIELD_DIRECTION, "TEXT", null);
                 }
                 if (success == BA_ReturnCode.Success)
                 {
@@ -4639,7 +4639,7 @@ namespace bagis_pro
                     if (hasSiteType == false)
                     {
                         success = await GeoprocessingTools.AddFieldAsync(gdbUri.LocalPath + "\\" + arrSiteFiles[i],
-                            Constants.FIELD_SITE_TYPE, "TEXT");
+                            Constants.FIELD_SITE_TYPE, "TEXT", null);
                         if (success == BA_ReturnCode.Success)
                         {
                             Module1.Current.ModuleLogManager.LogDebug(nameof(CreateSitesLayerAsync),
@@ -4650,7 +4650,7 @@ namespace bagis_pro
                     if (hasSiteId == false)
                     {
                         success = await GeoprocessingTools.AddFieldAsync(gdbUri.LocalPath + "\\" + arrSiteFiles[i],
-                            Constants.FIELD_SITE_ID, "INTEGER");
+                            Constants.FIELD_SITE_ID, "INTEGER", null);
                         if (success == BA_ReturnCode.Success)
                         {
                             Module1.Current.ModuleLogManager.LogDebug(nameof(CreateSitesLayerAsync),
@@ -4864,7 +4864,7 @@ namespace bagis_pro
             {
                 if (!await GeodatabaseTools.AttributeExistsAsync(analysisUri, Constants.FILE_MERGED_SITES, arrFields[i]))
                 {
-                    success = await GeoprocessingTools.AddFieldAsync(returnPath, arrFields[i], arrFieldDataTypes[i]);
+                    success = await GeoprocessingTools.AddFieldAsync(returnPath, arrFields[i], arrFieldDataTypes[i], null);
                     Module1.Current.ModuleLogManager.LogDebug(nameof(CreateSitesLayerAsync),
                         "New field " + arrFields[i] + " added to " + Constants.FILE_MERGED_SITES);
                 }
@@ -4951,7 +4951,7 @@ namespace bagis_pro
 
                 // Update aspect directions
                 Uri uriAnalysis = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Analysis));
-                success = await GeoprocessingTools.AddFieldAsync(returnPath, Constants.FIELD_DIRECTION, "TEXT");
+                success = await GeoprocessingTools.AddFieldAsync(returnPath, Constants.FIELD_DIRECTION, "TEXT", null);
                 if (success == BA_ReturnCode.Success)
                 {
                     int intAspectCount = Convert.ToInt16(Module1.Current.BagisSettings.AspectDirectionsCount);
@@ -5253,7 +5253,7 @@ namespace bagis_pro
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
             if (hasSiteId == false)
             {
-                success = await GeoprocessingTools.AddFieldAsync(analysisPath + "\\" + Constants.FILE_MERGED_SITES, Constants.FIELD_SITE_ID, "INTEGER");
+                success = await GeoprocessingTools.AddFieldAsync(analysisPath + "\\" + Constants.FILE_MERGED_SITES, Constants.FIELD_SITE_ID, "INTEGER", null);
                 if (success == BA_ReturnCode.Success)
                 {
                     Module1.Current.ModuleLogManager.LogDebug(nameof(CreateSitesLayerAsync),
@@ -5698,7 +5698,7 @@ namespace bagis_pro
             string outputGdb = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis);
             string strTempBuffer = "tmpSitesBuffer";
             BA_ReturnCode success = await GeoprocessingTools.BufferAsync(aoiFcPath,
-                outputGdb + "\\" + strTempBuffer, strBufferDistance, "ALL");
+                outputGdb + "\\" + strTempBuffer, strBufferDistance, "ALL", CancelableProgressor.None);
             if (success == BA_ReturnCode.Success)
             {
                 double dblArea = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(new Uri(outputGdb), strTempBuffer, "");
@@ -6626,7 +6626,7 @@ namespace bagis_pro
             string strGeodatabase = Path.GetDirectoryName(strFeatureClass);
             string strData = Path.GetFileName(strFeatureClass);
             FeatureLayer lyrDelete = null;
-            BA_ReturnCode success = await GeoprocessingTools.AddFieldAsync(strFeatureClass, Delete_YN, "TEXT");
+            BA_ReturnCode success = await GeoprocessingTools.AddFieldAsync(strFeatureClass, Delete_YN, "TEXT", null);
             if (success == BA_ReturnCode.Success)
             {
                 await QueuedTask.Run(() =>
@@ -7474,7 +7474,7 @@ namespace bagis_pro
                     if (success == BA_ReturnCode.Success)
                     {
                         string fieldDissolve = "DISS1";
-                        success = await GeoprocessingTools.AddFieldAsync(strTmpSelect, fieldDissolve, "INTEGER");
+                        success = await GeoprocessingTools.AddFieldAsync(strTmpSelect, fieldDissolve, "INTEGER", null);
                         if (success == BA_ReturnCode.Success)
                         {
                             QueryFilter qf = new QueryFilter();
@@ -7498,7 +7498,7 @@ namespace bagis_pro
                         if (success == BA_ReturnCode.Success)
                         {
                             success = await GeoprocessingTools.DeleteDatasetAsync(strTmpSelect);
-                            success = await GeoprocessingTools.AddFieldAsync(strTmpDissolve, Constants.FIELD_RECALC_AREA, "Double");
+                            success = await GeoprocessingTools.AddFieldAsync(strTmpDissolve, Constants.FIELD_RECALC_AREA, "Double", null);
                             if (success == BA_ReturnCode.Success)
                             {
                                 // Recalculate area due to bug in Pro
@@ -7561,7 +7561,7 @@ namespace bagis_pro
                             else
                             {
                                 // Recalculate area due to bug in Pro
-                                success = await GeoprocessingTools.AddFieldAsync(strIntersectFull, Constants.FIELD_RECALC_AREA, "Double");
+                                success = await GeoprocessingTools.AddFieldAsync(strIntersectFull, Constants.FIELD_RECALC_AREA, "Double", null);
                                 if (success == BA_ReturnCode.Success)
                                 {
                                     // Recalculate area due to bug in Pro

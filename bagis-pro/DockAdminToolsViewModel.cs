@@ -1259,7 +1259,7 @@ namespace bagis_pro
                             string strInputFeatures = $@"{GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi)}\{Constants.FILE_AOI_VECTOR}";
                             string strOutputFeatures = $@"{GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi)}\{Constants.FILE_AOI_PRISM_VECTOR}";
                             string strDistance = $@"{strDefaultBufferDistance} {strDefaultBufferUnits}";
-                            success =  await GeoprocessingTools.BufferAsync(strInputFeatures, strOutputFeatures, strDistance, "ALL");
+                            success =  await GeoprocessingTools.BufferAsync(strInputFeatures, strOutputFeatures, strDistance, "ALL", CancelableProgressor.None);
                             if (success == BA_ReturnCode.Success)
                             {
                                 pBufferDistance = strDefaultBufferDistance;
@@ -1787,11 +1787,11 @@ namespace bagis_pro
                             {
                                 if (strField.Equals(Constants.FIELD_HUC2))
                                 {
-                                    success = await GeoprocessingTools.AddFieldAsync(ppUri.LocalPath + "\\" + Constants.FILE_POURPOINT, strField, "INTEGER");
+                                    success = await GeoprocessingTools.AddFieldAsync(ppUri.LocalPath + "\\" + Constants.FILE_POURPOINT, strField, "INTEGER", null);
                                 }
                                 else
                                 {
-                                    success = await GeoprocessingTools.AddFieldAsync(ppUri.LocalPath + "\\" + Constants.FILE_POURPOINT, strField, "TEXT");
+                                    success = await GeoprocessingTools.AddFieldAsync(ppUri.LocalPath + "\\" + Constants.FILE_POURPOINT, strField, "TEXT", null);
                                 }
                             }
                         }
@@ -1905,7 +1905,7 @@ namespace bagis_pro
                     {
                         if (!await GeodatabaseTools.AttributeExistsAsync(ppUri, Constants.FILE_AOI_VECTOR, strField))
                         {
-                            success = await GeoprocessingTools.AddFieldAsync(strAoiVPath, strField, "TEXT");
+                            success = await GeoprocessingTools.AddFieldAsync(strAoiVPath, strField, "TEXT", null);
                         }
                     }
                     if (success == BA_ReturnCode.Success)
@@ -2057,7 +2057,7 @@ namespace bagis_pro
                                             CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
                     if (!gpResultClip.IsFailed)
                     {
-                        success = await GeoprocessingTools.AddFieldAsync(strOutputFc, Constants.FIELD_YEAR, "SHORT");
+                        success = await GeoprocessingTools.AddFieldAsync(strOutputFc, Constants.FIELD_YEAR, "SHORT", null);
                         if (success == BA_ReturnCode.Success)
                         {
                             var parameters = Geoprocessing.MakeValueArray(strOutputFc, Constants.FIELD_YEAR,
@@ -2095,7 +2095,7 @@ namespace bagis_pro
                                             CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
                     if (! gpResultClip.IsFailed)
                     {
-                        success = await GeoprocessingTools.AddFieldAsync(strOutputFc, Constants.FIELD_YEAR, "SHORT");
+                        success = await GeoprocessingTools.AddFieldAsync(strOutputFc, Constants.FIELD_YEAR, "SHORT", null);
                         if (success == BA_ReturnCode.Success)
                         {
                             var parameters = Geoprocessing.MakeValueArray(strOutputFc, Constants.FIELD_YEAR,
