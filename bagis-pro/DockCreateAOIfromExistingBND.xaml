@@ -61,9 +61,6 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="20"/>
                     <RowDefinition Height="50"/>
-                    <RowDefinition Height="20"/>
-                    <RowDefinition Height="30"/>
-                    <RowDefinition Height="30"/>
                     <RowDefinition Height="30"/>
                     <RowDefinition Height="30"/>
                     <RowDefinition Height="30"/>
@@ -95,60 +92,30 @@
                         <TextBox x:Name="txtFilterWidth" Height="20" Width="25" Text="{Binding FilterCellWidth}" IsEnabled="{Binding SmoothDemChecked}"></TextBox>
                     </DockPanel>
                 </GroupBox>
-                <DockPanel Grid.Row="2" Grid.Column="0" Margin="5,0,0,0" Grid.ColumnSpan="2">
-                    <TextBlock TextWrapping="Wrap">Select the output layer(s) to view:</TextBlock>
+                <DockPanel Grid.Row="2" Grid.Column="0" Margin="0,0,0,0">
+                    <CheckBox x:Name="ckBufferAoi" Content="Buffer AOI to clip layers" IsChecked="{Binding BufferAoiChecked}" Checked="BufferAOI_Checked" Unchecked="BufferAOI_Checked" Width="150"/>
                 </DockPanel>
-                <DockPanel Grid.Row="3" Grid.Column="0" Margin="2,0,0,0">
-                    <Button x:Name="btnSelectAll" Content="Select All" HorizontalAlignment="Left"  VerticalAlignment="Center" Width="55" Margin="0,0,6,0" Command="{Binding CmdSelectAll}"  />
-                    <Button x:Name="btnSelectNone" Content="Select None" HorizontalAlignment="Left"  VerticalAlignment="Center" Width="70" Command="{Binding CmdSelectNone}" />
-                </DockPanel>
-                <DockPanel Grid.Row="3" Grid.Column="1" Margin="5,0,0,0">
-                    <CheckBox x:Name="ckBufferAoi" Content="Buffer AOI to clip layers" VerticalAlignment="Center" IsChecked="{Binding BufferAoiChecked}" Checked="BufferAOI_Checked" Unchecked="BufferAOI_Checked"/>
+                <DockPanel Grid.Row="3" Grid.Column="0" Margin="2,0,0,0" Grid.ColumnSpan="2">
+                    <TextBlock Text="AOI Buffer Distance:" Width="120" VerticalAlignment="Center"/>
+                    <TextBox x:Name="txtBufferDistance" Text="{Binding BufferDistance}" Height="20" Width="30" HorizontalAlignment="Left"/>
+                    <TextBlock Text="{Binding AoiBufferUnits}" VerticalAlignment="Center" Margin="10,0,0,0"/>
                 </DockPanel>
                 <DockPanel Grid.Row="4" Grid.Column="0" Margin="5,0,0,0">
-                    <CheckBox x:Name="ckDemExtent" Content="DEM Extent" IsChecked="{Binding DemExtentChecked}"/>
+                    <TextBlock x:Name="lblBufferAoi" FontWeight="Bold" Foreground="Blue" MouseLeftButtonUp="LblBuffer_MouseLeftButtonUp" Width="110"><Run Text="(Why use a buffer?)"/></TextBlock>
                 </DockPanel>
-                <DockPanel Grid.Row="4" Grid.Column="1" Margin="5,0,0,0">
-                    <TextBlock x:Name="lblBufferAoi" Margin="15,1,0,0" FontWeight="Bold" Foreground="Blue" MouseLeftButtonUp="LblBuffer_MouseLeftButtonUp">(Why use a buffer?)</TextBlock>
-                </DockPanel>
-                <DockPanel Grid.Row="5" Grid.Column="0" Margin="5,0,0,0">
-                    <CheckBox x:Name="ckFilledDem" Content="Filled DEM" IsChecked="{Binding FilledDemChecked}"/>
-                </DockPanel>
-                <DockPanel Grid.Row="5" Grid.Column="1" Margin="5,0,0,0">
-                    <TextBlock Text="AOI Buffer Distance:" VerticalAlignment="Center"/>
-                    <TextBox x:Name="txtBufferDistance" Text="{Binding BufferDistance}" Width="30" Height="20"
-                     HorizontalAlignment="Left" VerticalAlignment="Center"/>
-                    <TextBlock Text="{Binding AoiBufferUnits}" VerticalAlignment="Center"/>
-                </DockPanel>
-                <DockPanel Grid.Row="6" Grid.Column="0" Margin="5,0,0,0">
-                    <CheckBox x:Name="ckFlowDirect" Content="Flow Direction" IsChecked="{Binding FlowDirectChecked}"/>
-                </DockPanel>
-                <DockPanel Grid.Row="7" Grid.Column="0" Margin="5,0,0,0">
-                    <CheckBox x:Name="ckFlowAccum" Content="Flow Accumulation" IsChecked="{Binding FlowAccumChecked}"/>
-                </DockPanel>
-                <DockPanel Grid.Row="8" Grid.Column="0" Margin="5,0,0,0">
-                    <CheckBox x:Name="ckSlope" Content="Slope" IsChecked="{Binding SlopeChecked}"/>
-                </DockPanel>
-                <DockPanel Grid.Row="9" Grid.Column="0" Margin="5,0,0,0">
-                    <CheckBox x:Name="ckAspect" Content="Aspect" IsChecked="{Binding AspectChecked}"/>
-                </DockPanel>
-                <DockPanel Grid.Row="9" Grid.Column="1" Margin="5,0,0,0">
+                <DockPanel Grid.Row="5" Grid.Column="0" Margin="5,0,0,0" Grid.ColumnSpan="2">
                     <TextBlock Text="DEM Elevation Unit:" VerticalAlignment="Center"/>
                     <TextBlock Text="{Binding DemElevUnit}" Margin="5,0,0,0" VerticalAlignment="Center"/>
                 </DockPanel>
-
-                <DockPanel Grid.Row="10" Grid.Column="0" Margin="5,0,0,0">
-                    <CheckBox x:Name="ckHillshade" Content="Hillshade" IsChecked="{Binding HillshadeChecked}"/>
-                </DockPanel>
-                <DockPanel Grid.Row="10" Grid.Column="1" Margin="5,0,0,0">
+                <DockPanel Grid.Row="6" Grid.Column="0" Margin="5,0,0,0" Grid.ColumnSpan="2">
                     <TextBlock Text="Slope Unit:" VerticalAlignment="Center"/>
                     <TextBlock Text="{Binding SlopeUnitDescr}" Margin="5,0,0,0" VerticalAlignment="Center"/>
                 </DockPanel>
-                <DockPanel Grid.Row="11" Grid.Column="0" Margin="5,0,0,0">
-                    <TextBlock VerticalAlignment="Center">Hillshade Z Factor:</TextBlock>
-                    <TextBox x:Name="txtZFactor" Height="20" Width="20" Margin="5,0,5,0" Text="{Binding ZFactor}" VerticalAlignment="Center"></TextBox>
+                <DockPanel Grid.Row="7" Grid.Column="0" Margin="5,0,0,0">
+                    <TextBlock Width="100" VerticalAlignment="Center"><Run Text="Hillshade Z Factor:"/></TextBlock>
+                    <TextBox x:Name="txtZFactor_Copy" Text="{Binding ZFactor}" Width="20" Height="20"/>
                 </DockPanel>
-                <DockPanel Grid.Row="11" Grid.Column="1" Margin="5,0,0,0">
+                <DockPanel Grid.Row="8" Grid.Column="1" Margin="5,0,0,0">
                     <Button x:Name="btnCreateAoi" Content="Generate AOI" HorizontalAlignment="Right" Width="130" FontWeight="Bold" VerticalAlignment="Center" Command="{Binding CmdGenerateAoi}" />
                 </DockPanel>
 

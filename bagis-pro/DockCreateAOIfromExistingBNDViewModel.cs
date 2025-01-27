@@ -1,16 +1,9 @@
-﻿using ArcGIS.Core.CIM;
-using ArcGIS.Core.Data;
-using ArcGIS.Core.Data.Raster;
-using ArcGIS.Core.Data.UtilityNetwork.Trace;
-using ArcGIS.Core.Geometry;
+﻿using ArcGIS.Core.Data;
 using ArcGIS.Desktop.Catalog;
 using ArcGIS.Desktop.Core;
 using ArcGIS.Desktop.Core.Geoprocessing;
-using ArcGIS.Desktop.Editing;
-using ArcGIS.Desktop.Extensions;
 using ArcGIS.Desktop.Framework;
 using ArcGIS.Desktop.Framework.Contracts;
-using ArcGIS.Desktop.Framework.Dialogs;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
 using ArcGIS.Desktop.Mapping;
 using bagis_pro.BA_Objects;
@@ -18,8 +11,6 @@ using ExtensionMethod;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -77,13 +68,6 @@ namespace bagis_pro
         private bool _smoothDemChecked;
         private int _filterCellHeight = 3;
         private int _filterCellWidth = 7;
-        private bool _demExtentChecked = true;
-        private bool _filledDemChecked = true;
-        private bool _flowDirectChecked = true;
-        private bool _flowAccumChecked = true;
-        private bool _slopeChecked = true;
-        private bool _aspectChecked = true;
-        private bool _hillshadeChecked = true;
         private bool _bufferAoiChecked = true;
         private int _zFactor = 1;
         private double _bufferDistance;
@@ -126,17 +110,6 @@ namespace bagis_pro
         {
             get => _filterCellWidth;
             set => SetProperty(ref _filterCellWidth, value);
-        }
-        public bool DemExtentChecked
-        {
-            get => _demExtentChecked;
-            set => SetProperty(ref _demExtentChecked, value);
-        }
-
-        public bool HillshadeChecked
-        {
-            get => _hillshadeChecked;
-            set => SetProperty(ref _hillshadeChecked, value);
         }
         public int ZFactor
         {
@@ -197,38 +170,6 @@ namespace bagis_pro
                 });
             }
         }
-        public System.Windows.Input.ICommand CmdSelectAll
-        {
-            get
-            {
-                return new RelayCommand(() =>
-                {
-                    DemExtentChecked = true; 
-                    //FilledDemChecked = true;
-                    //FlowAccumChecked = true;
-                    //FlowDirectChecked = true;
-                    //SlopeChecked = true;
-                    //AspectChecked = true;
-                    HillshadeChecked = true;
-                });
-            }
-        }
-        public System.Windows.Input.ICommand CmdSelectNone
-        {
-            get
-            {
-                return new RelayCommand(() =>
-                {
-                    DemExtentChecked = false;
-                    //FilledDemChecked = false;
-                    //FlowAccumChecked = false;
-                    //FlowDirectChecked = false;
-                    //SlopeChecked = false;
-                    //AspectChecked = false;
-                    HillshadeChecked = false;
-                });
-            }
-        }
 
         private RelayCommand _runGenerateAoiCommand;
         public ICommand CmdGenerateAoi
@@ -244,7 +185,7 @@ namespace bagis_pro
         private async void RunGenerateAoiImplAsync(object param)
         {
             uint nStep= 8;
-            int intWait = 1000;
+            int intWait = 500;
             // Validation
             if (string.IsNullOrEmpty(OutputWorkspace) || string.IsNullOrEmpty(AoiName))
             {
@@ -335,15 +276,14 @@ namespace bagis_pro
                 return;
 
             }
-
-            var progress = new ProgressDialog("Processing ...", "Cancel", nStep + 2, false);
+            
+            var progress = new ProgressDialog("Processing ...", "Cancel", 100, false);
             var status = new CancelableProgressorSource(progress);
-            status.Max = nStep + 2;
+            status.Max = 100;
             progress.Show();
             await QueuedTask.Run(() =>
             {
-                status.Progressor.Value += 1;
-                //status.Progressor.Status = (status.Progressor.Value * 100 / status.Progressor.Max) + @" % Completed";
+                status.Progressor.Value = 0;    // reset the progressor's value back to 0 between GP tasks
                 status.Progressor.Message = $@"Generating AOI boundary... (step 1 of {nStep})";
                 //block the CIM for a second
                 Task.Delay(intWait).Wait();
@@ -448,7 +388,7 @@ namespace bagis_pro
                          Constants.FILE_AOI_VECTOR;
             await QueuedTask.Run(() =>
             {
-                status.Progressor.Value += 1;
+                status.Progressor.Value = 0;
                 status.Progressor.Message = $@"Clipping DEM... (step 2 of {nStep})";
                 //block the CIM for a second
                 Task.Delay(intWait).Wait();
@@ -517,7 +457,7 @@ namespace bagis_pro
                 string filledDemPath = $@"{surfacesGdbPath}\{Constants.FILE_DEM_FILLED}";
                 await QueuedTask.Run(() =>
                 {
-                    status.Progressor.Value += 1;
+                    status.Progressor.Value = 0;
                     status.Progressor.Message = $@"Filling DEM... (step 3 of {nStep})";
                     //block the CIM for a second
                     Task.Delay(intWait).Wait();
@@ -567,22 +507,10 @@ namespace bagis_pro
                         }
                         success = BA_ReturnCode.Success;
                     }
-                    //if (FilledDemChecked)
-                    //{
-                    //    uri = new Uri(filledDemPath);
-                    //    await QueuedTask.Run(() =>
-                    //    {
-                    //        var rasterLayerCreationParams = new RasterLayerCreationParams(uri)
-                    //        {
-                    //            Name = "Filled DEM",
-                    //        };
-                    //    RasterLayer rasterLayer = LayerFactory.Instance.CreateLayer<RasterLayer>(rasterLayerCreationParams, oMap);
-                    //    });
-                    //}
                 }
                 await QueuedTask.Run(() =>
                 {
-                    status.Progressor.Value += 1;
+                    status.Progressor.Value = 0;
                     status.Progressor.Message = $@"Calculating Slope... (step 4 of {nStep})";
                     //block the CIM for a second
                     Task.Delay(intWait).Wait();
@@ -630,19 +558,12 @@ namespace bagis_pro
                             }
                         });
 
-                        //if (SlopeChecked)
-                        //{
-                        //    uri = new Uri($@"{surfacesGdbPath}\{Constants.FILE_SLOPE}");
-                        //    await MapTools.DisplayRasterStretchSymbolAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, "Slope", "ArcGIS Colors", "Black to White", 0);
-                        //}
                     }
-                    //else
-
                 }
 
                 await QueuedTask.Run(() =>
                 {
-                    status.Progressor.Value += 1;
+                    status.Progressor.Value = 0;
                     status.Progressor.Message = $@"Calculating Aspect... (step 5 of {nStep})";
                     //block the CIM for a second
                     Task.Delay(intWait).Wait();
@@ -662,16 +583,11 @@ namespace bagis_pro
                         progress.Hide();
                         return;
                     }
-                    //if (AspectChecked)
-                    //{
-                    //    uri = new Uri($@"{surfacesGdbPath}\{Constants.FILE_ASPECT}");
-                    //    await MapTools.DisplayRasterStretchSymbolAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, "Aspect", "ArcGIS Colors", "Black to White", 0);
-                    //}
                 }
 
                 await QueuedTask.Run(() =>
                 {
-                    status.Progressor.Value += 1;
+                    status.Progressor.Value = 0;
                     status.Progressor.Message = $@"Calculating Flow Direction... (step 6 of {nStep})";
                     //block the CIM for a second
                     Task.Delay(intWait).Wait();
@@ -690,15 +606,10 @@ namespace bagis_pro
                         progress.Hide();
                         return;
                     }
-                    //if (FlowDirectChecked)
-                    //{
-                    //    uri = new Uri($@"{surfacesGdbPath}\{Constants.FILE_FLOW_DIRECTION}");
-                    //    await MapTools.DisplayRasterStretchSymbolAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, "Flow Direction", "ArcGIS Colors", "Black to White", 0);
-                    //}
                 }
                 await QueuedTask.Run(() =>
                 {
-                    status.Progressor.Value += 1;
+                    status.Progressor.Value = 0;
                     status.Progressor.Message = $@"Calculating Flow Accumulation... (step 7 of {nStep})";
                     //block the CIM for a second
                     Task.Delay(intWait).Wait();
@@ -777,7 +688,7 @@ namespace bagis_pro
                 }
                 await QueuedTask.Run(() =>
                 {
-                    status.Progressor.Value += 1;
+                    status.Progressor.Value = 0;
                     status.Progressor.Message = $@"Calculating Hillshade... (step 8 of {nStep})";
                     //block the CIM for a second
                     Task.Delay(intWait).Wait();
@@ -797,10 +708,9 @@ namespace bagis_pro
                         progress.Hide();
                         return;
                     }
-                    progress.Hide();
 
                     // Display DEM Extent layer - aoi_v            
-                    if (oMap != null && DemExtentChecked)
+                    if (oMap != null)
                     {
                         strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi, true) +
                          Constants.FILE_AOI_VECTOR;
@@ -811,12 +721,9 @@ namespace bagis_pro
                             System.Windows.MessageBox.Show("Unable to add the extent layer", "BAGIS-Pro", MessageBoxButton.OK, MessageBoxImage.Error);
                             return;
                         }
-                    }
-
-                    if (HillshadeChecked)
-                    {
                         uri = new Uri($@"{surfacesGdbPath}\{Constants.FILE_HILLSHADE}");
                         await MapTools.DisplayRasterStretchSymbolAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, Constants.MAPS_HILLSHADE, "ArcGIS Colors", "Black to White", 0);
+
                     }
                 }
             }
