@@ -40,6 +40,7 @@ namespace bagis_pro
             }
 
         }
+
         private void ReportEndYear_textChangedEventHandler(object sender, TextChangedEventArgs args)
         {
             var textBox = sender as TextBox;
@@ -48,5 +49,21 @@ namespace bagis_pro
                 tbSelectMaxYear.Text = textBox.Text;
             }
         }
+        private void SelectedMaxYear_textChangedEventHandler(object sender, TextChangedEventArgs args)
+        {
+            // Set annual from value to annual to value - 29 (30 years)
+            var textBox = sender as TextBox;
+            if (textBox != null && tbSelectMinYear != null)
+            {
+                int maxYear = -1;
+                bool bSuccess = int.TryParse(textBox.Text, out maxYear);
+                if (bSuccess)
+                {
+                    tbSelectMinYear.Text = Convert.ToString(maxYear - 29);
+                }
+            }
+        }
+
+
     }
 }

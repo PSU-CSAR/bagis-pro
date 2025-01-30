@@ -340,7 +340,7 @@
                                     <CheckBox x:Name="ckAnnual" Content="Annual (from " Margin="0, 0, 0, 0" IsEnabled="False" IsChecked="{Binding AnnualDataChecked}" VerticalAlignment="Center" />
                                     <TextBox x:Name="tbSelectMinYear" Width ="40" Height="20" IsEnabled="False" Margin="0, 0, 0, 0" Text="{Binding SelectedMinYear}"/>
                                     <Label Content="to" Margin="0, 0, 0, 0" />
-                                    <TextBox x:Name="tbSelectMaxYear" Width ="40" Height="20" IsEnabled="False" Margin="0, 0, 0, 0" Text="{Binding SelectedMaxYear}" />
+                                    <TextBox x:Name="tbSelectMaxYear" Width ="40" Height="20" IsEnabled="False" Margin="0, 0, 0, 0" Text="{Binding SelectedMaxYear}" TextChanged="SelectedMaxYear_textChangedEventHandler"/>
                                     <Label Content=")" Margin="0, 0, 0, 0" />
                                 </DockPanel>
                                 <DockPanel HorizontalAlignment="Left">

@@ -1264,32 +1264,35 @@ namespace bagis_pro
                 layerNames.Add(layerName);
                 allYears.Add(i);
 ;           }
+            // Get a list of all the rasters in the fire.gdb
             Uri uriFire = new Uri(GeodatabaseTools.GetGeodatabasePath(aoiPath, GeodatabaseNames.Fire));
+            IList<string> lstMtbsRasters = new List<string>();
             await QueuedTask.Run(() =>
             {
-
                 using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(uriFire)))
                 {
                     IReadOnlyList<RasterDatasetDefinition> definitions = geodatabase.GetDefinitions<RasterDatasetDefinition>();
-                    for (int i = 0; i < layerNames.Count; i++)
+                    foreach (RasterDatasetDefinition def in definitions)
                     {
-                        string rasterName = layerNames[i];
-                        bool bExists = false;
-                        foreach (RasterDatasetDefinition def in definitions)
+                        if (def.GetName().IndexOf("mtbs") > -1)
                         {
-                            if (def.GetName().Equals(rasterName))
-                            {
-                                bExists = true;
-                                break;
-                            }
-                        }
-                        if (!bExists)
-                        {
-                            result.Add(Convert.ToString(allYears[i]));
+                            lstMtbsRasters.Add(def.GetName());
                         }
                     }
                 }
             });
+            if (lstMtbsRasters.Count > 0)
+            {
+                for (int i = minYear; i <= maxYear; i++)
+                {
+                    string validLayerName = GeneralTools.GetMtbsLayerFileName(i);
+                    string noDataLayerName = $@"{validLayerName}_{Constants.VALUE_NO_DATA.ToUpper()}";
+                    if (!lstMtbsRasters.Contains(validLayerName) && !lstMtbsRasters.Contains(noDataLayerName))
+                    {
+                        result.Add(Convert.ToString(i));
+                    }
+                }
+            }
             return result;
         }
     }

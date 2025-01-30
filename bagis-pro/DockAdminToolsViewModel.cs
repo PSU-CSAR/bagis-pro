@@ -2526,6 +2526,7 @@ namespace bagis_pro
                     return;
                 }
             }
+            MessageBox.Show("Fire statistics have been generated!");
         }
 
             private string CreateLogEntry(string strAoiPath, string strOldTriplet, string strNewTriplet, string strRemarks)
