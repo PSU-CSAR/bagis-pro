@@ -173,13 +173,13 @@ namespace bagis_pro
                         {
                             while (cursor.MoveNext())
                             {
-                                Feature aFeature = (Feature)cursor.Current;
-                                if (aFeature != null)
+                                Row aRow = cursor.Current;
+                                if (aRow != null)
                                 {
-                                    int idx = aFeature.FindField(fieldName);
+                                    int idx = aRow.FindField(fieldName);
                                     if (idx > -1)
                                     {
-                                        string strValue = Convert.ToString(aFeature[idx]);
+                                        string strValue = Convert.ToString(aRow[idx]);
                                         if (!string.IsNullOrEmpty(strValue) &&
                                             !lstReturn.Contains(strValue))
                                         {

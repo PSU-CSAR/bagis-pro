@@ -2392,7 +2392,9 @@ namespace bagis_pro
                     strCsvFile = $@"{Path.GetDirectoryName(_strFireReportLogFile)}\{i}_annual_statistics.csv";
                     String[] headings = { "stationTriplet", "stationName", "report_end_year", $@"{strYearPrefix}newfireno", $@"{strYearPrefix}nifc_burnedArea_SqMiles",
                     $@"{strYearPrefix}mtbs_burnedArea_SqMiles", $@"{strYearPrefix}nifc_burnedArea_pct", $@"{strYearPrefix}mtbs_burnedArea_pct", $@"{strYearPrefix}burnedForestedArea_SqMiles",
-                    $@"{strYearPrefix}burnedForestedArea_pct",$@"{strYearPrefix}lowburnedSeverityArea_SqMiles", $@"{strYearPrefix}lowburnedSeverityArea_pct",
+                    $@"{strYearPrefix}burnedForestedArea_pct",$@"{strYearPrefix}lowburnedSeverityForestedArea__SqMiles",$@"{strYearPrefix}lowburnedSeverityForestedArea_pct",
+                    $@"{strYearPrefix}mediumburnedSeverityForestedArea_SqMiles",$@"{strYearPrefix}mediumburnedSeverityForestedArea_pct",
+                    $@"{strYearPrefix}highburnedSeverityForestedArea_SqMiles",$@"{strYearPrefix}highburnedSeverityForestedArea_pct",$@"{strYearPrefix}lowburnedSeverityArea_SqMiles", $@"{strYearPrefix}lowburnedSeverityArea_pct",
                     $@"{strYearPrefix}mediumburnedSeverityArea_SqMiles", $@"{strYearPrefix}mediumburnedSeverityArea_pct",$@"{strYearPrefix}highburnedSeverityArea_SqMiles", $@"{strYearPrefix}highburnedSeverityArea_pct" };
                     output.AppendLine(string.Join(separator, headings));
 
@@ -2432,6 +2434,13 @@ namespace bagis_pro
                     string strYearsLabel = $@"Last{yearsLabel.ToString(fmt)}_newfireno";
                     lstHeadings.Add(strYearsLabel);
                 }
+                for (int i = 1; i <= intIncrementPeriods; i++)
+                {
+                    int yearsLabel = i * FireIncrementYears;
+                    string strYearsLabel = $@"Last{yearsLabel.ToString(fmt)}_period";
+                    lstHeadings.Add(strYearsLabel);
+                }
+
                 for (int i = 1; i <= intIncrementPeriods; i++)
                 {
                     int yearsLabel = i * FireIncrementYears;

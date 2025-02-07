@@ -348,7 +348,8 @@ namespace bagis_pro
         public const string VALUE_MTBS_SEVERITY_MODERATE = "Moderate";
         public const string VALUE_MTBS_SEVERITY_HIGH = "High";
         public static string[] MTBS_INCLUDE_SEVERITIES = { Constants.VALUE_MTBS_SEVERITY_LOW, Constants.VALUE_MTBS_SEVERITY_MODERATE, Constants.VALUE_MTBS_SEVERITY_HIGH };
-
+        public static int[] VALUES_NLCD_FORESTED_AREA = { 41, 42, 43 };
+        
         public const string UNITS_INCHES = "Inches";
         public const string UNITS_MILLIMETERS = "Millimeters";
         public const string UNITS_FEET = "Feet";

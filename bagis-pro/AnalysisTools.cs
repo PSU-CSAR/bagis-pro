@@ -2458,7 +2458,13 @@ namespace bagis_pro
                     MapMemberPosition = 0,
                 };
                 var slectionLayer = LayerFactory.Instance.CreateLayer<FeatureLayer>(flyrCreatnParam, MapView.Active.Map);
-                slectionLayer.SetDefinitionQuery(Constants.FIELD_GRID_CODE + " IN (41, 42, 43)");
+                StringBuilder sb = new StringBuilder();
+                foreach (var code in Constants.VALUES_NLCD_FORESTED_AREA)
+                {
+                    sb.Append($@"{code},");
+                }
+                string strCodes = sb.ToString().TrimEnd(',');
+                slectionLayer.SetDefinitionQuery(Constants.FIELD_GRID_CODE + " IN (" + strCodes + ")");
                 string dissolveOutputPath = strAnalysisGdb + "\\" + Constants.FILE_FORESTED_ZONE;
                 // Copy selected features to a new, temporary feature class
                 environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath);
@@ -7657,7 +7663,8 @@ namespace bagis_pro
             return dblReturn;
         }
 
-        public static async Task<IList<double>> QueryMtbsAreasByYearAsync(string aoiPath, int intYear, double aoiAreaSqMeters, double dblMtbsCellSize)
+        public static async Task<IList<double>> QueryMtbsAreasByYearAsync(string aoiPath, int intYear, double aoiAreaSqMeters, 
+            double dblMtbsCellSize)
         {
             IList<double> lstReturn = new List<double>();
             dynamic oFireSettings = GeneralTools.GetFireSettings(aoiPath);
@@ -7780,6 +7787,114 @@ namespace bagis_pro
             }
             return lstReturn;
         }
+        public static async Task<IList<double>> QueryMtbsForestedAreasByYearAsync(string aoiPath, int intYear, double forestedAreaSqMeters, CancelableProgressor prog)
+        {
+            IList<double> lstReturn = new List<double>();
+            string strMtbsLayerName = $@"{GeodatabaseTools.GetGeodatabasePath(aoiPath, GeodatabaseNames.Fire)}\{GeneralTools.GetMtbsLayerFileName(intYear)}_RECL";
+            string strInputFeatures = $@"{GeodatabaseTools.GetGeodatabasePath(aoiPath, GeodatabaseNames.Analysis)}\{Constants.FILE_FORESTED_ZONE}";
+            string strOutputTable = "tmpTabulate";
+            IGPResult gpResult = await QueuedTask.Run(() =>
+            {
+                var parameters = Geoprocessing.MakeValueArray(strInputFeatures, Constants.FIELD_GRID_CODE, strMtbsLayerName, Constants.FIELD_VALUE,
+                                                              $@"{GeodatabaseTools.GetGeodatabasePath(aoiPath, GeodatabaseNames.Fire)}\{strOutputTable}", 
+                                                              strMtbsLayerName);
+                return Geoprocessing.ExecuteToolAsync("TabulateArea_sa", parameters, null,
+                           prog, GPExecuteToolFlags.AddToHistory);
+            });
+            if (gpResult.IsFailed)
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(QueryMtbsForestedAreasByYearAsync),
+                    "Unable to Tabulate Area. Error code: " + gpResult.ErrorCode);
+                return lstReturn;
+            }
+
+            StringBuilder sb = new StringBuilder();
+            foreach (var code in Constants.VALUES_NLCD_FORESTED_AREA)
+            {
+                sb.Append($@"{code},");
+            }
+            string strCodes = sb.ToString().TrimEnd(',');
+            string strWhere = Constants.FIELD_GRID_CODE + " IN (" + strCodes + ")";
+            QueryFilter queryFilter = new QueryFilter();
+            queryFilter.WhereClause = strWhere;
+            dynamic oFireSettings = GeneralTools.GetFireSettings(aoiPath);
+            JArray arrMtbsLegend = oFireSettings.mtbsLegend;
+            string[] arrFieldNames = new string[3];
+            foreach (dynamic item in arrMtbsLegend)
+            {
+                string severity = Convert.ToString(item.Severity);
+                switch (severity)
+                {
+                    case Constants.VALUE_MTBS_SEVERITY_LOW:
+                        arrFieldNames[0] = $@"VALUE_{item.Value}";
+                        break;
+                    case Constants.VALUE_MTBS_SEVERITY_MODERATE:
+                        arrFieldNames[1] = $@"VALUE_{item.Value}";
+                        break;
+                    case Constants.VALUE_MTBS_SEVERITY_HIGH:
+                        arrFieldNames[2] = $@"VALUE_{item.Value}";
+                        break;
+                    default:
+                        break;
+                }
+
+
+            }
+            double lowSeveritySqMeters = 0;
+            double modSeveritySqMeters = 0;
+            double highSeveritySqMeters = 0;
+            Uri uriFire = new Uri($@"{GeodatabaseTools.GetGeodatabasePath(aoiPath, GeodatabaseNames.Fire)}");
+            IList<string> lstAreas = await GeodatabaseTools.QueryTableForDistinctValuesAsync(uriFire, strOutputTable, arrFieldNames[0], queryFilter);
+            foreach (string area in lstAreas)
+            {
+                double dblArea = Convert.ToDouble(area);
+                lowSeveritySqMeters = lowSeveritySqMeters + dblArea;
+            }
+            double lowSeveritySqMiles = Math.Round(AreaUnit.SquareMeters.ConvertTo(lowSeveritySqMeters, AreaUnit.SquareMiles), 2);
+            lstReturn.Add(lowSeveritySqMiles);
+            if (lowSeveritySqMeters > 0)
+            {
+                lstReturn.Add(Math.Round(lowSeveritySqMeters / forestedAreaSqMeters * 100, 1));
+            }
+            else
+            {
+                lstReturn.Add(0);
+            }
+            lstAreas = await GeodatabaseTools.QueryTableForDistinctValuesAsync(uriFire, strOutputTable, arrFieldNames[1], queryFilter);
+            foreach (string area in lstAreas)
+            {
+                double dblArea = Convert.ToDouble(area);
+                modSeveritySqMeters = modSeveritySqMeters + dblArea;
+            }
+            double modSeveritySqMiles = Math.Round(AreaUnit.SquareMeters.ConvertTo(modSeveritySqMeters, AreaUnit.SquareMiles), 2);
+            lstReturn.Add(modSeveritySqMiles);
+            if (modSeveritySqMeters > 0)
+            {
+                lstReturn.Add(Math.Round(modSeveritySqMeters / forestedAreaSqMeters * 100, 1));
+            }
+            else
+            {
+                lstReturn.Add(0);
+            }
+            lstAreas = await GeodatabaseTools.QueryTableForDistinctValuesAsync(uriFire, strOutputTable, arrFieldNames[2], queryFilter);
+            foreach (string area in lstAreas)
+            {
+                double dblArea = Convert.ToDouble(area);
+                highSeveritySqMeters = highSeveritySqMeters + dblArea;
+            }
+            double highSeveritySqMiles = Math.Round(AreaUnit.SquareMeters.ConvertTo(highSeveritySqMeters, AreaUnit.SquareMiles), 2);
+            lstReturn.Add(highSeveritySqMiles);
+            if (highSeveritySqMeters > 0)
+            {
+                lstReturn.Add(Math.Round(highSeveritySqMeters / forestedAreaSqMeters * 100, 1));
+            }
+            else
+            {
+                lstReturn.Add(0);
+            }
+
+            return lstReturn;
+        }
 
         public static async Task<IList<string>> GenerateAnnualFireStatisticsList(BA_Objects.Aoi oAoi, string strLogFile, double aoiAreaSqMeters,
                 double dblMtbsCellSize, int intYear, int intReportEndYear, IList<string> lstMissingMtbsYears)
@@ -7839,6 +7954,27 @@ namespace bagis_pro
 
             if (bMtbsExists)
             {
+                double forestedAreaSqMeters =
+                    await GeodatabaseTools.CalculateTotalPolygonAreaAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis)), Constants.FILE_FORESTED_ZONE, "");
+                // mtbs FORESTED burned areas by severity
+                if (bMtbsZeroData || forestedAreaSqMeters <= 0)
+                {
+                    lstElements.Add("0");
+                    lstElements.Add("0");
+                    lstElements.Add("0");
+                    lstElements.Add("0");
+                    lstElements.Add("0");
+                    lstElements.Add("0");
+                }
+                else
+                {
+                    IList<double> lstMtbsForestedAreas = await QueryMtbsForestedAreasByYearAsync(oAoi.FilePath, intYear, forestedAreaSqMeters, CancelableProgressor.None);
+                    foreach (var area in lstMtbsForestedAreas)
+                    {
+                        lstElements.Add(Convert.ToString(area));
+                    }                    
+                }
+                // mtbs all burned areas by severity
                 if (bMtbsZeroData)
                 {
                     lstElements.Add("0");
@@ -7905,6 +8041,11 @@ namespace bagis_pro
             {
                 double dblFireCount = await QueryPerimeterStatisticsByIncrementAsync(oAoi.FilePath, oInterval, aoiAreaSqMeters, FireStatisticType.Count, strLogFile);
                 lstElements.Add(Convert.ToString(dblFireCount));
+            }
+            foreach (var oInterval in lstInterval)
+            {
+                string strPeriod = $@"{oInterval.LowerBound}-{oInterval.UpperBound}|";
+                lstElements.Add(strPeriod.TrimEnd('|'));
             }
             foreach (var oInterval in lstInterval)
             {
