@@ -7787,10 +7787,9 @@ namespace bagis_pro
             }
             return lstReturn;
         }
-        public static async Task<IList<double>> QueryMtbsForestedAreasByYearAsync(string aoiPath, int intYear, double forestedAreaSqMeters, CancelableProgressor prog)
+        public static async Task<IList<double>> QueryMtbsForestedAreasAsync(string aoiPath, string strMtbsLayerName, double forestedAreaSqMeters, CancelableProgressor prog)
         {
             IList<double> lstReturn = new List<double>();
-            string strMtbsLayerName = $@"{GeodatabaseTools.GetGeodatabasePath(aoiPath, GeodatabaseNames.Fire)}\{GeneralTools.GetMtbsLayerFileName(intYear)}_RECL";
             string strInputFeatures = $@"{GeodatabaseTools.GetGeodatabasePath(aoiPath, GeodatabaseNames.Analysis)}\{Constants.FILE_FORESTED_ZONE}";
             string strOutputTable = "tmpTabulate";
             IGPResult gpResult = await QueuedTask.Run(() =>
@@ -7803,7 +7802,7 @@ namespace bagis_pro
             });
             if (gpResult.IsFailed)
             {
-                Module1.Current.ModuleLogManager.LogError(nameof(QueryMtbsForestedAreasByYearAsync),
+                Module1.Current.ModuleLogManager.LogError(nameof(QueryMtbsForestedAreasAsync),
                     "Unable to Tabulate Area. Error code: " + gpResult.ErrorCode);
                 return lstReturn;
             }
@@ -7893,6 +7892,11 @@ namespace bagis_pro
                 lstReturn.Add(0);
             }
 
+            if (await GeodatabaseTools.TableExistsAsync(uriFire, strOutputTable))
+            {
+                BA_ReturnCode success = await GeoprocessingTools.DeleteDatasetAsync($@"{uriFire.LocalPath}\{strOutputTable}");
+            }
+
             return lstReturn;
         }
 
@@ -7968,7 +7972,8 @@ namespace bagis_pro
                 }
                 else
                 {
-                    IList<double> lstMtbsForestedAreas = await QueryMtbsForestedAreasByYearAsync(oAoi.FilePath, intYear, forestedAreaSqMeters, CancelableProgressor.None);
+                    string strMtbsLayerName = $@"{GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Fire)}\{GeneralTools.GetMtbsLayerFileName(intYear)}_RECL";
+                    IList<double> lstMtbsForestedAreas = await QueryMtbsForestedAreasAsync(oAoi.FilePath, strMtbsLayerName, forestedAreaSqMeters, CancelableProgressor.None);
                     foreach (var area in lstMtbsForestedAreas)
                     {
                         lstElements.Add(Convert.ToString(area));
@@ -8028,7 +8033,10 @@ namespace bagis_pro
             StringBuilder sb = new StringBuilder();
             foreach(string year in lstMtbsMissingYears)
             {
-                sb.Append($@"{year}|");
+                if (Convert.ToInt16(year) <= intReportEndYear)
+                {
+                    sb.Append($@"{year}|");
+                }                
             }
             string missingYears = "";
             if (sb.ToString().Length > 0)
@@ -8077,6 +8085,51 @@ namespace bagis_pro
                 double dblBurnedForestedAreaPct = await QueryPerimeterStatisticsByIncrementAsync(oAoi.FilePath, oInterval, aoiAreaSqMeters, FireStatisticType.BurnedForestedAreaPct, strLogFile);
                 lstElements.Add(Convert.ToString(dblBurnedForestedAreaPct));
             }
+
+            // mtbs FORESTED burned areas by severity
+            double forestedAreaSqMeters =
+                await GeodatabaseTools.CalculateTotalPolygonAreaAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis)), Constants.FILE_FORESTED_ZONE, "");
+            double[,] Data = new double[6, lstInterval.Count];
+            int j = 0;
+            foreach (var oInterval in lstInterval)
+            {
+                bool bMtbsMaxLayerExists = await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(gdbFire), $@"tmpMax_{oInterval.Value}");
+                if (forestedAreaSqMeters <= 0 || !bMtbsMaxLayerExists)
+                {
+                    Data[0, j] = 0;  // low forested area
+                    Data[1, j] = 0;  // low forested pct
+                    Data[2, j] = 0;  // med forested area
+                    Data[3, j] = 0;  // med forested pct
+                    Data[4, j] = 0;  // med forested area
+                    Data[5, j] = 0;  // med forested pct
+                }
+                else
+                {
+                    string strMtbsLayerName = $@"{GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Fire)}\tmpMax_{oInterval.Value}";
+                    IList<double> lstMtbsForestedAreas = await QueryMtbsForestedAreasAsync(oAoi.FilePath, strMtbsLayerName, forestedAreaSqMeters, CancelableProgressor.None);
+                    if (lstMtbsForestedAreas.Count == 6)
+                    {
+                        Data[0, j] = lstMtbsForestedAreas[0];  // low forested area
+                        Data[1, j] = lstMtbsForestedAreas[1];  // low forested pct
+                        Data[2, j] = lstMtbsForestedAreas[2];  // med forested area
+                        Data[3, j] = lstMtbsForestedAreas[3];  // med forested pct
+                        Data[4, j] = lstMtbsForestedAreas[4];  // med forested area
+                        Data[5, j] = lstMtbsForestedAreas[5];  // med forested pct
+                    }
+                }
+                j++;
+            }
+            if (Data.GetLength(0) > 0)
+            {
+                for (int k = 0; k < Data.GetLength(0); k++)
+                {
+                    for (int i = 0; i < lstInterval.Count; i++)
+                    {
+                        lstElements.Add(Convert.ToString(Data[k, i]));
+                    }                    
+                }
+            }
+
             IList<string> lstLowSevAreas = new List<string>();
             IList<string> lstLowSevPcts = new List<string>();
             IList<string> lstModSevAreas = new List<string>();
@@ -8085,7 +8138,7 @@ namespace bagis_pro
             IList<string> lstHighSevPcts = new List<string>();
             foreach (var oInterval in lstInterval)
             {
-                IList<string> lstMtbsAreas = await AnalysisTools.QueryMtbsAreasByIncrementAsync(oAoi.FilePath, oInterval, aoiAreaSqMeters, dblMtbsCellSize);
+                IList<string> lstMtbsAreas = await QueryMtbsAreasByIncrementAsync(oAoi.FilePath, oInterval, aoiAreaSqMeters, dblMtbsCellSize);
                 if (lstMtbsAreas.Count == 6)
                 {
                     string strLowSevArea = Convert.ToString(lstMtbsAreas[0]);
@@ -8121,6 +8174,7 @@ namespace bagis_pro
             QueryFilter queryFilter = new QueryFilter();
             string strGdbFire = GeodatabaseTools.GetGeodatabasePath(aoiPath, GeodatabaseNames.Fire);
             string strMaxFileName = $@"tmpMax_{oInterval.Value}";
+            // This file is created in QueryMtbsAreaPctByIncrementAsync()
             if (await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(strGdbFire), strMaxFileName))
             {
                 if (arrMtbsLegend != null)
@@ -8234,7 +8288,7 @@ namespace bagis_pro
                     }
                     lstReturn.Add(Convert.ToString(dblHighBurnedAreaSqMiles));
                     lstReturn.Add(Convert.ToString(dblHighBurnedAreaPct));
-                    BA_ReturnCode success = await GeoprocessingTools.DeleteDatasetAsync($@"{strGdbFire}\{strMaxFileName}");
+                    //BA_ReturnCode success = await GeoprocessingTools.DeleteDatasetAsync($@"{strGdbFire}\{strMaxFileName}");
                 }
             }
             else
@@ -8268,7 +8322,15 @@ namespace bagis_pro
                     break;
                 }
             }
-            if (bAllYearsMissing) return "";
+            string strMaxFileName = $@"tmpMax_{oInterval.Value}";
+            if (bAllYearsMissing)
+            {
+                if (await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(strGdbFire),strMaxFileName))
+                {
+                    BA_ReturnCode success = await GeoprocessingTools.DeleteDatasetAsync($@"{strGdbFire}\{strMaxFileName}");
+                }
+                return "";
+            }
             StringBuilder sb = new StringBuilder();
             for (int i = (int)oInterval.LowerBound; i <= (int)oInterval.UpperBound; i++)
             {
@@ -8278,7 +8340,6 @@ namespace bagis_pro
                     sb.Append($@"{strGdbFire}\{strLayerName};");
                 }
             }
-            string strMaxFileName = $@"tmpMax_{oInterval.Value}";
             if (sb.Length > 0)
             {
                 string strInputLayerPaths = sb.ToString();
