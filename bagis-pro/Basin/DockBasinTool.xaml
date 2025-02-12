@@ -1,0 +1,78 @@
+﻿<UserControl x:Class="bagis_pro.Basin.DockBasinToolView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"   
+             xmlns:ui="clr-namespace:bagis_pro.Basin"
+             xmlns:extensions="clr-namespace:ArcGIS.Desktop.Extensions;assembly=ArcGIS.Desktop.Extensions"
+             mc:Ignorable="d" 
+             d:DesignHeight="550" d:DesignWidth="550"
+             d:DataContext="{Binding Path=ui.DockBasinToolViewModel}">
+  <UserControl.Resources>
+        <ResourceDictionary/>
+    </UserControl.Resources>
+  <Grid>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="30"/>
+      <RowDefinition Height="30"/>
+      <RowDefinition Height="30"/>
+      <RowDefinition Height="200"/>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="*"/>
+    </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="Auto"/>
+        </Grid.ColumnDefinitions>
+        <DockPanel Grid.Row="0" Grid.Column="0" Margin="2,0,2,0">
+            <Button x:Name="btnFolder" Content="Open" HorizontalAlignment="Left"  VerticalAlignment="Center" Width="50" Command="{Binding CmdAoiFolder}" Margin="5, 0, 0, 0"/>
+        </DockPanel>
+        <DockPanel Grid.Row="0" Grid.Column="1" LastChildFill="true" KeyboardNavigation.TabNavigation="Local"  Margin="2,0,2,0">
+            <TextBox x:Name="txtSelectFolder" Text="{Binding ParentFolder}" HorizontalAlignment="Left"  VerticalAlignment="Center" Width="300" IsReadOnly="True" Margin="5,0,0,0" />
+        </DockPanel>
+        <DockPanel Grid.Row="0" Grid.Column="2" Margin="20,0,2,0">
+            <Button x:Name="btnSelectBasin" Content="Select" HorizontalAlignment="Right"  VerticalAlignment="Center" Width="50" Command="{Binding CmdAoiFolder}" Margin="5, 0, 0, 0"/>
+        </DockPanel>
+        <DockPanel Grid.Row="1" Grid.Column="0" Margin="2,0,2,0">
+            <TextBlock Name="tbBasin" MaxWidth="50" VerticalAlignment="Center" FontWeight="Bold" Text="Basin" Margin="5, 0, 0, 0"/>
+
+            <TextBox x:Name="txtIsBasin" Text="{Binding IsBasin}" HorizontalAlignment="Left" Margin="5, 0, 0, 0" 
+                                    VerticalAlignment="Center" Width="50" IsReadOnly="True"
+                                    Foreground="Blue" Background="Transparent"/>
+        </DockPanel>
+        <DockPanel Grid.Row="1" Grid.Column="1" Margin="2,0,2,0">
+            <TextBlock Name="tbAoi" MaxWidth="50" VerticalAlignment="Center" FontWeight="Bold" Text="Aoi" Margin="5, 0, 0, 0"/>
+
+            <TextBox x:Name="txtIsAoi" Text="{Binding IsAoi}" HorizontalAlignment="Left" Margin="5, 0, 0, 0" 
+                                    VerticalAlignment="Center" Width="50" IsReadOnly="True"
+                                    Foreground="Blue" Background="Transparent"/>
+            <Button x:Name="btnViewDem" Content="View DEM Extent" HorizontalAlignment="Right"  VerticalAlignment="Center" Width="100" Command="{Binding CmdViewDem}" Margin="5, 0, 0, 0"/>
+        </DockPanel>
+        <DockPanel Grid.Row="2" Grid.Column="1" Margin="2,0,2,0">
+            <Button x:Name="btnViewLayers" Content="View Layers" HorizontalAlignment="Right"  VerticalAlignment="Center" Width="100" Command="{Binding CmdViewDem}" Margin="5, 0, 0, 0"/>
+        </DockPanel>
+        <DockPanel Grid.Row="2" Grid.Column="2" Margin="20,0,2,0">
+            <Button x:Name="btnClose" Content="Close" HorizontalAlignment="Right"  VerticalAlignment="Center" Width="50" Command="{Binding CmdAoiFolder}" Margin="5, 0, 0, 0"/>
+        </DockPanel>        
+      <DockPanel Grid.Row="3" Grid.Column="0" Margin="2,0,2,0" Grid.ColumnSpan="3">
+            <ListView ItemsSource="{Binding Subfolders}" Width="500" HorizontalAlignment="Left">
+                <ListView.View>
+                    <GridView AllowsColumnReorder="true" ColumnHeaderToolTip="Aoi">
+                        <GridViewColumn DisplayMemberBinding = "{Binding Path=FolderName}" Header="Subfolders" Width="135"/>
+                        <GridViewColumn DisplayMemberBinding = "{Binding Path=BasinStatus}" Width="80">
+                            <GridViewColumnHeader>BASIN Status</GridViewColumnHeader>
+                        </GridViewColumn>
+                        <GridViewColumn DisplayMemberBinding = "{Binding Path=PourpointId}" Header="Pourpoint Id" Width="80"/>
+                        <GridViewColumn DisplayMemberBinding = "{Binding Path=PourpointName}" Header="Pourpoint Name" Width="100"/>
+                        <GridViewColumn DisplayMemberBinding = "{Binding Path=Huc2}" Header="HUC2" Width="40"/>
+                    </GridView>
+
+                </ListView.View>
+            </ListView>
+        </DockPanel>
+        <DockPanel Grid.Row="4" Grid.Column="0" Margin="2,0,2,0" Grid.ColumnSpan="2">
+            <TextBlock x:Name="lblChangeFolder" Margin="2,0,2,0" VerticalAlignment="Center" FontWeight="Bold" Foreground="Blue" MouseLeftButtonUp="LblChangeFolder_MouseLeftButtonUp">Double-click to change folder.</TextBlock>
+        </DockPanel>
+    </Grid>
+</UserControl>

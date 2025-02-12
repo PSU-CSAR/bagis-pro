@@ -37,6 +37,7 @@
         </group>
         <group id="bagis_pro_Groups_Maps" appearsOnAddInTab="false" caption="Map Functions" keytip="G3">
           <!--<menu refID="bagis_pro_Menus_MnuMaps" size="middle" /> -->
+          <button refID="bagis_pro_Basin_DockBasinTool_ShowButton" size="middle" />
           <labelControl refID="bagis_pro_Buttons_LblCurrentAoi" />
           <comboBox refID="bagis_pro_Buttons_CboCurrentAoi" />
           <button refID="bagis_pro_Menus_MnuMaps_BtnSelectAoi" size="middle" />
@@ -224,6 +225,9 @@
         <button id="bagis_pro_WinExportPdf" caption="3. Export Map Package" className="BtnWinExportPdf" loadOnClick="true" smallImage="Images\PdfIcon.png" largeImage="Images\PdfIcon.png" condition="BtnExportToPdf_Condition" keytip="B14">
           <tooltip heading="Export Map Package">Click to export Map Package to PDF<disabledText /></tooltip>
         </button>
+        <button id="bagis_pro_Basin_DockBasinTool_ShowButton" caption="Select Basin" className="bagis_pro.Basin.DockBasinTool_ShowButton" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ArcGISProjectOpenState16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ArcGISProjectOpenState32.png">
+          <tooltip heading="Select Basin">Click to select a basin<disabledText /></tooltip>
+        </button>
       </controls>
       <menus>
         <menu id="bagis_pro_Menus_MnuAoiCreation" caption="AOI Creation">
@@ -269,6 +273,9 @@
         </dockPane>
         <dockPane id="bagis_pro_DockAoiInfo" caption="DockAoiInfo" className="DockAoiInfoViewModel" dock="group" dockWith="esri_core_projectDockPane">
           <content className="DockAoiInfoView" />
+        </dockPane>
+        <dockPane id="bagis_pro_Basin_DockBasinTool" caption="Basin Tool" className="bagis_pro.Basin.DockBasinToolViewModel" height="550" width="800" dock="float" dockWith="esri_core_projectDockPane">
+          <content className="bagis_pro.Basin.DockBasinToolView" />
         </dockPane>
       </dockPanes>
     </insertModule>
