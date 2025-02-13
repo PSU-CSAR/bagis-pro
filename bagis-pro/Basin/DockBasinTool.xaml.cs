@@ -25,5 +25,10 @@ namespace bagis_pro.Basin
         {
             InitializeComponent();
         }
+
+        private void txtIsBasin_TextChanged(object sender, TextChangedEventArgs e)
+        {
+
+        }
     }
 }

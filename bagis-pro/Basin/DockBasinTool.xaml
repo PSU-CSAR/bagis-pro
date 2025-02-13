@@ -26,7 +26,7 @@
             <ColumnDefinition Width="Auto"/>
         </Grid.ColumnDefinitions>
         <DockPanel Grid.Row="0" Grid.Column="0" Margin="2,0,2,0">
-            <Button x:Name="btnFolder" Content="Open" HorizontalAlignment="Left"  VerticalAlignment="Center" Width="50" Command="{Binding CmdAoiFolder}" Margin="5, 0, 0, 0"/>
+            <Button x:Name="btnFolder" Content="Open" HorizontalAlignment="Left"  VerticalAlignment="Center" Width="50" Command="{Binding CmdFolder}" Margin="5, 0, 0, 0"/>
         </DockPanel>
         <DockPanel Grid.Row="0" Grid.Column="1" LastChildFill="true" KeyboardNavigation.TabNavigation="Local"  Margin="2,0,2,0">
             <TextBox x:Name="txtSelectFolder" Text="{Binding ParentFolder}" HorizontalAlignment="Left"  VerticalAlignment="Center" Width="300" IsReadOnly="True" Margin="5,0,0,0" />
@@ -39,18 +39,18 @@
 
             <TextBox x:Name="txtIsBasin" Text="{Binding IsBasin}" HorizontalAlignment="Left" Margin="5, 0, 0, 0" 
                                     VerticalAlignment="Center" Width="50" IsReadOnly="True"
-                                    Foreground="Blue" Background="Transparent"/>
+                                    Foreground="Blue" FontWeight="Bold" Background="Transparent"/>
         </DockPanel>
         <DockPanel Grid.Row="1" Grid.Column="1" Margin="2,0,2,0">
             <TextBlock Name="tbAoi" MaxWidth="50" VerticalAlignment="Center" FontWeight="Bold" Text="Aoi" Margin="5, 0, 0, 0"/>
 
             <TextBox x:Name="txtIsAoi" Text="{Binding IsAoi}" HorizontalAlignment="Left" Margin="5, 0, 0, 0" 
                                     VerticalAlignment="Center" Width="50" IsReadOnly="True"
-                                    Foreground="Blue" Background="Transparent"/>
-            <Button x:Name="btnViewDem" Content="View DEM Extent" HorizontalAlignment="Right"  VerticalAlignment="Center" Width="100" Command="{Binding CmdViewDem}" Margin="5, 0, 0, 0"/>
+                                    Foreground="Blue" FontWeight="Bold" Background="Transparent"/>
+            <Button x:Name="btnViewDem" Content="View DEM Extent" HorizontalAlignment="Right"  VerticalAlignment="Center" Width="100" Command="{Binding CmdViewDem}" IsEnabled="{Binding CmdViewDemEnabled}" Margin="5, 0, 0, 0"/>
         </DockPanel>
         <DockPanel Grid.Row="2" Grid.Column="1" Margin="2,0,2,0">
-            <Button x:Name="btnViewLayers" Content="View Layers" HorizontalAlignment="Right"  VerticalAlignment="Center" Width="100" Command="{Binding CmdViewDem}" Margin="5, 0, 0, 0"/>
+            <Button x:Name="btnViewLayers" Content="View Layers" HorizontalAlignment="Right"  VerticalAlignment="Center" Width="100" Command="{Binding CmdViewLayers}" IsEnabled="{Binding CmdViewLayersEnabled}" Margin="5, 0, 0, 0"/>
         </DockPanel>
         <DockPanel Grid.Row="2" Grid.Column="2" Margin="20,0,2,0">
             <Button x:Name="btnClose" Content="Close" HorizontalAlignment="Right"  VerticalAlignment="Center" Width="50" Command="{Binding CmdAoiFolder}" Margin="5, 0, 0, 0"/>
@@ -58,13 +58,13 @@
       <DockPanel Grid.Row="3" Grid.Column="0" Margin="2,0,2,0" Grid.ColumnSpan="3">
             <ListView ItemsSource="{Binding Subfolders}" Width="500" HorizontalAlignment="Left">
                 <ListView.View>
-                    <GridView AllowsColumnReorder="true" ColumnHeaderToolTip="Aoi">
-                        <GridViewColumn DisplayMemberBinding = "{Binding Path=FolderName}" Header="Subfolders" Width="135"/>
-                        <GridViewColumn DisplayMemberBinding = "{Binding Path=BasinStatus}" Width="80">
+                    <GridView AllowsColumnReorder="true">
+                        <GridViewColumn DisplayMemberBinding = "{Binding Path=Name}" Header="Subfolders" Width="145"/>
+                        <GridViewColumn DisplayMemberBinding = "{Binding Path=BasinStatus}" Width="95">
                             <GridViewColumnHeader>BASIN Status</GridViewColumnHeader>
                         </GridViewColumn>
-                        <GridViewColumn DisplayMemberBinding = "{Binding Path=PourpointId}" Header="Pourpoint Id" Width="80"/>
-                        <GridViewColumn DisplayMemberBinding = "{Binding Path=PourpointName}" Header="Pourpoint Name" Width="100"/>
+                        <GridViewColumn DisplayMemberBinding = "{Binding Path=PourpointId}" Header="Pourpoint Id" Width="95"/>
+                        <GridViewColumn DisplayMemberBinding = "{Binding Path=PourpointName}" Header="Pourpoint Name" Width="105"/>
                         <GridViewColumn DisplayMemberBinding = "{Binding Path=Huc2}" Header="HUC2" Width="40"/>
                     </GridView>
 
@@ -72,7 +72,7 @@
             </ListView>
         </DockPanel>
         <DockPanel Grid.Row="4" Grid.Column="0" Margin="2,0,2,0" Grid.ColumnSpan="2">
-            <TextBlock x:Name="lblChangeFolder" Margin="2,0,2,0" VerticalAlignment="Center" FontWeight="Bold" Foreground="Blue" MouseLeftButtonUp="LblChangeFolder_MouseLeftButtonUp">Double-click to change folder.</TextBlock>
+            <TextBlock x:Name="lblChangeFolder" Margin="2,0,2,0" VerticalAlignment="Center" FontWeight="Bold" Foreground="Blue">Double-click to change folder.</TextBlock>
         </DockPanel>
     </Grid>
 </UserControl>
