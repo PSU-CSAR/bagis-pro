@@ -440,8 +440,7 @@ namespace bagis_pro
             bool bExists = false;
             if (gdbUri.IsFile)
             {
-                string strFolderPath = System.IO.Path.GetDirectoryName(gdbUri.LocalPath);
-                if (System.IO.Directory.Exists(strFolderPath))
+                if (System.IO.Directory.Exists(gdbUri.LocalPath))
                 {
                     await QueuedTask.Run(() =>
                     {
@@ -468,8 +467,7 @@ namespace bagis_pro
             bool bExists = false;
             if (gdbUri.IsFile)
             {
-                string strFolderPath = System.IO.Path.GetDirectoryName(gdbUri.LocalPath);
-                if (System.IO.Directory.Exists(strFolderPath))
+                if (System.IO.Directory.Exists(gdbUri.LocalPath))
                 {
                     await QueuedTask.Run(() =>
                     {
