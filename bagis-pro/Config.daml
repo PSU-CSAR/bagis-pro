@@ -25,7 +25,7 @@
         <!-- comment this out if you have no controls on the Addin tab to avoid
               an empty group -->
         <group id="bagis_pro_Groups_BasinAnalyst" appearsOnAddInTab="false" caption=" " keytip="G1">
-          <menu refID="bagis_pro_Menus_MnuAoiCreation" size="middle" />
+          <menu refID="bagis_pro_Menus_MnuAoiTools" size="middle" />
           <!-- host controls within groups
           <toolbar refID="BAGIS_V4_Toolbar1" /> 
           <tool refID="bagis_pro_Basin_SetDEMExtenttTool" size="large" />
@@ -37,10 +37,8 @@
         </group>
         <group id="bagis_pro_Groups_Maps" appearsOnAddInTab="false" caption="Map Functions" keytip="G3">
           <!--<menu refID="bagis_pro_Menus_MnuMaps" size="middle" /> -->
-          <button refID="bagis_pro_Basin_DockBasinTool_ShowButton" size="middle" />
           <labelControl refID="bagis_pro_Buttons_LblCurrentAoi" />
           <comboBox refID="bagis_pro_Buttons_CboCurrentAoi" />
-          <button refID="bagis_pro_Menus_MnuMaps_BtnSelectAoi" size="middle" />
           <button refID="bagis_pro_DockpaneLayers_ShowButton" size="middle" />
           <button refID="bagis_pro_DockAnalysisLayers_ShowButton" size="middle" />
           <button refID="bagis_pro_WinExportPdf" size="middle" />
@@ -89,14 +87,14 @@
       </palettes>
       <controls>
         <!-- add your controls here -->
-        <button id="bagis_pro_Menus_MnuAoiCreation_AddRefLayers" caption="Add Ref Layers" className="bagis_pro.Menus.MnuAoiCreation_AddRefLayers" condition="MnuAoiCreation_AddRefLayers_Condition" loadOnClick="true" keytip="B1">
+        <button id="bagis_pro_Menus_MnuAoiTools_AddRefLayers" caption="Add Ref Layers" className="bagis_pro.Menus.MnuAoiCreation_AddRefLayers" condition="MnuAoiCreation_AddRefLayers_Condition" loadOnClick="true" keytip="B1">
           <tooltip heading="Add Ref Layers">Add Reference Layers<disabledText /></tooltip>
         </button>
-        <button id="bagis_pro_Menus_MnuAoiCreation_AOIShapefile" caption="Create AOI from Shapefile" className="bagis_pro.Menus.MnuAoiCreation_AOIShapefile" loadOnClick="true" keytip="B5">
+        <button id="bagis_pro_Menus_MnuAoiTools_AOIShapefile" caption="Create AOI from Shapefile" className="bagis_pro.Menus.MnuAoiCreation_AOIShapefile" loadOnClick="true" keytip="B5">
           <tooltip heading="Create AOI from Shapefile">
             Create AOI from Shapefile<disabledText /></tooltip>
         </button>
-        <button id="bagis_pro_Menus_MnuAoiCreation_Options" caption="Options" className="bagis_pro.Menus.MnuAoiCreation_Options" condition="MnuAoiCreation_AddRefLayers_Condition" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericOptions16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericOptions32.png" keytip="B6">
+        <button id="bagis_pro_Menus_MnuAoiTools_Options" caption="Options" className="bagis_pro.Menus.MnuAoiCreation_Options" condition="MnuAoiCreation_AddRefLayers_Condition" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericOptions16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericOptions32.png" keytip="B6">
           <tooltip heading="Options">
             Options for managing AOIs in BAGIS.<disabledText /></tooltip>
         </button>
@@ -116,7 +114,7 @@
           <tooltip heading="Load Maps">
             Click to load maps<disabledText /></tooltip>
         </button>
-        <button id="bagis_pro_Menus_MnuMaps_BtnSelectAoi" caption="Select AOI" className="bagis_pro.Menus.MnuMaps_BtnSelectAoi" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ArcGISProjectOpenState16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ArcGISProjectOpenState32.png" keytip="B13">
+        <button id="bagis_pro_Menus_MnuMaps_BtnSelectAoi" caption="Select AOI" className="bagis_pro.Menus.MnuMaps_BtnSelectAoi" loadOnClick="true" keytip="B13">
           <tooltip heading="Select AOI">Click to select an AOI<disabledText /></tooltip>
         </button>
         <button id="bagis_pro_Buttons_BtnExcelTables" caption="Excel Tables" className="bagis_pro.Buttons.BtnExcelTables" loadOnClick="true" smallImage="Images\excel.png" largeImage="Images\excel.png" condition="BtnExcelTables_Condition" keytip="B15">
@@ -225,15 +223,17 @@
         <button id="bagis_pro_WinExportPdf" caption="3. Export Map Package" className="BtnWinExportPdf" loadOnClick="true" smallImage="Images\PdfIcon.png" largeImage="Images\PdfIcon.png" condition="BtnExportToPdf_Condition" keytip="B14">
           <tooltip heading="Export Map Package">Click to export Map Package to PDF<disabledText /></tooltip>
         </button>
-        <button id="bagis_pro_Basin_DockBasinTool_ShowButton" caption="Select Basin" className="bagis_pro.Basin.DockBasinTool_ShowButton" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ArcGISProjectOpenState16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/ArcGISProjectOpenState32.png">
+        <button id="bagis_pro_Basin_DockBasinTool_ShowButton" caption="Select Basin" className="bagis_pro.Basin.DockBasinTool_ShowButton" loadOnClick="true" >
           <tooltip heading="Select Basin">Click to select a basin<disabledText /></tooltip>
         </button>
       </controls>
       <menus>
-        <menu id="bagis_pro_Menus_MnuAoiCreation" caption="AOI Creation">
-          <button refID="bagis_pro_Menus_MnuAoiCreation_AddRefLayers" />
-          <button refID="bagis_pro_Menus_MnuAoiCreation_AOIShapefile" />
-          <button refID="bagis_pro_Menus_MnuAoiCreation_Options" separator="true" />
+        <menu id="bagis_pro_Menus_MnuAoiTools" caption="AOI Tools">
+          <button refID="bagis_pro_Menus_MnuAoiTools_AddRefLayers" />
+          <button refID="bagis_pro_Basin_DockBasinTool_ShowButton" />
+          <button refID="bagis_pro_Menus_MnuAoiTools_AOIShapefile" />
+          <button refID="bagis_pro_Menus_MnuMaps_BtnSelectAoi" />
+          <button refID="bagis_pro_Menus_MnuAoiTools_Options" separator="true" />
         </menu>
         <menu id="bagis_pro_Menus_MnuBasin" caption="Basin Tools" smallImage="GenericButtonGreen16.png" largeImage="GenericButtonGreen32.png">
           <button refID="bagis_pro_Menus_MnuBasin_SelectBasin" />

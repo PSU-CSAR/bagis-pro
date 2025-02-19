@@ -1,5 +1,6 @@
 ﻿using ArcGIS.Core.CIM;
 using ArcGIS.Core.Data;
+using ArcGIS.Core.Data.UtilityNetwork.Trace;
 using ArcGIS.Core.Geometry;
 using ArcGIS.Desktop.Catalog;
 using ArcGIS.Desktop.Core;
@@ -8,6 +9,8 @@ using ArcGIS.Desktop.Editing;
 using ArcGIS.Desktop.Extensions;
 using ArcGIS.Desktop.Framework;
 using ArcGIS.Desktop.Framework.Contracts;
+using ArcGIS.Desktop.Framework.Threading.Tasks;
+using ArcGIS.Desktop.Mapping;
 using bagis_pro.BA_Objects;
 using System;
 using System.Collections.Generic;
@@ -18,6 +21,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Net.WebRequestMethods;
 
 namespace bagis_pro.Basin
 {
@@ -46,8 +50,8 @@ namespace bagis_pro.Basin
         }
 
         private string _parentFolder;
-        private string _isBasin;
-        private string _isAoi;
+        private string _basinStatus;
+        private string _aoiStatus;
         private bool _cmdViewDemEnabled;
         private bool _cmdViewLayersEnabled;
 
@@ -56,20 +60,20 @@ namespace bagis_pro.Basin
             get => _parentFolder;
             set => SetProperty(ref _parentFolder, value);
         }
-        public string IsBasin
+        public string BasinStatus
         {
-            get { return _isBasin; }
+            get { return _basinStatus; }
             set
             {
-                SetProperty(ref _isBasin, value, () => IsBasin);
+                SetProperty(ref _basinStatus, value, () => BasinStatus);
             }
         }
-        public string IsAoi
+        public string AoiStatus
         {
-            get { return _isAoi; }
+            get { return _aoiStatus; }
             set
             {
-                SetProperty(ref _isAoi, value, () => IsAoi);
+                SetProperty(ref _aoiStatus, value, () => AoiStatus);
             }
         }
         public bool CmdViewDemEnabled
@@ -229,55 +233,95 @@ namespace bagis_pro.Basin
                             }
                             Subfolders.Add(nextEntry);
                         }
+                        CheckSelectedFolderStatus(ParentFolder);
                     }
-
-
-                    //IList<BA_Objects.Aoi> lstAois = await GeneralTools.GetAoiFoldersAsync(ParentFolder, _strLogFile);
-                    //foreach (var pAoi in lstAois)
-                    //{
-                    //    string[] arrValues = await AnalysisTools.QueryLocalStationValues(pAoi.FilePath);
-                    //    if (arrValues.Length == 3)
-                    //    {
-                    //        pAoi.StationTriplet = arrValues[0];
-                    //        pAoi.StationName = arrValues[1];
-                    //        pAoi.Huc2 = Convert.ToInt16(arrValues[2]);
-                    //        if (!pAoi.ValidForecastData)
-                    //        {
-                    //            pAoi.AoiBatchStateText = AoiBatchState.NotReady.ToString();
-                    //        }
-                    //    }
-                    //    Names.Add(pAoi);
-                    //}
-                    //if (Names.Count > 0)
-                    //{
-                    //    CmdRunEnabled = true;
-                    //    CmdSnodasEnabled = true;
-                    //    CmdForecastEnabled = true;
-                    //    CmdToggleEnabled = true;
-                    //    TasksEnabled = true;
-                    //    CmdGenStatisticsEnabled = true;
-                    //    CmdFireReportEnabled = true;
-                    //}
-                    //else
-                    //{
-                    //    MessageBox.Show("No valid AOIs were found in the selected folder!", "BAGIS-PRO");
-                    //    Module1.Current.ModuleLogManager.LogDebug(nameof(CmdAoiFolder),
-                    //        "No valid AOIs were found in the selected folder!");
-                    //    CmdRunEnabled = false;
-                    //    CmdSnodasEnabled = false;
-                    //    CmdForecastEnabled = false;
-                    //    CmdToggleEnabled = false;
-                    //    TasksEnabled = false;
-                    //    FireTasksEnabled = false;
-                    //    CmdGenStatisticsEnabled = false;
-                    //    CmdFireReportEnabled = false;
-                    //}
-
                 });
             }
         }
 
+        public System.Windows.Input.ICommand CmdViewDem
+        {
+            get
+            {
+                return new RelayCommand(async () =>
+                {
+                    ArcGIS.Desktop.Layouts.Layout layout = await MapTools.GetDefaultLayoutAsync(Constants.MAPS_DEFAULT_LAYOUT_NAME);
+                    Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
+                    BA_ReturnCode success = await MapTools.SetDefaultMapFrameDimensionAsync(Constants.MAPS_DEFAULT_MAP_FRAME_NAME, layout, oMap,
+                        0.5, 2.5, 8.0, 10.5);
+                    Uri uriAoi = new Uri(GeodatabaseTools.GetGeodatabasePath(ParentFolder, GeodatabaseNames.Aoi));
+                    if (await GeodatabaseTools.FeatureClassExistsAsync(uriAoi, Constants.FILE_AOI_VECTOR))
+                    {
+                        //remove layer if it's there already
+                        await QueuedTask.Run(() =>
+                        {
+                            Layer oLayer =
+                            oMap.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(Constants.MAPS_BASIN_BOUNDARY, StringComparison.CurrentCultureIgnoreCase));
+                            if (oLayer != null)
+                            {
+                                oMap.RemoveLayer(oLayer);
+                            }
+                        });
 
+                        //add aoi boundary to map
+                        string strPath = GeodatabaseTools.GetGeodatabasePath(ParentFolder, GeodatabaseNames.Aoi, true) +
+                                         Constants.FILE_AOI_VECTOR;
+                        Uri aoiUri = new Uri(strPath);
+                        success = await MapTools.AddAoiBoundaryToMapAsync(aoiUri, ColorFactory.Instance.RedRGB, Constants.MAPS_DEFAULT_MAP_NAME, Constants.MAPS_BASIN_BOUNDARY);
+                    }
+                });
+            }
+        }
+        protected async void CheckSelectedFolderStatus(string strFolderPath)
+        {
+            FolderType fType = await GeodatabaseTools.GetAoiFolderTypeAsync(strFolderPath);
+            Uri uriSurfaces = new Uri(GeodatabaseTools.GetGeodatabasePath(strFolderPath, GeodatabaseNames.Surfaces));
+            if (fType != FolderType.AOI)
+            {
+                //then check if dem_filled exists
+                if (await GeodatabaseTools.RasterDatasetExistsAsync(uriSurfaces, Constants.FILE_DEM_FILLED))
+                {
+                    double cellSize = await GeodatabaseTools.GetCellSizeAsync(uriSurfaces, Constants.FILE_DEM_FILLED, WorkspaceType.Raster);                    
+                    BasinStatus = Convert.ToString(Math.Round(cellSize, 2)) + " meters resolution";
+                    CmdViewLayersEnabled = true;
+                }
+                else
+                {
+                    BasinStatus = "No";
+                    CmdViewLayersEnabled = false;
+                }
+                AoiStatus = "No";
+            }
+            else
+            {
+                double cellSize = -1;
+                if (await GeodatabaseTools.RasterDatasetExistsAsync(uriSurfaces, Constants.FILE_DEM_FILLED))
+                {
+                    cellSize = await GeodatabaseTools.GetCellSizeAsync(uriSurfaces, Constants.FILE_DEM_FILLED, WorkspaceType.Raster);
+                }
+                if (cellSize <= 0)
+                {
+                    BasinStatus = "No";
+                    AoiStatus = "No";
+                    CmdViewLayersEnabled = false;
+                }
+                else
+                {
+                    BasinStatus = Convert.ToString(Math.Round(cellSize, 2)) + " meters resolution";
+                    AoiStatus = "Yes";
+                    CmdViewLayersEnabled = true;
+                }
+            }
+            //allow user to view the DEM extent when the selected folder is a BASIN or an AOI
+            if (BasinStatus.Equals("No") && AoiStatus.Equals("No"))
+            {
+                CmdViewDemEnabled = false;
+            }
+            else
+            {
+                CmdViewDemEnabled = true;
+            }
+        }
     }
 
     /// <summary>
