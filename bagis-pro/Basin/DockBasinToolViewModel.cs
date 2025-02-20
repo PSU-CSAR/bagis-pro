@@ -54,6 +54,7 @@ namespace bagis_pro.Basin
         private string _aoiStatus;
         private bool _cmdViewDemEnabled;
         private bool _cmdViewLayersEnabled;
+        private WinViewDemLayers _winViewDemLayers = null;
 
         public string ParentFolder
         {
@@ -269,6 +270,25 @@ namespace bagis_pro.Basin
                         Uri aoiUri = new Uri(strPath);
                         success = await MapTools.AddAoiBoundaryToMapAsync(aoiUri, ColorFactory.Instance.RedRGB, Constants.MAPS_DEFAULT_MAP_NAME, Constants.MAPS_BASIN_BOUNDARY);
                     }
+                });
+            }
+        }
+
+        public System.Windows.Input.ICommand CmdViewLayers
+        {
+            get
+            {
+                return new RelayCommand( () =>
+                {
+                    //already open?
+                    if (_winViewDemLayers != null)
+                        return;
+                    _winViewDemLayers = new WinViewDemLayers();
+                    _winViewDemLayers.Owner = FrameworkApplication.Current.MainWindow;  // Required for modeless dialog
+                    _winViewDemLayers.Closed += (o, e) => { _winViewDemLayers = null; };
+                    //_winexportpdf.Show();
+                    //uncomment for modal
+                    var result = _winViewDemLayers.ShowDialog();
                 });
             }
         }

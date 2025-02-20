@@ -11,9 +11,7 @@
     >
     <controls:ProWindow.Resources>
         <ResourceDictionary>
-            <ResourceDictionary.MergedDictionaries>
-                <extensions:DesignOnlyResourceDictionary Source="pack://application:,,,/ArcGIS.Desktop.Framework;component\Themes\Default.xaml"/>
-            </ResourceDictionary.MergedDictionaries>
+
         </ResourceDictionary>
     </controls:ProWindow.Resources>
     <Grid>
