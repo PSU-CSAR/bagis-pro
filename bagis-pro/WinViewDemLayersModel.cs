@@ -6,6 +6,12 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using ArcGIS.Desktop.Core;
 using ArcGIS.Desktop.Layouts;
+using ArcGIS.Desktop.Framework.Threading.Tasks;
+using ArcGIS.Desktop.Mapping;
+using System.Linq;
+using ArcGIS.Core.CIM;
+using bagis_pro.BA_Objects;
+using System.Security.Policy;
 
 namespace bagis_pro
 {
@@ -30,7 +36,7 @@ namespace bagis_pro
             get => _flowDirChecked;
             set => SetProperty(ref _flowDirChecked, value);
         }
-        bool FlowAccChecked
+        public bool FlowAccChecked
         {
             get => _flowAccChecked;
             set => SetProperty(ref _flowAccChecked, value);
@@ -45,7 +51,7 @@ namespace bagis_pro
             get => _aspectChecked;
             set => SetProperty(ref _aspectChecked, value);
         }
-        bool HillshadeChecked
+        public bool HillshadeChecked
         {
             get => _hillshadeChecked;
             set => SetProperty(ref _hillshadeChecked, value);
@@ -58,8 +64,6 @@ namespace bagis_pro
         public WinViewDemLayersModel(WinViewDemLayers view)
         {
             _view = view;
-
-
         }
         protected void SetCheckedValues(bool checkAll)
         {
@@ -69,7 +73,10 @@ namespace bagis_pro
             SlopeChecked = checkAll;
             AspectChecked = checkAll;
             HillshadeChecked = checkAll;
-            PourpointChecked = checkAll;
+            if (_view.ckPourpoint.IsEnabled)
+            {
+                PourpointChecked = checkAll;
+            }            
         }
 
         public ICommand CmdAll => new RelayCommand(() =>
@@ -87,164 +94,74 @@ namespace bagis_pro
             _view.Close();
         });
 
-        protected async void ExecuteExport()
+        public ICommand CmdDisplay => new RelayCommand( async () =>
         {
-            ReportType rType = ReportType.Watershed;
-            try
+            string[] arrDemLayers = {Constants.FILE_DEM_FILLED, Constants.FILE_FLOW_DIRECTION, Constants.FILE_FLOW_ACCUMULATION,
+                                    Constants.FILE_SLOPE, Constants.FILE_ASPECT, Constants.MAPS_HILLSHADE, Constants.MAPS_STREAM_GAGE};
+
+            Layout layout = await MapTools.GetDefaultLayoutAsync(Constants.MAPS_DEFAULT_LAYOUT_NAME);
+            Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
+            BA_ReturnCode success = await MapTools.SetDefaultMapFrameDimensionAsync(Constants.MAPS_DEFAULT_MAP_FRAME_NAME, layout, oMap,
+                0.5, 2.5, 8.0, 10.5);
+
+            await QueuedTask.Run(() =>
             {
-                string outputDirectory = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE;
-                if (!System.IO.Directory.Exists(outputDirectory))
+                foreach (string strName in arrDemLayers)
                 {
-                    System.IO.Directory.CreateDirectory(outputDirectory);
-                }
-
-                // Delete any old PDF files
-                //string[] arrFilesToDelete = Constants.FILES_EXPORT_WATERSHED_PDF.Concat(Constants.FILES_EXPORT_SITE_ANALYSIS_PDF).ToArray();
-                foreach (var item in Constants.FILES_EXPORT_WATERSHED_PDF)
-                {
-                    string strPath = GeneralTools.GetFullPdfFileName(item);
-                    if (System.IO.File.Exists(strPath))
+                    Layer oLayer =
+                        oMap.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(strName, StringComparison.CurrentCultureIgnoreCase));
+                    if (oLayer != null)
                     {
-                        try
-                        {
-                            System.IO.File.Delete(strPath);
-                        }
-                        catch (Exception)
-                        {
-                            System.Windows.MessageBoxResult res =
-                                MessageBox.Show("Unable to delete file before creating new pdf. Do you want to close the file and try again?",
-                                "BAGIS-PRO", System.Windows.MessageBoxButton.YesNo);
-                            if (res == System.Windows.MessageBoxResult.Yes)
-                            {
-                                return;
-                            }
-                        }
+                        oMap.RemoveLayer(oLayer);
                     }
                 }
-
-                Layout oLayout = await MapTools.GetDefaultLayoutAsync(Constants.MAPS_DEFAULT_LAYOUT_NAME);
-
-                // Load the maps if they aren't in the viewer already
-                BA_ReturnCode success = BA_ReturnCode.Success;
-                string strTestState = Constants.STATES_WATERSHED_MAP_BUTTONS[0];
-                //if (rType.Equals(ReportType.SiteAnalysis))
-                //{
-                //    strTestState = Constants.STATES_SITE_ANALYSIS_MAP_BUTTONS[0];
-                //}
-                if (!FrameworkApplication.State.Contains(strTestState))
-                {
-                    success = await MapTools.DisplayMaps(Module1.Current.Aoi.FilePath, oLayout, true);
-                    success = await MapTools.DisplayLegendAsync(Constants.MAPS_DEFAULT_MAP_FRAME_NAME, oLayout,
-                        "ArcGIS Colors", "1.5 Point", true);
-                }
-
-                if (success != BA_ReturnCode.Success)
-                {
-                    MessageBox.Show("Unable to load maps. The map package cannot be exported!!", "BAGIS-PRO");
-                    return;
-                }
-
-                if (oLayout != null)
-                {
-                    bool bFoundIt = false;
-                    //A layout view may exist but it may not be active
-                    //Iterate through each pane in the application and check to see if the layout is already open and if so, activate it
-                    foreach (var pane in FrameworkApplication.Panes)
-                    {
-                        if (!(pane is ILayoutPane layoutPane))  //if not a layout view, continue to the next pane    
-                            continue;
-                        if (layoutPane.LayoutView != null &&
-                            layoutPane.LayoutView.Layout == oLayout) //if there is a match, activate the view  
-                        {
-                            (layoutPane as Pane).Activate();
-                            bFoundIt = true;
-                        }
-                    }
-                    if (!bFoundIt)
-                    {
-                        ILayoutPane iNewLayoutPane = await FrameworkApplication.Panes.CreateLayoutPaneAsync(oLayout); //GUI thread
-                        (iNewLayoutPane as Pane).Activate();
-                    }
-                }
-                success = await MapTools.PublishMapsAsync(rType, Constants.PDF_EXPORT_RESOLUTION); // export the maps to pdf
-                if (success != BA_ReturnCode.Success)
-                {
-                    MessageBox.Show("An error occurred while generating the maps!!", "BAGIS-PRO");
-                }
-                // Only run critical precip for watershed report
-                if (rType.Equals(ReportType.Watershed))
-                {
-                    success = await GeneralTools.GenerateTablesAsync(false);   // export the tables to pdf
-                    if (success != BA_ReturnCode.Success)
-                    {
-                        MessageBox.Show("An error occurred while generating the Excel tables!!", "BAGIS-PRO");
-                    }
-                    else
-                    {
-                        // Generate the critical precip map; It has to follow the tables
-                        Uri uriAnalysis = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis));
-                        if (await GeodatabaseTools.FeatureClassExistsAsync(uriAnalysis, Constants.FILE_CRITICAL_PRECIP_ZONE))
-                        {
-                            success = await MapTools.DisplayCriticalPrecipitationZonesMapAsync(uriAnalysis);
-                            string strButtonState = "MapButtonPalette_BtnCriticalPrecipZone_State";
-                            if (success.Equals(BA_ReturnCode.Success))
-                                Module1.ActivateState(strButtonState);
-                            int foundS1 = strButtonState.IndexOf("_State");
-                            string strMapButton = strButtonState.Remove(foundS1);
-                            ICommand cmd = FrameworkApplication.GetPlugInWrapper(strMapButton) as ICommand;
-                            Module1.Current.ModuleLogManager.LogDebug(nameof(ExecuteExport),
-                                "About to toggle map button " + strMapButton);
-                            if ((cmd != null))
-                            {
-                                do
-                                {
-                                    await Task.Delay(TimeSpan.FromSeconds(0.4));  // build in delay until the command can execute
-                                }
-                                while (!cmd.CanExecute(null));
-                                cmd.Execute(null);
-                            }
-
-                            do
-                            {
-                                await Task.Delay(TimeSpan.FromSeconds(0.4));  // build in delay so maps can load
-                            }
-                            while (Module1.Current.MapFinishedLoading == false);
-                            success = await GeneralTools.ExportMapToPdfAsync(Constants.PDF_EXPORT_RESOLUTION);    // export map to pdf
-                            if (success != BA_ReturnCode.Success)
-                            {
-                                MessageBox.Show("Unable to generate critical precipitation zones map!!", "BAGIS-PRO");
-                            }
-                        }
-                    }
-                }
-
-                int sitesAppendixCount = await GeneralTools.GenerateSitesTableAsync(Module1.Current.Aoi);
-                //success = await GeneralTools.GenerateMapsTitlePageAsync(rType, Publisher, Comments);
-                string[] arrPieces = Module1.Current.Aoi.StationTriplet.Split(':');
-                string outputPath = GeneralTools.GetFullPdfFileName(Constants.FILE_EXPORT_WATERSHED_REPORT_PDF);
-                if (arrPieces.Length != 3)
-                {
-                    Module1.Current.ModuleLogManager.LogDebug(nameof(ExecuteExport), "Unable to determine station triplet for document title!");
-                    outputPath = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\" + "Not_Specified_Watershed-Report.pdf";
-                }
-                else
-                {
-                    string strBaseFileName = Module1.Current.Aoi.StationTriplet.Replace(':', '_') + "_Watershed-Report.pdf";
-                    outputPath = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\" + strBaseFileName;
-                }
-                //if (rType.Equals(ReportType.SiteAnalysis))
-                //{
-                //    outputPath = GeneralTools.GetFullPdfFileName(Constants.FILE_EXPORT_SITE_ANALYSIS_REPORT_PDF);
-                //}
-                GeneralTools.PublishFullPdfDocument(outputPath, rType, sitesAppendixCount);    // Put it all together into a single pdf document
-
-                MessageBox.Show("Map package exported to " + outputPath + "!!", "BAGIS-PRO");
-            }
-            catch (Exception e)
+            });
+            string surfacesGdb = GeodatabaseTools.GetGeodatabasePath(_view.FolderPath, GeodatabaseNames.Surfaces);
+            string strPath = $@"{surfacesGdb}\{Constants.FILE_DEM_FILLED}";
+            if (FilledDemChecked)
             {
-                MessageBox.Show("An error occurred while trying to export the maps!! " + e.Message, "BAGIS PRO");
+                await MapTools.DisplayRasterStretchSymbolAsync(Constants.MAPS_DEFAULT_MAP_NAME, new Uri(strPath),Constants.FILE_DEM_FILLED,
+                    "ArcGIS Colors", "Black to White", 0);
             }
-        }
+            if (FlowAccChecked)
+            {
+                strPath = $@"{surfacesGdb}\{Constants.FILE_FLOW_ACCUMULATION}";
+                await MapTools.DisplayRasterStretchSymbolAsync(Constants.MAPS_DEFAULT_MAP_NAME, new Uri(strPath), Constants.FILE_FLOW_ACCUMULATION,
+                    "ArcGIS Colors", "Black to White", 0);
+            }
+            if (FlowDirChecked)
+            {
+                strPath = $@"{surfacesGdb}\{Constants.FILE_FLOW_DIRECTION}";
+                await MapTools.DisplayRasterStretchSymbolAsync(Constants.MAPS_DEFAULT_MAP_NAME, new Uri(strPath), Constants.FILE_FLOW_DIRECTION,
+                    "ArcGIS Colors", "Black to White", 0);
+            }
+            if (SlopeChecked)
+            {
+                strPath = $@"{surfacesGdb}\{Constants.FILE_SLOPE}";
+                await MapTools.DisplayRasterStretchSymbolAsync(Constants.MAPS_DEFAULT_MAP_NAME, new Uri(strPath), Constants.FILE_SLOPE,
+                    "ArcGIS Colors", "Slope", 0);
+            }
+            if (AspectChecked)
+            {
+                strPath = $@"{surfacesGdb}\{Constants.FILE_ASPECT}";
+                await MapTools.DisplayRasterStretchSymbolAsync(Constants.MAPS_DEFAULT_MAP_NAME, new Uri(strPath), Constants.FILE_ASPECT,
+                    "ArcGIS Colors", "Aspect", 0);
+            }
+            if (HillshadeChecked)
+            {
+                strPath = $@"{surfacesGdb}\{Constants.FILE_HILLSHADE}";
+                await MapTools.DisplayRasterStretchSymbolAsync(Constants.MAPS_DEFAULT_MAP_NAME, new Uri(strPath), Constants.MAPS_HILLSHADE,
+                    "ArcGIS Colors", "Black to White", 0);
+            }
+            if(PourpointChecked)
+            {
+                strPath = GeodatabaseTools.GetGeodatabasePath(_view.FolderPath, GeodatabaseNames.Aoi, true) +
+                    Constants.FILE_POURPOINT;
+                success = await MapTools.AddPointMarkersAsync(Constants.MAPS_DEFAULT_MAP_NAME, new Uri(strPath), Constants.MAPS_STREAM_GAGE, CIMColor.CreateRGBColor(255, 165, 0),
+                    SimpleMarkerStyle.Circle, 8, "", MaplexPointPlacementMethod.NorthEastOfPoint);
+            }
+
+        });
 
     }
 }

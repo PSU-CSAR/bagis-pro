@@ -2868,7 +2868,7 @@ namespace bagis_pro
                     }
 
                     // Create a new Stretch Colorizer Definition supplying the color ramp
-                    StretchColorizerDefinition stretchColorizerDef = new StretchColorizerDefinition(0, RasterStretchType.DefaultFromSource, 1.0, cimColorRamp);
+                    StretchColorizerDefinition stretchColorizerDef = new StretchColorizerDefinition(0, RasterStretchType.MinimumMaximum, 1.0, cimColorRamp);
                     int idxLayer = oMap.Layers.Count;
                     //RasterLayer rasterLayer = (RasterLayer)LayerFactory.Instance.CreateRasterLayer(rasterUri, MapView.Active.Map, idxLayer,
                     //    displayName, stretchColorizerDef);

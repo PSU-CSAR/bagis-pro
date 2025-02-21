@@ -282,12 +282,33 @@ namespace bagis_pro.Basin
                 {
                     //already open?
                     if (_winViewDemLayers != null)
+                    {
+                        _winViewDemLayers.FolderPath = ParentFolder;    
+                        if (AoiStatus.Equals("No"))
+                        {
+                            _winViewDemLayers.ckPourpoint.IsEnabled = false;
+                        }
+                        else
+                        {
+                            _winViewDemLayers.ckPourpoint.IsEnabled = true;
+                        }
                         return;
+                    }
+                        
                     _winViewDemLayers = new WinViewDemLayers();
                     _winViewDemLayers.Owner = FrameworkApplication.Current.MainWindow;  // Required for modeless dialog
                     _winViewDemLayers.Closed += (o, e) => { _winViewDemLayers = null; };
                     //_winexportpdf.Show();
                     //uncomment for modal
+                    _winViewDemLayers.FolderPath = ParentFolder;
+                    if (AoiStatus.Equals("No"))
+                    {
+                        _winViewDemLayers.ckPourpoint.IsEnabled = false;
+                    }
+                    else
+                    {
+                        _winViewDemLayers.ckPourpoint.IsEnabled = true;
+                    }
                     var result = _winViewDemLayers.ShowDialog();
                 });
             }

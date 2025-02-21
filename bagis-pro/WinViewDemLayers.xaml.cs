@@ -20,6 +20,7 @@ namespace bagis_pro
     /// </summary>
     public partial class WinViewDemLayers : ArcGIS.Desktop.Framework.Controls.ProWindow
     {
+        public string FolderPath = "";
         public WinViewDemLayers()
         {
             InitializeComponent();
