@@ -20,7 +20,7 @@ using ArcGIS.Desktop.Mapping;
 
 namespace bagis_pro.Menus
 {
-    internal class MnuAoiCreation_AddRefLayers : Button
+    internal class MnuAoiTools_AddRefLayers : Button
     {
         protected override void OnClick()
         {
@@ -28,7 +28,7 @@ namespace bagis_pro.Menus
             MessageBox.Show("Add reference layers");
         }
     }
-    internal class MnuAoiCreation_AOIShapefile : Button
+    internal class MnuAoiTools_AOIShapefile : Button
     {
         protected override async void OnClick()
         {
@@ -92,11 +92,82 @@ namespace bagis_pro.Menus
         }
     }
 
-    internal class MnuAoiCreation_Options : Button
+    internal class MnuAoiTools_Options : Button
     {
         protected override void OnClick()
         {
             MessageBox.Show("You have options!");
+        }
+    }
+
+    internal class MnuAoiTools_BtnSelectAoi : Button
+    {
+        protected async override void OnClick()
+        {
+            try
+            {
+                OpenItemDialog selectAoiDialog = new OpenItemDialog()
+                {
+                    Title = "Select AOI Folder",
+                    MultiSelect = false,
+                    Filter = ItemFilters.Folders
+                };
+                if (selectAoiDialog.ShowDialog() == true)
+                {
+                    Module1.DeactivateState("Aoi_Selected_State");
+                    IEnumerable<Item> selectedItems = selectAoiDialog.Items;
+                    var e = selectedItems.FirstOrDefault();
+                    BA_Objects.Aoi oAoi = await GeneralTools.SetAoiAsync(e.Path, null);
+                    if (oAoi != null)
+                    {
+                        Module1.Current.CboCurrentAoi.SetAoiName(oAoi.Name);
+                        MessageBox.Show("AOI is set to " + oAoi.Name + "!", "BAGIS PRO");
+
+                        if (!oAoi.ValidForecastData)
+                        {
+                            StringBuilder sb = new StringBuilder();
+                            sb.Append("This AOI does not have the required forecast station information. ");
+                            sb.Append("Use the Batch Tools menu to run the 'Forecast Station Data' tool to update ");
+                            sb.Append("the forecast station data. Next use the Batch Tools menu to run the ");
+                            sb.Append("'Generate AOI Reports' tool to create the analysis layers required by BAGIS-Pro.");
+                            MessageBox.Show(sb.ToString(), "BAGIS PRO");
+                        }
+                        else
+                        {
+                            string[] arrButtonNames = { "bagis_pro_Menus_MnuMaps_BtnMapLoad", "bagis_pro_Buttons_BtnExcelTables",
+                                "bagis_pro_WinExportPdf"};
+                            int intButtonsDisabled = 0;
+                            for (int i = 0; i < arrButtonNames.Length; i++)
+                            {
+                                var plugin = FrameworkApplication.GetPlugInWrapper(arrButtonNames[i]);
+                                if (plugin == null)
+                                {
+                                    intButtonsDisabled++;
+                                }
+                                else if (!plugin.Enabled)
+                                {
+                                    intButtonsDisabled++;
+                                }
+                            }
+                            if (intButtonsDisabled > 0)
+                            {
+                                StringBuilder sb = new StringBuilder();
+                                sb.Append("This AOI is missing at least one required layer. Use the Batch Tools menu to run the ");
+                                sb.Append("'Generate AOI Reports' tool to create the analysis layers required by BAGIS-Pro.");
+                                MessageBox.Show(sb.ToString(), "BAGIS PRO");
+                            }
+                        }
+                        // @ToDo: Re-enable when I'm ready to work on DockAoiInfo
+                        //DockAoiInfoViewModel.Show();
+
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show("An error occurred while trying to set the AOI!! " + e.Message, "BAGIS PRO");
+            }
+
         }
     }
 

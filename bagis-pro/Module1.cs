@@ -108,6 +108,7 @@ namespace bagis_pro
         internal string DisplayedMap { get; set; } = "";
         internal bool MapFinishedLoading { get; set; } = false;
         internal Buttons.CboCurrentAoi CboCurrentAoi { get; set; }
+        internal Buttons.CboCurrentBasin CboCurrentBasin { get; set; }
         public BA_Objects.ILoggerManager ModuleLogManager;
         internal string DisplayedSweMap { get; set; } = "";
         internal string DisplayedSweDeltaMap { get; set; } = "";
