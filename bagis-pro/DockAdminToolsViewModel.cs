@@ -45,7 +45,8 @@ namespace bagis_pro
             Names.CollectionChanged += ContentCollectionChanged;
             ArchiveChecked = true;
             TasksEnabled = false;
-            FireTasksEnabled = false;
+            FireDataEnabled = false;
+            FireReportEnabled = false;
         }
 
         /// <summary>
@@ -89,7 +90,8 @@ namespace bagis_pro
         private bool _alwaysNearChecked = false;
         private bool _mergeAoiVChecked = true;
         private bool _updateStationDataChecked = false;
-        private bool _fireTasksEnabled = false;
+        private bool _fireDataEnabled = false;
+        private bool _fireReportEnabled = false;
         private string _fireReportFolder;
         private bool _cmdFireReportLogEnabled = false;
         private bool _cmdFireReportEnabled = false;
@@ -209,12 +211,21 @@ namespace bagis_pro
             }
         }
 
-        public bool FireTasksEnabled
+        public bool FireDataEnabled
         {
-            get { return _fireTasksEnabled; }
+            get { return _fireDataEnabled; }
             set
             {
-                SetProperty(ref _fireTasksEnabled, value, () => FireTasksEnabled);
+                SetProperty(ref _fireDataEnabled, value, () => FireDataEnabled);
+            }
+        }
+
+        public bool FireReportEnabled
+        {
+            get { return _fireReportEnabled; }
+            set
+            {
+                SetProperty(ref _fireReportEnabled, value, () => FireReportEnabled);
             }
         }
 
@@ -603,7 +614,8 @@ namespace bagis_pro
                         CmdForecastEnabled = false;
                         CmdToggleEnabled = false;
                         TasksEnabled = false;
-                        FireTasksEnabled = false;
+                        FireDataEnabled = false;
+                        FireReportEnabled = false;
                         CmdGenStatisticsEnabled = false;
                         CmdFireReportEnabled = false;
                     }
@@ -627,8 +639,16 @@ namespace bagis_pro
                         IList<Interval> lstInterval = GeneralTools.GetFireStatisticsIntervals(ReportEndYear, FireDataClipYears, FireIncrementYears, false, 0, out intIncrementPeriods);
                         FireTimePeriodCount = intIncrementPeriods;  
                         _intMtbsMaxYear = await this.QueryMtbsMaxYearAsync(_dictDatasources, Constants.DATA_TYPE_FIRE_BURN_SEVERITY);
-                        MtbsDataDescr = $@"MTBS data available from {MtbsMinYear} to {_intMtbsMaxYear}";
-                        FireTasksEnabled = true;
+                        if (_intMtbsMaxYear > 0)
+                        {
+                            MtbsDataDescr = $@"MTBS data available from {MtbsMinYear} to {_intMtbsMaxYear}";
+                            FireDataEnabled = true;
+                        }
+                        else
+                        {
+                            MtbsDataDescr = $@"MTBS web services are currently unavailable. Data retrieval is disabled.";
+                        }
+                        FireReportEnabled = true;
                     }
                 });
             }
@@ -2241,6 +2261,7 @@ namespace bagis_pro
                     }
                     else
                     {
+                        // Check for fire settings before continuing
                         bool bMissingFireSettings = false;
                         string strFireSettingsPath = $@"{aoiFolder}\{Constants.FOLDER_MAPS}\{Constants.FILE_FIRE_SETTINGS}";
                         if (File.Exists(strFireSettingsPath))
@@ -2261,8 +2282,27 @@ namespace bagis_pro
                             strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Missing fire_analysis.json file for " +
                                 Names[idxRow].Name + "! Retrieve fire data before running report. \r\n";
                             File.AppendAllText(_strFireReportLogFile, strLogEntry);       // append
-                            break;
+                            continue;
                         }
+                        // Check for fire.gdb and data before continuing
+                        string strFireGdbPath = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Fire);
+                        bool bHasFireData = false;
+                        if (Directory.Exists(strFireGdbPath))
+                        {
+                            if (await GeodatabaseTools.FeatureClassExistsAsync(new Uri(strFireGdbPath), Constants.FILE_NIFC_FIRE))
+                            {
+                                bHasFireData = true;
+                            }
+                        }
+                        if (!bHasFireData)
+                        {
+                            Names[idxRow].AoiBatchStateText = AoiBatchState.Failed.ToString();  // update gui
+                            strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Missing fire data for " +
+                                Names[idxRow].Name + "! Retrieve fire data before running report. \r\n";
+                            File.AppendAllText(_strFireReportLogFile, strLogEntry);       // append
+                            continue;
+                        }
+
                         Names[idxRow].AoiBatchStateText = AoiBatchState.Started.ToString();  // update gui
                         strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Starting fire report for " +
                             Names[idxRow].Name + "\r\n";
@@ -2652,19 +2692,16 @@ namespace bagis_pro
         {
             Webservices ws = new Webservices();
             IList<string> lstMtbsServiceNames = await ws.QueryMtbsImageServiceNamesAsync(dictDatasources, strDataType);
-            // usgs_mtbs_conus/mtbs_CONUS_1990
-            string sName = lstMtbsServiceNames.Last();
-            string[] arrPieces = sName.Split(new char[] { '_' });
-            int lastPos = arrPieces.Length - 1;
-            int testYear = Convert.ToInt16(arrPieces[lastPos]);
-            if (testYear > 0)
+            int testYear = -1;
+            if (lstMtbsServiceNames.Count > 0)
             {
-                return testYear;
+                // usgs_mtbs_conus/mtbs_CONUS_1990
+                string sName = lstMtbsServiceNames.Last();
+                string[] arrPieces = sName.Split(new char[] { '_' });
+                int lastPos = arrPieces.Length - 1;
+                testYear = Convert.ToInt16(arrPieces[lastPos]);
             }
-            else
-            {
-                return 9999;
-            }
+            return testYear;
         }
     }
 

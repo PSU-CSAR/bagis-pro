@@ -252,19 +252,19 @@
           <tooltip heading="Select Basin">
             Click to select a basin<disabledText /></tooltip>
         </button>
-        <button id="bagis_pro_Buttons_BtnSetBasinExtent" caption="Set BASIN Extent" className="bagis_pro.Buttons.BtnSetBasinExtent" loadOnClick="true" smallImage="GenericButtonBlue16" largeImage="GenericButtonBlue32">
+        <button id="bagis_pro_Buttons_BtnSetBasinExtent" caption="Set BASIN Extent" className="bagis_pro.Buttons.BtnSetBasinExtent" loadOnClick="true" condition="bagis_pro_Buttons_BtnSetBasinExtent_Condition" smallImage="GenericButtonBlue16" largeImage="GenericButtonBlue32">
           <tooltip heading="Set BASIN Extent">Set BASIN Extent<disabledText /></tooltip>
         </button>
-        <button id="bagis_pro_Buttons_BtnCreateBasin" caption="Create BASIN" className="bagis_pro.Buttons.BtnCreateBasin" loadOnClick="true" smallImage="GenericButtonBlue16" largeImage="GenericButtonBlue32">
+        <button id="bagis_pro_Buttons_BtnCreateBasin" caption="Create BASIN" className="bagis_pro.Buttons.BtnCreateBasin" loadOnClick="true" condition="bagis_pro_Buttons_BtnCreateBasin_Condition" smallImage="GenericButtonBlue16" largeImage="GenericButtonBlue32">
           <tooltip heading="Create BASIN">Create BASIN<disabledText /></tooltip>
         </button>
-        <button id="bagis_pro_Buttons_BtnDefineAoi" caption="Define AOI" className="bagis_pro.Buttons.BtnDefineAoi" loadOnClick="true" smallImage="GenericButtonBlue16" largeImage="GenericButtonBlue32">
+        <button id="bagis_pro_Buttons_BtnDefineAoi" caption="Define AOI" className="bagis_pro.Buttons.BtnDefineAoi" loadOnClick="true" condition="bagis_pro_Buttons_BtnDefineAoi_Condition" smallImage="GenericButtonBlue16" largeImage="GenericButtonBlue32">
           <tooltip heading="Define AOI">Define AOI<disabledText /></tooltip>
         </button>
-        <button id="bagis_pro_Buttons_BtnSetPourpoint" caption="Set Pourpoint Location" className="bagis_pro.Buttons.BtnSetPourpoint" loadOnClick="true" smallImage="GenericButtonBlue16" largeImage="GenericButtonBlue32">
+        <button id="bagis_pro_Buttons_BtnSetPourpoint" caption="Set Pourpoint Location" className="bagis_pro.Buttons.BtnSetPourpoint" loadOnClick="true" condition="bagis_pro_Buttons_BtnSetPourpoint_Condition" smallImage="GenericButtonBlue16" largeImage="GenericButtonBlue32">
           <tooltip heading="Set Pourpoint Location">Set Pourpoint Location<disabledText /></tooltip>
         </button>
-        <button id="bagis_pro_Buttons_BtnCreateAoi" caption="Create AOI" className="bagis_pro.Buttons.BtnCreateAoi" loadOnClick="true" smallImage="GenericButtonBlue16" largeImage="GenericButtonBlue32">
+        <button id="bagis_pro_Buttons_BtnCreateAoi" caption="Create AOI" className="bagis_pro.Buttons.BtnCreateAoi" loadOnClick="true" condition="bagis_pro_Buttons_BtnCreateAoi_Condition" smallImage="GenericButtonBlue16" largeImage="GenericButtonBlue32">
           <tooltip heading="Create AOI">Create AOI<disabledText /></tooltip>
         </button>
       </controls>
@@ -418,5 +418,21 @@
     <insertCondition id="MapButtonPalette_BtnLandCover_Condition" caption="Map Disabled">
       <state id="MapButtonPalette_BtnLandCover_State" />
     </insertCondition>
+    <insertCondition id="bagis_pro_Buttons_BtnSetBasinExtent_Condition" caption="Disabled">
+      <state id="bagis_pro_Buttons_BtnSetBasinExtent_State" />
+    </insertCondition>
+    <insertCondition id="bagis_pro_Buttons_BtnCreateBasin_Condition" caption="Disabled">
+      <state id="bagis_pro_Buttons_BtnCreateBasin_State" />
+    </insertCondition>
+    <insertCondition id="bagis_pro_Buttons_BtnDefineAoi_Condition" caption="Disabled">
+      <state id="bagis_pro_Buttons_BtnDefineAoi_State" />
+    </insertCondition>
+    <insertCondition id="bagis_pro_Buttons_BtnSetPourpoint_Condition" caption="Disabled">
+      <state id="bagis_pro_Buttons_BtnSetPourpoint_State" />
+    </insertCondition>
+    <insertCondition id="bagis_pro_Buttons_BtnCreateAoi_Condition" caption="Disabled">
+      <state id="bagis_pro_Buttons_BtnCreateAoi_State" />
+    </insertCondition>
+
   </conditions>
 </ArcGIS>

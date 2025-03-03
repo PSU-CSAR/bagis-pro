@@ -768,11 +768,17 @@ namespace bagis_pro
                 }
                 return returnList;
             }
+            catch(JsonReaderException)
+            {
+                Module1.Current.ModuleLogManager.LogDebug(nameof(QueryMtbsImageServiceNamesAsync),
+                    "An error occurred while parsing the response to query the names of the mtbs web services!");
+                return returnList;
+            }
             catch (Exception)
             {
                 Module1.Current.ModuleLogManager.LogDebug(nameof(QueryMtbsImageServiceNamesAsync),
-                    "An error occurred while trying to retrieve the batch settings version number from the ebagis server!");
-                return null;
+                    "An error occurred while trying to query the names of the mtbs web services!");
+                return returnList;
             }
         }
 

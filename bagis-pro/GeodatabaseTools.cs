@@ -10,6 +10,7 @@ using ArcGIS.Desktop.Mapping;
 using bagis_pro.BA_Objects;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -1265,20 +1266,24 @@ namespace bagis_pro
             // Get a list of all the rasters in the fire.gdb
             Uri uriFire = new Uri(GeodatabaseTools.GetGeodatabasePath(aoiPath, GeodatabaseNames.Fire));
             IList<string> lstMtbsRasters = new List<string>();
-            await QueuedTask.Run(() =>
+            if (Directory.Exists(uriFire.LocalPath))
             {
-                using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(uriFire)))
+                await QueuedTask.Run(() =>
                 {
-                    IReadOnlyList<RasterDatasetDefinition> definitions = geodatabase.GetDefinitions<RasterDatasetDefinition>();
-                    foreach (RasterDatasetDefinition def in definitions)
+                    using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(uriFire)))
                     {
-                        if (def.GetName().IndexOf("mtbs") > -1)
+                        IReadOnlyList<RasterDatasetDefinition> definitions = geodatabase.GetDefinitions<RasterDatasetDefinition>();
+                        foreach (RasterDatasetDefinition def in definitions)
                         {
-                            lstMtbsRasters.Add(def.GetName());
+                            if (def.GetName().IndexOf("mtbs") > -1)
+                            {
+                                lstMtbsRasters.Add(def.GetName());
+                            }
                         }
                     }
-                }
-            });
+                });
+            }
+
             if (lstMtbsRasters.Count > 0)
             {
                 for (int i = minYear; i <= maxYear; i++)
