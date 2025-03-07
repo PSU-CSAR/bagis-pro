@@ -22,6 +22,7 @@ using System.ComponentModel;
 using ArcGIS.Desktop.Core.Geoprocessing;
 using System.Diagnostics;
 using bagis_pro.BA_Objects;
+using System.Windows.Documents;
 
 namespace bagis_pro
 {
@@ -116,6 +117,7 @@ namespace bagis_pro
         private IDictionary<string, dynamic> _dictDatasources = null;
         private bool _Reclip_MTBS_Checked = false;  //@ToDo: Change to true before production
         private string _strSettingsFile;
+        private const string _separator = ",";
 
         public string Heading
         {
@@ -2240,7 +2242,6 @@ namespace bagis_pro
             File.WriteAllText(_strFireReportLogFile, strLogEntry);    // overwrite file if it exists
 
             // Dictionary: Key is the year, Value is an ArrayList of the values for that line
-            IDictionary<string, IList<IList<string>>> dictOutput = new Dictionary<string, IList<IList<string>>>();
             IList<IList<string>> lstIncrementOutput = new List<IList<string>>();    
             int intIncrementPeriods = 0;
             IList<Interval> lstInterval = null;
@@ -2248,6 +2249,42 @@ namespace bagis_pro
             int overrideMaxYear = ReportEndYear;
             bool bAnnualStatistics = true;
             bool bIncrementStatistics = true;
+            // Only check this once
+            if (SelectedTimeChecked)
+            {
+                overrideMinYear = SelectedMinYear;
+                overrideMaxYear = SelectedMaxYear;
+                if (!AnnualDataChecked)
+                {
+                    bAnnualStatistics = false;
+                }
+                if (!IncrementDataChecked)
+                {
+                    bIncrementStatistics = false;
+                }
+            }
+            if (bAnnualStatistics)
+            {
+                // Delete any annual statistics files we plan to overwrite
+                for (int i = overrideMinYear; i <= overrideMaxYear; i++)
+                {
+                    string strCsvFile = $@"{Path.GetDirectoryName(_strFireReportLogFile)}\{i}_annual_statistics.csv";
+                    if (File.Exists(strCsvFile))
+                    {
+                        try
+                        {
+                            File.Delete(strCsvFile);
+                        }
+                        catch (Exception e)
+                        {
+                            MessageBox.Show($@"Unable to overwrite {strCsvFile}. Report process stopped!");
+                            return;
+                        }
+
+                    }
+                }
+
+            }
             for (int idxRow = 0; idxRow < Names.Count; idxRow++)
             {
                 if (Names[idxRow].AoiBatchIsSelected)
@@ -2338,36 +2375,48 @@ namespace bagis_pro
 
                     }
 
-                    // Generating annual statistics
-                    if (SelectedTimeChecked)
-                    {
-                        overrideMinYear = SelectedMinYear;
-                        overrideMaxYear = SelectedMaxYear;
-                        if (!AnnualDataChecked)
-                        {
-                            bAnnualStatistics = false;
-                        }
-                        if (!IncrementDataChecked)
-                        {
-                            bIncrementStatistics = false;
-                        }
-                    }
                     IList<string> lstMissingMtbsYears = await GeodatabaseTools.QueryMissingMtbsRasters(oAoi.FilePath, overrideMinYear, overrideMaxYear);
                     if (bAnnualStatistics)
                     {
                         for (int i = overrideMinYear; i <= overrideMaxYear; i++)
                         {
-                            IList<string> lstAnnualElements = await AnalysisTools.GenerateAnnualFireStatisticsList(oAoi, _strFireReportLogFile,
-                                aoiAreaSqMeters, cellSizeSqMeters, i, overrideMaxYear, lstMissingMtbsYears);
-                            if (dictOutput.ContainsKey(i.ToString()))
+                            BA_ReturnCode success = BA_ReturnCode.WriteError;
+                            string strCsvFile = $@"{Path.GetDirectoryName(_strFireReportLogFile)}\{i}_annual_statistics.csv";
+                            if (!File.Exists(strCsvFile))
                             {
-                                dictOutput[i.ToString()].Add(lstAnnualElements);
+                               success = this.InitAnnualCsv(i, strCsvFile);
                             }
                             else
                             {
-                                IList<IList<string>> lstNew = new List<IList<string>>();
-                                lstNew.Add(lstAnnualElements);
-                                dictOutput.Add(i.ToString(), lstNew);
+                                success = BA_ReturnCode.Success;
+                            }
+
+                            if (success == BA_ReturnCode.Success)
+                            {
+                                IList<string> lstAnnualElements = await AnalysisTools.GenerateAnnualFireStatisticsList(oAoi, _strFireReportLogFile,
+                                    aoiAreaSqMeters, cellSizeSqMeters, i, overrideMaxYear, lstMissingMtbsYears);
+                                if (lstAnnualElements.Count > 0)
+                                {
+                                    try
+                                    {
+                                        // Adds new content to file
+                                        StringBuilder sb = new StringBuilder();
+                                        foreach (var item in lstAnnualElements)
+                                        { 
+                                            sb.Append($@"{item}{_separator}");
+                                        }
+                                        using (StreamWriter sw = File.AppendText(strCsvFile))
+                                        {
+                                            sw.WriteLine(sb.ToString());
+                                        }
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} Data could not be written to the {strCsvFile} file!{System.Environment.NewLine}";
+                                        File.AppendAllText(_strFireReportLogFile, strLogEntry);
+                                        return;
+                                    }
+                                }
                             }
                         }
                     }
@@ -2418,53 +2467,12 @@ namespace bagis_pro
             }
 
             // Write out annual statistics from dictionary
-            string strCsvFile = "";
+            string strCsvFile1 = "";
             StringBuilder output = new StringBuilder();
-            string separator = ",";
-            if (bAnnualStatistics)
-            {
-                for (int i = overrideMinYear; i <= overrideMaxYear; i++)
-                {
-                    output.Clear();
-                    string strYear = Convert.ToString(i);
-                    string strYearPrefix = $@"YY{strYear.Substring(strYear.Length - 2)}_";
-                    // Structures to manage data
-                    strCsvFile = $@"{Path.GetDirectoryName(_strFireReportLogFile)}\{i}_annual_statistics.csv";
-                    String[] headings = { "stationTriplet", "stationName", "report_end_year", $@"{strYearPrefix}newfireno", $@"{strYearPrefix}nifc_burnedArea_SqMiles",
-                    $@"{strYearPrefix}mtbs_burnedArea_SqMiles", $@"{strYearPrefix}nifc_burnedArea_pct", $@"{strYearPrefix}mtbs_burnedArea_pct", $@"{strYearPrefix}burnedForestedArea_SqMiles",
-                    $@"{strYearPrefix}burnedForestedArea_pct",$@"{strYearPrefix}lowburnedSeverityForestedArea__SqMiles",$@"{strYearPrefix}lowburnedSeverityForestedArea_pct",
-                    $@"{strYearPrefix}mediumburnedSeverityForestedArea_SqMiles",$@"{strYearPrefix}mediumburnedSeverityForestedArea_pct",
-                    $@"{strYearPrefix}highburnedSeverityForestedArea_SqMiles",$@"{strYearPrefix}highburnedSeverityForestedArea_pct",$@"{strYearPrefix}lowburnedSeverityArea_SqMiles", $@"{strYearPrefix}lowburnedSeverityArea_pct",
-                    $@"{strYearPrefix}mediumburnedSeverityArea_SqMiles", $@"{strYearPrefix}mediumburnedSeverityArea_pct",$@"{strYearPrefix}highburnedSeverityArea_SqMiles", $@"{strYearPrefix}highburnedSeverityArea_pct" };
-                    output.AppendLine(string.Join(separator, headings));
-
-                    if (dictOutput.ContainsKey(i.ToString()))
-                    {
-                        IList<IList<string>> lstYearElements = dictOutput[i.ToString()];
-                        foreach (var item in lstYearElements)
-                        {
-                            output.AppendLine(string.Join(separator, item));
-                        }
-                    }
-
-                    try
-                    {
-                        // Overwrites file with new content
-                        File.WriteAllText(strCsvFile, output.ToString());
-                    }
-                    catch (Exception ex)
-                    {
-                        strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} Data could not be written to the CSV file!{System.Environment.NewLine}";
-                        File.AppendAllText(_strFireReportLogFile, strLogEntry);
-                        MessageBox.Show("Data could not be written to the CSV file!", "BAGIS-PRO");
-                        return;
-                    }
-                }
-            }
 
             if (bIncrementStatistics)
             {
-                strCsvFile = $@"{Path.GetDirectoryName(_strFireReportLogFile)}\increment_statistics.csv";
+                strCsvFile1 = $@"{Path.GetDirectoryName(_strFireReportLogFile)}\increment_statistics.csv";
                 output.Clear();
                 IList<string> lstHeadings = new List<string>() { "stationTriplet", "stationName", "report_end_year", "mtbs_missing_years" };
                 string fmt = "00";
@@ -2591,17 +2599,17 @@ namespace bagis_pro
                 }
 
                 String[] incrementHeadings = lstHeadings.ToArray();
-                output.AppendLine(string.Join(separator, incrementHeadings));
+                output.AppendLine(string.Join(_separator, incrementHeadings));
 
                 foreach (var item in lstIncrementOutput)
                 {
-                    output.AppendLine(string.Join(separator, item));
+                    output.AppendLine(string.Join(_separator, item));
                 }
 
                 try
                 {
                     // Overwrites file with new content
-                    File.WriteAllText(strCsvFile, output.ToString());
+                    File.WriteAllText(strCsvFile1, output.ToString());
                 }
                 catch (Exception ex)
                 {
@@ -2612,6 +2620,32 @@ namespace bagis_pro
                 }
             }
             MessageBox.Show("Fire statistics have been generated!");
+        }
+        private BA_ReturnCode InitAnnualCsv(int intYear, string strCsvFile)
+        {
+            StringBuilder output = new StringBuilder();
+            string strYear = Convert.ToString(intYear);
+            string strYearPrefix = $@"YY{strYear.Substring(strYear.Length - 2)}_";
+            String[] headings = { "stationTriplet", "stationName", "report_end_year", $@"{strYearPrefix}newfireno", $@"{strYearPrefix}nifc_burnedArea_SqMiles",
+                $@"{strYearPrefix}mtbs_burnedArea_SqMiles", $@"{strYearPrefix}nifc_burnedArea_pct", $@"{strYearPrefix}mtbs_burnedArea_pct", $@"{strYearPrefix}burnedForestedArea_SqMiles",
+                $@"{strYearPrefix}burnedForestedArea_pct",$@"{strYearPrefix}lowburnedSeverityForestedArea__SqMiles",$@"{strYearPrefix}lowburnedSeverityForestedArea_pct",
+                $@"{strYearPrefix}mediumburnedSeverityForestedArea_SqMiles",$@"{strYearPrefix}mediumburnedSeverityForestedArea_pct",
+                $@"{strYearPrefix}highburnedSeverityForestedArea_SqMiles",$@"{strYearPrefix}highburnedSeverityForestedArea_pct",$@"{strYearPrefix}lowburnedSeverityArea_SqMiles", $@"{strYearPrefix}lowburnedSeverityArea_pct",
+                $@"{strYearPrefix}mediumburnedSeverityArea_SqMiles", $@"{strYearPrefix}mediumburnedSeverityArea_pct",$@"{strYearPrefix}highburnedSeverityArea_SqMiles", $@"{strYearPrefix}highburnedSeverityArea_pct" };
+            output.AppendLine(string.Join(_separator, headings));
+            try
+            {
+                // Overwrites file with new content
+                File.WriteAllText(strCsvFile, output.ToString());
+                return BA_ReturnCode.Success;
+            }
+            catch (Exception ex)
+            {
+                string strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} Headings could not be written to an annual CSV file!{System.Environment.NewLine}";
+                File.AppendAllText(_strFireReportLogFile, strLogEntry);
+                MessageBox.Show("Headings could not be written to an annual CSV file!", "BAGIS-PRO");
+                return BA_ReturnCode.WriteError;
+            }
         }
 
             private string CreateLogEntry(string strAoiPath, string strOldTriplet, string strNewTriplet, string strRemarks)

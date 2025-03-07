@@ -1,4 +1,5 @@
-﻿using ArcGIS.Core.Data;
+﻿using ActiproSoftware.Windows.Extensions;
+using ArcGIS.Core.Data;
 using ArcGIS.Core.Data.Exceptions;
 using ArcGIS.Core.Data.Raster;
 using ArcGIS.Core.Geometry;
@@ -1294,6 +1295,13 @@ namespace bagis_pro
                     {
                         result.Add(Convert.ToString(i));
                     }
+                }
+            }
+            else
+            {
+                foreach (var year in allYears)
+                {
+                    result.Add(Convert.ToString(year));
                 }
             }
             return result;
