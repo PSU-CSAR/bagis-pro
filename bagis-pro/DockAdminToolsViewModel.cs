@@ -2374,7 +2374,7 @@ namespace bagis_pro
                     Uri fireUri = new Uri(GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Fire));
                     double aoiAreaSqMeters = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(aoiUri, Constants.FILE_AOI_VECTOR, null);
                     double cellSizeSqMeters = -1;
-                    for (int i = _intMtbsMaxYear; i >= MtbsMinYear; --i)
+                    for (int i = overrideMinYear; i <= overrideMaxYear; i++)
                     {
                         string strRasterName = GeneralTools.GetMtbsLayerFileName(i);
                         if (await GeodatabaseTools.RasterDatasetExistsAsync(fireUri, strRasterName))
@@ -2386,7 +2386,6 @@ namespace bagis_pro
                                 break;
                             }
                         }
-
                     }
 
                     IList<string> lstMissingMtbsYears = await GeodatabaseTools.QueryMissingMtbsRasters(oAoi.FilePath, overrideMinYear, overrideMaxYear);

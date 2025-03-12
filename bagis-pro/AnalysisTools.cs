@@ -8089,19 +8089,33 @@ namespace bagis_pro
             // mtbs FORESTED burned areas by severity
             double forestedAreaSqMeters =
                 await GeodatabaseTools.CalculateTotalPolygonAreaAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis)), Constants.FILE_FORESTED_ZONE, "");
-            double[,] Data = new double[6, lstInterval.Count];
             int j = 0;
+            IList<string> lstLowSevAreas1 = new List<string>();
+            IList<string> lstLowSevPcts1 = new List<string>();
+            IList<string> lstModSevAreas1 = new List<string>();
+            IList<string> lstModSevPcts1 = new List<string>();
+            IList<string> lstHighSevAreas1 = new List<string>();
+            IList<string> lstHighSevPcts1 = new List<string>();
             foreach (var oInterval in lstInterval)
             {
                 bool bMtbsMaxLayerExists = await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(gdbFire), $@"tmpMax_{oInterval.Value}");
-                if (forestedAreaSqMeters <= 0 || !bMtbsMaxLayerExists)
+                if (!bMtbsMaxLayerExists)
                 {
-                    Data[0, j] = 0;  // low forested area
-                    Data[1, j] = 0;  // low forested pct
-                    Data[2, j] = 0;  // med forested area
-                    Data[3, j] = 0;  // med forested pct
-                    Data[4, j] = 0;  // med forested area
-                    Data[5, j] = 0;  // med forested pct
+                    lstLowSevAreas1.Add("");  // low forested area
+                    lstLowSevPcts1.Add("");  // low forested pct
+                    lstModSevAreas1.Add("");  // med forested area
+                    lstModSevPcts1.Add("");  // med forested pct
+                    lstHighSevAreas1.Add("");  // high forested area
+                    lstHighSevPcts1.Add("");  // high forested pct
+                }
+                else if (forestedAreaSqMeters <= 0 )
+                {
+                    lstLowSevAreas1.Add("0");  // low forested area
+                    lstLowSevPcts1.Add("0");  // low forested pct
+                    lstModSevAreas1.Add("0");  // med forested area
+                    lstModSevPcts1.Add("0");  // med forested pct
+                    lstHighSevAreas1.Add("0");  // high forested area
+                    lstHighSevPcts1.Add("0");  // high forested pct
                 }
                 else
                 {
@@ -8109,25 +8123,24 @@ namespace bagis_pro
                     IList<double> lstMtbsForestedAreas = await QueryMtbsForestedAreasAsync(oAoi.FilePath, strMtbsLayerName, forestedAreaSqMeters, CancelableProgressor.None);
                     if (lstMtbsForestedAreas.Count == 6)
                     {
-                        Data[0, j] = lstMtbsForestedAreas[0];  // low forested area
-                        Data[1, j] = lstMtbsForestedAreas[1];  // low forested pct
-                        Data[2, j] = lstMtbsForestedAreas[2];  // med forested area
-                        Data[3, j] = lstMtbsForestedAreas[3];  // med forested pct
-                        Data[4, j] = lstMtbsForestedAreas[4];  // med forested area
-                        Data[5, j] = lstMtbsForestedAreas[5];  // med forested pct
+                        lstLowSevAreas1.Add(Convert.ToString(lstMtbsForestedAreas[0]));  // low forested area
+                        lstLowSevPcts1.Add(Convert.ToString(lstMtbsForestedAreas[1]));  // low forested pct
+                        lstModSevAreas1.Add(Convert.ToString(lstMtbsForestedAreas[2]));  // mod forested area
+                        lstModSevPcts1.Add(Convert.ToString(lstMtbsForestedAreas[3]));  // mod forested pct
+                        lstHighSevAreas1.Add(Convert.ToString(lstMtbsForestedAreas[4])); // high forested area
+                        lstHighSevPcts1.Add(Convert.ToString(lstMtbsForestedAreas[5])); // high forested pct
                     }
                 }
                 j++;
             }
-            if (Data.GetLength(0) > 0)
+            if (lstLowSevAreas1.Count > 0)
             {
-                for (int k = 0; k < Data.GetLength(0); k++)
-                {
-                    for (int i = 0; i < lstInterval.Count; i++)
-                    {
-                        lstElements.Add(Convert.ToString(Data[k, i]));
-                    }                    
-                }
+                lstElements.AddRange(lstLowSevAreas1);
+                lstElements.AddRange(lstLowSevPcts1);
+                lstElements.AddRange(lstModSevAreas1);
+                lstElements.AddRange(lstModSevPcts1);
+                lstElements.AddRange(lstHighSevAreas1);
+                lstElements.AddRange(lstHighSevPcts1);
             }
 
             IList<string> lstLowSevAreas = new List<string>();
