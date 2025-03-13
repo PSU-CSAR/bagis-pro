@@ -7339,7 +7339,7 @@ namespace bagis_pro
                     dblAreaSqMeters = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(new Uri(strGdbFire), Constants.FILE_NIFC_FIRE, strWhere);
                     if (dblAreaSqMeters > 0)
                     {
-                        dblReturn = Math.Round(dblAreaSqMeters/aoiAreaSqMeters * 100, 1);
+                        dblReturn = Math.Round(dblAreaSqMeters/aoiAreaSqMeters * 100, 3);
                     }
                     else
                     {
@@ -7433,7 +7433,7 @@ namespace bagis_pro
                     {
                         double forestedAreaSqMeters =
                             await GeodatabaseTools.CalculateTotalPolygonAreaAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(aoiPath, GeodatabaseNames.Analysis)), Constants.FILE_FORESTED_ZONE, "");
-                        dblReturn = Math.Round(burnedForestAreaSqMeters / forestedAreaSqMeters * 100, 1);
+                        dblReturn = Math.Round(burnedForestAreaSqMeters / forestedAreaSqMeters * 100, 3);
                     }
                     if (await GeodatabaseTools.FeatureClassExistsAsync(new Uri(strGdbFire), strTmpIntersect)) 
                     {
@@ -7536,7 +7536,7 @@ namespace bagis_pro
                     double dblAreaSqMeters = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(new Uri(strGdbFire), strDissolveFc, "");
                     if (dblAreaSqMeters > 0)
                     {
-                        dblReturn = Math.Round(dblAreaSqMeters / aoiAreaSqMeters * 100, 1);
+                        dblReturn = Math.Round(dblAreaSqMeters / aoiAreaSqMeters * 100, 3);
                     }
                     else
                     {
@@ -7613,7 +7613,7 @@ namespace bagis_pro
                     {
                         double forestedAreaSqMeters = 
                             await GeodatabaseTools.CalculateTotalPolygonAreaAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(aoiPath, GeodatabaseNames.Analysis)), Constants.FILE_FORESTED_ZONE, "");
-                        dblReturn = Math.Round(burnedForestAreaSqMeters / forestedAreaSqMeters * 100, 1);
+                        dblReturn = Math.Round(burnedForestAreaSqMeters / forestedAreaSqMeters * 100, 3);
                     }
                     else if (burnedForestAreaSqMeters == 0)
                     {
@@ -7648,7 +7648,7 @@ namespace bagis_pro
                     dblAreaSqMeters = await QueryMtbsAreaSqMetersAsync(aoiPath, strMtbsLayer, dblMtbsCellSize);
                     if (dblAreaSqMeters > 0)
                     {
-                        dblReturn = Math.Round(dblAreaSqMeters / aoiAreaSqMeters * 100, 1);
+                        dblReturn = Math.Round(dblAreaSqMeters / aoiAreaSqMeters * 100, 3);
                     }
                     else
                     {
@@ -7717,7 +7717,7 @@ namespace bagis_pro
                     {
                         double dblAreaSqMeters = lngTotal * dblMtbsCellSize * dblMtbsCellSize;
                         dblLowBurnedAreaSqMiles = Math.Round(AreaUnit.SquareMeters.ConvertTo(dblAreaSqMeters, AreaUnit.SquareMiles),2);
-                        dblLowBurnedAreaPct = Math.Round(dblAreaSqMeters / aoiAreaSqMeters * 100, 1);
+                        dblLowBurnedAreaPct = Math.Round(dblAreaSqMeters / aoiAreaSqMeters * 100, 3);
                     }
                 }
                 lstReturn.Add(dblLowBurnedAreaSqMiles);
@@ -7748,7 +7748,7 @@ namespace bagis_pro
                     {
                         double dblAreaSqMeters = lngTotal * dblMtbsCellSize * dblMtbsCellSize;
                         dblMedBurnedAreaSqMiles = Math.Round(AreaUnit.SquareMeters.ConvertTo(dblAreaSqMeters, AreaUnit.SquareMiles), 2);
-                        dblMedBurnedAreaPct = Math.Round(dblAreaSqMeters / aoiAreaSqMeters * 100, 1);
+                        dblMedBurnedAreaPct = Math.Round(dblAreaSqMeters / aoiAreaSqMeters * 100, 3);
                     }
                 }
                 lstReturn.Add(dblMedBurnedAreaSqMiles);
@@ -7779,7 +7779,7 @@ namespace bagis_pro
                     {
                         double dblAreaSqMeters = lngTotal * dblMtbsCellSize * dblMtbsCellSize;
                         dblHighBurnedAreaSqMiles = Math.Round(AreaUnit.SquareMeters.ConvertTo(dblAreaSqMeters, AreaUnit.SquareMiles), 2);
-                        dblHighBurnedAreaPct = Math.Round(dblAreaSqMeters / aoiAreaSqMeters * 100, 1);
+                        dblHighBurnedAreaPct = Math.Round(dblAreaSqMeters / aoiAreaSqMeters * 100, 3);
                     }
                 }
                 lstReturn.Add(dblHighBurnedAreaSqMiles);
@@ -7853,7 +7853,7 @@ namespace bagis_pro
             lstReturn.Add(lowSeveritySqMiles);
             if (lowSeveritySqMeters > 0)
             {
-                lstReturn.Add(Math.Round(lowSeveritySqMeters / forestedAreaSqMeters * 100, 1));
+                lstReturn.Add(Math.Round(lowSeveritySqMeters / forestedAreaSqMeters * 100, 3));
             }
             else
             {
@@ -7869,7 +7869,7 @@ namespace bagis_pro
             lstReturn.Add(modSeveritySqMiles);
             if (modSeveritySqMeters > 0)
             {
-                lstReturn.Add(Math.Round(modSeveritySqMeters / forestedAreaSqMeters * 100, 1));
+                lstReturn.Add(Math.Round(modSeveritySqMeters / forestedAreaSqMeters * 100, 3));
             }
             else
             {
@@ -7885,7 +7885,7 @@ namespace bagis_pro
             lstReturn.Add(highSeveritySqMiles);
             if (highSeveritySqMeters > 0)
             {
-                lstReturn.Add(Math.Round(highSeveritySqMeters / forestedAreaSqMeters * 100, 1));
+                lstReturn.Add(Math.Round(highSeveritySqMeters / forestedAreaSqMeters * 100, 3));
             }
             else
             {
@@ -8234,7 +8234,7 @@ namespace bagis_pro
                         {
                             double dblAreaSqMeters = lngTotal * dblMtbsCellSize * dblMtbsCellSize;
                             dblLowBurnedAreaSqMiles = Math.Round(AreaUnit.SquareMeters.ConvertTo(dblAreaSqMeters, AreaUnit.SquareMiles), 2);
-                            dblLowBurnedAreaPct = Math.Round(dblAreaSqMeters / aoiAreaSqMeters * 100, 1);
+                            dblLowBurnedAreaPct = Math.Round(dblAreaSqMeters / aoiAreaSqMeters * 100, 3);
                         }
                     }
                     lstReturn.Add(Convert.ToString(dblLowBurnedAreaSqMiles));
@@ -8265,7 +8265,7 @@ namespace bagis_pro
                         {
                             double dblAreaSqMeters = lngTotal * dblMtbsCellSize * dblMtbsCellSize;
                             dblMedBurnedAreaSqMiles = Math.Round(AreaUnit.SquareMeters.ConvertTo(dblAreaSqMeters, AreaUnit.SquareMiles), 2);
-                            dblMedBurnedAreaPct = Math.Round(dblAreaSqMeters / aoiAreaSqMeters * 100, 1);
+                            dblMedBurnedAreaPct = Math.Round(dblAreaSqMeters / aoiAreaSqMeters * 100, 3);
                         }
                     }
                     lstReturn.Add(Convert.ToString(dblMedBurnedAreaSqMiles));
@@ -8296,12 +8296,12 @@ namespace bagis_pro
                         {
                             double dblAreaSqMeters = lngTotal * dblMtbsCellSize * dblMtbsCellSize;
                             dblHighBurnedAreaSqMiles = Math.Round(AreaUnit.SquareMeters.ConvertTo(dblAreaSqMeters, AreaUnit.SquareMiles), 2);
-                            dblHighBurnedAreaPct = Math.Round(dblAreaSqMeters / aoiAreaSqMeters * 100, 1);
+                            dblHighBurnedAreaPct = Math.Round(dblAreaSqMeters / aoiAreaSqMeters * 100, 3);
                         }
                     }
                     lstReturn.Add(Convert.ToString(dblHighBurnedAreaSqMiles));
                     lstReturn.Add(Convert.ToString(dblHighBurnedAreaPct));
-                    //BA_ReturnCode success = await GeoprocessingTools.DeleteDatasetAsync($@"{strGdbFire}\{strMaxFileName}");
+                    BA_ReturnCode success = await GeoprocessingTools.DeleteDatasetAsync($@"{strGdbFire}\{strMaxFileName}");
                 }
             }
             else
@@ -8401,7 +8401,7 @@ namespace bagis_pro
                             dblReturn = Math.Round(AreaUnit.SquareMeters.ConvertTo(dblTotalBurnedArea, AreaUnit.SquareMiles), 2);
                             if (oStatisticType == FireStatisticType.MtbsBurnedAreaPct)
                             {
-                                dblReturn = Math.Round(dblTotalBurnedArea / aoiAreaSqMeters * 100, 1);
+                                dblReturn = Math.Round(dblTotalBurnedArea / aoiAreaSqMeters * 100, 3);
                             }                            
                         }
                     }
