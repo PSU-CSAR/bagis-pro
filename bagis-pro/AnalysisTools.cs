@@ -7384,7 +7384,7 @@ namespace bagis_pro
                                 $@"{strGdbFire}\{strTmpIntersect}", "ONLY_FID");
                             if (success != BA_ReturnCode.Success)
                             {
-                                string strLogEntry = "An error occurred while running the Intersect tool. Burned forested area cannot be calculated!" + "\r\n";
+                                string strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "An error occurred while running the Intersect tool. Burned forested area cannot be calculated!" + "\r\n";
                                 File.AppendAllText(strLogFile, strLogEntry);       // append
                             }
                             else
@@ -7414,7 +7414,7 @@ namespace bagis_pro
                     }
                     else
                     {
-                        string strLogEntry = "forestedzone is missing. Burned forested area cannot be calculated!" + "\r\n";
+                        string strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "forestedzone is missing. Burned forested area cannot be calculated!" + "\r\n";
                         File.AppendAllText(strLogFile, strLogEntry);       // append
                     }
                     break;
@@ -7561,7 +7561,7 @@ namespace bagis_pro
                                strIntersectFull, "ONLY_FID");
                             if (success != BA_ReturnCode.Success)
                             {
-                                string strLogEntry = "An error occurred while running the Intersect tool. Burned forested area cannot be calculated!" + "\r\n";
+                                string strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "An error occurred while running the Intersect tool. Burned forested area cannot be calculated!" + "\r\n";
                                 File.AppendAllText(strLogFile, strLogEntry);       // append
                             }
                             else
@@ -7594,7 +7594,7 @@ namespace bagis_pro
                     }
                     else
                     {
-                        string strLogEntry = "forestedzone is missing. Burned forested area cannot be calculated!" + "\r\n";
+                        string strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "forestedzone is missing. Burned forested area cannot be calculated!" + "\r\n";
                         File.AppendAllText(strLogFile, strLogEntry);       // append
                     }
                     break;
@@ -8024,24 +8024,35 @@ namespace bagis_pro
         }
 
         public static async Task<IList<string>> GenerateIncrementFireStatisticsList(BA_Objects.Aoi oAoi, string strLogFile, double aoiAreaSqMeters,
-            double dblMtbsCellSize, IList<Interval> lstInterval, int intReportEndYear, IList<string> lstMtbsMissingYears)
+            double dblMtbsCellSize, IList<Interval> lstInterval, IList<string> lstMtbsMissingYears)
         {
+            Interval objInterval = lstInterval.Last();
             IList<string> lstElements = new List<string>();
             lstElements.Add(oAoi.StationTriplet);   // Station triplet
             lstElements.Add(oAoi.Name);  //AOI Name
-            lstElements.Add(Convert.ToString(intReportEndYear));
-            StringBuilder sb = new StringBuilder();
-            foreach(string year in lstMtbsMissingYears)
-            {
-                if (Convert.ToInt16(year) <= intReportEndYear)
-                {
-                    sb.Append($@"{year}|");
-                }                
-            }
+            lstElements.Add(Convert.ToString(objInterval.UpperBound));
             string missingYears = "";
-            if (sb.ToString().Length > 0)
+            StringBuilder sb = new StringBuilder();
+            int countMissing = 0;
+            if (lstMtbsMissingYears.Count > 0)
             {
-                missingYears = sb.ToString().TrimEnd('|');  //Delimit missing years with pipe           
+                foreach (string year in lstMtbsMissingYears)
+                {
+                    int intYear = Convert.ToInt16(year);
+                    if (intYear >= objInterval.LowerBound && intYear <= objInterval.UpperBound)
+                    {
+                        sb.Append($@"{year}|");
+                        countMissing++;
+                    }
+                }
+                if (countMissing == (objInterval.UpperBound-objInterval.LowerBound+1))
+                {
+                    missingYears = "ALL";
+                }
+                else if (sb.ToString().Length > 0)
+                {
+                    missingYears = sb.ToString().TrimEnd('|');  //Delimit missing years with pipe           
+                }
             }
             lstElements.Add(missingYears);
             string gdbFire = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Fire);
@@ -8087,8 +8098,12 @@ namespace bagis_pro
             }
 
             // mtbs FORESTED burned areas by severity
-            double forestedAreaSqMeters =
-                await GeodatabaseTools.CalculateTotalPolygonAreaAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis)), Constants.FILE_FORESTED_ZONE, "");
+            double forestedAreaSqMeters = -1;
+            bool bForestedZonesExists = await GeodatabaseTools.FeatureClassExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis)), Constants.FILE_FORESTED_ZONE);
+            if (bForestedZonesExists)
+            {
+                forestedAreaSqMeters = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis)), Constants.FILE_FORESTED_ZONE, "");
+            }
             int j = 0;
             IList<string> lstLowSevAreas1 = new List<string>();
             IList<string> lstLowSevPcts1 = new List<string>();
@@ -8099,7 +8114,16 @@ namespace bagis_pro
             foreach (var oInterval in lstInterval)
             {
                 bool bMtbsMaxLayerExists = await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(gdbFire), $@"tmpMax_{oInterval.Value}");
-                if (!bMtbsMaxLayerExists)
+                if (!bForestedZonesExists)
+                {
+                    lstLowSevAreas1.Add("-1");  // low forested area
+                    lstLowSevPcts1.Add("-1");  // low forested pct
+                    lstModSevAreas1.Add("-1");  // med forested area
+                    lstModSevPcts1.Add("-1");  // med forested pct
+                    lstHighSevAreas1.Add("-1");  // high forested area
+                    lstHighSevPcts1.Add("-1");  // high forested pct
+                }
+                else if (!bMtbsMaxLayerExists)
                 {
                     lstLowSevAreas1.Add("");  // low forested area
                     lstLowSevPcts1.Add("");  // low forested pct
@@ -8107,7 +8131,7 @@ namespace bagis_pro
                     lstModSevPcts1.Add("");  // med forested pct
                     lstHighSevAreas1.Add("");  // high forested area
                     lstHighSevPcts1.Add("");  // high forested pct
-                }
+                }     
                 else if (forestedAreaSqMeters <= 0 )
                 {
                     lstLowSevAreas1.Add("0");  // low forested area
@@ -8151,7 +8175,7 @@ namespace bagis_pro
             IList<string> lstHighSevPcts = new List<string>();
             foreach (var oInterval in lstInterval)
             {
-                IList<string> lstMtbsAreas = await QueryMtbsAreasByIncrementAsync(oAoi.FilePath, oInterval, aoiAreaSqMeters, dblMtbsCellSize);
+                IList<string> lstMtbsAreas = await QueryMtbsAreasByIncrementAsync(oAoi.FilePath, oInterval, aoiAreaSqMeters, dblMtbsCellSize, lstMtbsMissingYears);
                 if (lstMtbsAreas.Count == 6)
                 {
                     string strLowSevArea = Convert.ToString(lstMtbsAreas[0]);
@@ -8178,7 +8202,8 @@ namespace bagis_pro
             return lstElements;
         }
 
-        public static async Task<IList<string>> QueryMtbsAreasByIncrementAsync(string aoiPath, Interval oInterval, double aoiAreaSqMeters, double dblMtbsCellSize)        
+        public static async Task<IList<string>> QueryMtbsAreasByIncrementAsync(string aoiPath, Interval oInterval, double aoiAreaSqMeters,
+            double dblMtbsCellSize, IList<string> lstMtbsMissingYears)
         {
             IList<string> lstReturn = new List<string>();
             dynamic oFireSettings = GeneralTools.GetFireSettings(aoiPath);
@@ -8186,8 +8211,17 @@ namespace bagis_pro
             string[] arrIncludeSeverities = { Constants.VALUE_MTBS_SEVERITY_LOW, Constants.VALUE_MTBS_SEVERITY_MODERATE, Constants.VALUE_MTBS_SEVERITY_HIGH };
             QueryFilter queryFilter = new QueryFilter();
             string strGdbFire = GeodatabaseTools.GetGeodatabasePath(aoiPath, GeodatabaseNames.Fire);
-            string strMaxFileName = $@"tmpMax_{oInterval.Value}";
             // This file is created in QueryMtbsAreaPctByIncrementAsync()
+            string strMaxFileName = $@"tmpMax_{oInterval.Value}";
+            bool bAllYearsMissing = true;
+            for (int i = (int)oInterval.LowerBound; i <= (int)oInterval.UpperBound; i++)
+            {
+                if (!lstMtbsMissingYears.Contains(i.ToString()))
+                {
+                    bAllYearsMissing = false;
+                    break;
+                }
+            }
             if (await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(strGdbFire), strMaxFileName))
             {
                 if (arrMtbsLegend != null)
@@ -8304,7 +8338,7 @@ namespace bagis_pro
                     BA_ReturnCode success = await GeoprocessingTools.DeleteDatasetAsync($@"{strGdbFire}\{strMaxFileName}");
                 }
             }
-            else
+            else if (bAllYearsMissing)
             {
                 lstReturn.Add("");
                 lstReturn.Add("");
@@ -8313,10 +8347,18 @@ namespace bagis_pro
                 lstReturn.Add("");
                 lstReturn.Add("");
             }
+            else
+            {
+                lstReturn.Add("0");
+                lstReturn.Add("0");
+                lstReturn.Add("0");
+                lstReturn.Add("0");
+                lstReturn.Add("0");
+                lstReturn.Add("0");
+            }
 
             return lstReturn;
         }
-
         public static async Task<string> QueryMtbsAreaPctByIncrementAsync(string aoiPath, Interval oInterval, double aoiAreaSqMeters, double dblMtbsCellSize,
             FireStatisticType oStatisticType, IList<string> lstMtbsMissingYears)        
         {

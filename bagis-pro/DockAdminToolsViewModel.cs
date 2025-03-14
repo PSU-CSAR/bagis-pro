@@ -2453,7 +2453,7 @@ namespace bagis_pro
                             success = BA_ReturnCode.Success;
                         }
                         IList<string> lstOutput = await AnalysisTools.GenerateIncrementFireStatisticsList(oAoi, _strFireReportLogFile,
-                            aoiAreaSqMeters, cellSizeSqMeters, lstInterval, ReportEndYear, lstMissingMtbsYears);
+                            aoiAreaSqMeters, cellSizeSqMeters, lstInterval, lstMissingMtbsYears);
                         if (lstOutput.Count > 0)
                         {
                             try
