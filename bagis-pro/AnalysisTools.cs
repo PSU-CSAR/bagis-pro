@@ -7808,6 +7808,7 @@ namespace bagis_pro
             }
 
             StringBuilder sb = new StringBuilder();
+            // Building query string for forested area nlcd codes
             foreach (var code in Constants.VALUES_NLCD_FORESTED_AREA)
             {
                 sb.Append($@"{code},");
@@ -7818,36 +7819,40 @@ namespace bagis_pro
             queryFilter.WhereClause = strWhere;
             dynamic oFireSettings = GeneralTools.GetFireSettings(aoiPath);
             JArray arrMtbsLegend = oFireSettings.mtbsLegend;
-            string[] arrFieldNames = new string[3];
+            IList<string> lstLow = new List<string>();
+            IList<string> lstModerate = new List<string>();
+            IList<string> lstHigh = new List<string>();
             foreach (dynamic item in arrMtbsLegend)
             {
                 string severity = Convert.ToString(item.Severity);
                 switch (severity)
                 {
                     case Constants.VALUE_MTBS_SEVERITY_LOW:
-                        arrFieldNames[0] = $@"VALUE_{item.Value}";
+                        lstLow.Add($@"VALUE_{item.Value}");
                         break;
                     case Constants.VALUE_MTBS_SEVERITY_MODERATE:
-                        arrFieldNames[1] = $@"VALUE_{item.Value}";
+                        lstModerate.Add($@"VALUE_{item.Value}");
                         break;
                     case Constants.VALUE_MTBS_SEVERITY_HIGH:
-                        arrFieldNames[2] = $@"VALUE_{item.Value}";
+                        lstHigh.Add($@"VALUE_{item.Value}");
                         break;
                     default:
                         break;
                 }
-
-
             }
             double lowSeveritySqMeters = 0;
             double modSeveritySqMeters = 0;
             double highSeveritySqMeters = 0;
             Uri uriFire = new Uri($@"{GeodatabaseTools.GetGeodatabasePath(aoiPath, GeodatabaseNames.Fire)}");
-            IList<string> lstAreas = await GeodatabaseTools.QueryTableForDistinctValuesAsync(uriFire, strOutputTable, arrFieldNames[0], queryFilter);
-            foreach (string area in lstAreas)
+            IList<string> lstAreas = null;
+            foreach (var aField in lstLow)
             {
-                double dblArea = Convert.ToDouble(area);
-                lowSeveritySqMeters = lowSeveritySqMeters + dblArea;
+                lstAreas = await GeodatabaseTools.QueryTableForDistinctValuesAsync(uriFire, strOutputTable, aField, queryFilter);
+                foreach (string area in lstAreas)
+                {
+                    double dblArea = Convert.ToDouble(area);
+                    lowSeveritySqMeters = lowSeveritySqMeters + dblArea;
+                }
             }
             double lowSeveritySqMiles = Math.Round(AreaUnit.SquareMeters.ConvertTo(lowSeveritySqMeters, AreaUnit.SquareMiles), 2);
             lstReturn.Add(lowSeveritySqMiles);
@@ -7859,11 +7864,14 @@ namespace bagis_pro
             {
                 lstReturn.Add(0);
             }
-            lstAreas = await GeodatabaseTools.QueryTableForDistinctValuesAsync(uriFire, strOutputTable, arrFieldNames[1], queryFilter);
-            foreach (string area in lstAreas)
+            foreach (var aField in lstModerate)
             {
-                double dblArea = Convert.ToDouble(area);
-                modSeveritySqMeters = modSeveritySqMeters + dblArea;
+                lstAreas = await GeodatabaseTools.QueryTableForDistinctValuesAsync(uriFire, strOutputTable, aField, queryFilter);
+                foreach (string area in lstAreas)
+                {
+                    double dblArea = Convert.ToDouble(area);
+                    modSeveritySqMeters = modSeveritySqMeters + dblArea;
+                }
             }
             double modSeveritySqMiles = Math.Round(AreaUnit.SquareMeters.ConvertTo(modSeveritySqMeters, AreaUnit.SquareMiles), 2);
             lstReturn.Add(modSeveritySqMiles);
@@ -7875,11 +7883,14 @@ namespace bagis_pro
             {
                 lstReturn.Add(0);
             }
-            lstAreas = await GeodatabaseTools.QueryTableForDistinctValuesAsync(uriFire, strOutputTable, arrFieldNames[2], queryFilter);
-            foreach (string area in lstAreas)
+            foreach (var aField in lstHigh)
             {
-                double dblArea = Convert.ToDouble(area);
-                highSeveritySqMeters = highSeveritySqMeters + dblArea;
+                lstAreas = await GeodatabaseTools.QueryTableForDistinctValuesAsync(uriFire, strOutputTable, aField, queryFilter);
+                foreach (string area in lstAreas)
+                {
+                    double dblArea = Convert.ToDouble(area);
+                    highSeveritySqMeters = highSeveritySqMeters + dblArea;
+                }
             }
             double highSeveritySqMiles = Math.Round(AreaUnit.SquareMeters.ConvertTo(highSeveritySqMeters, AreaUnit.SquareMiles), 2);
             lstReturn.Add(highSeveritySqMiles);
@@ -7896,7 +7907,6 @@ namespace bagis_pro
             {
                 BA_ReturnCode success = await GeoprocessingTools.DeleteDatasetAsync($@"{uriFire.LocalPath}\{strOutputTable}");
             }
-
             return lstReturn;
         }
 

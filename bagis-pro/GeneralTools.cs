@@ -1294,6 +1294,12 @@ namespace bagis_pro
                         Module1.Current.ModuleLogManager.LogDebug(nameof(SetAoiAsync),
                            "AOI set to use Alaska data sources. HUC2 = " + oAoi.Huc2);
                     }
+                    else
+                    {
+                        Module1.Current.DataSourceGroup = Constants.DATA_SOURCES_DEFAULT;
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(SetAoiAsync),
+                           "AOI set to use default data sources. HUC2 = " + oAoi.Huc2);
+                    }
                     if (!string.IsNullOrEmpty(oAoi.StationTriplet))
                     {
                         string[] arrResults = await GeneralTools.QueryForecastListAoiProperties(oAoi.StationTriplet);

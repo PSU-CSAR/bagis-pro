@@ -162,7 +162,7 @@
             {
                 "Value": 1,
                 "Description": "Unburned/unchanged/Low",
-                "Severity": "Low"
+                "Severity": "None"
             },
             {
                 "Value": 2,
@@ -190,6 +190,6 @@
                 "Severity": "None"
             }
         ],
-        "Version": 21
+        "Version": 22
     }
 }
