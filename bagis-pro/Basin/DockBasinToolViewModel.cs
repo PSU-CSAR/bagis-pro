@@ -19,9 +19,8 @@ using System.Collections.Specialized;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using static System.Net.WebRequestMethods;
+using System.Windows.Forms;
+using Button = ArcGIS.Desktop.Framework.Contracts.Button;
 
 namespace bagis_pro.Basin
 {
@@ -273,7 +272,6 @@ namespace bagis_pro.Basin
                 });
             }
         }
-
         public System.Windows.Input.ICommand CmdViewLayers
         {
             get
@@ -310,6 +308,60 @@ namespace bagis_pro.Basin
                         _winViewDemLayers.ckPourpoint.IsEnabled = true;
                     }
                     var result = _winViewDemLayers.ShowDialog();
+                });
+            }
+        }
+        public System.Windows.Input.ICommand CmdSelectBasin
+        {
+            get
+            {
+                return new RelayCommand(async () =>
+                {
+                    //@ToDo: This will always fail for now
+                    BA_ReturnCode success = await MapTools.SetDefaultProjection();
+                    IList<Aoi> lstAois = await GeneralTools.GetAoiFoldersAsync(ParentFolder, "");
+                    bool bNeedToClipDem = false;
+                    if (BasinStatus.ToUpper().IndexOf("RESOLUTION") > -1)   // FGDB exists
+                    {
+                        if (AoiStatus.ToUpper().Equals("YES") || lstAois.Count > 0)
+                        {
+                            MessageBox.Show("The selected folder is an AOI or contains AOIs. You cannot alter its DEM data.", "BAGIS-Pro");
+                        }
+                        else
+                        {
+                            DialogResult res = MessageBox.Show("Reuse existing DEM?", "BAGIS-Pro", MessageBoxButtons.YesNo);
+                            switch (res)
+                            {
+                                case DialogResult.Cancel:
+                                    return;
+                                case DialogResult.Yes:
+                                    // Do nothing. bNeedToClipDem is already false
+                                    break;
+                                case DialogResult.No:
+                                    DialogResult confirm = 
+                                    MessageBox.Show("Are you sure? \r\n WARNING!!! Existing DEM layers will be deleted if you continue. Click NO to cancel the action.", "BAGIS-Pro", MessageBoxButtons.YesNo);
+                                    if (confirm == DialogResult.No)
+                                    {
+                                        return;
+                                    }
+                                    // Delete the Surfaces Geodatabase
+                                    string surfacesGdbPath = GeodatabaseTools.GetGeodatabasePath(ParentFolder, GeodatabaseNames.Surfaces); ;
+                                    string aoiGdbPath = GeodatabaseTools.GetGeodatabasePath(ParentFolder, GeodatabaseNames.Aoi); ;
+                                    if (Directory.Exists(surfacesGdbPath))
+                                    {
+                                        int retVal = await MapTools.RemoveLayersInFolderAsync(surfacesGdbPath);
+                                        success = await GeoprocessingTools.DeleteDatasetAsync(surfacesGdbPath);
+                                    }
+                                    // Delete the Aoi Geodatabase
+                                    if (Directory.Exists(aoiGdbPath))
+                                    {
+                                        int retVal = await MapTools.RemoveLayersInFolderAsync(aoiGdbPath);
+                                        success = await GeoprocessingTools.DeleteDatasetAsync(aoiGdbPath);
+                                    }
+                                    break;
+                            }
+                        }
+                    }
                 });
             }
         }

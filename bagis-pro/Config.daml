@@ -248,7 +248,7 @@
           <tooltip heading="Export Map Package">
             Click to export Map Package to PDF<disabledText /></tooltip>
         </button>
-        <button id="bagis_pro_Basin_DockBasinTool_ShowButton" caption="Select Basin" className="bagis_pro.Basin.DockBasinTool_ShowButton" condition="bagis_pro_Buttons_BtnSetBasinExtent_Condition" loadOnClick="true">
+        <button id="bagis_pro_Basin_DockBasinTool_ShowButton" caption="Select Basin" className="bagis_pro.Basin.DockBasinTool_ShowButton" loadOnClick="true">
           <tooltip heading="Select Basin">
             Click to select a basin<disabledText /></tooltip>
         </button>

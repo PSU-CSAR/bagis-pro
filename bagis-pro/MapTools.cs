@@ -4014,6 +4014,76 @@ namespace bagis_pro
             }
             return layersRemoved;
         }
+        public static async Task<BA_ReturnCode> SetDefaultProjection()
+        {
+            Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
+            bool bApplyProjection = false;
+            if (oMap != null)
+            {
+                SpatialReference spatialReference = oMap.SpatialReference;
+                if (spatialReference == null)
+                {
+                    bApplyProjection = true;
+                }
+                if (spatialReference.Name != "USA_Contiguous_Albers_Equal_Area_Conic_USGS_version")
+                {
+                    bApplyProjection = true;
+                }
+                try
+                {
+                    if (bApplyProjection)
+                    {
+                        // Spatial reference for NAD 1983 Albers North America
+                        SpatialReference oAlbersCoordSystem = SpatialReferenceBuilder.CreateSpatialReference(102008);
+                        // Valid factory code for layer projection; Make sure it matches Albers datum
+                        if (spatialReference != null && spatialReference.Wkid > 0)
+                        {
+                            bool bDatumMatch = DatumMatch(spatialReference, oAlbersCoordSystem);
+                            if (!bDatumMatch)
+                            {
+                                MessageBox.Show("Datums do not match. Layer cannot be correctly projected without a transformation!", "BAGIS-Pro");
+                                return BA_ReturnCode.NotSupportedOperation;
+                            }
+                            oMap.SetSpatialReference(oAlbersCoordSystem);
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    MessageBox.Show($@"""Exception:{e.Message}. Could not reproject to USA Contiguous Albers Equal Area Conic USGS!", "BAGIS-Pro");
+                    return BA_ReturnCode.NotSupportedOperation;
+
+                }
+            }
+            return BA_ReturnCode.Success;
+        }
+        public static bool DatumMatch(SpatialReference oSRef1, SpatialReference oSRef2)
+        {
+            // Compare the spatial references
+            if (oSRef1.Wkid == oSRef2.Wkid)
+            {
+                return true;
+            }
+            if (oSRef1.Name == oSRef2.Name)
+            {
+                return true;
+            }
+            if (oSRef1.IsGeographic != oSRef2.IsGeographic)
+            {
+                return false;
+            }
+            if (oSRef1.IsProjected != oSRef2.IsProjected)
+            {
+                return false;
+            }
+            Datum datum1 = oSRef1.Datum;
+            Datum datum2 = oSRef2.Datum;
+            if (datum1.Name == datum2.Name)
+            {
+                return true;
+            }
+            return false;
+        }
 
     }
 }
