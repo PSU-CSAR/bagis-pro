@@ -4,6 +4,7 @@ using ArcGIS.Core.Data.UtilityNetwork.Trace;
 using ArcGIS.Core.Geometry;
 using ArcGIS.Desktop.Catalog;
 using ArcGIS.Desktop.Core;
+using ArcGIS.Desktop.Core.Geoprocessing;
 using ArcGIS.Desktop.Core.Utilities;
 using ArcGIS.Desktop.Editing;
 using ArcGIS.Desktop.Extensions;
@@ -317,6 +318,7 @@ namespace bagis_pro.Basin
             {
                 return new RelayCommand(async () =>
                 {
+                    //SetDefaultProjection also initializes the Layout and the MapFrame dimensions
                     //@ToDo: This will always fail for now
                     BA_ReturnCode success = await MapTools.SetDefaultProjection();
                     IList<Aoi> lstAois = await GeneralTools.GetAoiFoldersAsync(ParentFolder, "");
@@ -339,14 +341,14 @@ namespace bagis_pro.Basin
                                     break;
                                 case DialogResult.No:
                                     DialogResult confirm = 
-                                    MessageBox.Show("Are you sure? \r\n WARNING!!! Existing DEM layers will be deleted if you continue. Click NO to cancel the action.", "BAGIS-Pro", MessageBoxButtons.YesNo);
+                                        MessageBox.Show("Are you sure? \r\n WARNING!!! Existing DEM layers will be deleted if you continue. Click NO to cancel the action.", "BAGIS-Pro", MessageBoxButtons.YesNo);
                                     if (confirm == DialogResult.No)
                                     {
                                         return;
                                     }
                                     // Delete the Surfaces Geodatabase
                                     string surfacesGdbPath = GeodatabaseTools.GetGeodatabasePath(ParentFolder, GeodatabaseNames.Surfaces); ;
-                                    string aoiGdbPath = GeodatabaseTools.GetGeodatabasePath(ParentFolder, GeodatabaseNames.Aoi); ;
+                                    string aoiGdbPath = GeodatabaseTools.GetGeodatabasePath(ParentFolder, GeodatabaseNames.Aoi);
                                     if (Directory.Exists(surfacesGdbPath))
                                     {
                                         int retVal = await MapTools.RemoveLayersInFolderAsync(surfacesGdbPath);
@@ -358,10 +360,31 @@ namespace bagis_pro.Basin
                                         int retVal = await MapTools.RemoveLayersInFolderAsync(aoiGdbPath);
                                         success = await GeoprocessingTools.DeleteDatasetAsync(aoiGdbPath);
                                     }
+                                    // verify the gdbs were removed
+                                    if (Directory.Exists(surfacesGdbPath) || Directory.Exists(aoiGdbPath))
+                                    {
+                                        MessageBox.Show("Unable to clear BASIN's internal file geodatabase! Please restart ArcGIS Pro and try again.", "BAGIS-Pro", MessageBoxButtons.YesNo);
+                                    }
+                                    bNeedToClipDem = true;
                                     break;
                             }
                         }
                     }
+                    // @ToDo: BAGIS V3 has code to set BasinFolderBase to ParentFolder
+                    // Check for local settings file
+                    success = GeneralTools.LoadBagisSettings();
+                    if (success != BA_ReturnCode.Success)
+                    {
+                        MessageBox.Show("Unable to get critical system settings information. System stopped!", "BAGIS-Pro", MessageBoxButtons.YesNo);
+                        return;
+                    }
+                    // reset aoi information
+                    GeneralTools.ResetAoiFlags();
+                    GeneralTools.ResetAoi();
+
+                    // These are gp environment variables to be used for gp tools in this function; There is no way to set this at the session/project level
+                    var env = Geoprocessing.MakeEnvironmentArray(workspace: ParentFolder);
+
                 });
             }
         }

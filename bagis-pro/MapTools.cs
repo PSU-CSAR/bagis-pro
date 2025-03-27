@@ -10,6 +10,7 @@ using ArcGIS.Desktop.Framework.Contracts;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
 using ArcGIS.Desktop.Layouts;
 using ArcGIS.Desktop.Mapping;
+using NLog.Layouts;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -4016,7 +4017,11 @@ namespace bagis_pro
         }
         public static async Task<BA_ReturnCode> SetDefaultProjection()
         {
+            Layout layout = await MapTools.GetDefaultLayoutAsync(Constants.MAPS_DEFAULT_LAYOUT_NAME);
             Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
+            BA_ReturnCode success = await MapTools.SetDefaultMapFrameDimensionAsync(Constants.MAPS_DEFAULT_MAP_FRAME_NAME, layout, oMap,
+                0.5, 2.5, 8.0, 10.5);
+
             bool bApplyProjection = false;
             if (oMap != null)
             {

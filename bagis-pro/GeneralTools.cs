@@ -3348,6 +3348,28 @@ namespace bagis_pro
             }
             return lstIntervals;
         }
+        public static void ResetAoiFlags()
+        {
+            Module1.DeactivateState("bagis_pro_Buttons_BtnDefineAoi_State");
+            Module1.DeactivateState("bagis_pro_Buttons_BtnSetPourpoint_State");
+            Module1.DeactivateState("bagis_pro_Buttons_BtnCreateAoi_State");
+            //@ToDo: Will there be a stream links button?
+            //Disable AOI flags also disable all the map flags
+            MapTools.DeactivateMapButtons();
+        }
+        public static void ResetAoi()
+        {
+            Module1.Current.ModuleLogManager.UpdateLogFileLocation("");
+            var layersPane = (DockpaneLayersViewModel)FrameworkApplication.DockPaneManager.Find("bagis_pro_DockpaneLayers");
+            layersPane.ResetView();
+            Module1.Current.Aoi = new Aoi();
+            MapTools.DeactivateMapButtons();
+            Module1.DeactivateState("BtnExcelTables_State");
+            Module1.DeactivateState("BtnLoadMaps_State");
+            Module1.DeactivateState("Aoi_Selected_State");
+            Module1.Current.CboCurrentAoi.ResetAoiName();
+            //@ToDo: Will there be a stream links button?
+        }
     }
 
 }

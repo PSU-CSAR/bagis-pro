@@ -10,6 +10,7 @@ namespace bagis_pro.Buttons
     {
 
         private bool _isInitialized;
+        private string _strNotSelected = "Not Selected";
 
         /// <summary>
         /// Combo Box constructor
@@ -44,7 +45,7 @@ namespace bagis_pro.Buttons
                 _isInitialized = true;
             }
 
-            Add(new ComboBoxItem("Not Selected"));
+            Add(new ComboBoxItem(_strNotSelected));
             Enabled = true; //enables the ComboBox
             SelectedItem = ItemCollection.FirstOrDefault(); //set the default item in the comboBox
 
@@ -70,6 +71,12 @@ namespace bagis_pro.Buttons
         {
             Clear();
             Add(new ComboBoxItem(basinName));
+            SelectedItem = ItemCollection.FirstOrDefault(); //set the default item in the comboBox
+        }
+        public void ResetBasinName()
+        {
+            Clear();
+            Add(new ComboBoxItem(_strNotSelected));
             SelectedItem = ItemCollection.FirstOrDefault(); //set the default item in the comboBox
         }
 
