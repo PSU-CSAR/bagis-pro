@@ -88,7 +88,7 @@
           <tooltip heading="Add Ref Layers">
             Add Reference Layers<disabledText /></tooltip>
         </button>
-        <button id="bagis_pro_Menus_MnuAoiTools_AOIShapefile" caption="Create AOI from Shapefile" className="bagis_pro.Menus.MnuAoiTools_AOIShapefile" loadOnClick="true" keytip="B5">
+        <button id="bagis_pro_Menus_MnuAoiTools_AOIShapefile" caption="Create AOI from Shapefile" className="bagis_pro.Menus.MnuAoiTools_AOIShapefile" loadOnClick="true" smallImage="ShapefilePolygon16" largeImage="ShapefilePolygon32" keytip="B5">
           <tooltip heading="Create AOI from Shapefile">
             Create AOI from Shapefile<disabledText /></tooltip>
         </button>
@@ -104,7 +104,7 @@
           <tooltip heading="Load Maps">
             Click to load maps<disabledText /></tooltip>
         </button>
-        <button id="bagis_pro_Menus_MnuAoiTools_BtnSelectAoi" caption="Select AOI" className="bagis_pro.Menus.MnuAoiTools_BtnSelectAoi" loadOnClick="true" keytip="B13">
+        <button id="bagis_pro_Menus_MnuAoiTools_BtnSelectAoi" caption="Select AOI" className="bagis_pro.Menus.MnuAoiTools_BtnSelectAoi" loadOnClick="true" smallImage="FolderBlueOpenState16" largeImage="FolderBlueOpenState32" keytip="B13">
           <tooltip heading="Select AOI">
             Click to select an AOI<disabledText /></tooltip>
         </button>
@@ -248,23 +248,23 @@
           <tooltip heading="Export Map Package">
             Click to export Map Package to PDF<disabledText /></tooltip>
         </button>
-        <button id="bagis_pro_Basin_DockBasinTool_ShowButton" caption="Select Basin" className="bagis_pro.Basin.DockBasinTool_ShowButton" loadOnClick="true">
+        <button id="bagis_pro_Basin_DockBasinTool_ShowButton" caption="Select Basin" className="bagis_pro.Basin.DockBasinTool_ShowButton" loadOnClick="true" smallImage="WaterbodyMask16">
           <tooltip heading="Select Basin">
             Click to select a basin<disabledText /></tooltip>
         </button>
-        <button id="bagis_pro_Buttons_BtnSetBasinExtent" caption="Set BASIN Extent" className="bagis_pro.Buttons.BtnSetBasinExtent" loadOnClick="true" condition="bagis_pro_Buttons_BtnSetBasinExtent_Condition" smallImage="GenericButtonBlue16" largeImage="GenericButtonBlue32">
+        <button id="bagis_pro_Buttons_BtnSetBasinExtent" caption="Set BASIN Extent" className="bagis_pro.Buttons.BtnSetBasinExtent" loadOnClick="true" condition="bagis_pro_Buttons_BtnSetBasinExtent_Condition" smallImage="SelectParcelFeatures16" largeImage="SelectParcelFeatures32">
           <tooltip heading="Set BASIN Extent">Set BASIN Extent<disabledText /></tooltip>
         </button>
-        <button id="bagis_pro_Buttons_BtnCreateBasin" caption="Create BASIN" className="bagis_pro.Buttons.BtnCreateBasin" loadOnClick="true" condition="bagis_pro_Buttons_BtnCreateBasin_Condition" smallImage="GenericButtonBlue16" largeImage="GenericButtonBlue32">
+        <button id="bagis_pro_Buttons_BtnCreateBasin" caption="Create BASIN" className="bagis_pro.Buttons.BtnCreateBasin" loadOnClick="true" condition="bagis_pro_Buttons_BtnCreateBasin_Condition" smallImage="WatershedHammer16" largeImage="WatershedHammer32">
           <tooltip heading="Create BASIN">Create BASIN<disabledText /></tooltip>
         </button>
-        <button id="bagis_pro_Buttons_BtnDefineAoi" caption="Define AOI" className="bagis_pro.Buttons.BtnDefineAoi" loadOnClick="true" condition="bagis_pro_Buttons_BtnDefineAoi_Condition" smallImage="GenericButtonBlue16" largeImage="GenericButtonBlue32">
+        <button id="bagis_pro_Buttons_BtnDefineAoi" caption="Define AOI" className="bagis_pro.Buttons.BtnDefineAoi" loadOnClick="true" condition="bagis_pro_Buttons_BtnDefineAoi_Condition" smallImage="FolderConnection16" largeImage="FolderConnection32">
           <tooltip heading="Define AOI">Define AOI<disabledText /></tooltip>
         </button>
-        <button id="bagis_pro_Buttons_BtnSetPourpoint" caption="Set Pourpoint Location" className="bagis_pro.Buttons.BtnSetPourpoint" loadOnClick="true" condition="bagis_pro_Buttons_BtnSetPourpoint_Condition" smallImage="GenericButtonBlue16" largeImage="GenericButtonBlue32">
+        <button id="bagis_pro_Buttons_BtnSetPourpoint" caption="Set Pourpoint Location" className="bagis_pro.Buttons.BtnSetPourpoint" loadOnClick="true" condition="bagis_pro_Buttons_BtnSetPourpoint_Condition" smallImage="SnapPourPoint16" largeImage="SnapPourPoint32">
           <tooltip heading="Set Pourpoint Location">Set Pourpoint Location<disabledText /></tooltip>
         </button>
-        <button id="bagis_pro_Buttons_BtnCreateAoi" caption="Create AOI" className="bagis_pro.Buttons.BtnCreateAoi" loadOnClick="true" condition="bagis_pro_Buttons_BtnCreateAoi_Condition" smallImage="GenericButtonBlue16" largeImage="GenericButtonBlue32">
+        <button id="bagis_pro_Buttons_BtnCreateAoi" caption="Create AOI" className="bagis_pro.Buttons.BtnCreateAoi" loadOnClick="true" condition="bagis_pro_Buttons_BtnCreateAoi_Condition" smallImage="WatershedHammer16" largeImage="WatershedHammer32">
           <tooltip heading="Create AOI">Create AOI<disabledText /></tooltip>
         </button>
       </controls>
