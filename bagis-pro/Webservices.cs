@@ -799,19 +799,26 @@ namespace bagis_pro
             {
                 string uriTest = $@"{wsUri}/info/iteminfo?f=pjson";
                 EsriHttpResponseMessage response = new EsriHttpClient().Get(uriTest);
-                JObject jsonVal = JObject.Parse(await response.Content.ReadAsStringAsync()) as JObject;
-                JValue jsonType = (JValue)jsonVal["type"];
-                if (jsonType != null)
+                try
                 {
-                    string strType = jsonType.ToString();
-                    if (strType.Equals("Image Service"))
+                    JObject jsonVal = JObject.Parse(await response.Content.ReadAsStringAsync()) as JObject;
+                    JValue jsonType = (JValue)jsonVal["type"];
+                    if (jsonType != null)
                     {
-                        return true;
+                        string strType = jsonType.ToString();
+                        if (strType.Equals("Image Service"))
+                        {
+                            return true;
+                        }
+                        else
+                        {
+                            return false;
+                        }
                     }
-                    else
-                    {
-                        return false;
-                    }
+                }
+                catch (JsonReaderException ex)
+                { 
+                    // munch
                 }
             }
             return false;

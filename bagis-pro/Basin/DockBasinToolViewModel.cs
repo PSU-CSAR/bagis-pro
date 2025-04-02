@@ -54,6 +54,7 @@ namespace bagis_pro.Basin
         private string _aoiStatus;
         private bool _cmdViewDemEnabled;
         private bool _cmdViewLayersEnabled;
+        private bool _cmdSelectBasinEnabled;
         private WinViewDemLayers _winViewDemLayers = null;
 
         public string ParentFolder
@@ -92,6 +93,14 @@ namespace bagis_pro.Basin
             set
             {
                 SetProperty(ref _cmdViewLayersEnabled, value, () => CmdViewLayersEnabled);
+            }
+        }
+        public bool CmdSelectBasinEnabled
+        {
+            get { return _cmdSelectBasinEnabled; }
+            set
+            {
+                SetProperty(ref _cmdSelectBasinEnabled, value, () => CmdSelectBasinEnabled);
             }
         }
 
@@ -187,7 +196,7 @@ namespace bagis_pro.Basin
                                 if (await GeodatabaseTools.RasterDatasetExistsAsync(uriSurfaces, Constants.FILE_DEM_FILLED))
                                 {
                                     // This subfolder contains a dem
-                                    double cellSize = await GeodatabaseTools.GetCellSizeAsync(uriSurfaces, Constants.FILE_DEM_FILLED, WorkspaceType.Raster);
+                                    double cellSize = await GeodatabaseTools.GetCellSizeAsync(new Uri(strDemPath), WorkspaceType.Geodatabase);
                                     nextEntry.BasinStatus = Convert.ToString(Math.Round(cellSize, 2)) + " meters resolution";
                                 }
                                 else
@@ -200,7 +209,7 @@ namespace bagis_pro.Basin
                             }
                             else
                             {
-                                double cellSize = await GeodatabaseTools.GetCellSizeAsync(uriSurfaces, Constants.FILE_DEM_FILLED, WorkspaceType.Raster);
+                                double cellSize = await GeodatabaseTools.GetCellSizeAsync(new Uri(strDemPath), WorkspaceType.Geodatabase);
                                 if (cellSize > 0)
                                 {
                                     nextEntry.BasinStatus = Convert.ToString(Math.Round(cellSize, 2)) + " meters resolution";
@@ -319,8 +328,13 @@ namespace bagis_pro.Basin
                 return new RelayCommand(async () =>
                 {
                     //SetDefaultProjection also initializes the Layout and the MapFrame dimensions
-                    //@ToDo: This will always fail for now
-                    BA_ReturnCode success = await MapTools.SetDefaultProjection();
+                    //01-APR-2025: We decided not to set a default project for now so other projections could be supported
+                    //Initialize the layout and map separately instead
+                    //BA_ReturnCode success = await MapTools.SetDefaultProjection();
+                    ArcGIS.Desktop.Layouts.Layout layout = await MapTools.GetDefaultLayoutAsync(Constants.MAPS_DEFAULT_LAYOUT_NAME);
+                    Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
+                    BA_ReturnCode success = await MapTools.SetDefaultMapFrameDimensionAsync(Constants.MAPS_DEFAULT_MAP_FRAME_NAME, layout, oMap,
+                        0.5, 2.5, 8.0, 10.5);
                     IList<Aoi> lstAois = await GeneralTools.GetAoiFoldersAsync(ParentFolder, "");
                     bool bNeedToClipDem = false;
                     if (BasinStatus.ToUpper().IndexOf("RESOLUTION") > -1)   // FGDB exists
@@ -387,7 +401,23 @@ namespace bagis_pro.Basin
 
                     if (bNeedToClipDem)
                     {
-
+                        DemInfo demInfo = null;
+                        if (Module1.Current.DemDimension == null || (Module1.Current.DemDimension.x_CellSize * Module1.Current.DemDimension.y_CellSize == 0))
+                        {
+                            string strSourceDem = (string)Module1.Current.BagisSettings.DemUri;
+                            WorkspaceType wType = await GeneralTools.GetRasterWorkspaceType(strSourceDem);
+                            if (wType == WorkspaceType.None)
+                            {
+                                System.Windows.MessageBox.Show("Invalid DEM. AOI cannot be created!", "BAGIS-Pro", System.Windows.MessageBoxButton.OK,
+                                    System.Windows.MessageBoxImage.Error);
+                                return;
+                            }
+                            else if (wType == WorkspaceType.ImageServer || wType == WorkspaceType.Geodatabase || wType == WorkspaceType.Raster)
+                            {
+                                System.Windows.MessageBox.Show("The Basin DEM extent boundaries will be snapped to the DEM raster cells.\r\n The activation might take a few seconds.", "BAGIS-Pro");
+                                demInfo = await GeneralTools.GetRasterDimensionsAsync(strSourceDem);
+                            }
+                        }
                     }
 
                 });
@@ -397,12 +427,13 @@ namespace bagis_pro.Basin
         {
             FolderType fType = await GeodatabaseTools.GetAoiFolderTypeAsync(strFolderPath);
             Uri uriSurfaces = new Uri(GeodatabaseTools.GetGeodatabasePath(strFolderPath, GeodatabaseNames.Surfaces));
+            string strFullDemPath = $@"{uriSurfaces.LocalPath}\{Constants.FILE_DEM_FILLED}";
             if (fType != FolderType.AOI)
             {
                 //then check if dem_filled exists
                 if (await GeodatabaseTools.RasterDatasetExistsAsync(uriSurfaces, Constants.FILE_DEM_FILLED))
                 {
-                    double cellSize = await GeodatabaseTools.GetCellSizeAsync(uriSurfaces, Constants.FILE_DEM_FILLED, WorkspaceType.Raster);                    
+                    double cellSize = await GeodatabaseTools.GetCellSizeAsync(new Uri(strFullDemPath), WorkspaceType.Geodatabase);                    
                     BasinStatus = Convert.ToString(Math.Round(cellSize, 2)) + " meters resolution";
                     CmdViewLayersEnabled = true;
                 }
@@ -418,7 +449,7 @@ namespace bagis_pro.Basin
                 double cellSize = -1;
                 if (await GeodatabaseTools.RasterDatasetExistsAsync(uriSurfaces, Constants.FILE_DEM_FILLED))
                 {
-                    cellSize = await GeodatabaseTools.GetCellSizeAsync(uriSurfaces, Constants.FILE_DEM_FILLED, WorkspaceType.Raster);
+                    cellSize = await GeodatabaseTools.GetCellSizeAsync(new Uri(strFullDemPath), WorkspaceType.Geodatabase);
                 }
                 if (cellSize <= 0)
                 {
@@ -442,6 +473,7 @@ namespace bagis_pro.Basin
             {
                 CmdViewDemEnabled = true;
             }
+            CmdSelectBasinEnabled = true;
         }
     }
 

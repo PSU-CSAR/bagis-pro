@@ -160,7 +160,8 @@ namespace bagis_pro
         Raster,
         Geodatabase,
         ImageServer,
-        FeatureServer
+        FeatureServer,
+        None
     }
 
     public enum MeasurementUnitType

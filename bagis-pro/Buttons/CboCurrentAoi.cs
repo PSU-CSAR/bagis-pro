@@ -39,13 +39,7 @@ namespace bagis_pro.Buttons
             if (!_isInitialized)
             {
                 Clear();
-
-                //Add 6 items to the combobox
-                //for (int i = 0; i < 6; i++)
-                //{
-                //    string name = string.Format("Item {0}", i);
-                //    Add(new ComboBoxItem(name));
-                //}
+                Add(new ComboBoxItem(_strNotSelected));
                 _isInitialized = true;
             }
 
@@ -78,7 +72,7 @@ namespace bagis_pro.Buttons
         }
         public void ResetAoiName()
         {
-            Clear();
+            Clear();          
             Add(new ComboBoxItem(_strNotSelected));
             SelectedItem = ItemCollection.FirstOrDefault(); //set the default item in the comboBox
         }

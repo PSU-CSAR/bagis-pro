@@ -2377,9 +2377,10 @@ namespace bagis_pro
                     for (int i = overrideMinYear; i <= overrideMaxYear; i++)
                     {
                         string strRasterName = GeneralTools.GetMtbsLayerFileName(i);
+                        Uri fullFireUri = new Uri($@"{fireUri.LocalPath}\{strRasterName}");
                         if (await GeodatabaseTools.RasterDatasetExistsAsync(fireUri, strRasterName))
                         {
-                            double dblTest = await GeodatabaseTools.GetCellSizeAsync(fireUri, strRasterName, WorkspaceType.Raster);
+                            double dblTest = await GeodatabaseTools.GetCellSizeAsync(fullFireUri, WorkspaceType.Geodatabase);
                             if (dblTest > 0)
                             {
                                 cellSizeSqMeters = Math.Round(dblTest,2);

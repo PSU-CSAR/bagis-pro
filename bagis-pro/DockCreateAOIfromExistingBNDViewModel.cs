@@ -210,25 +210,9 @@ namespace bagis_pro
             }
 
             // verify dem is available
-            Webservices ws = new Webservices();
             string strSourceDem = (string)Module1.Current.BagisSettings.DemUri;
-            bool bDemImageService = false;
-            bool bDemRaster = false;
-            if (!string.IsNullOrEmpty(strSourceDem))
-            {
-                bDemImageService = await Webservices.ValidateImageService(strSourceDem);
-                if (!bDemImageService)
-                {
-                    string strDirectory = Path.GetDirectoryName(strSourceDem);
-                    string strRaster = Path.GetFileName(strSourceDem);
-                    if (!string.IsNullOrEmpty(strDirectory) && !string.IsNullOrEmpty(strRaster))
-                    {
-                        Uri gdbUri = new Uri(strDirectory);
-                        bDemRaster = await GeodatabaseTools.RasterDatasetExistsAsync(gdbUri, strRaster);
-                    }                    
-                }
-            }
-            if (bDemImageService == false && bDemRaster == false)
+            WorkspaceType wType = await GeneralTools.GetRasterWorkspaceType(strSourceDem);
+            if (wType == WorkspaceType.None)
             {
                 System.Windows.MessageBox.Show("Invalid DEM. AOI cannot be created!", "BAGIS-Pro", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
@@ -297,16 +281,7 @@ namespace bagis_pro
                 return;
             }
 
-            double cellSize = -1;
-            if (bDemImageService)
-            {
-                cellSize = await GeodatabaseTools.GetCellSizeAsync(new Uri(strSourceDem), "", WorkspaceType.ImageServer);
-            }
-            else
-            {
-                string strGdb = Path.GetDirectoryName(strSourceDem);
-                cellSize = await GeodatabaseTools.GetCellSizeAsync(new Uri(strGdb), Path.GetFileName(strSourceDem), WorkspaceType.Raster);
-            }
+            double cellSize = await GeodatabaseTools.GetCellSizeAsync(new Uri(strSourceDem), wType);
             // If DEM CellSize could not be calculated, the DEM is likely invalid
             if (cellSize <= 0)
             {

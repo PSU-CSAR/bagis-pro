@@ -867,14 +867,15 @@ namespace bagis_pro
 
             return lstInterval;
         }
-
-        public static async Task<double> GetCellSizeAsync(Uri gdbUri, string rasterName, WorkspaceType workspaceType)
+        public static async Task<double> GetCellSizeAsync(Uri uriRaster, WorkspaceType workspaceType)
         {
             double cellSize = -1.0F;
+            string rasterName = System.IO.Path.GetFileName(uriRaster.LocalPath);
             switch (workspaceType)
             {
-                case WorkspaceType.Raster:
-                    if (await GeodatabaseTools.RasterDatasetExistsAsync(gdbUri, rasterName))
+                case WorkspaceType.Geodatabase:
+                    Uri gdbUri = new Uri(System.IO.Path.GetDirectoryName(uriRaster.LocalPath));
+                    if (await GeodatabaseTools.RasterDatasetExistsAsync(gdbUri, rasterName ))
                     {
                         await QueuedTask.Run(() => {
                             using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(gdbUri)))
@@ -897,7 +898,7 @@ namespace bagis_pro
                     await QueuedTask.Run(() =>
                     {
                         // Create an image service layer using the url for an image service.
-                        var isLayer = LayerFactory.Instance.CreateLayer(gdbUri, oMap) as ImageServiceLayer;
+                        var isLayer = LayerFactory.Instance.CreateLayer(uriRaster, oMap) as ImageServiceLayer;
                         if (isLayer != null)
                         {
                             isLayer.SetVisibility(false);
@@ -912,6 +913,26 @@ namespace bagis_pro
                                 }
                             }
                             oMap.RemoveLayer(isLayer);
+                        }
+                    });
+                    break;
+                case WorkspaceType.Raster:
+                    // Create a FileSystemConnectionPath using the folder path
+                    Uri folderUri = new Uri(System.IO.Path.GetDirectoryName(uriRaster.LocalPath));
+                    await QueuedTask.Run(() => {
+                        FileSystemConnectionPath connectionPath =
+                            new FileSystemConnectionPath(folderUri, FileSystemDatastoreType.Raster);
+                        // Create a new FileSystemDatastore using the FileSystemConnectionPath.
+                        using (FileSystemDatastore dataStore = new FileSystemDatastore(connectionPath))
+                        using (RasterDataset fileRasterDataset = dataStore.OpenDataset<RasterDataset>(rasterName))
+                        {
+                            // Open the raster dataset.
+                            if (fileRasterDataset != null)
+                            {
+                                RasterBandDefinition bandDefinition = fileRasterDataset.GetBand(0).GetDefinition();
+                                Tuple<double, double> tupleSize = bandDefinition.GetMeanCellSize();
+                                cellSize = (tupleSize.Item1 + tupleSize.Item2) / 2;
+                            }
                         }
                     });
                     break;

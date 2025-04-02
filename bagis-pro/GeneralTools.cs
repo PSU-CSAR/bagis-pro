@@ -25,8 +25,6 @@ using ArcGIS.Desktop.Catalog;
 using Microsoft.VisualBasic.FileIO;
 using ArcGIS.Desktop.Core.Geoprocessing;
 using System.Text;
-using ArcGIS.Core.Data.UtilityNetwork.Trace;
-using System.Runtime.CompilerServices;
 using bagis_pro.BA_Objects;
 
 namespace bagis_pro
@@ -3367,8 +3365,114 @@ namespace bagis_pro
             Module1.DeactivateState("BtnExcelTables_State");
             Module1.DeactivateState("BtnLoadMaps_State");
             Module1.DeactivateState("Aoi_Selected_State");
-            Module1.Current.CboCurrentAoi.ResetAoiName();
-            //@ToDo: Will there be a stream links button?
+            if (Module1.Current.CboCurrentAoi != null)
+            {
+                Module1.Current.CboCurrentAoi.ResetAoiName();
+            }           
+        }
+        public static async Task<WorkspaceType> GetRasterWorkspaceType(string strRasterPath)
+        {
+            WorkspaceType wType = WorkspaceType.None;
+            if (!string.IsNullOrEmpty(strRasterPath))
+            {
+                bool bImageService = await Webservices.ValidateImageService(strRasterPath);
+                bool bFgdb = false;
+                if (strRasterPath.IndexOf("fgdb") > -1)
+                {
+                    bFgdb = true;
+                }
+                if (bImageService)
+                {
+                    wType = WorkspaceType.ImageServer;
+                }
+                else if (!bImageService && bFgdb == true)
+                {
+                    string strDirectory = Path.GetDirectoryName(strRasterPath);
+                    string strRaster = Path.GetFileName(strRasterPath);
+                    if (!string.IsNullOrEmpty(strDirectory) && Directory.Exists(strDirectory) &&
+                        !string.IsNullOrEmpty(strRaster))
+                    {
+                        Uri gdbUri = new Uri(strDirectory);
+                        if (await GeodatabaseTools.RasterDatasetExistsAsync(gdbUri, strRaster))
+                        {
+                            wType = WorkspaceType.Geodatabase;
+                        }
+                    }
+                }
+                else
+                {
+                    string strDirectory = Path.GetDirectoryName(strRasterPath);
+                    string strRaster = Path.GetFileName(strRasterPath);
+                    if (!string.IsNullOrEmpty(strDirectory) && Directory.Exists(strDirectory) &&
+                        !string.IsNullOrEmpty(strRaster))
+                    {
+                        IList<string> lstRaster = new List<string>() { strRasterPath };
+                        IList<string> lstFound = await RasterDatasetsExistAsync(lstRaster);
+                        if (lstFound.Count == lstRaster.Count)
+                        {
+                            wType = WorkspaceType.Raster;
+                        }
+                    }
+                }
+            }
+            return wType;
+        }
+        public static async Task<DemInfo> GetRasterDimensionsAsync(string strRasterPath)
+        {
+            DemInfo demInfo = new DemInfo();
+            WorkspaceType workspaceType = await GetRasterWorkspaceType(strRasterPath);
+            if (workspaceType == WorkspaceType.Geodatabase)
+            {
+                Uri gdbUri = new Uri(System.IO.Path.GetDirectoryName(strRasterPath));
+                string rasterName = System.IO.Path.GetFileName(strRasterPath);
+                await QueuedTask.Run(() => {
+                    using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(gdbUri)))
+                    using (RasterDataset rasterDataset = geodatabase.OpenDataset<RasterDataset>(rasterName))
+                    {
+                        RasterBandDefinition bandDefinition = rasterDataset.GetBand(0).GetDefinition();
+                        var oEnv = bandDefinition.GetExtent();
+                        demInfo.minMapX = oEnv.XMin;
+                        demInfo.maxMapX = oEnv.XMax;
+                        demInfo.minMapY = oEnv.YMin;
+                        demInfo.maxMapY = oEnv.YMax;
+                        demInfo.heightInPixels = oEnv.Height;
+                        demInfo.widthInPixels = oEnv.Width;
+                        Tuple<double, double> tupleSize = bandDefinition.GetMeanCellSize();
+                        demInfo.x_CellSize = tupleSize.Item1;
+                        demInfo.y_CellSize = tupleSize.Item2;
+                    }
+                });
+            }
+            else if (workspaceType == WorkspaceType.Raster)
+            {
+                // Create a FileSystemConnectionPath using the folder path.
+                Uri folderUri = new Uri(System.IO.Path.GetDirectoryName(strRasterPath));
+                await QueuedTask.Run(() => {
+                    FileSystemConnectionPath connectionPath =
+                        new FileSystemConnectionPath(folderUri, FileSystemDatastoreType.Raster);
+                    // Create a new FileSystemDatastore using the FileSystemConnectionPath.
+                    using (FileSystemDatastore dataStore = new FileSystemDatastore(connectionPath))
+                    using (RasterDataset fileRasterDataset = dataStore.OpenDataset<RasterDataset>(System.IO.Path.GetFileName(strRasterPath)))
+                    {
+                        // Open the raster dataset.
+                        if (fileRasterDataset != null)
+                        {
+                            RasterBandDefinition bandDefinition = fileRasterDataset.GetBand(0).GetDefinition();
+                            var oEnv = bandDefinition.GetExtent();
+                            demInfo.minMapX = oEnv.XMin;
+                            demInfo.maxMapX = oEnv.XMax;
+                            demInfo.minMapY = oEnv.YMin;
+                            demInfo.maxMapY = oEnv.YMax;
+                            demInfo.heightInPixels = oEnv.Height;
+                            demInfo.widthInPixels = oEnv.Width;
+                            Tuple<double, double> tupleSize = bandDefinition.GetMeanCellSize();
+                            demInfo.x_CellSize = tupleSize.Item1;
+                            demInfo.y_CellSize = tupleSize.Item2;
+                        }
+                    }
+                });
+            }
+            return demInfo;
         }
     }
 

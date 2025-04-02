@@ -2811,26 +2811,32 @@ namespace bagis_pro
         {
             Layer layer = null;
             Map oMap = await MapTools.SetDefaultMapNameAsync(strMapName);
-
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
             // Open the requested raster so we know it exists; return if it doesn't
             await QueuedTask.Run(() =>
             {
-                //Create the raster layer on the active map
-                //Migrate from 2.x
-                var rasterLayerCreationParams = new RasterLayerCreationParams(mapUri)
+                try
                 {
-                    Name = displayName,
-                };
-                layer = LayerFactory.Instance.CreateLayer<RasterLayer>(rasterLayerCreationParams, oMap);
+                    var rasterLayerCreationParams = new RasterLayerCreationParams(mapUri)
+                    {
+                        Name = displayName,
+                    };
+                    //Create the raster layer on the active map
+                    layer = LayerFactory.Instance.CreateLayer<RasterLayer>(rasterLayerCreationParams, oMap);
 
-                // Set raster layer transparency and name
-                if (layer != null)
+                    // Set raster layer transparency and name
+                    if (layer != null)
+                    {
+                        layer.SetVisibility(bIsVisible);
+                        success = BA_ReturnCode.Success;
+                    }
+                }
+                catch (Exception e)
                 {
-                    layer.SetVisibility(bIsVisible);
-
+                    // munch
                 }
             });
-            return BA_ReturnCode.Success;
+            return success;
         }
 
         public static async Task DisplayRasterStretchSymbolAsync(string strMapName, Uri rasterUri, string displayName, string styleCategory,

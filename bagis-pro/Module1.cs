@@ -17,6 +17,7 @@ using ArcGIS.Desktop.Framework.Dialogs;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
 using ArcGIS.Desktop.Mapping;
 using System.IO;
+using bagis_pro.BA_Objects;
 
 namespace bagis_pro
 {
@@ -120,5 +121,6 @@ namespace bagis_pro
         internal string RoadsBufferDistance { get; set; } = "";
         internal string DataSourceGroup { get; set; } = Constants.DATA_SOURCES_DEFAULT;
         internal string ChromePath { get; set; } = "";
+        internal DemInfo DemDimension { get; set; }
     }
 }

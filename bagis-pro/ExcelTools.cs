@@ -410,13 +410,14 @@ namespace bagis_pro
             //Zonal Statistics
             //===========================
             // We assume elevation zones is the smaller cell size. Could not find api to set cell size to minimum of layers
-            double dblCellSize = await GeodatabaseTools.GetCellSizeAsync(uriElevZones, Constants.FILE_ELEV_ZONE, WorkspaceType.Raster);
+            string strInZoneData = uriElevZones.LocalPath + "\\" + Constants.FILE_ELEV_ZONE;
+            double dblCellSize = await GeodatabaseTools.GetCellSizeAsync(new Uri(strInZoneData), WorkspaceType.Geodatabase);
             IGPResult gpResult = await QueuedTask.Run(() =>
             {
                 string sMask = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_RASTER;
                 var environments = Geoprocessing.MakeEnvironmentArray(workspace: Module1.Current.Aoi.FilePath, snapRaster: BA_Objects.Aoi.SnapRasterPath(Module1.Current.Aoi.FilePath),
                     mask: sMask, cellSize: dblCellSize);
-                string strInZoneData = uriElevZones.LocalPath + "\\" + Constants.FILE_ELEV_ZONE;
+                strInZoneData = uriElevZones.LocalPath + "\\" + Constants.FILE_ELEV_ZONE;
                 string strOutTable = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis, true) + Constants.FILE_ELEV_ZONES_TBL;
                 var parameters = Geoprocessing.MakeValueArray(strInZoneData, Constants.FIELD_VALUE, precipPath, strOutTable);
                 return Geoprocessing.ExecuteToolAsync("ZonalStatisticsAsTable_sa", parameters, environments,

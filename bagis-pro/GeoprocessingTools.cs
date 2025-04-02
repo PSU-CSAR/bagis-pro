@@ -285,39 +285,46 @@ namespace bagis_pro
             string strLayerName = "ClipRasterSource";
             Uri uri = new Uri(strInputRaster);
             BA_ReturnCode success = await MapTools.DisplayMapServiceLayerAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, strLayerName, false);
-            string strClippingGeometry = "NONE";
-            if (bUseClippingGeometry == true)
+            if (success == BA_ReturnCode.Success)            
             {
-                strClippingGeometry = "ClippingGeometry";
-            }
-            IGPResult gpResult = await QueuedTask.Run(() =>
-            {
-                var environments = Geoprocessing.MakeEnvironmentArray(workspace: strWorkspace, snapRaster: strSnapRaster, extent: strRectangle);
-                // Always set the extent when clipping from an image service
-                var parameters = Geoprocessing.MakeValueArray(strLayerName, strRectangle, strOutputRaster, strTemplateDataset,
-                                    strNoDataValue, strClippingGeometry);
-                return Geoprocessing.ExecuteToolAsync("Clip_management", parameters, environments,
-                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-            });
-
-            // Remove the temp layer
-            var oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
-            Layer oLayer =
-                oMap.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(strLayerName, StringComparison.CurrentCultureIgnoreCase));
-            if (oLayer != null)
-            {
-                await QueuedTask.Run(() =>
+                string strClippingGeometry = "NONE";
+                if (bUseClippingGeometry == true)
                 {
-                    oMap.RemoveLayer(oLayer);
+                    strClippingGeometry = "ClippingGeometry";
+                }
+                IGPResult gpResult = await QueuedTask.Run(() =>
+                {
+                    var environments = Geoprocessing.MakeEnvironmentArray(workspace: strWorkspace, snapRaster: strSnapRaster, extent: strRectangle);
+                    // Always set the extent when clipping from an image service
+                    var parameters = Geoprocessing.MakeValueArray(strLayerName, strRectangle, strOutputRaster, strTemplateDataset,
+                                        strNoDataValue, strClippingGeometry);
+                    return Geoprocessing.ExecuteToolAsync("Clip_management", parameters, environments,
+                                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
                 });
-            }
-            if (gpResult.IsFailed)
-            {
-                return BA_ReturnCode.UnknownError;
+
+                // Remove the temp layer
+                var oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
+                Layer oLayer =
+                    oMap.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(strLayerName, StringComparison.CurrentCultureIgnoreCase));
+                if (oLayer != null)
+                {
+                    await QueuedTask.Run(() =>
+                    {
+                        oMap.RemoveLayer(oLayer);
+                    });
+                }
+                if (gpResult.IsFailed)
+                {
+                    return BA_ReturnCode.UnknownError;
+                }
+                else
+                {
+                    return BA_ReturnCode.Success;
+                }
             }
             else
             {
-                return BA_ReturnCode.Success;
+                return success;
             }
         }
 

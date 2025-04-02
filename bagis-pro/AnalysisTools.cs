@@ -2560,11 +2560,12 @@ namespace bagis_pro
             IList<BA_Objects.Interval> lstAspectInterval = AnalysisTools.GetAspectClasses(intAspectCount);
 
             // Create the elevation-precipitation layer
-            Uri uriSurfaces = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Surfaces));
+            Uri uriSurfaces = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Surfaces, true) + Constants.FILE_DEM_CLIPPED);
             Uri uriAnalysis = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Analysis));
             Uri uriLayers = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers));
-            double dblDemCellSize = await GeodatabaseTools.GetCellSizeAsync(uriSurfaces, Constants.FILE_DEM_CLIPPED, WorkspaceType.Raster);
-            double dblPrismCellSize = await GeodatabaseTools.GetCellSizeAsync(uriPrism, prismFile, WorkspaceType.Raster);
+            double dblDemCellSize = await GeodatabaseTools.GetCellSizeAsync(uriSurfaces, WorkspaceType.Geodatabase);
+            Uri uriPrismFull = new Uri($@"{uriPrism.LocalPath}\{prismFile}");
+            double dblPrismCellSize = await GeodatabaseTools.GetCellSizeAsync(uriPrismFull, WorkspaceType.Geodatabase);
             if (dblPrismCellSize < 0)
             {
                 Module1.Current.ModuleLogManager.LogError(nameof(CalculateElevPrecipCorrAsync),
@@ -2600,8 +2601,8 @@ namespace bagis_pro
 
                 if (success == BA_ReturnCode.Success)
                 {
-                    double dblAspectCellSize = await GeodatabaseTools.GetCellSizeAsync(uriAnalysis, Constants.FILE_ASPECT_ZONE, WorkspaceType.Raster);
                     string aspectZonesPath = uriAnalysis.LocalPath + "\\" + Constants.FILE_ASPECT_ZONE;
+                    double dblAspectCellSize = await GeodatabaseTools.GetCellSizeAsync(new Uri(aspectZonesPath), WorkspaceType.Geodatabase);                    
                     if (dblPrismCellSize != dblAspectCellSize)
                     {
                         // Execute focal statistics to account for differing cell sizes
@@ -2963,6 +2964,10 @@ namespace bagis_pro
                         strInputRaster = "ClipRasterSource";
                         Uri uri = new Uri(strWsUri);
                         success = await MapTools.DisplayMapServiceLayerAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, strInputRaster, false);
+                    }
+                    if (success != BA_ReturnCode.Success)
+                    {
+                        return;
                     }
                     string strTemplateDataset = strClipGdb + "\\" + strClipFile;
                     // Always set the extent when clipping from an image service
@@ -3895,8 +3900,8 @@ namespace bagis_pro
                 return BA_ReturnCode.UnknownError;
             }
 
-            double dblCellSize = await GeodatabaseTools.GetCellSizeAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Analysis)),
-                Constants.FILE_PRECIPITATION_CONTRIBUTION, WorkspaceType.Raster);
+            double dblCellSize = await GeodatabaseTools.GetCellSizeAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Analysis, true) + Constants.FILE_PRECIPITATION_CONTRIBUTION),
+                WorkspaceType.Geodatabase);
             if (dblCellSize < 1)
             {
                 Module1.Current.ModuleLogManager.LogDebug(nameof(CalculatePrecipitationContributionAsync),
