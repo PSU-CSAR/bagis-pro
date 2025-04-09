@@ -15,5 +15,5 @@
   "snowCourseElev": "elevation",
   "snowCourseName": "name",
   "prism": "http://bagis.geog.pdx.edu/arcgis/services/BAGIS_PRISM_1991_2020",
-  "westernStateBoundaries": "https://services.arcgis.com/SXbDpmb7xQkk44JV/arcgis/rest/services/AOI_Location_Maps_WFL1/FeatureServer"
+  "westernStateBoundaries": "https://services.arcgis.com/SXbDpmb7xQkk44JV/arcgis/rest/services/AOI_Location_Map_WFL1/FeatureServer"
 }
