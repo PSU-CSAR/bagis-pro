@@ -2979,7 +2979,7 @@ namespace bagis_pro
                 Uri uri = new Uri(url);
                 var flyrCreatnParam = new FeatureLayerCreationParams(uri)
                 {
-                    Name = Constants.MAPS_AOI_LOCATION,
+                    Name = Constants.MAPS_WESTERN_STATES_BOUNDARY,
                     IsVisible = true,
                 };
 
