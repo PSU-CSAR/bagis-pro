@@ -2963,7 +2963,7 @@ namespace bagis_pro
                     {
                         strInputRaster = "ClipRasterSource";
                         Uri uri = new Uri(strWsUri);
-                        success = await MapTools.DisplayMapServiceLayerAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, strInputRaster, false);
+                        success = await MapTools.DisplayRasterLayerAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, strInputRaster, false);
                     }
                     if (success != BA_ReturnCode.Success)
                     {

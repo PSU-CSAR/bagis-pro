@@ -2806,7 +2806,7 @@ namespace bagis_pro
             return BA_ReturnCode.Success;
         }
 
-    public static async Task<BA_ReturnCode> DisplayMapServiceLayerAsync(string strMapName, Uri mapUri, string displayName,
+    public static async Task<BA_ReturnCode> DisplayRasterLayerAsync(string strMapName, Uri mapUri, string displayName,
         bool bIsVisible)
         {
             Layer layer = null;
@@ -2971,17 +2971,21 @@ namespace bagis_pro
                         map.RemoveLayer(oLayer);
                     }
                 }
+                map.SetLabelEngine(ArcGIS.Desktop.Mapping.LabelEngine.Standard);
 
-                // add western state boundaries map service layer
+                //add western state boundaries map service layer
                 Webservices ws = new Webservices();
                 string url = await ws.GetWesternStateBoundariesUriAsync();
-                Uri uri = new Uri(url);                
-                success = await MapTools.DisplayMapServiceLayerAsync(Constants.MAPS_AOI_LOCATION, uri, 
-                        Constants.MAPS_WESTERN_STATES_BOUNDARY, true);
-                if (success == BA_ReturnCode.Success)
+                Uri uri = new Uri(url);
+                var flyrCreatnParam = new FeatureLayerCreationParams(uri)
                 {
-                    Module1.ActivateState("MapButtonPalette_BtnAoiLocation_State");
-                }
+                    Name = Constants.MAPS_AOI_LOCATION,
+                    IsVisible = true,
+                };
+
+                var featureLayer = LayerFactory.Instance.CreateLayer<FeatureLayer>(
+                  flyrCreatnParam, map);
+                Module1.ActivateState("MapButtonPalette_BtnAoiLocation_State");
 
                 //add aoi boundary to map
                 string strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi, true) +

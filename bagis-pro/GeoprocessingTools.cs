@@ -284,7 +284,7 @@ namespace bagis_pro
         {
             string strLayerName = "ClipRasterSource";
             Uri uri = new Uri(strInputRaster);
-            BA_ReturnCode success = await MapTools.DisplayMapServiceLayerAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, strLayerName, false);
+            BA_ReturnCode success = await MapTools.DisplayRasterLayerAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, strLayerName, false);
             if (success == BA_ReturnCode.Success)            
             {
                 string strClippingGeometry = "NONE";
