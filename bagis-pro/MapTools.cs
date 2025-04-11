@@ -3858,6 +3858,8 @@ namespace bagis_pro
                     graphic.Text = strDescr;
                     textBox.SetGraphic(graphic);
                 }
+                Module1.Current.ModuleLogManager.LogDebug(nameof(DisplayMultiMapPageLayoutAsync),
+                    "Update textBox2 to " + strDescr);
             });
 
             // Pro 3.x did not properly apply the camera without separating this out

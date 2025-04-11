@@ -29,10 +29,10 @@
             <Button x:Name="btnFolder" Content="Open" HorizontalAlignment="Left"  VerticalAlignment="Center" Width="50" Command="{Binding CmdFolder}" Margin="5, 0, 0, 0"/>
         </DockPanel>
         <DockPanel Grid.Row="0" Grid.Column="1" LastChildFill="true" KeyboardNavigation.TabNavigation="Local"  Margin="2,0,2,0">
-            <TextBox x:Name="txtSelectFolder" Text="{Binding ParentFolder}" HorizontalAlignment="Left"  VerticalAlignment="Center" Width="300" IsReadOnly="True" />
+            <TextBox x:Name="txtSelectFolder" Text="{Binding ParentFolder}" HorizontalAlignment="Left"  VerticalAlignment="Center" Width="320" IsReadOnly="True" />
         </DockPanel>
-        <DockPanel Grid.Row="0" Grid.Column="2" Margin="20,0,2,0">
-            <Button x:Name="btnSelectBasin" Content="Select" HorizontalAlignment="Right"  VerticalAlignment="Center" Width="50" Command="{Binding CmdSelectBasin}" IsEnabled="{Binding CmdSelectBasinEnabled}" Margin="5, 0, 0, 0"/>
+        <DockPanel Grid.Row="0" Grid.Column="2" Margin="5,0,2,0">
+            <Button x:Name="btnSelectBasin" Content="Select" HorizontalAlignment="Left"  VerticalAlignment="Center" Width="50" Command="{Binding CmdSelectBasin}" IsEnabled="{Binding CmdSelectBasinEnabled}" Margin="5, 0, 0, 0"/>
         </DockPanel>
         <DockPanel Grid.Row="1" Grid.Column="0" Margin="2,0,2,0">
             <TextBlock Name="tbBasin" MaxWidth="50" VerticalAlignment="Center" HorizontalAlignment="Right" FontWeight="Bold" Text="Basin" Margin="5, 0, 0, 0"/>

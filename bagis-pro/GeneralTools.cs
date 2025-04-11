@@ -3377,7 +3377,7 @@ namespace bagis_pro
             {
                 bool bImageService = await Webservices.ValidateImageService(strRasterPath);
                 bool bFgdb = false;
-                if (strRasterPath.IndexOf("fgdb") > -1)
+                if (strRasterPath.IndexOf(".gdb") > -1)
                 {
                     bFgdb = true;
                 }
@@ -3472,7 +3472,41 @@ namespace bagis_pro
                     }
                 });
             }
-            return demInfo;
+            else
+            {
+                // image service
+                var oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
+                await QueuedTask.Run(() =>
+                {
+                    // Create an image service layer using the url for an image service.
+                    var isLayer = LayerFactory.Instance.CreateLayer(new Uri(strRasterPath), oMap) as ImageServiceLayer;
+                    if (isLayer != null)
+                    {
+                        isLayer.SetVisibility(false);
+                        var oRaster = isLayer.GetRaster();
+                        if (oRaster != null)
+                        {
+                            var oRasterBand = oRaster.GetBand(0);
+                            if (oRasterBand != null)
+                            {
+                                RasterBandDefinition bandDefinition = oRasterBand.GetDefinition();
+                                var oEnv = bandDefinition.GetExtent();
+                                demInfo.minMapX = oEnv.XMin;
+                                demInfo.maxMapX = oEnv.XMax;
+                                demInfo.minMapY = oEnv.YMin;
+                                demInfo.maxMapY = oEnv.YMax;
+                                demInfo.heightInPixels = oEnv.Height;
+                                demInfo.widthInPixels = oEnv.Width;
+                                Tuple<double, double> tupleSize = bandDefinition.GetMeanCellSize();
+                                demInfo.x_CellSize = tupleSize.Item1;
+                                demInfo.y_CellSize = tupleSize.Item2;
+                            }
+                        }
+                        oMap.RemoveLayer(isLayer);
+                    }
+                });
+            }
+                return demInfo;
         }
     }
 
