@@ -34,7 +34,6 @@ namespace bagis_pro.Basin
             Subfolders = new ObservableCollection<FolderEntry>();
             Subfolders.CollectionChanged += ContentCollectionChanged;
 
-
         }
 
         /// <summary>
@@ -145,16 +144,6 @@ namespace bagis_pro.Basin
             {
                 return new RelayCommand(async () =>
                 {
-                    //ParentFolder = "C:\\Docs\\AOIs\\testbasin";
-                    //IsBasin = "No";
-                    //IsAoi = "No";
-                    //FolderEntry oEntry = new FolderEntry(".. <Parent Folder>",
-                    //    "", "", "", "");
-                    //Subfolders.Add(oEntry);
-                    //FolderEntry oEntry1 = new FolderEntry("13309220_ID_USGS_Mf_Salmon_R_at_Mf_Lodge",
-                    //    "22.15 meters resolution", "13309220:ID:USGS", "Mf Salmon R at Mf Lodge","17");
-                    //Subfolders.Add(oEntry1);
-                    //Display the filter in an Open Item dialog
                     OpenItemDialog aNewFilter = new OpenItemDialog
                     {
                         Title = "Select a basin, aoi, or folder",
@@ -245,6 +234,16 @@ namespace bagis_pro.Basin
                         }
                         CheckSelectedFolderStatus(ParentFolder);
                     }
+                    // Force the combobox to instantiate
+                    var plugin = FrameworkApplication.GetPlugInWrapper("bagis_pro_Buttons_CboCurrentBasin");
+                    FrameworkApplication.Current.Dispatcher.Invoke(() =>
+                    {
+                        // Do something on the GUI thread
+                        if (Module1.Current.CboCurrentBasin != null)
+                        {
+                            Module1.Current.CboCurrentBasin.ResetBasinName();
+                        }                        
+                    });
                 });
             }
         }
@@ -336,11 +335,12 @@ namespace bagis_pro.Basin
                     BA_ReturnCode success = await MapTools.SetDefaultMapFrameDimensionAsync(Constants.MAPS_DEFAULT_MAP_FRAME_NAME, layout, oMap,
                         0.5, 2.5, 8.0, 10.5);
                     IList<Aoi> lstAois = await GeneralTools.GetAoiFoldersAsync(ParentFolder, "");
-                    bool bNeedToClipDem = false;
+                    bool bNeedToClipDem = true;
                     if (BasinStatus.ToUpper().IndexOf("RESOLUTION") > -1)   // FGDB exists
                     {
                         if (AoiStatus.ToUpper().Equals("YES") || lstAois.Count > 0)
                         {
+                            bNeedToClipDem = false;
                             MessageBox.Show("The selected folder is an AOI or contains AOIs. You cannot alter its DEM data.", "BAGIS-Pro");
                         }
                         else
@@ -351,7 +351,7 @@ namespace bagis_pro.Basin
                                 case DialogResult.Cancel:
                                     return;
                                 case DialogResult.Yes:
-                                    // Do nothing. bNeedToClipDem is already false
+                                    bNeedToClipDem = false;
                                     break;
                                 case DialogResult.No:
                                     DialogResult confirm = 
@@ -417,9 +417,40 @@ namespace bagis_pro.Basin
                                 System.Windows.MessageBox.Show("The Basin DEM extent boundaries will be snapped to the DEM raster cells.\r\n The activation might take a few seconds.", "BAGIS-Pro");
                                 demInfo = await GeneralTools.GetRasterDimensionsAsync(strSourceDem);
                             }
+                            if (demInfo != null && demInfo.x_CellSize > 0)
+                            {
+                                System.Windows.MessageBox.Show("Snapping to raster has been activated!", "BAGIS-Pro");
+                            }
+                        }
+                        Module1.ActivateState("bagis_pro_Buttons_BtnSetBasinExtent_State");
+                        FrameworkApplication.Current.Dispatcher.Invoke(() =>
+                        {
+                            // Do something on the GUI thread
+                            Module1.Current.CboCurrentBasin.SetBasinName(Path.GetFileName(ParentFolder));
+                            System.Windows.MessageBox.Show("Please select and clip the DEM to the basin folder!", "BAGIS-Pro");
+                        });
+                    }
+                    else
+                    {
+                        string envExtent = await GeodatabaseTools.GetEnvelope(GeodatabaseTools.GetGeodatabasePath(ParentFolder, GeodatabaseNames.Aoi), Constants.FILE_AOI_VECTOR);
+                        if (string.IsNullOrEmpty(envExtent))
+                        {
+                            System.Windows.MessageBox.Show("The Basin folder file structure is corrupted! Unable to read its boundary file - aoi_v", "BAGIS-Pro");
+                            return;
+                        }
+                        else
+                        {
+                            FrameworkApplication.Current.Dispatcher.Invoke(() =>
+                            {
+                                Module1.Current.CboCurrentBasin.SetBasinName(Path.GetFileName(ParentFolder));
+                            });
+                            Module1.DeactivateState("bagis_pro_Buttons_BtnSetBasinExtent_State");
+                            Module1.ActivateState("bagis_pro_Buttons_BtnDefineAoi");
+                            // Asked Geoffrey if we need to add a BasinInfo button
+                            //Module1.ActivateState("bagis_pro_Buttons_BtnSetBasinExtent_State");
+
                         }
                     }
-
                 });
             }
         }

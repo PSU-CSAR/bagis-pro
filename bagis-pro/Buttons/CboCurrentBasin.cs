@@ -31,24 +31,16 @@ namespace bagis_pro.Buttons
             if (_isInitialized)
                 SelectedItem = ItemCollection.FirstOrDefault(); //set the default item in the comboBox
 
-
             if (!_isInitialized)
             {
                 Clear();
-
-                //Add 6 items to the combobox
-                //for (int i = 0; i < 6; i++)
-                //{
-                //    string name = string.Format("Item {0}", i);
-                //    Add(new ComboBoxItem(name));
-                //}
+                Add(new ComboBoxItem(_strNotSelected));
                 _isInitialized = true;
             }
 
             Add(new ComboBoxItem(_strNotSelected));
             Enabled = true; //enables the ComboBox
             SelectedItem = ItemCollection.FirstOrDefault(); //set the default item in the comboBox
-
         }
 
         /// <summary>
@@ -66,7 +58,6 @@ namespace bagis_pro.Buttons
 
             // TODO  Code behavior when selection changes.    
         }
-
         public void SetBasinName(string basinName)
         {
             Clear();
