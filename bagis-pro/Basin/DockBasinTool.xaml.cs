@@ -5,13 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 
 namespace bagis_pro.Basin
@@ -25,10 +19,15 @@ namespace bagis_pro.Basin
         {
             InitializeComponent();
         }
-
-        private void txtIsBasin_TextChanged(object sender, TextChangedEventArgs e)
+        private async void ListViewItem_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-
+            var item = sender as ListViewItem;
+            if (item != null && item.IsSelected)
+            {
+                FolderEntry oFolderEntry = item.Content as FolderEntry;
+                DockBasinToolViewModel oModel = (DockBasinToolViewModel)DataContext;
+                _ = await oModel.LstFolders_MouseDoubleClick(LstFolders.SelectedIndex, oFolderEntry);
+            }
         }
     }
 }

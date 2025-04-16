@@ -29,7 +29,7 @@
             <Button x:Name="btnFolder" Content="Open" HorizontalAlignment="Left"  VerticalAlignment="Center" Width="50" Command="{Binding CmdFolder}" Margin="5, 0, 0, 0"/>
         </DockPanel>
         <DockPanel Grid.Row="0" Grid.Column="1" LastChildFill="true" KeyboardNavigation.TabNavigation="Local"  Margin="2,0,2,0">
-            <TextBox x:Name="txtSelectFolder" Text="{Binding ParentFolder}" HorizontalAlignment="Left"  VerticalAlignment="Center" Width="320" IsReadOnly="True" />
+            <TextBox x:Name="txtSelectFolder" Text="{Binding ParentFolder}" HorizontalAlignment="Left"  VerticalAlignment="Center" Width="320" IsReadOnly="True" Tag="{Binding BasinFolderTag}"/>
         </DockPanel>
         <DockPanel Grid.Row="0" Grid.Column="2" Margin="5,0,2,0">
             <Button x:Name="btnSelectBasin" Content="Select" HorizontalAlignment="Left"  VerticalAlignment="Center" Width="50" Command="{Binding CmdSelectBasin}" IsEnabled="{Binding CmdSelectBasinEnabled}" Margin="5, 0, 0, 0"/>
@@ -54,7 +54,7 @@
             <Button x:Name="btnViewLayers" Content="View Layers" HorizontalAlignment="Right"  VerticalAlignment="Center" Width="100" Command="{Binding CmdViewLayers}" IsEnabled="{Binding CmdViewLayersEnabled}" Margin="10, 0, 0, 0"/>
         </DockPanel>
       <DockPanel Grid.Row="3" Grid.Column="0" Margin="2,0,2,0" Grid.ColumnSpan="3">
-            <ListView ItemsSource="{Binding Subfolders}" Width="500" HorizontalAlignment="Left">
+            <ListView ItemsSource="{Binding Subfolders}" Width="500" HorizontalAlignment="Left" x:Name="LstFolders">
                 <ListView.View>
                     <GridView AllowsColumnReorder="true">
                         <GridViewColumn DisplayMemberBinding = "{Binding Path=Name}" Header="Subfolders" Width="145"/>
@@ -65,8 +65,12 @@
                         <GridViewColumn DisplayMemberBinding = "{Binding Path=PourpointName}" Header="Pourpoint Name" Width="105"/>
                         <GridViewColumn DisplayMemberBinding = "{Binding Path=Huc2}" Header="HUC2" Width="40"/>
                     </GridView>
-
                 </ListView.View>
+                <ListView.ItemContainerStyle>
+                    <Style TargetType="ListViewItem">
+                        <EventSetter Event="MouseDoubleClick" Handler="ListViewItem_MouseDoubleClick" />
+                    </Style>
+                </ListView.ItemContainerStyle>
             </ListView>
         </DockPanel>
         <DockPanel Grid.Row="4" Grid.Column="0" Margin="2,0,2,0" Grid.ColumnSpan="2">

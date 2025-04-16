@@ -20,6 +20,7 @@ using System.Collections.Specialized;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using Button = ArcGIS.Desktop.Framework.Contracts.Button;
 
@@ -49,6 +50,7 @@ namespace bagis_pro.Basin
         }
 
         private string _parentFolder;
+        private string _basinFolderTag;
         private string _basinStatus;
         private string _aoiStatus;
         private bool _cmdViewDemEnabled;
@@ -60,6 +62,11 @@ namespace bagis_pro.Basin
         {
             get => _parentFolder;
             set => SetProperty(ref _parentFolder, value);
+        }
+        public string BasinFolderTag
+        {
+            get => _basinFolderTag;
+            set => SetProperty(ref _basinFolderTag, value);
         }
         public string BasinStatus
         {
@@ -159,80 +166,14 @@ namespace bagis_pro.Basin
                         foreach (var item in arrFileNames)
                         {
                             ParentFolder = item.Path;
+                            BasinFolderTag = ParentFolder;
                         }
                     }
-
-                    Subfolders.Clear();
-                    // Display the first entry
-                    string strParent = ".. <Parent Folder>";
-                    FolderEntry parentEntry = new FolderEntry();
-                    parentEntry.Name = strParent;
-                    Subfolders.Add(parentEntry);
-                    // @ToDo: Not sure when we use the following
-                    string strRoot = "..<Root Folder - No Parent folder>";
                     if (!String.IsNullOrEmpty(ParentFolder))
                     {
                         string[] arrSubDirectories = Directory.GetDirectories(ParentFolder);
-                        for (int i = 0; i < arrSubDirectories.Length; i++)
-                        {
-                            FolderEntry nextEntry = new FolderEntry();
-                            nextEntry.Name = Path.GetFileName(arrSubDirectories[i]);
-                            FolderType fType = await GeodatabaseTools.GetAoiFolderTypeAsync(arrSubDirectories[i]);
-                            Uri uriSurfaces = new Uri(GeodatabaseTools.GetGeodatabasePath(arrSubDirectories[i], GeodatabaseNames.Surfaces));
-                            string strDemPath = $@"{uriSurfaces.LocalPath}\{Constants.FILE_DEM_FILLED}";
-                            if (fType != FolderType.AOI)
-                            {
-                                if (await GeodatabaseTools.RasterDatasetExistsAsync(uriSurfaces, Constants.FILE_DEM_FILLED))
-                                {
-                                    // This subfolder contains a dem
-                                    double cellSize = await GeodatabaseTools.GetCellSizeAsync(new Uri(strDemPath), WorkspaceType.Geodatabase);
-                                    nextEntry.BasinStatus = Convert.ToString(Math.Round(cellSize, 2)) + " meters resolution";
-                                }
-                                else
-                                {
-                                    nextEntry.BasinStatus = "No";
-                                }
-                                nextEntry.PourpointId = "N/A";
-                                nextEntry.PourpointName = "N/A";
-                                nextEntry.Huc2 = "N/A";
-                            }
-                            else
-                            {
-                                double cellSize = await GeodatabaseTools.GetCellSizeAsync(new Uri(strDemPath), WorkspaceType.Geodatabase);
-                                if (cellSize > 0)
-                                {
-                                    nextEntry.BasinStatus = Convert.ToString(Math.Round(cellSize, 2)) + " meters resolution";
-                                    nextEntry.PourpointId = "Missing";
-                                    nextEntry.PourpointName = "Missing";
-                                    nextEntry.Huc2 = "Missing";
-                                    string[] arrValues = await AnalysisTools.QueryLocalStationValues(arrSubDirectories[i]);
-                                    if (arrValues.Length == 3)
-                                    {
-                                        if (!string.IsNullOrEmpty(arrValues[0]))
-                                        {
-                                            nextEntry.PourpointId = arrValues[0];
-                                        }
-                                        if (!string.IsNullOrEmpty(arrValues[1]))
-                                        {
-                                            nextEntry.PourpointName = arrValues[1];
-                                        }
-                                        if (!string.IsNullOrEmpty(arrValues[2]))
-                                        {
-                                            nextEntry.Huc2 = arrValues[2];
-                                        }
-                                    }
-                                }
-                                else
-                                {
-                                    nextEntry.BasinStatus = "No";
-                                    nextEntry.PourpointId = "N/A";
-                                    nextEntry.PourpointName = "N/A";
-                                    nextEntry.Huc2 = "N/A";
-                                }
-                            }
-                            Subfolders.Add(nextEntry);
-                        }
-                        CheckSelectedFolderStatus(ParentFolder);
+                        BA_ReturnCode success = await DisplaySubfolderListAsync(arrSubDirectories, true);
+                        success = await CheckSelectedFolderStatusAsync(ParentFolder);
                     }
                     // Force the combobox to instantiate
                     var plugin = FrameworkApplication.GetPlugInWrapper("bagis_pro_Buttons_CboCurrentBasin");
@@ -246,6 +187,129 @@ namespace bagis_pro.Basin
                     });
                 });
             }
+        }
+
+        private async Task<BA_ReturnCode> DisplaySubfolderListAsync(string[] arrSubDirectories, bool bDisplayParentDir)
+        {
+            Subfolders.Clear();
+            FolderEntry rootEntry = new FolderEntry();
+            rootEntry.Name = "..<Root Folder - No Parent folder>";
+            FolderEntry parentEntry = new FolderEntry();
+            parentEntry.Name = ".. <Parent Folder>";
+            if (arrSubDirectories == null || arrSubDirectories.Count() == 0)
+            {
+                if (bDisplayParentDir)
+                {
+                    Subfolders.Add(parentEntry);
+                }
+            }
+            else
+            {
+                if (bDisplayParentDir)
+                {
+                    Subfolders.Add(parentEntry);
+                }
+                else
+                {
+                    Subfolders.Add(rootEntry);    
+                }
+                for (int i = 0; i < arrSubDirectories.Length; i++)
+                {
+                    FolderEntry nextEntry = new FolderEntry();
+                    nextEntry.Name = Path.GetFileName(arrSubDirectories[i]);
+                    FolderType fType = await GeodatabaseTools.GetAoiFolderTypeAsync(arrSubDirectories[i]);
+                    Uri uriSurfaces = new Uri(GeodatabaseTools.GetGeodatabasePath(arrSubDirectories[i], GeodatabaseNames.Surfaces));
+                    string strDemPath = $@"{uriSurfaces.LocalPath}\{Constants.FILE_DEM_FILLED}";
+                    if (fType != FolderType.AOI)
+                    {
+                        if (await GeodatabaseTools.RasterDatasetExistsAsync(uriSurfaces, Constants.FILE_DEM_FILLED))
+                        {
+                            // This subfolder contains a dem
+                            double cellSize = await GeodatabaseTools.GetCellSizeAsync(new Uri(strDemPath), WorkspaceType.Geodatabase);
+                            nextEntry.BasinStatus = Convert.ToString(Math.Round(cellSize, 2)) + " meters resolution";
+                        }
+                        else
+                        {
+                            nextEntry.BasinStatus = "No";
+                        }
+                        nextEntry.PourpointId = "N/A";
+                        nextEntry.PourpointName = "N/A";
+                        nextEntry.Huc2 = "N/A";
+                    }
+                    else
+                    {
+                        double cellSize = await GeodatabaseTools.GetCellSizeAsync(new Uri(strDemPath), WorkspaceType.Geodatabase);
+                        if (cellSize > 0)
+                        {
+                            nextEntry.BasinStatus = Convert.ToString(Math.Round(cellSize, 2)) + " meters resolution";
+                            nextEntry.PourpointId = "Missing";
+                            nextEntry.PourpointName = "Missing";
+                            nextEntry.Huc2 = "Missing";
+                            string[] arrValues = await AnalysisTools.QueryLocalStationValues(arrSubDirectories[i]);
+                            if (arrValues.Length == 3)
+                            {
+                                if (!string.IsNullOrEmpty(arrValues[0]))
+                                {
+                                    nextEntry.PourpointId = arrValues[0];
+                                }
+                                if (!string.IsNullOrEmpty(arrValues[1]))
+                                {
+                                    nextEntry.PourpointName = arrValues[1];
+                                }
+                                if (!string.IsNullOrEmpty(arrValues[2]))
+                                {
+                                    nextEntry.Huc2 = arrValues[2];
+                                }
+                            }
+                        }
+                        else
+                        {
+                            nextEntry.BasinStatus = "No";
+                            nextEntry.PourpointId = "N/A";
+                            nextEntry.PourpointName = "N/A";
+                            nextEntry.Huc2 = "N/A";
+                        }
+                    }
+                    Subfolders.Add(nextEntry);
+                }
+            }
+            return BA_ReturnCode.Success;
+        }
+        public async Task<BA_ReturnCode> LstFolders_MouseDoubleClick(int selectedIndex, FolderEntry oFolderEntry)
+        {
+            string strNewPath = "";
+            bool bNotTheRootDir = true;
+            if (selectedIndex == 0)
+            {
+                // up to the parent folder
+                DirectoryInfo info = Directory.GetParent(ParentFolder);
+                if (info != null)
+                {
+                    strNewPath = info.FullName;
+                }
+                if (strNewPath.Length == 0) 
+                {
+                    // reaching the top of a folder structure
+                    strNewPath = BasinFolderTag;
+                    bNotTheRootDir = false;
+                }
+                ParentFolder = strNewPath;
+                BasinFolderTag = strNewPath;    
+            }
+            else
+            {
+                strNewPath = $@"{BasinFolderTag}\{oFolderEntry.Name}";
+                ParentFolder = strNewPath;
+                BasinFolderTag = ParentFolder;
+            }
+            // Checks if the folder has dem and aoi to set the BasinStatus and AoiStatus values
+            BA_ReturnCode success = await CheckSelectedFolderStatusAsync(ParentFolder);
+            if (! string.IsNullOrEmpty(ParentFolder))
+            {
+                string[] arrSubDirectories = Directory.GetDirectories(ParentFolder);
+                success = await DisplaySubfolderListAsync(arrSubDirectories, bNotTheRootDir);
+            }
+            return success;
         }
 
         public System.Windows.Input.ICommand CmdViewDem
@@ -446,15 +510,12 @@ namespace bagis_pro.Basin
                             });
                             Module1.DeactivateState("bagis_pro_Buttons_BtnSetBasinExtent_State");
                             Module1.ActivateState("bagis_pro_Buttons_BtnDefineAoi");
-                            // Asked Geoffrey if we need to add a BasinInfo button
-                            //Module1.ActivateState("bagis_pro_Buttons_BtnSetBasinExtent_State");
-
                         }
                     }
                 });
             }
         }
-        protected async void CheckSelectedFolderStatus(string strFolderPath)
+        protected async Task<BA_ReturnCode> CheckSelectedFolderStatusAsync(string strFolderPath)
         {
             FolderType fType = await GeodatabaseTools.GetAoiFolderTypeAsync(strFolderPath);
             Uri uriSurfaces = new Uri(GeodatabaseTools.GetGeodatabasePath(strFolderPath, GeodatabaseNames.Surfaces));
@@ -499,12 +560,14 @@ namespace bagis_pro.Basin
             if (BasinStatus.Equals("No") && AoiStatus.Equals("No"))
             {
                 CmdViewDemEnabled = false;
+                CmdSelectBasinEnabled = false;
             }
             else
             {
                 CmdViewDemEnabled = true;
+                CmdSelectBasinEnabled = true;
             }
-            CmdSelectBasinEnabled = true;
+            return BA_ReturnCode.Success;
         }
     }
 
