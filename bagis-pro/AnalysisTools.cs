@@ -8128,7 +8128,20 @@ namespace bagis_pro
             IList<string> lstHighSevPcts1 = new List<string>();
             foreach (var oInterval in lstInterval)
             {
-                bool bMtbsMaxLayerExists = await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(gdbFire), $@"tmpMax_{oInterval.Value}");
+                bool bAllYearsMissing = true;
+                bool bMtbsMaxLayerExists = false;
+                for (int i = (int)oInterval.LowerBound; i <= (int)oInterval.UpperBound; i++)
+                {
+                    if (!lstMtbsMissingYears.Contains(i.ToString()))
+                    {
+                        bAllYearsMissing = false;
+                        break;
+                    }
+                }
+                if (!bAllYearsMissing)
+                {
+                    bMtbsMaxLayerExists = await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(gdbFire), $@"tmpMax_{oInterval.Value}");
+                }
                 if (!bForestedZonesExists)
                 {
                     lstLowSevAreas1.Add("-1");  // low forested area
@@ -8138,7 +8151,7 @@ namespace bagis_pro
                     lstHighSevAreas1.Add("-1");  // high forested area
                     lstHighSevPcts1.Add("-1");  // high forested pct
                 }
-                else if (!bMtbsMaxLayerExists)
+                else if (bAllYearsMissing)
                 {
                     lstLowSevAreas1.Add("");  // low forested area
                     lstLowSevPcts1.Add("");  // low forested pct
@@ -8146,8 +8159,17 @@ namespace bagis_pro
                     lstModSevPcts1.Add("");  // med forested pct
                     lstHighSevAreas1.Add("");  // high forested area
                     lstHighSevPcts1.Add("");  // high forested pct
-                }     
-                else if (forestedAreaSqMeters <= 0 )
+                }
+                else if (!bMtbsMaxLayerExists)
+                {
+                    lstLowSevAreas1.Add("0");  // low forested area
+                    lstLowSevPcts1.Add("0");  // low forested pct
+                    lstModSevAreas1.Add("0");  // med forested area
+                    lstModSevPcts1.Add("0");  // med forested pct
+                    lstHighSevAreas1.Add("0");  // high forested area
+                    lstHighSevPcts1.Add("0");  // high forested pct
+                }
+                else if (forestedAreaSqMeters <= 0)
                 {
                     lstLowSevAreas1.Add("0");  // low forested area
                     lstLowSevPcts1.Add("0");  // low forested pct
@@ -8418,7 +8440,7 @@ namespace bagis_pro
                 string strMtbsLayer = $@"{strGdbFire}\{strMaxFileName}";
                 // Calculate maximum of all 4 layers using Cell Statistics
                 var parameters = Geoprocessing.MakeValueArray(strInputLayerPaths, strMtbsLayer, "MAXIMUM");
-                var environments = Geoprocessing.MakeEnvironmentArray(workspace: aoiPath);
+                var environments = Geoprocessing.MakeEnvironmentArray(workspace: aoiPath, extent: "MAXOF");
                 var gpResult = await Geoprocessing.ExecuteToolAsync("CellStatistics_sa", parameters, environments,
                                                 CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
                 if (gpResult.IsFailed)
