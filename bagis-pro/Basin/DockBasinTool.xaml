@@ -69,6 +69,7 @@
                 <ListView.ItemContainerStyle>
                     <Style TargetType="ListViewItem">
                         <EventSetter Event="MouseDoubleClick" Handler="ListViewItem_MouseDoubleClick" />
+                        <EventSetter Event="PreviewMouseDown" Handler="ListViewItem_PreviewMouseDown" />
                     </Style>
                 </ListView.ItemContainerStyle>
             </ListView>

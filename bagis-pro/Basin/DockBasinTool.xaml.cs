@@ -29,5 +29,18 @@ namespace bagis_pro.Basin
                 _ = await oModel.LstFolders_MouseDoubleClick(LstFolders.SelectedIndex, oFolderEntry);
             }
         }
+        private async void ListViewItem_PreviewMouseDown(object sender, MouseButtonEventArgs e)
+        {
+            var item = sender as ListViewItem;
+            if (item != null)
+            {                
+                FolderEntry oFolderEntry = item.Content as FolderEntry;
+                DockBasinToolViewModel oModel = (DockBasinToolViewModel)DataContext;
+                if (oModel != null && oFolderEntry != null)
+                {
+                    _ = await oModel.LstFolders_PreviewMouseDown(oFolderEntry);
+                }
+            }
+        }
     }
 }

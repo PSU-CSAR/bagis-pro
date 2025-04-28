@@ -57,6 +57,10 @@ namespace bagis_pro.Basin
         private bool _cmdViewLayersEnabled;
         private bool _cmdSelectBasinEnabled;
         private WinViewDemLayers _winViewDemLayers = null;
+        protected string _rootEntryName = "..<Root Folder - No Parent folder>";
+        protected string _parentFolderName = ".. <Parent Folder>";
+        protected string _parentFolderFGDBBasinStatus = "-";
+        protected string _parentFolderFGDBAoiStatus = "-";
 
         public string ParentFolder
         {
@@ -193,9 +197,9 @@ namespace bagis_pro.Basin
         {
             Subfolders.Clear();
             FolderEntry rootEntry = new FolderEntry();
-            rootEntry.Name = "..<Root Folder - No Parent folder>";
+            rootEntry.Name = _rootEntryName;
             FolderEntry parentEntry = new FolderEntry();
-            parentEntry.Name = ".. <Parent Folder>";
+            parentEntry.Name = _parentFolderName;
             if (arrSubDirectories == null || arrSubDirectories.Count() == 0)
             {
                 if (bDisplayParentDir)
@@ -293,21 +297,75 @@ namespace bagis_pro.Basin
                     strNewPath = BasinFolderTag;
                     bNotTheRootDir = false;
                 }
+                // Reset the parentfolder's status data when navigate upward
+                _parentFolderFGDBBasinStatus = "-";
+                _parentFolderFGDBAoiStatus = "-";
+
                 ParentFolder = strNewPath;
-                BasinFolderTag = strNewPath;    
+                BasinFolderTag = strNewPath;
             }
             else
             {
                 strNewPath = $@"{BasinFolderTag}\{oFolderEntry.Name}";
                 ParentFolder = strNewPath;
                 BasinFolderTag = ParentFolder;
+                // remember the parentfolder's status data when navigate downward
+                _parentFolderFGDBBasinStatus = BasinStatus;
+                _parentFolderFGDBAoiStatus = AoiStatus;
             }
             // Checks if the folder has dem and aoi to set the BasinStatus and AoiStatus values
             BA_ReturnCode success = await CheckSelectedFolderStatusAsync(ParentFolder);
-            if (! string.IsNullOrEmpty(ParentFolder))
+            if (!string.IsNullOrEmpty(ParentFolder))
             {
                 string[] arrSubDirectories = Directory.GetDirectories(ParentFolder);
                 success = await DisplaySubfolderListAsync(arrSubDirectories, bNotTheRootDir);
+            }
+            return success;
+        }
+        public async Task<BA_ReturnCode> LstFolders_PreviewMouseDown(FolderEntry oFolderEntry)
+        {
+            string strNewPath = "";
+            bool bNotTheRootDir = true;
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            if (!string.IsNullOrEmpty(oFolderEntry.Name))
+            {
+                if (oFolderEntry.Name.Substring(0,1).Equals("."))
+                {
+                    ParentFolder = BasinFolderTag;
+                    BasinStatus = _parentFolderFGDBBasinStatus;
+                    AoiStatus = _parentFolderFGDBAoiStatus; 
+                }
+                else
+                {
+                    strNewPath = $@"{BasinFolderTag}\{oFolderEntry.Name}";
+                    ParentFolder = strNewPath;
+                    CmdSelectBasinEnabled = true;
+                    BasinStatus = oFolderEntry.BasinStatus;
+                    if (oFolderEntry.PourpointId.Length > 3)
+                    {
+                        AoiStatus = "Yes";
+                    }
+                    else
+                    {
+                        AoiStatus = "No";
+                    }
+                }
+                if (!BasinStatus.ToUpper().Equals("NO"))
+                {
+                    CmdViewLayersEnabled = true;
+                }
+                else
+                {
+                    CmdViewLayersEnabled = false;
+                }
+                if (await GeodatabaseTools.FeatureClassExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(ParentFolder, GeodatabaseNames.Aoi)), Constants.FILE_AOI_VECTOR))
+                {
+                    CmdViewDemEnabled = true;
+                }
+                else
+                {
+                    CmdViewDemEnabled = false;
+                }
             }
             return success;
         }
