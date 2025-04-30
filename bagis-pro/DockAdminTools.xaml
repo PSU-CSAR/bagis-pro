@@ -275,7 +275,7 @@
                 <Grid>
                      <Grid.RowDefinitions>
                         <RowDefinition Height="80"/>
-                        <RowDefinition Height="120"/>
+                        <RowDefinition Height="130"/>
                         <RowDefinition Height="250"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
@@ -293,16 +293,21 @@
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="30"/>
-                                <RowDefinition Height="30"/>
+                                <RowDefinition Height="20"/>
+                                <RowDefinition Height="20"/>
                                 <RowDefinition Height="30"/>
                             </Grid.RowDefinitions>
                             <StackPanel Grid.Row="0" >
                                 <TextBlock Text="{Binding FireDataClipDescr}"/>
                             </StackPanel>
-                            <StackPanel Grid.Row="1" >
+                            <StackPanel Grid.Row="1" Orientation="Horizontal">
+                                <CheckBox x:Name="ckClipNifc" Content="Clip NIFC data" IsChecked="{Binding Clip_Nifc_Checked}" />
+                                <CheckBox x:Name="ckClipMtbs" Content="Clip MTBS data" IsChecked="{Binding Clip_Mtbs_Checked}" Checked="Clip_Mtbs_Changed" Unchecked="Clip_Mtbs_Changed" Margin="10, 0, 0, 0"/>
+                            </StackPanel>
+                            <StackPanel Grid.Row="2" >
                                 <CheckBox x:Name="ckOverwriteMtbs" Content="Overwrite existing MTBS rasters in AOI" IsChecked="{Binding Reclip_MTBS_Checked}" />
                             </StackPanel>
-                            <StackPanel Grid.Row="2" Orientation="Horizontal">
+                            <StackPanel Grid.Row="3" Orientation="Horizontal">
                                 <Button x:Name="btnFireDataLog" Content="View Log" HorizontalAlignment="Left" VerticalAlignment="Center" Width="75" IsEnabled="{Binding CmdFireDataLogEnabled}" Command="{Binding CmdFireDataLog}" Margin="5, 0, 70, 0"/>
                                 <Button x:Name="btnFireData" Content="Retrieve" HorizontalAlignment="Right" VerticalAlignment="Center" Width="60" IsEnabled="{Binding CmdFireReportEnabled}" Command="{Binding CmdFireData}" Margin="70, 0, 0, 0"/>
                             </StackPanel>
@@ -357,9 +362,10 @@
                                     Foreground="Blue" Background="Transparent"/>
                             </StackPanel>
                             <StackPanel Grid.Row="5" Orientation="Horizontal">
-                                <Button x:Name="btnFireReportLog" Content="View Log" HorizontalAlignment="Left" VerticalAlignment="Center" Width="75" IsEnabled="{Binding CmdFireReportLogEnabled}" Command="{Binding CmdFireReportLog}" Margin="5, 0, 70, 0"/>
-                                <Button x:Name="btnFireReport" Content="Generate" HorizontalAlignment="Right" VerticalAlignment="Center" Width="60" IsEnabled="{Binding CmdFireReportEnabled}" Command="{Binding CmdFireReport}" Margin="70, 0, 0, 0"/>
-                        </StackPanel>
+                                <Button x:Name="btnFireReportLog" Content="View Log" HorizontalAlignment="Left" VerticalAlignment="Center" Width="60" IsEnabled="{Binding CmdFireReportLogEnabled}" Command="{Binding CmdFireReportLog}" Margin="5, 0, 5, 0"/>
+                                <Button x:Name="btnFireMaps" Content="Generate Maps" HorizontalAlignment="Left" VerticalAlignment="Center" Width="90" IsEnabled="{Binding CmdFireReportEnabled}" Command="{Binding CmdFireMaps}" Margin="5, 0, 5, 0"/>
+                                <Button x:Name="btnFireReport" Content="Generate Report" Width="95" VerticalAlignment="Center" IsEnabled="{Binding CmdFireReportEnabled}" Command="{Binding CmdFireReport}" Margin="5, 0, 5, 0"/>
+                            </StackPanel>
                     </Grid>
                     </GroupBox>
                 </Grid>

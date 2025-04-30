@@ -40,7 +40,6 @@ namespace bagis_pro
             }
 
         }
-
         private void ReportEndYear_textChangedEventHandler(object sender, TextChangedEventArgs args)
         {
             var textBox = sender as TextBox;
@@ -62,6 +61,12 @@ namespace bagis_pro
                     tbSelectMinYear.Text = Convert.ToString(maxYear - 29);
                 }
             }
+        }
+
+        public void Clip_Mtbs_Changed(object s, RoutedEventArgs e)
+        {
+            var ckBox = s as CheckBox;
+            ckOverwriteMtbs.IsEnabled = (bool) ckBox.IsChecked;
         }
 
 

@@ -48,6 +48,8 @@ namespace bagis_pro
             TasksEnabled = false;
             FireDataEnabled = false;
             FireReportEnabled = false;
+            Clip_Nifc_Checked = true;
+            Clip_Mtbs_Checked = true;
         }
 
         /// <summary>
@@ -115,6 +117,8 @@ namespace bagis_pro
         private string _strNifcDataDescr;
         private string _strMtbsDataDescr;
         private IDictionary<string, dynamic> _dictDatasources = null;
+        private bool _bClip_Nifc_Checked;
+        private bool _bClip_Mtbs_Checked;
         private bool _Reclip_MTBS_Checked = false;  //@ToDo: Change to true before production
         private string _strSettingsFile;
         private const string _separator = ",";
@@ -479,6 +483,22 @@ namespace bagis_pro
         {
             get { return $@"From the previous {_intFireDataClipYears} years"; }
         }
+        public bool Clip_Nifc_Checked
+        {
+            get { return _bClip_Nifc_Checked; }
+            set
+            {
+                SetProperty(ref _bClip_Nifc_Checked, value, () => Clip_Nifc_Checked);
+            }
+        }
+        public bool Clip_Mtbs_Checked
+        {
+            get { return _bClip_Mtbs_Checked; }
+            set
+            {
+                SetProperty(ref _bClip_Mtbs_Checked, value, () => Clip_Mtbs_Checked);
+            }
+        }
         public string SettingsFile
         {
             get { return _strSettingsFile; }
@@ -721,6 +741,16 @@ namespace bagis_pro
                 if (_runFireReport == null)
                     _runFireReport = new RelayCommand(RunFireReportImplAsync, () => true);
                 return _runFireReport;
+            }
+        }
+        private RelayCommand _runFireMaps;
+        public ICommand CmdFireMaps
+        {
+            get
+            {
+                if (_runFireMaps == null)
+                    _runFireMaps = new RelayCommand(RunFireMapsImplAsync, () => true);
+                return _runFireMaps;
             }
         }
 
@@ -1985,6 +2015,12 @@ namespace bagis_pro
 
         private async void RunFireDataImplAsync(object param)
         {
+            if (!Clip_Nifc_Checked && !Clip_Mtbs_Checked)
+            {
+                MessageBox.Show("No layer types selected to clip. Process stopped!", "BAGIS-Pro");
+                return;
+            }
+            
             // Make sure the maps_publish\fire_statistics folder exists under the selected folder
             string strParentPath = Path.GetDirectoryName(Path.GetDirectoryName(_strFireDataLogFile));
             if (!Directory.Exists(strParentPath))
@@ -2065,143 +2101,154 @@ namespace bagis_pro
                     Webservices ws = new Webservices();
                     IDictionary<string, dynamic> dictDataSources = await ws.QueryDataSourcesAsync();
                     string strWsUri = dictDataSources[Constants.DATA_TYPE_FIRE_HISTORY].uri;
-
-                    FeatureLayer lyrHistory = null;
-                    string strOutputFc = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Layers, true)
-                        + Constants.FILE_FIRE_HISTORY;
-                    string strClipFile = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Aoi, true)
-                        + Constants.FILE_AOI_VECTOR;
-                    //success = await AnalysisTools.ClipFeatureLayerAsync(aoiFolder, strOutputFc, Constants.DATA_TYPE_FIRE_HISTORY,
-                    //    "0", "Meters");
-                    var environmentsClip = Geoprocessing.MakeEnvironmentArray(workspace: aoiFolder);
-                    var parametersClip = Geoprocessing.MakeValueArray(strWsUri, strClipFile, strOutputFc, "");
-                    var gpResultClip = await Geoprocessing.ExecuteToolAsync("Clip_analysis", parametersClip, environmentsClip,
-                                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                    if (!gpResultClip.IsFailed)
+                    
+                    if (Clip_Nifc_Checked)
                     {
-                        success = await GeoprocessingTools.AddFieldAsync(strOutputFc, Constants.FIELD_YEAR, "SHORT", null);
-                        if (success == BA_ReturnCode.Success)
+                        FeatureLayer lyrHistory = null;
+                        string strOutputFc = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Layers, true)
+                            + Constants.FILE_FIRE_HISTORY;
+                        string strClipFile = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Aoi, true)
+                            + Constants.FILE_AOI_VECTOR;
+                        //success = await AnalysisTools.ClipFeatureLayerAsync(aoiFolder, strOutputFc, Constants.DATA_TYPE_FIRE_HISTORY,
+                        //    "0", "Meters");
+                        var environmentsClip = Geoprocessing.MakeEnvironmentArray(workspace: aoiFolder);
+                        var parametersClip = Geoprocessing.MakeValueArray(strWsUri, strClipFile, strOutputFc, "");
+                        var gpResultClip = await Geoprocessing.ExecuteToolAsync("Clip_analysis", parametersClip, environmentsClip,
+                                                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                        if (!gpResultClip.IsFailed)
                         {
-                            var parameters = Geoprocessing.MakeValueArray(strOutputFc, Constants.FIELD_YEAR,
-                                "!FIRE_YEAR_INT!", "PYTHON3", "", "SHORT");
-                            IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("management.CalculateField", parameters, null,
-                                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                            if (gpResult.IsFailed)
+                            success = await GeoprocessingTools.AddFieldAsync(strOutputFc, Constants.FIELD_YEAR, "SHORT", null);
+                            if (success == BA_ReturnCode.Success)
                             {
-                                Module1.Current.ModuleLogManager.LogError(nameof(RunFireDataImplAsync),
-                                    "CalculateField tool failed to update YEAR field. Error code: " + gpResult.ErrorCode);
-                                success = BA_ReturnCode.UnknownError;
-                            }
-                            else
-                            {
-                                await QueuedTask.Run(() =>
+                                var parameters = Geoprocessing.MakeValueArray(strOutputFc, Constants.FIELD_YEAR,
+                                    "!FIRE_YEAR_INT!", "PYTHON3", "", "SHORT");
+                                IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("management.CalculateField", parameters, null,
+                                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                                if (gpResult.IsFailed)
                                 {
-                                    var historyParams = new FeatureLayerCreationParams(new Uri(strOutputFc))
+                                    Module1.Current.ModuleLogManager.LogError(nameof(RunFireDataImplAsync),
+                                        "CalculateField tool failed to update YEAR field. Error code: " + gpResult.ErrorCode);
+                                    success = BA_ReturnCode.UnknownError;
+                                }
+                                else
+                                {
+                                    await QueuedTask.Run(() =>
                                     {
-                                        Name = "Selection Layer",
-                                        IsVisible = false,
-                                        MapMemberIndex = 0,
-                                        MapMemberPosition = 0,
-                                    };
-                                    lyrHistory = LayerFactory.Instance.CreateLayer<FeatureLayer>(historyParams, oMap);
-                                    lyrHistory.SetDefinitionQuery($@"{Constants.FIELD_YEAR} >= {minYearClip}");
-                                });
+                                        var historyParams = new FeatureLayerCreationParams(new Uri(strOutputFc))
+                                        {
+                                            Name = "Selection Layer",
+                                            IsVisible = false,
+                                            MapMemberIndex = 0,
+                                            MapMemberPosition = 0,
+                                        };
+                                        lyrHistory = LayerFactory.Instance.CreateLayer<FeatureLayer>(historyParams, oMap);
+                                        lyrHistory.SetDefinitionQuery($@"{Constants.FIELD_YEAR} >= {minYearClip}");
+                                    });
+                                }
                             }
                         }
-                    }
-                    strWsUri = dictDataSources[Constants.DATA_TYPE_FIRE_CURRENT].uri;
-                    strOutputFc = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Layers, true)
-                        + Constants.FILE_FIRE_CURRENT;
-                    parametersClip = Geoprocessing.MakeValueArray(strWsUri, strClipFile, strOutputFc, "");
-                    gpResultClip = await Geoprocessing.ExecuteToolAsync("Clip_analysis", parametersClip, environmentsClip,
-                                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                    if (! gpResultClip.IsFailed)
-                    {
-                        success = await GeoprocessingTools.AddFieldAsync(strOutputFc, Constants.FIELD_YEAR, "SHORT", null);
+                        strWsUri = dictDataSources[Constants.DATA_TYPE_FIRE_CURRENT].uri;
+                        strOutputFc = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Layers, true)
+                            + Constants.FILE_FIRE_CURRENT;
+                        parametersClip = Geoprocessing.MakeValueArray(strWsUri, strClipFile, strOutputFc, "");
+                        gpResultClip = await Geoprocessing.ExecuteToolAsync("Clip_analysis", parametersClip, environmentsClip,
+                                                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                        if (!gpResultClip.IsFailed)
+                        {
+                            success = await GeoprocessingTools.AddFieldAsync(strOutputFc, Constants.FIELD_YEAR, "SHORT", null);
+                            if (success == BA_ReturnCode.Success)
+                            {
+                                var parameters = Geoprocessing.MakeValueArray(strOutputFc, Constants.FIELD_YEAR,
+                                    $@"Year($feature.{Constants.FIELD_FIRECURRENT_DATE})", "Arcade", "", "SHORT");
+                                IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("management.CalculateField", parameters, null,
+                                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                                if (gpResult.IsFailed)
+                                {
+                                    Module1.Current.ModuleLogManager.LogError(nameof(RunFireDataImplAsync),
+                                        "CalculateField tool failed to update YEAR field. Error code: " + gpResult.ErrorCode);
+                                    success = BA_ReturnCode.UnknownError;
+                                }
+                            }
+
+                        }
+
+                        // Merge features
+                        string strCurrentId = "poly_SourceOID"; // Used to identify records that come from fire_current
+                        string strMergeFc = "";
                         if (success == BA_ReturnCode.Success)
                         {
-                            var parameters = Geoprocessing.MakeValueArray(strOutputFc, Constants.FIELD_YEAR,
-                                $@"Year($feature.{Constants.FIELD_FIRECURRENT_DATE})", "Arcade", "", "SHORT");
-                            IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("management.CalculateField", parameters, null,
+                            string strInputDatasets = $@"{lyrHistory.Name};{strOutputFc}";
+                            strMergeFc = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Fire, true)
+                                + Constants.FILE_NIFC_FIRE;
+                            string strIrwinIdMap = $@"{Constants.FIELD_IRWIN_ID} ""{Constants.FIELD_IRWIN_ID}"" true true false 50 Text 0 0,First,#,{lyrHistory.Name},{Constants.FIELD_IRWIN_ID},0,50,{strOutputFc},poly_IRWINID,0,38;";
+                            string strIncidentMap = $@"{Constants.FIELD_INCIDENT} ""{Constants.FIELD_INCIDENT}"" true true false 50 Text 0 0,First,#,{lyrHistory.Name},{Constants.FIELD_INCIDENT},0,50,{strOutputFc},{Constants.FIELD_FIRECURRENT_INCIDENT},0,50;";
+                            string strYearMap = $@"{Constants.FIELD_YEAR} ""{Constants.FIELD_YEAR}"" true true false 2 Short 0 0,First,#,{lyrHistory.Name},{Constants.FIELD_YEAR},-1,-1,{strOutputFc},{Constants.FIELD_YEAR},-1,-1;";
+                            string strFieldMap = $@"{strIrwinIdMap}{strIncidentMap}{strYearMap}{strCurrentId} ""{strCurrentId}"" true true false 4 Long 0 0,First,#,{strOutputFc},{strCurrentId},-1,-1";
+                            var parameters = Geoprocessing.MakeValueArray(strInputDatasets, strMergeFc, strFieldMap, "NO_SOURCE_INFO");
+                            IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("Merge_management", parameters, null,
                                 CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
                             if (gpResult.IsFailed)
                             {
                                 Module1.Current.ModuleLogManager.LogError(nameof(RunFireDataImplAsync),
-                                    "CalculateField tool failed to update YEAR field. Error code: " + gpResult.ErrorCode);
+                                     "Unable to merge features. Error code: " + gpResult.ErrorCode);
                                 success = BA_ReturnCode.UnknownError;
                             }
                         }
+
+                        if (success == BA_ReturnCode.Success)
+                        {
+                            string strWhere1 = $@"{strCurrentId} > 0";    //Identifies features that came from firecurrent
+                            string strNotWhere1 = $@"{strCurrentId} IS NULL";
+                            success = await AnalysisTools.DeleteDuplicatesAsync(strMergeFc, strWhere1, Constants.FIELD_IRWIN_ID, strNotWhere1);
+                        }
+                        if (success == BA_ReturnCode.Success)
+                        {
+                            success = await AnalysisTools.DeleteIrwinDuplicatesAsync(aoiFolder);
+                        }
+
+                        if (success == BA_ReturnCode.Success)
+                        {
+                            success = await AnalysisTools.DissolveIncidentDuplicatesAsync(aoiFolder);
+                        }
+
+                        dynamic oFireSettings = GeneralTools.GetFireSettings(aoiFolder);
+                        if (success == BA_ReturnCode.Success)
+                        {
+                            oFireSettings.lastNifcYear = _intNifcMaxYear;
+                            oFireSettings.dataBeginYear = _intMinYear;
+                            oFireSettings.fireDataClipYears = FireDataClipYears;
+                            oFireSettings.reportEndYear = "";   // Clear report related settings so we don't get out of sync
+                            oFireSettings.increment = "";
+                            GeneralTools.UpdateFireDataSourceSettings(ref oFireSettings, aoiFolder, dictDataSources, Constants.DATA_TYPE_FIRE_HISTORY, false);
+                            GeneralTools.UpdateFireDataSourceSettings(ref oFireSettings, aoiFolder, dictDataSources, Constants.DATA_TYPE_FIRE_CURRENT, true);
+                        }
+
+                        // Recalculate area due to bug in Pro
+                        string strAreaProperties = Constants.FIELD_RECALC_AREA + " AREA_GEODESIC";
+                        success = await GeoprocessingTools.CalculateGeometryAsync(strMergeFc, strAreaProperties, "SQUARE_METERS");
+                        // Remove temporary layer
+                        await QueuedTask.Run(() =>
+                        {
+                            oMap.RemoveLayer(lyrHistory);
+                        });
                     }
 
-                    // Merge features
-                    string strCurrentId = "poly_SourceOID"; // Used to identify records that come from fire_current
-                    string strMergeFc = "";
-                    if (success == BA_ReturnCode.Success)
+                    if (Clip_Mtbs_Checked)
                     {
-                        string strInputDatasets = $@"{lyrHistory.Name};{strOutputFc}";
-                        strMergeFc = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Fire, true)
-                            + Constants.FILE_NIFC_FIRE;
-                        string strIrwinIdMap = $@"{Constants.FIELD_IRWIN_ID} ""{Constants.FIELD_IRWIN_ID}"" true true false 50 Text 0 0,First,#,{lyrHistory.Name},{Constants.FIELD_IRWIN_ID},0,50,{strOutputFc},poly_IRWINID,0,38;";
-                        string strIncidentMap = $@"{Constants.FIELD_INCIDENT} ""{Constants.FIELD_INCIDENT}"" true true false 50 Text 0 0,First,#,{lyrHistory.Name},{Constants.FIELD_INCIDENT},0,50,{strOutputFc},{Constants.FIELD_FIRECURRENT_INCIDENT},0,50;";
-                        string strYearMap = $@"{Constants.FIELD_YEAR} ""{Constants.FIELD_YEAR}"" true true false 2 Short 0 0,First,#,{lyrHistory.Name},{Constants.FIELD_YEAR},-1,-1,{strOutputFc},{Constants.FIELD_YEAR},-1,-1;";
-                        string strFieldMap = $@"{strIrwinIdMap}{strIncidentMap}{strYearMap}{strCurrentId} ""{strCurrentId}"" true true false 4 Long 0 0,First,#,{strOutputFc},{strCurrentId},-1,-1";
-                        var parameters = Geoprocessing.MakeValueArray(strInputDatasets, strMergeFc, strFieldMap, "NO_SOURCE_INFO");
-                        IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("Merge_management", parameters, null,
-                            CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                        if (gpResult.IsFailed)
+                        List<string> lstMtbsImageServices = new List<string>();
+                        List<string> lstMtbsLayerNames = new List<string>();
+                        DataSource dsFire = new DataSource(_dictDatasources[DataSource.GetFireBurnSeverityKey]);
+                        for (int i = minYearClip; i <= _intMtbsMaxYear; i++)
                         {
-                            Module1.Current.ModuleLogManager.LogError(nameof(RunFireDataImplAsync),
-                                 "Unable to merge features. Error code: " + gpResult.ErrorCode);
-                            success = BA_ReturnCode.UnknownError;
+                            lstMtbsImageServices.Add($@"{dsFire.uri}{GeneralTools.GetMtbsLayerFileName(i)}/{Constants.URI_IMAGE_SERVER}");
+                            lstMtbsLayerNames.Add(GeneralTools.GetMtbsLayerFileName(i));
+                        }
+                        if (lstMtbsImageServices.Count > 0)
+                        {
+                            success = await AnalysisTools.ClipMtbsLayersAsync(aoiFolder, dictDataSources, Constants.FILE_AOI_VECTOR, lstMtbsImageServices, lstMtbsLayerNames,
+                                _intMtbsMaxYear, Reclip_MTBS_Checked);
                         }
                     }
-
-                    if (success == BA_ReturnCode.Success)
-                    {
-                        string strWhere1 = $@"{strCurrentId} > 0";    //Identifies features that came from firecurrent
-                        string strNotWhere1 = $@"{strCurrentId} IS NULL";                                               
-                        success = await AnalysisTools.DeleteDuplicatesAsync(strMergeFc, strWhere1, Constants.FIELD_IRWIN_ID, strNotWhere1);
-                    }
-                    if (success == BA_ReturnCode.Success)
-                    {
-                        success = await AnalysisTools.DeleteIrwinDuplicatesAsync(aoiFolder);
-                    }
-
-                    if (success == BA_ReturnCode.Success)
-                    {
-                        success = await AnalysisTools.DissolveIncidentDuplicatesAsync(aoiFolder);
-                    }
-
-                    dynamic oFireSettings = GeneralTools.GetFireSettings(aoiFolder);
-                    if (success == BA_ReturnCode.Success)
-                    {
-                        oFireSettings.lastNifcYear = _intNifcMaxYear;
-                        oFireSettings.dataBeginYear = _intMinYear;
-                        oFireSettings.fireDataClipYears = FireDataClipYears;
-                        oFireSettings.reportEndYear = "";   // Clear report related settings so we don't get out of sync
-                        oFireSettings.increment = "";
-                        GeneralTools.UpdateFireDataSourceSettings(ref oFireSettings, aoiFolder, dictDataSources, Constants.DATA_TYPE_FIRE_HISTORY, false);
-                        GeneralTools.UpdateFireDataSourceSettings(ref oFireSettings, aoiFolder, dictDataSources, Constants.DATA_TYPE_FIRE_CURRENT, true);
-                    }
-
-                    // Recalculate area due to bug in Pro
-                    string strAreaProperties = Constants.FIELD_RECALC_AREA + " AREA_GEODESIC";
-                    success = await GeoprocessingTools.CalculateGeometryAsync(strMergeFc, strAreaProperties, "SQUARE_METERS");
-
-                    List<string> lstMtbsImageServices = new List<string>();
-                    List<string> lstMtbsLayerNames = new List<string>();
-                    DataSource dsFire = new DataSource(_dictDatasources[DataSource.GetFireBurnSeverityKey]);
-                    for (int i = minYearClip; i <= _intMtbsMaxYear; i++)
-                    {
-                        lstMtbsImageServices.Add($@"{dsFire.uri}{GeneralTools.GetMtbsLayerFileName(i)}/{Constants.URI_IMAGE_SERVER}");
-                        lstMtbsLayerNames.Add(GeneralTools.GetMtbsLayerFileName(i));
-                    }
-                    if (lstMtbsImageServices.Count> 0)
-                    {
-                        success = await AnalysisTools.ClipMtbsLayersAsync(aoiFolder, dictDataSources, Constants.FILE_AOI_VECTOR, lstMtbsImageServices, lstMtbsLayerNames, 
-                            _intMtbsMaxYear, Reclip_MTBS_Checked);
-                    }
-
 
                     if (success == BA_ReturnCode.Success && errorCount == 0)
                     {
@@ -2211,12 +2258,6 @@ namespace bagis_pro
                     {
                         Names[idxRow].AoiBatchStateText = AoiBatchState.Failed.ToString();
                     }
-
-                    // Remove temporary layer
-                    await QueuedTask.Run(() =>
-                    {
-                        oMap.RemoveLayer(lyrHistory);
-                    });
                 }
             }
             strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Fire data generation complete!! \r\n";
@@ -2417,6 +2458,297 @@ namespace bagis_pro
                                         StringBuilder sb = new StringBuilder();
                                         foreach (var item in lstAnnualElements)
                                         { 
+                                            sb.Append($@"{item}{_separator}");
+                                        }
+                                        using (StreamWriter sw = File.AppendText(strCsvFile))
+                                        {
+                                            sw.WriteLine(sb.ToString());
+                                        }
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} Data could not be written to the {strCsvFile} file!{System.Environment.NewLine}";
+                                        File.AppendAllText(_strFireReportLogFile, strLogEntry);
+                                        return;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if (bIncrementStatistics)
+                    {
+                        // Generating increment statistics
+                        bool bRequestPeriods = false;
+                        if (IncrementDataChecked)
+                        {
+                            bRequestPeriods = true;
+                        }
+                        BA_ReturnCode success = BA_ReturnCode.WriteError;
+                        string strCsvFile = $@"{Path.GetDirectoryName(_strFireReportLogFile)}\increment_statistics.csv";
+                        lstInterval = GeneralTools.GetFireStatisticsIntervals(ReportEndYear, FireDataClipYears, FireIncrementYears, bRequestPeriods, FireTimePeriodCount, out intIncrementPeriods);
+                        if (!File.Exists(strCsvFile))
+                        {
+                            success = this.InitIncrementCsv(intIncrementPeriods, strCsvFile);
+                        }
+                        else
+                        {
+                            success = BA_ReturnCode.Success;
+                        }
+                        IList<string> lstOutput = await AnalysisTools.GenerateIncrementFireStatisticsList(oAoi, _strFireReportLogFile,
+                            aoiAreaSqMeters, cellSizeSqMeters, lstInterval, lstMissingMtbsYears);
+                        if (lstOutput.Count > 0)
+                        {
+                            try
+                            {
+                                // Adds new content to file
+                                StringBuilder sb = new StringBuilder();
+                                foreach (var item in lstOutput)
+                                {
+                                    sb.Append($@"{item}{_separator}");
+                                }
+                                using (StreamWriter sw = File.AppendText(strCsvFile))
+                                {
+                                    sw.WriteLine(sb.ToString());
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} Data could not be written to the {strCsvFile} file!{System.Environment.NewLine}";
+                                File.AppendAllText(_strFireReportLogFile, strLogEntry);
+                                return;
+                            }
+                        }
+
+                    }
+
+                    try
+                    {
+                        dynamic oFireSettings = GeneralTools.GetFireSettings(oAoi.FilePath);
+                        if (oFireSettings.DataSources != null)
+                        {
+                            // We know the file exists
+                            oFireSettings.reportEndYear = _intNifcMaxYear;
+                            oFireSettings.increment = FireIncrementYears;
+
+                            // serialize JSON directly to a file
+                            using (StreamWriter file = File.CreateText($@"{oAoi.FilePath}\{Constants.FOLDER_MAPS}\{Constants.FILE_FIRE_SETTINGS}"))
+                            {
+                                JsonSerializer serializer = new JsonSerializer();
+                                serializer.Formatting = Newtonsoft.Json.Formatting.Indented;
+                                serializer.Serialize(file, oFireSettings);
+                            }
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Unable to update fire_analysis.json for " +
+                            Names[idxRow].Name + "\r\n";
+                        File.AppendAllText(_strFireReportLogFile, strLogEntry);       // append
+                    }
+
+                    Names[idxRow].AoiBatchStateText = AoiBatchState.Completed.ToString();  // update gui
+                    strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Finished generate fire statistics export for " +
+                        Names[idxRow].Name + "\r\n";
+                    File.AppendAllText(_strFireReportLogFile, strLogEntry);       // append
+                }
+            }
+            MessageBox.Show("Fire statistics have been generated!");
+        }
+
+        private async void RunFireMapsImplAsync(object param)
+        {
+            // Make sure the maps_publish folder exists under the selected folder
+            // Make sure the maps_publish\fire_statistics folder exists under the selected folder
+            string strParentPath = Path.GetDirectoryName(Path.GetDirectoryName(_strFireDataLogFile));
+            if (!Directory.Exists(strParentPath))
+            {
+                Directory.CreateDirectory(strParentPath);
+            }
+            if (!Directory.Exists(Path.GetDirectoryName(_strFireDataLogFile)))
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(_strFireDataLogFile));
+            }
+
+            // Create initial log entry
+            string strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Starting fire report " + "\r\n";
+            File.WriteAllText(_strFireReportLogFile, strLogEntry);    // overwrite file if it exists
+
+            int intIncrementPeriods = 0;
+            IList<Interval> lstInterval = null;
+            int overrideMinYear = _intMinYear;
+            int overrideMaxYear = ReportEndYear;
+            bool bAnnualStatistics = true;
+            bool bIncrementStatistics = true;
+            // Only check this once
+            if (SelectedTimeChecked)
+            {
+                overrideMinYear = SelectedMinYear;
+                overrideMaxYear = SelectedMaxYear;
+                if (!AnnualDataChecked)
+                {
+                    bAnnualStatistics = false;
+                }
+                if (!IncrementDataChecked)
+                {
+                    bIncrementStatistics = false;
+                }
+            }
+            if (bAnnualStatistics)
+            {
+                // Delete any annual statistics files we plan to overwrite
+                for (int i = overrideMinYear; i <= overrideMaxYear; i++)
+                {
+                    string strCsvFile = $@"{Path.GetDirectoryName(_strFireReportLogFile)}\{i}_annual_statistics.csv";
+                    if (File.Exists(strCsvFile))
+                    {
+                        try
+                        {
+                            File.Delete(strCsvFile);
+                        }
+                        catch (Exception e)
+                        {
+                            MessageBox.Show($@"Unable to overwrite {strCsvFile}. Report process stopped!");
+                            return;
+                        }
+
+                    }
+                }
+            }
+            if (bIncrementStatistics)
+            {
+                string strCsvFile = $@"{Path.GetDirectoryName(_strFireReportLogFile)}\increment_statistics.csv";
+                if (File.Exists(strCsvFile))
+                {
+                    try
+                    {
+                        File.Delete(strCsvFile);
+                    }
+                    catch (Exception e)
+                    {
+                        MessageBox.Show($@"Unable to overwrite {strCsvFile}. Report process stopped!");
+                        return;
+                    }
+
+                }
+            }
+            for (int idxRow = 0; idxRow < Names.Count; idxRow++)
+            {
+                if (Names[idxRow].AoiBatchIsSelected)
+                {
+                    string aoiFolder = Names[idxRow].FilePath;
+                    if (Names[idxRow].AoiBatchStateText.Equals(AoiBatchState.NotReady.ToString()))
+                    {
+                        strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} Skipping fire report for {Names[idxRow].FilePath}. Required station information is missing.{System.Environment.NewLine}";
+                        File.AppendAllText(_strFireReportLogFile, strLogEntry);
+                        continue;
+                    }
+                    else
+                    {
+                        // Check for fire settings before continuing
+                        bool bMissingFireSettings = false;
+                        string strFireSettingsPath = $@"{aoiFolder}\{Constants.FOLDER_MAPS}\{Constants.FILE_FIRE_SETTINGS}";
+                        if (File.Exists(strFireSettingsPath))
+                        {
+                            dynamic oFireSettings = GeneralTools.GetFireSettings(aoiFolder);
+                            if (oFireSettings.DataSources == null)
+                            {
+                                bMissingFireSettings = true;
+                            }
+                        }
+                        else
+                        {
+                            bMissingFireSettings = true;
+                        }
+                        if (bMissingFireSettings)
+                        {
+                            Names[idxRow].AoiBatchStateText = AoiBatchState.Failed.ToString();  // update gui
+                            strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Missing fire_analysis.json file for " +
+                                Names[idxRow].Name + "! Retrieve fire data before running report. \r\n";
+                            File.AppendAllText(_strFireReportLogFile, strLogEntry);       // append
+                            continue;
+                        }
+                        // Check for fire.gdb and data before continuing
+                        string strFireGdbPath = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Fire);
+                        bool bHasFireData = false;
+                        if (Directory.Exists(strFireGdbPath))
+                        {
+                            if (await GeodatabaseTools.FeatureClassExistsAsync(new Uri(strFireGdbPath), Constants.FILE_NIFC_FIRE))
+                            {
+                                bHasFireData = true;
+                            }
+                        }
+                        if (!bHasFireData)
+                        {
+                            Names[idxRow].AoiBatchStateText = AoiBatchState.Failed.ToString();  // update gui
+                            strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Missing fire data for " +
+                                Names[idxRow].Name + "! Retrieve fire data before running report. \r\n";
+                            File.AppendAllText(_strFireReportLogFile, strLogEntry);       // append
+                            continue;
+                        }
+
+                        Names[idxRow].AoiBatchStateText = AoiBatchState.Started.ToString();  // update gui
+                        strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Starting fire report for " +
+                            Names[idxRow].Name + "\r\n";
+                        File.AppendAllText(_strFireReportLogFile, strLogEntry);       // append
+                    }
+                    // Set current AOI
+                    Aoi oAoi = await GeneralTools.SetAoiAsync(aoiFolder, Names[idxRow]);
+                    if (Module1.Current.CboCurrentAoi != null)
+                    {
+                        FrameworkApplication.Current.Dispatcher.Invoke(() =>
+                        {
+                            // Do something on the GUI thread
+                            Module1.Current.CboCurrentAoi.SetAoiName(oAoi.Name);
+                        });
+                    }
+
+                    Uri aoiUri = new Uri(GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi));
+                    Uri fireUri = new Uri(GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Fire));
+                    double aoiAreaSqMeters = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(aoiUri, Constants.FILE_AOI_VECTOR, null);
+                    double cellSizeSqMeters = -1;
+                    for (int i = overrideMinYear; i <= overrideMaxYear; i++)
+                    {
+                        string strRasterName = GeneralTools.GetMtbsLayerFileName(i);
+                        Uri fullFireUri = new Uri($@"{fireUri.LocalPath}\{strRasterName}");
+                        if (await GeodatabaseTools.RasterDatasetExistsAsync(fireUri, strRasterName))
+                        {
+                            double dblTest = await GeodatabaseTools.GetCellSizeAsync(fullFireUri, WorkspaceType.Geodatabase);
+                            if (dblTest > 0)
+                            {
+                                cellSizeSqMeters = Math.Round(dblTest, 2);
+                                break;
+                            }
+                        }
+                    }
+
+                    IList<string> lstMissingMtbsYears = await GeodatabaseTools.QueryMissingMtbsRasters(oAoi.FilePath, overrideMinYear, overrideMaxYear);
+                    if (bAnnualStatistics)
+                    {
+                        for (int i = overrideMinYear; i <= overrideMaxYear; i++)
+                        {
+                            BA_ReturnCode success = BA_ReturnCode.WriteError;
+                            string strCsvFile = $@"{Path.GetDirectoryName(_strFireReportLogFile)}\{i}_annual_statistics.csv";
+                            if (!File.Exists(strCsvFile))
+                            {
+                                success = this.InitAnnualCsv(i, strCsvFile);
+                            }
+                            else
+                            {
+                                success = BA_ReturnCode.Success;
+                            }
+
+                            if (success == BA_ReturnCode.Success)
+                            {
+                                IList<string> lstAnnualElements = await AnalysisTools.GenerateAnnualFireStatisticsList(oAoi, _strFireReportLogFile,
+                                    aoiAreaSqMeters, cellSizeSqMeters, i, overrideMaxYear, lstMissingMtbsYears);
+                                if (lstAnnualElements.Count > 0)
+                                {
+                                    try
+                                    {
+                                        // Adds new content to file
+                                        StringBuilder sb = new StringBuilder();
+                                        foreach (var item in lstAnnualElements)
+                                        {
                                             sb.Append($@"{item}{_separator}");
                                         }
                                         using (StreamWriter sw = File.AppendText(strCsvFile))
