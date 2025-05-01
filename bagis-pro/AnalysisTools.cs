@@ -7078,7 +7078,7 @@ namespace bagis_pro
             });
             return success;
         }
-        public static async Task<BA_ReturnCode> ClipMtbsLayersAsync(string strAoiPath, IDictionary<string, dynamic> dictDataSources,
+        public static async Task<int> ClipMtbsLayersAsync(string strAoiPath, IDictionary<string, dynamic> dictDataSources,
             string strClipFile, List<string> lstImageServiceUri, List<string> lstRasterFileName, int intLastMtbsYear, bool bReclipMtbs)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
@@ -7288,22 +7288,8 @@ namespace bagis_pro
             if (await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Fire)), tempNoData))
             {
                 success = await GeoprocessingTools.DeleteDatasetAsync($@"{GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Fire)}\{tempNoData}");
-            }
-            // Update settings file
-            if (clippedLayersCount > 0)
-            {
-                dynamic oFireSettings = GeneralTools.GetFireSettings(strAoiPath);
-                if (oFireSettings.DataSources != null)
-                {
-                    // We know the file exists
-                    oFireSettings.mtbsLegend = Module1.Current.BagisSettings.MtbsLegend;
-                    oFireSettings.lastMtbsYear = intLastMtbsYear;
-                }
-                // Updates the MTBS data source and saves the file
-                GeneralTools.UpdateFireDataSourceSettings(ref oFireSettings, strAoiPath, dictDataSources, Constants.DATA_TYPE_FIRE_BURN_SEVERITY, true);
-            }
-            success = BA_ReturnCode.Success;
-            return success;
+            }            
+            return clippedLayersCount;
         }
 
         public static async Task<double> QueryPerimeterStatisticsByYearAsync(string aoiPath, int intYear, 

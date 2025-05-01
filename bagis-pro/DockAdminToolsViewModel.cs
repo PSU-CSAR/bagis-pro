@@ -2245,8 +2245,26 @@ namespace bagis_pro
                         }
                         if (lstMtbsImageServices.Count > 0)
                         {
-                            success = await AnalysisTools.ClipMtbsLayersAsync(aoiFolder, dictDataSources, Constants.FILE_AOI_VECTOR, lstMtbsImageServices, lstMtbsLayerNames,
+                            int intRetVal = await AnalysisTools.ClipMtbsLayersAsync(aoiFolder, dictDataSources, Constants.FILE_AOI_VECTOR, lstMtbsImageServices, lstMtbsLayerNames,
                                 _intMtbsMaxYear, Reclip_MTBS_Checked);
+                            if (intRetVal > 0)
+                            {
+                                // Update settings file
+                                dynamic oFireSettings = GeneralTools.GetFireSettings(aoiFolder);
+                                if (oFireSettings.DataSources != null)
+                                {
+                                    // We know the file exists
+                                    oFireSettings.mtbsLegend = Module1.Current.BagisSettings.MtbsLegend;
+                                    oFireSettings.lastMtbsYear = _intMtbsMaxYear;
+                                    oFireSettings.dataBeginYear = _intMinYear;
+                                    oFireSettings.fireDataClipYears = FireDataClipYears;
+                                    oFireSettings.reportEndYear = "";   // Clear report related settings so we don't get out of sync
+                                    oFireSettings.increment = "";
+                                }
+                                // Updates the MTBS data source and saves the file
+                                GeneralTools.UpdateFireDataSourceSettings(ref oFireSettings, aoiFolder, dictDataSources, Constants.DATA_TYPE_FIRE_BURN_SEVERITY, true);
+                                success = BA_ReturnCode.Success;
+                            }
                         }
                     }
 
