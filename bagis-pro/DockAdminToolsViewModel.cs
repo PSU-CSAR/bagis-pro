@@ -22,7 +22,6 @@ using System.ComponentModel;
 using ArcGIS.Desktop.Core.Geoprocessing;
 using System.Diagnostics;
 using bagis_pro.BA_Objects;
-using System.Windows.Documents;
 
 namespace bagis_pro
 {
@@ -80,6 +79,7 @@ namespace bagis_pro
         private string _strGenStatisticsLogFile;
         private string _strFireDataLogFile;
         private string _strFireReportLogFile;
+        private string _strFireMapsLogFile;
         private bool _cmdRunEnabled = false;
         private bool _cmdForecastEnabled = false;
         private bool _cmdSnodasEnabled = false;
@@ -596,6 +596,7 @@ namespace bagis_pro
                     CmdFireDataLogEnabled = File.Exists(_strFireDataLogFile);
 
                     _strFireReportLogFile = $@"{ParentFolder}\{Constants.FOLDER_MAP_PACKAGE}\{Constants.FOLDER_FIRE_STATISTICS}\{Constants.FILE_FIRE_REPORT_LOG}";
+                    _strFireMapsLogFile = $@"{ParentFolder}\{Constants.FOLDER_MAP_PACKAGE}\{Constants.FOLDER_FIRE_STATISTICS}\{Constants.FILE_FIRE_REPORT_LOG}";
                     CmdFireReportLogEnabled = File.Exists(_strFireReportLogFile);
 
 
@@ -2449,19 +2450,17 @@ namespace bagis_pro
                     }
 
                     IList<string> lstMissingMtbsYears = await GeodatabaseTools.QueryMissingMtbsRasters(oAoi.FilePath, overrideMinYear, overrideMaxYear);
+
                     if (bAnnualStatistics)
                     {
+                        string strMapsFolder = $@"{oAoi.FilePath}\{Constants.FOLDER_MAP_PACKAGE}\{Constants.FOLDER_FIRE_STATISTICS}";
                         for (int i = overrideMinYear; i <= overrideMaxYear; i++)
                         {
                             BA_ReturnCode success = BA_ReturnCode.WriteError;
-                            string strCsvFile = $@"{Path.GetDirectoryName(_strFireReportLogFile)}\{i}_annual_statistics.csv";
-                            if (!File.Exists(strCsvFile))
+                            string strMapFile = $@"{strMapsFolder}\{i}{Constants.FILE_FIRE_SUFFIX_PDF}";
+                            if (File.Exists(strMapFile))
                             {
-                               success = this.InitAnnualCsv(i, strCsvFile);
-                            }
-                            else
-                            {
-                                success = BA_ReturnCode.Success;
+                               File.Delete(strMapFile);
                             }
 
                             if (success == BA_ReturnCode.Success)
@@ -2478,15 +2477,15 @@ namespace bagis_pro
                                         { 
                                             sb.Append($@"{item}{_separator}");
                                         }
-                                        using (StreamWriter sw = File.AppendText(strCsvFile))
-                                        {
-                                            sw.WriteLine(sb.ToString());
-                                        }
+                                        //using (StreamWriter sw = File.AppendText(strCsvFile))
+                                        //{
+                                        //    sw.WriteLine(sb.ToString());
+                                        //}
                                     }
                                     catch (Exception ex)
                                     {
-                                        strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} Data could not be written to the {strCsvFile} file!{System.Environment.NewLine}";
-                                        File.AppendAllText(_strFireReportLogFile, strLogEntry);
+                                        //strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} Data could not be written to the {strCsvFile} file!{System.Environment.NewLine}";
+                                        //File.AppendAllText(_strFireReportLogFile, strLogEntry);
                                         return;
                                     }
                                 }
@@ -2575,21 +2574,15 @@ namespace bagis_pro
 
         private async void RunFireMapsImplAsync(object param)
         {
-            // Make sure the maps_publish folder exists under the selected folder
             // Make sure the maps_publish\fire_statistics folder exists under the selected folder
-            string strParentPath = Path.GetDirectoryName(Path.GetDirectoryName(_strFireDataLogFile));
-            if (!Directory.Exists(strParentPath))
+            if (!Directory.Exists(Path.GetDirectoryName(_strFireMapsLogFile)))
             {
-                Directory.CreateDirectory(strParentPath);
-            }
-            if (!Directory.Exists(Path.GetDirectoryName(_strFireDataLogFile)))
-            {
-                Directory.CreateDirectory(Path.GetDirectoryName(_strFireDataLogFile));
+                Directory.CreateDirectory(Path.GetDirectoryName(_strFireMapsLogFile));
             }
 
             // Create initial log entry
-            string strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Starting fire report " + "\r\n";
-            File.WriteAllText(_strFireReportLogFile, strLogEntry);    // overwrite file if it exists
+            string strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Starting fire maps " + "\r\n";
+            File.WriteAllText(_strFireMapsLogFile, strLogEntry);    // overwrite file if it exists
 
             int intIncrementPeriods = 0;
             IList<Interval> lstInterval = null;
@@ -2611,44 +2604,8 @@ namespace bagis_pro
                     bIncrementStatistics = false;
                 }
             }
-            if (bAnnualStatistics)
-            {
-                // Delete any annual statistics files we plan to overwrite
-                for (int i = overrideMinYear; i <= overrideMaxYear; i++)
-                {
-                    string strCsvFile = $@"{Path.GetDirectoryName(_strFireReportLogFile)}\{i}_annual_statistics.csv";
-                    if (File.Exists(strCsvFile))
-                    {
-                        try
-                        {
-                            File.Delete(strCsvFile);
-                        }
-                        catch (Exception e)
-                        {
-                            MessageBox.Show($@"Unable to overwrite {strCsvFile}. Report process stopped!");
-                            return;
-                        }
 
-                    }
-                }
-            }
-            if (bIncrementStatistics)
-            {
-                string strCsvFile = $@"{Path.GetDirectoryName(_strFireReportLogFile)}\increment_statistics.csv";
-                if (File.Exists(strCsvFile))
-                {
-                    try
-                    {
-                        File.Delete(strCsvFile);
-                    }
-                    catch (Exception e)
-                    {
-                        MessageBox.Show($@"Unable to overwrite {strCsvFile}. Report process stopped!");
-                        return;
-                    }
 
-                }
-            }
             for (int idxRow = 0; idxRow < Names.Count; idxRow++)
             {
                 if (Names[idxRow].AoiBatchIsSelected)
@@ -2656,8 +2613,8 @@ namespace bagis_pro
                     string aoiFolder = Names[idxRow].FilePath;
                     if (Names[idxRow].AoiBatchStateText.Equals(AoiBatchState.NotReady.ToString()))
                     {
-                        strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} Skipping fire report for {Names[idxRow].FilePath}. Required station information is missing.{System.Environment.NewLine}";
-                        File.AppendAllText(_strFireReportLogFile, strLogEntry);
+                        strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} Skipping fire map for {Names[idxRow].FilePath}. Required station information is missing.{System.Environment.NewLine}";
+                        File.AppendAllText(_strFireMapsLogFile, strLogEntry);
                         continue;
                     }
                     else
@@ -2681,8 +2638,8 @@ namespace bagis_pro
                         {
                             Names[idxRow].AoiBatchStateText = AoiBatchState.Failed.ToString();  // update gui
                             strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Missing fire_analysis.json file for " +
-                                Names[idxRow].Name + "! Retrieve fire data before running report. \r\n";
-                            File.AppendAllText(_strFireReportLogFile, strLogEntry);       // append
+                                Names[idxRow].Name + "! Retrieve fire data before running maps. \r\n";
+                            File.AppendAllText(_strFireMapsLogFile, strLogEntry);       // append
                             continue;
                         }
                         // Check for fire.gdb and data before continuing
@@ -2699,13 +2656,13 @@ namespace bagis_pro
                         {
                             Names[idxRow].AoiBatchStateText = AoiBatchState.Failed.ToString();  // update gui
                             strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Missing fire data for " +
-                                Names[idxRow].Name + "! Retrieve fire data before running report. \r\n";
-                            File.AppendAllText(_strFireReportLogFile, strLogEntry);       // append
+                                Names[idxRow].Name + "! Retrieve fire maps before running report. \r\n";
+                            File.AppendAllText(_strFireMapsLogFile, strLogEntry);       // append
                             continue;
                         }
 
                         Names[idxRow].AoiBatchStateText = AoiBatchState.Started.ToString();  // update gui
-                        strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Starting fire report for " +
+                        strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Starting fire maps for " +
                             Names[idxRow].Name + "\r\n";
                         File.AppendAllText(_strFireReportLogFile, strLogEntry);       // append
                     }
@@ -2723,145 +2680,144 @@ namespace bagis_pro
                     Uri aoiUri = new Uri(GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi));
                     Uri fireUri = new Uri(GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Fire));
                     double aoiAreaSqMeters = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(aoiUri, Constants.FILE_AOI_VECTOR, null);
-                    double cellSizeSqMeters = -1;
-                    for (int i = overrideMinYear; i <= overrideMaxYear; i++)
-                    {
-                        string strRasterName = GeneralTools.GetMtbsLayerFileName(i);
-                        Uri fullFireUri = new Uri($@"{fireUri.LocalPath}\{strRasterName}");
-                        if (await GeodatabaseTools.RasterDatasetExistsAsync(fireUri, strRasterName))
-                        {
-                            double dblTest = await GeodatabaseTools.GetCellSizeAsync(fullFireUri, WorkspaceType.Geodatabase);
-                            if (dblTest > 0)
-                            {
-                                cellSizeSqMeters = Math.Round(dblTest, 2);
-                                break;
-                            }
-                        }
-                    }
 
                     IList<string> lstMissingMtbsYears = await GeodatabaseTools.QueryMissingMtbsRasters(oAoi.FilePath, overrideMinYear, overrideMaxYear);
+                    BA_ReturnCode success = BA_ReturnCode.UnknownError;
+                    Layout oLayout = await MapTools.GetDefaultLayoutAsync(Constants.MAPS_FIRE_LAYOUT_NAME);
                     if (bAnnualStatistics)
                     {
                         for (int i = overrideMinYear; i <= overrideMaxYear; i++)
                         {
-                            BA_ReturnCode success = BA_ReturnCode.WriteError;
-                            string strCsvFile = $@"{Path.GetDirectoryName(_strFireReportLogFile)}\{i}_annual_statistics.csv";
-                            if (!File.Exists(strCsvFile))
-                            {
-                                success = this.InitAnnualCsv(i, strCsvFile);
-                            }
-                            else
-                            {
-                                success = BA_ReturnCode.Success;
-                            }
 
                             if (success == BA_ReturnCode.Success)
                             {
-                                IList<string> lstAnnualElements = await AnalysisTools.GenerateAnnualFireStatisticsList(oAoi, _strFireReportLogFile,
-                                    aoiAreaSqMeters, cellSizeSqMeters, i, overrideMaxYear, lstMissingMtbsYears);
-                                if (lstAnnualElements.Count > 0)
-                                {
-                                    try
-                                    {
-                                        // Adds new content to file
-                                        StringBuilder sb = new StringBuilder();
-                                        foreach (var item in lstAnnualElements)
-                                        {
-                                            sb.Append($@"{item}{_separator}");
-                                        }
-                                        using (StreamWriter sw = File.AppendText(strCsvFile))
-                                        {
-                                            sw.WriteLine(sb.ToString());
-                                        }
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} Data could not be written to the {strCsvFile} file!{System.Environment.NewLine}";
-                                        File.AppendAllText(_strFireReportLogFile, strLogEntry);
-                                        return;
-                                    }
-                                }
+                                //IList<string> lstAnnualElements = await AnalysisTools.GenerateAnnualFireStatisticsList(oAoi, _strFireReportLogFile,
+                                //    aoiAreaSqMeters, cellSizeSqMeters, i, overrideMaxYear, lstMissingMtbsYears);
+                                //if (lstAnnualElements.Count > 0)
+                                //{
+                                //    try
+                                //    {
+                                //        // Adds new content to file
+                                //        StringBuilder sb = new StringBuilder();
+                                //        foreach (var item in lstAnnualElements)
+                                //        {
+                                //            sb.Append($@"{item}{_separator}");
+                                //        }
+                                //        using (StreamWriter sw = File.AppendText(strCsvFile))
+                                //        {
+                                //            sw.WriteLine(sb.ToString());
+                                //        }
+                                //    }
+                                //    catch (Exception ex)
+                                //    {
+                                //        strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} Data could not be written to the {strCsvFile} file!{System.Environment.NewLine}";
+                                //        File.AppendAllText(_strFireReportLogFile, strLogEntry);
+                                //        return;
+                                //    }
+                                //}
                             }
                         }
                     }
-                    if (bIncrementStatistics)
+                    //if (bIncrementStatistics)
+                    //{
+                    //    // Generating increment statistics
+                    //    bool bRequestPeriods = false;
+                    //    if (IncrementDataChecked)
+                    //    {
+                    //        bRequestPeriods = true;
+                    //    }
+                    //    BA_ReturnCode success = BA_ReturnCode.WriteError;
+                    //    string strCsvFile = $@"{Path.GetDirectoryName(_strFireReportLogFile)}\increment_statistics.csv";
+                    //    lstInterval = GeneralTools.GetFireStatisticsIntervals(ReportEndYear, FireDataClipYears, FireIncrementYears, bRequestPeriods, FireTimePeriodCount, out intIncrementPeriods);
+                    //    if (!File.Exists(strCsvFile))
+                    //    {
+                    //        success = this.InitIncrementCsv(intIncrementPeriods, strCsvFile);
+                    //    }
+                    //    else
+                    //    {
+                    //        success = BA_ReturnCode.Success;
+                    //    }
+                    //    IList<string> lstOutput = await AnalysisTools.GenerateIncrementFireStatisticsList(oAoi, _strFireReportLogFile,
+                    //        aoiAreaSqMeters, cellSizeSqMeters, lstInterval, lstMissingMtbsYears);
+                    //    if (lstOutput.Count > 0)
+                    //    {
+                    //        try
+                    //        {
+                    //            // Adds new content to file
+                    //            StringBuilder sb = new StringBuilder();
+                    //            foreach (var item in lstOutput)
+                    //            {
+                    //                sb.Append($@"{item}{_separator}");
+                    //            }
+                    //            using (StreamWriter sw = File.AppendText(strCsvFile))
+                    //            {
+                    //                sw.WriteLine(sb.ToString());
+                    //            }
+                    //        }
+                    //        catch (Exception ex)
+                    //        {
+                    //            strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} Data could not be written to the {strCsvFile} file!{System.Environment.NewLine}";
+                    //            File.AppendAllText(_strFireReportLogFile, strLogEntry);
+                    //            return;
+                    //        }
+                    //    }
+
+                    //}
+
+                    // Always load the maps in case we are running through multiple Aois
+                    success = await MapTools.DisplayFireMapsAsync(Module1.Current.Aoi.FilePath, oLayout);                    
+                    if (success != BA_ReturnCode.Success)
                     {
-                        // Generating increment statistics
-                        bool bRequestPeriods = false;
-                        if (IncrementDataChecked)
+                        Module1.Current.ModuleLogManager.LogError(nameof(RunImplAsync),
+                            "An error occurred while trying to load the maps. The map package cannot be exported!");
+                        Names[idxRow].AoiBatchStateText = AoiBatchState.Failed.ToString();
+                        return;
+                    }                  
+                    // Legend
+                    //success = await MapTools.DisplayLegendAsync(Constants.MAPS_FIRE_MAP_FRAME_NAME, oLayout,
+                    //    "ArcGIS Colors", "1.5 Point", false);
+
+                    if (oLayout != null)
+                    {
+                        if (success == BA_ReturnCode.Success)
                         {
-                            bRequestPeriods = true;
-                        }
-                        BA_ReturnCode success = BA_ReturnCode.WriteError;
-                        string strCsvFile = $@"{Path.GetDirectoryName(_strFireReportLogFile)}\increment_statistics.csv";
-                        lstInterval = GeneralTools.GetFireStatisticsIntervals(ReportEndYear, FireDataClipYears, FireIncrementYears, bRequestPeriods, FireTimePeriodCount, out intIncrementPeriods);
-                        if (!File.Exists(strCsvFile))
-                        {
-                            success = this.InitIncrementCsv(intIncrementPeriods, strCsvFile);
-                        }
-                        else
-                        {
-                            success = BA_ReturnCode.Success;
-                        }
-                        IList<string> lstOutput = await AnalysisTools.GenerateIncrementFireStatisticsList(oAoi, _strFireReportLogFile,
-                            aoiAreaSqMeters, cellSizeSqMeters, lstInterval, lstMissingMtbsYears);
-                        if (lstOutput.Count > 0)
-                        {
-                            try
-                            {
-                                // Adds new content to file
-                                StringBuilder sb = new StringBuilder();
-                                foreach (var item in lstOutput)
-                                {
-                                    sb.Append($@"{item}{_separator}");
-                                }
-                                using (StreamWriter sw = File.AppendText(strCsvFile))
-                                {
-                                    sw.WriteLine(sb.ToString());
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} Data could not be written to the {strCsvFile} file!{System.Environment.NewLine}";
-                                File.AppendAllText(_strFireReportLogFile, strLogEntry);
-                                return;
-                            }
+                            MapDefinition defaultMap = MapTools.LoadMapDefinition(BagisMapType.FIRE);
+                            await MapTools.UpdateMapElementsAsync(Module1.Current.Aoi.StationName, Constants.MAPS_FIRE_LAYOUT_NAME,defaultMap);                            
+                            //success = await MapTools.UpdateLegendAsync(oLayout, defaultMap.LegendLayerList);
                         }
 
-                    }
-
-                    try
-                    {
-                        dynamic oFireSettings = GeneralTools.GetFireSettings(oAoi.FilePath);
-                        if (oFireSettings.DataSources != null)
+                        bool bFoundIt = false;
+                        //A layout view may exist but it may not be active
+                        //Iterate through each pane in the application and check to see if the layout is already open and if so, activate it
+                        foreach (var pane in FrameworkApplication.Panes)
                         {
-                            // We know the file exists
-                            oFireSettings.reportEndYear = _intNifcMaxYear;
-                            oFireSettings.increment = FireIncrementYears;
-
-                            // serialize JSON directly to a file
-                            using (StreamWriter file = File.CreateText($@"{oAoi.FilePath}\{Constants.FOLDER_MAPS}\{Constants.FILE_FIRE_SETTINGS}"))
+                            if (!(pane is ILayoutPane layoutPane))  //if not a layout view, continue to the next pane    
+                                continue;
+                            if (layoutPane.LayoutView != null &&
+                                layoutPane.LayoutView.Layout == oLayout) //if there is a match, activate the view  
                             {
-                                JsonSerializer serializer = new JsonSerializer();
-                                serializer.Formatting = Newtonsoft.Json.Formatting.Indented;
-                                serializer.Serialize(file, oFireSettings);
+                                (layoutPane as Pane).Activate();
+                                bFoundIt = true;
                             }
                         }
-                    }
-                    catch (Exception)
-                    {
-                        strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Unable to update fire_analysis.json for " +
-                            Names[idxRow].Name + "\r\n";
-                        File.AppendAllText(_strFireReportLogFile, strLogEntry);       // append
+                        if (!bFoundIt)
+                        {
+                            await FrameworkApplication.Current.Dispatcher.Invoke(async () =>
+                            {
+                                // Do something on the GUI thread
+                                ILayoutPane iNewLayoutPane = await FrameworkApplication.Panes.CreateLayoutPaneAsync(oLayout); //GUI thread
+                                (iNewLayoutPane as Pane).Activate();
+                            });
+                        }
                     }
 
                     Names[idxRow].AoiBatchStateText = AoiBatchState.Completed.ToString();  // update gui
-                    strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Finished generate fire statistics export for " +
+                    strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Finished generate maps export for " +
                         Names[idxRow].Name + "\r\n";
-                    File.AppendAllText(_strFireReportLogFile, strLogEntry);       // append
+                    File.AppendAllText(_strFireMapsLogFile, strLogEntry);       // append
                 }
             }
-            MessageBox.Show("Fire statistics have been generated!");
+            MessageBox.Show("Fire maps have been generated!");
         }
         private BA_ReturnCode InitAnnualCsv(int intYear, string strCsvFile)
         {

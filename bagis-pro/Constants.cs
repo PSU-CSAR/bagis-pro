@@ -17,6 +17,9 @@ namespace bagis_pro
         public const string MAPS_AOI_LOCATION = "AOI Location";
         public const string MAPS_AOI_LOCATION_LAYOUT = "AOI Location Layout";
         public const string MAPS_AOI_LOCATION_MAP_FRAME_NAME = "AOI Location Map Frame";
+        public const string MAPS_FIRE_MAP_NAME = "Basin Fire Analysis";
+        public const string MAPS_FIRE_LAYOUT_NAME = "Basin Fire Analysis Layout";
+        public const string MAPS_FIRE_MAP_FRAME_NAME = "Basin Fire Analysis Map Frame";
         public const string MAPS_SNODAS_LAYOUT = "SNODAS Layout";
         public const string MAPS_SNODAS_DELTA_LAYOUT = "SNODAS Delta Layout";
         public const string MAPS_SEASONAL_PRECIP_LAYOUT = "Seasonal Precipitation Layout";
@@ -60,7 +63,10 @@ namespace bagis_pro
         public const string MAPS_SUBTITLE = "SubTitle";
         public const string MAPS_TEXTBOX1 = "TextBox1";
         public const string MAPS_TEXTBOX2 = "TextBox2";
-
+        public const string MAPS_NIFC_PERIMETER = "NIFC Fire Perimeter";
+        public static readonly string[] MAPS_FIRE_ARRAY = { Constants.MAPS_BASIN_BOUNDARY, Constants.MAPS_STREAMS, Constants.MAPS_WATERBODIES, 
+            Constants.MAPS_SNOTEL, Constants.MAPS_SNOW_COURSE, Constants.MAPS_HILLSHADE, Constants.MAPS_SNOLITE, Constants.MAPS_COOP_PILLOW, 
+            Constants.MAPS_STREAM_GAGE, Constants.MAPS_NIFC_PERIMETER};
         public const string FILE_AOI_VECTOR = "aoi_v";
         public const string FILE_AOI_BUFFERED_VECTOR = "aoib_v";
         public const string FILE_AOI_PRISM_VECTOR = "p_aoi_v";
@@ -117,6 +123,7 @@ namespace bagis_pro
         public const string FILE_GEN_STATISTICS_LOG = "generate_statistics_log.txt";
         public const string FILE_FIRE_DATA_LOG = "generate_fire_data_log.txt";
         public const string FILE_FIRE_REPORT_LOG = "generate_fire_report_log.txt";
+        public const string FILE_FIRE_MAPS_LOG = "generate_fire_maps_log.txt";
         public const string FILE_FORECAST_STATION_LOG = "forecast_station_log.csv";
         public const string FILE_AOI_STATISTICS = "forecast_aoi_statistics.csv";
         public const string FILE_SNOLITE = "snolite_sites";
@@ -170,6 +177,8 @@ namespace bagis_pro
         public const string FILE_EXPORT_SEASONAL_PRECIP_DISTRIBUTION_PDF = "seasonal_precip_distribution.pdf";
         public const string FILE_EXPORT_MAP_AOI_LOCATION_PDF = "map_aoi_location.pdf";
         public const string FILE_EXPORT_LAND_COVER_PDF = "land_cover.pdf";
+        public const string FILE_FIRE_SUFFIX_PDF = "_Fire-Map.pdf";
+        public const string FILE_FIRE_REPORT_SUFFIX_PDF = "_Fire-Report.pdf";
 
         // List of files in the watershed PDF map package and the order in which they will be assembled
         // Any changes to members or order of this array need to have a corresponding update to FILES_EXPORT_TITLES
