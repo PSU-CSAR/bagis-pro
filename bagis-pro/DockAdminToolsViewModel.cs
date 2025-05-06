@@ -22,6 +22,7 @@ using System.ComponentModel;
 using ArcGIS.Desktop.Core.Geoprocessing;
 using System.Diagnostics;
 using bagis_pro.BA_Objects;
+using ArcGIS.Core.Geometry;
 
 namespace bagis_pro
 {
@@ -2772,43 +2773,45 @@ namespace bagis_pro
                             "An error occurred while trying to load the maps. The map package cannot be exported!");
                         Names[idxRow].AoiBatchStateText = AoiBatchState.Failed.ToString();
                         return;
-                    }                  
+                    }
+
+                    bool bFoundIt = false;
+                    //A layout view may exist but it may not be active
+                    //Iterate through each pane in the application and check to see if the layout is already open and if so, activate it
+                    foreach (var pane in FrameworkApplication.Panes)
+                    {
+                        if (!(pane is ILayoutPane layoutPane))  //if not a layout view, continue to the next pane    
+                            continue;
+                        if (layoutPane.LayoutView != null &&
+                            layoutPane.LayoutView.Layout == oLayout) //if there is a match, activate the view  
+                        {
+                            (layoutPane as Pane).Activate();
+                            bFoundIt = true;
+                        }
+                    }
+                    if (!bFoundIt)
+                    {
+                        await FrameworkApplication.Current.Dispatcher.Invoke(async () =>
+                        {
+                            // Do something on the GUI thread
+                            ILayoutPane iNewLayoutPane = await FrameworkApplication.Panes.CreateLayoutPaneAsync(oLayout); //GUI thread
+                            (iNewLayoutPane as Pane).Activate();
+                        });
+                    }
+
                     // Legend
-                    //success = await MapTools.DisplayLegendAsync(Constants.MAPS_FIRE_MAP_FRAME_NAME, oLayout,
-                    //    "ArcGIS Colors", "1.5 Point", false);
+                    success = await MapTools.DisplayLegendAsync(Constants.MAPS_FIRE_MAP_FRAME_NAME, oLayout,
+                        "ArcGIS Colors", "1.5 Point", false);
 
                     if (oLayout != null)
                     {
                         if (success == BA_ReturnCode.Success)
                         {
                             MapDefinition defaultMap = MapTools.LoadMapDefinition(BagisMapType.FIRE);
-                            await MapTools.UpdateMapElementsAsync(Module1.Current.Aoi.StationName, Constants.MAPS_FIRE_LAYOUT_NAME,defaultMap);                            
-                            //success = await MapTools.UpdateLegendAsync(oLayout, defaultMap.LegendLayerList);
+                            success = await MapTools.UpdateMapElementsAsync(Module1.Current.Aoi.StationName, Constants.MAPS_FIRE_LAYOUT_NAME,defaultMap);                            
+                            success = await MapTools.UpdateLegendAsync(oLayout, defaultMap.LegendLayerList);
                         }
 
-                        bool bFoundIt = false;
-                        //A layout view may exist but it may not be active
-                        //Iterate through each pane in the application and check to see if the layout is already open and if so, activate it
-                        foreach (var pane in FrameworkApplication.Panes)
-                        {
-                            if (!(pane is ILayoutPane layoutPane))  //if not a layout view, continue to the next pane    
-                                continue;
-                            if (layoutPane.LayoutView != null &&
-                                layoutPane.LayoutView.Layout == oLayout) //if there is a match, activate the view  
-                            {
-                                (layoutPane as Pane).Activate();
-                                bFoundIt = true;
-                            }
-                        }
-                        if (!bFoundIt)
-                        {
-                            await FrameworkApplication.Current.Dispatcher.Invoke(async () =>
-                            {
-                                // Do something on the GUI thread
-                                ILayoutPane iNewLayoutPane = await FrameworkApplication.Panes.CreateLayoutPaneAsync(oLayout); //GUI thread
-                                (iNewLayoutPane as Pane).Activate();
-                            });
-                        }
                     }
 
                     Names[idxRow].AoiBatchStateText = AoiBatchState.Completed.ToString();  // update gui

@@ -59,8 +59,8 @@ namespace bagis_pro.Buttons
                 });
             }
 
-            await MapTools.UpdateMapElementsAsync(Module1.Current.Aoi.StationName.ToUpper(), Constants.MAPS_DEFAULT_LAYOUT_NAME, thisMap);
-            BA_ReturnCode success = await MapTools.UpdateLegendAsync(oLayout, thisMap.LegendLayerList);
+            BA_ReturnCode success = await MapTools.UpdateMapElementsAsync(Module1.Current.Aoi.StationName.ToUpper(), Constants.MAPS_DEFAULT_LAYOUT_NAME, thisMap);
+            success = await MapTools.UpdateLegendAsync(oLayout, thisMap.LegendLayerList);
             Module1.Current.MapFinishedLoading = true;
             Module1.Current.DisplayedMap = thisMap.PdfFileName;
         }

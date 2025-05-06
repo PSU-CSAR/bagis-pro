@@ -1617,7 +1617,7 @@ namespace bagis_pro
             return success;
         }
 
-        public static async Task UpdateMapElementsAsync(string subTitleText, string mapLayoutName,
+        public static async Task<BA_ReturnCode> UpdateMapElementsAsync(string subTitleText, string mapLayoutName,
             BA_Objects.MapDefinition mapDefinition)
         {
             await QueuedTask.Run(() =>
@@ -1688,6 +1688,7 @@ namespace bagis_pro
 
                 }
             });
+            return BA_ReturnCode.Success;
         }
 
         public static async Task<BA_ReturnCode> DisplayNorthArrowAsync(Layout layout, string mapFrameName)
