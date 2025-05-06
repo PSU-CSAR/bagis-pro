@@ -11,7 +11,7 @@ namespace bagis_pro.BA_Objects
     {
         private IList<string> m_layerList;
         private IList<string> m_legendLayerList;
-        private readonly string m_Title;
+        private string m_Title;
         private readonly string m_unitsText;
         private readonly string m_pdfFileName;
         private readonly string m_lowerRightTextbox;
@@ -27,6 +27,7 @@ namespace bagis_pro.BA_Objects
         public string Title
         {
             get { return m_Title; }
+            set { m_Title = value; }    
         }
 
         public string UnitsText

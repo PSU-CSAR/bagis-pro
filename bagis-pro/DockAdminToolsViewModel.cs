@@ -23,6 +23,7 @@ using ArcGIS.Desktop.Core.Geoprocessing;
 using System.Diagnostics;
 using bagis_pro.BA_Objects;
 using ArcGIS.Core.Geometry;
+using ArcGIS.Core.Data.UtilityNetwork.Trace;
 
 namespace bagis_pro
 {
@@ -2458,7 +2459,7 @@ namespace bagis_pro
                         for (int i = overrideMinYear; i <= overrideMaxYear; i++)
                         {
                             BA_ReturnCode success = BA_ReturnCode.WriteError;
-                            string strMapFile = $@"{strMapsFolder}\{i}{Constants.FILE_FIRE_SUFFIX_PDF}";
+                            string strMapFile = $@"{strMapsFolder}\{i}{Constants.FILE_MAP_SUFFIX_PDF}";
                             if (File.Exists(strMapFile))
                             {
                                File.Delete(strMapFile);
@@ -2685,38 +2686,73 @@ namespace bagis_pro
                     IList<string> lstMissingMtbsYears = await GeodatabaseTools.QueryMissingMtbsRasters(oAoi.FilePath, overrideMinYear, overrideMaxYear);
                     BA_ReturnCode success = BA_ReturnCode.UnknownError;
                     Layout oLayout = await MapTools.GetDefaultLayoutAsync(Constants.MAPS_FIRE_LAYOUT_NAME);
+                    // Always load the maps in case we are running through multiple Aois
+                    success = await MapTools.DisplayFireMapsAsync(Module1.Current.Aoi.FilePath, oLayout);
+                    if (success != BA_ReturnCode.Success)
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(RunFireMapsImplAsync),
+                            "An error occurred while trying to load the maps. The map package cannot be exported!");
+                        Names[idxRow].AoiBatchStateText = AoiBatchState.Failed.ToString();
+                        return;
+                    }
+
+                    bool bFoundIt = false;
+                    //A layout view may exist but it may not be active
+                    //Iterate through each pane in the application and check to see if the layout is already open and if so, activate it
+                    foreach (var pane in FrameworkApplication.Panes)
+                    {
+                        if (!(pane is ILayoutPane layoutPane))  //if not a layout view, continue to the next pane    
+                            continue;
+                        if (layoutPane.LayoutView != null &&
+                            layoutPane.LayoutView.Layout == oLayout) //if there is a match, activate the view  
+                        {
+                            (layoutPane as Pane).Activate();
+                            bFoundIt = true;
+                        }
+                    }
+                    if (!bFoundIt)
+                    {
+                        await FrameworkApplication.Current.Dispatcher.Invoke(async () =>
+                        {
+                            // Do something on the GUI thread
+                            ILayoutPane iNewLayoutPane = await FrameworkApplication.Panes.CreateLayoutPaneAsync(oLayout); //GUI thread
+                            (iNewLayoutPane as Pane).Activate();
+                        });
+                    }
+
+                    // Legend
+                    success = await MapTools.DisplayLegendAsync(Constants.MAPS_FIRE_MAP_FRAME_NAME, oLayout,
+                        "ArcGIS Colors", "1.5 Point", true);
+
+                    MapDefinition defaultMap = null;
+                    if (oLayout != null)
+                    {
+                        if (success == BA_ReturnCode.Success)
+                        {
+                            defaultMap = MapTools.LoadMapDefinition(BagisMapType.FIRE);
+                            success = await MapTools.UpdateLegendAsync(oLayout, defaultMap.LegendLayerList);
+                        }
+                    }
                     if (bAnnualStatistics)
                     {
+                        Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_FIRE_MAP_NAME);
+                        var nifcLayer = oMap.GetLayersAsFlattenedList().OfType<FeatureLayer>().Where(l => l.Name.Equals(Constants.MAPS_NIFC_PERIMETER, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
                         for (int i = overrideMinYear; i <= overrideMaxYear; i++)
                         {
-
                             if (success == BA_ReturnCode.Success)
                             {
-                                //IList<string> lstAnnualElements = await AnalysisTools.GenerateAnnualFireStatisticsList(oAoi, _strFireReportLogFile,
-                                //    aoiAreaSqMeters, cellSizeSqMeters, i, overrideMaxYear, lstMissingMtbsYears);
-                                //if (lstAnnualElements.Count > 0)
-                                //{
-                                //    try
-                                //    {
-                                //        // Adds new content to file
-                                //        StringBuilder sb = new StringBuilder();
-                                //        foreach (var item in lstAnnualElements)
-                                //        {
-                                //            sb.Append($@"{item}{_separator}");
-                                //        }
-                                //        using (StreamWriter sw = File.AppendText(strCsvFile))
-                                //        {
-                                //            sw.WriteLine(sb.ToString());
-                                //        }
-                                //    }
-                                //    catch (Exception ex)
-                                //    {
-                                //        strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} Data could not be written to the {strCsvFile} file!{System.Environment.NewLine}";
-                                //        File.AppendAllText(_strFireReportLogFile, strLogEntry);
-                                //        return;
-                                //    }
-                                //}
+                                await QueuedTask.Run(() =>
+                                {
+                                    nifcLayer.SetDefinitionQuery($@"{Constants.FIELD_YEAR} >= {i}");
+                                    nifcLayer.SetVisibility(true);
+                                });
+                                defaultMap.Title = $@"FIRE DISTURBANCE {i}";
+                                success = await MapTools.UpdateMapElementsAsync(Module1.Current.Aoi.StationName, Constants.MAPS_FIRE_LAYOUT_NAME, defaultMap);        
+                                Module1.Current.DisplayedMap = $@"{i}{Constants.FILE_MAP_SUFFIX_PDF}";
+                                // @ToDo: file name not currently including station name?
+                                success = await GeneralTools.ExportMapToPdfAsync(Constants.PDF_EXPORT_RESOLUTION);
                             }
+                            
                         }
                     }
                     //if (bIncrementStatistics)
@@ -2765,54 +2801,7 @@ namespace bagis_pro
 
                     //}
 
-                    // Always load the maps in case we are running through multiple Aois
-                    success = await MapTools.DisplayFireMapsAsync(Module1.Current.Aoi.FilePath, oLayout);                    
-                    if (success != BA_ReturnCode.Success)
-                    {
-                        Module1.Current.ModuleLogManager.LogError(nameof(RunImplAsync),
-                            "An error occurred while trying to load the maps. The map package cannot be exported!");
-                        Names[idxRow].AoiBatchStateText = AoiBatchState.Failed.ToString();
-                        return;
-                    }
 
-                    bool bFoundIt = false;
-                    //A layout view may exist but it may not be active
-                    //Iterate through each pane in the application and check to see if the layout is already open and if so, activate it
-                    foreach (var pane in FrameworkApplication.Panes)
-                    {
-                        if (!(pane is ILayoutPane layoutPane))  //if not a layout view, continue to the next pane    
-                            continue;
-                        if (layoutPane.LayoutView != null &&
-                            layoutPane.LayoutView.Layout == oLayout) //if there is a match, activate the view  
-                        {
-                            (layoutPane as Pane).Activate();
-                            bFoundIt = true;
-                        }
-                    }
-                    if (!bFoundIt)
-                    {
-                        await FrameworkApplication.Current.Dispatcher.Invoke(async () =>
-                        {
-                            // Do something on the GUI thread
-                            ILayoutPane iNewLayoutPane = await FrameworkApplication.Panes.CreateLayoutPaneAsync(oLayout); //GUI thread
-                            (iNewLayoutPane as Pane).Activate();
-                        });
-                    }
-
-                    // Legend
-                    success = await MapTools.DisplayLegendAsync(Constants.MAPS_FIRE_MAP_FRAME_NAME, oLayout,
-                        "ArcGIS Colors", "1.5 Point", false);
-
-                    if (oLayout != null)
-                    {
-                        if (success == BA_ReturnCode.Success)
-                        {
-                            MapDefinition defaultMap = MapTools.LoadMapDefinition(BagisMapType.FIRE);
-                            success = await MapTools.UpdateMapElementsAsync(Module1.Current.Aoi.StationName, Constants.MAPS_FIRE_LAYOUT_NAME,defaultMap);                            
-                            success = await MapTools.UpdateLegendAsync(oLayout, defaultMap.LegendLayerList);
-                        }
-
-                    }
 
                     Names[idxRow].AoiBatchStateText = AoiBatchState.Completed.ToString();  // update gui
                     strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Finished generate maps export for " +

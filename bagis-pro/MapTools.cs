@@ -2,7 +2,6 @@
 using ArcGIS.Core.Data;
 using ArcGIS.Core.Data.Exceptions;
 using ArcGIS.Core.Data.Raster;
-using ArcGIS.Core.Data.UtilityNetwork.Trace;
 using ArcGIS.Core.Geometry;
 using ArcGIS.Desktop.Core;
 using ArcGIS.Desktop.Framework;
@@ -10,11 +9,9 @@ using ArcGIS.Desktop.Framework.Contracts;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
 using ArcGIS.Desktop.Layouts;
 using ArcGIS.Desktop.Mapping;
-using NLog.Layouts;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
@@ -111,7 +108,7 @@ namespace bagis_pro
                     //add subbasin contribution layer to map                    
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
                                      Constants.FILE_PRECIP_CONTRIB_VECTOR;
-                    success = await MapTools.AddAoiBoundaryToMapAsync(new Uri(strPath), ColorFactory.Instance.BlackRGB, Constants.MAPS_DEFAULT_MAP_NAME, Constants.MAPS_SUBBASIN_BOUNDARY, 
+                    success = await MapTools.AddAoiBoundaryToMapAsync(new Uri(strPath), ColorFactory.Instance.BlackRGB, Constants.MAPS_DEFAULT_MAP_NAME, Constants.MAPS_SUBBASIN_BOUNDARY,
                         false);
 
                     //add Snotel Represented Area Layer
@@ -259,7 +256,7 @@ namespace bagis_pro
                         Constants.FILE_HILLSHADE;
                     uri = new Uri(strPath);
                     await MapTools.DisplayRasterStretchSymbolAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, Constants.MAPS_HILLSHADE, "ArcGIS Colors", "Black to White", 0);
-                    
+
                     // add elev zones layer
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
                         Constants.FILE_ELEV_ZONE;
@@ -310,7 +307,7 @@ namespace bagis_pro
                         Constants.FILE_PRECIPITATION_CONTRIBUTION;
                     uri = new Uri(strPath);
                     success = await MapTools.DisplayRasterWithClassifyAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, Constants.MAPS_PRECIPITATION_CONTRIBUTION, "ColorBrewer Schemes (RGB)",
-                               "Yellow-Green-Blue (Continuous)", Constants.FIELD_VOL_ACRE_FT, 30, ClassificationMethod.EqualInterval, 10, null, null, null,false);
+                               "Yellow-Green-Blue (Continuous)", Constants.FIELD_VOL_ACRE_FT, 30, ClassificationMethod.EqualInterval, 10, null, null, null, false);
 
                     if (success == BA_ReturnCode.Success)
                         Module1.ActivateState("MapButtonPalette_BtnPrecipContrib_State");
@@ -334,7 +331,7 @@ namespace bagis_pro
                     success = await SetClipGeometryAsync(oAoi.FilePath, Constants.MAPS_DEFAULT_MAP_NAME);
 
                     //zoom to aoi boundary layer
-                    success = await MapTools.ZoomToExtentAsync(aoiUri, Constants.MAPS_DEFAULT_LAYOUT_NAME, Constants.MAPS_DEFAULT_MAP_FRAME_NAME, 
+                    success = await MapTools.ZoomToExtentAsync(aoiUri, Constants.MAPS_DEFAULT_LAYOUT_NAME, Constants.MAPS_DEFAULT_MAP_FRAME_NAME,
                         Constants.MAP_BUFFER_FACTOR);
 
                     // Put maps in correct order for 3.x
@@ -366,7 +363,7 @@ namespace bagis_pro
 
                 }
             }
-            
+
             return BA_ReturnCode.UnknownError;
         }
 
@@ -377,10 +374,10 @@ namespace bagis_pro
                 Layout layout = null;
                 Project proj = Project.Current;
 
-               //Finding the first project item with name matches with mapName
-               LayoutProjectItem lytItem =
-                   proj.GetItems<LayoutProjectItem>()
-                       .FirstOrDefault(m => m.Name.Equals(layoutName, StringComparison.CurrentCultureIgnoreCase));
+                //Finding the first project item with name matches with mapName
+                LayoutProjectItem lytItem =
+                    proj.GetItems<LayoutProjectItem>()
+                        .FirstOrDefault(m => m.Name.Equals(layoutName, StringComparison.CurrentCultureIgnoreCase));
                 if (lytItem != null)
                 {
                     layout = lytItem.GetLayout();
@@ -429,7 +426,7 @@ namespace bagis_pro
             Map oMap = null;
             await QueuedTask.Run(() =>
             {
-                 //Finding the first project item with name matches with mapName
+                //Finding the first project item with name matches with mapName
                 MapProjectItem mpi =
                     proj.GetItems<MapProjectItem>()
                         .FirstOrDefault(m => m.Name.Equals(mapName, StringComparison.CurrentCultureIgnoreCase));
@@ -449,9 +446,8 @@ namespace bagis_pro
             }
             return oMap;
         }
-
         public static async Task<BA_ReturnCode> AddAoiBoundaryToMapAsync(Uri aoiUri, CIMColor lineColor, string mapName = Constants.MAPS_DEFAULT_MAP_NAME,
-            string displayName = "", 
+            string displayName = "",
             bool isVisible = true, double lineSymbolWidth = 1.0)
         {
             // parse the uri for the folder and file
@@ -467,7 +463,7 @@ namespace bagis_pro
             {
                 return BA_ReturnCode.UnknownError;
             }
-            if (! await GeodatabaseTools.FeatureClassExistsAsync(new Uri(strFolderPath), strFileName))
+            if (!await GeodatabaseTools.FeatureClassExistsAsync(new Uri(strFolderPath), strFileName))
             {
                 Module1.Current.ModuleLogManager.LogError(nameof(AddAoiBoundaryToMapAsync),
                     "Unable to locate feature class " + aoiUri.LocalPath + "!");
@@ -567,8 +563,8 @@ namespace bagis_pro
         }
 
         public static async Task<BA_ReturnCode> AddPolygonLayerUniqueValuesAsync(Map oMap, Uri uri, string styleCategory, string styleName,
-                                                                                 List<string> lstDisplayFields, bool isVisible,                                                                                 bool bAllOtherValues, double dblTransparency, string displayName = "")
-        { 
+                                                                                 List<string> lstDisplayFields, bool isVisible, bool bAllOtherValues, double dblTransparency, string displayName = "")
+        {
             // parse the uri for the folder and file
             string strFileName = null;
             string strFolderPath = null;
@@ -627,10 +623,10 @@ namespace bagis_pro
 
                 //Creates a "Renderer"
                 var cimRenderer = fLayer.CreateRenderer(uvr);
-                
+
                 //Sets the renderer to the feature layer
                 fLayer.SetRenderer(cimRenderer);
-                
+
                 success = BA_ReturnCode.Success;
             });
             return success;
@@ -766,7 +762,7 @@ namespace bagis_pro
                         theLabelClass.MaplexLabelPlacementProperties.NeverRemoveLabel = true;
                     }
                     //Gets the text symbol of the label class            
-                    var textSymbol = listLabelClasses.FirstOrDefault().TextSymbol.Symbol as CIMTextSymbol; 
+                    var textSymbol = listLabelClasses.FirstOrDefault().TextSymbol.Symbol as CIMTextSymbol;
                     textSymbol.FontStyleName = "Bold"; //set font as bold
                     textSymbol.SetSize(10); //set font size 
                     lyrDefn.LabelClasses = listLabelClasses.ToArray(); //Set the labelClasses back
@@ -782,7 +778,7 @@ namespace bagis_pro
             return success;
         }
 
-        public static async Task<BA_ReturnCode> ZoomToExtentAsync(Uri aoiUri, string layoutName, string mapFrameName, 
+        public static async Task<BA_ReturnCode> ZoomToExtentAsync(Uri aoiUri, string layoutName, string mapFrameName,
             double bufferFactor = 1)
         {
             string strFileName = null;
@@ -817,7 +813,7 @@ namespace bagis_pro
                 }
             });
 
-            return BA_ReturnCode.Success;             
+            return BA_ReturnCode.Success;
         }
 
         public static async Task<Envelope> QueryZoomEnvelopeAsync(Uri aoiUri, double bufferFactor = 1)
@@ -893,7 +889,7 @@ namespace bagis_pro
             });
         }
 
-        public static async Task<BA_ReturnCode> DisplayRasterWithSymbolAsync(string strMapName, Uri rasterUri, string displayName, 
+        public static async Task<BA_ReturnCode> DisplayRasterWithSymbolAsync(string strMapName, Uri rasterUri, string displayName,
             string styleCategory, string styleName, string fieldName, int transparency, bool isVisible)
         {
             // parse the uri for the folder and file
@@ -944,7 +940,7 @@ namespace bagis_pro
             return BA_ReturnCode.Success;
         }
 
-        public static async Task<BA_ReturnCode> DisplayRasterWithClassifyAsync(string strMapName, Uri rasterUri, string displayName, string styleCategory, 
+        public static async Task<BA_ReturnCode> DisplayRasterWithClassifyAsync(string strMapName, Uri rasterUri, string displayName, string styleCategory,
             string styleName, string fieldName, int transparency, ClassificationMethod classificationMethod, int numClasses, IList<BA_Objects.Interval> lstInterval,
             IList<BA_Objects.Interval> lstCustomBreaks, int[,] arrColors, bool isVisible)
         {
@@ -995,7 +991,7 @@ namespace bagis_pro
             }
             else
             {
-                await MapTools.SetToClassifyRenderer(MapView.Active.Map, displayName, fieldName, lstInterval, lstCustomBreaks,arrColors);
+                await MapTools.SetToClassifyRenderer(MapView.Active.Map, displayName, fieldName, lstInterval, lstCustomBreaks, arrColors);
             }
 
             success = BA_ReturnCode.Success;
@@ -1056,7 +1052,7 @@ namespace bagis_pro
             return success;
         }
 
-        public static async Task<BA_ReturnCode> DisplayUniqueValuesRasterFromLayerFileAsync(string strMapName, Uri rasterUri, 
+        public static async Task<BA_ReturnCode> DisplayUniqueValuesRasterFromLayerFileAsync(string strMapName, Uri rasterUri,
             string displayName, string layerFilePath, int transparency, bool bIsVisible)
         {
             BA_ReturnCode success = BA_ReturnCode.Success;
@@ -1103,7 +1099,7 @@ namespace bagis_pro
                         Module1.Current.ModuleLogManager.LogError(nameof(DisplayUniqueValuesRasterFromLayerFileAsync),
                             $@"Unable to create raster layer from {rasterUri.AbsolutePath}!");
                         success = BA_ReturnCode.ReadError;
-                    }                    
+                    }
                 });
 
                 // Set raster layer transparency and name
@@ -1165,7 +1161,7 @@ namespace bagis_pro
             // Get the layer we want to symbolize from the map
             Layer oLayer =
                 MapView.Active.Map.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(layerName, StringComparison.CurrentCultureIgnoreCase));
- 
+
             BasicRasterLayer basicRasterLayer = null;
             if (oLayer != null && oLayer is BasicRasterLayer)
             {
@@ -1184,11 +1180,11 @@ namespace bagis_pro
             CIMColorRamp cimColorRamp = colorRampList[0].ColorRamp;
 
             // Creates a new Classify Colorizer Definition using defined parameters.
-            ClassifyColorizerDefinition classifyColorizerDef = 
+            ClassifyColorizerDefinition classifyColorizerDef =
                 new ClassifyColorizerDefinition(fieldName, numberofClasses, classificationMethod, cimColorRamp);
 
             // Creates a new Classify colorizer using the colorizer definition created above.
-            CIMRasterClassifyColorizer newColorizer = 
+            CIMRasterClassifyColorizer newColorizer =
                 await basicRasterLayer.CreateColorizerAsync(classifyColorizerDef) as CIMRasterClassifyColorizer;
 
             // Sets the newly created colorizer on the layer.
@@ -1255,8 +1251,8 @@ namespace bagis_pro
                     newColorizer.ClassBreaks = arrCustomBreaks;
                 }
 
-                    basicRasterLayer.SetColorizer(newColorizer);
-                });
+                basicRasterLayer.SetColorizer(newColorizer);
+            });
 
         }
 
@@ -1435,19 +1431,19 @@ namespace bagis_pro
             //Construct on the worker thread
             await QueuedTask.Run(() =>
             {
-               //Build 2D envelope geometry
-               Coordinate2D leg_ll = new Coordinate2D(0.5, 0.3);
-               Coordinate2D leg_ur = new Coordinate2D(2.14, 2.57);
+                //Build 2D envelope geometry
+                Coordinate2D leg_ll = new Coordinate2D(0.5, 0.3);
+                Coordinate2D leg_ur = new Coordinate2D(2.14, 2.57);
                 //Migrate from 2.x
                 Envelope leg_env = EnvelopeBuilderEx.CreateEnvelope(leg_ll, leg_ur);
 
-               //Reference MF, create legend and add to layout
-               MapFrame mapFrame = layout.FindElement(mapFrameName) as MapFrame;
-               var layoutDef = layout.GetDefinition();
-               CIMLegend cimLeg = layoutDef.Elements.OfType<CIMLegend>().FirstOrDefault();
+                //Reference MF, create legend and add to layout
+                MapFrame mapFrame = layout.FindElement(mapFrameName) as MapFrame;
+                var layoutDef = layout.GetDefinition();
+                CIMLegend cimLeg = layoutDef.Elements.OfType<CIMLegend>().FirstOrDefault();
                 Legend legend = null;
-               if (cimLeg == null)
-               {
+                if (cimLeg == null)
+                {
                     //Migrate from 2.x
                     //legend = LayoutElementFactory.Instance.CreateLegend(layout, leg_env, mapFrame);
                     var legendInfo = new LegendInfo()
@@ -1457,9 +1453,9 @@ namespace bagis_pro
                     legend = ElementFactory.Instance.CreateMapSurroundElement(
                         layout, leg_env, legendInfo, Constants.MAPS_LEGEND) as Legend;
                 }
-               legend.SetAnchor(Anchor.BottomLeftCorner);
-               
-               cimLeg = legend.GetDefinition() as CIMLegend;                
+                legend.SetAnchor(Anchor.BottomLeftCorner);
+
+                cimLeg = legend.GetDefinition() as CIMLegend;
                 // Turn off all of the layers to start
                 if (bHideAllLayers)
                 {
@@ -1473,23 +1469,23 @@ namespace bagis_pro
                     }
                 }
 
-               // Format other elements in the legend
-               cimLeg.GraphicFrame.BorderSymbol = new CIMSymbolReference
-               {
-                   Symbol = SymbolFactory.Instance.ConstructLineSymbol(ColorFactory.Instance.BlackRGB, 1.5, SimpleLineStyle.Solid)
-               };
-               cimLeg.GraphicFrame.BorderGapX = 3;
-               cimLeg.GraphicFrame.BorderGapY = 3;
-               cimLeg.FittingStrategy = LegendFittingStrategy.AdjustFrame;
-               cimLeg.DefaultPatchHeight = 8;
-               cimLeg.DefaultPatchWidth = 14;
-               cimLeg.ItemGap = 3;
-               cimLeg.PatchGap = 4;
+                // Format other elements in the legend
+                cimLeg.GraphicFrame.BorderSymbol = new CIMSymbolReference
+                {
+                    Symbol = SymbolFactory.Instance.ConstructLineSymbol(ColorFactory.Instance.BlackRGB, 1.5, SimpleLineStyle.Solid)
+                };
+                cimLeg.GraphicFrame.BorderGapX = 3;
+                cimLeg.GraphicFrame.BorderGapY = 3;
+                cimLeg.FittingStrategy = LegendFittingStrategy.AdjustFrame;
+                cimLeg.DefaultPatchHeight = 8;
+                cimLeg.DefaultPatchWidth = 14;
+                cimLeg.ItemGap = 3;
+                cimLeg.PatchGap = 4;
 
                 // Apply the changes
                 legend.SetDefinition(cimLeg);
 
-           });
+            });
             return BA_ReturnCode.Success;
         }
 
@@ -1739,7 +1735,7 @@ namespace bagis_pro
                 {
                     var scaleBars = arcgis_2d.SearchScaleBars("Scale Line ");
                     if (scaleBars == null || scaleBars.Count == 0) return;
-                        ScaleBarStyleItem scaleBarStyleItem = scaleBars[0];
+                    ScaleBarStyleItem scaleBarStyleItem = scaleBars[0];
 
                     //Reference the map frame and define the location
                     MapFrame mapFrame = layout.FindElement(mapFrameName) as MapFrame;
@@ -1791,7 +1787,7 @@ namespace bagis_pro
                     scaleBar2.SetDefinition(cimScaleBar2);
 
                 });
-               return BA_ReturnCode.Success;
+                return BA_ReturnCode.Success;
             }
             else
             {
@@ -2201,7 +2197,7 @@ namespace bagis_pro
                     }
                     string strDescr = $@"Forested land cover includes areas with forest classifications {Environment.NewLine}from the {dataSourceDesc}.";
                     mapDefinition = new BA_Objects.MapDefinition(Constants.TITLE_FORESTED_LAND_COVER,
-                        "Elevation Units = " + strDemDisplayUnits, Constants.FILE_EXPORT_MAP_FORESTED_LAND_COVER_PDF, 
+                        "Elevation Units = " + strDemDisplayUnits, Constants.FILE_EXPORT_MAP_FORESTED_LAND_COVER_PDF,
                         strDescr);
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
@@ -2449,7 +2445,7 @@ namespace bagis_pro
                     strTitle = Constants.TITLE_WINTER_PRECIP;
                     if (!String.IsNullOrEmpty(oAnalysis.WinterStartMonth))
                     {
-                        string strSuffix = " (" + oAnalysis.WinterStartMonth.ToUpper() + " - " + 
+                        string strSuffix = " (" + oAnalysis.WinterStartMonth.ToUpper() + " - " +
                             oAnalysis.WinterEndMonth.ToUpper() + ")";
                         strTitle = strTitle + strSuffix;
                     }
@@ -2510,7 +2506,7 @@ namespace bagis_pro
                         dataSourceDesc = oDs.shortDescription;
                     }
                     mapDefinition = new BA_Objects.MapDefinition(Constants.TITLE_LAND_COVER,
-                        " ", Constants.FILE_EXPORT_LAND_COVER_PDF, 
+                        " ", Constants.FILE_EXPORT_LAND_COVER_PDF,
                         "Land cover classification from the " + dataSourceDesc + ".");
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
@@ -2727,7 +2723,7 @@ namespace bagis_pro
             BA_Objects.DataSource oValuesDataSource = null;
             if (dictLocalDataSources.ContainsKey(strDataType))
             {
-               oValuesDataSource = dictLocalDataSources[strDataType];
+                oValuesDataSource = dictLocalDataSources[strDataType];
             }
             if (oValuesDataSource != null)
             {
@@ -2774,7 +2770,7 @@ namespace bagis_pro
         {
             string strBagisTag = await GeneralTools.GetBagisTagAsync(strPath, Constants.META_TAG_XPATH);
             string layerUnits = Constants.UNITS_MILLIMETERS;
-                if (!string.IsNullOrEmpty(strBagisTag))
+            if (!string.IsNullOrEmpty(strBagisTag))
             {
                 layerUnits = GeneralTools.GetValueForKey(strBagisTag, Constants.META_TAG_ZUNIT_VALUE, ';');
             }
@@ -2791,7 +2787,7 @@ namespace bagis_pro
                 if (oUnitsDataSource != null)
                 {
                     layerUnits = oUnitsDataSource.units;
-                }                
+                }
             }
             return layerUnits;
         }
@@ -2840,8 +2836,8 @@ namespace bagis_pro
             return BA_ReturnCode.Success;
         }
 
-    public static async Task<BA_ReturnCode> DisplayRasterLayerAsync(string strMapName, Uri mapUri, string displayName,
-        bool bIsVisible)
+        public static async Task<BA_ReturnCode> DisplayRasterLayerAsync(string strMapName, Uri mapUri, string displayName,
+            bool bIsVisible)
         {
             Layer layer = null;
             Map oMap = await MapTools.SetDefaultMapNameAsync(strMapName);
@@ -3025,7 +3021,7 @@ namespace bagis_pro
                 string strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi, true) +
                                  Constants.FILE_AOI_VECTOR;
                 uri = new Uri(strPath);
-                success = await MapTools.AddAoiBoundaryToMapAsync(uri, ColorFactory.Instance.RedRGB, Constants.MAPS_AOI_LOCATION, 
+                success = await MapTools.AddAoiBoundaryToMapAsync(uri, ColorFactory.Instance.RedRGB, Constants.MAPS_AOI_LOCATION,
                     Constants.MAPS_BASIN_BOUNDARY, true, 3);
 
                 // create map elements
@@ -3049,7 +3045,7 @@ namespace bagis_pro
                     {
                         graphic.Text = oAoi.StationName.ToUpper();
                         textBox.SetGraphic(graphic);
-                    }                                       
+                    }
                 }
             });
 
@@ -3282,7 +3278,7 @@ namespace bagis_pro
                 // Manually build middle intervals; Spec is defined
                 BA_Objects.Interval oInterval = new BA_Objects.Interval
                 {
-                    LowerBound = lstNegInterval[halfZones-1].UpperBound,
+                    LowerBound = lstNegInterval[halfZones - 1].UpperBound,
                     UpperBound = 0.00001F,
                     Value = halfZones + 1
                 };
@@ -3291,7 +3287,7 @@ namespace bagis_pro
                 // Calculate interval list for negative values
                 dblInterval = Math.Round(arrReturnValues[3] / halfZones, 2);
                 IList<BA_Objects.Interval> lstPosInterval = new List<BA_Objects.Interval>();
-                zones = GeneralTools.CreateRangeArray(lstNegInterval.Last().UpperBound, arrReturnValues[3],dblInterval, out lstPosInterval);
+                zones = GeneralTools.CreateRangeArray(lstNegInterval.Last().UpperBound, arrReturnValues[3], dblInterval, out lstPosInterval);
                 // Make sure we don't have > than half zones
                 if (zones > halfZones)
                 {
@@ -3371,11 +3367,11 @@ namespace bagis_pro
         public static async Task<BA_ReturnCode> GetSystemFilesFromPortalAsync()
         {
             string[] documentIds = new string[5];
-            documentIds[0] = (string) Module1.Current.BagisSettings.NLCDLandCoverLayerItemId;
-            documentIds[1] = (string) Module1.Current.BagisSettings.SnodasSweLayoutItemId;
-            documentIds[2] = (string) Module1.Current.BagisSettings.SnodasDeltaLayoutItemId;
-            documentIds[3] = (string) Module1.Current.BagisSettings.SeasonalPrecipLayoutItemId;
-            documentIds[4] = (string) Module1.Current.BagisSettings.PublicAndTribalLandsLayerItemId;
+            documentIds[0] = (string)Module1.Current.BagisSettings.NLCDLandCoverLayerItemId;
+            documentIds[1] = (string)Module1.Current.BagisSettings.SnodasSweLayoutItemId;
+            documentIds[2] = (string)Module1.Current.BagisSettings.SnodasDeltaLayoutItemId;
+            documentIds[3] = (string)Module1.Current.BagisSettings.SeasonalPrecipLayoutItemId;
+            documentIds[4] = (string)Module1.Current.BagisSettings.PublicAndTribalLandsLayerItemId;
             string[] layerFileNames = new string[] { Constants.LAYER_FILE_NLCD_LAND_COVER, Constants.LAYOUT_FILE_SNODAS_SWE,
                 Constants.LAYOUT_FILE_SNODAS_DELTA_SWE, Constants.LAYOUT_FILE_SEASONAL_PRECIP_CONTRIB, Constants.LAYER_FILE_PUBLIC_TRIBAL_LANDS };
             Webservices ws = new Webservices();
@@ -3385,11 +3381,11 @@ namespace bagis_pro
             foreach (var fName in layerFileNames)
             {
                 string fullPath = Module1.Current.SettingsPath + "\\" + Constants.FOLDER_SETTINGS + "\\" + fName;
-                if (! System.IO.File.Exists(fullPath))
+                if (!System.IO.File.Exists(fullPath))
                 {
                     Module1.Current.ModuleLogManager.LogInfo(nameof(GetSystemFilesFromPortalAsync),
                         "Retrieving layer file from portal: " + layerFileNames[i]);
-                    success = await ws.GetPortalFile(BA_Objects.AGSPortalProperties.PORTAL_ORGANIZATION, documentIds[i], 
+                    success = await ws.GetPortalFile(BA_Objects.AGSPortalProperties.PORTAL_ORGANIZATION, documentIds[i],
                         fullPath);
                     if (success != BA_ReturnCode.Success)
                     {
@@ -3432,7 +3428,8 @@ namespace bagis_pro
                     success = BA_ReturnCode.UnknownError;
                     return success;
                 }
-                await QueuedTask.Run(() => {
+                await QueuedTask.Run(() =>
+                {
                     if (moveToLayerPosition.Item1 != null) //layer gets moved into the group
                         moveToLayerPosition.Item1.MoveLayer(layerToMove, moveToLayerPosition.Item2);
                     else //Layer gets moved into the root
@@ -3486,7 +3483,7 @@ namespace bagis_pro
                     using (RowCursor cursor = table.Search(queryFilter, false))
                     {
                         while (cursor.MoveNext())
-                         {
+                        {
                             using (Feature feature = (Feature)cursor.Current)
                             {
                                 Polygon tempAoiGeo = (Polygon)feature.GetShape();
@@ -3499,7 +3496,7 @@ namespace bagis_pro
                                 {
                                     // always want the largest if > 1
                                     aoiGeo = tempAoiGeo;
-                                }                          
+                                }
                             }
                         }
                     }
@@ -3531,7 +3528,7 @@ namespace bagis_pro
                 Module1.Current.ModuleLogManager.LogDebug(nameof(SetClipGeometryAsync), "Sites layers excluded from clipping");
                 // set the map definition
                 map.SetDefinition(mapDef);
-               
+
             });
             return BA_ReturnCode.Success;
         }
@@ -3539,7 +3536,7 @@ namespace bagis_pro
         private static async Task<BA_ReturnCode> DisplayMultiMapPageLayoutAsync(string strAoiPath, int idxDefaultMonth, BagisMapType bagisMapType)
         {
             // Check to make sure the layers are there
-            string[] arrMapFrames = new string[] { "November", "December", "January", "February", "March", "April","May", "June", "July" };
+            string[] arrMapFrames = new string[] { "November", "December", "January", "February", "March", "April", "May", "June", "July" };
             Uri uriLayers = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Analysis));
             string[] arrFiles = Constants.FILES_SWE_ZONES;
             string layoutName = Constants.MAPS_SNODAS_LAYOUT;
@@ -3623,7 +3620,7 @@ namespace bagis_pro
             BA_Objects.Analysis oAnalysis = GeneralTools.GetAnalysisSettings(strAoiPath);
             IList<BA_Objects.Interval> lstInterval = new List<BA_Objects.Interval>();
             switch (bagisMapType)
-            {                
+            {
                 case BagisMapType.SNODAS_SWE:
                     lstInterval = await CalculateSweZonesAsync(idxDefaultMonth);
                     break;
@@ -3690,34 +3687,34 @@ namespace bagis_pro
                     IList<string> lstFile = new List<string>();
                     IList<esriDatasetType> lstDatasetType = new List<esriDatasetType>();
 
-                        if (Module1.Current.Aoi.HasSnotel == true)
-                        {
-                            lstLayerName.Add(Constants.MAPS_SNOTEL);
-                            lstGdb.Add(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers));
-                            lstFile.Add(Constants.FILE_SNOTEL);
-                            lstDatasetType.Add(esriDatasetType.esriDTFeatureClass);
-                        }
-                        if (Module1.Current.Aoi.HasSnolite == true)
-                        {
-                            lstLayerName.Add(Constants.MAPS_SNOLITE);
-                            lstGdb.Add(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers));
-                            lstFile.Add(Constants.FILE_SNOLITE);
-                            lstDatasetType.Add(esriDatasetType.esriDTFeatureClass);
-                        }
-                        if (Module1.Current.Aoi.HasCoopPillow == true)
-                        {
-                            lstLayerName.Add(Constants.MAPS_COOP_PILLOW);
-                            lstGdb.Add(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers));
-                            lstFile.Add(Constants.FILE_COOP_PILLOW);
-                            lstDatasetType.Add(esriDatasetType.esriDTFeatureClass);
-                        }
-                        if (Module1.Current.Aoi.HasSnowCourse == true)
-                        {
-                            lstLayerName.Add(Constants.MAPS_SNOW_COURSE);
-                            lstGdb.Add(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers));
-                            lstFile.Add(Constants.FILE_SNOW_COURSE);
-                            lstDatasetType.Add(esriDatasetType.esriDTFeatureClass);
-                        }
+                    if (Module1.Current.Aoi.HasSnotel == true)
+                    {
+                        lstLayerName.Add(Constants.MAPS_SNOTEL);
+                        lstGdb.Add(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers));
+                        lstFile.Add(Constants.FILE_SNOTEL);
+                        lstDatasetType.Add(esriDatasetType.esriDTFeatureClass);
+                    }
+                    if (Module1.Current.Aoi.HasSnolite == true)
+                    {
+                        lstLayerName.Add(Constants.MAPS_SNOLITE);
+                        lstGdb.Add(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers));
+                        lstFile.Add(Constants.FILE_SNOLITE);
+                        lstDatasetType.Add(esriDatasetType.esriDTFeatureClass);
+                    }
+                    if (Module1.Current.Aoi.HasCoopPillow == true)
+                    {
+                        lstLayerName.Add(Constants.MAPS_COOP_PILLOW);
+                        lstGdb.Add(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers));
+                        lstFile.Add(Constants.FILE_COOP_PILLOW);
+                        lstDatasetType.Add(esriDatasetType.esriDTFeatureClass);
+                    }
+                    if (Module1.Current.Aoi.HasSnowCourse == true)
+                    {
+                        lstLayerName.Add(Constants.MAPS_SNOW_COURSE);
+                        lstGdb.Add(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers));
+                        lstFile.Add(Constants.FILE_SNOW_COURSE);
+                        lstDatasetType.Add(esriDatasetType.esriDTFeatureClass);
+                    }
                     // Waterbodies
                     bool bExists = await GeodatabaseTools.FeatureClassExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Analysis)), Constants.FILE_WATER_BODIES);
                     if (bExists)
@@ -3727,31 +3724,31 @@ namespace bagis_pro
                         lstFile.Add(Constants.FILE_WATER_BODIES);
                         lstDatasetType.Add(esriDatasetType.esriDTFeatureClass);
                     }
-                        // Streams
-                        lstLayerName.Add(Constants.MAPS_STREAMS);
-                        lstGdb.Add(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers));
-                        lstFile.Add(Constants.FILE_STREAMS);
-                        lstDatasetType.Add(esriDatasetType.esriDTFeatureClass);
-                        // SNODAS SWE
-                        lstLayerName.Add(mapLayerName);
-                        lstGdb.Add(uriLayers.LocalPath);
-                        lstFile.Add(arrFiles[i]);
-                        lstDatasetType.Add(esriDatasetType.esriDTRasterDataset);
-                        // Hillshade
-                        lstLayerName.Add(Constants.MAPS_HILLSHADE);
-                        lstGdb.Add(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Surfaces));
-                        lstFile.Add(Constants.FILE_HILLSHADE);
-                        lstDatasetType.Add(esriDatasetType.esriDTRasterDataset);
-                        // Gage Stations
-                        lstLayerName.Add(Constants.MAPS_STREAM_GAGE);
-                        lstGdb.Add(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi));
-                        lstFile.Add(Constants.FILE_POURPOINT);
-                        lstDatasetType.Add(esriDatasetType.esriDTFeatureClass);
-                        // AOI_V
-                        lstLayerName.Add(Constants.MAPS_BASIN_BOUNDARY);
-                        lstGdb.Add(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi));
-                        lstFile.Add(Constants.FILE_AOI_VECTOR);
-                        lstDatasetType.Add(esriDatasetType.esriDTFeatureClass);
+                    // Streams
+                    lstLayerName.Add(Constants.MAPS_STREAMS);
+                    lstGdb.Add(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers));
+                    lstFile.Add(Constants.FILE_STREAMS);
+                    lstDatasetType.Add(esriDatasetType.esriDTFeatureClass);
+                    // SNODAS SWE
+                    lstLayerName.Add(mapLayerName);
+                    lstGdb.Add(uriLayers.LocalPath);
+                    lstFile.Add(arrFiles[i]);
+                    lstDatasetType.Add(esriDatasetType.esriDTRasterDataset);
+                    // Hillshade
+                    lstLayerName.Add(Constants.MAPS_HILLSHADE);
+                    lstGdb.Add(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Surfaces));
+                    lstFile.Add(Constants.FILE_HILLSHADE);
+                    lstDatasetType.Add(esriDatasetType.esriDTRasterDataset);
+                    // Gage Stations
+                    lstLayerName.Add(Constants.MAPS_STREAM_GAGE);
+                    lstGdb.Add(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi));
+                    lstFile.Add(Constants.FILE_POURPOINT);
+                    lstDatasetType.Add(esriDatasetType.esriDTFeatureClass);
+                    // AOI_V
+                    lstLayerName.Add(Constants.MAPS_BASIN_BOUNDARY);
+                    lstGdb.Add(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi));
+                    lstFile.Add(Constants.FILE_AOI_VECTOR);
+                    lstDatasetType.Add(esriDatasetType.esriDTFeatureClass);
 
                     int j = 0;
 
@@ -3759,9 +3756,9 @@ namespace bagis_pro
                     {
                         await QueuedTask.Run(() =>
                         {
-                          oLayer = oMap.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(layerName, StringComparison.CurrentCultureIgnoreCase));
-                          if (oLayer != null && arrExists[i])
-                          {
+                            oLayer = oMap.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(layerName, StringComparison.CurrentCultureIgnoreCase));
+                            if (oLayer != null && arrExists[i])
+                            {
                                 // Update data source for layer
                                 var dbGdbConnectionFile = new FileGeodatabaseConnectionPath(new Uri(lstGdb[j], UriKind.Absolute));
                                 var workspaceConnectionString = new Geodatabase(dbGdbConnectionFile).GetConnectionString();
@@ -3775,8 +3772,8 @@ namespace bagis_pro
                                     DatasetType = lstDatasetType[j]
                                 };
                                 oLayer.SetDataConnection(updatedDataConnection);
-                          }
-                          j++;
+                            }
+                            j++;
                         });
                     }
 
@@ -3788,7 +3785,7 @@ namespace bagis_pro
                     {
                         if (lstLayerName[k].Equals(mapLayerName))
                         {
-                            idxData = k;                
+                            idxData = k;
                             break;
                         }
                     }
@@ -3816,10 +3813,10 @@ namespace bagis_pro
                                             break;
                                         }
                                     }
-                                grpClass.Label = $@"{correctField}";
+                                    grpClass.Label = $@"{correctField}";
+                                }
+                                bLayer.SetColorizer(uvrColorizer);
                             }
-                            bLayer.SetColorizer(uvrColorizer);
-                        }
                         });
                     }
                 }
@@ -3839,7 +3836,7 @@ namespace bagis_pro
                     else
                     {
                         graphic.Text = "BASIN NAME UNKNOWN";
-                    }                    
+                    }
                     textBox.SetGraphic(graphic);
                 }
                 // Update legend map frame
@@ -3848,8 +3845,8 @@ namespace bagis_pro
                 if (cimLegend != null)
                 {
                     cimLegend.MapFrame = legendMapFrameName;
-                    IList<string> lstInvisible = new List<string> {Constants.MAPS_STREAMS, Constants.MAPS_BASIN_BOUNDARY, Constants.MAPS_HILLSHADE};
-                    if (! Module1.Current.Aoi.HasSnotel)
+                    IList<string> lstInvisible = new List<string> { Constants.MAPS_STREAMS, Constants.MAPS_BASIN_BOUNDARY, Constants.MAPS_HILLSHADE };
+                    if (!Module1.Current.Aoi.HasSnotel)
                     {
                         lstInvisible.Add(Constants.MAPS_SNOTEL);
                     }
@@ -3901,11 +3898,11 @@ namespace bagis_pro
             {
                 string mFrameName = arrMapFrames[i];
                 await Task.Delay(TimeSpan.FromSeconds(0.4));
-                    await QueuedTask.Run(() =>
-                    {
-                        //Thread.Sleep(2000); // Try sleeping thread to see if it helps SetCamera work better
-                        layout = someLytItem.GetLayout();
-                        MapFrame mapFrame = layout.FindElement(mFrameName) as MapFrame;
+                await QueuedTask.Run(() =>
+                {
+                    //Thread.Sleep(2000); // Try sleeping thread to see if it helps SetCamera work better
+                    layout = someLytItem.GetLayout();
+                    MapFrame mapFrame = layout.FindElement(mFrameName) as MapFrame;
                     if (mapFrame != null)
                     {
                         //Get map and a layer of interest
@@ -3913,19 +3910,19 @@ namespace bagis_pro
                         //Get the specific layer you want from the map and its extent
                         FeatureLayer lyr = m.FindLayers("Basin Boundary").First() as FeatureLayer;
                         mapFrame.SetCamera(lyr);
-                            //Thread.Sleep(2000); // Try sleeping thread to see if it helps SetCamera work better
-                            Camera cam = mapFrame.Camera;
+                        //Thread.Sleep(2000); // Try sleeping thread to see if it helps SetCamera work better
+                        Camera cam = mapFrame.Camera;
                         cam.Scale = cam.Scale * 1.1;
                         mapFrame.SetCamera(cam);
-                        }
-                        else
-                        {
-                            Module1.Current.ModuleLogManager.LogDebug(nameof(DisplayMultiMapPageLayoutAsync),
-                                $@"Unable to find element mapFrame {arrMapFrames[i]}");
-                        }
-                    });
+                    }
+                    else
+                    {
+                        Module1.Current.ModuleLogManager.LogDebug(nameof(DisplayMultiMapPageLayoutAsync),
+                            $@"Unable to find element mapFrame {arrMapFrames[i]}");
+                    }
+                });
             }
-            
+
             success = CloseMapPanes(arrMapFrames);
 
             // Pro 3.x did not properly apply the camera without touching the map frames a second time
@@ -3998,7 +3995,8 @@ namespace bagis_pro
                     {
                         Module1.Current.ModuleLogManager.LogError(nameof(ReOrderMapsAsync), $"Layer {moveBelowThisLayerName} not found ");
                     }
-                    await QueuedTask.Run(() => {
+                    await QueuedTask.Run(() =>
+                    {
                         if (moveToLayerPosition.Item1 != null) //layer gets moved into the group
                             moveToLayerPosition.Item1.MoveLayer(layerToMove, moveToLayerPosition.Item2);
                         else //Layer gets moved into the root
@@ -4183,6 +4181,13 @@ namespace bagis_pro
                     uri = new Uri(strPath);
                     await MapTools.AddLineLayerAsync(Constants.MAPS_FIRE_MAP_NAME, uri, Constants.MAPS_STREAMS, true, ColorFactory.Instance.BlueRGB);
 
+                    // add nifc layer
+                    strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Fire, true) +
+                              Constants.FILE_NIFC_FIRE;
+                    uri = new Uri(strPath);
+                    await MapTools.AddPolygonLayerNoFillAsync(uri, ColorFactory.Instance.CreateRGBColor(115, 38, 0), Constants.MAPS_FIRE_MAP_NAME,
+                        Constants.MAPS_NIFC_PERIMETER, false, 2.0);
+
                     // add pourpoint layer
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi, true) +
                               Constants.FILE_POURPOINT;
@@ -4251,6 +4256,61 @@ namespace bagis_pro
             }
 
             return BA_ReturnCode.UnknownError;
+        }
+
+        public static async Task<BA_ReturnCode> AddPolygonLayerNoFillAsync(Uri aoiUri, CIMColor lineColor, string mapName,
+            string displayName, bool isVisible, double lineSymbolWidth = 1.0)
+        {
+            // parse the uri for the folder and file
+            string strFileName = null;
+            string strFolderPath = null;
+            Map oMap = await MapTools.SetDefaultMapNameAsync(mapName);
+            if (aoiUri.IsFile)
+            {
+                strFileName = System.IO.Path.GetFileName(aoiUri.LocalPath);
+                strFolderPath = System.IO.Path.GetDirectoryName(aoiUri.LocalPath);
+            }
+            else
+            {
+                return BA_ReturnCode.UnknownError;
+            }
+            if (!await GeodatabaseTools.FeatureClassExistsAsync(new Uri(strFolderPath), strFileName))
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(AddPolygonLayerNoFillAsync),
+                    "Unable to locate feature class " + aoiUri.LocalPath + "!");
+                return BA_ReturnCode.ReadError;
+            }
+            await QueuedTask.Run(() =>
+            {
+                FeatureClass fClass = null;
+                // Opens a file geodatabase. This will open the geodatabase if the folder exists and contains a valid geodatabase.
+                using (Geodatabase geodatabase =
+                    new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(strFolderPath))))
+                {
+                    // Use the geodatabase.
+                    fClass = geodatabase.OpenDataset<FeatureClass>(strFileName);
+                }
+                if (String.IsNullOrEmpty(displayName))
+                {
+                    displayName = fClass.GetDefinition().GetAliasName();
+                }
+                // Create symbology for feature layer
+                var flyrCreatnParam = new FeatureLayerCreationParams(fClass)
+                {
+                    Name = displayName,
+                    IsVisible = isVisible,
+                    RendererDefinition = new SimpleRendererDefinition()
+                    {
+                        SymbolTemplate = SymbolFactory.Instance.ConstructPolygonSymbol(
+                            lineColor, SimpleFillStyle.Null,
+                        SymbolFactory.Instance.ConstructStroke(lineColor, lineSymbolWidth, SimpleLineStyle.Solid))
+                        .MakeSymbolReference()
+                    }
+                };
+
+                FeatureLayer fLayer = LayerFactory.Instance.CreateLayer<FeatureLayer>(flyrCreatnParam, oMap);
+            });
+            return BA_ReturnCode.Success;
         }
 
     }

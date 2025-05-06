@@ -84,6 +84,11 @@ namespace bagis_pro
                             break;
                     }
 
+                    if (Module1.Current.DisplayedMap.IndexOf(Constants.FILE_MAP_SUFFIX_PDF) > -1)
+                    {
+                        layoutName = Constants.MAPS_FIRE_LAYOUT_NAME;
+                    }
+
                     LayoutProjectItem lytItem =
                         Project.Current.GetItems<LayoutProjectItem>()
                         .FirstOrDefault(m => m.Name.Equals(layoutName, StringComparison.CurrentCultureIgnoreCase));

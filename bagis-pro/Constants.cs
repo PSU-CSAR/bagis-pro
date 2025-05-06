@@ -177,8 +177,8 @@ namespace bagis_pro
         public const string FILE_EXPORT_SEASONAL_PRECIP_DISTRIBUTION_PDF = "seasonal_precip_distribution.pdf";
         public const string FILE_EXPORT_MAP_AOI_LOCATION_PDF = "map_aoi_location.pdf";
         public const string FILE_EXPORT_LAND_COVER_PDF = "land_cover.pdf";
-        public const string FILE_FIRE_SUFFIX_PDF = "_Fire-Map.pdf";
-        public const string FILE_FIRE_REPORT_SUFFIX_PDF = "_Fire-Report.pdf";
+        public const string FILE_MAP_SUFFIX_PDF = "_Fire-Map.pdf";
+        public const string FILE_REPORT_SUFFIX_PDF = "_Fire-Report.pdf";
 
         // List of files in the watershed PDF map package and the order in which they will be assembled
         // Any changes to members or order of this array need to have a corresponding update to FILES_EXPORT_TITLES
