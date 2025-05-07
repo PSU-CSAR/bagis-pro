@@ -2514,17 +2514,7 @@ namespace bagis_pro
 
         public static string GetFullPdfFileName(string strBaseFileName)
         {
-            if (Constants.FILE_TITLE_PAGE_PDF.Equals(strBaseFileName) || Constants.FILE_DATA_SOURCES_PDF.Equals(strBaseFileName) ||
-                Constants.FILE_SITES_TABLE_PDF.Equals(strBaseFileName))
-            {
-                // The title page doesn't have the station name prefix
-                return Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\" + strBaseFileName;
-            }
-            else
-            {
-                return Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\"
-                    + Module1.Current.Aoi.FileStationName + "_" + strBaseFileName;
-            }
+            return Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\" + strBaseFileName;
         }
 
         public static BA_Objects.Analysis GetAnalysisSettings(string strAoiPath)

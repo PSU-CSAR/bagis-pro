@@ -22,7 +22,6 @@ namespace bagis_pro.BA_Objects
         string m_aoiBatchState;
         bool m_aoiBatchIsSelected;
         string m_stationTriplet = "";
-        string m_fileStationName = "";
         string m_stationNumber = "";
         string m_stationState = "";
         public string StationName = "";
@@ -151,12 +150,6 @@ namespace bagis_pro.BA_Objects
                 }
             }
         }
-
-        public string FileStationName
-        {
-            get { return m_fileStationName; }
-        }
-
         public string StationNumber
         {
             get { return m_stationNumber; }

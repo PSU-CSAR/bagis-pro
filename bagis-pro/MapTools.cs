@@ -3366,14 +3366,16 @@ namespace bagis_pro
 
         public static async Task<BA_ReturnCode> GetSystemFilesFromPortalAsync()
         {
-            string[] documentIds = new string[5];
+            string[] documentIds = new string[6];
             documentIds[0] = (string)Module1.Current.BagisSettings.NLCDLandCoverLayerItemId;
             documentIds[1] = (string)Module1.Current.BagisSettings.SnodasSweLayoutItemId;
             documentIds[2] = (string)Module1.Current.BagisSettings.SnodasDeltaLayoutItemId;
             documentIds[3] = (string)Module1.Current.BagisSettings.SeasonalPrecipLayoutItemId;
             documentIds[4] = (string)Module1.Current.BagisSettings.PublicAndTribalLandsLayerItemId;
+            documentIds[5] = (string)Module1.Current.BagisSettings.MTBSFireLayerItemId;
             string[] layerFileNames = new string[] { Constants.LAYER_FILE_NLCD_LAND_COVER, Constants.LAYOUT_FILE_SNODAS_SWE,
-                Constants.LAYOUT_FILE_SNODAS_DELTA_SWE, Constants.LAYOUT_FILE_SEASONAL_PRECIP_CONTRIB, Constants.LAYER_FILE_PUBLIC_TRIBAL_LANDS };
+                Constants.LAYOUT_FILE_SNODAS_DELTA_SWE, Constants.LAYOUT_FILE_SEASONAL_PRECIP_CONTRIB, Constants.LAYER_FILE_PUBLIC_TRIBAL_LANDS,
+                Constants.LAYER_FILE_MTBS_FIRE};
             Webservices ws = new Webservices();
             BA_ReturnCode success = BA_ReturnCode.ReadError;
 
@@ -4235,7 +4237,7 @@ namespace bagis_pro
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Surfaces, true) +
                         Constants.FILE_HILLSHADE;
                     uri = new Uri(strPath);
-                    await MapTools.DisplayRasterStretchSymbolAsync(Constants.MAPS_FIRE_MAP_NAME, uri, Constants.MAPS_HILLSHADE, "ArcGIS Colors", "Black to White", 0);
+                    await MapTools.DisplayRasterStretchSymbolAsync(Constants.MAPS_FIRE_MAP_NAME, uri, Constants.MAPS_HILLSHADE, "ArcGIS Colors", "Black to White", 50);
 
                     // create map elements
                     success = await MapTools.AddMapElements(Constants.MAPS_FIRE_MAP_FRAME_NAME, Constants.MAPS_FIRE_LAYOUT_NAME);

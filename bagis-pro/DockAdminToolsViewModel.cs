@@ -2681,11 +2681,22 @@ namespace bagis_pro
 
                     Uri aoiUri = new Uri(GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi));
                     Uri fireUri = new Uri(GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Fire));
+                    string strExportPrefix = "";
+                    if (!string.IsNullOrEmpty(Module1.Current.Aoi.StationTriplet))
+                    {
+                        strExportPrefix = Module1.Current.Aoi.StationTriplet.Replace(':', '_');
+                    }
+                    else
+                    {
+                        strExportPrefix = Constants.VALUE_NOT_SPECIFIED; 
+                    }
                     double aoiAreaSqMeters = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(aoiUri, Constants.FILE_AOI_VECTOR, null);
 
                     IList<string> lstMissingMtbsYears = await GeodatabaseTools.QueryMissingMtbsRasters(oAoi.FilePath, overrideMinYear, overrideMaxYear);
                     BA_ReturnCode success = BA_ReturnCode.UnknownError;
                     Layout oLayout = await MapTools.GetDefaultLayoutAsync(Constants.MAPS_FIRE_LAYOUT_NAME);
+                    string strLayerFilePath = Module1.Current.SettingsPath + "\\" + Constants.FOLDER_SETTINGS + "\\" + Constants.LAYER_FILE_MTBS_FIRE;
+
                     // Always load the maps in case we are running through multiple Aois
                     success = await MapTools.DisplayFireMapsAsync(Module1.Current.Aoi.FilePath, oLayout);
                     if (success != BA_ReturnCode.Success)
@@ -2743,14 +2754,27 @@ namespace bagis_pro
                             {
                                 await QueuedTask.Run(() =>
                                 {
-                                    nifcLayer.SetDefinitionQuery($@"{Constants.FIELD_YEAR} >= {i}");
+                                    nifcLayer.SetDefinitionQuery($@"{Constants.FIELD_YEAR} = {i}");
                                     nifcLayer.SetVisibility(true);
                                 });
+                                if (!lstMissingMtbsYears.Contains(Convert.ToString(i)))
+                                {
+                                    Uri uriMtbs = new Uri($@"{GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Fire, true)}{GeneralTools.GetMtbsLayerFileName(i)}_RECL");
+                                    success = await MapTools.DisplayUniqueValuesRasterFromLayerFileAsync(Constants.MAPS_FIRE_MAP_NAME, uriMtbs, this.GetMtbsMapName(i),
+                                        strLayerFilePath, 25, true);
+                                }
                                 defaultMap.Title = $@"FIRE DISTURBANCE {i}";
                                 success = await MapTools.UpdateMapElementsAsync(Module1.Current.Aoi.StationName, Constants.MAPS_FIRE_LAYOUT_NAME, defaultMap);        
-                                Module1.Current.DisplayedMap = $@"{i}{Constants.FILE_MAP_SUFFIX_PDF}";
-                                // @ToDo: file name not currently including station name?
+                                Module1.Current.DisplayedMap = $@"{strExportPrefix}_{i}{Constants.FILE_MAP_SUFFIX_PDF}";
                                 success = await GeneralTools.ExportMapToPdfAsync(Constants.PDF_EXPORT_RESOLUTION);
+                                var mtbsLayer = oMap.GetLayersAsFlattenedList().OfType<RasterLayer>().Where(l => l.Name.Equals(this.GetMtbsMapName(i), StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
+                                if (mtbsLayer != null)
+                                {
+                                    await QueuedTask.Run(() =>
+                                    {
+                                        mtbsLayer.SetVisibility(false);
+                                    });
+                                }
                             }
                             
                         }
@@ -2810,6 +2834,10 @@ namespace bagis_pro
                 }
             }
             MessageBox.Show("Fire maps have been generated!");
+        }
+        private string GetMtbsMapName(int year)
+        {
+            return $@"MTBS_{year}";
         }
         private BA_ReturnCode InitAnnualCsv(int intYear, string strCsvFile)
         {
