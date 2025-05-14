@@ -2688,9 +2688,13 @@ namespace bagis_pro
                     }
                     else
                     {
-                        strExportPrefix = Constants.VALUE_NOT_SPECIFIED; 
+                        strExportPrefix = Constants.VALUE_NOT_SPECIFIED;
+                        
                     }
-                    double aoiAreaSqMeters = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(aoiUri, Constants.FILE_AOI_VECTOR, null);
+                    string strFireReportPath = $@"{Module1.Current.Aoi.FilePath}\{Constants.FOLDER_MAP_PACKAGE}\{Constants.FOLDER_FIRE_STATISTICS}\{strExportPrefix}{Constants.FILE_REPORT_SUFFIX_PDF}";
+                    var result = await GeodatabaseTools.CalculateAoiAreaSqMetersAsync(Module1.Current.Aoi.FilePath, -1);
+                    double aoiAreaSqMeters = result.Item1;
+                    double areaSqKm = AreaUnit.SquareMeters.ConvertTo(aoiAreaSqMeters, AreaUnit.SquareKilometers);
 
                     IList<string> lstMissingMtbsYears = await GeodatabaseTools.QueryMissingMtbsRasters(oAoi.FilePath, overrideMinYear, overrideMaxYear);
                     BA_ReturnCode success = BA_ReturnCode.UnknownError;
@@ -2748,6 +2752,7 @@ namespace bagis_pro
                     {
                         Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_FIRE_MAP_NAME);
                         var nifcLayer = oMap.GetLayersAsFlattenedList().OfType<FeatureLayer>().Where(l => l.Name.Equals(Constants.MAPS_NIFC_PERIMETER, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
+                        IList<string> lstExportedMaps = new List<string>();
                         for (int i = overrideMinYear; i <= overrideMaxYear; i++)
                         {
                             if (success == BA_ReturnCode.Success)
@@ -2767,6 +2772,10 @@ namespace bagis_pro
                                 success = await MapTools.UpdateMapElementsAsync(Module1.Current.Aoi.StationName, Constants.MAPS_FIRE_LAYOUT_NAME, defaultMap);        
                                 Module1.Current.DisplayedMap = $@"{strExportPrefix}_{i}{Constants.FILE_MAP_SUFFIX_PDF}";
                                 success = await GeneralTools.ExportMapToPdfAsync(Constants.PDF_EXPORT_RESOLUTION);
+                                if (success == BA_ReturnCode.Success)
+                                {
+                                    lstExportedMaps.Add(GeneralTools.GetFullPdfFileName(Module1.Current.DisplayedMap));
+                                }
                                 var mtbsLayer = oMap.GetLayersAsFlattenedList().OfType<RasterLayer>().Where(l => l.Name.Equals(this.GetMtbsMapName(i), StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
                                 if (mtbsLayer != null)
                                 {
@@ -2777,6 +2786,10 @@ namespace bagis_pro
                                 }
                             }
                             
+                        }
+                        if (lstExportedMaps.Count > 0)
+                        {
+                            success = GeneralTools.PublishFirePdfDocument(strFireReportPath, lstExportedMaps);
                         }
                     }
                     //if (bIncrementStatistics)

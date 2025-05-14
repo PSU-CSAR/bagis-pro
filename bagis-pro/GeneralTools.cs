@@ -171,7 +171,7 @@ namespace bagis_pro
                 var result = await GeodatabaseTools.CalculateAoiAreaSqMetersAsync(Module1.Current.Aoi.FilePath, -1);
                 double dblAreaSqM = result.Item1;
                 Uri gdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi));
-                double areaSqKm = ArcGIS.Core.Geometry.AreaUnit.SquareMeters.ConvertTo(dblAreaSqM, 
+                double areaSqKm = ArcGIS.Core.Geometry.AreaUnit.SquareMeters.ConvertTo(dblAreaSqM,
                     ArcGIS.Core.Geometry.AreaUnit.SquareKilometers);
 
                 if (!result.Item2)
@@ -449,7 +449,7 @@ namespace bagis_pro
                         var dirInfo = Directory.CreateDirectory($@"{publishFolder}\{Constants.FOLDER_CHROME_USER_DATA}");
                         if (!dirInfo.Exists)
                         {
-                            Module1.Current.ModuleLogManager.LogError(nameof(GenerateMapsTitlePageAsync), 
+                            Module1.Current.ModuleLogManager.LogError(nameof(GenerateMapsTitlePageAsync),
                                 "Unable to create working directory for Chrome. PDF conversion failed!");
                             return BA_ReturnCode.WriteError;
                         }
@@ -2007,7 +2007,7 @@ namespace bagis_pro
         {
             // Initialize output document
             PdfDocument outputDocument = new PdfDocument();
-            
+
             int idx = 0;
             int i = 0;
             PdfDocument combineDocument = new PdfDocument();
@@ -2065,6 +2065,59 @@ namespace bagis_pro
                     catch (Exception)
                     {
                         Module1.Current.ModuleLogManager.LogError(nameof(PublishFullPdfDocument),
+                            "Unable to delete " + strPath + " !!");
+                    }
+                }
+            }
+
+            return BA_ReturnCode.Success;
+        }
+
+        public static BA_ReturnCode PublishFirePdfDocument(string outputPath, IList<string> lstMapPaths)
+        {
+            // Initialize output document
+            PdfDocument outputDocument = new PdfDocument();
+
+            int idx = 0;
+            int i = 0;
+            PdfDocument combineDocument = new PdfDocument();
+            //Iterate through files
+            foreach (var fullPath in lstMapPaths)
+            {
+                PdfDocument inputDocument = null;
+                if (File.Exists(fullPath))
+                {
+                    inputDocument = PdfReader.Open(fullPath, PdfDocumentOpenMode.Import);
+                }
+                else
+                {
+                    BA_ReturnCode success = GeneralTools.GenerateBlankPage(Constants.FILES_EXPORT_TITLES[i], fullPath);
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        inputDocument = PdfReader.Open(fullPath, PdfDocumentOpenMode.Import);
+                    }
+                }
+                if (inputDocument != null)
+                {
+                    PdfPage page = inputDocument.Pages[idx];
+                    combineDocument.AddPage(page);
+                }
+                i++;
+            }
+            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+            combineDocument.Save(outputPath);
+
+            foreach (var strPath in lstMapPaths)
+            {
+                if (File.Exists(strPath))
+                {
+                    try
+                    {
+                        File.Delete(strPath);
+                    }
+                    catch (Exception)
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(PublishFirePdfDocument),
                             "Unable to delete " + strPath + " !!");
                     }
                 }
@@ -2943,10 +2996,10 @@ namespace bagis_pro
         {
             string[] arrBuffer = new string[2];
             Uri uriTest = new Uri(strInputGdb);
-            if (!await GeodatabaseTools.FeatureClassExistsAsync(uriTest, strInputFile)) 
-            { 
-                return arrBuffer; 
-            }   
+            if (!await GeodatabaseTools.FeatureClassExistsAsync(uriTest, strInputFile))
+            {
+                return arrBuffer;
+            }
             string strBagisTag = await GeneralTools.GetBagisTagAsync(strInputGdb + "\\" + strInputFile, Constants.META_TAG_XPATH);
             if (!overWriteMetadata && !String.IsNullOrEmpty(strBagisTag))
             {
@@ -3255,7 +3308,7 @@ namespace bagis_pro
             }
             return oFireSettings;
         }
-        public static void UpdateFireDataSourceSettings(ref dynamic oFireSettings, string strFilePath, 
+        public static void UpdateFireDataSourceSettings(ref dynamic oFireSettings, string strFilePath,
             IDictionary<string, dynamic> dictDataSources, string strLayerType, bool bSaveFile)
         {
             var oDataSources = new JArray();
@@ -3318,7 +3371,7 @@ namespace bagis_pro
             {
                 intRemainderFlag = 0;
             }
-            intPeriods = (int) Math.Floor((intReportEndYear - intDataBeginYear) / Convert.ToDouble(intIncrement)) + intRemainderFlag;
+            intPeriods = (int)Math.Floor((intReportEndYear - intDataBeginYear) / Convert.ToDouble(intIncrement)) + intRemainderFlag;
             for (int i = 1; i <= intPeriods; i++)
             {
                 Interval oInterval = new Interval();
@@ -3363,7 +3416,7 @@ namespace bagis_pro
             if (Module1.Current.CboCurrentAoi != null)
             {
                 Module1.Current.CboCurrentAoi.ResetAoiName();
-            }           
+            }
         }
         public static async Task<WorkspaceType> GetRasterWorkspaceType(string strRasterPath)
         {
@@ -3420,7 +3473,8 @@ namespace bagis_pro
             {
                 Uri gdbUri = new Uri(System.IO.Path.GetDirectoryName(strRasterPath));
                 string rasterName = System.IO.Path.GetFileName(strRasterPath);
-                await QueuedTask.Run(() => {
+                await QueuedTask.Run(() =>
+                {
                     using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(gdbUri)))
                     using (RasterDataset rasterDataset = geodatabase.OpenDataset<RasterDataset>(rasterName))
                     {
@@ -3442,7 +3496,8 @@ namespace bagis_pro
             {
                 // Create a FileSystemConnectionPath using the folder path.
                 Uri folderUri = new Uri(System.IO.Path.GetDirectoryName(strRasterPath));
-                await QueuedTask.Run(() => {
+                await QueuedTask.Run(() =>
+                {
                     FileSystemConnectionPath connectionPath =
                         new FileSystemConnectionPath(folderUri, FileSystemDatastoreType.Raster);
                     // Create a new FileSystemDatastore using the FileSystemConnectionPath.
@@ -3501,8 +3556,63 @@ namespace bagis_pro
                     }
                 });
             }
-                return demInfo;
+            return demInfo;
         }
+        public static async Task<BA_ReturnCode> GenerateFireMapsTitlePageAsync(double areaSqKm)
+        {
+            string publishFolder = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\" + Constants.FOLDER_FIRE_STATISTICS;
+            try
+            {
+                // Serialize the title page object
+                BA_Objects.ExportTitlePage tPage = new BA_Objects.ExportTitlePage
+                {
+                    aoi_name = Module1.Current.Aoi.StationName,
+                    local_path = Module1.Current.Aoi.FilePath,
+                    streamgage_station = Module1.Current.Aoi.StationTriplet,
+                    streamgage_station_name = Module1.Current.Aoi.StationName,
+                    drainage_area_sqkm = areaSqKm,
+                    //    elevation_min_meters = elevMinMeters,
+                    //    elevation_max_meters = elevMaxMeters,
+                    //    has_snotel_sites = hasSnotelSites,
+                    //    snotel_sites_in_basin = snotelInBasin,
+                    //    snotel_sites_in_buffer = snotelInBuffer,
+                    //    snotel_sites_buffer_size = snotelSitesBufferSize,
+                    //    snolite_sites_in_basin = snoliteInBasin,
+                    //    snolite_sites_in_buffer = snoliteInBuffer,
+                    //    coop_pillow_sites_in_basin = coopPillowInBasin,
+                    //    coop_pillow_sites_in_buffer = coopPillowInBuffer,
+                    //    has_scos_sites = hasScosSites,
+                    //    scos_sites_in_basin = scosInBasin,
+                    //    scos_sites_in_buffer = scosInBuffer,
+                    //    scos_sites_buffer_size = snowCourseSitesBufferSize,
+                    //    site_elev_range = siteElevRange,
+                    //    site_elev_range_units = siteElevRangeUnits,
+                    //    site_buffer_dist = siteBufferDistance,
+                    //    site_buffer_dist_units = siteBufferDistanceUnits,
+                    //    represented_snotel_percent = pctSnotelRepresented,
+                    //    represented_snow_course_percent = pctSnowCourseRepresented,
+                    //    represented_all_sites_percent = pctAllSitesRepresented,
+                    //    annual_runoff_ratio = strRunoffRatio,
+                    //    annual_runoff_data_descr = annualRunoffDataDescr,
+                    //    report_title = strReportTitle,
+                    //    roads_buffer = roadsBufferDistance + " " + roadsBufferUnits,
+                    date_created = DateTime.Now
+                };
+                //if (lstDataSources.Count > 0)
+                //{
+                //    BA_Objects.DataSource[] data_sources = new BA_Objects.DataSource[lstDataSources.Count];
+                //    lstDataSources.CopyTo(data_sources, 0);
+                //    tPage.data_sources = data_sources;
+                //}
+            }
+            catch (Exception ex)
+            {
+
+            }
+            return BA_ReturnCode.Success;
+        }
+
+
     }
 
 }
