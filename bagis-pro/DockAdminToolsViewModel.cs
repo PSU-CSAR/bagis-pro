@@ -2248,7 +2248,7 @@ namespace bagis_pro
                         }
                         if (lstMtbsImageServices.Count > 0)
                         {
-                            int intRetVal = await AnalysisTools.ClipMtbsLayersAsync(aoiFolder, dictDataSources, Constants.FILE_AOI_VECTOR, lstMtbsImageServices, lstMtbsLayerNames,
+                            int intRetVal = await AnalysisTools.ClipMtbsLayersAsync(aoiFolder, Constants.FILE_AOI_VECTOR, lstMtbsImageServices, lstMtbsLayerNames,
                                 _intMtbsMaxYear, Reclip_MTBS_Checked);
                             if (intRetVal > 0)
                             {
@@ -2695,9 +2695,9 @@ namespace bagis_pro
                     var result = await GeodatabaseTools.CalculateAoiAreaSqMetersAsync(Module1.Current.Aoi.FilePath, -1);
                     double aoiAreaSqMeters = result.Item1;
                     double areaSqKm = AreaUnit.SquareMeters.ConvertTo(aoiAreaSqMeters, AreaUnit.SquareKilometers);
-
                     IList<string> lstMissingMtbsYears = await GeodatabaseTools.QueryMissingMtbsRasters(oAoi.FilePath, overrideMinYear, overrideMaxYear);
-                    BA_ReturnCode success = BA_ReturnCode.UnknownError;
+
+                    BA_ReturnCode success = await GeneralTools.GenerateFireMapsTitlePageAsync(areaSqKm);
                     Layout oLayout = await MapTools.GetDefaultLayoutAsync(Constants.MAPS_FIRE_LAYOUT_NAME);
                     string strLayerFilePath = Module1.Current.SettingsPath + "\\" + Constants.FOLDER_SETTINGS + "\\" + Constants.LAYER_FILE_MTBS_FIRE;
 

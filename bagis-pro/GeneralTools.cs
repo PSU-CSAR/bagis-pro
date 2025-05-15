@@ -558,6 +558,29 @@ namespace bagis_pro
             return dictDataSources;
         }
 
+        public static IDictionary<string, BA_Objects.DataSource> QueryLocalFireDataSources(string strAoiFolder)
+        {
+            IDictionary<string, BA_Objects.DataSource> dictDataSources = new Dictionary<string, BA_Objects.DataSource>();
+            dynamic oFireSettings = GeneralTools.GetFireSettings(strAoiFolder);
+            if (oFireSettings != null && oFireSettings.DataSources != null)
+            {
+                // iterate through jarray
+                foreach (var item in oFireSettings.DataSources)
+                {
+                    DataSource oDataSource = new DataSource(item);
+                    if (dictDataSources.Keys.Contains(oDataSource.layerType))
+                    {
+                        dictDataSources[oDataSource.layerType] = oDataSource;
+                    }
+                    else
+                    {
+                        dictDataSources.Add(oDataSource.layerType, oDataSource);
+                    }
+                }
+            }
+            return dictDataSources;
+        }
+
         public static BA_ReturnCode SaveDataSourcesToFile(IDictionary<string, BA_Objects.DataSource> dictDataSources)
         {
             // Put the data sources into a list that can be added to the Analysis object
@@ -2081,8 +2104,12 @@ namespace bagis_pro
             int idx = 0;
             int i = 0;
             PdfDocument combineDocument = new PdfDocument();
-            //Iterate through files
-            foreach (var fullPath in lstMapPaths)
+            IList<string> lstAllPages = new List<string>();
+            lstAllPages.Add(GetFullPdfFileName(Constants.FILE_TITLE_PAGE_PDF));
+            lstAllPages.Add(GetFullPdfFileName(Constants.FILE_DATA_SOURCES_PDF));
+            lstAllPages.AddRange(lstMapPaths);
+            //Iterate through map files
+            foreach (var fullPath in lstAllPages)
             {
                 PdfDocument inputDocument = null;
                 if (File.Exists(fullPath))
@@ -3560,11 +3587,48 @@ namespace bagis_pro
         }
         public static async Task<BA_ReturnCode> GenerateFireMapsTitlePageAsync(double areaSqKm)
         {
-            string publishFolder = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE + "\\" + Constants.FOLDER_FIRE_STATISTICS;
+            string publishFolder = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE;
+            Webservices ws = new Webservices();
+            //Printing data sources
+            IDictionary<string, DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
+            IDictionary<string, DataSource> dictAllDataSources = GeneralTools.QueryLocalFireDataSources(Module1.Current.Aoi.FilePath);
+            // Merge watershed report data sources into fire data sources; Fire data sources win
+            foreach (var key in dictLocalDataSources.Keys)
+            {
+                if (!dictAllDataSources.ContainsKey(key))
+                {
+                    dictAllDataSources.Add(key, dictLocalDataSources[key]);
+                }
+            }
+            
+            string[] keys = { Constants.DATA_TYPE_SNOTEL, Constants.DATA_TYPE_SNOW_COURSE, Constants.DATA_TYPE_SNOLITE, Constants.DATA_TYPE_COOP_PILLOW,
+                              DataSource.GetDemKey, Constants.DATA_TYPE_FIRE_CURRENT, DataSource.GetFireBurnSeverityKey };
+            IList<DataSource> lstDataSources = new List<DataSource>();
+            foreach (string strKey in keys)
+            {
+                if (dictAllDataSources.ContainsKey(strKey))
+                {
+                    DataSource newSource = dictAllDataSources[strKey];
+                    lstDataSources.Add(newSource);
+                }
+            }
+            // Add the DEM if it isn't there
+            if (!dictAllDataSources.ContainsKey(DataSource.GetDemKey))
+            {
+                IDictionary<string, dynamic> dictDatasources = await ws.QueryDataSourcesAsync();
+                if (dictDatasources != null)
+                {
+                    DataSource dsDem = new BA_Objects.DataSource(dictDatasources[BA_Objects.DataSource.GetDemKey]);
+                    if (dsDem != null)
+                    {
+                        lstDataSources.Add(dsDem);
+                    }
+                }
+            }
             try
             {
                 // Serialize the title page object
-                BA_Objects.ExportTitlePage tPage = new BA_Objects.ExportTitlePage
+                ExportTitlePage tPage = new ExportTitlePage
                 {
                     aoi_name = Module1.Current.Aoi.StationName,
                     local_path = Module1.Current.Aoi.FilePath,
@@ -3598,16 +3662,64 @@ namespace bagis_pro
                     //    roads_buffer = roadsBufferDistance + " " + roadsBufferUnits,
                     date_created = DateTime.Now
                 };
-                //if (lstDataSources.Count > 0)
-                //{
-                //    BA_Objects.DataSource[] data_sources = new BA_Objects.DataSource[lstDataSources.Count];
-                //    lstDataSources.CopyTo(data_sources, 0);
-                //    tPage.data_sources = data_sources;
-                //}
-            }
-            catch (Exception ex)
-            {
+                if (lstDataSources.Count > 0)
+                {
+                    DataSource[] data_sources = new DataSource[lstDataSources.Count];
+                    lstDataSources.CopyTo(data_sources, 0);
+                    tPage.data_sources = data_sources;
+                }
+                //@ToDo: Delete any existing title and data sources page so we don't append the old ones
+                // Data sources page
+                System.Xml.Serialization.XmlSerializer writer = new System.Xml.Serialization.XmlSerializer(tPage.GetType());
+                string myXmlFile = publishFolder + "\\" + Constants.FILE_DATA_SOURCES_XML;
+                using (FileStream fs = File.Create(myXmlFile))
+                {
+                    writer.Serialize(fs, tPage);
+                }
 
+                // Process the data sources page through the xsl template
+                string myStyleSheet = GeneralTools.GetAddInDirectory() + "\\" + Constants.FILE_DATA_SOURCES_XSL;
+                var myXPathDoc = new XPathDocument(myXmlFile);
+                var myXslTrans = new XslCompiledTransform();
+                myXslTrans.Load(myStyleSheet);
+                string htmlFilePath = publishFolder + "\\" + Constants.FILE_DATA_SOURCES_HTML;
+                using (XmlTextWriter myWriter = new XmlTextWriter(htmlFilePath, null))
+                {
+                    myXslTrans.Transform(myXPathDoc, null, myWriter);
+                }
+
+                // Convert the title page to PDF
+                if (File.Exists(htmlFilePath))
+                {
+                    //PdfSharp.Pdf.PdfDocument titlePageDoc = TheArtOfDev.HtmlRenderer.PdfSharp.PdfGenerator.GeneratePdf(System.IO.File.ReadAllText(htmlFilePath),
+                    //    PdfSharp.PageSize.Letter);
+                    //titlePageDoc.Save(publishFolder + "\\" + Constants.FILE_DATA_SOURCES_PDF);
+                    var url = $@"file:///{htmlFilePath}";
+                    using (var p = new Process())
+                    {
+                        p.StartInfo.FileName = Module1.Current.ChromePath;
+                        p.StartInfo.Arguments = $"--headless --disable-gpu --no-pdf-header-footer --user-data-dir={publishFolder}\\{Constants.FOLDER_CHROME_USER_DATA} --print-to-pdf={publishFolder + "\\" + Constants.FILE_DATA_SOURCES_PDF} {url}";
+                        p.Start();
+                        p.WaitForExit();
+                    }
+                }
+                Module1.Current.ModuleLogManager.LogDebug(nameof(GenerateFireMapsTitlePageAsync),
+                    "Data sources page created!!");
+            }
+            catch (Exception e)
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(GenerateFireMapsTitlePageAsync),
+                    "Exception: " + e.Message);
+                MessageBox.Show("An error occurred while trying to parse the XML!! " + e.Message, "BAGIS PRO");
+                return BA_ReturnCode.UnknownError;
+            }
+            finally
+            {
+                // Clean up Chrome work directory; It leaves a bunch of garbage here                
+                if (Directory.Exists($@"{publishFolder}\{Constants.FOLDER_CHROME_USER_DATA}"))
+                {
+                    Directory.Delete($@"{publishFolder}\{Constants.FOLDER_CHROME_USER_DATA}", true);
+                }
             }
             return BA_ReturnCode.Success;
         }

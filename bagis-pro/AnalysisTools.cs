@@ -7078,8 +7078,7 @@ namespace bagis_pro
             });
             return success;
         }
-        public static async Task<int> ClipMtbsLayersAsync(string strAoiPath, IDictionary<string, dynamic> dictDataSources,
-            string strClipFile, List<string> lstImageServiceUri, List<string> lstRasterFileName, int intLastMtbsYear, bool bReclipMtbs)
+        public static async Task<int> ClipMtbsLayersAsync(string strAoiPath, string strClipFile, List<string> lstImageServiceUri, List<string> lstRasterFileName, int intLastMtbsYear, bool bReclipMtbs)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
 

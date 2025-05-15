@@ -63,16 +63,18 @@
                       </td>
                     </tr>
                 </xsl:for-each>
-                <tr>
-                  <td class="style3">
-                    Station Runoff Volume
-                  </td>
-                </tr>
-                <tr>
-                  <td class="style4">
-                    <xsl:value-of select="annual_runoff_data_descr" />
-                  </td>
-                </tr>
+                <xsl:if test="annual_runoff_data_descr != ''">
+                  <tr>
+                    <td class="style3">
+                      Station Runoff Volume
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="style4">
+                      <xsl:value-of select="annual_runoff_data_descr" />
+                    </td>
+                  </tr>
+                </xsl:if>
               </table>
             </div>
 </body></html>

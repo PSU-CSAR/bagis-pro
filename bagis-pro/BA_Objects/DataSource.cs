@@ -32,6 +32,8 @@ namespace bagis_pro.BA_Objects
             layerType = dynSource.layerType;
             heading = dynSource.heading;
             shortDescription = dynSource.shortDescription;
+            if (dynSource.DateClipped != null) 
+                DateClipped = dynSource.DateClipped;
         }
 
         public static JObject DataSourceJson(dynamic oDataSource)
@@ -41,7 +43,8 @@ namespace bagis_pro.BA_Objects
             newDataSource.description = oDataSource.uri;
             newDataSource.layerType = oDataSource.layerType;
             newDataSource.heading = oDataSource.heading;
-            newDataSource.dateClippedText = DateTime.Now.ToString("MMMM d, yyyy");
+            //newDataSource.dateClippedText = DateTime.Now.ToString("MMMM d, yyyy");
+            newDataSource.DateClipped = DateTime.Now;
             return newDataSource;
         }
 
@@ -98,7 +101,6 @@ namespace bagis_pro.BA_Objects
             }
 
         }
-
         public static string GetFireBurnSeverityKey
         {
             get
@@ -111,7 +113,6 @@ namespace bagis_pro.BA_Objects
                         return Constants.DATA_TYPE_FIRE_BURN_SEVERITY;
                 }
             }
-
         }
     }
 }
