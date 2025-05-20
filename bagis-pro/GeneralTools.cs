@@ -2107,7 +2107,7 @@ namespace bagis_pro
             IList<string> lstAllPages = new List<string>();
             lstAllPages.Add(GetFullPdfFileName(Constants.FILE_TITLE_PAGE_PDF));
             lstAllPages.Add(GetFullPdfFileName(Constants.FILE_DATA_SOURCES_PDF));
-            lstAllPages.AddRange(lstMapPaths);
+            ((List<string>)lstAllPages).AddRange(lstMapPaths);
             //Iterate through map files
             foreach (var fullPath in lstAllPages)
             {

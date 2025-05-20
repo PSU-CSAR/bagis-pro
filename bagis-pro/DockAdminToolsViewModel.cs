@@ -24,6 +24,7 @@ using System.Diagnostics;
 using bagis_pro.BA_Objects;
 using ArcGIS.Core.Geometry;
 using ArcGIS.Core.Data.UtilityNetwork.Trace;
+using Newtonsoft.Json.Linq;
 
 namespace bagis_pro
 {
@@ -2104,7 +2105,8 @@ namespace bagis_pro
                     Webservices ws = new Webservices();
                     IDictionary<string, dynamic> dictDataSources = await ws.QueryDataSourcesAsync();
                     string strWsUri = dictDataSources[Constants.DATA_TYPE_FIRE_HISTORY].uri;
-                    
+                    dynamic oFireSettings = GeneralTools.GetFireSettings(aoiFolder);
+
                     if (Clip_Nifc_Checked)
                     {
                         FeatureLayer lyrHistory = null;
@@ -2114,6 +2116,35 @@ namespace bagis_pro
                             + Constants.FILE_AOI_VECTOR;
                         //success = await AnalysisTools.ClipFeatureLayerAsync(aoiFolder, strOutputFc, Constants.DATA_TYPE_FIRE_HISTORY,
                         //    "0", "Meters");
+                        // Delete nifcfire layer before starting clip
+                        string strNifcFc = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Fire, true)
+                            + Constants.FILE_NIFC_FIRE;
+                        success = await GeoprocessingTools.DeleteDatasetAsync(strNifcFc);
+                        // Remove nifc-related parameters before starting clip
+                        oFireSettings.Remove("lastNifcYear");
+                        oFireSettings.Remove("dataBeginYear");
+                        oFireSettings.Remove("fireDataClipYears");
+                        oFireSettings.Remove("reportEndYear");
+                        oFireSettings.Remove("increment");
+                        // Remove nifc data sources before starting clip
+                        if (oFireSettings.DataSources != null)
+                        {
+                            JArray oDataSources = oFireSettings.DataSources;
+                            if (oDataSources.Count > 0)
+                            {
+                                var foundDs = oDataSources.FirstOrDefault(a => a["layerType"].ToString().Equals(Constants.DATA_TYPE_FIRE_HISTORY));
+                                if (foundDs != null) 
+                                {
+                                    oDataSources.Remove(foundDs);
+                                }
+                                foundDs = oDataSources.FirstOrDefault(a => a["layerType"].ToString().Equals(Constants.DATA_TYPE_FIRE_CURRENT));
+                                if (foundDs != null)
+                                {
+                                    oDataSources.Remove(foundDs);
+                                }
+                            }
+                        }
+
                         var environmentsClip = Geoprocessing.MakeEnvironmentArray(workspace: aoiFolder);
                         var parametersClip = Geoprocessing.MakeValueArray(strWsUri, strClipFile, strOutputFc, "");
                         var gpResultClip = await Geoprocessing.ExecuteToolAsync("Clip_analysis", parametersClip, environmentsClip,
@@ -2149,6 +2180,11 @@ namespace bagis_pro
                                     });
                                 }
                             }
+                            GeneralTools.UpdateFireDataSourceSettings(ref oFireSettings, aoiFolder, dictDataSources, Constants.DATA_TYPE_FIRE_HISTORY, false);
+                        }
+                        else
+                        {
+                            success = BA_ReturnCode.WriteError;
                         }
                         strWsUri = dictDataSources[Constants.DATA_TYPE_FIRE_CURRENT].uri;
                         strOutputFc = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Layers, true)
@@ -2158,6 +2194,7 @@ namespace bagis_pro
                                                 CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
                         if (!gpResultClip.IsFailed)
                         {
+                            GeneralTools.UpdateFireDataSourceSettings(ref oFireSettings, aoiFolder, dictDataSources, Constants.DATA_TYPE_FIRE_CURRENT, false);
                             success = await GeoprocessingTools.AddFieldAsync(strOutputFc, Constants.FIELD_YEAR, "SHORT", null);
                             if (success == BA_ReturnCode.Success)
                             {
@@ -2172,13 +2209,16 @@ namespace bagis_pro
                                     success = BA_ReturnCode.UnknownError;
                                 }
                             }
-
+                        }
+                        else
+                        {
+                            success = BA_ReturnCode.WriteError;
                         }
 
                         // Merge features
                         string strCurrentId = "poly_SourceOID"; // Used to identify records that come from fire_current
                         string strMergeFc = "";
-                        if (success == BA_ReturnCode.Success)
+                        if (success == BA_ReturnCode.Success && lyrHistory != null)
                         {
                             string strInputDatasets = $@"{lyrHistory.Name};{strOutputFc}";
                             strMergeFc = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Fire, true)
@@ -2197,6 +2237,10 @@ namespace bagis_pro
                                 success = BA_ReturnCode.UnknownError;
                             }
                         }
+                        else
+                        {
+                            success = BA_ReturnCode.ReadError;
+                        }
 
                         if (success == BA_ReturnCode.Success)
                         {
@@ -2214,16 +2258,12 @@ namespace bagis_pro
                             success = await AnalysisTools.DissolveIncidentDuplicatesAsync(aoiFolder);
                         }
 
-                        dynamic oFireSettings = GeneralTools.GetFireSettings(aoiFolder);
                         if (success == BA_ReturnCode.Success)
                         {
+                            // Modify fire settings in memory
                             oFireSettings.lastNifcYear = _intNifcMaxYear;
                             oFireSettings.dataBeginYear = _intMinYear;
                             oFireSettings.fireDataClipYears = FireDataClipYears;
-                            oFireSettings.reportEndYear = "";   // Clear report related settings so we don't get out of sync
-                            oFireSettings.increment = "";
-                            GeneralTools.UpdateFireDataSourceSettings(ref oFireSettings, aoiFolder, dictDataSources, Constants.DATA_TYPE_FIRE_HISTORY, false);
-                            GeneralTools.UpdateFireDataSourceSettings(ref oFireSettings, aoiFolder, dictDataSources, Constants.DATA_TYPE_FIRE_CURRENT, true);
                         }
 
                         // Recalculate area due to bug in Pro
@@ -2252,8 +2292,25 @@ namespace bagis_pro
                                 _intMtbsMaxYear, Reclip_MTBS_Checked);
                             if (intRetVal > 0)
                             {
-                                // Update settings file
-                                dynamic oFireSettings = GeneralTools.GetFireSettings(aoiFolder);
+                                // Clean out old settings before trying to add new ones
+                                oFireSettings.Remove("reportEndYear");
+                                oFireSettings.Remove("increment");
+                                // Remove mtbs data source
+                                if (oFireSettings.DataSources != null)
+                                {
+                                    JArray oDataSources = oFireSettings.DataSources;
+                                    if (oDataSources.Count > 0)
+                                    {
+
+                                        var foundDs = oDataSources.FirstOrDefault(a => a["layerType"].ToString().Equals(DataSource.GetFireBurnSeverityKey));
+                                        if (foundDs != null)
+                                        {
+                                            oDataSources.Remove(foundDs);
+                                        }
+                                    }
+                                }
+
+                                // Update settings file in memory
                                 if (oFireSettings.DataSources != null)
                                 {
                                     // We know the file exists
@@ -2261,23 +2318,43 @@ namespace bagis_pro
                                     oFireSettings.lastMtbsYear = _intMtbsMaxYear;
                                     oFireSettings.dataBeginYear = _intMinYear;
                                     oFireSettings.fireDataClipYears = FireDataClipYears;
-                                    oFireSettings.reportEndYear = "";   // Clear report related settings so we don't get out of sync
-                                    oFireSettings.increment = "";
-                                }
+                                 }
                                 // Updates the MTBS data source and saves the file
-                                GeneralTools.UpdateFireDataSourceSettings(ref oFireSettings, aoiFolder, dictDataSources, Constants.DATA_TYPE_FIRE_BURN_SEVERITY, true);
+                                GeneralTools.UpdateFireDataSourceSettings(ref oFireSettings, aoiFolder, dictDataSources, Constants.DATA_TYPE_FIRE_BURN_SEVERITY, false);
                                 success = BA_ReturnCode.Success;
                             }
                         }
                     }
 
+                    // Save fire json settings to disk
+                    try
+                    {
+                        // serialize JSON directly to a file
+                        using (StreamWriter file = File.CreateText($@"{aoiFolder}\{Constants.FOLDER_MAPS}\{Constants.FILE_FIRE_SETTINGS}"))
+                        {
+                            JsonSerializer serializer = new JsonSerializer();
+                            serializer.Formatting = Newtonsoft.Json.Formatting.Indented;
+                            serializer.Serialize(file, oFireSettings);
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        //munch
+                    }
+
                     if (success == BA_ReturnCode.Success && errorCount == 0)
                     {
                         Names[idxRow].AoiBatchStateText = AoiBatchState.Completed.ToString();  // update gui
+                        strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Fire data complete for " +
+                            Names[idxRow].Name + "\r\n";
+                        File.AppendAllText(_strFireDataLogFile, strLogEntry);       // append
                     }
                     else
                     {
                         Names[idxRow].AoiBatchStateText = AoiBatchState.Failed.ToString();
+                        strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Fire data FAILED for " +
+                            Names[idxRow].Name + "\r\n";
+                        File.AppendAllText(_strFireDataLogFile, strLogEntry);
                     }
                 }
             }
