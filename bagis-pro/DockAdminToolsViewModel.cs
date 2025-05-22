@@ -2116,10 +2116,19 @@ namespace bagis_pro
                             + Constants.FILE_AOI_VECTOR;
                         //success = await AnalysisTools.ClipFeatureLayerAsync(aoiFolder, strOutputFc, Constants.DATA_TYPE_FIRE_HISTORY,
                         //    "0", "Meters");
-                        // Delete nifcfire layer before starting clip
-                        string strNifcFc = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Fire, true)
-                            + Constants.FILE_NIFC_FIRE;
-                        success = await GeoprocessingTools.DeleteDatasetAsync(strNifcFc);
+                        // Delete nifc-sourced layers before starting clip
+                        string[] arrLayersToDelete = {$"{GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Fire, true)}{Constants.FILE_NIFC_FIRE}",
+                                                      $"{GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Layers, true)}{Constants.FILE_FIRE_HISTORY}",
+                                                      $"{GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Layers, true)}{Constants.FILE_FIRE_CURRENT}"};
+                        for (int i = 0; i < arrLayersToDelete.Length; i++)
+                        {
+                            Uri uri = new Uri(Path.GetDirectoryName(arrLayersToDelete[i]));
+                            string fcName = Path.GetFileName(arrLayersToDelete[i]);
+                            if (await GeodatabaseTools.FeatureClassExistsAsync(uri, fcName))
+                            {
+                                success = await GeoprocessingTools.DeleteDatasetAsync(arrLayersToDelete[i]);
+                            }
+                        }
                         // Remove nifc-related parameters before starting clip
                         oFireSettings.Remove("lastNifcYear");
                         oFireSettings.Remove("dataBeginYear");
