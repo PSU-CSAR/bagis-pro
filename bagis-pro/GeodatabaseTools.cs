@@ -339,7 +339,6 @@ namespace bagis_pro
             });
             return retVal;
         }
-
         public static async Task<long> CountFeaturesAsync(Uri gdbUri, string featureClassName)
         {
             long retVal = -1;
@@ -365,6 +364,52 @@ namespace bagis_pro
                             using (Table table = geodatabase.OpenDataset<Table>(featureClassName))
                             {
                                 retVal = table.GetCount();
+                            }
+                        }
+                        else
+                        {
+                            retVal = 0;
+                            Module1.Current.ModuleLogManager.LogDebug(nameof(CountFeaturesAsync),
+                                "Feature class " + featureClassName + " not found. Returning 0 features");
+                        }
+                    }
+                });
+            }
+            catch (Exception e)
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(CountFeaturesAsync),
+                    "Exception: " + e.Message);
+            }
+            return retVal;
+        }
+
+        public static async Task<long> CountFeaturesWithFilterAsync(Uri gdbUri, string featureClassName,
+            string strWhere)
+        {
+            long retVal = -1;
+            try
+            {
+                await QueuedTask.Run(() =>
+                {
+                    using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(gdbUri)))
+                    {
+                        bool bExists = false;
+                        IReadOnlyList<FeatureClassDefinition> definitions = geodatabase.GetDefinitions<FeatureClassDefinition>();
+                        foreach (FeatureClassDefinition def in definitions)
+                        {
+                            if (def.GetName().Equals(featureClassName) || def.GetAliasName().Equals(featureClassName))
+                            {
+                                bExists = true;
+                                break;
+                            }
+                        }
+                        if (bExists)
+                        {
+                            using (FeatureClass featureClass = geodatabase.OpenDataset<FeatureClass>(featureClassName))
+                            {
+                                QueryFilter queryFilter = new QueryFilter();
+                                queryFilter.WhereClause = strWhere;
+                                retVal = featureClass.GetCount(queryFilter);
                             }
                         }
                         else

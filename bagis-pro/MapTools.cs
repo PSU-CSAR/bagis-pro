@@ -2,6 +2,7 @@
 using ArcGIS.Core.Data;
 using ArcGIS.Core.Data.Exceptions;
 using ArcGIS.Core.Data.Raster;
+using ArcGIS.Core.Data.UtilityNetwork.Trace;
 using ArcGIS.Core.Geometry;
 using ArcGIS.Desktop.Core;
 using ArcGIS.Desktop.Framework;
@@ -12,6 +13,7 @@ using ArcGIS.Desktop.Mapping;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
@@ -856,13 +858,12 @@ namespace bagis_pro
                 if (mpi != null)
                 {
                     map = mpi.GetMap();
-                    foreach (string strName in Constants.MAPS_ALL_ARRAY)
+                    foreach (string strName in arrLayersToRemove)
                     {
                         Layer oLayer =
                             map.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(strName, StringComparison.CurrentCultureIgnoreCase));
                         if (oLayer != null)
                         {
-
                             map.RemoveLayer(oLayer);
                         }
                     }
@@ -3440,8 +3441,7 @@ namespace bagis_pro
             }
             return success;
         }
-
-        private static Tuple<GroupLayer, int> FindLayerPosition(GroupLayer groupLayer, string moveToLayerNameBelow, Map oMap)
+        public static Tuple<GroupLayer, int> FindLayerPosition(GroupLayer groupLayer, string moveToLayerNameBelow, Map oMap)
         {
             int index = 0;
             foreach (var lyr in groupLayer != null ? groupLayer.Layers : oMap.Layers)
@@ -4156,7 +4156,16 @@ namespace bagis_pro
 
                     //remove existing layers from map frame
                     await MapTools.RemoveLayersfromMapFrame(Constants.MAPS_FIRE_MAP_NAME, Constants.MAPS_FIRE_ARRAY);
-                    //@ToDo: Remove MTBS Layers
+                    //remove mtbs layers
+                    Regex regexMtbs = new Regex(@"^MTBS_"); // ^ anchors the pattern to the start
+                    await QueuedTask.Run(() =>
+                    {
+                        var matchingLayers = oMap.Layers.Where(layer => regexMtbs.IsMatch(layer.Name)).ToList();
+                        foreach (var oLayer in matchingLayers)
+                        {
+                            oMap.RemoveLayer(oLayer);
+                        }
+                    });
 
                     //retrieve layer symbology files from portal if needed
                     success = await GetSystemFilesFromPortalAsync();
@@ -4249,10 +4258,6 @@ namespace bagis_pro
                     //zoom to aoi boundary layer
                     success = await MapTools.ZoomToExtentAsync(aoiUri, Constants.MAPS_FIRE_LAYOUT_NAME, Constants.MAPS_FIRE_MAP_FRAME_NAME,
                         Constants.MAP_BUFFER_FACTOR);
-
-                    // Put maps in correct order for 3.x
-                    //success = await MapTools.ReOrderMapsAsync();
-
                     return success;
                 }
             }

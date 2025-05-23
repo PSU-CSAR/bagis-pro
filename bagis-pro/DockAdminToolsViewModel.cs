@@ -2748,6 +2748,18 @@ namespace bagis_pro
                             File.AppendAllText(_strFireMapsLogFile, strLogEntry);       // append
                             continue;
                         }
+                        // Check to see if there are any features (fires) in nifcfire
+                        string strWhere = $"{Constants.FIELD_YEAR} >= {overrideMinYear} AND {Constants.FIELD_YEAR} <= {overrideMaxYear}";
+                        long lngCount = await GeodatabaseTools.CountFeaturesWithFilterAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Fire)),
+                            Constants.FILE_NIFC_FIRE, strWhere);
+                        if (lngCount <= 0)
+                        {
+                            Names[idxRow].AoiBatchStateText = AoiBatchState.Completed.ToString();  // update gui
+                            strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "No fires found for " +
+                                Names[idxRow].Name + " for selected time period. Fire maps not created. \r\n";
+                            File.AppendAllText(_strFireMapsLogFile, strLogEntry);       // append
+                            continue;
+                        }
 
                         Names[idxRow].AoiBatchStateText = AoiBatchState.Started.ToString();  // update gui
                         strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Starting fire maps for " +
@@ -2841,7 +2853,11 @@ namespace bagis_pro
                         IList<string> lstExportedMaps = new List<string>();
                         for (int i = overrideMinYear; i <= overrideMaxYear; i++)
                         {
-                            if (success == BA_ReturnCode.Success)
+                            string strWhere = $"{Constants.FIELD_YEAR} = {i}";
+                            long lngCount = await GeodatabaseTools.CountFeaturesWithFilterAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Fire)),
+                                Constants.FILE_NIFC_FIRE, strWhere);
+                            Module1.Current.DisplayedMap = $@"{strExportPrefix}_{i}{Constants.FILE_MAP_SUFFIX_PDF}";
+                            if (success == BA_ReturnCode.Success && lngCount > 0)
                             {
                                 await QueuedTask.Run(() =>
                                 {
@@ -2853,15 +2869,24 @@ namespace bagis_pro
                                     Uri uriMtbs = new Uri($@"{GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Fire, true)}{GeneralTools.GetMtbsLayerFileName(i)}_RECL");
                                     success = await MapTools.DisplayUniqueValuesRasterFromLayerFileAsync(Constants.MAPS_FIRE_MAP_NAME, uriMtbs, this.GetMtbsMapName(i),
                                         strLayerFilePath, 25, true);
+                                    // Put nifc layer on top; In order to move layerToMove, I need to know if the destination is a group layer and the zero based position it needs to move to.
+                                    Tuple<GroupLayer, int> moveToLayerPosition = MapTools.FindLayerPosition(null, this.GetMtbsMapName(i), oMap);
+                                    if (moveToLayerPosition.Item2 == -1)
+                                    {
+                                        Module1.Current.ModuleLogManager.LogError(nameof(RunFireMapsImplAsync), $"Layer {this.GetMtbsMapName(i)} not found ");
+                                    }
+                                    await QueuedTask.Run(() =>
+                                    {
+                                        // subtract 1 from moveToLayerPosition.Item2 because we want it ABOVE the found layer
+                                        if (moveToLayerPosition.Item1 != null) //layer gets moved into the group
+                                            moveToLayerPosition.Item1.MoveLayer(nifcLayer, moveToLayerPosition.Item2 - 1);
+                                        else //Layer gets moved into the root
+                                            oMap.MoveLayer(nifcLayer, moveToLayerPosition.Item2 - 1);
+                                    });
                                 }
                                 defaultMap.Title = $@"FIRE DISTURBANCE {i}";
-                                success = await MapTools.UpdateMapElementsAsync(Module1.Current.Aoi.StationName, Constants.MAPS_FIRE_LAYOUT_NAME, defaultMap);        
-                                Module1.Current.DisplayedMap = $@"{strExportPrefix}_{i}{Constants.FILE_MAP_SUFFIX_PDF}";
+                                success = await MapTools.UpdateMapElementsAsync(Module1.Current.Aoi.StationName, Constants.MAPS_FIRE_LAYOUT_NAME, defaultMap);
                                 success = await GeneralTools.ExportMapToPdfAsync(Constants.PDF_EXPORT_RESOLUTION);
-                                if (success == BA_ReturnCode.Success)
-                                {
-                                    lstExportedMaps.Add(GeneralTools.GetFullPdfFileName(Module1.Current.DisplayedMap));
-                                }
                                 var mtbsLayer = oMap.GetLayersAsFlattenedList().OfType<RasterLayer>().Where(l => l.Name.Equals(this.GetMtbsMapName(i), StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
                                 if (mtbsLayer != null)
                                 {
@@ -2871,7 +2896,12 @@ namespace bagis_pro
                                     });
                                 }
                             }
-                            
+                            else
+                            {
+                                GeneralTools.GenerateBlankPage($"FIRE DISTURBANCE {i}", 
+                                    GeneralTools.GetFullPdfFileName(Module1.Current.DisplayedMap));
+                            }
+                            lstExportedMaps.Add(GeneralTools.GetFullPdfFileName(Module1.Current.DisplayedMap));
                         }
                         if (lstExportedMaps.Count > 0)
                         {
@@ -2932,6 +2962,8 @@ namespace bagis_pro
                     File.AppendAllText(_strFireMapsLogFile, strLogEntry);       // append
                 }
             }
+            strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Completed fire maps generation" + "\r\n";
+            File.AppendAllText(_strFireMapsLogFile, strLogEntry);       // append
             MessageBox.Show("Fire maps have been generated!");
         }
         private string GetMtbsMapName(int year)

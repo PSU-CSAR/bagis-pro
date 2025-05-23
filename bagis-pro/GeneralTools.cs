@@ -3602,7 +3602,7 @@ namespace bagis_pro
             }
             
             string[] keys = { Constants.DATA_TYPE_SNOTEL, Constants.DATA_TYPE_SNOW_COURSE, Constants.DATA_TYPE_SNOLITE, Constants.DATA_TYPE_COOP_PILLOW,
-                              DataSource.GetDemKey, Constants.DATA_TYPE_FIRE_CURRENT, DataSource.GetFireBurnSeverityKey };
+                              DataSource.GetDemKey, Constants.DATA_TYPE_FIRE_CURRENT, Constants.DATA_TYPE_FIRE_HISTORY, DataSource.GetFireBurnSeverityKey };
             IList<DataSource> lstDataSources = new List<DataSource>();
             foreach (string strKey in keys)
             {
