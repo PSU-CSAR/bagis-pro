@@ -207,6 +207,7 @@ namespace bagis_pro
         //    FILE_EXPORT_MAP_ROADS_PDF, FILE_EXPORT_MAP_PUBLIC_LAND_ZONES_PDF, FILE_EXPORT_MAP_PUBLIC_LAND_OWNERSHIP_PDF,
         //    FILE_EXPORT_MAP_BELOW_TREELINE_PDF, FILE_EXPORT_MAP_SITES_LOCATION_PDF};
         public const string FILE_TITLE_PAGE_XSL = "title_page.xsl";
+        public const string FILE_TITLE_PAGE_FIRE_XSL = "title_page_fire.xsl";
         public const string FILE_TITLE_PAGE_XML = "title_page.xml";
         public const string FILE_TITLE_PAGE_HTML = "title_page.html";
         public const string FILE_TITLE_PAGE_PDF = "title_page.pdf";

@@ -26,6 +26,7 @@ using Microsoft.VisualBasic.FileIO;
 using ArcGIS.Desktop.Core.Geoprocessing;
 using System.Text;
 using bagis_pro.BA_Objects;
+using System.Security.Policy;
 
 namespace bagis_pro
 {
@@ -3585,7 +3586,7 @@ namespace bagis_pro
             }
             return demInfo;
         }
-        public static async Task<BA_ReturnCode> GenerateFireMapsTitlePageAsync(double areaSqKm)
+        public static async Task<BA_ReturnCode> GenerateFireMapsTitlePageAsync(double areaSqKm, string missingMtbsYears)
         {
             string publishFolder = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE;
             Webservices ws = new Webservices();
@@ -3635,31 +3636,7 @@ namespace bagis_pro
                     streamgage_station = Module1.Current.Aoi.StationTriplet,
                     streamgage_station_name = Module1.Current.Aoi.StationName,
                     drainage_area_sqkm = areaSqKm,
-                    //    elevation_min_meters = elevMinMeters,
-                    //    elevation_max_meters = elevMaxMeters,
-                    //    has_snotel_sites = hasSnotelSites,
-                    //    snotel_sites_in_basin = snotelInBasin,
-                    //    snotel_sites_in_buffer = snotelInBuffer,
-                    //    snotel_sites_buffer_size = snotelSitesBufferSize,
-                    //    snolite_sites_in_basin = snoliteInBasin,
-                    //    snolite_sites_in_buffer = snoliteInBuffer,
-                    //    coop_pillow_sites_in_basin = coopPillowInBasin,
-                    //    coop_pillow_sites_in_buffer = coopPillowInBuffer,
-                    //    has_scos_sites = hasScosSites,
-                    //    scos_sites_in_basin = scosInBasin,
-                    //    scos_sites_in_buffer = scosInBuffer,
-                    //    scos_sites_buffer_size = snowCourseSitesBufferSize,
-                    //    site_elev_range = siteElevRange,
-                    //    site_elev_range_units = siteElevRangeUnits,
-                    //    site_buffer_dist = siteBufferDistance,
-                    //    site_buffer_dist_units = siteBufferDistanceUnits,
-                    //    represented_snotel_percent = pctSnotelRepresented,
-                    //    represented_snow_course_percent = pctSnowCourseRepresented,
-                    //    represented_all_sites_percent = pctAllSitesRepresented,
-                    //    annual_runoff_ratio = strRunoffRatio,
-                    //    annual_runoff_data_descr = annualRunoffDataDescr,
-                    //    report_title = strReportTitle,
-                    //    roads_buffer = roadsBufferDistance + " " + roadsBufferUnits,
+                    missing_mtbs_years = missingMtbsYears,
                     date_created = DateTime.Now
                 };
                 if (lstDataSources.Count > 0)
@@ -3668,21 +3645,75 @@ namespace bagis_pro
                     lstDataSources.CopyTo(data_sources, 0);
                     tPage.data_sources = data_sources;
                 }
-                //@ToDo: Delete any existing title and data sources page so we don't append the old ones
-                // Data sources page
+                //Delete any existing title and data sources page so we don't append the old ones
+                if (File.Exists($"{publishFolder + "\\" + Constants.FILE_DATA_SOURCES_PDF}"))
+                    File.Delete($"{publishFolder + "\\" + Constants.FILE_DATA_SOURCES_PDF}");
+                if (File.Exists($"{publishFolder + "\\" + Constants.FILE_TITLE_PAGE_PDF}"))
+                    File.Delete($"{publishFolder + "\\" + Constants.FILE_TITLE_PAGE_PDF}");
+
+                string myXmlFile = publishFolder + "\\" + Constants.FILE_TITLE_PAGE_XML;
                 System.Xml.Serialization.XmlSerializer writer = new System.Xml.Serialization.XmlSerializer(tPage.GetType());
-                string myXmlFile = publishFolder + "\\" + Constants.FILE_DATA_SOURCES_XML;
+                using (System.IO.FileStream fs = System.IO.File.Create(myXmlFile))
+                {
+                    writer.Serialize(fs, tPage);
+                }
+
+                // Process the title page through the xsl template
+                string myStyleSheet = GeneralTools.GetAddInDirectory() + "\\" + Constants.FILE_TITLE_PAGE_FIRE_XSL;
+                XPathDocument myXPathDoc = new XPathDocument(myXmlFile);
+                XslCompiledTransform myXslTrans = new XslCompiledTransform();
+                myXslTrans.Load(myStyleSheet);
+                string htmlFilePath = publishFolder + "\\" + Constants.FILE_TITLE_PAGE_HTML;
+                using (XmlTextWriter myWriter = new XmlTextWriter(htmlFilePath, null))
+                {
+                    myXslTrans.Transform(myXPathDoc, null, myWriter);
+                }
+
+                // Convert the title page to PDF
+                if (File.Exists(htmlFilePath))
+                {
+                    //PdfSharp.Pdf.PdfDocument titlePageDoc = TheArtOfDev.HtmlRenderer.PdfSharp.PdfGenerator.GeneratePdf(System.IO.File.ReadAllText(htmlFilePath),
+                    //    PdfSharp.PageSize.Letter);
+                    //titlePageDoc.Save(publishFolder + "\\" + Constants.FILE_TITLE_PAGE_PDF);
+                    if (!Directory.Exists($@"{publishFolder}\{Constants.FOLDER_CHROME_USER_DATA}"))
+                    {
+                        var dirInfo = Directory.CreateDirectory($@"{publishFolder}\{Constants.FOLDER_CHROME_USER_DATA}");
+                        if (!dirInfo.Exists)
+                        {
+                            Module1.Current.ModuleLogManager.LogError(nameof(GenerateFireMapsTitlePageAsync),
+                                "Unable to create working directory for Chrome. PDF conversion failed!");
+                            return BA_ReturnCode.WriteError;
+                        }
+                    }
+                    var url = $@"file:///{htmlFilePath}";
+                    using (var p = new Process())
+                    {
+                        p.StartInfo.FileName = Module1.Current.ChromePath;
+                        p.StartInfo.Arguments = $"--headless --disable-gpu --no-pdf-header-footer --user-data-dir={publishFolder}\\{Constants.FOLDER_CHROME_USER_DATA} --lang=en_US --print-to-pdf={publishFolder + "\\" + Constants.FILE_TITLE_PAGE_PDF} {url}";
+                        p.Start();
+                        p.WaitForExit();
+                    }
+
+                    // Clean up Chrome work directory; It leaves a bunch of garbage here
+                    Directory.Delete($@"{publishFolder}\{Constants.FOLDER_CHROME_USER_DATA}", true);
+                }
+                Module1.Current.ModuleLogManager.LogDebug(nameof(GenerateFireMapsTitlePageAsync),
+                    "Title page created!!");
+
+                // Data sources page
+                writer = new System.Xml.Serialization.XmlSerializer(tPage.GetType());
+                myXmlFile = publishFolder + "\\" + Constants.FILE_DATA_SOURCES_XML;
                 using (FileStream fs = File.Create(myXmlFile))
                 {
                     writer.Serialize(fs, tPage);
                 }
 
                 // Process the data sources page through the xsl template
-                string myStyleSheet = GeneralTools.GetAddInDirectory() + "\\" + Constants.FILE_DATA_SOURCES_XSL;
-                var myXPathDoc = new XPathDocument(myXmlFile);
-                var myXslTrans = new XslCompiledTransform();
+                myStyleSheet = GeneralTools.GetAddInDirectory() + "\\" + Constants.FILE_DATA_SOURCES_XSL;
+                myXPathDoc = new XPathDocument(myXmlFile);
+                myXslTrans = new XslCompiledTransform();
                 myXslTrans.Load(myStyleSheet);
-                string htmlFilePath = publishFolder + "\\" + Constants.FILE_DATA_SOURCES_HTML;
+                htmlFilePath = publishFolder + "\\" + Constants.FILE_DATA_SOURCES_HTML;
                 using (XmlTextWriter myWriter = new XmlTextWriter(htmlFilePath, null))
                 {
                     myXslTrans.Transform(myXPathDoc, null, myWriter);

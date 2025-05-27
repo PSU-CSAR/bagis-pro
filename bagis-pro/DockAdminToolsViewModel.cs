@@ -25,6 +25,7 @@ using bagis_pro.BA_Objects;
 using ArcGIS.Core.Geometry;
 using ArcGIS.Core.Data.UtilityNetwork.Trace;
 using Newtonsoft.Json.Linq;
+using System.Windows.Documents;
 
 namespace bagis_pro
 {
@@ -2794,8 +2795,13 @@ namespace bagis_pro
                     double aoiAreaSqMeters = result.Item1;
                     double areaSqKm = AreaUnit.SquareMeters.ConvertTo(aoiAreaSqMeters, AreaUnit.SquareKilometers);
                     IList<string> lstMissingMtbsYears = await GeodatabaseTools.QueryMissingMtbsRasters(oAoi.FilePath, overrideMinYear, overrideMaxYear);
+                    string strMissingMtbsYears = "None";
+                    if (lstMissingMtbsYears.Count > 0)
+                    {
+                        strMissingMtbsYears = string.Join(", ", lstMissingMtbsYears);
+                    }
 
-                    BA_ReturnCode success = await GeneralTools.GenerateFireMapsTitlePageAsync(areaSqKm);
+                    BA_ReturnCode success = await GeneralTools.GenerateFireMapsTitlePageAsync(areaSqKm, strMissingMtbsYears);
                     Layout oLayout = await MapTools.GetDefaultLayoutAsync(Constants.MAPS_FIRE_LAYOUT_NAME);
                     string strLayerFilePath = Module1.Current.SettingsPath + "\\" + Constants.FOLDER_SETTINGS + "\\" + Constants.LAYER_FILE_MTBS_FIRE;
 

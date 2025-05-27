@@ -41,6 +41,7 @@ namespace bagis_pro.BA_Objects
         public long snolite_sites_in_buffer;
         public long coop_pillow_sites_in_basin;
         public long coop_pillow_sites_in_buffer;
+        public string missing_mtbs_years;
 
         public Site[] all_sites;
         public DataSource[] data_sources;
