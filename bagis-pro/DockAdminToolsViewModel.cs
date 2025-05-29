@@ -2539,19 +2539,20 @@ namespace bagis_pro
                     }
 
                     IList<string> lstMissingMtbsYears = await GeodatabaseTools.QueryMissingMtbsRasters(oAoi.FilePath, overrideMinYear, overrideMaxYear);
-
                     if (bAnnualStatistics)
                     {
-                        string strMapsFolder = $@"{oAoi.FilePath}\{Constants.FOLDER_MAP_PACKAGE}\{Constants.FOLDER_FIRE_STATISTICS}";
                         for (int i = overrideMinYear; i <= overrideMaxYear; i++)
                         {
                             BA_ReturnCode success = BA_ReturnCode.WriteError;
-                            string strMapFile = $@"{strMapsFolder}\{i}{Constants.FILE_MAP_SUFFIX_PDF}";
-                            if (File.Exists(strMapFile))
+                            string strCsvFile = $@"{Path.GetDirectoryName(_strFireReportLogFile)}\{i}_annual_statistics.csv";
+                            if (!File.Exists(strCsvFile))
                             {
-                               File.Delete(strMapFile);
+                                success = this.InitAnnualCsv(i, strCsvFile);
                             }
-
+                            else
+                            {
+                                success = BA_ReturnCode.Success;
+                            }
                             if (success == BA_ReturnCode.Success)
                             {
                                 IList<string> lstAnnualElements = await AnalysisTools.GenerateAnnualFireStatisticsList(oAoi, _strFireReportLogFile,
@@ -2563,18 +2564,18 @@ namespace bagis_pro
                                         // Adds new content to file
                                         StringBuilder sb = new StringBuilder();
                                         foreach (var item in lstAnnualElements)
-                                        { 
+                                        {
                                             sb.Append($@"{item}{_separator}");
                                         }
-                                        //using (StreamWriter sw = File.AppendText(strCsvFile))
-                                        //{
-                                        //    sw.WriteLine(sb.ToString());
-                                        //}
+                                        using (StreamWriter sw = File.AppendText(strCsvFile))
+                                        {
+                                            sw.WriteLine(sb.ToString());
+                                        }
                                     }
                                     catch (Exception ex)
                                     {
-                                        //strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} Data could not be written to the {strCsvFile} file!{System.Environment.NewLine}";
-                                        //File.AppendAllText(_strFireReportLogFile, strLogEntry);
+                                        strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} Data could not be written to the {strCsvFile} file!{System.Environment.NewLine}";
+                                        File.AppendAllText(_strFireReportLogFile, strLogEntry);
                                         return;
                                     }
                                 }
