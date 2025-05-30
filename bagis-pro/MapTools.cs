@@ -773,8 +773,11 @@ namespace bagis_pro
                 }
                 else
                 {
-                    Module1.Current.ModuleLogManager.LogError(nameof(AddPointMarkersAsync),
-                        "Field " + labelField + " is missing from the feature class and cannot be used as a label!");
+                    if (!string.IsNullOrEmpty(labelField))
+                    {
+                        Module1.Current.ModuleLogManager.LogWarn(nameof(AddPointMarkersAsync),
+                            "Field " + labelField + " is missing from the feature class and cannot be used as a label!");
+                    }
                 }
             });
             return success;
@@ -4008,7 +4011,7 @@ namespace bagis_pro
                 }
                 else
                 {
-                    Module1.Current.ModuleLogManager.LogError(nameof(ReOrderMapsAsync), @$"The {arrTestLayers[i]} was not be found!");
+                    Module1.Current.ModuleLogManager.LogWarn(nameof(ReOrderMapsAsync), @$"The {arrTestLayers[i]} layer was not be found!");
                 }
             }
             return BA_ReturnCode.Success;

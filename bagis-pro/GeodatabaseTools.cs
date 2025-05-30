@@ -331,7 +331,7 @@ namespace bagis_pro
                         }
                         else
                         {
-                            Module1.Current.ModuleLogManager.LogError(nameof(CountPointsWithinInFeatureAsync),
+                            Module1.Current.ModuleLogManager.LogWarn(nameof(CountPointsWithinInFeatureAsync),
                                 "Unable to locate point class " + pointFeatureName);
                         }
                     }

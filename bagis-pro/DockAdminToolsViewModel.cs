@@ -2792,6 +2792,11 @@ namespace bagis_pro
                         
                     }
                     string strFireReportPath = $@"{Module1.Current.Aoi.FilePath}\{Constants.FOLDER_MAP_PACKAGE}\{Constants.FOLDER_FIRE_STATISTICS}\{strExportPrefix}{Constants.FILE_REPORT_SUFFIX_PDF}";
+                    // Make sure output directory exists
+                    if (!Directory.Exists(Path.GetDirectoryName(strFireReportPath)))
+                    {
+                        Directory.CreateDirectory(Path.GetDirectoryName(strFireReportPath));
+                    }
                     var result = await GeodatabaseTools.CalculateAoiAreaSqMetersAsync(Module1.Current.Aoi.FilePath, -1);
                     double aoiAreaSqMeters = result.Item1;
                     double areaSqKm = AreaUnit.SquareMeters.ConvertTo(aoiAreaSqMeters, AreaUnit.SquareKilometers);
@@ -2913,6 +2918,25 @@ namespace bagis_pro
                         if (lstExportedMaps.Count > 0)
                         {
                             success = GeneralTools.PublishFirePdfDocument(strFireReportPath, lstExportedMaps);
+                        }
+                        if (success == BA_ReturnCode.Success)
+                        {
+                            if (!ParentFolder.Equals(Module1.Current.Aoi.FilePath))
+                            {
+                                string strTargetFolder = $@"{ParentFolder}\{Constants.FOLDER_MAP_PACKAGE}\{Constants.FOLDER_FIRE_STATISTICS}";
+                                if (!Directory.Exists(strTargetFolder))
+                                {
+                                    Directory.CreateDirectory(strTargetFolder);
+                                }
+                                try
+                                {
+                                    File.Copy(strFireReportPath, $@"{strTargetFolder}\{strExportPrefix}{Constants.FILE_REPORT_SUFFIX_PDF}",true);
+                                }
+                                catch (Exception)
+                                {
+                                    MessageBox.Show("Unable to copy maps to selected folder. Please make sure all map documents are closed!"); 
+                                }
+                            }
                         }
                     }
                     //if (bIncrementStatistics)
