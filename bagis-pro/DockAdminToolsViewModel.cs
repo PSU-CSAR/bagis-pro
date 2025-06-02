@@ -2155,12 +2155,27 @@ namespace bagis_pro
                             }
                         }
 
-                        var environmentsClip = Geoprocessing.MakeEnvironmentArray(workspace: aoiFolder);
+                        var environmentsClip = Geoprocessing.MakeEnvironmentArray(workspace: aoiFolder, extent:strClipFile );
                         var parametersClip = Geoprocessing.MakeValueArray(strWsUri, strClipFile, strOutputFc, "");
                         var gpResultClip = await Geoprocessing.ExecuteToolAsync("Clip_analysis", parametersClip, environmentsClip,
                                                 CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
                         if (!gpResultClip.IsFailed)
                         {
+                            if (gpResultClip.HasWarnings)
+                            {
+                                Module1.Current.ModuleLogManager.LogWarn(nameof(RunFireDataImplAsync),
+                                    Constants.FILE_FIRE_HISTORY + " completed with the following warnings: ");
+                                foreach (var msg in gpResultClip.Messages)
+                                {
+                                    if (msg.Type.Equals(GPMessageType.Warning))
+                                    {
+                                        Module1.Current.ModuleLogManager.LogWarn(nameof(RunFireDataImplAsync), msg.Text);
+                                    }
+                                }
+                                strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + Constants.FILE_FIRE_HISTORY + 
+                                    " clipping completed with WARNINGS. Check the AOI-level log for details \r\n";
+                                File.AppendAllText(_strFireDataLogFile, strLogEntry);       // append
+                            }
                             success = await GeoprocessingTools.AddFieldAsync(strOutputFc, Constants.FIELD_YEAR, "SHORT", null);
                             if (success == BA_ReturnCode.Success)
                             {
@@ -2194,6 +2209,18 @@ namespace bagis_pro
                         }
                         else
                         {
+                            Module1.Current.ModuleLogManager.LogError(nameof(RunFireDataImplAsync),
+                                "An error occurred while clipping " + Constants.FILE_FIRE_HISTORY + "!");
+                            foreach (var msg in gpResultClip.Messages)
+                            {
+                                if (msg.Type.Equals(GPMessageType.Error))
+                                {
+                                    Module1.Current.ModuleLogManager.LogError(nameof(RunFireDataImplAsync), msg.Text);
+                                }
+                            }
+                            strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "An error occurred while clipping " +
+                                Constants.FILE_FIRE_HISTORY + ". Check the AOI-level log for details \r\n";
+                            File.AppendAllText(_strFireDataLogFile, strLogEntry);       // append
                             success = BA_ReturnCode.WriteError;
                         }
                         strWsUri = dictDataSources[Constants.DATA_TYPE_FIRE_CURRENT].uri;
@@ -2204,6 +2231,21 @@ namespace bagis_pro
                                                 CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
                         if (!gpResultClip.IsFailed)
                         {
+                            if (gpResultClip.HasWarnings)
+                            {
+                                Module1.Current.ModuleLogManager.LogWarn(nameof(RunFireDataImplAsync),
+                                    Constants.FILE_FIRE_CURRENT + " completed with the following warnings: ");
+                                foreach (var msg in gpResultClip.Messages)
+                                {
+                                    if (msg.Type.Equals(GPMessageType.Warning))
+                                    {
+                                        Module1.Current.ModuleLogManager.LogWarn(nameof(RunFireDataImplAsync), msg.Text);
+                                    }
+                                }
+                                strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + Constants.FILE_FIRE_CURRENT +
+                                    " clipping completed with WARNINGS. Check the AOI-level log for details \r\n";
+                                File.AppendAllText(_strFireDataLogFile, strLogEntry);       // append
+                            }
                             GeneralTools.UpdateFireDataSourceSettings(ref oFireSettings, aoiFolder, dictDataSources, Constants.DATA_TYPE_FIRE_CURRENT, false);
                             success = await GeoprocessingTools.AddFieldAsync(strOutputFc, Constants.FIELD_YEAR, "SHORT", null);
                             if (success == BA_ReturnCode.Success)
@@ -2222,8 +2264,21 @@ namespace bagis_pro
                         }
                         else
                         {
+                            Module1.Current.ModuleLogManager.LogError(nameof(RunFireDataImplAsync),
+                                "An error occurred while clipping " + Constants.FILE_FIRE_CURRENT + "!");
+                            foreach (var msg in gpResultClip.Messages)
+                            {
+                                if (msg.Type.Equals(GPMessageType.Error))
+                                {
+                                    Module1.Current.ModuleLogManager.LogError(nameof(RunFireDataImplAsync), msg.Text);
+                                }
+                            }
+                            strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "An error occurred while clipping " +
+                                Constants.FILE_FIRE_CURRENT + ". Check the AOI-level log for details \r\n";
+                            File.AppendAllText(_strFireDataLogFile, strLogEntry);       // append
                             success = BA_ReturnCode.WriteError;
                         }
+
 
                         // Merge features
                         string strCurrentId = "poly_SourceOID"; // Used to identify records that come from fire_current
