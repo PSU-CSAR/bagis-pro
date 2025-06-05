@@ -2391,6 +2391,14 @@ namespace bagis_pro
                         }
                     }
 
+                    bool bMissingFireHistory = await GeodatabaseTools.MissingFireHistory(aoiFolder);
+                    if (bMissingFireHistory)
+                    {
+                        strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") +
+                            "WARN: This AOI has mtbs severity data but no firehistory features! \r\n";
+                        File.AppendAllText(_strFireDataLogFile, strLogEntry);       // append
+                    }
+
                     // Save fire json settings to disk
                     try
                     {

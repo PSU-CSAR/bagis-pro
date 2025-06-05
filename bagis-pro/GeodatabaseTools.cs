@@ -1318,7 +1318,6 @@ namespace bagis_pro
             }
             return (areaSqM, bIsMeters);
         }
-
         public static async Task<IList<string>> QueryMissingMtbsRasters(string aoiPath, int minYear, int maxYear)
         {
             IList<string> result = new List<string>();
@@ -1369,6 +1368,36 @@ namespace bagis_pro
                 {
                     result.Add(Convert.ToString(year));
                 }
+            }
+            return result;
+        }
+        public static async Task<bool> MissingFireHistory(string aoiPath)
+        {
+            Uri uriFire = new Uri(GeodatabaseTools.GetGeodatabasePath(aoiPath, GeodatabaseNames.Fire));
+            long fireHistoryCount = await GeodatabaseTools.CountFeaturesAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(aoiPath, GeodatabaseNames.Fire)), Constants.FILE_FIRE_HISTORY);
+            if (fireHistoryCount > 0)
+            {
+                return false;
+            }
+            bool result = false;
+            // Get a list of all the rasters in the fire.gdb
+            if (Directory.Exists(uriFire.LocalPath))
+            {
+                await QueuedTask.Run(() =>
+                {
+                    using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(uriFire)))
+                    {
+                        IReadOnlyList<RasterDatasetDefinition> definitions = geodatabase.GetDefinitions<RasterDatasetDefinition>();
+                        foreach (RasterDatasetDefinition def in definitions)
+                        {
+                            if (def.GetName().IndexOf("_RECL") > -1)
+                            {
+                                result = true;
+                                continue;
+                            }
+                        }
+                    }
+                });
             }
             return result;
         }
