@@ -4160,7 +4160,7 @@ namespace bagis_pro
                     //remove existing layers from map frame
                     await MapTools.RemoveLayersfromMapFrame(Constants.MAPS_FIRE_MAP_NAME, Constants.MAPS_FIRE_ARRAY);
                     //remove mtbs layers
-                    Regex regexMtbs = new Regex(@"^MTBS_"); // ^ anchors the pattern to the start
+                    Regex regexMtbs = new Regex(@"^MTBS_|^MTBS "); // ^ anchors the pattern to the start
                     await QueuedTask.Run(() =>
                     {
                         var matchingLayers = oMap.Layers.Where(layer => regexMtbs.IsMatch(layer.Name)).ToList();

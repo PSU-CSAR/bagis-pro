@@ -8125,7 +8125,7 @@ namespace bagis_pro
                 }
                 if (!bAllYearsMissing)
                 {
-                    bMtbsMaxLayerExists = await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(gdbFire), $@"tmpMax_{oInterval.Value}");
+                    bMtbsMaxLayerExists = await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(gdbFire), $@"Max_{oInterval.Value}");
                 }
                 if (!bForestedZonesExists)
                 {
@@ -8165,7 +8165,7 @@ namespace bagis_pro
                 }
                 else
                 {
-                    string strMtbsLayerName = $@"{GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Fire)}\tmpMax_{oInterval.Value}";
+                    string strMtbsLayerName = $@"{GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Fire)}\Max_{oInterval.Value}";
                     IList<double> lstMtbsForestedAreas = await QueryMtbsForestedAreasAsync(oAoi.FilePath, strMtbsLayerName, forestedAreaSqMeters, CancelableProgressor.None);
                     if (lstMtbsForestedAreas.Count == 6)
                     {
@@ -8234,7 +8234,7 @@ namespace bagis_pro
             QueryFilter queryFilter = new QueryFilter();
             string strGdbFire = GeodatabaseTools.GetGeodatabasePath(aoiPath, GeodatabaseNames.Fire);
             // This file is created in QueryMtbsAreaPctByIncrementAsync()
-            string strMaxFileName = $@"tmpMax_{oInterval.Value}";
+            string strMaxFileName = $@"Max_{oInterval.Value}";
             bool bAllYearsMissing = true;
             for (int i = (int)oInterval.LowerBound; i <= (int)oInterval.UpperBound; i++)
             {
@@ -8357,7 +8357,8 @@ namespace bagis_pro
                     }
                     lstReturn.Add(Convert.ToString(dblHighBurnedAreaSqMiles));
                     lstReturn.Add(Convert.ToString(dblHighBurnedAreaPct));
-                    BA_ReturnCode success = await GeoprocessingTools.DeleteDatasetAsync($@"{strGdbFire}\{strMaxFileName}");
+                    // 05-JUN-2025: Stop deleting max files; They will be used by the maps
+                    //BA_ReturnCode success = await GeoprocessingTools.DeleteDatasetAsync($@"{strGdbFire}\{strMaxFileName}");
                 }
             }
             else if (bAllYearsMissing)
@@ -8399,7 +8400,7 @@ namespace bagis_pro
                     break;
                 }
             }
-            string strMaxFileName = $@"tmpMax_{oInterval.Value}";
+            string strMaxFileName = $@"Max_{oInterval.Value}";
             if (bAllYearsMissing)
             {
                 if (await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(strGdbFire),strMaxFileName))

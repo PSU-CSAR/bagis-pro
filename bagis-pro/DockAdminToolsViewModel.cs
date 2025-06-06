@@ -2741,8 +2741,8 @@ namespace bagis_pro
             IList<Interval> lstInterval = null;
             int overrideMinYear = _intMinYear;
             int overrideMaxYear = ReportEndYear;
-            bool bAnnualStatistics = true;
-            bool bIncrementStatistics = true;
+            bool bAnnualMaps = true;
+            bool bIncrementMaps = true;
             // Only check this once
             if (SelectedTimeChecked)
             {
@@ -2750,20 +2750,20 @@ namespace bagis_pro
                 overrideMaxYear = SelectedMaxYear;
                 if (!AnnualDataChecked)
                 {
-                    bAnnualStatistics = false;
+                    bAnnualMaps = false;
                 }
                 if (!IncrementDataChecked)
                 {
-                    bIncrementStatistics = false;
+                    bIncrementMaps = false;
                 }
             }
-
 
             for (int idxRow = 0; idxRow < Names.Count; idxRow++)
             {
                 if (Names[idxRow].AoiBatchIsSelected)
                 {
                     string aoiFolder = Names[idxRow].FilePath;
+                    string strFireGdbPath = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Fire);
                     if (Names[idxRow].AoiBatchStateText.Equals(AoiBatchState.NotReady.ToString()))
                     {
                         strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} Skipping fire map for {Names[idxRow].FilePath}. Required station information is missing.{System.Environment.NewLine}";
@@ -2796,7 +2796,6 @@ namespace bagis_pro
                             continue;
                         }
                         // Check for fire.gdb and data before continuing
-                        string strFireGdbPath = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Fire);
                         bool bHasFireData = false;
                         if (Directory.Exists(strFireGdbPath))
                         {
@@ -2921,11 +2920,11 @@ namespace bagis_pro
                             success = await MapTools.UpdateLegendAsync(oLayout, defaultMap.LegendLayerList);
                         }
                     }
-                    if (bAnnualStatistics)
+                    Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_FIRE_MAP_NAME);
+                    var nifcLayer = oMap.GetLayersAsFlattenedList().OfType<FeatureLayer>().Where(l => l.Name.Equals(Constants.MAPS_NIFC_PERIMETER, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
+                    IList<string> lstExportedMaps = new List<string>();
+                    if (bAnnualMaps)
                     {
-                        Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_FIRE_MAP_NAME);
-                        var nifcLayer = oMap.GetLayersAsFlattenedList().OfType<FeatureLayer>().Where(l => l.Name.Equals(Constants.MAPS_NIFC_PERIMETER, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
-                        IList<string> lstExportedMaps = new List<string>();
                         for (int i = overrideMinYear; i <= overrideMaxYear; i++)
                         {
                             string strWhere = $"{Constants.FIELD_YEAR} = {i}";
@@ -2978,77 +2977,95 @@ namespace bagis_pro
                             }
                             lstExportedMaps.Add(GeneralTools.GetFullPdfFileName(Module1.Current.DisplayedMap));
                         }
-                        if (lstExportedMaps.Count > 0)
+                    }
+                    if (bIncrementMaps)
+                    {
+                        // Generating increment maps
+                        bool bRequestPeriods = false;
+                        if (IncrementDataChecked)
                         {
-                            success = GeneralTools.PublishFirePdfDocument(strFireReportPath, lstExportedMaps);
+                            bRequestPeriods = true;
                         }
-                        if (success == BA_ReturnCode.Success)
+                        lstInterval = GeneralTools.GetFireStatisticsIntervals(ReportEndYear, FireDataClipYears, FireIncrementYears, bRequestPeriods, FireTimePeriodCount, out intIncrementPeriods);
+                        foreach (var oInterval in lstInterval)
                         {
-                            if (!ParentFolder.Equals(Module1.Current.Aoi.FilePath))
+                            string strFileName = $"Max_{oInterval.Value}";
+                            string strLayerName = $"MTBS {oInterval.LowerBound}-{oInterval.UpperBound}";
+                            Module1.Current.DisplayedMap = $@"{strExportPrefix}_{oInterval.LowerBound}-{oInterval.UpperBound}{Constants.FILE_MAP_SUFFIX_PDF}";
+                            string strWhere = $"{Constants.FIELD_YEAR} >= {oInterval.LowerBound} And {Constants.FIELD_YEAR} <= {oInterval.UpperBound}";
+                            long lngCount = await GeodatabaseTools.CountFeaturesWithFilterAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Fire)),
+                                Constants.FILE_NIFC_FIRE, strWhere);
+                            if (lngCount > 0)
                             {
-                                string strTargetFolder = $@"{ParentFolder}\{Constants.FOLDER_MAP_PACKAGE}\{Constants.FOLDER_FIRE_STATISTICS}";
-                                if (!Directory.Exists(strTargetFolder))
+                                //Set NIFC fire filter to the interval; Also count features within interval
+                                await QueuedTask.Run(() =>
                                 {
-                                    Directory.CreateDirectory(strTargetFolder);
-                                }
-                                try
+                                    nifcLayer.SetDefinitionQuery($@"{Constants.FIELD_YEAR} >= {oInterval.LowerBound} And {Constants.FIELD_YEAR} <= {oInterval.UpperBound}");
+                                    nifcLayer.SetVisibility(true);
+                                });
+                                Uri uriMtbs = new Uri($@"{strFireGdbPath}\{strFileName}");
+                                if (await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(strFireGdbPath), strFileName))
                                 {
-                                    File.Copy(strFireReportPath, $@"{strTargetFolder}\{strExportPrefix}{Constants.FILE_REPORT_SUFFIX_PDF}",true);
+                                    success = await MapTools.DisplayUniqueValuesRasterFromLayerFileAsync(Constants.MAPS_FIRE_MAP_NAME, uriMtbs, strLayerName,
+                                        strLayerFilePath, 25, true);
+                                    // Put nifc layer on top; In order to move layerToMove, I need to know if the destination is a group layer and the zero based position it needs to move to.
+                                    Tuple<GroupLayer, int> moveToLayerPosition = MapTools.FindLayerPosition(null, strLayerName, oMap);
+                                    if (moveToLayerPosition.Item2 == -1)
+                                    {
+                                        Module1.Current.ModuleLogManager.LogError(nameof(RunFireMapsImplAsync), $"Layer {strLayerName} not found ");
+                                    }
+                                    await QueuedTask.Run(() =>
+                                    {
+                                        // subtract 1 from moveToLayerPosition.Item2 because we want it ABOVE the found layer
+                                        if (moveToLayerPosition.Item1 != null) //layer gets moved into the group
+                                            moveToLayerPosition.Item1.MoveLayer(nifcLayer, moveToLayerPosition.Item2 - 1);
+                                        else //Layer gets moved into the root
+                                            oMap.MoveLayer(nifcLayer, moveToLayerPosition.Item2 - 1);
+                                    });
                                 }
-                                catch (Exception)
+                                defaultMap.Title = $@"FIRE DISTURBANCE {oInterval.LowerBound}-{oInterval.UpperBound}";
+                                success = await MapTools.UpdateMapElementsAsync(Module1.Current.Aoi.StationName, Constants.MAPS_FIRE_LAYOUT_NAME, defaultMap);
+                                success = await GeneralTools.ExportMapToPdfAsync(Constants.PDF_EXPORT_RESOLUTION);
+                                var mtbsLayer = oMap.GetLayersAsFlattenedList().OfType<RasterLayer>().Where(l => l.Name.Equals(strLayerName, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
+                                if (mtbsLayer != null)
                                 {
-                                    MessageBox.Show("Unable to copy maps to selected folder. Please make sure all map documents are closed!"); 
+                                    await QueuedTask.Run(() =>
+                                    {
+                                        mtbsLayer.SetVisibility(false);
+                                    });
                                 }
+                            }
+                            else
+                            {
+                                GeneralTools.GenerateBlankPage($"FIRE DISTURBANCE {oInterval.LowerBound}-{oInterval.UpperBound}",
+                                    GeneralTools.GetFullPdfFileName(Module1.Current.DisplayedMap));
+                            }
+                            lstExportedMaps.Add(GeneralTools.GetFullPdfFileName(Module1.Current.DisplayedMap));
+                        }
+                    }
+                    if (lstExportedMaps.Count > 0)
+                    {
+                        success = GeneralTools.PublishFirePdfDocument(strFireReportPath, lstExportedMaps);
+                    }
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        if (!ParentFolder.Equals(Module1.Current.Aoi.FilePath))
+                        {
+                            string strTargetFolder = $@"{ParentFolder}\{Constants.FOLDER_MAP_PACKAGE}\{Constants.FOLDER_FIRE_STATISTICS}";
+                            if (!Directory.Exists(strTargetFolder))
+                            {
+                                Directory.CreateDirectory(strTargetFolder);
+                            }
+                            try
+                            {
+                                File.Copy(strFireReportPath, $@"{strTargetFolder}\{strExportPrefix}{Constants.FILE_REPORT_SUFFIX_PDF}", true);
+                            }
+                            catch (Exception)
+                            {
+                                MessageBox.Show("Unable to copy maps to selected folder. Please make sure all map documents are closed!");
                             }
                         }
                     }
-                    //if (bIncrementStatistics)
-                    //{
-                    //    // Generating increment statistics
-                    //    bool bRequestPeriods = false;
-                    //    if (IncrementDataChecked)
-                    //    {
-                    //        bRequestPeriods = true;
-                    //    }
-                    //    BA_ReturnCode success = BA_ReturnCode.WriteError;
-                    //    string strCsvFile = $@"{Path.GetDirectoryName(_strFireReportLogFile)}\increment_statistics.csv";
-                    //    lstInterval = GeneralTools.GetFireStatisticsIntervals(ReportEndYear, FireDataClipYears, FireIncrementYears, bRequestPeriods, FireTimePeriodCount, out intIncrementPeriods);
-                    //    if (!File.Exists(strCsvFile))
-                    //    {
-                    //        success = this.InitIncrementCsv(intIncrementPeriods, strCsvFile);
-                    //    }
-                    //    else
-                    //    {
-                    //        success = BA_ReturnCode.Success;
-                    //    }
-                    //    IList<string> lstOutput = await AnalysisTools.GenerateIncrementFireStatisticsList(oAoi, _strFireReportLogFile,
-                    //        aoiAreaSqMeters, cellSizeSqMeters, lstInterval, lstMissingMtbsYears);
-                    //    if (lstOutput.Count > 0)
-                    //    {
-                    //        try
-                    //        {
-                    //            // Adds new content to file
-                    //            StringBuilder sb = new StringBuilder();
-                    //            foreach (var item in lstOutput)
-                    //            {
-                    //                sb.Append($@"{item}{_separator}");
-                    //            }
-                    //            using (StreamWriter sw = File.AppendText(strCsvFile))
-                    //            {
-                    //                sw.WriteLine(sb.ToString());
-                    //            }
-                    //        }
-                    //        catch (Exception ex)
-                    //        {
-                    //            strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} Data could not be written to the {strCsvFile} file!{System.Environment.NewLine}";
-                    //            File.AppendAllText(_strFireReportLogFile, strLogEntry);
-                    //            return;
-                    //        }
-                    //    }
-
-                    //}
-
-
 
                     Names[idxRow].AoiBatchStateText = AoiBatchState.Completed.ToString();  // update gui
                     strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Finished generate maps export for " +
