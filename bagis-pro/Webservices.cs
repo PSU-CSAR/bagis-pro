@@ -721,9 +721,12 @@ namespace bagis_pro
         public string[] ParseUriAndLayerNumber(string strWsUri)
         {
             string[] arrReturnValues = new string[2];
-            arrReturnValues[1] = strWsUri.Split('/').Last();
-            int intTrim = arrReturnValues[1].Length + 1;
-            arrReturnValues[0] = strWsUri.Substring(0, strWsUri.Length - intTrim);
+            if (strWsUri.IndexOf('/') > -1)
+            {
+                arrReturnValues[1] = strWsUri.Split('/').Last();
+                int intTrim = arrReturnValues[1].Length + 1;
+                arrReturnValues[0] = strWsUri.Substring(0, strWsUri.Length - intTrim);
+            }
             return arrReturnValues;
         }
 

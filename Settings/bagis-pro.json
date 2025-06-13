@@ -89,22 +89,22 @@
             "shortDescription": "30 meter USGS digital elevation model"
         },
         {
-            "layerType": "Fire History",
+            "layerType": "Backup Fire History",
             "heading": "NIFC Wildland Fires",
             "description": "National Interagency Fire Center (NIFC) historic wildland fires webservices accessed on the report creating date (see the report summary page). See https://data-nifc.opendata.arcgis.com/datasets/nifc::interagencyfireperimeterhistory-all-years-view/about for more information.",
             "uri": "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/InterAgencyFirePerimeterHistory_All_Years_View/FeatureServer/0"
         },
         {
-            "layerType": "Backup Fire Current",
+            "layerType": "Fire History",
             "heading": "NIFC Wildland Fires",
-            "description": "National Interagency Fire Center (NIFC) current wildland fires webservices accessed on the report creating date (see the report summary page). See https://data-nifc.opendata.arcgis.com/datasets/nifc::wfigs-interagency-fire-perimeters/about for more information.",
-            "uri": "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Interagency_Perimeters/FeatureServer/0"
+            "description": "National Interagency Fire Center (NIFC) historic wildland fires webservices accessed on the report creating date (see the report summary page). See https://data-nifc.opendata.arcgis.com/datasets/nifc::interagencyfireperimeterhistory-all-years-view/about for more information.",
+            "uri": "D:\\FirelineEngagement.gdb\\Firelines_Engagement_17_24"
         },
-                {
+        {
             "layerType": "Fire Current",
             "heading": "NIFC Wildland Fires",
             "description": "National Interagency Fire Center (NIFC) current wildland fires webservices accessed on the report creating date (see the report summary page). See https://data-nifc.opendata.arcgis.com/datasets/nifc::wfigs-interagency-fire-perimeters/about for more information.",
-            "uri": "D:\\FirelineEngagement.gdb\\Firelines_Engagement_17_24"
+            "uri": "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Interagency_Perimeters/FeatureServer/0"
         },
         {
             "layerType": "Fire Burn Severity",
