@@ -2176,21 +2176,26 @@ namespace bagis_pro
                                     " clipping completed with WARNINGS. Check the AOI-level log for details \r\n";
                                 File.AppendAllText(_strFireDataLogFile, strLogEntry);       // append
                             }
-                            success = await GeoprocessingTools.AddFieldAsync(strOutputFc, Constants.FIELD_YEAR, "SHORT", null);
+                            Uri uriLayers = new Uri(GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Layers));
+                            if (!await GeodatabaseTools.AttributeExistsAsync(uriLayers, Constants.FILE_FIRE_HISTORY, Constants.FIELD_YEAR))
+                            {
+                                success = await GeoprocessingTools.AddFieldAsync(strOutputFc, Constants.FIELD_YEAR, "SHORT", null);
+                                if (success == BA_ReturnCode.Success)
+                                {
+                                    var parameters = Geoprocessing.MakeValueArray(strOutputFc, Constants.FIELD_YEAR,
+                                        "!FIRE_YEAR_INT!", "PYTHON3", "", "SHORT");
+                                    IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("management.CalculateField", parameters, null,
+                                        CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                                    if (gpResult.IsFailed)
+                                    {
+                                        Module1.Current.ModuleLogManager.LogError(nameof(RunFireDataImplAsync),
+                                            "CalculateField tool failed to update YEAR field. Error code: " + gpResult.ErrorCode);
+                                        success = BA_ReturnCode.UnknownError;
+                                    }
+                                }
+                            }
                             if (success == BA_ReturnCode.Success)
                             {
-                                var parameters = Geoprocessing.MakeValueArray(strOutputFc, Constants.FIELD_YEAR,
-                                    "!FIRE_YEAR_INT!", "PYTHON3", "", "SHORT");
-                                IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("management.CalculateField", parameters, null,
-                                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                                if (gpResult.IsFailed)
-                                {
-                                    Module1.Current.ModuleLogManager.LogError(nameof(RunFireDataImplAsync),
-                                        "CalculateField tool failed to update YEAR field. Error code: " + gpResult.ErrorCode);
-                                    success = BA_ReturnCode.UnknownError;
-                                }
-                                else
-                                {
                                     await QueuedTask.Run(() =>
                                     {
                                         var historyParams = new FeatureLayerCreationParams(new Uri(strOutputFc))
@@ -2203,7 +2208,6 @@ namespace bagis_pro
                                         lyrHistory = LayerFactory.Instance.CreateLayer<FeatureLayer>(historyParams, oMap);
                                         lyrHistory.SetDefinitionQuery($@"{Constants.FIELD_YEAR} >= {minYearClip}");
                                     });
-                                }
                             }
                             GeneralTools.UpdateFireDataSourceSettings(ref oFireSettings, aoiFolder, dictDataSources, Constants.DATA_TYPE_FIRE_HISTORY, false);
                         }
