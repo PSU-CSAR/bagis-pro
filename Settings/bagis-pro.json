@@ -98,7 +98,7 @@
             "layerType": "Fire History",
             "heading": "NIFC Wildland Fires",
             "description": "National Interagency Fire Center (NIFC) historic wildland fires webservices accessed on the report creating date (see the report summary page). See https://data-nifc.opendata.arcgis.com/datasets/nifc::interagencyfireperimeterhistory-all-years-view/about for more information.",
-            "uri": "D:\\FirelineEngagement.gdb\\Firelines_Engagement_17_24"
+            "uri": "D:\\FirelineEngagement.gdb\\NIFC_Perimeters_17_24"
         },
         {
             "layerType": "Fire Current",
