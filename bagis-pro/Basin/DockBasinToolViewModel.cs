@@ -178,9 +178,14 @@ namespace bagis_pro.Basin
                         string[] arrSubDirectories = Directory.GetDirectories(ParentFolder);
                         BA_ReturnCode success = await DisplaySubfolderListAsync(arrSubDirectories, true);
                         success = await CheckSelectedFolderStatusAsync(ParentFolder);
+                        CmdSelectBasinEnabled = true;
                     }
-                    // Force the combobox to instantiate
-                    var plugin = FrameworkApplication.GetPlugInWrapper("bagis_pro_Buttons_CboCurrentBasin");
+                    else
+                    {
+                        CmdSelectBasinEnabled = false;
+                    }
+                        // Force the combobox to instantiate
+                        var plugin = FrameworkApplication.GetPlugInWrapper("bagis_pro_Buttons_CboCurrentBasin");
                     FrameworkApplication.Current.Dispatcher.Invoke(() =>
                     {
                         // Do something on the GUI thread
@@ -319,8 +324,13 @@ namespace bagis_pro.Basin
             {
                 string[] arrSubDirectories = Directory.GetDirectories(ParentFolder);
                 success = await DisplaySubfolderListAsync(arrSubDirectories, bNotTheRootDir);
+                CmdSelectBasinEnabled = true;
             }
-            return success;
+            else
+            {
+                CmdSelectBasinEnabled = false;
+            }
+                return success;
         }
         public async Task<BA_ReturnCode> LstFolders_PreviewMouseDown(FolderEntry oFolderEntry)
         {
@@ -618,7 +628,7 @@ namespace bagis_pro.Basin
             if (BasinStatus.Equals("No") && AoiStatus.Equals("No"))
             {
                 CmdViewDemEnabled = false;
-                CmdSelectBasinEnabled = false;
+                //CmdSelectBasinEnabled = false;
             }
             else
             {
