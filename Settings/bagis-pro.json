@@ -89,13 +89,13 @@
             "shortDescription": "30 meter USGS digital elevation model"
         },
         {
-            "layerType": "Backup Fire History",
+            "layerType": "Fire History",
             "heading": "NIFC Wildland Fires",
             "description": "National Interagency Fire Center (NIFC) historic wildland fires webservices accessed on the report creating date (see the report summary page). See https://data-nifc.opendata.arcgis.com/datasets/nifc::interagencyfireperimeterhistory-all-years-view/about for more information.",
             "uri": "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/InterAgencyFirePerimeterHistory_All_Years_View/FeatureServer/0"
         },
         {
-            "layerType": "Fire History",
+            "layerType": "Local Fire History",
             "heading": "NIFC Wildland Fires",
             "description": "National Interagency Fire Center (NIFC) historic wildland fires webservices accessed on the report creating date (see the report summary page). See https://data-nifc.opendata.arcgis.com/datasets/nifc::interagencyfireperimeterhistory-all-years-view/about for more information.",
             "uri": "D:\\FirelineEngagement.gdb\\NIFC_Perimeters_17_24"
