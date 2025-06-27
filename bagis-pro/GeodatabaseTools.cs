@@ -1374,7 +1374,7 @@ namespace bagis_pro
         public static async Task<bool> MissingFireHistory(string aoiPath)
         {
             Uri uriFire = new Uri(GeodatabaseTools.GetGeodatabasePath(aoiPath, GeodatabaseNames.Fire));
-            long fireHistoryCount = await GeodatabaseTools.CountFeaturesAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(aoiPath, GeodatabaseNames.Fire)), Constants.FILE_FIRE_HISTORY);
+            long fireHistoryCount = await GeodatabaseTools.CountFeaturesAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(aoiPath, GeodatabaseNames.Layers)), Constants.FILE_FIRE_HISTORY);
             if (fireHistoryCount > 0)
             {
                 return false;
