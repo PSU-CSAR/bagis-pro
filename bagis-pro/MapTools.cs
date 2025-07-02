@@ -3008,9 +3008,7 @@ namespace bagis_pro
                 map.SetLabelEngine(ArcGIS.Desktop.Mapping.LabelEngine.Standard);
 
                 //add western state boundaries map service layer
-                Webservices ws = new Webservices();
-                string url = await ws.GetWesternStateBoundariesUriAsync();
-                Uri uri = new Uri(url);
+                Uri uri = new Uri((string) Module1.Current.BagisSettings.westernStateBoundaries);
                 var flyrCreatnParam = new FeatureLayerCreationParams(uri)
                 {
                     Name = Constants.MAPS_WESTERN_STATES_BOUNDARY,

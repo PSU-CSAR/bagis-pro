@@ -1858,7 +1858,8 @@ namespace bagis_pro
                     // QUERY THE MASTER LIST FOR THE STATION TRIPLET
                     string[] arrSearch = { Constants.FIELD_STATION_TRIPLET, Constants.FIELD_NAME, Constants.FIELD_HUC2 };
                     string[] arrFound = new string[arrSearch.Length];
-                    string strWsUri = await ws.GetForecastStationsUriAsync();
+                    string strWsUri = (string)Module1.Current.BagisSettings.GaugeStationUri;
+
                     string strWsUriTrimmed = "";
                     string layerId = "";
                     if (!string.IsNullOrEmpty(strWsUri))

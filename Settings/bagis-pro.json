@@ -135,6 +135,7 @@
         "PrecipBufferUnits": "Kilometers",
         "SnotelBufferDistance": 5,
         "SnotelBufferUnits": "Kilometers",
+        "SnotelName": "name",
         "RoadsAnalysisBufferDistance": 300,
         "RoadsAnalysisBufferUnits": "Feet",
         "AoiBufferDistance": 100,
@@ -165,6 +166,7 @@
         "FireDataClipYears": 30,
         "FireIncrementYears": 5,
         "HydrologicUnitBoundaries": "https://hydrowfs.nationalmap.gov/arcgis/rest/services/wbd/MapServer/1",
+        "westernStateBoundaries": "https://services.arcgis.com/SXbDpmb7xQkk44JV/arcgis/rest/services/AOI_Location_Map_WFL1/FeatureServer",
         "MtbsLegend": [
             {
                 "Value": 1,
@@ -197,6 +199,6 @@
                 "Severity": "None"
             }
         ],
-        "Version": 24
+        "Version": 25
     }
 }

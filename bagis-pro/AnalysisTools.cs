@@ -572,21 +572,8 @@ namespace bagis_pro
             string[] arrReturnValues = new string[] { strTriplet, strStationName };
             Uri ppUri = new Uri(GeodatabaseTools.GetGeodatabasePath(aoiFilePath, GeodatabaseNames.Aoi));
             string strPourpointClassPath = ppUri.LocalPath + "\\" + Constants.FILE_POURPOINT;
-            Webservices ws = new Webservices();
-            Module1.Current.ModuleLogManager.LogDebug(nameof(GetStationValues),
-                "Contacting webservices server to retrieve pourpoint layer uri");
-            var response = new EsriHttpClient().Get(Constants.URI_DESKTOP_SETTINGS);
-            var json = await response.Content.ReadAsStringAsync();
-            dynamic oSettings = JObject.Parse(json);
-            if (oSettings == null || String.IsNullOrEmpty(Convert.ToString(oSettings.gaugeStation)))
-            {
-                Module1.Current.ModuleLogManager.LogDebug(nameof(GetStationValues),
-                    "Unable to retrieve gauge station uri from " + Constants.URI_DESKTOP_SETTINGS);
-                MessageBox.Show("Unable to retrieve gauge station uri. Station values cannot be retrieved!!", "BAGIS-PRO");
-                return null;
-            }
             // Note: Refactored this 2024-FEB-02 but couldn't test it because it's not in use
-            string strWsUri = Convert.ToString(oSettings.gaugeStation);
+            string strWsUri = (string) Module1.Current.BagisSettings.GaugeStationUri;
             string fcstServiceLayerId = strWsUri.Split('/').Last();
             int intTrim = fcstServiceLayerId.Length + 1;
             string fcstTempString = strWsUri.Substring(0, strWsUri.Length - intTrim);
@@ -636,7 +623,8 @@ namespace bagis_pro
                         QueryFilter queryFilter = new QueryFilter();
                         string strNearId = await GeodatabaseTools.QueryTableForSingleValueAsync(ppUri, Constants.FILE_POURPOINT,
                             Constants.FIELD_NEAR_ID, queryFilter);
-                        string[] arrSearch = { Constants.FIELD_STATION_TRIPLET, (string)oSettings.gaugeStationName };
+                        string[] arrSearch = { Constants.FIELD_STATION_TRIPLET, (string)Module1.Current.BagisSettings.GaugeStationUri};
+                        Webservices ws = new Webservices();
                         string[] arrFound = new string[arrSearch.Length];
                         if (!String.IsNullOrEmpty(strNearId))
                         {
@@ -1616,16 +1604,6 @@ namespace bagis_pro
                 return success;
             }
 
-            var response = new EsriHttpClient().Get(Constants.URI_DESKTOP_SETTINGS);
-            var json = await response.Content.ReadAsStringAsync();
-            dynamic oSettings = JObject.Parse(json);
-            if (oSettings == null || String.IsNullOrEmpty(Convert.ToString(oSettings.snowCourseName)))
-            {
-                Module1.Current.ModuleLogManager.LogError(nameof(ClipSnoLayersAsync),
-                    "Unable to retrieve snotel settings from " + Constants.URI_DESKTOP_SETTINGS + " .Clipping cancelled!!");
-                return success;
-            }
-
             // Get the buffer layers
             if (bClipSnotel)
             {
@@ -1845,10 +1823,10 @@ namespace bagis_pro
                         {
                             if (!String.IsNullOrEmpty(strFc))
                             {
-                                string sourceName = Convert.ToString(oSettings.snotelName);
+                                string sourceName = Convert.ToString(Module1.Current.BagisSettings.SnotelName);
                                 if (i == 1)  // This is a snow course layer
                                 {
-                                    sourceName = Convert.ToString(oSettings.snowCourseName);
+                                    sourceName = Convert.ToString(Module1.Current.BagisSettings.SnotelName);
                                 }
                                 using (Table table = geodatabase.OpenDataset<Table>(strOutputLayer[i]))
                                 {

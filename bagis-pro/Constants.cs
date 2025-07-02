@@ -255,7 +255,6 @@ namespace bagis_pro
                                                                                         "SQ4 PRECIPITATION CONTRIBUTION"};
         public const string FILE_BAGIS_MAP_PARAMETERS = "map_parameters.txt";
         public const string URI_IMAGE_SERVER = "/ImageServer";
-        public const string URI_DESKTOP_SETTINGS = "https://github.com/PSU-CSAR/bagis-pro/raw/master/Settings/bagis.json";
         public const string URI_BATCH_TOOL_SETTINGS = "https://github.com/PSU-CSAR/bagis-pro/raw/master/Settings/bagis-pro.json";
         public const string LAYER_FILE_NLCD_LAND_COVER = "nlcd_land_cover.lyrx";
         public const string LAYER_FILE_PUBLIC_TRIBAL_LANDS = "Public_and_Tribal_Lands.lyrx";

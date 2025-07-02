@@ -2640,8 +2640,7 @@ namespace bagis_pro
             string[] arrResults = { };
             try
             {
-                Webservices ws = new Webservices();
-                string strForecastUri = await ws.GetForecastStationsUriAsync();
+                string strForecastUri = (string) Module1.Current.BagisSettings.GaugeStationUri;
                 string strForecastUriTrimmed = "";
                 string layerId = "";
                 if (!string.IsNullOrEmpty(strForecastUri))
@@ -2654,6 +2653,7 @@ namespace bagis_pro
                 {
                     WhereClause = Constants.FIELD_STATION_TRIPLET + " = '" + stationTriplet + "'"
                 };
+                Webservices ws = new Webservices();
                 string[] arrSearch = { Constants.FIELD_NAME, Constants.FIELD_WINTER_START_MONTH, Constants.FIELD_WINTER_END_MONTH,
                     Constants.FIELD_HUC, Constants.FIELD_HUC2};
                 arrResults = await ws.QueryServiceForValuesAsync(uriForecast, layerId, arrSearch, queryFilter);

@@ -334,47 +334,6 @@ namespace bagis_pro
                 return BA_ReturnCode.UnknownError;
             }
         }
-
-        public async Task<string> GetWesternStateBoundariesUriAsync()
-        {
-            if (!string.IsNullOrEmpty(Module1.Current.WesternStateBoundariesUri))
-            {
-                return Module1.Current.WesternStateBoundariesUri;
-            }
-            else
-            {
-                var response = new EsriHttpClient().Get(Constants.URI_DESKTOP_SETTINGS);
-                var json = await response.Content.ReadAsStringAsync();
-                dynamic oSettings = JObject.Parse(json);
-                if (oSettings == null || String.IsNullOrEmpty(Convert.ToString(oSettings.westernStateBoundaries)))
-                {
-                    Module1.Current.ModuleLogManager.LogError(nameof(GetWesternStateBoundariesUriAsync),
-                        "Unable to retrieve settings from " + Constants.URI_DESKTOP_SETTINGS);
-                    return "";
-                }
-                else
-                {
-                    return Convert.ToString(oSettings.westernStateBoundaries);
-                }
-            }
-        }
-
-        public async Task<string> GetForecastStationsUriAsync()
-        {
-            var response = new EsriHttpClient().Get(Constants.URI_DESKTOP_SETTINGS);
-            var json = await response.Content.ReadAsStringAsync();
-            dynamic oSettings = JObject.Parse(json);
-            if (oSettings == null || String.IsNullOrEmpty(Convert.ToString(oSettings.gaugeStation)))
-            {
-                Module1.Current.ModuleLogManager.LogError(nameof(GetForecastStationsUriAsync),
-                    "Unable to retrieve settings from " + Constants.URI_DESKTOP_SETTINGS);
-                return "";
-            }
-            else
-            {
-                return Convert.ToString(oSettings.gaugeStation);
-            }
-        }
         public async Task<BA_ReturnCode> UpdateAoiItemsAsync(string stationTriplet)
         {
             string nwccAoiName = "";
