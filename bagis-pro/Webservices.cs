@@ -191,24 +191,6 @@ namespace bagis_pro
             });
             return returnValues;
         }
-
-        public async Task<IDictionary<string, dynamic>> QueryDataSourcesAsync()
-        {
-            IDictionary<string, dynamic> dictDataSources = new Dictionary<string, dynamic>();
-            EsriHttpResponseMessage response = new EsriHttpClient().Get(Constants.URI_BATCH_TOOL_SETTINGS);
-            JObject jsonVal = JObject.Parse(await response.Content.ReadAsStringAsync()) as JObject;
-            JArray arrDataSources = (JArray)jsonVal["dataSources"];
-
-            foreach (dynamic dSource in arrDataSources)
-            {
-                string key = dSource.layerType;
-                if (!dictDataSources.ContainsKey(key))
-                {
-                    dictDataSources.Add(key, dSource);
-                }
-            }
-            return dictDataSources;
-        }
         public async Task<int> QueryNifcMinYearAsync(IDictionary<string, dynamic> dictDatasources, string strDataType)
         {
             string wsUri = "";
@@ -258,12 +240,12 @@ namespace bagis_pro
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
             EsriHttpResponseMessage response = new EsriHttpClient().Get(Constants.URI_BATCH_TOOL_SETTINGS);
             JObject jsonVal = JObject.Parse(await response.Content.ReadAsStringAsync()) as JObject;
-            dynamic oSettings = (JObject)jsonVal["BagisSettings"];
+            //dynamic oSettings = (JObject)jsonVal["BagisSettings"];
             using (System.IO.StreamWriter file = File.CreateText(strSaveToPath))
             using (JsonTextWriter writer = new JsonTextWriter(file))
             {
                 writer.Formatting = Formatting.Indented;
-                oSettings.WriteTo(writer);
+                jsonVal.WriteTo(writer);
             }
             success = BA_ReturnCode.Success;
             return success;
@@ -391,40 +373,6 @@ namespace bagis_pro
             else
             {
                 return Convert.ToString(oSettings.gaugeStation);
-            }
-        }
-
-        public async Task<string> GetDem30UriFromDatasourcesAsync()
-        {
-            IDictionary<string, BA_Objects.DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
-            if (!dictLocalDataSources.ContainsKey(BA_Objects.DataSource.GetDemKey))
-            {
-                IDictionary<string, dynamic> dictDatasources = await this.QueryDataSourcesAsync();
-                if (dictDatasources != null)
-                {
-                    BA_Objects.DataSource dsDem = new BA_Objects.DataSource(dictDatasources[BA_Objects.DataSource.GetDemKey]);
-                    if (dsDem != null)
-                    {
-                        return dsDem.uri;
-                    }
-                    else
-                    {
-                        Module1.Current.ModuleLogManager.LogError(nameof(GetDem30UriFromDatasourcesAsync),
-                            $@"Unable to find element 30m DEM in server data sources");
-                        return "";
-                    }
-                }
-                else
-                {
-                    Module1.Current.ModuleLogManager.LogError(nameof(GetDem30UriFromDatasourcesAsync),
-                        $@"Unable to retrieve data sources from server!");
-                    return "";
-                }
-            }
-            else
-            {
-                BA_Objects.DataSource dsDem = new BA_Objects.DataSource(dictLocalDataSources[BA_Objects.DataSource.GetDemKey]);
-                return dsDem.uri;
             }
         }
         public async Task<BA_ReturnCode> UpdateAoiItemsAsync(string stationTriplet)

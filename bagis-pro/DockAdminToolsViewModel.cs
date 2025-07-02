@@ -120,7 +120,6 @@ namespace bagis_pro
         private int _intFireDataClipYears;
         private string _strNifcDataDescr;
         private string _strMtbsDataDescr;
-        private IDictionary<string, dynamic> _dictDatasources = null;
         private bool _bClip_Nifc_Checked;
         private bool _bClip_Mtbs_Checked;
         private bool _Reclip_MTBS_Checked = false;  //@ToDo: Change to true before production
@@ -647,16 +646,11 @@ namespace bagis_pro
                         CmdFireReportEnabled = false;
                     }
 
-                    // Retrieve the data source dictionary if we don't have it already
-                    Webservices ws = new Webservices();
-                    if (_dictDatasources == null || _dictDatasources.Count < 1)
-                    {
-                        _dictDatasources = await ws.QueryDataSourcesAsync();
-                    }
                     // Query minimum available fire data year from webservice; It's here because it's an async call
                     if (ReportEndYear < 1)   // Only do this the first time an AOI folder is selected
                     {
-                        _intNifcMaxYear = await ws.QueryNifcMinYearAsync(_dictDatasources, Constants.DATA_TYPE_FIRE_CURRENT);
+                        Webservices ws = new Webservices();
+                        _intNifcMaxYear = await ws.QueryNifcMinYearAsync(Module1.Current.DataSources, Constants.DATA_TYPE_FIRE_CURRENT);
                         NifcDataDescr = $@"NIFC data available from {NifcMinYear} to {_intNifcMaxYear}";
                         ReportEndYear = _intNifcMaxYear;
                         SelectedMaxYear = ReportEndYear;
@@ -665,7 +659,7 @@ namespace bagis_pro
                         int intIncrementPeriods;
                         IList<Interval> lstInterval = GeneralTools.GetFireStatisticsIntervals(ReportEndYear, FireDataClipYears, FireIncrementYears, false, 0, out intIncrementPeriods);
                         FireTimePeriodCount = intIncrementPeriods;  
-                        _intMtbsMaxYear = await this.QueryMtbsMaxYearAsync(_dictDatasources, Constants.DATA_TYPE_FIRE_BURN_SEVERITY);
+                        _intMtbsMaxYear = await this.QueryMtbsMaxYearAsync(Module1.Current.DataSources, Constants.DATA_TYPE_FIRE_BURN_SEVERITY);
                         if (_intMtbsMaxYear > 0)
                         {
                             MtbsDataDescr = $@"MTBS data available from {MtbsMinYear} to {_intMtbsMaxYear}";
@@ -2101,11 +2095,7 @@ namespace bagis_pro
                     //string unmanagedBufferUnits = arrUnmanagedBufferInfo[1];
 
                     //Clip nifc fire layers
-                    Module1.Current.ModuleLogManager.LogDebug(nameof(RunFireDataImplAsync),
-                        "Contacting webservices server to retrieve layer metadata");
-                    Webservices ws = new Webservices();
-                    IDictionary<string, dynamic> dictDataSources = await ws.QueryDataSourcesAsync();
-                    string strWsUri = dictDataSources[Constants.DATA_TYPE_FIRE_HISTORY].uri;
+                    string strWsUri = Module1.Current.DataSources[Constants.DATA_TYPE_FIRE_HISTORY].uri;
                     dynamic oFireSettings = GeneralTools.GetFireSettings(aoiFolder);
 
                     if (Clip_Nifc_Checked)
@@ -2209,7 +2199,7 @@ namespace bagis_pro
                                         lyrHistory.SetDefinitionQuery($@"{Constants.FIELD_YEAR} >= {minYearClip}");
                                     });
                             }
-                            GeneralTools.UpdateFireDataSourceSettings(ref oFireSettings, aoiFolder, dictDataSources, Constants.DATA_TYPE_FIRE_HISTORY, false);
+                            GeneralTools.UpdateFireDataSourceSettings(ref oFireSettings, aoiFolder, Module1.Current.DataSources, Constants.DATA_TYPE_FIRE_HISTORY, false);
                         }
                         else
                         {
@@ -2227,7 +2217,7 @@ namespace bagis_pro
                             File.AppendAllText(_strFireDataLogFile, strLogEntry);       // append
                             success = BA_ReturnCode.WriteError;
                         }
-                        strWsUri = dictDataSources[Constants.DATA_TYPE_FIRE_CURRENT].uri;
+                        strWsUri = Module1.Current.DataSources[Constants.DATA_TYPE_FIRE_CURRENT].uri;
                         strOutputFc = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Layers, true)
                             + Constants.FILE_FIRE_CURRENT;
                         parametersClip = Geoprocessing.MakeValueArray(strWsUri, strClipFile, strOutputFc, "");
@@ -2250,7 +2240,7 @@ namespace bagis_pro
                                     " clipping completed with WARNINGS. Check the AOI-level log for details \r\n";
                                 File.AppendAllText(_strFireDataLogFile, strLogEntry);       // append
                             }
-                            GeneralTools.UpdateFireDataSourceSettings(ref oFireSettings, aoiFolder, dictDataSources, Constants.DATA_TYPE_FIRE_CURRENT, false);
+                            GeneralTools.UpdateFireDataSourceSettings(ref oFireSettings, aoiFolder, Module1.Current.DataSources, Constants.DATA_TYPE_FIRE_CURRENT, false);
                             success = await GeoprocessingTools.AddFieldAsync(strOutputFc, Constants.FIELD_YEAR, "SHORT", null);
                             if (success == BA_ReturnCode.Success)
                             {
@@ -2349,7 +2339,7 @@ namespace bagis_pro
                     {
                         List<string> lstMtbsImageServices = new List<string>();
                         List<string> lstMtbsLayerNames = new List<string>();
-                        DataSource dsFire = new DataSource(_dictDatasources[DataSource.GetFireBurnSeverityKey]);
+                        DataSource dsFire = new DataSource(Module1.Current.DataSources[DataSource.GetFireBurnSeverityKey]);
                         for (int i = minYearClip; i <= _intMtbsMaxYear; i++)
                         {
                             lstMtbsImageServices.Add($@"{dsFire.uri}{GeneralTools.GetMtbsLayerFileName(i)}/{Constants.URI_IMAGE_SERVER}");
@@ -2389,7 +2379,7 @@ namespace bagis_pro
                                     oFireSettings.fireDataClipYears = FireDataClipYears;
                                  }
                                 // Updates the MTBS data source and saves the file
-                                GeneralTools.UpdateFireDataSourceSettings(ref oFireSettings, aoiFolder, dictDataSources, Constants.DATA_TYPE_FIRE_BURN_SEVERITY, false);
+                                GeneralTools.UpdateFireDataSourceSettings(ref oFireSettings, aoiFolder, Module1.Current.DataSources, Constants.DATA_TYPE_FIRE_BURN_SEVERITY, false);
                                 success = BA_ReturnCode.Success;
                             }
                         }
@@ -2873,7 +2863,7 @@ namespace bagis_pro
                         strMissingMtbsYears = string.Join(", ", lstMissingMtbsYears);
                     }
 
-                    BA_ReturnCode success = await GeneralTools.GenerateFireMapsTitlePageAsync(areaSqKm, strMissingMtbsYears);
+                    BA_ReturnCode success = GeneralTools.GenerateFireMapsTitlePage(areaSqKm, strMissingMtbsYears);
                     Layout oLayout = await MapTools.GetDefaultLayoutAsync(Constants.MAPS_FIRE_LAYOUT_NAME);
                     string strLayerFilePath = Module1.Current.SettingsPath + "\\" + Constants.FOLDER_SETTINGS + "\\" + Constants.LAYER_FILE_MTBS_FIRE;
 

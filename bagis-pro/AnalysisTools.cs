@@ -787,14 +787,7 @@ namespace bagis_pro
             string prismBufferDistance, string prismBufferUnits, string strBufferDistance, string strBufferUnits)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
-
-            Webservices ws = new Webservices();
-            Module1.Current.ModuleLogManager.LogDebug(nameof(ClipLayersAsync),
-                "Contacting webservices server to retrieve layer metadata");
-            IDictionary<string, dynamic> dictDataSources =
-                await ws.QueryDataSourcesAsync();
-            string strWsPrefix = dictDataSources[strDataType].uri;
-
+            string strWsPrefix = Module1.Current.DataSources[strDataType].uri;
             string[] arrLayersToDelete = new string[2];
             string strClipGdb = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, false);
             string strClipFile = Constants.FILE_AOI_PRISM_VECTOR;
@@ -1015,7 +1008,7 @@ namespace bagis_pro
                                 StringBuilder sb = new StringBuilder();
                                 sb.Append(Constants.META_TAG_PREFIX);
                                 // Z Units
-                                string strUnits = dictDataSources[strDataType].units;
+                                string strUnits = Module1.Current.DataSources[strDataType].units;
                                 sb.Append(Constants.META_TAG_ZUNIT_CATEGORY + Constants.META_TAG_CATEGORY_DEPTH + "; ");
                                 sb.Append(Constants.META_TAG_ZUNIT_VALUE + strUnits + "; ");
                                 // Buffer Distance
@@ -1065,7 +1058,7 @@ namespace bagis_pro
                         if (bIsNoData == false)
                         {
                             IDictionary<string, BA_Objects.DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
-                            BA_Objects.DataSource updateDataSource = new BA_Objects.DataSource(dictDataSources[strDataType])
+                            BA_Objects.DataSource updateDataSource = new BA_Objects.DataSource(Module1.Current.DataSources[strDataType])
                             {
                                 DateClipped = DateTime.Now,
                             };
@@ -1602,21 +1595,15 @@ namespace bagis_pro
             Uri uriLayers = new Uri(strLayers);
             string strAnalysis = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Analysis);
             Uri uriAnalysis = new Uri(strAnalysis);
-
-            Webservices ws = new Webservices();
-            Module1.Current.ModuleLogManager.LogDebug(nameof(ClipSnoLayersAsync),
-                "Contacting webservices server to retrieve layer metadata");
-            IDictionary<string, dynamic> dictDataSources =
-                await ws.QueryDataSourcesAsync();
-            if (dictDataSources != null)
+            if (Module1.Current.DataSources != null)
             {
-                if (!dictDataSources.ContainsKey(Constants.DATA_TYPE_SNOTEL) ||
-                    !dictDataSources.ContainsKey(Constants.DATA_TYPE_SNOW_COURSE) ||
-                    !dictDataSources.ContainsKey(Constants.DATA_TYPE_SNOLITE) ||
-                    !dictDataSources.ContainsKey(Constants.DATA_TYPE_COOP_PILLOW))
+                if (!Module1.Current.DataSources.ContainsKey(Constants.DATA_TYPE_SNOTEL) ||
+                    !Module1.Current.DataSources.ContainsKey(Constants.DATA_TYPE_SNOW_COURSE) ||
+                    !Module1.Current.DataSources.ContainsKey(Constants.DATA_TYPE_SNOLITE) ||
+                    !Module1.Current.DataSources.ContainsKey(Constants.DATA_TYPE_COOP_PILLOW))
                 {
                     Module1.Current.ModuleLogManager.LogError(nameof(ClipSnoLayersAsync),
-                        "Unable to retrieve snotel datasource information from " + Constants.URI_BATCH_TOOL_SETTINGS +
+                        "Unable to retrieve snotel datasource information from " + Constants.FILE_BAGIS_SETTINGS +
                         ". Clipping cancelled!!");
                     return success;
                 }
@@ -1624,7 +1611,7 @@ namespace bagis_pro
             else
             {
                 Module1.Current.ModuleLogManager.LogError(nameof(ClipSnoLayersAsync),
-                    "Unable to retrieve datasource information from " + Constants.URI_BATCH_TOOL_SETTINGS +
+                    "Unable to retrieve datasource information from " + Constants.FILE_BAGIS_SETTINGS +
                     ". Clipping cancelled!!");
                 return success;
             }
@@ -1681,7 +1668,7 @@ namespace bagis_pro
                     success = await GeoprocessingTools.DeleteDatasetAsync(strLayers + "\\" + strFinalOutputLayer[3]);
                 }
 
-                string strWsUri = dictDataSources[Constants.DATA_TYPE_SNOTEL].uri;
+                string strWsUri = Module1.Current.DataSources[Constants.DATA_TYPE_SNOTEL].uri;
                 strOutputFc[0] = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers, true) + strOutputLayer[0];
                 strOutputFc[2] = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers, true) + strOutputLayer[2];
                 strOutputFc[3] = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers, true) + strOutputLayer[3];
@@ -1708,7 +1695,7 @@ namespace bagis_pro
                     }
                 }
                 // SNOLITE
-                strWsUri = dictDataSources[Constants.DATA_TYPE_SNOLITE].uri;
+                strWsUri = Module1.Current.DataSources[Constants.DATA_TYPE_SNOLITE].uri;
                 parametersClip = Geoprocessing.MakeValueArray(strWsUri, strTemplateDataset, strOutputFc[2], "");
                 gpResultClip = await Geoprocessing.ExecuteToolAsync("Clip_analysis", parametersClip, environmentsClip,
                                         CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
@@ -1729,7 +1716,7 @@ namespace bagis_pro
                     }
                 }
                 // Snow pillow
-                strWsUri = dictDataSources[Constants.DATA_TYPE_COOP_PILLOW].uri;
+                strWsUri = Module1.Current.DataSources[Constants.DATA_TYPE_COOP_PILLOW].uri;
                 parametersClip = Geoprocessing.MakeValueArray(strWsUri, strTemplateDataset, strOutputFc[3], "");
                 gpResultClip = await Geoprocessing.ExecuteToolAsync("Clip_analysis", parametersClip, environmentsClip,
                                         CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
@@ -1793,7 +1780,7 @@ namespace bagis_pro
                     success = await GeoprocessingTools.DeleteDatasetAsync(strAnalysis + "\\" + Constants.FILE_SCOS_ZONE);
                 }
 
-                string strWsUri = dictDataSources[Constants.DATA_TYPE_SNOW_COURSE].uri;
+                string strWsUri = Module1.Current.DataSources[Constants.DATA_TYPE_SNOW_COURSE].uri;
                 strOutputFc[1] = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers, true) + strOutputLayer[1];
                 string strTemplateDataset = strClipGdb + "\\" + snowCosClipLayer;
                 var environmentsClip = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath);
@@ -2055,7 +2042,7 @@ namespace bagis_pro
                             break;
                     }
                     IDictionary<string, BA_Objects.DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
-                    BA_Objects.DataSource updateDataSource = new BA_Objects.DataSource(dictDataSources[strKey])
+                    BA_Objects.DataSource updateDataSource = new BA_Objects.DataSource(Module1.Current.DataSources[strKey])
                     {
                         DateClipped = DateTime.Now,
                     };
@@ -2166,13 +2153,7 @@ namespace bagis_pro
             string strDataType, string strBufferDistance, string strBufferUnits)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
-
-            Webservices ws = new Webservices();
-            Module1.Current.ModuleLogManager.LogDebug(nameof(ClipFeatureLayerAsync),
-                "Contacting webservices server to retrieve layer metadata");
-            IDictionary<string, dynamic> dictDataSources =
-                await ws.QueryDataSourcesAsync();
-            string strWsUri = dictDataSources[strDataType].uri;
+            string strWsUri = Module1.Current.DataSources[strDataType].uri;
 
             string[] arrLayersToDelete = new string[2];
             string strClipGdb = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, false);
@@ -2279,7 +2260,7 @@ namespace bagis_pro
                             StringBuilder sb = new StringBuilder();
                             sb.Append(Constants.META_TAG_PREFIX);
                             // Z Units
-                            string strUnits = dictDataSources[strDataType].units;
+                            string strUnits = Module1.Current.DataSources[strDataType].units;
                             sb.Append(Constants.META_TAG_ZUNIT_CATEGORY + Constants.META_TAG_CATEGORY_DEPTH + "; ");
                             sb.Append(Constants.META_TAG_ZUNIT_VALUE + strUnits + "; ");
                             // Buffer Distance
@@ -2326,7 +2307,7 @@ namespace bagis_pro
 
                         // Update layer metadata
                         IDictionary<string, BA_Objects.DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
-                        BA_Objects.DataSource updateDataSource = new BA_Objects.DataSource(dictDataSources[strDataType])
+                        BA_Objects.DataSource updateDataSource = new BA_Objects.DataSource(Module1.Current.DataSources[strDataType])
                         {
                             DateClipped = DateTime.Now,
                         };
@@ -2850,13 +2831,7 @@ namespace bagis_pro
             {
                 bClipFromLayer = true;
             }
-
-            Webservices ws = new Webservices();
-            Module1.Current.ModuleLogManager.LogDebug(nameof(ClipLayersAsync),
-                "Contacting webservices server to retrieve layer metadata");
-            IDictionary<string, dynamic> dictDataSources =
-                await ws.QueryDataSourcesAsync();
-            string strWsUri = dictDataSources[strDataType].uri;
+            string strWsUri = Module1.Current.DataSources[strDataType].uri;
             string strInputRaster = strWsUri;
             string[] arrLayersToDelete = new string[2];
             string strClipGdb = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi, false);
@@ -3007,7 +2982,7 @@ namespace bagis_pro
                         StringBuilder sb = new StringBuilder();
                         sb.Append(Constants.META_TAG_PREFIX);
                         // Z Units
-                        string strUnits = dictDataSources[strDataType].units;
+                        string strUnits = Module1.Current.DataSources[strDataType].units;
                         sb.Append(Constants.META_TAG_ZUNIT_CATEGORY + Constants.META_TAG_CATEGORY_DEPTH + "; ");
                         sb.Append(Constants.META_TAG_ZUNIT_VALUE + strUnits + "; ");
                         // Buffer Distance
@@ -3054,7 +3029,7 @@ namespace bagis_pro
 
                     // Update layer metadata
                     IDictionary<string, BA_Objects.DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
-                    BA_Objects.DataSource updateDataSource = new BA_Objects.DataSource(dictDataSources[strDataType])
+                    BA_Objects.DataSource updateDataSource = new BA_Objects.DataSource(Module1.Current.DataSources[strDataType])
                     {
                         DateClipped = DateTime.Now,
                     };
@@ -5016,7 +4991,18 @@ namespace bagis_pro
         public static async Task<BA_ReturnCode> ReclipSurfacesAsync(string aoiFolderPath, string strSitesPath)
         {
             Webservices ws = new Webservices();
-            string demUri = await ws.GetDem30UriFromDatasourcesAsync();
+            string demUri = "";
+            DataSource dsDem = new BA_Objects.DataSource(Module1.Current.DataSources[DataSource.GetDemKey]);
+            if (dsDem != null)
+            {
+                demUri = dsDem.uri;
+            }
+            if (string.IsNullOrEmpty(demUri))
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(ReclipSurfacesAsync),
+                    $@"Unable to find element 30m DEM in server data sources");
+                return BA_ReturnCode.ReadError;
+            }
             string clipEnvelope = "";
             string strOutputFeatures = GeodatabaseTools.GetGeodatabasePath(aoiFolderPath, GeodatabaseNames.Analysis, true) +
                 "tmpBuffer";
@@ -5169,12 +5155,7 @@ namespace bagis_pro
 
             if (outsidePrism > 0)
             {
-                Webservices ws = new Webservices();
-                Module1.Current.ModuleLogManager.LogDebug(nameof(GetPrismImageUriAsync),
-                    "Contacting webservices server to retrieve prism layer uri");
-                IDictionary<string, dynamic> dictDataSources =
-                    await ws.QueryDataSourcesAsync();
-                string strWsPrefix = dictDataSources[BA_Objects.DataSource.GetPrecipitationKey].uri;
+                string strWsPrefix = Module1.Current.DataSources[DataSource.GetPrecipitationKey].uri;
                 if (!string.IsNullOrEmpty(strWsPrefix))
                 {
                     string localLayerName = Path.GetFileName((string)Module1.Current.BagisSettings.AoiPrecipFile);
@@ -5192,22 +5173,19 @@ namespace bagis_pro
         public static async Task<bool> TooManySitesAsync(string strAoiPath)
         {
             int maxSitesAllowed = (int)Module1.Current.BagisSettings.MaximumSitesAllowed;
-            Webservices ws = new Webservices();
-            IDictionary<string, dynamic> dictDataSources =
-                await ws.QueryDataSourcesAsync();
-            if (dictDataSources != null)
+            if (Module1.Current.DataSources != null)
             {
-                if (!dictDataSources.ContainsKey(Constants.DATA_TYPE_SNOTEL) ||
-                    !dictDataSources.ContainsKey(Constants.DATA_TYPE_SNOW_COURSE))
+                if (!Module1.Current.DataSources.ContainsKey(Constants.DATA_TYPE_SNOTEL) ||
+                    !Module1.Current.DataSources.ContainsKey(Constants.DATA_TYPE_SNOW_COURSE))
                 {
                     Module1.Current.ModuleLogManager.LogError(nameof(TooManySitesAsync),
-                        "Unable to retrieve snotel datasource information from " + Constants.URI_BATCH_TOOL_SETTINGS +
+                        "Unable to retrieve snotel datasource information from " + Constants.FILE_BAGIS_SETTINGS +
                         ". Processing cancelled!!");
                     return true;
                 }
             }
             string[] arrWsUri = new string[]
-                { dictDataSources[Constants.DATA_TYPE_SNOTEL].uri, dictDataSources[Constants.DATA_TYPE_SNOW_COURSE].uri };
+                { Module1.Current.DataSources[Constants.DATA_TYPE_SNOTEL].uri, Module1.Current.DataSources[Constants.DATA_TYPE_SNOW_COURSE].uri };
             Uri uriAoi = new Uri(GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Aoi));
             string tempJoin = "tmpJoin";
             string strAoiPoly = uriAoi.LocalPath + "\\" + Constants.FILE_AOI_BUFFERED_VECTOR;

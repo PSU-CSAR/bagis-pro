@@ -28,7 +28,6 @@ namespace bagis_pro
 
             // Set path to settings file if we need to
             if (String.IsNullOrEmpty(this.SettingsFile))
-
             {
                 // Find batch tool settings file
                 string strSettingsPath = GeneralTools.GetBagisSettingsPath();
@@ -38,40 +37,12 @@ namespace bagis_pro
                         + @"\" + Constants.FILE_BAGIS_SETTINGS;
                     if (!File.Exists(strFullPath))
                     {
-                        if (!Directory.Exists(strSettingsPath + @"\" + Constants.FOLDER_SETTINGS))
-                        {
-                            var dirInfo = Directory.CreateDirectory(strSettingsPath + @"\" + Constants.FOLDER_SETTINGS);
-                            if (dirInfo == null)
-                            {
-                                MessageBox.Show("Unable to create BAGIS settings folder in " + strSettingsPath +
-                                    "! Process stopped.");
-                                return;
-                            }
-                        }
-                        Webservices ws = new Webservices();
-                        var success = Task.Run(() => ws.DownloadBagisSettingsAsync(strFullPath));
-                        if ((BA_ReturnCode)success.Result == BA_ReturnCode.Success)
-                        {
-                            this.SettingsFile = strFullPath;
-                        }
+                        MessageBox.Show($@"Unable to locate settings file {strFullPath}. Map package cannot be exported!");
+                        return;
                     }
                     else
                     {
                         this.SettingsFile = strFullPath;
-                    }
-
-                    // read JSON directly from a file
-                    using (FileStream fs = File.OpenRead(this.SettingsFile))
-                    {
-                        using (JsonTextReader reader = new JsonTextReader(new StreamReader(fs)))
-                        {
-                            dynamic oBagisSettings = (JObject)JToken.ReadFrom(reader);
-                            if (oBagisSettings != null)
-                            {
-                                Module1.Current.BagisSettings = oBagisSettings;
-                            }
-                            Publisher = (string)oBagisSettings.Publisher;
-                        }
                     }
                 }
             }

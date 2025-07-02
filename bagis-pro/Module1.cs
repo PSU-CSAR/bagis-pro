@@ -116,7 +116,8 @@ namespace bagis_pro
         internal string DisplayedSweDeltaMap { get; set; } = "";
         internal string DisplayedSeasonalPrecipContribMap { get; set; } = "";
         internal string SettingsPath { get; set; } = "";
-        internal dynamic BagisSettings { get; set; } = "";
+        internal dynamic BagisSettings { get; set; }
+        internal IDictionary<string, dynamic> DataSources { get; set; }
         internal double PrismZonesInterval { get; set; } = 999;
         internal string WesternStateBoundariesUri { get; } = "";
         internal string RoadsBufferDistance { get; set; } = "";

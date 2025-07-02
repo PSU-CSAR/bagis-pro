@@ -357,10 +357,10 @@ namespace bagis_pro
                 // Add the DEM if it isn't there
                 if (!dictLocalDataSources.ContainsKey(BA_Objects.DataSource.GetDemKey))
                 {
-                    IDictionary<string, dynamic> dictDatasources = await ws.QueryDataSourcesAsync();
-                    if (dictDatasources != null)
+                    if (Module1.Current.DataSources != null)
                     {
-                        BA_Objects.DataSource dsDem = new BA_Objects.DataSource(dictDatasources[BA_Objects.DataSource.GetDemKey]);
+                        BA_Objects.DataSource dsDem = 
+                            new BA_Objects.DataSource(Module1.Current.DataSources[BA_Objects.DataSource.GetDemKey]);
                         if (dsDem != null)
                         {
                             lstDataSources.Add(dsDem);
@@ -724,11 +724,10 @@ namespace bagis_pro
                     demDataSource = dictLocalDataSources[BA_Objects.DataSource.GetDemKey];
                 }
                 else
-                {
-                    IDictionary<string, dynamic> dictDatasources = await ws.QueryDataSourcesAsync();
-                    if (dictDatasources != null)
+                {                    
+                    if (Module1.Current.DataSources != null)
                     {
-                        demDataSource = new BA_Objects.DataSource(dictDatasources[BA_Objects.DataSource.GetDemKey]);
+                        demDataSource = new BA_Objects.DataSource(Module1.Current.DataSources[BA_Objects.DataSource.GetDemKey]);
                     }
                 }
 
@@ -2984,7 +2983,7 @@ namespace bagis_pro
                 // Check for most current server version
                 var result = Task.Run(() => ws.QueryBagisSettingsVersionAsync());
                 double dblServerVersion = (double)result.Result;
-                if ((oBagisSettings != null) && ((double)oBagisSettings.Version < dblServerVersion))
+                if ((oBagisSettings != null) && ((double)oBagisSettings.BagisSettings.Version < dblServerVersion))
                 {
                     var success = Task.Run(() => ws.DownloadBagisSettingsAsync(strSettingsPath + @"\" + Constants.FILE_BAGIS_SETTINGS));
                     if ((BA_ReturnCode)success.Result == BA_ReturnCode.Success)
@@ -3008,7 +3007,18 @@ namespace bagis_pro
                 }
                 if (oBagisSettings != null)
                 {
-                    Module1.Current.BagisSettings = oBagisSettings;
+                    Module1.Current.BagisSettings = oBagisSettings.BagisSettings;
+                    JArray arrDataSources = (JArray)oBagisSettings["dataSources"];
+                    IDictionary<string, dynamic> dictDataSources = new Dictionary<string, dynamic>();
+                    foreach (dynamic dSource in arrDataSources)
+                    {
+                        string key = dSource.layerType;
+                        if (!dictDataSources.ContainsKey(key))
+                        {
+                            dictDataSources.Add(key, dSource);
+                        }
+                    }
+                    Module1.Current.DataSources = dictDataSources;
                 }
                 return BA_ReturnCode.Success;
             }
@@ -3586,10 +3596,9 @@ namespace bagis_pro
             }
             return demInfo;
         }
-        public static async Task<BA_ReturnCode> GenerateFireMapsTitlePageAsync(double areaSqKm, string missingMtbsYears)
+        public static BA_ReturnCode GenerateFireMapsTitlePage(double areaSqKm, string missingMtbsYears)
         {
             string publishFolder = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE;
-            Webservices ws = new Webservices();
             //Printing data sources
             IDictionary<string, DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
             IDictionary<string, DataSource> dictAllDataSources = GeneralTools.QueryLocalFireDataSources(Module1.Current.Aoi.FilePath);
@@ -3616,10 +3625,9 @@ namespace bagis_pro
             // Add the DEM if it isn't there
             if (!dictAllDataSources.ContainsKey(DataSource.GetDemKey))
             {
-                IDictionary<string, dynamic> dictDatasources = await ws.QueryDataSourcesAsync();
-                if (dictDatasources != null)
+                if (Module1.Current.DataSources != null)
                 {
-                    DataSource dsDem = new BA_Objects.DataSource(dictDatasources[BA_Objects.DataSource.GetDemKey]);
+                    DataSource dsDem = new BA_Objects.DataSource(Module1.Current.DataSources[BA_Objects.DataSource.GetDemKey]);
                     if (dsDem != null)
                     {
                         lstDataSources.Add(dsDem);
@@ -3680,7 +3688,7 @@ namespace bagis_pro
                         var dirInfo = Directory.CreateDirectory($@"{publishFolder}\{Constants.FOLDER_CHROME_USER_DATA}");
                         if (!dirInfo.Exists)
                         {
-                            Module1.Current.ModuleLogManager.LogError(nameof(GenerateFireMapsTitlePageAsync),
+                            Module1.Current.ModuleLogManager.LogError(nameof(GenerateFireMapsTitlePage),
                                 "Unable to create working directory for Chrome. PDF conversion failed!");
                             return BA_ReturnCode.WriteError;
                         }
@@ -3697,7 +3705,7 @@ namespace bagis_pro
                     // Clean up Chrome work directory; It leaves a bunch of garbage here
                     Directory.Delete($@"{publishFolder}\{Constants.FOLDER_CHROME_USER_DATA}", true);
                 }
-                Module1.Current.ModuleLogManager.LogDebug(nameof(GenerateFireMapsTitlePageAsync),
+                Module1.Current.ModuleLogManager.LogDebug(nameof(GenerateFireMapsTitlePage),
                     "Title page created!!");
 
                 // Data sources page
@@ -3734,12 +3742,12 @@ namespace bagis_pro
                         p.WaitForExit();
                     }
                 }
-                Module1.Current.ModuleLogManager.LogDebug(nameof(GenerateFireMapsTitlePageAsync),
+                Module1.Current.ModuleLogManager.LogDebug(nameof(GenerateFireMapsTitlePage),
                     "Data sources page created!!");
             }
             catch (Exception e)
             {
-                Module1.Current.ModuleLogManager.LogError(nameof(GenerateFireMapsTitlePageAsync),
+                Module1.Current.ModuleLogManager.LogError(nameof(GenerateFireMapsTitlePage),
                     "Exception: " + e.Message);
                 MessageBox.Show("An error occurred while trying to parse the XML!! " + e.Message, "BAGIS PRO");
                 return BA_ReturnCode.UnknownError;
