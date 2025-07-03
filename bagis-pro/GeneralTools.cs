@@ -3447,6 +3447,7 @@ namespace bagis_pro
             var layersPane = (DockpaneLayersViewModel)FrameworkApplication.DockPaneManager.Find("bagis_pro_DockpaneLayers");
             layersPane.ResetView();
             Module1.Current.Aoi = new Aoi();
+            Module1.Current.DataSourceGroup = Constants.DATA_TYPE_DEM;
             MapTools.DeactivateMapButtons();
             Module1.DeactivateState("BtnExcelTables_State");
             Module1.DeactivateState("BtnLoadMaps_State");

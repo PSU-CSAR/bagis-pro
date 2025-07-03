@@ -536,7 +536,8 @@ namespace bagis_pro.Basin
                         DemInfo demInfo = null;
                         if (Module1.Current.DemDimension == null || (Module1.Current.DemDimension.x_CellSize * Module1.Current.DemDimension.y_CellSize == 0))
                         {
-                            string strSourceDem = (string)Module1.Current.BagisSettings.DemUri;
+
+                            string strSourceDem = Module1.Current.DataSources[DataSource.GetDemKey].uri;
                             WorkspaceType wType = await GeneralTools.GetRasterWorkspaceType(strSourceDem);
                             if (wType == WorkspaceType.None)
                             {

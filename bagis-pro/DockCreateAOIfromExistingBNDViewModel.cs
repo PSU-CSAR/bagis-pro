@@ -210,7 +210,7 @@ namespace bagis_pro
             }
 
             // verify dem is available
-            string strSourceDem = (string)Module1.Current.BagisSettings.DemUri;
+            string strSourceDem = Module1.Current.DataSources[DataSource.GetDemKey].uri;
             WorkspaceType wType = await GeneralTools.GetRasterWorkspaceType(strSourceDem);
             if (wType == WorkspaceType.None)
             {
@@ -229,6 +229,7 @@ namespace bagis_pro
             }
 
             // Start populating aoi object
+            GeneralTools.ResetAoi();
             Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
             Aoi oAoi = new Aoi();
             oAoi.FilePath = $@"{OutputWorkspace}\{AoiName}";
