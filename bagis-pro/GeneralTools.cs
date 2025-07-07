@@ -2983,7 +2983,21 @@ namespace bagis_pro
                 // Check for most current server version
                 var result = Task.Run(() => ws.QueryBagisSettingsVersionAsync());
                 double dblServerVersion = (double)result.Result;
-                if ((oBagisSettings != null) && ((double)oBagisSettings.Version < dblServerVersion))
+                bool bUpdateSettings = false;
+                if (oBagisSettings != null && oBagisSettings.BagisSettings == null)
+                {
+                    // We have an old version of the settings file and need to update
+                    bUpdateSettings = true;
+                }
+                else if (oBagisSettings != null)
+                {
+                    double dblCurrVersion = (double)oBagisSettings.BagisSettings.Version;
+                    if (dblCurrVersion < dblServerVersion)
+                    {
+                        bUpdateSettings = true;
+                    }
+                }
+                if (bUpdateSettings)
                 {
                     var success = Task.Run(() => ws.DownloadBagisSettingsAsync(strSettingsPath + @"\" + Constants.FILE_BAGIS_SETTINGS));
                     if ((BA_ReturnCode)success.Result == BA_ReturnCode.Success)
