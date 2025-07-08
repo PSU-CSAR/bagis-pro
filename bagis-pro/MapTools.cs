@@ -3368,16 +3368,17 @@ namespace bagis_pro
 
         public static async Task<BA_ReturnCode> GetSystemFilesFromPortalAsync()
         {
-            string[] documentIds = new string[6];
+            string[] documentIds = new string[7];
             documentIds[0] = (string)Module1.Current.BagisSettings.NLCDLandCoverLayerItemId;
             documentIds[1] = (string)Module1.Current.BagisSettings.SnodasSweLayoutItemId;
             documentIds[2] = (string)Module1.Current.BagisSettings.SnodasDeltaLayoutItemId;
             documentIds[3] = (string)Module1.Current.BagisSettings.SeasonalPrecipLayoutItemId;
             documentIds[4] = (string)Module1.Current.BagisSettings.PublicAndTribalLandsLayerItemId;
             documentIds[5] = (string)Module1.Current.BagisSettings.MTBSFireLayerItemId;
+            documentIds[6] = (string)Module1.Current.BagisSettings.ReferenceMapsLayerItemId;
             string[] layerFileNames = new string[] { Constants.LAYER_FILE_NLCD_LAND_COVER, Constants.LAYOUT_FILE_SNODAS_SWE,
                 Constants.LAYOUT_FILE_SNODAS_DELTA_SWE, Constants.LAYOUT_FILE_SEASONAL_PRECIP_CONTRIB, Constants.LAYER_FILE_PUBLIC_TRIBAL_LANDS,
-                Constants.LAYER_FILE_MTBS_FIRE};
+                Constants.LAYER_FILE_MTBS_FIRE, Constants.LAYER_FILE_REFERENCE_MAPS};
             Webservices ws = new Webservices();
             BA_ReturnCode success = BA_ReturnCode.ReadError;
 

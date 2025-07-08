@@ -259,6 +259,7 @@ namespace bagis_pro
         public const string LAYER_FILE_NLCD_LAND_COVER = "nlcd_land_cover.lyrx";
         public const string LAYER_FILE_PUBLIC_TRIBAL_LANDS = "Public_and_Tribal_Lands.lyrx";
         public const string LAYER_FILE_MTBS_FIRE = "mtbs_fire_data.lyrx";
+        public const string LAYER_FILE_REFERENCE_MAPS = "BAGIS_Reference_Maps.lyr";
         public const string LAYOUT_FILE_SNODAS_SWE = "SNODAS Layout.pagx";
         public const string LAYOUT_FILE_SNODAS_DELTA_SWE = "SNODAS Delta Layout.pagx";
         public const string LAYOUT_FILE_SEASONAL_PRECIP_CONTRIB = "Seasonal Precipitation Layout.pagx";

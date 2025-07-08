@@ -35,15 +35,22 @@ namespace bagis_pro
 
         protected DockAdminToolsViewModel() 
         {
-            BA_ReturnCode success = GeneralTools.LoadBagisSettings();
-            if (success == BA_ReturnCode.Success && Module1.Current.BagisSettings != null)
+            try
             {
-                Publisher = (string)Module1.Current.BagisSettings.Publisher;
-                FireIncrementYears = (int)Module1.Current.BagisSettings.FireIncrementYears;
-                NifcMinYear = (int)Module1.Current.BagisSettings.FireNifcMinYear;
-                MtbsMinYear = (int)Module1.Current.BagisSettings.FireMtbsMinYear;
-                FireDataClipYears = (int)Module1.Current.BagisSettings.FireDataClipYears;
-                SettingsFile = $@"{GeneralTools.GetBagisSettingsPath()}\{Constants.FOLDER_SETTINGS}\{Constants.FILE_BAGIS_SETTINGS}";
+                BA_ReturnCode success = GeneralTools.LoadBagisSettings();
+                if (success == BA_ReturnCode.Success && Module1.Current.BagisSettings != null)
+                {
+                    Publisher = (string)Module1.Current.BagisSettings.Publisher;
+                    FireIncrementYears = (int)Module1.Current.BagisSettings.FireIncrementYears;
+                    NifcMinYear = (int)Module1.Current.BagisSettings.FireNifcMinYear;
+                    MtbsMinYear = (int)Module1.Current.BagisSettings.FireMtbsMinYear;
+                    FireDataClipYears = (int)Module1.Current.BagisSettings.FireDataClipYears;
+                    SettingsFile = $@"{GeneralTools.GetBagisSettingsPath()}\{Constants.FOLDER_SETTINGS}\{Constants.FILE_BAGIS_SETTINGS}";
+                }
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show("An error occurred loading the batch tools! " + e.StackTrace);
             }
             Names = new ObservableCollection<BA_Objects.Aoi>();
             Names.CollectionChanged += ContentCollectionChanged;
