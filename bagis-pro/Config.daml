@@ -84,7 +84,7 @@
       </palettes>
       <controls>
         <!-- add your controls here -->
-        <button id="bagis_pro_Menus_MnuAoiTools_AddRefLayers" caption="Add Ref Layers" className="bagis_pro.Menus.MnuAoiTools_AddRefLayers" condition="MnuAoiTools_AddRefLayers_Condition" loadOnClick="true" keytip="B1">
+        <button id="bagis_pro_Menus_MnuAoiTools_AddRefLayers" caption="Add Ref Layers" className="bagis_pro.Menus.MnuAoiTools_AddRefLayers" loadOnClick="true" keytip="B1">
           <tooltip heading="Add Ref Layers">
             Add Reference Layers<disabledText /></tooltip>
         </button>
@@ -92,7 +92,7 @@
           <tooltip heading="Create AOI from Shapefile">
             Create AOI from Shapefile<disabledText /></tooltip>
         </button>
-        <button id="bagis_pro_Menus_MnuAoiTools_Options" caption="Options" className="bagis_pro.Menus.MnuAoiTools_Options" condition="MnuAoiTools_AddRefLayers_Condition" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericOptions16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericOptions32.png" keytip="B6">
+        <button id="bagis_pro_Menus_MnuAoiTools_Options" caption="Options" className="bagis_pro.Menus.MnuAoiTools_Options" condition="MnuAoiTools_Options" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericOptions16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericOptions32.png" keytip="B6">
           <tooltip heading="Options">
             Options for managing AOIs in BAGIS.<disabledText /></tooltip>
         </button>
@@ -315,8 +315,11 @@
   <conditions>
     <!-- our custom condition -->
     <insertCondition id="MnuAoiTools_AddRefLayers_Condition" caption="Add Reference Layers">
-      <!-- Using this condition to disable most of the buttons on the Basin Analysis menu temporarily -->
       <state id="MnuAoiTools_AddRefLayers_State" />
+    </insertCondition>
+    <insertCondition id="MnuAoiTools_Options" caption="Options">
+      <!-- Using this condition to disable most of the buttons on the Basin Analysis menu temporarily -->
+      <state id="MnuAoiTools_Options_State" />
     </insertCondition>
     <insertCondition id="BtnExportToPdf_Condition" caption="Export PDF">
       <and>

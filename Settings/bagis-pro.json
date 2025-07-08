@@ -155,7 +155,7 @@
         "SnodasDeltaLayoutItemId": "1eafb8ca4b2048a2a22598d6372cf0d5",
         "SeasonalPrecipLayoutItemId": "34a1c22f75254c56918c5eb820a6810a",
         "PublicAndTribalLandsLayerItemId": "c72cf8608c644a8c90c651e1bbfe815f",
-        "ReferenceMapsLayerItemId": "20ec4efb5b6c42bd9ecb7baf00e1ef1d",
+        "ReferenceMapsLayerItemId": "afbcb79e203b40e889aeaf4edb4a6930",
         "MaximumSitesAllowed": 50,
         "WinterStartMonth": 11,
         "WinterEndMonth": 3,
@@ -199,6 +199,6 @@
                 "Severity": "None"
             }
         ],
-        "Version": 27
+        "Version": 28
     }
 }

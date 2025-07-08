@@ -12,6 +12,7 @@ using ArcGIS.Desktop.Layouts;
 using ArcGIS.Desktop.Mapping;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -2930,7 +2931,6 @@ namespace bagis_pro
                     rasterUri.LocalPath + " could not be found. Raster not displayed!!");
             }
         }
-
         public static async Task<BA_ReturnCode> DisplayLocationMapAsync(BA_Objects.Aoi oAoi)
         {
             string mapName = Constants.MAPS_AOI_LOCATION;
@@ -4321,6 +4321,66 @@ namespace bagis_pro
             });
             return BA_ReturnCode.Success;
         }
+
+        public static async Task<BA_ReturnCode> DisplayReferenceLayersAsync()
+        {
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;            
+            try
+            {
+                // Ensure we have the current BAGIS settings
+                success = GeneralTools.LoadBagisSettings();
+                // Ensure we have the local layer file
+                success = await GetSystemFilesFromPortalAsync();
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show("An error occurred while loading the BAGIS settings. Layers cannot be displayed!" + e.StackTrace, "BAGIS-Pro");
+                return success;
+            }
+            
+            // Make sure the default map frame is available
+            Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
+
+            await QueuedTask.Run( () =>
+            {
+                // Remove existing layers from map frame
+                //string[] arrLayerNames = new string[2];
+                //arrLayerNames[0] = Constants.MAPS_BASIN_BOUNDARY;
+                //arrLayerNames[1] = Constants.MAPS_WESTERN_STATES_BOUNDARY;
+                //foreach (string strName in arrLayerNames)
+                //{
+                //    Layer oLayer =
+                //        oMap.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(strName, StringComparison.CurrentCultureIgnoreCase));
+                //    if (oLayer != null)
+                //    {
+                //        oMap.RemoveLayer(oLayer);
+                //    }
+                //}
+
+                //add Reference Map layers
+                string strLayerFilePath = Module1.Current.SettingsPath + "\\" + Constants.FOLDER_SETTINGS + "\\" + Constants.LAYER_FILE_REFERENCE_MAPS;
+                if (File.Exists(strLayerFilePath))
+                {
+                    Uri uri = new Uri(strLayerFilePath);
+                    var flyrCreatnParam = new LayerCreationParams(uri)
+                    {
+                        IsVisible = true,
+                    };
+                    var featureLayer = LayerFactory.Instance.CreateLayer<FeatureLayer>(
+                        flyrCreatnParam, oMap);
+                }
+                else
+                {
+                    MessageBox.Show($@"Unable to locate Reference Map layer file ({strLayerFilePath}). Reference maps cannot be loaded!", "BAGIS-Pro");
+                    success = BA_ReturnCode.ReadError;
+                    return;
+                }
+            });
+
+            return success;
+        }
+
+
 
     }
 }

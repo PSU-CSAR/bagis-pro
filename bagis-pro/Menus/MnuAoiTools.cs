@@ -22,10 +22,9 @@ namespace bagis_pro.Menus
 {
     internal class MnuAoiTools_AddRefLayers : Button
     {
-        protected override void OnClick()
+        protected async override void OnClick()
         {
-            Module1.ToggleState("MnuBasinAnalyst_BasinInfo_State");
-            MessageBox.Show("Add reference layers");
+            BA_ReturnCode success = await MapTools.DisplayReferenceLayersAsync();
         }
     }
     internal class MnuAoiTools_AOIShapefile : Button
