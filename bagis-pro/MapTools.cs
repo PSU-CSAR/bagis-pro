@@ -4343,19 +4343,16 @@ namespace bagis_pro
 
             await QueuedTask.Run( () =>
             {
-                // Remove existing layers from map frame
-                //string[] arrLayerNames = new string[2];
-                //arrLayerNames[0] = Constants.MAPS_BASIN_BOUNDARY;
-                //arrLayerNames[1] = Constants.MAPS_WESTERN_STATES_BOUNDARY;
-                //foreach (string strName in arrLayerNames)
-                //{
-                //    Layer oLayer =
-                //        oMap.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(strName, StringComparison.CurrentCultureIgnoreCase));
-                //    if (oLayer != null)
-                //    {
-                //        oMap.RemoveLayer(oLayer);
-                //    }
-                //}
+                // Check for existence of reference map layers
+                var mLayer = oMap.GetLayersAsFlattenedList().OfType<MapImageLayer>().Where(f =>
+                    f.Name == "BAGIS_GISLayers/BAGIS_Reference_Maps").FirstOrDefault();
+                if (mLayer != null)
+                {
+                    MessageBox.Show("Reference Layers already added to map!", "BAGIS-Pro");
+                    return;
+                }
+
+
 
                 //add Reference Map layers
                 string strLayerFilePath = Module1.Current.SettingsPath + "\\" + Constants.FOLDER_SETTINGS + "\\" + Constants.LAYER_FILE_REFERENCE_MAPS;
