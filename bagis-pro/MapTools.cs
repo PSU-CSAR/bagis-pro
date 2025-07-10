@@ -2,7 +2,6 @@
 using ArcGIS.Core.Data;
 using ArcGIS.Core.Data.Exceptions;
 using ArcGIS.Core.Data.Raster;
-using ArcGIS.Core.Data.UtilityNetwork.Trace;
 using ArcGIS.Core.Geometry;
 using ArcGIS.Desktop.Core;
 using ArcGIS.Desktop.Framework;
@@ -4340,7 +4339,8 @@ namespace bagis_pro
             
             // Make sure the default map frame is available
             Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
-
+            string strLayerFilePath = Module1.Current.SettingsPath + "\\" + Constants.FOLDER_SETTINGS + "\\" + Constants.LAYER_FILE_REFERENCE_MAPS;
+            string strGaugeStationsUri = (string)Module1.Current.BagisSettings.GaugeStationUri;
             await QueuedTask.Run( () =>
             {
                 // Check for existence of reference map layers
@@ -4352,16 +4352,13 @@ namespace bagis_pro
                     return;
                 }
 
-
-
                 //add Reference Map layers
-                string strLayerFilePath = Module1.Current.SettingsPath + "\\" + Constants.FOLDER_SETTINGS + "\\" + Constants.LAYER_FILE_REFERENCE_MAPS;
                 if (File.Exists(strLayerFilePath))
                 {
                     Uri uri = new Uri(strLayerFilePath);
                     var flyrCreatnParam = new LayerCreationParams(uri)
                     {
-                        IsVisible = true,
+                        IsVisible = true
                     };
                     var featureLayer = LayerFactory.Instance.CreateLayer<FeatureLayer>(
                         flyrCreatnParam, oMap);
@@ -4371,6 +4368,59 @@ namespace bagis_pro
                     MessageBox.Show($@"Unable to locate Reference Map layer file ({strLayerFilePath}). Reference maps cannot be loaded!", "BAGIS-Pro");
                     success = BA_ReturnCode.ReadError;
                     return;
+                }
+                if (!string.IsNullOrEmpty(strGaugeStationsUri))
+                {
+                    // Get the referenced styles in the current project
+                    IEnumerable<StyleProjectItem> projectStyles = Project.Current.GetItems<StyleProjectItem>();
+                    // Find a specific style (e.g., "ArcGIS 2D")
+                    StyleProjectItem style = projectStyles.FirstOrDefault(s => s.Name == "ArcGIS 2D");
+                    CIMPointSymbol pointSymbol = null;
+                    if (style != null)
+                    {
+                        // Search for a point symbol named "Circle 1" within the style
+                        IList <SymbolStyleItem> symbolItems = style.SearchSymbols(StyleItemType.PointSymbol, "Circle 4");
+                        SymbolStyleItem symbolStyleItem = symbolItems.FirstOrDefault();
+                        // Need to find exact symbol we want. Pro uses a fuzzy search
+                        foreach (var item in symbolItems)
+                        {
+                            if (item.Name.Equals("Circle 4"))
+                            {
+                                symbolStyleItem = item;
+                                break;
+                            }
+                        }
+                        if (symbolStyleItem != null)
+                        {
+                            // Get the CIMSymbol from the SymbolStyleItem                            
+                            pointSymbol = symbolStyleItem.Symbol as CIMPointSymbol;
+                            // https://github.com/Esri/arcgis-pro-sdk-community-samples/blob/master/Map-Authoring/Symbology/PointSymbology.cs
+                            var marker = pointSymbol.SymbolLayers[0] as CIMVectorMarker;
+                            //Getting the polygon symbol layers components in the marker
+                            var polySymbol = marker.MarkerGraphics[0].Symbol as CIMPolygonSymbol;
+                            //modifying the polygon's outline and width per requirements
+                            polySymbol.SymbolLayers[0] = SymbolFactory.Instance.ConstructStroke(ColorFactory.Instance.RedRGB, 1, SimpleLineStyle.Solid); //This is the outline
+                            polySymbol.SymbolLayers[1] = SymbolFactory.Instance.ConstructSolidFill(ColorFactory.Instance.RedRGB); //This is the fill
+                            pointSymbol.SetColor(CIMColor.CreateRGBColor(255, 255, 255, 0));    // Second layer of symbol
+                            pointSymbol.SetSize(10);
+                        }
+                    }
+                    if (pointSymbol != null)
+                    {
+                        Uri uri = new Uri(strGaugeStationsUri);
+                        var flyrCreatnParam = new FeatureLayerCreationParams(uri)
+                        {
+                            IsVisible = true,
+                            RendererDefinition = new SimpleRendererDefinition()
+                            {
+                                //SymbolTemplate = SymbolFactory.Instance.ConstructPointSymbol(CIMColor.CreateRGBColor(255, 165, 0), 5, SimpleMarkerStyle.Circle)
+                                //    .MakeSymbolReference()
+                                SymbolTemplate = pointSymbol.MakeSymbolReference()
+                            }
+                        };
+                        var featureLayer = LayerFactory.Instance.CreateLayer<FeatureLayer>(
+                            flyrCreatnParam, oMap);
+                    }
                 }
             });
 
