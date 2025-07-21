@@ -555,7 +555,7 @@ namespace bagis_pro.Basin
                                 System.Windows.MessageBox.Show("Snapping to raster has been activated!", "BAGIS-Pro");
                             }
                         }
-                        Module1.ActivateState("bagis_pro_Buttons_BtnSetBasinExtent_State");
+                        Module1.ActivateState("bagis_pro_Buttons_SetBasinExtentTool_State");
                         FrameworkApplication.Current.Dispatcher.Invoke(() =>
                         {
                             // Do something on the GUI thread
@@ -577,7 +577,7 @@ namespace bagis_pro.Basin
                             {
                                 Module1.Current.CboCurrentBasin.SetBasinName(Path.GetFileName(ParentFolder));
                             });
-                            Module1.DeactivateState("bagis_pro_Buttons_BtnSetBasinExtent_State");
+                            Module1.DeactivateState("bagis_pro_Buttons_SetBasinExtentTool_State");
                             Module1.ActivateState("bagis_pro_Buttons_BtnDefineAoi");
                         }
                     }

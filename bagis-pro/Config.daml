@@ -252,7 +252,7 @@
           <tooltip heading="Select Basin">
             Click to select a basin<disabledText /></tooltip>
         </button>
-        <button id="bagis_pro_Buttons_BtnSetBasinExtent" caption="Set BASIN Extent" className="bagis_pro.Buttons.BtnSetBasinExtent" loadOnClick="true" condition="bagis_pro_Buttons_BtnSetBasinExtent_Condition" smallImage="SelectParcelFeatures16" largeImage="SelectParcelFeatures32">
+        <button id="bagis_pro_Buttons_BtnSetBasinExtent" caption="Set BASIN Extent" className="bagis_pro.Buttons.SetBasinExtentTool" loadOnClick="true" condition="bagis_pro_Buttons_SetBasinExtentTool_Condition" smallImage="SelectParcelFeatures16" largeImage="SelectParcelFeatures32">
           <tooltip heading="Set BASIN Extent">Set BASIN Extent<disabledText /></tooltip>
         </button>
         <button id="bagis_pro_Buttons_BtnCreateBasin" caption="Create BASIN" className="bagis_pro.Buttons.BtnCreateBasin" loadOnClick="true" condition="bagis_pro_Buttons_BtnCreateBasin_Condition" smallImage="WatershedHammer16" largeImage="WatershedHammer32">
@@ -421,8 +421,8 @@
     <insertCondition id="MapButtonPalette_BtnLandCover_Condition" caption="Map Disabled">
       <state id="MapButtonPalette_BtnLandCover_State" />
     </insertCondition>
-    <insertCondition id="bagis_pro_Buttons_BtnSetBasinExtent_Condition" caption="Disabled">
-      <state id="bagis_pro_Buttons_BtnSetBasinExtent_State" />
+    <insertCondition id="bagis_pro_Buttons_SetBasinExtentTool_Condition" caption="Disabled">
+      <state id="bagis_pro_Buttons_SetBasinExtentTool_State" />
     </insertCondition>
     <insertCondition id="bagis_pro_Buttons_BtnCreateBasin_Condition" caption="Disabled">
       <state id="bagis_pro_Buttons_BtnCreateBasin_State" />
