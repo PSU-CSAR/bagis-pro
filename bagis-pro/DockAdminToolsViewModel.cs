@@ -23,7 +23,6 @@ using ArcGIS.Desktop.Core.Geoprocessing;
 using System.Diagnostics;
 using bagis_pro.BA_Objects;
 using ArcGIS.Core.Geometry;
-using ArcGIS.Core.Data.UtilityNetwork.Trace;
 using Newtonsoft.Json.Linq;
 using System.Windows.Documents;
 
@@ -2475,6 +2474,35 @@ namespace bagis_pro
                     bIncrementStatistics = false;
                 }
             }
+            // Warn if there is existing output and give option to terminate
+            if (bAnnualStatistics)
+            {
+                var dir = new DirectoryInfo($@"{Path.GetDirectoryName(_strFireReportLogFile)}");
+                var fileEnum = dir.EnumerateFiles("*_annual_statistics.csv");
+                if (fileEnum.Count() > 0)
+                {
+                    System.Windows.MessageBoxResult res = MessageBox.Show("At least 1 annual statistics file exists in the output folder. Do you want to continue and overwrite these files?", "BAGIS-Pro",
+                        System.Windows.MessageBoxButton.YesNo);
+                    if (res != System.Windows.MessageBoxResult.Yes)
+                    {
+                        return;
+                    }
+                }
+            }
+            string strCsvIncrement = $@"{Path.GetDirectoryName(_strFireReportLogFile)}\increment_statistics.csv";
+            if (bIncrementStatistics)
+            {
+                if (File.Exists(strCsvIncrement))
+                {
+                    System.Windows.MessageBoxResult res = MessageBox.Show("The increment_statistics.csv file exists in the output folder. Do you want to continue and overwrite this file?", "BAGIS-Pro",
+                        System.Windows.MessageBoxButton.YesNo);
+                    if (res != System.Windows.MessageBoxResult.Yes)
+                    {
+                        return;
+                    }
+                }
+            }
+
             if (bAnnualStatistics)
             {
                 // Delete any annual statistics files we plan to overwrite
@@ -2498,19 +2526,17 @@ namespace bagis_pro
             }
             if (bIncrementStatistics)
             {
-                string strCsvFile = $@"{Path.GetDirectoryName(_strFireReportLogFile)}\increment_statistics.csv";
-                if (File.Exists(strCsvFile))
+                if (File.Exists(strCsvIncrement))
                 {
                     try
                     {
-                        File.Delete(strCsvFile);
+                        File.Delete(strCsvIncrement);
                     }
                     catch (Exception e)
                     {
-                        MessageBox.Show($@"Unable to overwrite {strCsvFile}. Report process stopped!");
+                        MessageBox.Show($@"Unable to overwrite {strCsvIncrement}. Report process stopped!");
                         return;
                     }
-
                 }
             }
             for (int idxRow = 0; idxRow < Names.Count; idxRow++)
@@ -3346,7 +3372,7 @@ namespace bagis_pro
     /// <summary>
     /// Button implementation to show the DockPane.
     /// </summary>
-    internal class DockAdminTools_ShowButton : Button
+    internal class DockAdminTools_ShowButton : ArcGIS.Desktop.Framework.Contracts.Button
     {
         protected override void OnClick()
         {
