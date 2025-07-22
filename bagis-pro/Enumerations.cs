@@ -162,6 +162,7 @@ namespace bagis_pro
         Geodatabase,
         ImageServer,
         FeatureServer,
+        Shapefile,
         None
     }
 

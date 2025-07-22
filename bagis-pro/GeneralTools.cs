@@ -3518,6 +3518,53 @@ namespace bagis_pro
             }
             return wType;
         }
+        public static async Task<WorkspaceType> GetFeatureWorkspaceType(string strFeaturesPath)
+        {
+            WorkspaceType wType = WorkspaceType.None;
+            if (!string.IsNullOrEmpty(strFeaturesPath))
+            {
+                bool bFeatureService = await Webservices.ValidateFeatureService(strFeaturesPath);
+                bool bFgdb = false;
+                if (strFeaturesPath.IndexOf(".gdb") > -1)
+                {
+                    bFgdb = true;
+                }
+                if (bFeatureService)
+                {
+                    wType = WorkspaceType.FeatureServer;
+                }
+                else if (!bFeatureService && bFgdb == true)
+                {
+                    string strDirectory = Path.GetDirectoryName(strFeaturesPath);
+                    string strFClass = Path.GetFileName(strFeaturesPath);
+                    if (!string.IsNullOrEmpty(strDirectory) && Directory.Exists(strDirectory) &&
+                        !string.IsNullOrEmpty(strFClass))
+                    {
+                        Uri gdbUri = new Uri(strDirectory);
+                        if (await GeodatabaseTools.FeatureClassExistsAsync(gdbUri, strFClass))
+                        {
+                            wType = WorkspaceType.Geodatabase;
+                        }
+                    }
+                }
+                else
+                {
+                    string strDirectory = Path.GetDirectoryName(strFeaturesPath);
+                    string strFClass = Path.GetFileName(strFeaturesPath);
+                    if (!string.IsNullOrEmpty(strDirectory) && Directory.Exists(strDirectory) &&
+                        !string.IsNullOrEmpty(strFClass))
+                    {
+                        IList<string> lstFeatures = new List<string>() { strFeaturesPath };
+                        IList<string> lstFound = await ShapefilesExistAsync(lstFeatures);
+                        if (lstFound.Count == lstFeatures.Count)
+                        {
+                            wType = WorkspaceType.Shapefile;
+                        }
+                    }
+                }
+            }
+            return wType;
+        }
         public static async Task<DemInfo> GetRasterDimensionsAsync(string strRasterPath)
         {
             DemInfo demInfo = new DemInfo();

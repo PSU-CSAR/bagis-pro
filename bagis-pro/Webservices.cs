@@ -1,22 +1,21 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using ArcGIS.Core.Data;
+﻿using ArcGIS.Core.Data;
+using ArcGIS.Core.Geometry;
 using ArcGIS.Desktop.Core;
+using ArcGIS.Desktop.Core.Geoprocessing;
+using ArcGIS.Desktop.Core.Portal;
 using ArcGIS.Desktop.Framework;
 using ArcGIS.Desktop.Framework.Contracts;
 using ArcGIS.Desktop.Framework.Dialogs;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
-using ArcGIS.Desktop.Core.Portal;
-using Newtonsoft.Json.Linq;
-using System.Net.Http;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System;
+using System.Collections.Generic;
 using System.IO;
-using ArcGIS.Desktop.Core.Geoprocessing;
-using ArcGIS.Core.Geometry;
+using System.Linq;
+using System.Net.Http;
+using System.Threading.Tasks;
 using System.Web;
-using System.Text.Json.Nodes;
 using System.Windows.Forms.VisualStyles;
 
 namespace bagis_pro
@@ -193,23 +192,46 @@ namespace bagis_pro
         }
         public async Task<int> QueryNifcMinYearAsync(IDictionary<string, dynamic> dictDatasources, string strDataType)
         {
-            string wsUri = "";
+            string strUri = "";
             if (dictDatasources != null)
             {
                 BA_Objects.DataSource dsFire = new BA_Objects.DataSource(dictDatasources[strDataType]);
                 if (dsFire != null)
                 {
-                    wsUri = dsFire.uri;
+                    strUri = dsFire.uri;
                 }
                 else
                 {
                     Module1.Current.ModuleLogManager.LogError(nameof(QueryNifcMinYearAsync),
                         $@"Unable to find element {strDataType} uri in server data sources");
                 }
-                if (!string.IsNullOrEmpty(wsUri))
+                if (!string.IsNullOrEmpty(strUri))
                 {
-                    string[] arrReturnValues = this.ParseUriAndLayerNumber(wsUri);
-                    if (arrReturnValues.Length == 2 && !string.IsNullOrEmpty(arrReturnValues[0]))
+                    WorkspaceType wType = await GeneralTools.GetFeatureWorkspaceType(strUri);
+                    if (wType == WorkspaceType.FeatureServer)
+                    {
+                        string[] arrReturnValues = ParseUriAndLayerNumber(strUri);
+                        if (arrReturnValues.Length == 2 && !string.IsNullOrEmpty(arrReturnValues[0]))
+                        {
+                            int intYear = DateTime.Now.Year;
+                            QueryFilter queryFilter = new QueryFilter();
+                            bool bRecordsFound = false;
+                            while (!bRecordsFound)
+                            {
+                                string strTimeStamp = $@"{intYear}-01-01 00:00:00";
+                                queryFilter.WhereClause = $@"{Constants.FIELD_FIRECURRENT_DATE} >= timestamp '{strTimeStamp}'";
+                                string[] arrSearch = { Constants.FIELD_FIRECURRENT_INCIDENT };
+                                string[] arrFound = await this.QueryServiceForValuesAsync(new Uri(arrReturnValues[0]), arrReturnValues[1], arrSearch, queryFilter);
+                                if (arrFound != null && !string.IsNullOrEmpty(arrFound[0]))
+                                {
+                                    bRecordsFound = true;
+                                    return intYear;
+                                }
+                                intYear--;
+                            }
+                        }
+                    }
+                    else if (wType == WorkspaceType.Geodatabase)
                     {
                         int intYear = DateTime.Now.Year;
                         QueryFilter queryFilter = new QueryFilter();
@@ -218,9 +240,11 @@ namespace bagis_pro
                         {
                             string strTimeStamp = $@"{intYear}-01-01 00:00:00";
                             queryFilter.WhereClause = $@"{Constants.FIELD_FIRECURRENT_DATE} >= timestamp '{strTimeStamp}'";
-                            string[] arrSearch = { Constants.FIELD_FIRECURRENT_INCIDENT };
-                            string[] arrFound = await this.QueryServiceForValuesAsync(new Uri(arrReturnValues[0]), arrReturnValues[1], arrSearch, queryFilter);
-                            if (arrFound != null && !string.IsNullOrEmpty(arrFound[0]))
+                            string strGdbUri = Path.GetDirectoryName(strUri);
+                            string strFcName = Path.GetFileName(strUri);
+                            IList<string> lstFound = await GeodatabaseTools.QueryTableForDistinctValuesAsync(new Uri(strGdbUri), strFcName,
+                                Constants.FIELD_FIRECURRENT_INCIDENT, queryFilter);
+                            if (lstFound != null && !string.IsNullOrEmpty(lstFound[0]))
                             {
                                 bRecordsFound = true;
                                 return intYear;
@@ -625,7 +649,7 @@ namespace bagis_pro
             }
             return null;
         }
-        public string[] ParseUriAndLayerNumber(string strWsUri)
+        public static string[] ParseUriAndLayerNumber(string strWsUri)
         {
             string[] arrReturnValues = new string[2];
             if (strWsUri.IndexOf('/') > -1)
@@ -691,7 +715,6 @@ namespace bagis_pro
                 return returnList;
             }
         }
-
         public static async Task<bool> ValidateImageService(string imageServerUri)
         {
             //Derive the rest uri from the imageserver uri
@@ -732,6 +755,39 @@ namespace bagis_pro
                 }
             }
             return false;
+        }
+
+        public static async Task<bool> ValidateFeatureService(string featuresUri)
+        {
+            bool bIsValid = false;
+            if (!string.IsNullOrEmpty(featuresUri))
+            {
+                string[] arrReturnValues = ParseUriAndLayerNumber(featuresUri);
+                if (arrReturnValues.Length == 2 && !string.IsNullOrEmpty(arrReturnValues[0]))
+                {
+                    await QueuedTask.Run(() =>
+                    {
+                        try
+                        {
+                            ServiceConnectionProperties serviceConnectionProperties = new ServiceConnectionProperties(new Uri(arrReturnValues[0]));
+                            using (Geodatabase geodatabase = new Geodatabase(serviceConnectionProperties))
+                            {
+                                Table table = geodatabase.OpenDataset<Table>(arrReturnValues[1]);
+                                if (table != null)
+                                {
+                                    bIsValid = true;
+                                }
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            Module1.Current.ModuleLogManager.LogError(nameof(ValidateFeatureService),
+                                "Exception: " + e.Message);
+                        }
+                    });
+                }
+            }
+            return bIsValid;
         }
         public static async Task<int> QueryHuc2Async(string strAoiPath)
         {
