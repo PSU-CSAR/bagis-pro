@@ -1,21 +1,25 @@
-﻿using ArcGIS.Core.CIM;
-using ArcGIS.Core.Data;
-using ArcGIS.Core.Geometry;
-using ArcGIS.Desktop.Catalog;
-using ArcGIS.Desktop.Core;
-using ArcGIS.Desktop.Editing;
-using ArcGIS.Desktop.Extensions;
+﻿
 using ArcGIS.Desktop.Framework;
 using ArcGIS.Desktop.Framework.Contracts;
+using bagis_pro.Basin;
 using System.Windows;
 
 namespace bagis_pro.Buttons
 {
     internal class BtnCreateBasin : Button
     {
+        private Basin.WinClipDem _winClipDem = null;
         protected override void OnClick()
         {
-            MessageBox.Show("Create basin!");
+            //already open?
+            if (_winClipDem != null)
+                return;
+            _winClipDem = new WinClipDem();
+            _winClipDem.Owner = FrameworkApplication.Current.MainWindow;
+            _winClipDem.Closed += (o, e) => { _winClipDem = null; };
+            //_winClipDem.Show();
+            //uncomment for modal
+            _winClipDem.ShowDialog();
         }
     }
 }

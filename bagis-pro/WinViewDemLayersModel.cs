@@ -10,8 +10,6 @@ using ArcGIS.Desktop.Framework.Threading.Tasks;
 using ArcGIS.Desktop.Mapping;
 using System.Linq;
 using ArcGIS.Core.CIM;
-using bagis_pro.BA_Objects;
-using System.Security.Policy;
 
 namespace bagis_pro
 {

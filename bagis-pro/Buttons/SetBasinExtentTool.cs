@@ -38,6 +38,7 @@ namespace bagis_pro.Buttons
                 Name = glName,
                 IsVisible = true
             };
+            GraphicElement oElement = null;
            await QueuedTask.Run(() =>
             {
                 // Create a new graphics layer if one doesn't exist
@@ -64,10 +65,19 @@ namespace bagis_pro.Buttons
                     Polygon = (Polygon)geometry,
                     Symbol = polySym.MakeSymbolReference()
                 };
-                graphicsLayer.AddElement(cimGraphicElement);
+                oElement = graphicsLayer.AddElement(cimGraphicElement);
             });
 
-            return true;
+            if (oElement != null)
+            {
+                Module1.ActivateState("bagis_pro_Buttons_BtnCreateBasin_State");
+                return true;
+            }
+            else
+            {
+                Module1.DeactivateState("bagis_pro_Buttons_BtnCreateBasin_State");
+                return false;
+            }
         }
     }
 }
