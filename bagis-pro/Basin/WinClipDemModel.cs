@@ -12,14 +12,18 @@ namespace bagis_pro.Basin
     internal class WinClipDemModel : PropertyChangedBase
     {
         WinClipDem _view = null;
-        bool _demExtentChecked = false;
-        bool _filledDemChecked = false;
-        bool _flowDirChecked = false;
-        bool _flowAccChecked = false;
-        bool _slopeChecked = false;
-        bool _aspectChecked = false;
-        bool _hillshadeChecked = false;
+        bool _demExtentChecked = true;
+        bool _filledDemChecked = true;
+        bool _flowDirChecked = true;
+        bool _flowAccChecked = true;
+        bool _slopeChecked = true;
+        bool _aspectChecked = true;
+        bool _hillshadeChecked = true;
         double _zFactor = 1;
+        private bool _smoothDemChecked;
+        private int _filterCellHeight = 3;
+        private int _filterCellWidth = 7;
+
         public WinClipDemModel(WinClipDem view)
         {
             _view = view;
@@ -65,7 +69,21 @@ namespace bagis_pro.Basin
             get => _zFactor;
             set => SetProperty(ref _zFactor, value);
         }
-
+        public bool SmoothDemChecked
+        {
+            get => _smoothDemChecked;
+            set => SetProperty(ref _smoothDemChecked, value);
+        }
+        public int FilterCellHeight
+        {
+            get => _filterCellHeight;
+            set => SetProperty(ref _filterCellHeight, value);
+        }
+        public int FilterCellWidth
+        {
+            get => _filterCellWidth;
+            set => SetProperty(ref _filterCellWidth, value);
+        }
         public ICommand CmdAll => new RelayCommand(() =>
         {
             SetCheckedValues(true);

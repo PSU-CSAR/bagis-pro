@@ -25,5 +25,23 @@ namespace bagis_pro.Basin
             InitializeComponent();
             this.DataContext = new WinClipDemModel(this);
         }
+        private void LblSmooth_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            string strMessage = "Smoothing DEM using a directional filter can effectively remove the " +
+                "striping artifact in older USGS 7.5 minute (i.e., 30 meters) DEM. " +
+                "When present, the striping is most prominent on DEM derivative " +
+                "surfaces such as slope, curvature, or hillshade. Please inspect " +
+                "these derivatives right after a BASIN was created. If there is clear " +
+                "striping, then recreate the BASIN with the smooth DEM option " +
+                "checked. A recommended filter size is 3 by 7 (height by width)";
+            MessageBox.Show(strMessage, "Why Smooth DEM", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        public void SmoothDem_Checked(object s, RoutedEventArgs e)
+        {
+            var chkBox = s as CheckBox;
+            bool bChecked = chkBox.IsChecked ?? false;
+            txtFilterHeight.IsEnabled = bChecked;
+            txtFilterWidth.IsEnabled = bChecked;
+        }
     }
 }
