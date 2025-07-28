@@ -30,6 +30,7 @@
             <RowDefinition Height="30"/>
             <RowDefinition Height="30"/>
             <RowDefinition Height="50"/>
+            <RowDefinition Height="35"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
         <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="10, 0, 0, 0">
@@ -83,6 +84,8 @@
                 <TextBox x:Name="txtFilterWidth" Height="20" Width="25" Text="{Binding FilterCellWidth}" IsEnabled="{Binding SmoothDemChecked}"></TextBox>
             </DockPanel>
         </GroupBox>
-
+        <StackPanel Grid.Row="12" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <Button x:Name="btnClip" Content="Clip" Width="75" FontWeight="Bold" VerticalAlignment="Center" Command="{Binding CmdClip}" />
+        </StackPanel>
     </Grid>
 </controls:ProWindow>

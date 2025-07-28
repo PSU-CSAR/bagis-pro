@@ -104,5 +104,21 @@ namespace bagis_pro.Basin
             AspectChecked = checkAll;
             HillshadeChecked = checkAll;
         }
+
+        private RelayCommand _runClipCommand;
+        public ICommand CmdClip
+        {
+            get
+            {
+                if (_runClipCommand == null)
+                    _runClipCommand = new RelayCommand(RunClipImplAsync, () => true);
+                return _runClipCommand;
+            }
+        }
+
+        private async void RunClipImplAsync(object param)
+        {
+            int blah = 1 + 1;
+        }
     }
 }
