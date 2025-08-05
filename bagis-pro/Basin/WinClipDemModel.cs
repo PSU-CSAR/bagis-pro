@@ -1,10 +1,10 @@
 ﻿using ArcGIS.Desktop.Framework;
 using ArcGIS.Desktop.Framework.Contracts;
-using System;
+using ArcGIS.Desktop.Framework.Threading.Tasks;
+using bagis_pro.BA_Objects;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Input;
 
 namespace bagis_pro.Basin
@@ -23,6 +23,7 @@ namespace bagis_pro.Basin
         private bool _smoothDemChecked;
         private int _filterCellHeight = 3;
         private int _filterCellWidth = 7;
+        private string _basinFolder = "";
 
         public WinClipDemModel(WinClipDem view)
         {
@@ -118,7 +119,57 @@ namespace bagis_pro.Basin
 
         private async void RunClipImplAsync(object param)
         {
-            int blah = 1 + 1;
+            // verify filter size parameters
+            if (SmoothDemChecked)
+            {
+                if (FilterCellHeight <= 0 || FilterCellWidth <= 0)
+                {
+                    MessageBox.Show("Invalid filter size! Please re-enter.", "BAGIS-Pro");
+                    return;
+                }
+            }
+
+            // verify dem is available
+            string strSourceDem = Module1.Current.DataSources[DataSource.GetDemKey].uri;
+            WorkspaceType wType = await GeneralTools.GetRasterWorkspaceType(strSourceDem);
+            if (wType == WorkspaceType.None)
+            {
+                MessageBox.Show("Invalid DEM. AOI cannot be created!", "BAGIS-Pro", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            // Get output path from parent form
+            var pane = (DockBasinToolViewModel)FrameworkApplication.DockPaneManager.Find("bagis_pro_Basin_DockBasinTool");;
+            _basinFolder = pane.ParentFolder;
+
+
+            uint nStep = 12;
+            int intWait = 500;
+            var progress = new ProgressDialog("Processing ...", "Cancel", 100, false);
+            var status = new CancelableProgressorSource(progress);
+            status.Max = 100;
+            progress.Show();
+            IList<string> lstExistingGdb = GeodatabaseTools.CheckForBasinGdb(_basinFolder);
+            for (int i = 0; i < lstExistingGdb.Count; i++)
+            {
+                int layersRemoved = await MapTools.RemoveLayersInFolderAsync(lstExistingGdb[i]);
+                System.IO.Directory.Delete(lstExistingGdb[i], true);
+            }
+            BA_ReturnCode success = await GeodatabaseTools.CreateGeodatabaseFoldersAsync(_basinFolder, FolderType.BASIN, status.Progressor);
+
+            await QueuedTask.Run(() =>
+            {
+                status.Progressor.Value = 0;    // reset the progressor's value back to 0 between GP tasks
+                status.Progressor.Message = $@"Clipping DEM to Basin Folder ... (step 1 of {nStep})";
+                //block the CIM for a second
+                Task.Delay(intWait).Wait();
+            }, status.Progressor);
+
+
+
+            // Clean-up step progressor
+            progress.Hide();
+            progress.Dispose();
         }
     }
 }

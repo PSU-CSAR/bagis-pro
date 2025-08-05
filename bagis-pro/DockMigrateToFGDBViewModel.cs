@@ -524,20 +524,6 @@ namespace bagis_pro
             }
             return lstBagisGdb;
         }
-
-        IList<string> CheckForBasinGdb(string aoiPath)
-        {
-            IList<string> lstBasinGdb = new List<string>();
-            foreach (var strName in GeodatabaseNames.BasinNames)
-            {
-                if (Directory.Exists(aoiPath + "\\" + strName))
-                {
-                    lstBasinGdb.Add(aoiPath + "\\" + strName);
-                }
-            }
-            return lstBasinGdb;
-        }
-
         private async void RunImplAsync(object param)
         {
             // Bring GP History tool forward
@@ -562,7 +548,7 @@ namespace bagis_pro
                     }
                     else
                     {
-                        lstExistingGdb = CheckForBasinGdb(oAoi.FilePath);
+                        lstExistingGdb = GeodatabaseTools.CheckForBasinGdb(oAoi.FilePath);
                     }
 
                     // Make directory for log if it doesn't exist

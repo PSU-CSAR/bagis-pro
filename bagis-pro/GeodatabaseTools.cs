@@ -1134,7 +1134,6 @@ namespace bagis_pro
             }
             return lstInterval;
         }
-
         public static async Task<BA_ReturnCode> CreateGeodatabaseFoldersAsync(string strAoiPath, FolderType fType,
             CancelableProgressor prog)
         {
@@ -1400,6 +1399,18 @@ namespace bagis_pro
                 });
             }
             return result;
+        }
+        public static IList<string> CheckForBasinGdb(string aoiPath)
+        {
+            IList<string> lstBasinGdb = new List<string>();
+            foreach (var strName in GeodatabaseNames.BasinNames)
+            {
+                if (Directory.Exists(aoiPath + "\\" + strName))
+                {
+                    lstBasinGdb.Add(aoiPath + "\\" + strName);
+                }
+            }
+            return lstBasinGdb;
         }
     }
 
