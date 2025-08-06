@@ -40,7 +40,7 @@ namespace bagis_pro.BA_Objects
         {
             dynamic newDataSource = new JObject();
             newDataSource.uri = oDataSource.uri;
-            newDataSource.description = oDataSource.uri;
+            newDataSource.description = oDataSource.description;
             newDataSource.layerType = oDataSource.layerType;
             newDataSource.heading = oDataSource.heading;
             //newDataSource.dateClippedText = DateTime.Now.ToString("MMMM d, yyyy");
