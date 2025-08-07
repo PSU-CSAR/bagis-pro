@@ -24,7 +24,6 @@ using System.Diagnostics;
 using bagis_pro.BA_Objects;
 using ArcGIS.Core.Geometry;
 using Newtonsoft.Json.Linq;
-using System.Windows.Documents;
 
 namespace bagis_pro
 {
@@ -109,7 +108,8 @@ namespace bagis_pro
         private bool _cmdFireReportLogEnabled = false;
         private bool _cmdFireReportEnabled = false;
         private bool _cmdFireDataLogEnabled = false;
-        private int _intReportEndYear;
+        private int _intAnnualEndYear;
+        private int _intIncrementalEndYear;
         private int _intMinYear;
         private int _intFireIncrementYears;
         private bool _bAllTimeChecked = true;   //Default
@@ -358,13 +358,20 @@ namespace bagis_pro
                 SetProperty(ref _cmdFireReportEnabled, value, () => CmdFireReportEnabled);
             }
         }
-
-        public int ReportEndYear
+        public int AnnualEndYear
         {
-            get { return _intReportEndYear; }
+            get { return _intAnnualEndYear; }
             set
             {
-                SetProperty(ref _intReportEndYear, value, () => ReportEndYear);
+                SetProperty(ref _intAnnualEndYear, value, () => AnnualEndYear);
+            }
+        }
+        public int IncrementalEndYear
+        {
+            get { return _intIncrementalEndYear; }
+            set
+            {
+                SetProperty(ref _intIncrementalEndYear, value, () => IncrementalEndYear);
             }
         }
 
@@ -653,28 +660,30 @@ namespace bagis_pro
                     }
 
                     // Query minimum available fire data year from webservice; It's here because it's an async call
-                    if (ReportEndYear < 1)   // Only do this the first time an AOI folder is selected
+                    if (AnnualEndYear < 1)   // Only do this the first time an AOI folder is selected
                     {
                         Webservices ws = new Webservices();
                         _intNifcMaxYear = await ws.QueryNifcMinYearAsync(Module1.Current.DataSources, Constants.DATA_TYPE_FIRE_CURRENT);
                         NifcDataDescr = $@"NIFC data available from {NifcMinYear} to {_intNifcMaxYear}";
-                        ReportEndYear = _intNifcMaxYear;
-                        SelectedMaxYear = ReportEndYear;
+                        AnnualEndYear = _intNifcMaxYear;
+                        SelectedMaxYear = AnnualEndYear;
                         _intMinYear = (DateTime.Now.Year - FireDataClipYears) + 1;
                         SelectedMinYear = _intMinYear;
-                        int intIncrementPeriods;
-                        IList<Interval> lstInterval = GeneralTools.GetFireStatisticsIntervals(ReportEndYear, FireDataClipYears, FireIncrementYears, false, 0, out intIncrementPeriods);
-                        FireTimePeriodCount = intIncrementPeriods;  
                         _intMtbsMaxYear = await this.QueryMtbsMaxYearAsync(Module1.Current.DataSources, Constants.DATA_TYPE_FIRE_BURN_SEVERITY);
                         if (_intMtbsMaxYear > 0)
                         {
                             MtbsDataDescr = $@"MTBS data available from {MtbsMinYear} to {_intMtbsMaxYear}";
-                            FireDataEnabled = true;
+                            FireDataEnabled = true; 
+                            IncrementalEndYear = _intMtbsMaxYear;
                         }
                         else
                         {
+                            IncrementalEndYear = _intNifcMaxYear;
                             MtbsDataDescr = $@"MTBS web services are currently unavailable. Data retrieval is disabled.";
                         }
+                        int intIncrementPeriods;
+                        IList<Interval> lstInterval = GeneralTools.GetFireStatisticsIntervals(IncrementalEndYear, FireDataClipYears, FireIncrementYears, false, 0, out intIncrementPeriods);
+                        FireTimePeriodCount = intIncrementPeriods;
                         FireReportEnabled = true;
                     }
                 });
@@ -2131,7 +2140,7 @@ namespace bagis_pro
                         oFireSettings.Remove("lastNifcYear");
                         oFireSettings.Remove("dataBeginYear");
                         oFireSettings.Remove("fireDataClipYears");
-                        oFireSettings.Remove("reportEndYear");
+                        oFireSettings.Remove("annualReportEndYear");
                         oFireSettings.Remove("increment");
                         // Remove nifc data sources before starting clip
                         if (oFireSettings.DataSources != null)
@@ -2359,7 +2368,7 @@ namespace bagis_pro
                             if (intRetVal > 0)
                             {
                                 // Clean out old settings before trying to add new ones
-                                oFireSettings.Remove("reportEndYear");
+                                oFireSettings.Remove("annualReportEndYear");
                                 oFireSettings.Remove("increment");
                                 // Remove mtbs data source
                                 if (oFireSettings.DataSources != null)
@@ -2457,7 +2466,7 @@ namespace bagis_pro
             int intIncrementPeriods = 0;
             IList<Interval> lstInterval = null;
             int overrideMinYear = _intMinYear;
-            int overrideMaxYear = ReportEndYear;
+            int overrideMaxYear = AnnualEndYear;
             bool bAnnualStatistics = true;
             bool bIncrementStatistics = true;
             // Only check this once
@@ -2683,7 +2692,7 @@ namespace bagis_pro
                         }
                         BA_ReturnCode success = BA_ReturnCode.WriteError;
                         string strCsvFile = $@"{Path.GetDirectoryName(_strFireReportLogFile)}\increment_statistics.csv";
-                        lstInterval = GeneralTools.GetFireStatisticsIntervals(ReportEndYear, FireDataClipYears, FireIncrementYears, bRequestPeriods, FireTimePeriodCount, out intIncrementPeriods);
+                        lstInterval = GeneralTools.GetFireStatisticsIntervals(IncrementalEndYear, FireDataClipYears, FireIncrementYears, bRequestPeriods, FireTimePeriodCount, out intIncrementPeriods);
                         if (!File.Exists(strCsvFile))
                         {
                             success = this.InitIncrementCsv(intIncrementPeriods, strCsvFile);
@@ -2725,7 +2734,7 @@ namespace bagis_pro
                         if (oFireSettings.DataSources != null)
                         {
                             // We know the file exists
-                            oFireSettings.reportEndYear = _intNifcMaxYear;
+                            oFireSettings.annualReportEndYear = overrideMaxYear;
                             oFireSettings.increment = FireIncrementYears;
 
                             // serialize JSON directly to a file
@@ -2768,7 +2777,7 @@ namespace bagis_pro
             int intIncrementPeriods = 0;
             IList<Interval> lstInterval = null;
             int overrideMinYear = _intMinYear;
-            int overrideMaxYear = ReportEndYear;
+            int overrideMaxYear = AnnualEndYear;
             bool bAnnualMaps = true;
             bool bIncrementMaps = true;
             // Only check this once
@@ -3014,7 +3023,7 @@ namespace bagis_pro
                         {
                             bRequestPeriods = true;
                         }
-                        lstInterval = GeneralTools.GetFireStatisticsIntervals(ReportEndYear, FireDataClipYears, FireIncrementYears, bRequestPeriods, FireTimePeriodCount, out intIncrementPeriods);
+                        lstInterval = GeneralTools.GetFireStatisticsIntervals(IncrementalEndYear, FireDataClipYears, FireIncrementYears, bRequestPeriods, FireTimePeriodCount, out intIncrementPeriods);
                         foreach (var oInterval in lstInterval)
                         {
                             string strFileName = $"Max_{oInterval.Value}";

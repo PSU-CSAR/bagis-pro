@@ -1,4 +1,5 @@
-﻿using System;
+﻿using bagis_pro.Basin;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -40,7 +41,7 @@ namespace bagis_pro
             }
 
         }
-        private void ReportEndYear_textChangedEventHandler(object sender, TextChangedEventArgs args)
+        private void AnnualEndYear_textChangedEventHandler(object sender, TextChangedEventArgs args)
         {
             var textBox = sender as TextBox;
             if (tbSelectMaxYear != null)
@@ -52,17 +53,22 @@ namespace bagis_pro
         {
             // Set annual from value to annual to value - 29 (30 years)
             var textBox = sender as TextBox;
-            if (textBox != null && tbSelectMinYear != null)
-            {
-                int maxYear = -1;
+            int maxYear = -1;
+            if (textBox != null && tbSelectMinYear != null)            {                
                 bool bSuccess = int.TryParse(textBox.Text, out maxYear);
                 if (bSuccess)
                 {
                     tbSelectMinYear.Text = Convert.ToString(maxYear - 29);
+                   
                 }
             }
+            // The model wasn't catching this value without this
+            DockAdminToolsViewModel oModel = (DockAdminToolsViewModel)DataContext;
+            if (textBox != null)
+            {
+                oModel.SelectedMaxYear = maxYear;
+            }
         }
-
         public void Clip_Mtbs_Changed(object s, RoutedEventArgs e)
         {
             var ckBox = s as CheckBox;
