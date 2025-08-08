@@ -2141,6 +2141,7 @@ namespace bagis_pro
                         oFireSettings.Remove("dataBeginYear");
                         oFireSettings.Remove("fireDataClipYears");
                         oFireSettings.Remove("annualReportEndYear");
+                        oFireSettings.Remove("incrementReportEndYear");
                         oFireSettings.Remove("increment");
                         // Remove nifc data sources before starting clip
                         if (oFireSettings.DataSources != null)
@@ -2369,6 +2370,7 @@ namespace bagis_pro
                             {
                                 // Clean out old settings before trying to add new ones
                                 oFireSettings.Remove("annualReportEndYear");
+                                oFireSettings.Remove("incrementReportEndYear");
                                 oFireSettings.Remove("increment");
                                 // Remove mtbs data source
                                 if (oFireSettings.DataSources != null)
@@ -2735,6 +2737,7 @@ namespace bagis_pro
                         {
                             // We know the file exists
                             oFireSettings.annualReportEndYear = overrideMaxYear;
+                            oFireSettings.incrementReportEndYear = IncrementalEndYear;
                             oFireSettings.increment = FireIncrementYears;
 
                             // serialize JSON directly to a file
