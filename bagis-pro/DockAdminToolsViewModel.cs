@@ -1,6 +1,9 @@
 ﻿using ArcGIS.Core.Data;
+using ArcGIS.Core.Data.Raster;
+using ArcGIS.Core.Geometry;
 using ArcGIS.Desktop.Catalog;
 using ArcGIS.Desktop.Core;
+using ArcGIS.Desktop.Core.Geoprocessing;
 using ArcGIS.Desktop.Editing;
 using ArcGIS.Desktop.Framework;
 using ArcGIS.Desktop.Framework.Contracts;
@@ -8,22 +11,20 @@ using ArcGIS.Desktop.Framework.Dialogs;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
 using ArcGIS.Desktop.Layouts;
 using ArcGIS.Desktop.Mapping;
+using bagis_pro.BA_Objects;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
+using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using System.Collections.Specialized;
-using System.ComponentModel;
-using ArcGIS.Desktop.Core.Geoprocessing;
-using System.Diagnostics;
-using bagis_pro.BA_Objects;
-using ArcGIS.Core.Geometry;
-using Newtonsoft.Json.Linq;
 
 namespace bagis_pro
 {
@@ -1012,7 +1013,7 @@ namespace bagis_pro
         {
             for (int idxRow = 0; idxRow < Names.Count; idxRow++)
             {
-                BA_Objects.Aoi oAoi = Names[idxRow];
+                Aoi oAoi = Names[idxRow];
                 if (oAoi.StationTriplet.Equals(Constants.VALUE_MISSING) ||
                     oAoi.StationName.Equals(Constants.VALUE_MISSING) ||
                     oAoi.Huc2 == -1)
@@ -1152,6 +1153,79 @@ namespace bagis_pro
                     {
                         MessageBox.Show("Could not find fire report log file!", "BAGIS-PRO");
                         CmdFireReportLogEnabled = false;
+                    }
+                });
+            }
+        }
+
+        public ICommand CmdVerifyForFire
+        {
+            get
+            {
+                return new RelayCommand( async () =>
+                {
+                    for (int idxRow = 0; idxRow < Names.Count; idxRow++)
+                    {
+                        Aoi oAoi = Names[idxRow];
+                        // Check for fire settings before continuing
+                        bool bMissingFireSettings = false;
+                        string strFireSettingsPath = $@"{oAoi.FilePath}\{Constants.FOLDER_MAPS}\{Constants.FILE_FIRE_SETTINGS}";
+                        if (File.Exists(strFireSettingsPath))
+                        {
+                            dynamic oFireSettings = GeneralTools.GetFireSettings(oAoi.FilePath);
+                            if (oFireSettings.DataSources == null)
+                            {
+                                bMissingFireSettings = true;
+                            }
+                        }
+                        else
+                        {
+                            bMissingFireSettings = true;
+                        }
+                        if (bMissingFireSettings)
+                        {
+                            Names[idxRow].AoiBatchStateText = AoiBatchState.NoFireData.ToString();  // update gui
+                            continue;
+                        }
+                        // Check for fire.gdb and data before continuing
+                        string strFireGdbPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Fire);
+                        bool bHasFireData = false;
+                        if (Directory.Exists(strFireGdbPath))
+                        {
+                            if (await GeodatabaseTools.FeatureClassExistsAsync(new Uri(strFireGdbPath), Constants.FILE_NIFC_FIRE))
+                            {
+                                bHasFireData = true;
+                            }
+                            if (bHasFireData)
+                            {
+                                // Check for mtbs layers
+                                int intMtbs = 0;
+                                await QueuedTask.Run(() =>
+                                {
+                                    using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(strFireGdbPath))))
+                                    {
+                                        IReadOnlyList<RasterDatasetDefinition> definitions = geodatabase.GetDefinitions<RasterDatasetDefinition>();
+                                        foreach (RasterDatasetDefinition def in definitions)
+                                        {
+                                            if (def.GetName().IndexOf("mtbs") > -1)
+                                            {
+                                                intMtbs = 1;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                });
+                                if (intMtbs == 0)
+                                {
+                                    bHasFireData = false;
+                                }
+                            }
+                        }
+                        if (!bHasFireData)
+                        {
+                            Names[idxRow].AoiBatchStateText = AoiBatchState.NoFireData.ToString();  // update gui
+                            continue;
+                        }
                     }
                 });
             }
@@ -2555,7 +2629,7 @@ namespace bagis_pro
                 if (Names[idxRow].AoiBatchIsSelected)
                 {
                     string aoiFolder = Names[idxRow].FilePath;
-                    if (Names[idxRow].AoiBatchStateText.Equals(AoiBatchState.NotReady.ToString()))
+                    if (!Names[idxRow].AoiBatchStateText.Equals(AoiBatchState.Waiting.ToString()))
                     {
                         strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} Skipping fire report for {Names[idxRow].FilePath}. Required station information is missing.{System.Environment.NewLine}";
                         File.AppendAllText(_strFireReportLogFile, strLogEntry);
@@ -2563,52 +2637,7 @@ namespace bagis_pro
                     }
                     else
                     {
-                        // Check for fire settings before continuing
-                        bool bMissingFireSettings = false;
-                        string strFireSettingsPath = $@"{aoiFolder}\{Constants.FOLDER_MAPS}\{Constants.FILE_FIRE_SETTINGS}";
-                        if (File.Exists(strFireSettingsPath))
-                        {
-                            dynamic oFireSettings = GeneralTools.GetFireSettings(aoiFolder);
-                            if (oFireSettings.DataSources == null)
-                            {
-                                bMissingFireSettings = true;
-                            }
-                        }
-                        else
-                        {
-                            bMissingFireSettings = true;
-                        }
-                        if (bMissingFireSettings)
-                        {
-                            Names[idxRow].AoiBatchStateText = AoiBatchState.Failed.ToString();  // update gui
-                            strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Missing fire_analysis.json file for " +
-                                Names[idxRow].Name + "! Retrieve fire data before running report. \r\n";
-                            File.AppendAllText(_strFireReportLogFile, strLogEntry);       // append
-                            continue;
-                        }
-                        // Check for fire.gdb and data before continuing
-                        string strFireGdbPath = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Fire);
-                        bool bHasFireData = false;
-                        if (Directory.Exists(strFireGdbPath))
-                        {
-                            if (await GeodatabaseTools.FeatureClassExistsAsync(new Uri(strFireGdbPath), Constants.FILE_NIFC_FIRE))
-                            {
-                                bHasFireData = true;
-                            }
-                        }
-                        if (!bHasFireData)
-                        {
-                            Names[idxRow].AoiBatchStateText = AoiBatchState.Failed.ToString();  // update gui
-                            strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Missing fire data for " +
-                                Names[idxRow].Name + "! Retrieve fire data before running report. \r\n";
-                            File.AppendAllText(_strFireReportLogFile, strLogEntry);       // append
-                            continue;
-                        }
 
-                        Names[idxRow].AoiBatchStateText = AoiBatchState.Started.ToString();  // update gui
-                        strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Starting fire report for " +
-                            Names[idxRow].Name + "\r\n";
-                        File.AppendAllText(_strFireReportLogFile, strLogEntry);       // append
                     }
                     // Set current AOI
                     Aoi oAoi = await GeneralTools.SetAoiAsync(aoiFolder, Names[idxRow]);
@@ -2812,29 +2841,6 @@ namespace bagis_pro
                     }
                     else
                     {
-                        // Check for fire settings before continuing
-                        bool bMissingFireSettings = false;
-                        string strFireSettingsPath = $@"{aoiFolder}\{Constants.FOLDER_MAPS}\{Constants.FILE_FIRE_SETTINGS}";
-                        if (File.Exists(strFireSettingsPath))
-                        {
-                            dynamic oFireSettings = GeneralTools.GetFireSettings(aoiFolder);
-                            if (oFireSettings.DataSources == null)
-                            {
-                                bMissingFireSettings = true;
-                            }
-                        }
-                        else
-                        {
-                            bMissingFireSettings = true;
-                        }
-                        if (bMissingFireSettings)
-                        {
-                            Names[idxRow].AoiBatchStateText = AoiBatchState.Failed.ToString();  // update gui
-                            strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Missing fire_analysis.json file for " +
-                                Names[idxRow].Name + "! Retrieve fire data before running maps. \r\n";
-                            File.AppendAllText(_strFireMapsLogFile, strLogEntry);       // append
-                            continue;
-                        }
                         // Check for fire.gdb and data before continuing
                         bool bHasFireData = false;
                         if (Directory.Exists(strFireGdbPath))

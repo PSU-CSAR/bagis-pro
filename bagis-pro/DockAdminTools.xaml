@@ -273,10 +273,10 @@
                     </StackPanel>
                 </TabItem.Header>
                 <Grid>
-                     <Grid.RowDefinitions>
+                    <Grid.RowDefinitions>
                         <RowDefinition Height="80"/>
                         <RowDefinition Height="130"/>
-                        <RowDefinition Height="290"/>
+                        <RowDefinition Height="350"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
                     <StackPanel Grid.Row="0" Orientation="Vertical" Margin="5,5,5,5">
@@ -315,12 +315,17 @@
                     </GroupBox>
                     <GroupBox Margin="5,0,0,5" Padding="2" Grid.Row="2" HorizontalAlignment="Left" IsEnabled="{Binding FireReportEnabled}">
                         <GroupBox.Header>
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock FontWeight="Bold">Generate AOI Fire Report</TextBlock>
-                        </StackPanel>
-                    </GroupBox.Header>
-                    <Grid>
-                        <Grid.RowDefinitions>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock FontWeight="Bold">Generate AOI Fire Reports and Maps</TextBlock>
+                            </StackPanel>
+                        </GroupBox.Header>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="123*"/>
+                                <ColumnDefinition Width="167*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="30"/>
                                 <RowDefinition Height="30"/>
                                 <RowDefinition Height="30"/>
                                 <RowDefinition Height="30"/>
@@ -329,24 +334,27 @@
                                 <RowDefinition Height="30"/>
                                 <RowDefinition Height="30"/>
                             </Grid.RowDefinitions>
-                            <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="0, 0, 0, 2">
+                            <StackPanel Grid.Row="0" Orientation="Horizontal" Grid.ColumnSpan="2">
+                                <Button x:Name="btnVerifyForFire" Content="Verify AOI List For Fire" HorizontalAlignment="Left" VerticalAlignment="Center" Width="130" Margin="5, 0, 0, 0" Command="{Binding CmdVerifyForFire}"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Grid.Row="1" Margin="0,0,0,2" Grid.ColumnSpan="2">
                                 <Label Content="Annual report end year:"/>
                                 <TextBox Width ="40" Height="20" Text="{Binding AnnualEndYear}" TextChanged="AnnualEndYear_textChangedEventHandler"/>
                             </StackPanel>
-                            <StackPanel Orientation="Horizontal" Grid.Row="1" Margin="0, 0, 0, 2">
+                            <StackPanel Orientation="Horizontal" Grid.Row="2" Margin="0,0,0,2" Grid.ColumnSpan="2">
                                 <Label Content="Incremental report end year:"/>
                                 <TextBox Width ="40" Height="20" Text="{Binding IncrementalEndYear}" />
                             </StackPanel>
-                            <StackPanel Orientation="Horizontal" Grid.Row="2" Margin="0, 0, 0, 2">
+                            <StackPanel Orientation="Horizontal" Grid.Row="3" Margin="0,0,0,2" Grid.ColumnSpan="2">
                                 <Label Content="Increment (in years):"/>
                                 <TextBox Width ="30" Height="20" Text="{Binding FireIncrementYears}" />
                             </StackPanel>
 
-                            <StackPanel Orientation="Vertical" Grid.Row="3" VerticalAlignment="Center">
+                            <StackPanel Orientation="Vertical" Grid.Row="4" VerticalAlignment="Center" Grid.ColumnSpan="2">
                                 <RadioButton GroupName="timePeriod" Tag ="AllTimeChecked" Margin="0, 0, 0, 4" IsChecked="{Binding AllTimeChecked}">Calculate all time periods</RadioButton>
                                 <RadioButton GroupName="timePeriod" Tag ="SelectedTimeChecked" Margin="0, 0, 0, 2" IsChecked="{Binding SelectedTimeChecked}" Checked="SelectedTime_Checked" Unchecked="SelectedTime_Checked">Calculate selected time periods</RadioButton>
                             </StackPanel>
-                            <StackPanel Orientation="Vertical" Grid.Row="4" Margin="10, 0, 0, 0">
+                            <StackPanel Orientation="Vertical" Grid.Row="5" Margin="10,0,0,0" Grid.ColumnSpan="2">
                                 <DockPanel HorizontalAlignment="Left" >
                                     <CheckBox x:Name="ckAnnual" Content="Annual (from " Margin="0, 0, 0, 0" IsEnabled="False" IsChecked="{Binding AnnualDataChecked}" VerticalAlignment="Center" />
                                     <TextBox x:Name="tbSelectMinYear" Width ="40" Height="20" IsEnabled="False" Margin="0, 0, 0, 0" Text="{Binding SelectedMinYear}"/>
@@ -360,18 +368,18 @@
                                     <Label Content="periods)" Margin="0, 0, 0, 0" />
                                 </DockPanel>
                             </StackPanel>
-                            <StackPanel Orientation="Horizontal" Grid.Row="5">
+                            <StackPanel Orientation="Horizontal" Grid.Row="6" Grid.ColumnSpan="2">
                                 <Label Content="Output folder:"/>
                                 <TextBox x:Name="txtFireReportFolder" Text="{Binding FireReportFolder}" HorizontalAlignment="Left" Margin="5, 0, 0, 0" 
                                     VerticalAlignment="Center" Width="190" IsReadOnly="True"
                                     Foreground="Blue" Background="Transparent"/>
                             </StackPanel>
-                            <StackPanel Grid.Row="6" Orientation="Horizontal">
-                                <Button x:Name="btnFireReportLog" Content="View Log" HorizontalAlignment="Left" VerticalAlignment="Center" Width="60" IsEnabled="{Binding CmdFireReportLogEnabled}" Command="{Binding CmdFireReportLog}" Margin="5, 0, 5, 0"/>
-                                <Button x:Name="btnFireMaps" Content="Generate Maps" HorizontalAlignment="Left" VerticalAlignment="Center" Width="90" IsEnabled="{Binding CmdFireReportEnabled}" Command="{Binding CmdFireMaps}" Margin="5, 0, 5, 0"/>
-                                <Button x:Name="btnFireReport" Content="Generate Report" Width="95" VerticalAlignment="Center" IsEnabled="{Binding CmdFireReportEnabled}" Command="{Binding CmdFireReport}" Margin="5, 0, 5, 0"/>
+                            <StackPanel Grid.Row="7" Orientation="Horizontal" Grid.ColumnSpan="2">
+                                <Button x:Name="btnFireReportLog" Content="View Log" HorizontalAlignment="Left" VerticalAlignment="Center" Width="60" IsEnabled="{Binding CmdFireReportLogEnabled}" Command="{Binding CmdFireReportLog}" Margin="0, 0, 5, 0"/>
+                                <Button x:Name="btnFireReport" Content="1. Generate Report" Width="105" VerticalAlignment="Center" IsEnabled="{Binding CmdFireReportEnabled}" Command="{Binding CmdFireReport}" Margin="5, 0, 5, 0"/>
+                                <Button x:Name="btnFireMaps" Content="2. Generate Maps" HorizontalAlignment="Left" VerticalAlignment="Center" Width="100" IsEnabled="{Binding CmdFireReportEnabled}" Command="{Binding CmdFireMaps}" Margin="5, 0, 5, 0"/>
                             </StackPanel>
-                    </Grid>
+                        </Grid>
                     </GroupBox>
                 </Grid>
             </TabItem>

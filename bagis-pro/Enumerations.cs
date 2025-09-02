@@ -121,7 +121,9 @@ namespace bagis_pro
         Failed,
         Completed,
         Errors,
-        NotReady
+        NotReady,
+        NoFireData,
+        MissingReport
     }
 
     public enum ReportType
