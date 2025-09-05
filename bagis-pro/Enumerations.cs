@@ -121,8 +121,9 @@ namespace bagis_pro
         Failed,
         Completed,
         Errors,
+        Ready,
         NotReady,
-        NoFireData,
+        MissingFireData,
         MissingReport
     }
 

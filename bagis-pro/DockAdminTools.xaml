@@ -225,8 +225,8 @@
                                     Foreground="Blue" Background="Transparent"/>
                             </StackPanel>
                             <StackPanel Grid.Row="1" Orientation="Horizontal">
-                                <Button x:Name="btnSnodasLog" Content="View Log" HorizontalAlignment="Left" VerticalAlignment="Center" Width="75" IsEnabled="{Binding CmdFireReportLogEnabled}" Command="{Binding CmdFireReportLog}" Margin="5, 0, 70, 0"/>
-                                <Button x:Name="btnSnodas" Content="Export" HorizontalAlignment="Right" VerticalAlignment="Center" Width="50" IsEnabled="{Binding CmdFireReportEnabled}" Command="{Binding CmdSnodas}" Margin="70, 0, 0, 0"/>
+                                <Button x:Name="btnSnodasLog" Content="View Log" HorizontalAlignment="Left" VerticalAlignment="Center" Width="75" IsEnabled="{Binding CmdSnodasLogEnabled}" Command="{Binding CmdSnodasLog}" Margin="5, 0, 70, 0"/>
+                                <Button x:Name="btnSnodas" Content="Export" HorizontalAlignment="Right" VerticalAlignment="Center" Width="50" IsEnabled="{Binding CmdSnodasEnabled}" Command="{Binding CmdSnodas}" Margin="70, 0, 0, 0"/>
                             </StackPanel>
                         </Grid>
                     </GroupBox>

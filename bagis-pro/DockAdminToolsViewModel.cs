@@ -627,9 +627,9 @@ namespace bagis_pro
                             pAoi.StationTriplet = arrValues[0];
                             pAoi.StationName = arrValues[1];
                             pAoi.Huc2 = Convert.ToInt16(arrValues[2]);
-                            if (!pAoi.ValidForecastData)
+                            if (pAoi.ValidForecastData)
                             {
-                                pAoi.AoiBatchStateText = AoiBatchState.NotReady.ToString();
+                                pAoi.AoiBatchStateText = AoiBatchState.Ready.ToString();
                             }
                         }
                         Names.Add(pAoi);
@@ -784,6 +784,8 @@ namespace bagis_pro
 
             // Reset batch states
             ResetAoiBatchStateText();
+            // Set status to waiting for selected AOIs
+            int intReturn = SetAoiWaitingText();
 
             for (int idxRow = 0; idxRow < Names.Count; idxRow++)
             {
@@ -791,7 +793,7 @@ namespace bagis_pro
                 {
                     int errorCount = 0; // keep track of any non-fatal errors
                     string aoiFolder = Names[idxRow].FilePath;
-                    if (Names[idxRow].AoiBatchStateText.Equals(AoiBatchState.NotReady.ToString()))
+                    if (!Names[idxRow].AoiBatchStateText.Equals(AoiBatchState.Waiting.ToString()))
                     {
                         strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} Skipping export for {Names[idxRow].FilePath}. Required station information is missing.{System.Environment.NewLine}";
                         File.AppendAllText(_strSnodasLogFile, strLogEntry);
@@ -923,6 +925,8 @@ namespace bagis_pro
 
             // Reset batch states
             ResetAoiBatchStateText();
+            // Set status to waiting for selected AOIs
+            int intReturn = SetAoiWaitingText();
 
             // Download the runoff csv file from the NRCS Portal                
             string documentId = (string)Module1.Current.BagisSettings.AnnualRunoffItemId;
@@ -931,7 +935,11 @@ namespace bagis_pro
             Webservices ws = new Webservices();
             var runOffSuccess = await ws.GetPortalFile(BA_Objects.AGSPortalProperties.PORTAL_ORGANIZATION, documentId, Module1.Current.SettingsPath + "\\" + Constants.FOLDER_SETTINGS +
                 "\\" + Constants.FILE_ANNUAL_RUNOFF_CSV);
-
+            int errorCount = 0; // keep track of any non-fatal errors
+            if (runOffSuccess != BA_ReturnCode.Success)
+            {
+                errorCount++;
+            }
 
             // Structures to manage data
             string strCsvFile =$@"{Path.GetDirectoryName(_strGenStatisticsLogFile)}\{Constants.FILE_AOI_STATISTICS}";
@@ -951,13 +959,8 @@ namespace bagis_pro
             {
                 if (Names[idxRow].AoiBatchIsSelected)
                 {
-                    int errorCount = 0; // keep track of any non-fatal errors
-                    if (runOffSuccess != BA_ReturnCode.Success)
-                    {
-                        errorCount++;
-                    }
                     string aoiFolder = Names[idxRow].FilePath;
-                    if (Names[idxRow].AoiBatchStateText.Equals(AoiBatchState.NotReady.ToString()))
+                    if (!Names[idxRow].AoiBatchStateText.Equals(AoiBatchState.Waiting.ToString()))
                     {
                         strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} Skipping export for {Names[idxRow].FilePath}. Required station information is missing.{System.Environment.NewLine}";
                         File.AppendAllText(_strGenStatisticsLogFile, strLogEntry);
@@ -1022,9 +1025,23 @@ namespace bagis_pro
                 }
                 else
                 {
-                   oAoi.AoiBatchStateText = AoiBatchState.Waiting.ToString();
+                   oAoi.AoiBatchStateText = AoiBatchState.Ready.ToString();
                 }
             }
+        }
+        private int SetAoiWaitingText()
+        {
+            int retVal = 0;
+            for (int idxRow = 0; idxRow < Names.Count; idxRow++)
+            {
+                Aoi oAoi = Names[idxRow];
+                if (Names[idxRow].AoiBatchIsSelected && oAoi.AoiBatchStateText == AoiBatchState.Ready.ToString())
+                {
+                    oAoi.AoiBatchStateText = AoiBatchState.Waiting.ToString();
+                    retVal++;
+                }
+            }
+            return retVal;
         }
 
         private RelayCommand _runCommand;
@@ -1184,7 +1201,7 @@ namespace bagis_pro
                         }
                         if (bMissingFireSettings)
                         {
-                            Names[idxRow].AoiBatchStateText = AoiBatchState.NoFireData.ToString();  // update gui
+                            Names[idxRow].AoiBatchStateText = AoiBatchState.MissingFireData.ToString();  // update gui
                             continue;
                         }
                         // Check for fire.gdb and data before continuing
@@ -1223,9 +1240,11 @@ namespace bagis_pro
                         }
                         if (!bHasFireData)
                         {
-                            Names[idxRow].AoiBatchStateText = AoiBatchState.NoFireData.ToString();  // update gui
+                            Names[idxRow].AoiBatchStateText = AoiBatchState.MissingFireData.ToString();  // update gui
                             continue;
                         }
+                        // Fire data has been validated
+
                     }
                 });
             }
@@ -1295,6 +1314,9 @@ namespace bagis_pro
                 File.WriteAllText(strSettingsPath, json);
             }
 
+            // Set status to waiting for selected AOIs
+            int intReturn = SetAoiWaitingText();
+            
             // Make directory for required folders if they don't exist
             // Make sure that maps and maps_publish folders exist
             for (int idxRow = 0; idxRow < Names.Count; idxRow++)
@@ -1303,7 +1325,7 @@ namespace bagis_pro
                 {
                     int errorCount = 0; // keep track of any non-fatal errors
                     string aoiFolder = Names[idxRow].FilePath;
-                    if (Names[idxRow].AoiBatchStateText.Equals(AoiBatchState.NotReady.ToString()))
+                    if (!Names[idxRow].AoiBatchStateText.Equals(AoiBatchState.Waiting.ToString()))
                     {
                         strLogEntry = $@"Skipping report for {Names[idxRow].FilePath}. Required station information is missing.{System.Environment.NewLine}";
                         File.AppendAllText(_strLogFile, strLogEntry);
@@ -1871,12 +1893,21 @@ namespace bagis_pro
 
             // Reset AOI status
             ResetAoiBatchStateText();
+            // Set AOI status to waiting if box is checked
+            for (int idxRow = 0; idxRow < Names.Count; idxRow++)
+            {
+                Aoi oAoi = Names[idxRow];
+                if (Names[idxRow].AoiBatchIsSelected)
+                {
+                    oAoi.AoiBatchStateText = AoiBatchState.Waiting.ToString();
+                }
+            }
             Webservices ws = new Webservices();
             IList<string> lstMergeFeatures = new List<string>();
             BA_ReturnCode success = BA_ReturnCode.Success;
             for (int idxRow = 0; idxRow < Names.Count; idxRow++)
             {
-                if (Names[idxRow].AoiBatchIsSelected)
+                if (Names[idxRow].AoiBatchStateText == AoiBatchState.Waiting.ToString())
                 {
                     int errorCount = 0; // keep track of any non-fatal errors
                     success = BA_ReturnCode.Success;    // Re-initialize success variable
@@ -2130,6 +2161,8 @@ namespace bagis_pro
 
             // Reset batch states
             ResetAoiBatchStateText();
+            // Set status to waiting for selected AOIs
+            int intReturn = SetAoiWaitingText();
 
             for (int idxRow = 0; idxRow < Names.Count; idxRow++)
             {
@@ -2137,7 +2170,7 @@ namespace bagis_pro
                 {
                     int errorCount = 0; // keep track of any non-fatal errors
                     string aoiFolder = Names[idxRow].FilePath;
-                    if (Names[idxRow].AoiBatchStateText.Equals(AoiBatchState.NotReady.ToString()))
+                    if (!Names[idxRow].AoiBatchStateText.Equals(AoiBatchState.Waiting.ToString()))
                     {
                         strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} Skipping fire data for {Names[idxRow].FilePath}. Required station information is missing.{System.Environment.NewLine}";
                         File.AppendAllText(_strFireDataLogFile, strLogEntry);
@@ -2624,12 +2657,13 @@ namespace bagis_pro
                     }
                 }
             }
+            string[] arrInvalidStatus = [AoiBatchState.NotReady.ToString(), AoiBatchState.MissingFireData.ToString()];
             for (int idxRow = 0; idxRow < Names.Count; idxRow++)
             {
                 if (Names[idxRow].AoiBatchIsSelected)
                 {
                     string aoiFolder = Names[idxRow].FilePath;
-                    if (!Names[idxRow].AoiBatchStateText.Equals(AoiBatchState.Waiting.ToString()))
+                    if (arrInvalidStatus.Contains(Names[idxRow].AoiBatchStateText))
                     {
                         strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} Skipping fire report for {Names[idxRow].FilePath}. Required station information is missing.{System.Environment.NewLine}";
                         File.AppendAllText(_strFireReportLogFile, strLogEntry);
@@ -2765,17 +2799,32 @@ namespace bagis_pro
                         if (oFireSettings.DataSources != null)
                         {
                             // We know the file exists
-                            oFireSettings.annualReportEndYear = overrideMaxYear;
-                            oFireSettings.incrementReportEndYear = IncrementalEndYear;
-                            oFireSettings.increment = FireIncrementYears;
-
-                            // serialize JSON directly to a file
-                            using (StreamWriter file = File.CreateText($@"{oAoi.FilePath}\{Constants.FOLDER_MAPS}\{Constants.FILE_FIRE_SETTINGS}"))
+                            if (bAnnualStatistics)
                             {
-                                JsonSerializer serializer = new JsonSerializer();
-                                serializer.Formatting = Newtonsoft.Json.Formatting.Indented;
-                                serializer.Serialize(file, oFireSettings);
+                                oFireSettings.annualReportEndYear = overrideMaxYear;
                             }
+                            else
+                            {
+                                oFireSettings.Remove("annualReportEndYear");
+                            }
+                            if (bIncrementStatistics)
+                            {
+                                oFireSettings.incrementReportEndYear = IncrementalEndYear;
+                                oFireSettings.increment = FireIncrementYears;
+                            }
+                            else
+                            {
+                                oFireSettings.Remove("incrementReportEndYear");
+                                oFireSettings.Remove("increment");
+                            }
+
+                                // serialize JSON directly to a file
+                                using (StreamWriter file = File.CreateText($@"{oAoi.FilePath}\{Constants.FOLDER_MAPS}\{Constants.FILE_FIRE_SETTINGS}"))
+                                {
+                                    JsonSerializer serializer = new JsonSerializer();
+                                    serializer.Formatting = Newtonsoft.Json.Formatting.Indented;
+                                    serializer.Serialize(file, oFireSettings);
+                                }
                         }
                     }
                     catch (Exception)

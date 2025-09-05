@@ -41,7 +41,7 @@ namespace bagis_pro.BA_Objects
             m_dblMinElev = Constants.VALUE_NO_DATA_9999;
             m_dblMaxElev = Constants.VALUE_NO_DATA_9999;
             m_elevationUnits = LinearUnit.Meters;
-            m_aoiBatchState = AoiBatchState.Waiting.ToString();
+            m_aoiBatchState = AoiBatchState.NotReady.ToString();
             m_aoiBatchIsSelected = true;
         }
 
