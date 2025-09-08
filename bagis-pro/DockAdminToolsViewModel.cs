@@ -1187,9 +1187,10 @@ namespace bagis_pro
                         // Check for fire settings before continuing
                         bool bMissingFireSettings = false;
                         string strFireSettingsPath = $@"{oAoi.FilePath}\{Constants.FOLDER_MAPS}\{Constants.FILE_FIRE_SETTINGS}";
+                        dynamic oFireSettings = null;
                         if (File.Exists(strFireSettingsPath))
                         {
-                            dynamic oFireSettings = GeneralTools.GetFireSettings(oAoi.FilePath);
+                            oFireSettings = GeneralTools.GetFireSettings(oAoi.FilePath);
                             if (oFireSettings.DataSources == null)
                             {
                                 bMissingFireSettings = true;
@@ -1243,8 +1244,59 @@ namespace bagis_pro
                             Names[idxRow].AoiBatchStateText = AoiBatchState.MissingFireData.ToString();  // update gui
                             continue;
                         }
-                        // Fire data has been validated
-
+                        // Fire data existence has been validated; Check no fire status
+                        bool bZeroFires = false;
+                        if (oFireSettings != null && bHasFireData)
+                        {
+                            long nifcFireCount = await GeodatabaseTools.CountFeaturesAsync(new Uri(strFireGdbPath), Constants.FILE_NIFC_FIRE);
+                            // Check for mtbs layers
+                            // mtbs_CONUS_1996_NODATA
+                            int mtbsWithData = 0;
+                            await QueuedTask.Run(() =>
+                            {
+                                using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(strFireGdbPath))))
+                                {
+                                    IReadOnlyList<RasterDatasetDefinition> definitions = geodatabase.GetDefinitions<RasterDatasetDefinition>();
+                                    foreach (RasterDatasetDefinition def in definitions)
+                                    {
+                                        if (def.GetName().IndexOf("mtbs") > -1 && def.GetName().IndexOf($@"_{Constants.VALUE_NO_DATA.ToUpper()}") == -1)
+                                        {
+                                            mtbsWithData++;
+                                            break;
+                                        }
+                                    }
+                                }
+                            });
+                            if (nifcFireCount == 0 && mtbsWithData == 0)
+                            {
+                                bZeroFires = true;
+                                Names[idxRow].AoiBatchStateText = AoiBatchState.NoFire.ToString();  // update gui
+                                continue;
+                            }
+                        }
+                        // Fire data with fires has been validated; Check fire report status
+                        bool bHasIncrementReports = false;
+                        if (bHasFireData && !bZeroFires)
+                        {
+                            if (oFireSettings != null && oFireSettings.incrementReportEndYear != null)
+                            {
+                                long incrementReportEndYear = -1;
+                                string strYear = Convert.ToString(oFireSettings.incrementReportEndYear);
+                                bHasIncrementReports = long.TryParse(strYear, out incrementReportEndYear);
+                                if (bHasIncrementReports)
+                                {
+                                    Names[idxRow].AoiBatchStateText = AoiBatchState.HasReport.ToString();  // update gui
+                                }
+                                else
+                                {
+                                    Names[idxRow].AoiBatchStateText = AoiBatchState.MissingReport.ToString();  // update gui
+                                }
+                            }
+                            else
+                            {
+                                Names[idxRow].AoiBatchStateText = AoiBatchState.MissingReport.ToString();  // update gui
+                            }
+                        }
                     }
                 });
             }
