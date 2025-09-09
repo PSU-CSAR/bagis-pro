@@ -729,12 +729,8 @@ namespace bagis_pro
                             {
                                 if (Names[idxRow].AoiBatchStateText.Equals(AoiBatchState.MissingFireData.ToString()))
                                 {
-                                    Names[idxRow].AoiBatchIsSelected = true;
-                                }
-                                else
-                                {
-                                    Names[idxRow].AoiBatchIsSelected = false;
-                                }                                
+                                    Names[idxRow].AoiBatchIsSelected = !Names[idxRow].AoiBatchIsSelected;
+                                }                               
                             }
                             break;
                         case nameof(AoiBatchState.HasReport):
@@ -742,11 +738,7 @@ namespace bagis_pro
                             {
                                 if (Names[idxRow].AoiBatchStateText.Equals(AoiBatchState.HasReport.ToString()))
                                 {
-                                    Names[idxRow].AoiBatchIsSelected = true;
-                                }
-                                else
-                                {
-                                    Names[idxRow].AoiBatchIsSelected = false;
+                                    Names[idxRow].AoiBatchIsSelected = !Names[idxRow].AoiBatchIsSelected;
                                 }
                             }
                             break;
@@ -755,11 +747,7 @@ namespace bagis_pro
                             {
                                 if (Names[idxRow].AoiBatchStateText.Equals(AoiBatchState.MissingReport.ToString()))
                                 {
-                                    Names[idxRow].AoiBatchIsSelected = true;
-                                }
-                                else
-                                {
-                                    Names[idxRow].AoiBatchIsSelected = false;
+                                    Names[idxRow].AoiBatchIsSelected = !Names[idxRow].AoiBatchIsSelected;
                                 }
                             }
                             break;
@@ -768,11 +756,7 @@ namespace bagis_pro
                             {
                                 if (Names[idxRow].AoiBatchStateText.Equals(AoiBatchState.NoFire.ToString()))
                                 {
-                                    Names[idxRow].AoiBatchIsSelected = true;
-                                }
-                                else
-                                {
-                                    Names[idxRow].AoiBatchIsSelected = false;
+                                    Names[idxRow].AoiBatchIsSelected = !Names[idxRow].AoiBatchIsSelected;
                                 }
                             }
                             break;
