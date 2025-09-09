@@ -79,10 +79,13 @@
                             </ListView.View>
                         </ListView>
                     </DockPanel>
-                    <DockPanel Grid.Row="3" Grid.Column="0" KeyboardNavigation.TabNavigation="Local" Grid.ColumnSpan="2">
-                        <Button x:Name="btnToggle" Content="Switch Selection" HorizontalAlignment="Right" VerticalAlignment="Center" Width="100" IsEnabled="{Binding CmdToggleEnabled}" Command="{Binding CmdToggle}"/>
+                    <DockPanel Grid.Row="3" Grid.Column="0" >
+                        <Label Content="Fire status:"/>
+                        <ComboBox Name="cboFireStatus" IsReadOnly="true" ItemsSource="{Binding FilterFireStatus}" SelectedItem="{Binding SelectedFireStatus}"/>
                     </DockPanel>
-
+                    <DockPanel Grid.Row="3" Grid.Column="1" >
+                        <Button x:Name="btnToggle" Content="Switch Selection" HorizontalAlignment="Center" VerticalAlignment="Center" Width="100" IsEnabled="{Binding CmdToggleEnabled}" Command="{Binding CmdToggle}"/>
+                    </DockPanel>
                 </Grid>
             </TabItem>
             <TabItem>

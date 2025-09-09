@@ -31,6 +31,7 @@ namespace bagis_pro
     internal class DockAdminToolsViewModel : DockPane
     {
         private const string _dockPaneID = "bagis_pro_DockAdminTools";
+        private const string _include = "Include";
 
         protected DockAdminToolsViewModel() 
         {
@@ -59,6 +60,13 @@ namespace bagis_pro
             FireReportEnabled = false;
             Clip_Nifc_Checked = true;
             Clip_Mtbs_Checked = true;
+            FilterFireStatus = new ObservableCollection<string>();
+            FilterFireStatus.Add(_include);
+            FilterFireStatus.Add(AoiBatchState.MissingFireData.ToString());
+            FilterFireStatus.Add(AoiBatchState.HasReport.ToString());
+            FilterFireStatus.Add(AoiBatchState.MissingReport.ToString());
+            FilterFireStatus.Add(AoiBatchState.NoFire.ToString());
+            SelectedFireStatus = _include;
         }
 
         /// <summary>
@@ -131,6 +139,7 @@ namespace bagis_pro
         private bool _bClip_Mtbs_Checked;
         private bool _Reclip_MTBS_Checked = false;  //@ToDo: Change to true before production
         private string _strSettingsFile;
+        private string _strSelectedFireStatus;
         private const string _separator = ",";
 
         public string Heading
@@ -488,6 +497,15 @@ namespace bagis_pro
             }
         }
 
+        public string SelectedFireStatus
+        {
+            get { return _strSelectedFireStatus; }
+            set
+            {
+                SetProperty(ref _strSelectedFireStatus, value, () => SelectedFireStatus);
+            }
+        }
+
         public bool Reclip_MTBS_Checked
         {
             get { return _Reclip_MTBS_Checked; }
@@ -526,6 +544,7 @@ namespace bagis_pro
         }
 
         public ObservableCollection<BA_Objects.Aoi> Names { get; set; }
+        public ObservableCollection<string> FilterFireStatus { get; set; }
 
         // Assigns the propertyChanged event handler to each AOI item
         public void ContentCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
@@ -697,10 +716,76 @@ namespace bagis_pro
             {
                 return new RelayCommand( () =>
                 {
-                    for (int idxRow = 0; idxRow < Names.Count; idxRow++)
+                    switch (SelectedFireStatus)
                     {
-                        Names[idxRow].AoiBatchIsSelected = !Names [idxRow].AoiBatchIsSelected;                       
+                        case _include:
+                            for (int idxRow = 0; idxRow < Names.Count; idxRow++)
+                            {
+                                Names[idxRow].AoiBatchIsSelected = !Names[idxRow].AoiBatchIsSelected;
+                            }
+                            break;
+                        case nameof(AoiBatchState.MissingFireData):
+                            for (int idxRow = 0; idxRow < Names.Count; idxRow++)
+                            {
+                                if (Names[idxRow].AoiBatchStateText.Equals(AoiBatchState.MissingFireData.ToString()))
+                                {
+                                    Names[idxRow].AoiBatchIsSelected = true;
+                                }
+                                else
+                                {
+                                    Names[idxRow].AoiBatchIsSelected = false;
+                                }                                
+                            }
+                            break;
+                        case nameof(AoiBatchState.HasReport):
+                            for (int idxRow = 0; idxRow < Names.Count; idxRow++)
+                            {
+                                if (Names[idxRow].AoiBatchStateText.Equals(AoiBatchState.HasReport.ToString()))
+                                {
+                                    Names[idxRow].AoiBatchIsSelected = true;
+                                }
+                                else
+                                {
+                                    Names[idxRow].AoiBatchIsSelected = false;
+                                }
+                            }
+                            break;
+                        case nameof(AoiBatchState.MissingReport):
+                            for (int idxRow = 0; idxRow < Names.Count; idxRow++)
+                            {
+                                if (Names[idxRow].AoiBatchStateText.Equals(AoiBatchState.MissingReport.ToString()))
+                                {
+                                    Names[idxRow].AoiBatchIsSelected = true;
+                                }
+                                else
+                                {
+                                    Names[idxRow].AoiBatchIsSelected = false;
+                                }
+                            }
+                            break;
+                        case nameof(AoiBatchState.NoFire):
+                            for (int idxRow = 0; idxRow < Names.Count; idxRow++)
+                            {
+                                if (Names[idxRow].AoiBatchStateText.Equals(AoiBatchState.NoFire.ToString()))
+                                {
+                                    Names[idxRow].AoiBatchIsSelected = true;
+                                }
+                                else
+                                {
+                                    Names[idxRow].AoiBatchIsSelected = false;
+                                }
+                            }
+                            break;
+                        default:
+                            for (int idxRow = 0; idxRow < Names.Count; idxRow++)
+                            {
+                                Names[idxRow].AoiBatchIsSelected = !Names[idxRow].AoiBatchIsSelected;
+                            }
+                            break;
+
                     }
+
+
                 });
             }
         }
@@ -1181,6 +1266,7 @@ namespace bagis_pro
             {
                 return new RelayCommand( async () =>
                 {
+                    ResetAoiBatchStateText();
                     for (int idxRow = 0; idxRow < Names.Count; idxRow++)
                     {
                         Aoi oAoi = Names[idxRow];
@@ -2709,15 +2795,24 @@ namespace bagis_pro
                     }
                 }
             }
-            string[] arrInvalidStatus = [AoiBatchState.NotReady.ToString(), AoiBatchState.MissingFireData.ToString()];
+            string[] arrValidStatus = [AoiBatchState.HasReport.ToString(), AoiBatchState.MissingReport.ToString(), AoiBatchState.NoFire.ToString()];
+            for (int idxRow = 0; idxRow < Names.Count; idxRow++)
+            {
+                Aoi oAoi = Names[idxRow];
+                if (Names[idxRow].AoiBatchIsSelected && arrValidStatus.Contains(oAoi.AoiBatchStateText))
+                {
+                    oAoi.AoiBatchStateText = AoiBatchState.Waiting.ToString();
+                }
+            }
+
             for (int idxRow = 0; idxRow < Names.Count; idxRow++)
             {
                 if (Names[idxRow].AoiBatchIsSelected)
                 {
                     string aoiFolder = Names[idxRow].FilePath;
-                    if (arrInvalidStatus.Contains(Names[idxRow].AoiBatchStateText))
+                    if (!Names[idxRow].AoiBatchStateText.Equals(AoiBatchState.Waiting.ToString()))
                     {
-                        strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} Skipping fire report for {Names[idxRow].FilePath}. Required station information is missing.{System.Environment.NewLine}";
+                        strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} Skipping fire report for {Names[idxRow].FilePath}. AOI not ready for reports.{System.Environment.NewLine}";
                         File.AppendAllText(_strFireReportLogFile, strLogEntry);
                         continue;
                     }
@@ -2930,11 +3025,20 @@ namespace bagis_pro
 
             for (int idxRow = 0; idxRow < Names.Count; idxRow++)
             {
+                Aoi oAoi = Names[idxRow];
+                if (Names[idxRow].AoiBatchIsSelected && oAoi.AoiBatchStateText == AoiBatchState.HasReport.ToString())
+                {
+                    oAoi.AoiBatchStateText = AoiBatchState.Waiting.ToString();
+                }
+            }
+
+            for (int idxRow = 0; idxRow < Names.Count; idxRow++)
+            {
                 if (Names[idxRow].AoiBatchIsSelected)
                 {
                     string aoiFolder = Names[idxRow].FilePath;
                     string strFireGdbPath = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Fire);
-                    if (Names[idxRow].AoiBatchStateText.Equals(AoiBatchState.NotReady.ToString()))
+                    if (!Names[idxRow].AoiBatchStateText.Equals(AoiBatchState.Waiting.ToString()))
                     {
                         strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} Skipping fire map for {Names[idxRow].FilePath}. Required station information is missing.{System.Environment.NewLine}";
                         File.AppendAllText(_strFireMapsLogFile, strLogEntry);
@@ -2942,36 +3046,6 @@ namespace bagis_pro
                     }
                     else
                     {
-                        // Check for fire.gdb and data before continuing
-                        bool bHasFireData = false;
-                        if (Directory.Exists(strFireGdbPath))
-                        {
-                            if (await GeodatabaseTools.FeatureClassExistsAsync(new Uri(strFireGdbPath), Constants.FILE_NIFC_FIRE))
-                            {
-                                bHasFireData = true;
-                            }
-                        }
-                        if (!bHasFireData)
-                        {
-                            Names[idxRow].AoiBatchStateText = AoiBatchState.Failed.ToString();  // update gui
-                            strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Missing fire data for " +
-                                Names[idxRow].Name + "! Retrieve fire maps before running report. \r\n";
-                            File.AppendAllText(_strFireMapsLogFile, strLogEntry);       // append
-                            continue;
-                        }
-                        // Check to see if there are any features (fires) in nifcfire
-                        string strWhere = $"{Constants.FIELD_YEAR} >= {overrideMinYear} AND {Constants.FIELD_YEAR} <= {overrideMaxYear}";
-                        long lngCount = await GeodatabaseTools.CountFeaturesWithFilterAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Fire)),
-                            Constants.FILE_NIFC_FIRE, strWhere);
-                        if (lngCount <= 0)
-                        {
-                            Names[idxRow].AoiBatchStateText = AoiBatchState.Completed.ToString();  // update gui
-                            strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "No fires found for " +
-                                Names[idxRow].Name + " for selected time period. Fire maps not created. \r\n";
-                            File.AppendAllText(_strFireMapsLogFile, strLogEntry);       // append
-                            continue;
-                        }
-
                         Names[idxRow].AoiBatchStateText = AoiBatchState.Started.ToString();  // update gui
                         strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Starting fire maps for " +
                             Names[idxRow].Name + "\r\n";
@@ -3077,6 +3151,7 @@ namespace bagis_pro
                             string strWhere = $"{Constants.FIELD_YEAR} = {i}";
                             long lngCount = await GeodatabaseTools.CountFeaturesWithFilterAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Fire)),
                                 Constants.FILE_NIFC_FIRE, strWhere);
+                            //@ToDo: if lngCount is 0, we don't try to produce a map with mtbs. Is this what we want?
                             Module1.Current.DisplayedMap = $@"{strExportPrefix}_{i}{Constants.FILE_MAP_SUFFIX_PDF}";
                             if (success == BA_ReturnCode.Success && lngCount > 0)
                             {

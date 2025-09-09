@@ -113,7 +113,6 @@ namespace bagis_pro
         Prism_Precipitation_sq3,
         Prism_Precipitation_sq4,
     }
-
     public enum AoiBatchState
     {
         Waiting,
