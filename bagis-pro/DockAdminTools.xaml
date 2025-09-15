@@ -84,7 +84,8 @@
                         <ComboBox Name="cboFireStatus" IsReadOnly="true" ItemsSource="{Binding FilterFireStatus}" SelectedItem="{Binding SelectedFireStatus}"/>
                     </DockPanel>
                     <DockPanel Grid.Row="3" Grid.Column="1" >
-                        <Button x:Name="btnToggle" Content="Switch Selection" HorizontalAlignment="Center" VerticalAlignment="Center" Width="100" IsEnabled="{Binding CmdToggleEnabled}" Command="{Binding CmdToggle}"/>
+                        <Button x:Name="btnToggle" Content="Switch Selection" HorizontalAlignment="Center" VerticalAlignment="Center" Width="100" IsEnabled="{Binding CmdToggleEnabled}" Command="{Binding CmdToggle}" Margin="5,0,0,0"/>
+                        <Button x:Name="btnClear" Content="Clear All" HorizontalAlignment="Center" VerticalAlignment="Center" Width="75" IsEnabled="{Binding CmdToggleEnabled}" Command="{Binding CmdClearAll}" Margin="10,0,0,0"/>
                     </DockPanel>
                 </Grid>
             </TabItem>

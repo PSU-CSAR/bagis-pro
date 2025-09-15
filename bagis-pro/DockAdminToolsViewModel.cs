@@ -31,7 +31,7 @@ namespace bagis_pro
     internal class DockAdminToolsViewModel : DockPane
     {
         private const string _dockPaneID = "bagis_pro_DockAdminTools";
-        private const string _include = "Include";
+        private const string _all = "All";
 
         protected DockAdminToolsViewModel() 
         {
@@ -61,12 +61,12 @@ namespace bagis_pro
             Clip_Nifc_Checked = true;
             Clip_Mtbs_Checked = true;
             FilterFireStatus = new ObservableCollection<string>();
-            FilterFireStatus.Add(_include);
+            FilterFireStatus.Add(_all);
             FilterFireStatus.Add(AoiBatchState.MissingFireData.ToString());
             FilterFireStatus.Add(AoiBatchState.HasReport.ToString());
             FilterFireStatus.Add(AoiBatchState.MissingReport.ToString());
             FilterFireStatus.Add(AoiBatchState.NoFire.ToString());
-            SelectedFireStatus = _include;
+            SelectedFireStatus = _all;
         }
 
         /// <summary>
@@ -718,7 +718,7 @@ namespace bagis_pro
                 {
                     switch (SelectedFireStatus)
                     {
-                        case _include:
+                        case _all:
                             for (int idxRow = 0; idxRow < Names.Count; idxRow++)
                             {
                                 Names[idxRow].AoiBatchIsSelected = !Names[idxRow].AoiBatchIsSelected;
@@ -774,6 +774,19 @@ namespace bagis_pro
             }
         }
 
+        public System.Windows.Input.ICommand CmdClearAll
+        {
+            get
+            {
+                return new RelayCommand(() =>
+                {
+                    for (int idxRow = 0; idxRow < Names.Count; idxRow++)
+                    {
+                        Names[idxRow].AoiBatchIsSelected = false;
+                    }
+                });
+            }
+        }
         public ICommand CmdRun
         {
             get
@@ -2714,11 +2727,13 @@ namespace bagis_pro
                     bIncrementStatistics = false;
                 }
             }
+            string dateSuffix = DateTime.Now.ToString("MMddyyyy");
             // Warn if there is existing output and give option to terminate
             if (bAnnualStatistics)
             {
                 var dir = new DirectoryInfo($@"{Path.GetDirectoryName(_strFireReportLogFile)}");
-                var fileEnum = dir.EnumerateFiles("*_annual_statistics.csv");
+                string strSearch = $@"*_annual_statistics_{dateSuffix}.csv";
+                var fileEnum = dir.EnumerateFiles(strSearch);
                 if (fileEnum.Count() > 0)
                 {
                     System.Windows.MessageBoxResult res = MessageBox.Show("At least 1 annual statistics file exists in the output folder. Do you want to continue and overwrite these files?", "BAGIS-Pro",
@@ -2729,12 +2744,12 @@ namespace bagis_pro
                     }
                 }
             }
-            string strCsvIncrement = $@"{Path.GetDirectoryName(_strFireReportLogFile)}\increment_statistics.csv";
+            string strCsvIncrement = $@"{Path.GetDirectoryName(_strFireReportLogFile)}\increment_statistics_{dateSuffix}.csv";
             if (bIncrementStatistics)
             {
                 if (File.Exists(strCsvIncrement))
                 {
-                    System.Windows.MessageBoxResult res = MessageBox.Show("The increment_statistics.csv file exists in the output folder. Do you want to continue and overwrite this file?", "BAGIS-Pro",
+                    System.Windows.MessageBoxResult res = MessageBox.Show($@"The {strCsvIncrement} file exists in the output folder. Do you want to continue and overwrite this file?", "BAGIS-Pro",
                         System.Windows.MessageBoxButton.YesNo);
                     if (res != System.Windows.MessageBoxResult.Yes)
                     {
@@ -2748,7 +2763,7 @@ namespace bagis_pro
                 // Delete any annual statistics files we plan to overwrite
                 for (int i = overrideMinYear; i <= overrideMaxYear; i++)
                 {
-                    string strCsvFile = $@"{Path.GetDirectoryName(_strFireReportLogFile)}\{i}_annual_statistics.csv";
+                    string strCsvFile = $@"{Path.GetDirectoryName(_strFireReportLogFile)}\{i}_annual_statistics_{dateSuffix}.csv";
                     if (File.Exists(strCsvFile))
                     {
                         try
@@ -2802,7 +2817,10 @@ namespace bagis_pro
                     }
                     else
                     {
-
+                        Names[idxRow].AoiBatchStateText = AoiBatchState.Started.ToString();  // update gui
+                        strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Starting fire statistics for " +
+                            Names[idxRow].Name + "\r\n";
+                        File.AppendAllText(_strFireReportLogFile, strLogEntry);       // append
                     }
                     // Set current AOI
                     Aoi oAoi = await GeneralTools.SetAoiAsync(aoiFolder, Names[idxRow]);
@@ -2840,7 +2858,7 @@ namespace bagis_pro
                         for (int i = overrideMinYear; i <= overrideMaxYear; i++)
                         {
                             BA_ReturnCode success = BA_ReturnCode.WriteError;
-                            string strCsvFile = $@"{Path.GetDirectoryName(_strFireReportLogFile)}\{i}_annual_statistics.csv";
+                            string strCsvFile = $@"{Path.GetDirectoryName(_strFireReportLogFile)}\{i}_annual_statistics_{dateSuffix}.csv";
                             if (!File.Exists(strCsvFile))
                             {
                                 success = this.InitAnnualCsv(i, strCsvFile);
@@ -2887,11 +2905,10 @@ namespace bagis_pro
                             bRequestPeriods = true;
                         }
                         BA_ReturnCode success = BA_ReturnCode.WriteError;
-                        string strCsvFile = $@"{Path.GetDirectoryName(_strFireReportLogFile)}\increment_statistics.csv";
                         lstInterval = GeneralTools.GetFireStatisticsIntervals(IncrementalEndYear, FireDataClipYears, FireIncrementYears, bRequestPeriods, FireTimePeriodCount, out intIncrementPeriods);
-                        if (!File.Exists(strCsvFile))
+                        if (!File.Exists(strCsvIncrement))
                         {
-                            success = this.InitIncrementCsv(intIncrementPeriods, strCsvFile);
+                            success = this.InitIncrementCsv(intIncrementPeriods, strCsvIncrement);
                         }
                         else
                         {
@@ -2909,14 +2926,14 @@ namespace bagis_pro
                                 {
                                     sb.Append($@"{item}{_separator}");
                                 }
-                                using (StreamWriter sw = File.AppendText(strCsvFile))
+                                using (StreamWriter sw = File.AppendText(strCsvIncrement))
                                 {
                                     sw.WriteLine(sb.ToString());
                                 }
                             }
                             catch (Exception ex)
                             {
-                                strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} Data could not be written to the {strCsvFile} file!{System.Environment.NewLine}";
+                                strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} Data could not be written to the {strCsvIncrement} file!{System.Environment.NewLine}";
                                 File.AppendAllText(_strFireReportLogFile, strLogEntry);
                                 return;
                             }
@@ -3033,7 +3050,7 @@ namespace bagis_pro
                         Names[idxRow].AoiBatchStateText = AoiBatchState.Started.ToString();  // update gui
                         strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Starting fire maps for " +
                             Names[idxRow].Name + "\r\n";
-                        File.AppendAllText(_strFireReportLogFile, strLogEntry);       // append
+                        File.AppendAllText(_strFireMapsLogFile, strLogEntry);       // append
                     }
                     // Set current AOI
                     Aoi oAoi = await GeneralTools.SetAoiAsync(aoiFolder, Names[idxRow]);
