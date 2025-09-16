@@ -313,11 +313,11 @@
                             </StackPanel>
                             <StackPanel Grid.Row="3" Orientation="Horizontal">
                                 <Button x:Name="btnFireDataLog" Content="View Log" HorizontalAlignment="Left" VerticalAlignment="Center" Width="75" IsEnabled="{Binding CmdFireDataLogEnabled}" Command="{Binding CmdFireDataLog}" Margin="5, 0, 70, 0"/>
-                                <Button x:Name="btnFireData" Content="Retrieve" HorizontalAlignment="Right" VerticalAlignment="Center" Width="60" IsEnabled="{Binding CmdFireReportEnabled}" Command="{Binding CmdFireData}" Margin="70, 0, 0, 0"/>
+                                <Button x:Name="btnFireData" Content="Retrieve" HorizontalAlignment="Right" VerticalAlignment="Center" Width="60" IsEnabled="{Binding FireDataEnabled}" Command="{Binding CmdFireData}" Margin="70, 0, 0, 0"/>
                             </StackPanel>
                         </Grid>
                     </GroupBox>
-                    <GroupBox Margin="5,0,0,5" Padding="2" Grid.Row="2" HorizontalAlignment="Left" IsEnabled="{Binding FireReportEnabled}">
+                    <GroupBox Margin="5,0,0,5" Padding="2" Grid.Row="2" HorizontalAlignment="Left">
                         <GroupBox.Header>
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock FontWeight="Bold">Generate AOI Fire Reports and Maps</TextBlock>
@@ -339,7 +339,7 @@
                                 <RowDefinition Height="30"/>
                             </Grid.RowDefinitions>
                             <StackPanel Grid.Row="0" Orientation="Horizontal" Grid.ColumnSpan="2">
-                                <Button x:Name="btnVerifyForFire" Content="Verify AOI List For Fire" HorizontalAlignment="Left" VerticalAlignment="Center" Width="130" Margin="5, 0, 0, 0" Command="{Binding CmdVerifyForFire}"/>
+                                <Button x:Name="btnVerifyForFire" Content="Verify AOI List For Fire" HorizontalAlignment="Left" VerticalAlignment="Center" Width="130" Margin="5, 0, 0, 0" IsEnabled="{Binding FireDataEnabled}" Command="{Binding CmdVerifyForFire}"/>
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Grid.Row="1" Margin="0,0,0,2" Grid.ColumnSpan="2">
                                 <Label Content="Annual report end year:"/>

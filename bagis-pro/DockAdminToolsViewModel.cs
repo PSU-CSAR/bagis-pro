@@ -56,8 +56,6 @@ namespace bagis_pro
             Names.CollectionChanged += ContentCollectionChanged;
             ArchiveChecked = true;
             TasksEnabled = false;
-            FireDataEnabled = false;
-            FireReportEnabled = false;
             Clip_Nifc_Checked = true;
             Clip_Mtbs_Checked = true;
             FilterFireStatus = new ObservableCollection<string>();
@@ -112,7 +110,6 @@ namespace bagis_pro
         private bool _mergeAoiVChecked = true;
         private bool _updateStationDataChecked = false;
         private bool _fireDataEnabled = false;
-        private bool _fireReportEnabled = false;
         private string _fireReportFolder;
         private bool _cmdFireReportLogEnabled = false;
         private bool _cmdFireReportEnabled = false;
@@ -244,16 +241,6 @@ namespace bagis_pro
                 SetProperty(ref _fireDataEnabled, value, () => FireDataEnabled);
             }
         }
-
-        public bool FireReportEnabled
-        {
-            get { return _fireReportEnabled; }
-            set
-            {
-                SetProperty(ref _fireReportEnabled, value, () => FireReportEnabled);
-            }
-        }
-
         public bool CmdRunEnabled
         {
             get { return _cmdRunEnabled; }
@@ -579,7 +566,7 @@ namespace bagis_pro
                     break;
                 }
             }
-            TasksEnabled = bOneSelected;    
+            TasksEnabled = bOneSelected;
         }
 
         public System.Windows.Input.ICommand CmdAoiFolder
@@ -661,7 +648,6 @@ namespace bagis_pro
                         CmdToggleEnabled = true;
                         TasksEnabled = true;
                         CmdGenStatisticsEnabled = true;
-                        CmdFireReportEnabled = true;
                     }
                     else
                     {
@@ -674,10 +660,9 @@ namespace bagis_pro
                         CmdToggleEnabled = false;
                         TasksEnabled = false;
                         FireDataEnabled = false;
-                        FireReportEnabled = false;
                         CmdGenStatisticsEnabled = false;
-                        CmdFireReportEnabled = false;
                     }
+                    CmdFireReportEnabled = false;
 
                     // Query minimum available fire data year from webservice; It's here because it's an async call
                     if (AnnualEndYear < 1)   // Only do this the first time an AOI folder is selected
@@ -704,7 +689,6 @@ namespace bagis_pro
                         int intIncrementPeriods;
                         IList<Interval> lstInterval = GeneralTools.GetFireStatisticsIntervals(IncrementalEndYear, FireDataClipYears, FireIncrementYears, false, 0, out intIncrementPeriods);
                         FireTimePeriodCount = intIncrementPeriods;
-                        FireReportEnabled = true;
                     }
                 });
             }
@@ -1381,6 +1365,7 @@ namespace bagis_pro
                             }
                         }
                     }
+                    CmdFireReportEnabled = true;
                 });
             }
         }
@@ -2988,6 +2973,7 @@ namespace bagis_pro
                     File.AppendAllText(_strFireReportLogFile, strLogEntry);       // append
                 }
             }
+            CmdFireReportEnabled = false;
             MessageBox.Show("Fire statistics have been generated!");
         }
 
@@ -3338,6 +3324,7 @@ namespace bagis_pro
             }
             strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Completed fire maps generation" + "\r\n";
             File.AppendAllText(_strFireMapsLogFile, strLogEntry);       // append
+            CmdFireReportEnabled = false;
             MessageBox.Show("Fire maps have been generated!");
         }
         private string GetMtbsMapName(int year)
