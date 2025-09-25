@@ -1,8 +1,12 @@
-﻿using ArcGIS.Desktop.Framework;
+﻿using ArcGIS.Desktop.Core.Geoprocessing;
+using ArcGIS.Desktop.Framework;
 using ArcGIS.Desktop.Framework.Contracts;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
+using ArcGIS.Desktop.Mapping;
 using bagis_pro.BA_Objects;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
@@ -19,6 +23,7 @@ namespace bagis_pro.Basin
         bool _slopeChecked = true;
         bool _aspectChecked = true;
         bool _hillshadeChecked = true;
+        bool _cmdClipEnabled = true;
         double _zFactor = 1;
         private bool _smoothDemChecked;
         private int _filterCellHeight = 3;
@@ -64,6 +69,11 @@ namespace bagis_pro.Basin
         {
             get => _demExtentChecked;
             set => SetProperty(ref _demExtentChecked, value);
+        }
+        public bool CmdClipEnabled
+        {
+            get => _cmdClipEnabled;
+            set => SetProperty(ref _cmdClipEnabled, value);
         }
         public double ZFactor
         {
@@ -142,13 +152,13 @@ namespace bagis_pro.Basin
             var pane = (DockBasinToolViewModel)FrameworkApplication.DockPaneManager.Find("bagis_pro_Basin_DockBasinTool");;
             _basinFolder = pane.ParentFolder;
 
-
             uint nStep = 12;
             int intWait = 500;
             var progress = new ProgressDialog("Processing ...", "Cancel", 100, false);
             var status = new CancelableProgressorSource(progress);
             status.Max = 100;
             progress.Show();
+            CmdClipEnabled = false;
             IList<string> lstExistingGdb = GeodatabaseTools.CheckForBasinGdb(_basinFolder);
             for (int i = 0; i < lstExistingGdb.Count; i++)
             {
@@ -156,7 +166,16 @@ namespace bagis_pro.Basin
                 System.IO.Directory.Delete(lstExistingGdb[i], true);
             }
             BA_ReturnCode success = await GeodatabaseTools.CreateGeodatabaseFoldersAsync(_basinFolder, FolderType.BASIN, status.Progressor);
-
+            if (success != BA_ReturnCode.Success)
+            {
+                MessageBox.Show("Unable to create basin file geodatabases. Check permissions and disk space and try again.", "BAGIS-Pro");
+                progress.Hide();
+                progress.Dispose();
+                CmdClipEnabled = true;
+                return;
+            }
+            
+            string gdbAoi = GeodatabaseTools.GetGeodatabasePath(_basinFolder, GeodatabaseNames.Aoi);
             await QueuedTask.Run(() =>
             {
                 status.Progressor.Value = 0;    // reset the progressor's value back to 0 between GP tasks
@@ -165,11 +184,59 @@ namespace bagis_pro.Basin
                 Task.Delay(intWait).Wait();
             }, status.Progressor);
 
+            IGPResult gpResult = await QueuedTask.Run(() =>
+            {
+                var parameters = Geoprocessing.MakeValueArray(Constants.MAPS_CLIP_DEM_LAYER, "POLYGON", $@"{gdbAoi}\{Constants.FILE_AOI_VECTOR}",
+                    "DELETE_GRAPHICS");
+                CancelableProgressor prog = CancelableProgressor.None;
+                if (status != null)
+                {
+                    prog = status.Progressor;
+                }
+                return Geoprocessing.ExecuteToolAsync("GraphicsToFeatures_conversion", parameters, null,
+                            prog, GPExecuteToolFlags.AddToHistory);
+            });
 
+            Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
+            await QueuedTask.Run(() =>
+            {
+                // Create a new graphics layer if one doesn't exist
+                var graphicsLayer = oMap.GetLayersAsFlattenedList().OfType<GraphicsLayer>().Where(f =>
+                    f.Name == Constants.MAPS_CLIP_DEM_LAYER).FirstOrDefault();
+                if (graphicsLayer != null)
+                {
+                    oMap.RemoveLayer(graphicsLayer);
+                }                
+            });
+
+            if (gpResult.IsFailed)
+            {
+                MessageBox.Show("Unable to save the DEM extent file!", "BAGIS-Pro");
+                progress.Hide();
+                progress.Dispose();
+                CmdClipEnabled = true;
+                return;
+            }
+
+            //@ToDo: Outstanding question if we want the same fields as AOI's; If so, look at AddAOIVectorAttributesAsync method
+            string[] arrAddFields = new string[] { Constants.FIELD_BASIN };
+            string[] arrNewFieldTypes = new string[] { "TEXT" };
+            string basinName = System.IO.Path.GetFileName(_basinFolder);
+            success = await GeoprocessingTools.AddFieldAsync($@"{gdbAoi}\{Constants.FILE_AOI_VECTOR}", arrAddFields[0],
+                arrNewFieldTypes[0], status);
+            if (success == BA_ReturnCode.Success && !string.IsNullOrEmpty(basinName))
+            {
+                IDictionary<string, string> dictUpdate = new Dictionary<string, string>();
+                dictUpdate.Add(arrAddFields[0], basinName);
+                success = await GeodatabaseTools.UpdateFeatureAttributesAsync(new System.Uri(gdbAoi), Constants.FILE_AOI_VECTOR, 
+                    new ArcGIS.Core.Data.QueryFilter(), dictUpdate);
+            }
 
             // Clean-up step progressor
             progress.Hide();
             progress.Dispose();
+            CmdClipEnabled = true;
+            MessageBox.Show("Done!");
         }
     }
 }
