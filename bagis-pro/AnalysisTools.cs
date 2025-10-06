@@ -3028,7 +3028,7 @@ namespace bagis_pro
             return success;
         }
 
-        public static async Task<BA_ReturnCode> ClipRasterLayerNoBufferAsync(string strAoiPath, string strClipPath, string strClipExtent, 
+        public static async Task<BA_ReturnCode> ClipRasterLayerNoBufferAsync(string strAoiPath, string strClipPath, 
             string inputRaster, string outputRaster, string snapRasterPath, CancelableProgressor prog)
         {
             // Query the extent for the clip

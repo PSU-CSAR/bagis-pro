@@ -389,7 +389,7 @@ namespace bagis_pro
             {
                 string tempDem = "originaldem";
                 string tempOutput = $@"{surfacesGdbPath}\{tempDem}";
-                success = await AnalysisTools.ClipRasterLayerNoBufferAsync(oAoi.FilePath, strOutputFeatures, Constants.FILE_AOI_BUFFERED_VECTOR,
+                success = await AnalysisTools.ClipRasterLayerNoBufferAsync(oAoi.FilePath, strOutputFeatures,
                     strSourceDem, tempOutput, strSourceDem, status.Progressor);
 
                 string strDem = $@"{surfacesGdbPath}\{Constants.FILE_DEM}";
