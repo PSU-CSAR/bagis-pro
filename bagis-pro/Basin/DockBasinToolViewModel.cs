@@ -139,12 +139,10 @@ namespace bagis_pro.Basin
         public void FolderEntryPropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             //This will get called when the property of an object inside the collection changes
-            bool bOneSelected = false;
             for (int idxRow = 0; idxRow < Subfolders.Count; idxRow++)
             {
                 if (Subfolders[idxRow].BasinStatus.Length > 1)
                 {
-                    bOneSelected = true;
                     break;
                 }
             }
@@ -466,6 +464,10 @@ namespace bagis_pro.Basin
                     Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
                     BA_ReturnCode success = await MapTools.SetDefaultMapFrameDimensionAsync(Constants.MAPS_DEFAULT_MAP_FRAME_NAME, layout, oMap,
                         0.5, 2.5, 8.0, 10.5);
+                    FrameworkApplication.Current.Dispatcher.Invoke(() =>
+                    {
+                        Module1.Current.CboCurrentBasin.SetBasinName(Path.GetFileName(ParentFolder));
+                    });
                     IList<Aoi> lstAois = await GeneralTools.GetAoiFoldersAsync(ParentFolder, "");
                     bool bNeedToClipDem = true;
                     if (BasinStatus.ToUpper().IndexOf("RESOLUTION") > -1)   // FGDB exists

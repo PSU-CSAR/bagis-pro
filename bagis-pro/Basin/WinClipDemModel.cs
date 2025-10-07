@@ -159,7 +159,7 @@ namespace bagis_pro.Basin
             var pane = (DockBasinToolViewModel)FrameworkApplication.DockPaneManager.Find("bagis_pro_Basin_DockBasinTool");;
             _basinFolder = pane.ParentFolder;
 
-            uint nStep = 12;
+            uint nStep = 7;
             int intWait = 500;
             var progress = new ProgressDialog("Processing ...", "Cancel", 100, false);
             var status = new CancelableProgressorSource(progress);
@@ -195,13 +195,8 @@ namespace bagis_pro.Basin
             {
                 var parameters = Geoprocessing.MakeValueArray(Constants.MAPS_CLIP_DEM_LAYER, "POLYGON", $@"{gdbAoi}\{Constants.FILE_AOI_VECTOR}",
                     "DELETE_GRAPHICS");
-                CancelableProgressor prog = CancelableProgressor.None;
-                if (status != null)
-                {
-                    prog = status.Progressor;
-                }
                 return Geoprocessing.ExecuteToolAsync("GraphicsToFeatures_conversion", parameters, null,
-                            prog, GPExecuteToolFlags.AddToHistory);
+                            status.Progressor, GPExecuteToolFlags.AddToHistory);
             });
 
             Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
@@ -215,8 +210,7 @@ namespace bagis_pro.Basin
                 return;
             }
 
-            //@ToDo: Outstanding question if we want the same fields as AOI's; If so, look at AddAOIVectorAttributesAsync method
-            string[] arrAddFields = new string[] { Constants.FIELD_BASIN };
+            string[] arrAddFields = new string[] { Constants.FIELD_BASIN };     // A basin doesnt need station_name or station_triplet
             string[] arrNewFieldTypes = new string[] { "TEXT" };
             string basinName = System.IO.Path.GetFileName(_basinFolder);
             success = await GeoprocessingTools.AddFieldAsync($@"{gdbAoi}\{Constants.FILE_AOI_VECTOR}", arrAddFields[0],
@@ -483,11 +477,43 @@ namespace bagis_pro.Basin
                     "ArcGIS Colors", "Black to White", 0);
             }
 
+            await QueuedTask.Run(() =>
+            {
+                status.Progressor.Value = 0;    // reset the progressor's value back to 0 between GP tasks
+                status.Progressor.Message = $@"Calculating Hillshade... (step 7 of {nStep})";
+                //block the CIM for a second
+                Task.Delay(intWait).Wait();
+            }, status.Progressor);
+
+            parameters = Geoprocessing.MakeValueArray($@"{surfacesGdbPath}\{Constants.FILE_DEM_FILLED}",
+                $@"{surfacesGdbPath}\{Constants.FILE_HILLSHADE}", "", "", "", ZFactor);
+            environments = Geoprocessing.MakeEnvironmentArray(workspace: _basinFolder, snapRaster: strSourceDem);
+            gpResult = await Geoprocessing.ExecuteToolAsync("Hillshade_sa", parameters, environments,
+                status.Progressor, GPExecuteToolFlags.AddToHistory);
+            if (gpResult.IsFailed)
+            {
+                int retVal = await AbandonClipDEMAsync(_basinFolder, progress, status.Progressor);
+                return;
+            }
+            if (HillshadeChecked)
+            {
+                await MapTools.DisplayRasterStretchSymbolAsync(Constants.MAPS_DEFAULT_MAP_NAME, new Uri($@"{surfacesGdbPath}\{Constants.FILE_HILLSHADE}"), Constants.MAPS_HILLSHADE,
+                    "ArcGIS Colors", "Black to White", 0);
+            }
+
+            //if DEM is successfully clipped then disable the DEM clip tools and enable the AOI_tool
+            //declare the property value of buttons in the main toolbar
+            if (success == BA_ReturnCode.Success)
+            {
+                Module1.DeactivateState("bagis_pro_Buttons_SetBasinExtentTool_State");
+                Module1.DeactivateState("bagis_pro_Buttons_BtnCreateBasin_State");
+                Module1.ActivateState("bagis_pro_Buttons_BtnDefineAoi_State");
+            }
+
             // Clean-up step progressor
             progress.Hide();
             progress.Dispose();
             CmdClipEnabled = true;
-            MessageBox.Show("Done!");
         }
         private async Task<int> AbandonClipDEMAsync(string aoiPath, ProgressDialog prog, CancelableProgressor status)
         {
