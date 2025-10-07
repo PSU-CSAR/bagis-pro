@@ -32,6 +32,7 @@
           <button refID="bagis_pro_Buttons_BtnDefineAoi" size="middle" />
           <button refID="bagis_pro_Buttons_BtnSetPourpoint" size="middle" />
           <button refID="bagis_pro_Buttons_BtnCreateAoi" size="middle" />
+          <button refID="bagis_pro_Aoi_WinAoiInfo" size="large" />
         </group>
         <group id="bagis_pro_Groups_Maps" appearsOnAddInTab="false" caption="Map Functions" keytip="G3">
           <labelControl refID="bagis_pro_Buttons_LblCurrentAoi" />
@@ -263,6 +264,9 @@
         <button id="bagis_pro_Buttons_BtnCreateAoi" caption="Create AOI" className="bagis_pro.Buttons.BtnCreateAoi" loadOnClick="true" condition="bagis_pro_Buttons_BtnCreateAoi_Condition" smallImage="WatershedHammer16" largeImage="WatershedHammer32">
           <tooltip heading="Create AOI">Create AOI<disabledText /></tooltip>
         </button>
+        <button id="bagis_pro_AoiTools_WinAoiInfo" caption="WinAoiInfo" className="bagis_pro.AoiTools.ShowWinAoiInfo" loadOnClick="true" smallImage="GenericButtonPurple16" largeImage="GenericButtonPurple32">
+          <tooltip heading="Tooltip Heading">Tooltip text<disabledText /></tooltip>
+        </button>
       </controls>
       <menus>
         <menu id="bagis_pro_Menus_MnuAoiTools" caption="AOI Tools">
@@ -270,6 +274,7 @@
           <button refID="bagis_pro_Basin_DockBasinTool_ShowButton" />
           <button refID="bagis_pro_Menus_MnuAoiTools_AOIShapefile" />
           <button refID="bagis_pro_Menus_MnuAoiTools_BtnSelectAoi" />
+          <button refID="bagis_pro_AoiTools_WinAoiInfo" />
           <button refID="bagis_pro_Menus_MnuAoiTools_Options" separator="true" />
         </menu>
       </menus>
@@ -297,9 +302,6 @@
         </dockPane>
         <dockPane id="bagis_pro_DockCreateAOIfromExistingBND" caption="Create AOI from a shapefile" className="DockCreateAOIfromExistingBNDViewModel" dock="group" dockWith="esri_core_projectDockPane">
           <content className="DockCreateAOIfromExistingBNDView" />
-        </dockPane>
-        <dockPane id="bagis_pro_DockAoiInfo" caption="DockAoiInfo" className="DockAoiInfoViewModel" dock="group" dockWith="esri_core_projectDockPane">
-          <content className="DockAoiInfoView" />
         </dockPane>
         <dockPane id="bagis_pro_Basin_DockBasinTool" caption="Basin Tool" className="bagis_pro.Basin.DockBasinToolViewModel" height="550" width="800" dock="float" dockWith="esri_core_projectDockPane">
           <content className="bagis_pro.Basin.DockBasinToolView" />
