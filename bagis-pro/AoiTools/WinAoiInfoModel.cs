@@ -4,11 +4,14 @@ using ArcGIS.Desktop.Core.Geoprocessing;
 using ArcGIS.Desktop.Framework;
 using ArcGIS.Desktop.Framework.Contracts;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
+using ArcGIS.Desktop.Internal.Mapping.Symbology;
 using ArcGIS.Desktop.Mapping;
 using bagis_pro.BA_Objects;
 using ExtensionMethod;
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -20,10 +23,62 @@ namespace bagis_pro.AoiTools
     internal class WinAoiInfoModel : PropertyChangedBase
     {
         WinAoiInfo _view = null;
+        double _minElevMeters;
+        double _maxElevMeters;
+        double _areaSqKm;
+        double _areaAcre;
+        double _areaSqMiles;
 
         public WinAoiInfoModel(WinAoiInfo view)
         {
             _view = view;
+        }
+
+        public double MinElevMeters
+        {
+            get => _minElevMeters;
+            set
+            {
+                if (_minElevMeters != value)
+                {
+                    _minElevMeters = value;
+                    NotifyPropertyChanged(nameof(MinElevMeters));
+                    NotifyPropertyChanged(nameof(ElevRangeMeters)); // Also notify the calculated property                    
+                }
+            }
+        }
+        public double MaxElevMeters
+        {
+            get => _maxElevMeters;
+            set
+            {
+                if (_maxElevMeters != value)
+                {
+                    _maxElevMeters = value;
+                    NotifyPropertyChanged(nameof(MaxElevMeters));
+                    NotifyPropertyChanged(nameof(ElevRangeMeters)); // Also notify the calculated property                    
+                }
+            }
+        }
+        public double AreaSqKm
+        {
+            get => _areaSqKm;
+            set => SetProperty(ref _areaSqKm, value);
+        }
+
+        public double AreaAcre
+        {
+            get => _areaAcre;
+            set => SetProperty(ref _areaAcre, value);
+        }
+        public double AreaSqMile
+        {
+            get => _areaSqMiles;
+            set => SetProperty(ref _areaSqMiles, value);
+        }
+        public double ElevRangeMeters
+        {
+            get => Math.Round(MaxElevMeters - MinElevMeters, 2);
         }
 
         private RelayCommand _setAoiCommand;
@@ -55,6 +110,7 @@ namespace bagis_pro.AoiTools
                     if (oAoi != null)
                     {
                         Module1.Current.CboCurrentAoi.SetAoiName(oAoi.Name);
+                        _view.Title = $@"AOI: {oAoi.Name}";
                         MessageBox.Show("AOI is set to " + oAoi.Name + "!", "BAGIS PRO");
 
                         if (!oAoi.ValidForecastData)
@@ -91,6 +147,25 @@ namespace bagis_pro.AoiTools
                                 MessageBox.Show(sb.ToString(), "BAGIS PRO");
                             }
                         }
+                        string sMask = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_VECTOR;
+                        IList<double> lstResult = await GeoprocessingTools.GetDemStatsAsync(oAoi.FilePath, sMask, 0.005);
+                        if (lstResult.Count == 2)   // We expect the min and max values in that order
+                        {
+                            MinElevMeters = Math.Round(lstResult[0],2);
+                            MaxElevMeters = Math.Round(lstResult[1],2);
+                        }
+                        var result = await GeodatabaseTools.CalculateAoiAreaSqMetersAsync(oAoi.FilePath, -1);
+                        double dblAreaSqM = result.Item1;
+                        if (dblAreaSqM > 0)
+                        {
+                            AreaSqKm = Math.Round(ArcGIS.Core.Geometry.AreaUnit.SquareMeters.ConvertTo(dblAreaSqM,
+                                ArcGIS.Core.Geometry.AreaUnit.SquareKilometers), 2);
+                            AreaAcre = Math.Round(ArcGIS.Core.Geometry.AreaUnit.SquareMeters.ConvertTo(dblAreaSqM,
+                                ArcGIS.Core.Geometry.AreaUnit.Acres), 2);
+                            AreaSqMile = Math.Round(ArcGIS.Core.Geometry.AreaUnit.SquareMeters.ConvertTo(dblAreaSqM,
+                                ArcGIS.Core.Geometry.AreaUnit.SquareMiles), 2);
+                        }
+
                     }
                 }
             }

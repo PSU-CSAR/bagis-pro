@@ -5,7 +5,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:extensions="clr-namespace:ArcGIS.Desktop.Extensions;assembly=ArcGIS.Desktop.Extensions"
-        mc:Ignorable="d" Height="300" Width="300"
+        mc:Ignorable="d" Height="300" Width="400"
         WindowStartupLocation="CenterOwner"
     >
     <controls:ProWindow.Resources>
@@ -30,12 +30,51 @@
             <ColumnDefinition Width="Auto"/>
         </Grid.ColumnDefinitions>
         <DockPanel Grid.Row="0" Grid.Column="0" Margin="2,0,2,0">
-            <TextBlock Name="tbElevation" MaxWidth="100" VerticalAlignment="Center" HorizontalAlignment="Right" FontWeight="Bold" Text="Elevation Stats:" Margin="5, 0, 0, 0"/>
+            <TextBlock Name="tbElevation" MaxWidth="100" VerticalAlignment="Center" HorizontalAlignment="Left" FontWeight="Bold" Text="Elevation Stats:" Margin="5, 0, 0, 0"/>
+        </DockPanel>
+        <DockPanel Grid.Row="1" Grid.Column="0" Margin="2,0,2,0">
+            <TextBlock Name="tbMin" MaxWidth="50" VerticalAlignment="Center" HorizontalAlignment="Left"  Text="Min:" Margin="2, 0, 0, 0"/>
+            <TextBox x:Name="txtMinElev" Text="{Binding MinElevMeters}" HorizontalAlignment="Right"  
+                                    VerticalAlignment="Center" Width="60" IsReadOnly="True"
+                                    Foreground="Blue" FontWeight="Bold" Background="Transparent"/>
+            <TextBlock Name="tbMinUnits" MaxWidth="50" VerticalAlignment="Center" HorizontalAlignment="Left"  Text="Meters" Margin="2, 0, 0, 0"/>
+        </DockPanel>
+        <DockPanel Grid.Row="2" Grid.Column="0" Margin="2,0,2,0">
+            <TextBlock Name="tbMax" MaxWidth="50" VerticalAlignment="Center" HorizontalAlignment="Left"  Text="Max:" Margin="2, 0, 0, 0"/>
+            <TextBox x:Name="txtMaxElev" Text="{Binding MaxElevMeters}" HorizontalAlignment="Right"  
+                                    VerticalAlignment="Center" Width="60" IsReadOnly="True"
+                                    Foreground="Blue" FontWeight="Bold" Background="Transparent"/>
+            <TextBlock Name="tbMaxUnits" MaxWidth="50" VerticalAlignment="Center" HorizontalAlignment="Left"  Text="Meters" Margin="5, 0, 0, 0"/>
+        </DockPanel>
+        <DockPanel Grid.Row="3" Grid.Column="0" Margin="2,0,2,0">
+            <TextBlock Name="tbRange" MaxWidth="50" VerticalAlignment="Center" HorizontalAlignment="Left"  Text="Range:" Margin="2, 0, 0, 0"/>
+            <TextBox x:Name="txtMaxRange" Text="{Binding Path=ElevRangeMeters, Mode=OneWay}" HorizontalAlignment="Right"  
+                                    VerticalAlignment="Center" Width="60" IsReadOnly="True"
+                                    Foreground="Blue" FontWeight="Bold" Background="Transparent"/>
+            <TextBlock Name="tbRangeUnits" MaxWidth="50" VerticalAlignment="Center" HorizontalAlignment="Left"  Text="Meters" Margin="5, 0, 0, 0"/>
         </DockPanel>
         <DockPanel Grid.Row="0" Grid.Column="1" Margin="2,0,2,0">
-            <TextBlock Name="tbArea" MaxWidth="100" VerticalAlignment="Center" HorizontalAlignment="Right" FontWeight="Bold" Text="Aoi Area:" Margin="5, 0, 0, 0"/>
+            <TextBlock Name="tbArea" MaxWidth="100" VerticalAlignment="Center" HorizontalAlignment="Left" FontWeight="Bold" Text="Aoi Area:" Margin="5, 0, 0, 0"/>
         </DockPanel>
-        <DockPanel Grid.Row="0" Grid.Column="2" Margin="2,0,2,0">
+        <DockPanel Grid.Row="1" Grid.Column="1" Margin="2,0,2,0">
+            <TextBox x:Name="txtAreaSqKm" Text="{Binding Path=AreaSqKm}" HorizontalAlignment="Right"  
+                                    VerticalAlignment="Center" Width="80" IsReadOnly="True"
+                                    Foreground="Blue" FontWeight="Bold" Background="Transparent"/>
+            <TextBlock MaxWidth="60" VerticalAlignment="Center" HorizontalAlignment="Left"  Text="Square Km" Margin="5, 0, 0, 0"/>
+        </DockPanel>
+        <DockPanel Grid.Row="2" Grid.Column="1" Margin="2,0,2,0">
+            <TextBox x:Name="txtAreaAcre" Text="{Binding Path=AreaAcre}" HorizontalAlignment="Right"  
+                            VerticalAlignment="Center" Width="80" IsReadOnly="True"
+                            Foreground="Blue" FontWeight="Bold" Background="Transparent"/>
+            <TextBlock MaxWidth="60" VerticalAlignment="Center" HorizontalAlignment="Left"  Text="Acre" Margin="5, 0, 0, 0"/>
+        </DockPanel>
+        <DockPanel Grid.Row="3" Grid.Column="1" Margin="2,0,2,0">
+            <TextBox x:Name="txtAreaSqMile" Text="{Binding Path=AreaSqMile}" HorizontalAlignment="Right"  
+                            VerticalAlignment="Center" Width="80" IsReadOnly="True"
+                            Foreground="Blue" FontWeight="Bold" Background="Transparent"/>
+            <TextBlock MaxWidth="70" VerticalAlignment="Center" HorizontalAlignment="Left"  Text="Square Mile" Margin="5, 0, 0, 0"/>
+        </DockPanel>
+        <DockPanel Grid.Row="1" Grid.Column="2" Margin="2,0,2,0">
             <Button x:Name="btnSetAoi" Content="Set Aoi" HorizontalAlignment="Right"  VerticalAlignment="Center" Width="75" Command="{Binding CmdSetAoi}" Margin="25, 0, 0, 0"/>
         </DockPanel>
 

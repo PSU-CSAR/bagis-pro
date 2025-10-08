@@ -1,4 +1,5 @@
-﻿using bagis_pro.Basin;
+﻿using ActiproSoftware.Windows.Controls;
+using bagis_pro.Basin;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,5 +27,6 @@ namespace bagis_pro.AoiTools
             InitializeComponent();
             this.DataContext = new WinAoiInfoModel(this);
         }
+
     }
 }
