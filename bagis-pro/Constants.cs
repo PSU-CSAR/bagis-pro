@@ -325,6 +325,8 @@ namespace bagis_pro
         public const string FIELD_IRWIN_ID = "IRWINID";
         public const string FIELD_INCIDENT = "INCIDENT";
         public const string FIELD_BASIN = "BASIN";
+        public const string FIELD_AOIREFAREA = "AOIREFAREA";
+        public const string FIELD_AOIREFUNIT = "AOIREFUNIT";
 
         public const string DATA_TYPE_SWE = "Snotel SWE";
         public const string DATA_TYPE_PRECIPITATION = "Precipitation";

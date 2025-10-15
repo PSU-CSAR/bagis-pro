@@ -28,6 +28,8 @@ namespace bagis_pro.AoiTools
         double _areaSqKm;
         double _areaAcre;
         double _areaSqMiles;
+        double _aoiRefArea;
+        string _aoiRefUnits;
 
         public WinAoiInfoModel(WinAoiInfo view)
         {
