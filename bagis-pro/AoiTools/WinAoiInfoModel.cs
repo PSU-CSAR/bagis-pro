@@ -3,9 +3,6 @@ using ArcGIS.Desktop.Core;
 using ArcGIS.Desktop.Core.Geoprocessing;
 using ArcGIS.Desktop.Framework;
 using ArcGIS.Desktop.Framework.Contracts;
-using ArcGIS.Desktop.Framework.Threading.Tasks;
-using ArcGIS.Desktop.Internal.Mapping.Symbology;
-using ArcGIS.Desktop.Mapping;
 using bagis_pro.BA_Objects;
 using ExtensionMethod;
 using System;
@@ -29,7 +26,7 @@ namespace bagis_pro.AoiTools
         double _areaAcre;
         double _areaSqMiles;
         double _aoiRefArea;
-        string _aoiRefUnits;
+        string _aoiRefUnits = "N/A";
 
         public WinAoiInfoModel(WinAoiInfo view)
         {
@@ -81,6 +78,17 @@ namespace bagis_pro.AoiTools
         public double ElevRangeMeters
         {
             get => Math.Round(MaxElevMeters - MinElevMeters, 2);
+        }
+        public double AoiRefArea
+        {
+            get => _aoiRefArea;
+            set => SetProperty(ref _aoiRefArea, value);
+        }
+
+        public string AoiRefUnits
+        {
+            get => _aoiRefUnits;
+            set => SetProperty(ref _aoiRefUnits, value);
         }
 
         private RelayCommand _setAoiCommand;

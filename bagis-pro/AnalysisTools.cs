@@ -2531,7 +2531,6 @@ namespace bagis_pro
                     "Unable to extract Prism cell size. Calculation cancelled!");
                 return success;
             }
-            string demPath = uriSurfaces.LocalPath + "\\" + Constants.FILE_DEM_CLIPPED;
             string precipMeanPath = uriAnalysis.LocalPath + "\\" + Constants.FILE_PREC_MEAN_ELEV;
             int intCellFactor = (int)Math.Round(dblPrismCellSize / dblDemCellSize, 0);
             double cellSize = dblPrismCellSize / intCellFactor;
@@ -2541,7 +2540,7 @@ namespace bagis_pro
                 // Run aggregate tool
                 var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath,
                     snapRaster: uriPrism.LocalPath + "\\" + prismFile, cellSize: cellSize);
-                var parameters = Geoprocessing.MakeValueArray(demPath, precipMeanPath, intCellFactor, "MEAN");
+                var parameters = Geoprocessing.MakeValueArray(uriSurfaces.LocalPath, precipMeanPath, intCellFactor, "MEAN");
                 var gpResult = await Geoprocessing.ExecuteToolAsync("Aggregate", parameters, environments,
                                     CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
                 if (gpResult.IsFailed)
@@ -2917,11 +2916,12 @@ namespace bagis_pro
                         strInputRaster = "ClipRasterSource";
                         Uri uri = new Uri(strWsUri);
                         success = await MapTools.DisplayRasterLayerAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, strInputRaster, false);
+                        if (success != BA_ReturnCode.Success)
+                        {
+                            return;
+                        }
                     }
-                    if (success != BA_ReturnCode.Success)
-                    {
-                        return;
-                    }
+
                     string strTemplateDataset = strClipGdb + "\\" + strClipFile;
                     // Always set the extent when clipping from an image service
                     var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath, snapRaster: BA_Objects.Aoi.SnapRasterPath(strAoiPath),

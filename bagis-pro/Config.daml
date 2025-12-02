@@ -274,7 +274,7 @@
           <button refID="bagis_pro_Basin_DockBasinTool_ShowButton" />
           <button refID="bagis_pro_Menus_MnuAoiTools_AOIShapefile" />
           <button refID="bagis_pro_Menus_MnuAoiTools_BtnSelectAoi" />
-          <button refID="bagis_pro_AoiTools_WinAoiInfo" />
+          <!--<button refID="bagis_pro_AoiTools_WinAoiInfo" /> -->
           <button refID="bagis_pro_Menus_MnuAoiTools_Options" separator="true" />
         </menu>
       </menus>
