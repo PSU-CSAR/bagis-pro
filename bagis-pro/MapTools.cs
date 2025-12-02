@@ -3879,7 +3879,8 @@ namespace bagis_pro
                     }
 
                     //Apply the changes back to the layout; This is key!!
-                    layout.SetDefinition(layoutDef);
+                    //12-DEC-2025: Kept getting duplicates in legend on one report. Taking this out to see if it fixes
+                    //layout.SetDefinition(layoutDef);
                     Module1.Current.ModuleLogManager.LogDebug(nameof(DisplayMultiMapPageLayoutAsync),
                         "Set legend map frame to " + legendMapFrameName);
                 }
