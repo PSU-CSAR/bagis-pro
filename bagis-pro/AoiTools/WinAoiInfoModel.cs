@@ -25,8 +25,12 @@ namespace bagis_pro.AoiTools
         double _areaSqKm;
         double _areaAcre;
         double _areaSqMiles;
-        double _aoiRefArea;
+        int _aoiRefArea;
         string _aoiRefUnits = "N/A";
+        private bool _prism_Checked = false;
+        private string _prismBufferDistance = "";
+        private string _prismBufferUnits = "Meters";
+        private bool _reclipPrism_Checked = false;
 
         public WinAoiInfoModel(WinAoiInfo view)
         {
@@ -79,7 +83,7 @@ namespace bagis_pro.AoiTools
         {
             get => Math.Round(MaxElevMeters - MinElevMeters, 2);
         }
-        public double AoiRefArea
+        public int AoiRefArea
         {
             get => _aoiRefArea;
             set => SetProperty(ref _aoiRefArea, value);
@@ -89,6 +93,38 @@ namespace bagis_pro.AoiTools
         {
             get => _aoiRefUnits;
             set => SetProperty(ref _aoiRefUnits, value);
+        }
+        public bool Prism_Checked
+        {
+            get { return _prism_Checked; }
+            set
+            {
+                SetProperty(ref _prism_Checked, value, () => Prism_Checked);
+            }
+        }
+        public string PrismBufferDistance
+        {
+            get { return _prismBufferDistance; }
+            set
+            {
+                SetProperty(ref _prismBufferDistance, value, () => PrismBufferDistance);
+            }
+        }
+        public string PrismBufferUnits
+        {
+            get { return _prismBufferUnits; }
+            set
+            {
+                SetProperty(ref _prismBufferUnits, value, () => PrismBufferUnits);
+            }
+        }
+        public bool ReclipPrism_Checked
+        {
+            get { return _reclipPrism_Checked; }
+            set
+            {
+                SetProperty(ref _reclipPrism_Checked, value, () => ReclipPrism_Checked);
+            }
         }
 
         private RelayCommand _setAoiCommand;
@@ -121,7 +157,53 @@ namespace bagis_pro.AoiTools
                     {
                         Module1.Current.CboCurrentAoi.SetAoiName(oAoi.Name);
                         _view.Title = $@"AOI: {oAoi.Name}";
-                        MessageBox.Show("AOI is set to " + oAoi.Name + "!", "BAGIS PRO");
+                        string sMask = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_VECTOR;
+                        IList<double> lstResult = await GeoprocessingTools.GetDemStatsAsync(oAoi.FilePath, sMask, 0.005);
+                        if (lstResult.Count == 2)   // We expect the min and max values in that order
+                        {
+                            MinElevMeters = Math.Round(lstResult[0],2);
+                            MaxElevMeters = Math.Round(lstResult[1],2);
+                        }
+                        var result = await GeodatabaseTools.CalculateAoiAreaSqMetersAsync(oAoi.FilePath, -1);
+                        double dblAreaSqM = result.Item1;
+                        if (dblAreaSqM > 0)
+                        {
+                            AreaSqKm = Math.Round(ArcGIS.Core.Geometry.AreaUnit.SquareMeters.ConvertTo(dblAreaSqM,
+                                ArcGIS.Core.Geometry.AreaUnit.SquareKilometers), 2);
+                            AreaAcre = Math.Round(ArcGIS.Core.Geometry.AreaUnit.SquareMeters.ConvertTo(dblAreaSqM,
+                                ArcGIS.Core.Geometry.AreaUnit.Acres), 2);
+                            AreaSqMile = Math.Round(ArcGIS.Core.Geometry.AreaUnit.SquareMeters.ConvertTo(dblAreaSqM,
+                                ArcGIS.Core.Geometry.AreaUnit.SquareMiles), 2);
+                        }
+
+                        string[] arrReference = new string[] { Constants.FIELD_AOIREFAREA, Constants.FIELD_AOIREFUNIT };
+                        Uri uriAoi = new Uri(GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi));
+                        if (await GeodatabaseTools.AttributeExistsAsync(uriAoi, Constants.FILE_POURPOINT, arrReference[0]))
+                        {
+                            for (int i = 0; i < arrReference.Length; i++)
+                            {
+                                string retVal = await GeodatabaseTools.QueryTableForSingleValueAsync(uriAoi, Constants.FILE_POURPOINT, arrReference[i], new ArcGIS.Core.Data.QueryFilter());
+                                if (!string.IsNullOrEmpty(retVal))
+                                {
+                                    switch (i)
+                                    {
+                                        case 0:
+                                            // Reference area appears to be rounded to an integer in all of my sample data
+                                            AoiRefArea = Convert.ToInt32(retVal);
+                                            break;
+                                        case 1:
+                                            AoiRefUnits = retVal;
+                                            break;
+                                    }
+                                }
+                            }
+                        }
+                        // Set reference to layers pane to get information that was extracted during setAoi() function
+                        var layersPane = (DockpaneLayersViewModel)FrameworkApplication.DockPaneManager.Find("bagis_pro_DockpaneLayers");
+                        if (layersPane != null)
+                        {
+                            Prism_Checked = layersPane.Prism_Checked;
+                        }
 
                         if (!oAoi.ValidForecastData)
                         {
@@ -157,25 +239,6 @@ namespace bagis_pro.AoiTools
                                 MessageBox.Show(sb.ToString(), "BAGIS PRO");
                             }
                         }
-                        string sMask = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi, true) + Constants.FILE_AOI_VECTOR;
-                        IList<double> lstResult = await GeoprocessingTools.GetDemStatsAsync(oAoi.FilePath, sMask, 0.005);
-                        if (lstResult.Count == 2)   // We expect the min and max values in that order
-                        {
-                            MinElevMeters = Math.Round(lstResult[0],2);
-                            MaxElevMeters = Math.Round(lstResult[1],2);
-                        }
-                        var result = await GeodatabaseTools.CalculateAoiAreaSqMetersAsync(oAoi.FilePath, -1);
-                        double dblAreaSqM = result.Item1;
-                        if (dblAreaSqM > 0)
-                        {
-                            AreaSqKm = Math.Round(ArcGIS.Core.Geometry.AreaUnit.SquareMeters.ConvertTo(dblAreaSqM,
-                                ArcGIS.Core.Geometry.AreaUnit.SquareKilometers), 2);
-                            AreaAcre = Math.Round(ArcGIS.Core.Geometry.AreaUnit.SquareMeters.ConvertTo(dblAreaSqM,
-                                ArcGIS.Core.Geometry.AreaUnit.Acres), 2);
-                            AreaSqMile = Math.Round(ArcGIS.Core.Geometry.AreaUnit.SquareMeters.ConvertTo(dblAreaSqM,
-                                ArcGIS.Core.Geometry.AreaUnit.SquareMiles), 2);
-                        }
-
                     }
                 }
             }
