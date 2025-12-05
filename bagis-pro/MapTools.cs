@@ -2843,7 +2843,6 @@ namespace bagis_pro
         public static async Task<BA_ReturnCode> DisplayRasterLayerAsync(string strMapName, Uri mapUri, string displayName,
             bool bIsVisible)
         {
-            Layer layer = null;
             Map oMap = await MapTools.SetDefaultMapNameAsync(strMapName);
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
             // Open the requested raster so we know it exists; return if it doesn't
@@ -2854,20 +2853,17 @@ namespace bagis_pro
                     var rasterLayerCreationParams = new RasterLayerCreationParams(mapUri)
                     {
                         Name = displayName,
+                        IsVisible = bIsVisible
                     };
-                    //Create the raster layer on the active map
-                    layer = LayerFactory.Instance.CreateLayer<RasterLayer>(rasterLayerCreationParams, oMap);
-
+                    //Create the raster layer on the active map and set the visibility
+                    LayerFactory.Instance.CreateLayer<RasterLayer>(rasterLayerCreationParams, oMap);
                     // Set raster layer transparency and name
-                    if (layer != null)
-                    {
-                        layer.SetVisibility(bIsVisible);
-                        success = BA_ReturnCode.Success;
-                    }
+                    success = BA_ReturnCode.Success;
                 }
                 catch (Exception e)
                 {
-                    // munch
+                    Module1.Current.ModuleLogManager.LogError(nameof(DisplayRasterLayerAsync),
+                        $@"An error occurred while trying to create the raster layer. Exception: {e.Message}");
                 }
             });
             return success;
