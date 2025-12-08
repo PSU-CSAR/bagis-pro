@@ -1456,6 +1456,7 @@ namespace bagis_pro
                     }
                     layersPane.Prism_Checked = bExists;
                     fcPath = gdbUri.LocalPath + "\\" + PrismFile.Annual.ToString();
+                    oAoi.PrismDepthUnits = Constants.UNITS_INCHES;
                     if (bExists)
                     {
                         // Check for default units
@@ -1490,6 +1491,7 @@ namespace bagis_pro
                                     Module1.Current.ModuleLogManager.LogDebug(nameof(SetAoiAsync),
                                         "Unable to locate PRISM units on annual layer.");
                                 }
+                                oAoi.PrismDepthUnits = GetValueForKey(strBagisTag, Constants.META_TAG_ZUNIT_VALUE, ';');
                             }
                         }
                     }

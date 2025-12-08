@@ -1,4 +1,5 @@
-﻿using ArcGIS.Desktop.Catalog;
+﻿using ArcGIS.Core.Geometry;
+using ArcGIS.Desktop.Catalog;
 using ArcGIS.Desktop.Core;
 using ArcGIS.Desktop.Core.Geoprocessing;
 using ArcGIS.Desktop.Framework;
@@ -31,6 +32,8 @@ namespace bagis_pro.AoiTools
         private string _prismBufferDistance = "";
         private string _prismBufferUnits = "Meters";
         private bool _reclipPrism_Checked = false;
+        private bool _prismInchesChecked;
+        private bool _prismMmChecked = false;
 
         public WinAoiInfoModel(WinAoiInfo view)
         {
@@ -126,7 +129,22 @@ namespace bagis_pro.AoiTools
                 SetProperty(ref _reclipPrism_Checked, value, () => ReclipPrism_Checked);
             }
         }
-
+        public bool PrismInchesChecked
+        {
+            get { return _prismInchesChecked; }
+            set
+            {
+                SetProperty(ref _prismInchesChecked, value, () => PrismInchesChecked);
+            }
+        }
+        public bool PrismMmChecked
+        {
+            get { return _prismMmChecked; }
+            set
+            {
+                SetProperty(ref _prismMmChecked, value, () => PrismMmChecked);
+            }
+        }
         private RelayCommand _setAoiCommand;
         public ICommand CmdSetAoi
         {
@@ -203,6 +221,16 @@ namespace bagis_pro.AoiTools
                         if (layersPane != null)
                         {
                             Prism_Checked = layersPane.Prism_Checked;
+                            PrismBufferUnits = layersPane.PrismBufferUnits;
+                            PrismBufferDistance = layersPane.PrismBufferDistance;
+                        }
+                        if (oAoi.PrismDepthUnits.Equals(LinearUnit.Inches.ToString()))
+                        {
+                            PrismInchesChecked = true;
+                        }
+                        else
+                        {
+                            PrismMmChecked = true;
                         }
 
                         if (!oAoi.ValidForecastData)

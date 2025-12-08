@@ -15,6 +15,7 @@ namespace bagis_pro.BA_Objects
         double m_dblMinElev = Constants.VALUE_NO_DATA_9999;
         double m_dblMaxElev = Constants.VALUE_NO_DATA_9999;
         LinearUnit m_elevationUnits;
+        LinearUnit m_prismDepthUnits;
         public bool HasSnowCourse;
         public bool HasSnotel;
         public bool HasSnolite;
@@ -43,6 +44,7 @@ namespace bagis_pro.BA_Objects
             m_elevationUnits = LinearUnit.Meters;
             m_aoiBatchState = AoiBatchState.NotReady.ToString();
             m_aoiBatchIsSelected = true;
+            m_prismDepthUnits = LinearUnit.Inches;
         }
 
         public string Name
@@ -174,6 +176,24 @@ namespace bagis_pro.BA_Objects
                 {
                     return true;
                 }
+            }
+        }
+        public string PrismDepthUnits
+        {
+            set
+            {
+                if (value.Equals(Constants.UNITS_INCHES))
+                {
+                   m_prismDepthUnits = LinearUnit.Inches;
+                }
+                else
+                {
+                   m_prismDepthUnits = LinearUnit.Millimeters;
+                }
+            }
+            get
+            {
+                return m_prismDepthUnits.ToString();
             }
         }
 
