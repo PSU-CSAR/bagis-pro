@@ -34,7 +34,14 @@ namespace bagis_pro.AoiTools
         private bool _reclipPrism_Checked = false;
         private bool _prismInchesChecked;
         private bool _prismMmChecked = false;
-
+        private bool _SNOTEL_Checked = false;
+        private string _snotelBufferDistance = "";
+        private string _snotelBufferUnits = "";
+        private bool _reclipSnotel_Checked = false;
+        private bool _snowCos_Checked = false;
+        private string _snowCosBufferDistance = "";
+        private string _snowCosBufferUnits = "";
+        private bool _reclipSnowCos_Checked = false;
         public WinAoiInfoModel(WinAoiInfo view)
         {
             _view = view;
@@ -145,6 +152,77 @@ namespace bagis_pro.AoiTools
                 SetProperty(ref _prismMmChecked, value, () => PrismMmChecked);
             }
         }
+
+        public bool SNOTEL_Checked
+        {
+            get { return _SNOTEL_Checked; }
+            set
+            {
+                SetProperty(ref _SNOTEL_Checked, value, () => SNOTEL_Checked);
+            }
+        }
+
+        public string SnotelBufferDistance
+        {
+            get { return _snotelBufferDistance; }
+            set
+            {
+                SetProperty(ref _snotelBufferDistance, value, () => SnotelBufferDistance);
+            }
+        }
+
+        public string SnotelBufferUnits
+        {
+            get { return _snotelBufferUnits; }
+            set
+            {
+                SetProperty(ref _snotelBufferUnits, value, () => SnotelBufferUnits);
+            }
+        }
+
+        public bool ReclipSNOTEL_Checked
+        {
+            get { return _reclipSnotel_Checked; }
+            set
+            {
+                SetProperty(ref _reclipSnotel_Checked, value, () => ReclipSNOTEL_Checked);
+            }
+        }
+
+        public bool SnowCos_Checked
+        {
+            get { return _snowCos_Checked; }
+            set
+            {
+                SetProperty(ref _snowCos_Checked, value, () => SnowCos_Checked);
+            }
+        }
+        public string SnowCosBufferDistance
+        {
+            get { return _snowCosBufferDistance; }
+            set
+            {
+                SetProperty(ref _snowCosBufferDistance, value, () => SnowCosBufferDistance);
+            }
+        }
+
+        public string SnowCosBufferUnits
+        {
+            get { return _snowCosBufferUnits; }
+            set
+            {
+                SetProperty(ref _snowCosBufferUnits, value, () => SnowCosBufferUnits);
+            }
+        }
+
+        public bool ReclipSnowCos_Checked
+        {
+            get { return _reclipSnowCos_Checked; }
+            set
+            {
+                SetProperty(ref _reclipSnowCos_Checked, value, () => ReclipSnowCos_Checked);
+            }
+        }
         private RelayCommand _setAoiCommand;
         public ICommand CmdSetAoi
         {
@@ -223,6 +301,13 @@ namespace bagis_pro.AoiTools
                             Prism_Checked = layersPane.Prism_Checked;
                             PrismBufferUnits = layersPane.PrismBufferUnits;
                             PrismBufferDistance = layersPane.PrismBufferDistance;
+                            SNOTEL_Checked = layersPane.SNOTEL_Checked;
+                            SnotelBufferUnits = layersPane.SnotelBufferUnits;
+                            SnotelBufferDistance = layersPane.SnotelBufferDistance;
+                            SnowCos_Checked = layersPane.SnowCos_Checked;
+                            SnowCosBufferUnits = layersPane.SnowCosBufferUnits;
+                            SnowCosBufferDistance = layersPane.SnowCosBufferDistance;
+                            SnowCos_Checked = layersPane.SnowCos_Checked;
                         }
                         if (oAoi.PrismDepthUnits.Equals(LinearUnit.Inches.ToString()))
                         {
