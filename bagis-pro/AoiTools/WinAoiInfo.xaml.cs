@@ -1,5 +1,6 @@
 ﻿using ActiproSoftware.Windows.Controls;
 using bagis_pro.Basin;
+using Microsoft.VisualBasic.Devices;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,6 +27,32 @@ namespace bagis_pro.AoiTools
         {
             InitializeComponent();
             this.DataContext = new WinAoiInfoModel(this);
+        }
+        private void ClipCheckBoxChanged(object sender, RoutedEventArgs e)
+        {
+            bool bEnableReclip = false;
+            bool bChecked = ckReclipPrism.IsChecked ?? false;
+            if (bChecked)
+            {
+                bEnableReclip = true;
+            }
+            else
+            {
+                bChecked = ckReclipSnotel.IsChecked ?? false;
+                if (bChecked)
+                {
+                    bEnableReclip = true;
+                }
+                else
+                {
+                    bChecked = ckReclipSnowCos.IsChecked ?? false;
+                    if (bChecked)
+                    {
+                        bEnableReclip = true;
+                    }
+                }
+            }
+            btnReclip.IsEnabled = bEnableReclip;
         }
 
     }

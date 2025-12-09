@@ -4,6 +4,7 @@ using ArcGIS.Desktop.Core;
 using ArcGIS.Desktop.Core.Geoprocessing;
 using ArcGIS.Desktop.Framework;
 using ArcGIS.Desktop.Framework.Contracts;
+using ArcGIS.Desktop.Framework.Threading.Tasks;
 using bagis_pro.BA_Objects;
 using ExtensionMethod;
 using System;
@@ -26,7 +27,7 @@ namespace bagis_pro.AoiTools
         double _areaSqKm;
         double _areaAcre;
         double _areaSqMiles;
-        int _aoiRefArea;
+        double _aoiRefArea;
         string _aoiRefUnits = "N/A";
         private bool _prism_Checked = false;
         private string _prismBufferDistance = "";
@@ -93,7 +94,7 @@ namespace bagis_pro.AoiTools
         {
             get => Math.Round(MaxElevMeters - MinElevMeters, 2);
         }
-        public int AoiRefArea
+        public double AoiRefArea
         {
             get => _aoiRefArea;
             set => SetProperty(ref _aoiRefArea, value);
@@ -233,6 +234,27 @@ namespace bagis_pro.AoiTools
                 return _setAoiCommand;
             }
         }
+        public ICommand CmdClipLayers
+        {
+            get
+            {
+                return new RelayCommand(async () => {
+                    // Create from template
+                    await ClipLayersAsync(ReclipPrism_Checked, ReclipSNOTEL_Checked,
+                        ReclipSnowCos_Checked);
+                });
+            }
+        }
+
+        public ICommand CmdClose
+        {
+            get
+            {
+                return new RelayCommand( () => {
+                    _view.Close();
+                });
+            }
+        }
         private async void SetAoiImplAsync(object param)
         {
             try
@@ -284,8 +306,8 @@ namespace bagis_pro.AoiTools
                                     switch (i)
                                     {
                                         case 0:
-                                            // Reference area appears to be rounded to an integer in all of my sample data
-                                            AoiRefArea = Convert.ToInt32(retVal);
+                                            double dblVal = Convert.ToDouble(retVal);
+                                            AoiRefArea = Math.Round(dblVal,2);
                                             break;
                                         case 1:
                                             AoiRefUnits = retVal;
@@ -361,8 +383,103 @@ namespace bagis_pro.AoiTools
             }
 
         }
+        private async Task ClipLayersAsync(bool clipPrism, bool clipSnotel, bool clipSnowCos)
+        {
+            try
+            {
+                if (clipPrism == false && clipSnotel == false && clipSnowCos == false)
+                {
+                    MessageBox.Show("No layers selected to clip !!", "BAGIS-PRO");
+                    return;
+                }
+
+                var cmdShowHistory = FrameworkApplication.GetPlugInWrapper("esri_geoprocessing_showToolHistory") as ICommand;
+                if (cmdShowHistory != null)
+                {
+                    if (cmdShowHistory.CanExecute(null))
+                    {
+                        cmdShowHistory.Execute(null);
+                    }
+                }
+
+                BA_ReturnCode success = BA_ReturnCode.Success;
+                // Apply default buffer if left null
+                if (string.IsNullOrEmpty(PrismBufferDistance))
+                {
+                    PrismBufferDistance = (string)Module1.Current.BagisSettings.PrecipBufferDistance;
+                    PrismBufferUnits = (string)Module1.Current.BagisSettings.PrecipBufferUnits;
+                }
+
+                if (clipPrism)
+                {
+                    if (!await GeodatabaseTools.FeatureClassExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi)), Constants.FILE_AOI_PRISM_VECTOR))
+                    {
+                        string strInputFeatures = $@"{GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi)}\{Constants.FILE_AOI_VECTOR}";
+                        string strOutputFeatures = $@"{GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi)}\{Constants.FILE_AOI_PRISM_VECTOR}";
+                        string strDistance = $@"{PrismBufferDistance} {PrismBufferUnits}";
+                        success = await GeoprocessingTools.BufferAsync(strInputFeatures, strOutputFeatures, strDistance, "ALL", CancelableProgressor.None);
+                    }
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        success = await AnalysisTools.ClipLayersAsync(Module1.Current.Aoi.FilePath, BA_Objects.DataSource.GetPrecipitationKey,
+                            PrismBufferDistance, PrismBufferUnits, PrismBufferDistance, PrismBufferUnits);
+                        if (success == BA_ReturnCode.Success)
+                        {
+                            success = await AnalysisTools.UpdateSitesPropertiesAsync(Module1.Current.Aoi.FilePath, SiteProperties.Precipitation);
+                        }
+                        if (success == BA_ReturnCode.Success)
+                        {
+                            ReclipPrism_Checked = false;
+                            Prism_Checked = true;
+                        }
+                    }
+                }
+
+                if (clipSnotel || clipSnowCos)
+                {
+                    string snotelBufferDistance = "";
+                    string snowCosBufferDistance = "";
+                    double dblDistance = -1;
+                    bool isDouble = Double.TryParse(SnotelBufferDistance, out dblDistance);
+                    if (clipSnotel && isDouble && dblDistance > 0)
+                    {
+                        snotelBufferDistance = SnotelBufferDistance + " " + SnotelBufferUnits;
+                    }
+                    isDouble = Double.TryParse(SnowCosBufferDistance, out dblDistance);
+                    if (clipSnowCos && isDouble && dblDistance > 0)
+                    {
+                        snowCosBufferDistance = SnowCosBufferDistance + " " + SnowCosBufferUnits;
+                    }
+
+                    success = await AnalysisTools.ClipSnoLayersAsync(Module1.Current.Aoi.FilePath, clipSnotel, snotelBufferDistance,
+                        clipSnowCos, snowCosBufferDistance);
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        Uri uriLayers = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers));
+                        if (clipSnotel)
+                        {
+                            ReclipSNOTEL_Checked = false;
+                            SNOTEL_Checked = await GeodatabaseTools.FeatureClassExistsAsync(uriLayers, Constants.FILE_SNOTEL);
+                        }
+                        if (clipSnowCos)
+                        {
+                            ReclipSnowCos_Checked = false;
+                            SnowCos_Checked = await GeodatabaseTools.FeatureClassExistsAsync(uriLayers, Constants.FILE_SNOW_COURSE);
+                        }
+                    }
+                }
+
+                if (success != BA_ReturnCode.Success)
+                {
+                    MessageBox.Show("An error occurred while trying to clip the layers !!", "BAGIS-PRO");
+                }
+            }
+            catch (Exception ex)
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(ClipLayersAsync),
+                    "Exception: " + ex.Message);
+            }
+        }
 
     }
-
-
     }
