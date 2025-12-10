@@ -10,6 +10,7 @@ using ExtensionMethod;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Text;
@@ -43,6 +44,7 @@ namespace bagis_pro.AoiTools
         private string _snowCosBufferDistance = "";
         private string _snowCosBufferUnits = "";
         private bool _reclipSnowCos_Checked = false;
+        private ObservableCollection<string> _lstUnits = new ObservableCollection<string>();
         public WinAoiInfoModel(WinAoiInfo view)
         {
             _view = view;
@@ -215,7 +217,6 @@ namespace bagis_pro.AoiTools
                 SetProperty(ref _snowCosBufferUnits, value, () => SnowCosBufferUnits);
             }
         }
-
         public bool ReclipSnowCos_Checked
         {
             get { return _reclipSnowCos_Checked; }
@@ -223,6 +224,19 @@ namespace bagis_pro.AoiTools
             {
                 SetProperty(ref _reclipSnowCos_Checked, value, () => ReclipSnowCos_Checked);
             }
+        }
+        public ObservableCollection<string> LstUnits
+        {
+            get
+            {
+                if (_lstUnits.Count == 0)
+                {
+                    _lstUnits.Add("Meters");
+                    _lstUnits.Add("Kilometers");
+                }
+                return _lstUnits;
+            }
+            set { _lstUnits = value; NotifyPropertyChanged("LstUnits"); }
         }
         private RelayCommand _setAoiCommand;
         public ICommand CmdSetAoi

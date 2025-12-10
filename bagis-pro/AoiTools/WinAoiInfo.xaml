@@ -100,9 +100,9 @@
                     <RowDefinition Height="20"/>
                     <RowDefinition Height="80"/>
                     <RowDefinition Height="20"/>
+                    <RowDefinition Height="30"/>
                     <RowDefinition Height="20"/>
-                    <RowDefinition Height="20"/>
-                    <RowDefinition Height="20"/>
+                    <RowDefinition Height="30"/>
                     <RowDefinition Height="30"/>
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
@@ -140,14 +140,16 @@
                             <DockPanel Grid.Row="0" Grid.Column="1" Margin="2,0,2,0">
                                 <TextBox x:Name="txtPrismBuffer" Text="{Binding Path=PrismBufferDistance}" HorizontalAlignment="Left"  
                                     VerticalAlignment="Center" Width="50"/>
-                                <TextBlock MaxWidth="70" VerticalAlignment="Center" HorizontalAlignment="Left"  Text="{Binding Path=PrismBufferUnits}" Margin="5, 0, 0, 0"/>
+                                <ComboBox Name="cboPrismBufferUnits" SelectedItem="{Binding PrismBufferUnits}" HorizontalAlignment="Center" 
+                                    ItemsSource="{Binding LstUnits}" VerticalAlignment="Center" Width="75" Height="15" />
                             </DockPanel>
                             <DockPanel Grid.Row="1" Grid.Column="0" Margin="2,0,2,0">
                                 <TextBlock MaxWidth="90" VerticalAlignment="Center" HorizontalAlignment="Left"  Text="Depth Unit:" Margin="5, 0, 0, 0"/>
                             </DockPanel>
                             <DockPanel Grid.Row="1" Grid.Column="1" Margin="2,0,2,0">
-                                <RadioButton GroupName="timePeriod" Tag ="Inches" Margin="2, 0, 0, 0" IsChecked="{Binding PrismInchesChecked}" VerticalAlignment="Center">Inches</RadioButton>
-                                <RadioButton GroupName="timePeriod" Tag ="Millimeters" Margin="2, 0, 0, 0" IsChecked="{Binding PrismMmChecked}" VerticalAlignment="Center">Millimeters</RadioButton>
+                                <!-- Making this read-only for now; The units come from the data source definition -->
+                                <RadioButton GroupName="depthUnit" Tag ="Inches" Margin="2, 0, 0, 0" IsChecked="{Binding PrismInchesChecked}" VerticalAlignment="Center" IsEnabled="False">Inches</RadioButton>
+                                <RadioButton GroupName="depthUnit" Tag ="Millimeters" Margin="2, 0, 0, 0" IsChecked="{Binding PrismMmChecked}" VerticalAlignment="Center" IsEnabled="False">Millimeters</RadioButton>
                             </DockPanel>
                         </Grid>
                     </GroupBox>
@@ -162,7 +164,8 @@
                     <TextBlock MaxWidth="110" VerticalAlignment="Center" Text="Clip Buffer Distance:" Margin="5, 0, 5, 0"/>
                     <TextBox x:Name="txtSNOTELBuffer" Text="{Binding Path=SnotelBufferDistance}" HorizontalAlignment="Left"  
                                     VerticalAlignment="Center" Width="50"/>
-                    <TextBlock MaxWidth="70" VerticalAlignment="Center" HorizontalAlignment="Left"  Text="{Binding Path=SnotelBufferUnits}" Margin="5, 0, 5, 0"/>
+                    <ComboBox Name="cboSnotelBufferUnits" SelectedItem="{Binding SnotelBufferUnits}" Margin="5, 0, 0, 0" HorizontalAlignment="Left"  
+                      ItemsSource="{Binding LstUnits}" VerticalAlignment="Center" Width="75" Height="15" />
                 </DockPanel>
                 <DockPanel Grid.Row="5" Grid.Column="0" Margin="2,0,2,0">
                     <CheckBox x:Name="ckHasSnowCos" Content="Snow Course" VerticalAlignment="Center" IsChecked="{Binding SnowCos_Checked}" />
@@ -174,7 +177,8 @@
                     <TextBlock MaxWidth="110" VerticalAlignment="Center" Text="Clip Buffer Distance:" Margin="5, 0, 5, 0"/>
                     <TextBox x:Name="txtSnowCosBuffer" Text="{Binding Path=SnowCosBufferDistance}" HorizontalAlignment="Left"  
                                     VerticalAlignment="Center" Width="50"/>
-                    <TextBlock MaxWidth="70" VerticalAlignment="Center" HorizontalAlignment="Left"  Text="{Binding Path=SnowCosBufferUnits}" Margin="5, 0, 5, 0"/>
+                    <ComboBox Name="cboSnowCourseBufferUnits" SelectedItem="{Binding SnowCosBufferUnits}" HorizontalAlignment="Left" Margin="5, 0, 0, 0"
+                      ItemsSource="{Binding LstUnits}" VerticalAlignment="Center" Width="75" Height="15" />
                 </DockPanel>
             </Grid>
         </GroupBox>
