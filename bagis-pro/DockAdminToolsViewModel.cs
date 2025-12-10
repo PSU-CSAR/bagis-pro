@@ -3155,13 +3155,15 @@ namespace bagis_pro
                                     }
 
                                 });
+                                RasterLayer mtbsLayer = null;
                                 if (!lstMissingMtbsYears.Contains(Convert.ToString(i)))
                                 {
                                     Uri uriMtbs = new Uri($@"{GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Fire, true)}{GeneralTools.GetMtbsLayerFileName(i)}_RECL");
-                                    success = await MapTools.DisplayUniqueValuesRasterFromLayerFileAsync(Constants.MAPS_FIRE_MAP_NAME, uriMtbs, this.GetMtbsMapName(i),                                        strLayerFilePath, 25, true);
+                                    success = await MapTools.DisplayUniqueValuesRasterFromLayerFileAsync(Constants.MAPS_FIRE_MAP_NAME, uriMtbs, this.GetMtbsMapName(i), strLayerFilePath, 25, true);
                                     if (success == BA_ReturnCode.Success)
                                     {
                                         bHasMtbsLayer = true;
+                                        mtbsLayer = oMap.GetLayersAsFlattenedList().OfType<RasterLayer>().Where(l => l.Name.Equals(this.GetMtbsMapName(i), StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
                                     }
                                     else
                                     {
@@ -3169,8 +3171,27 @@ namespace bagis_pro
                                     }
                                     if (lngCount > 0)
                                     {
-                                        // Put nifc layer on top; In order to move layerToMove, I need to know if the destination is a group layer and the zero based position it needs to move to.
-                                        Tuple<GroupLayer, int> moveToLayerPosition = MapTools.FindLayerPosition(null, this.GetMtbsMapName(i), oMap);
+                                        Tuple<GroupLayer, int> moveToLayerPosition = null;
+                                        if (bHasMtbsLayer)
+                                        {
+                                            // Move mtbs layer under waterbodies so that vectors are all on type
+                                            moveToLayerPosition = MapTools.FindLayerPosition(null, Constants.MAPS_WATERBODIES, oMap);
+                                            if (moveToLayerPosition.Item2 == -1)
+                                            {
+                                                Module1.Current.ModuleLogManager.LogError(nameof(RunFireMapsImplAsync), $"Layer {Constants.MAPS_WATERBODIES} not found!");
+                                            }
+                                            await QueuedTask.Run(() =>
+                                            {
+                                                // subtract 1 from moveToLayerPosition.Item2 because we want it ABOVE the found layer
+                                                if (moveToLayerPosition.Item1 != null) //layer gets moved into the group
+                                                    moveToLayerPosition.Item1.MoveLayer(mtbsLayer, moveToLayerPosition.Item2);
+                                                else //Layer gets moved into the root
+                                                    oMap.MoveLayer(mtbsLayer, moveToLayerPosition.Item2);
+                                            });
+                                        }
+
+                                        // Put nifc layer on top of pourpoint; In order to move layerToMove, I need to know if the destination is a group layer and the zero based position it needs to move to.
+                                        moveToLayerPosition = MapTools.FindLayerPosition(null, Constants.MAPS_STREAM_GAGE, oMap);
                                         if (moveToLayerPosition.Item2 == -1)
                                         {
                                             Module1.Current.ModuleLogManager.LogError(nameof(RunFireMapsImplAsync), $"Layer {this.GetMtbsMapName(i)} not found ");
@@ -3179,9 +3200,9 @@ namespace bagis_pro
                                         {
                                             // subtract 1 from moveToLayerPosition.Item2 because we want it ABOVE the found layer
                                             if (moveToLayerPosition.Item1 != null) //layer gets moved into the group
-                                                moveToLayerPosition.Item1.MoveLayer(nifcLayer, moveToLayerPosition.Item2 - 1);
+                                                moveToLayerPosition.Item1.MoveLayer(nifcLayer, moveToLayerPosition.Item2);
                                             else //Layer gets moved into the root
-                                                oMap.MoveLayer(nifcLayer, moveToLayerPosition.Item2 - 1);
+                                                oMap.MoveLayer(nifcLayer, moveToLayerPosition.Item2);
                                         });
                                     }
                                 }
@@ -3197,7 +3218,6 @@ namespace bagis_pro
                                 {
                                     GeneralTools.GenerateBlankPage($"FIRE DISTURBANCE {i}", GeneralTools.GetFullPdfFileName(Module1.Current.DisplayedMap));
                                 }
-                                var mtbsLayer = oMap.GetLayersAsFlattenedList().OfType<RasterLayer>().Where(l => l.Name.Equals(this.GetMtbsMapName(i), StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
                                 if (mtbsLayer != null)
                                 {
                                     await QueuedTask.Run(() =>
@@ -3242,6 +3262,7 @@ namespace bagis_pro
                             }
                             Uri uriMtbs = new Uri($@"{strFireGdbPath}\{strFileName}");
                             bool bHasMtbsLayer = false;
+                            RasterLayer mtbsLayer = null;
                             if (await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(strFireGdbPath), strFileName))
                             {
                                 success = await MapTools.DisplayUniqueValuesRasterFromLayerFileAsync(Constants.MAPS_FIRE_MAP_NAME, uriMtbs, strLayerName,
@@ -3249,22 +3270,41 @@ namespace bagis_pro
                                 if (success == BA_ReturnCode.Success)
                                 {
                                     bHasMtbsLayer = true;
+                                    mtbsLayer = oMap.GetLayersAsFlattenedList().OfType<RasterLayer>().Where(l => l.Name.Equals(strLayerName, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
                                 }
                                 if (lngCount > 0)
                                 {
+                                    Tuple<GroupLayer, int> moveToLayerPosition = null;
+                                    if (bHasMtbsLayer)
+                                    {
+                                        // Move mtbs layer under waterbodies so that vectors are all on type
+                                        moveToLayerPosition = MapTools.FindLayerPosition(null, Constants.MAPS_WATERBODIES, oMap);
+                                        if (moveToLayerPosition.Item2 == -1)
+                                        {
+                                            Module1.Current.ModuleLogManager.LogError(nameof(RunFireMapsImplAsync), $"Layer {Constants.MAPS_WATERBODIES} not found!");
+                                        }
+                                        await QueuedTask.Run(() =>
+                                        {
+                                            // subtract 1 from moveToLayerPosition.Item2 because we want it ABOVE the found layer
+                                            if (moveToLayerPosition.Item1 != null) //layer gets moved into the group
+                                                moveToLayerPosition.Item1.MoveLayer(mtbsLayer, moveToLayerPosition.Item2);
+                                            else //Layer gets moved into the root
+                                                oMap.MoveLayer(mtbsLayer, moveToLayerPosition.Item2);
+                                        });
+                                    }
                                     // Put nifc layer on top; In order to move layerToMove, I need to know if the destination is a group layer and the zero based position it needs to move to.
-                                    Tuple<GroupLayer, int> moveToLayerPosition = MapTools.FindLayerPosition(null, strLayerName, oMap);
+                                    moveToLayerPosition = MapTools.FindLayerPosition(null, Constants.MAPS_STREAM_GAGE, oMap);
                                     if (moveToLayerPosition.Item2 == -1)
                                     {
-                                        Module1.Current.ModuleLogManager.LogError(nameof(RunFireMapsImplAsync), $"Layer {strLayerName} not found ");
+                                        Module1.Current.ModuleLogManager.LogError(nameof(RunFireMapsImplAsync), $"Layer {Constants.MAPS_STREAM_GAGE} not found ");
                                     }
                                     await QueuedTask.Run(() =>
                                     {
                                         // subtract 1 from moveToLayerPosition.Item2 because we want it ABOVE the found layer
                                         if (moveToLayerPosition.Item1 != null) //layer gets moved into the group
-                                            moveToLayerPosition.Item1.MoveLayer(nifcLayer, moveToLayerPosition.Item2 - 1);
+                                            moveToLayerPosition.Item1.MoveLayer(nifcLayer, moveToLayerPosition.Item2);
                                         else //Layer gets moved into the root
-                                            oMap.MoveLayer(nifcLayer, moveToLayerPosition.Item2 - 1);
+                                            oMap.MoveLayer(nifcLayer, moveToLayerPosition.Item2);
                                     });
                                 }
                             }
@@ -3281,7 +3321,6 @@ namespace bagis_pro
                                 GeneralTools.GenerateBlankPage($"FIRE DISTURBANCE {oInterval.LowerBound}-{oInterval.UpperBound}",
                                     GeneralTools.GetFullPdfFileName(Module1.Current.DisplayedMap));
                             }
-                            var mtbsLayer = oMap.GetLayersAsFlattenedList().OfType<RasterLayer>().Where(l => l.Name.Equals(strLayerName, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
                             if (mtbsLayer != null)
                             {
                                 await QueuedTask.Run(() =>
