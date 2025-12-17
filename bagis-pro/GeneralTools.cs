@@ -2868,6 +2868,11 @@ namespace bagis_pro
                 {
                     page_content = pageContent.ToUpper()
                 };
+                bool bIsFirePage = false;
+                if (pageContent.Contains(Constants.TITLE_FIRE_BLANK_PAGE))
+                {
+                    bIsFirePage = true;
+                }
                 string myXmlFile = publishFolder + "\\" + Constants.FILE_BLANK_PAGE_XML;
                 System.Xml.Serialization.XmlSerializer writer = new System.Xml.Serialization.XmlSerializer(tPage.GetType());
                 using (FileStream fs = File.Create(myXmlFile))
@@ -2877,6 +2882,10 @@ namespace bagis_pro
 
                 // Process the sites table page through the xsl template
                 string myStyleSheet = GeneralTools.GetAddInDirectory() + "\\" + Constants.FILE_BLANK_PAGE_XSL;
+                if (bIsFirePage)
+                {
+                    myStyleSheet = GeneralTools.GetAddInDirectory() + "\\" + Constants.FILE_BLANK_FIRE_PAGE_XSL;
+                }
                 XPathDocument myXPathDoc = new XPathDocument(myXmlFile);
                 XslCompiledTransform myXslTrans = new XslCompiledTransform();
                 myXslTrans.Load(myStyleSheet);
@@ -2932,7 +2941,6 @@ namespace bagis_pro
             }
             return success;
         }
-
         public static BA_ReturnCode LoadBagisSettings()
         {
             // Load batch tool settings; Make sure we have the central BAGIS folder

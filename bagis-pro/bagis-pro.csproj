@@ -171,5 +171,10 @@
     <None Include="Templates\no_sites.docx" />
     <None Include="Templates\too_many_sites.docx" />
   </ItemGroup>
+  <ItemGroup>
+    <None Update="blank_fire_page.xsl">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
   <Import Project="C:\Program Files\ArcGIS\Pro\bin\Esri.ProApp.SDK.Desktop.targets" Condition="Exists('C:\Program Files\ArcGIS\Pro\bin\Esri.ProApp.SDK.Desktop.targets') AND !Exists('Esri.ArcGISPro.Extensions.targets')" />
 </Project>

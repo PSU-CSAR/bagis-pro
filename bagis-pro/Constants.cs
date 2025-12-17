@@ -223,6 +223,7 @@ namespace bagis_pro
         public const string FILE_BLANK_PAGE_XSL = "blank_page.xsl";
         public const string FILE_BLANK_PAGE_XML = "blank_page.xml";
         public const string FILE_BLANK_PAGE_HTML = "blank_page.html";
+        public const string FILE_BLANK_FIRE_PAGE_XSL = "blank_fire_page.xsl";
         public const string FILE_EXPORT_OVERVIEW_PDF = "overview.pdf";
         public const string FILE_EXPORT_POTENTIAL_SITE_ANALYSIS_PDF = "potential_site_analysis.pdf";
         public const string FILE_BLANK_PAGE_PDF = "blank_page.pdf";
@@ -444,6 +445,7 @@ namespace bagis_pro
         public static string TITLE_SEASONAL_PRECIP_CONTRIB = "SEASONAL PRECIPITATION CONTRIBUTION MAPS";
         public static string TITLE_SNODAS_MEAN_SWE = "SNODAS MEAN SWE MAPS";
         public static string TITLE_SNODAS_MEAN_SWE_DELTA = "SNODAS MEAN SWE DELTA MAPS";
+        public static string TITLE_FIRE_BLANK_PAGE = "FIRE DISTURBANCE";  
 
         public static string[] FILES_EXPORT_TITLES = new string[]
         { "Title Page", "Data Sources Table", TITLE_LOCATION_MAP, "Active Sites Table",
