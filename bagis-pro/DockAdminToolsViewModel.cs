@@ -2993,22 +2993,6 @@ namespace bagis_pro
             IList<Interval> lstInterval = null;
             int overrideMinYear = _intMinYear;
             int overrideMaxYear = AnnualEndYear;
-            bool bAnnualMaps = true;
-            bool bIncrementMaps = true;
-            // Only check this once
-            if (SelectedTimeChecked)
-            {
-                overrideMinYear = SelectedMinYear;
-                overrideMaxYear = SelectedMaxYear;
-                if (!AnnualDataChecked)
-                {
-                    bAnnualMaps = false;
-                }
-                if (!IncrementDataChecked)
-                {
-                    bIncrementMaps = false;
-                }
-            }
 
             for (int idxRow = 0; idxRow < Names.Count; idxRow++)
             {
@@ -3023,9 +3007,36 @@ namespace bagis_pro
             {
                 if (Names[idxRow].AoiBatchIsSelected)
                 {
+                    bool bAnnualMaps = true;
+                    bool bIncrementMaps = true;
+                    bool bNoFireData = false;
+                    // Only check for each AOI in case we had a no fire data AOI
+                    if (SelectedTimeChecked)
+                    {
+                        overrideMinYear = SelectedMinYear;
+                        overrideMaxYear = SelectedMaxYear;
+                        if (!AnnualDataChecked)
+                        {
+                            bAnnualMaps = false;
+                        }
+                        if (!IncrementDataChecked)
+                        {
+                            bIncrementMaps = false;
+                        }
+                    }
                     string aoiFolder = Names[idxRow].FilePath;
                     string strFireGdbPath = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Fire);
-                    if (!Names[idxRow].AoiBatchStateText.Equals(AoiBatchState.Waiting.ToString()))
+                    if (Names[idxRow].AoiBatchStateText.Equals(AoiBatchState.NoFire.ToString()))
+                    {
+                        bNoFireData = true;
+                        bAnnualMaps = false;
+                        bIncrementMaps = false;
+                        Names[idxRow].AoiBatchStateText = AoiBatchState.Started.ToString();  // update gui
+                        strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Creating fire map placeholder for " +
+                            Names[idxRow].Name + "\r\n";
+                        File.AppendAllText(_strFireMapsLogFile, strLogEntry);       // append
+                    }
+                    else if (!Names[idxRow].AoiBatchStateText.Equals(AoiBatchState.Waiting.ToString()))
                     {
                         strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} Skipping fire map for {Names[idxRow].FilePath}. Required station information is missing.{System.Environment.NewLine}";
                         File.AppendAllText(_strFireMapsLogFile, strLogEntry);
@@ -3080,59 +3091,63 @@ namespace bagis_pro
                     BA_ReturnCode success = GeneralTools.GenerateFireMapsTitlePage(areaSqKm, strMissingMtbsYears);
                     Layout oLayout = await MapTools.GetDefaultLayoutAsync(Constants.MAPS_FIRE_LAYOUT_NAME);
                     string strLayerFilePath = Module1.Current.SettingsPath + "\\" + Constants.FOLDER_SETTINGS + "\\" + Constants.LAYER_FILE_MTBS_FIRE;
-
-                    // Always load the maps in case we are running through multiple Aois
-                    success = await MapTools.DisplayFireMapsAsync(Module1.Current.Aoi.FilePath, oLayout);
-                    if (success != BA_ReturnCode.Success)
-                    {
-                        Module1.Current.ModuleLogManager.LogError(nameof(RunFireMapsImplAsync),
-                            "An error occurred while trying to load the maps. The map package cannot be exported!");
-                        Names[idxRow].AoiBatchStateText = AoiBatchState.Failed.ToString();
-                        return;
-                    }
-
-                    bool bFoundIt = false;
-                    //A layout view may exist but it may not be active
-                    //Iterate through each pane in the application and check to see if the layout is already open and if so, activate it
-                    foreach (var pane in FrameworkApplication.Panes)
-                    {
-                        if (!(pane is ILayoutPane layoutPane))  //if not a layout view, continue to the next pane    
-                            continue;
-                        if (layoutPane.LayoutView != null &&
-                            layoutPane.LayoutView.Layout == oLayout) //if there is a match, activate the view  
-                        {
-                            (layoutPane as Pane).Activate();
-                            bFoundIt = true;
-                        }
-                    }
-                    if (!bFoundIt)
-                    {
-                        await FrameworkApplication.Current.Dispatcher.Invoke(async () =>
-                        {
-                            // Do something on the GUI thread
-                            ILayoutPane iNewLayoutPane = await FrameworkApplication.Panes.CreateLayoutPaneAsync(oLayout); //GUI thread
-                            (iNewLayoutPane as Pane).Activate();
-                        });
-                    }
-
-                    // Legend
-                    success = await MapTools.DisplayLegendAsync(Constants.MAPS_FIRE_MAP_FRAME_NAME, oLayout,
-                        "ArcGIS Colors", "1.5 Point", true);
-
-                    MapDefinition defaultMap = null;
-                    if (oLayout != null)
-                    {
-                        if (success == BA_ReturnCode.Success)
-                        {
-                            defaultMap = MapTools.LoadMapDefinition(BagisMapType.FIRE);
-                            success = await MapTools.UpdateLegendAsync(oLayout, defaultMap.LegendLayerList);
-                        }
-                    }
                     Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_FIRE_MAP_NAME);
-                    var nifcLayer = oMap.GetLayersAsFlattenedList().OfType<FeatureLayer>().Where(l => l.Name.Equals(Constants.MAPS_NIFC_PERIMETER, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
+                    FeatureLayer nifcLayer = null;
+                    MapDefinition defaultMap = null;
+
+                    if (!bNoFireData)
+                    {
+                        // Always load the maps in case we are running through multiple Aois
+                        success = await MapTools.DisplayFireMapsAsync(Module1.Current.Aoi.FilePath, oLayout);
+                        if (success != BA_ReturnCode.Success)
+                        {
+                            Module1.Current.ModuleLogManager.LogError(nameof(RunFireMapsImplAsync),
+                                "An error occurred while trying to load the maps. The map package cannot be exported!");
+                            Names[idxRow].AoiBatchStateText = AoiBatchState.Failed.ToString();
+                            return;
+                        }
+
+                        bool bFoundIt = false;
+                        //A layout view may exist but it may not be active
+                        //Iterate through each pane in the application and check to see if the layout is already open and if so, activate it
+                        foreach (var pane in FrameworkApplication.Panes)
+                        {
+                            if (!(pane is ILayoutPane layoutPane))  //if not a layout view, continue to the next pane    
+                                continue;
+                            if (layoutPane.LayoutView != null &&
+                                layoutPane.LayoutView.Layout == oLayout) //if there is a match, activate the view  
+                            {
+                                (layoutPane as Pane).Activate();
+                                bFoundIt = true;
+                            }
+                        }
+                        if (!bFoundIt)
+                        {
+                            await FrameworkApplication.Current.Dispatcher.Invoke(async () =>
+                            {
+                                // Do something on the GUI thread
+                                ILayoutPane iNewLayoutPane = await FrameworkApplication.Panes.CreateLayoutPaneAsync(oLayout); //GUI thread
+                                (iNewLayoutPane as Pane).Activate();
+                            });
+                        }
+
+                        // Legend
+                        success = await MapTools.DisplayLegendAsync(Constants.MAPS_FIRE_MAP_FRAME_NAME, oLayout,
+                            "ArcGIS Colors", "1.5 Point", true);
+                        if (oLayout != null)
+                        {
+                            if (success == BA_ReturnCode.Success)
+                            {
+                                defaultMap = MapTools.LoadMapDefinition(BagisMapType.FIRE);
+                                success = await MapTools.UpdateLegendAsync(oLayout, defaultMap.LegendLayerList);
+                            }
+                        }
+                    }
+
                     IList<string> lstExportedMaps = new List<string>();
                     if (bAnnualMaps)
                     {
+                        nifcLayer = oMap.GetLayersAsFlattenedList().OfType<FeatureLayer>().Where(l => l.Name.Equals(Constants.MAPS_NIFC_PERIMETER, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
                         for (int i = overrideMinYear; i <= overrideMaxYear; i++)
                         {
                             string strWhere = $"{Constants.FIELD_YEAR} = {i}";
@@ -3236,6 +3251,10 @@ namespace bagis_pro
                     }
                     if (bIncrementMaps)
                     {
+                        if (nifcLayer == null)
+                        {
+                            nifcLayer = oMap.GetLayersAsFlattenedList().OfType<FeatureLayer>().Where(l => l.Name.Equals(Constants.MAPS_NIFC_PERIMETER, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
+                        }
                         // Generating increment maps
                         bool bRequestPeriods = false;
                         if (IncrementDataChecked)
@@ -3329,6 +3348,14 @@ namespace bagis_pro
                                 });
                             }
                             lstExportedMaps.Add(GeneralTools.GetFullPdfFileName(Module1.Current.DisplayedMap));
+                        }
+                    }
+                    if (bNoFireData)
+                    {
+                        success = GeneralTools.GenerateBlankPage(Constants.TITLE_FIRE_BLANK_PAGE, GeneralTools.GetFullPdfFileName(Constants.FILE_BLANK_PAGE_PDF));
+                        if (success == BA_ReturnCode.Success)
+                        {
+                            lstExportedMaps.Add(GeneralTools.GetFullPdfFileName(Constants.FILE_BLANK_PAGE_PDF));
                         }
                     }
                     if (lstExportedMaps.Count > 0)
