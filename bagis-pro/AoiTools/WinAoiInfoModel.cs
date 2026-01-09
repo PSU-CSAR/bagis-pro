@@ -1,4 +1,6 @@
-﻿using ArcGIS.Core.Geometry;
+﻿using ArcGIS.Core.Data;
+using ArcGIS.Core.Data.Raster;
+using ArcGIS.Core.Geometry;
 using ArcGIS.Desktop.Catalog;
 using ArcGIS.Desktop.Core;
 using ArcGIS.Desktop.Core.Geoprocessing;
@@ -7,10 +9,13 @@ using ArcGIS.Desktop.Framework.Contracts;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
 using bagis_pro.BA_Objects;
 using ExtensionMethod;
+using Microsoft.Office.Interop.Excel;
+using Microsoft.VisualBasic.Logging;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Linq;
 using System.Text;
@@ -20,7 +25,7 @@ using System.Windows.Input;
 
 namespace bagis_pro.AoiTools
 {
-    internal class WinAoiInfoModel : PropertyChangedBase
+    internal class WinAoiInfoModel : ViewModelBase
     {
         WinAoiInfo _view = null;
         double _minElevMeters;
@@ -45,9 +50,10 @@ namespace bagis_pro.AoiTools
         private string _snowCosBufferUnits = "";
         private bool _reclipSnowCos_Checked = false;
         private ObservableCollection<string> _lstUnits = new ObservableCollection<string>();
+        private ObservableCollection<string> _rasterLayers;
         public WinAoiInfoModel(WinAoiInfo view)
         {
-            _view = view;
+            _view = view;           
         }
 
         public double MinElevMeters
@@ -238,6 +244,17 @@ namespace bagis_pro.AoiTools
             }
             set { _lstUnits = value; NotifyPropertyChanged("LstUnits"); }
         }
+        public ObservableCollection<string> RasterLayers
+        {
+            get { return _rasterLayers; }
+
+            set
+            {
+                //base.RaisePropertyChangingEvent("Log");
+                //_rasterLayers.Add(value.ToString());
+                //base.RaisePropertyChangedEvent("Log");
+            }
+        }
         private RelayCommand _setAoiCommand;
         public ICommand CmdSetAoi
         {
@@ -388,6 +405,19 @@ namespace bagis_pro.AoiTools
                                 MessageBox.Show(sb.ToString(), "BAGIS PRO");
                             }
                         }
+                        Uri uriLayers = new Uri(GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers));
+                        RasterLayers.Clear();
+                        await QueuedTask.Run(() =>
+                        {
+                            using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(uriLayers)))
+                            {
+                                IReadOnlyList<RasterDatasetDefinition> definitions = geodatabase.GetDefinitions<RasterDatasetDefinition>();
+                                foreach (RasterDatasetDefinition def in definitions)
+                                {
+                                    RasterLayers.Add(def.GetName());
+                                }
+                            }
+                        });
                     }
                 }
             }
@@ -494,6 +524,5 @@ namespace bagis_pro.AoiTools
                     "Exception: " + ex.Message);
             }
         }
-
     }
     }
