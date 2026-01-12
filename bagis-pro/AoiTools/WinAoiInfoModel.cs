@@ -7,6 +7,7 @@ using ArcGIS.Desktop.Core.Geoprocessing;
 using ArcGIS.Desktop.Framework;
 using ArcGIS.Desktop.Framework.Contracts;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
+using ArcGIS.Desktop.Mapping;
 using bagis_pro.BA_Objects;
 using ExtensionMethod;
 using Microsoft.Office.Interop.Excel;
@@ -50,10 +51,10 @@ namespace bagis_pro.AoiTools
         private string _snowCosBufferUnits = "";
         private bool _reclipSnowCos_Checked = false;
         private ObservableCollection<string> _lstUnits = new ObservableCollection<string>();
-        private ObservableCollection<string> _rasterLayers;
+        private ObservableCollection<string> _rasterLayers = new ObservableCollection<string>();
         public WinAoiInfoModel(WinAoiInfo view)
         {
-            _view = view;           
+            _view = view;
         }
 
         public double MinElevMeters
@@ -246,14 +247,8 @@ namespace bagis_pro.AoiTools
         }
         public ObservableCollection<string> RasterLayers
         {
-            get { return _rasterLayers; }
-
-            set
-            {
-                //base.RaisePropertyChangingEvent("Log");
-                //_rasterLayers.Add(value.ToString());
-                //base.RaisePropertyChangedEvent("Log");
-            }
+            get => _rasterLayers;
+            set => SetProperty(ref _rasterLayers, value); // Utilizes ViewModelBase.SetProperty
         }
         private RelayCommand _setAoiCommand;
         public ICommand CmdSetAoi
@@ -406,18 +401,20 @@ namespace bagis_pro.AoiTools
                             }
                         }
                         Uri uriLayers = new Uri(GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers));
-                        RasterLayers.Clear();
+                        ObservableCollection<string> tmpList = null;
                         await QueuedTask.Run(() =>
                         {
                             using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(uriLayers)))
                             {
+                                tmpList = new ObservableCollection<string>();
                                 IReadOnlyList<RasterDatasetDefinition> definitions = geodatabase.GetDefinitions<RasterDatasetDefinition>();
                                 foreach (RasterDatasetDefinition def in definitions)
                                 {
-                                    RasterLayers.Add(def.GetName());
+                                   tmpList.Add(def.GetName());
                                 }
                             }
                         });
+                        RasterLayers = tmpList;
                     }
                 }
             }
