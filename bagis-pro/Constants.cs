@@ -47,6 +47,7 @@ namespace bagis_pro
         public const string MAPS_WINTER_PRECIPITATION = "Winter Precipitation";
         public const string MAPS_SUBBASIN_BOUNDARY = "Subbasin Boundary";
         public const string MAPS_WESTERN_STATES_BOUNDARY = "Western States Boundary";
+        public const string MAPS_HUC6_WATERSHEDS= "HUC6 Watersheds";  // This is used to get the extent of the western states boundary group layer
         public const string MAPS_LAND_COVER = "Land Cover";
         public const string MAPS_WATERBODIES = "Waterbodies";
         public const string MAPS_STREAM_GAGE = "Streamgage";

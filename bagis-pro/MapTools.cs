@@ -3044,10 +3044,25 @@ namespace bagis_pro
                         textBox.SetGraphic(graphic);
                     }
                 }
+
             });
 
             success = await MapTools.DisplayLegendAsync(Constants.MAPS_AOI_LOCATION_MAP_FRAME_NAME, layout,
                 "ArcGIS Colors", "1.5 Point", false);
+
+            await QueuedTask.Run(() =>
+            {
+                if (success == BA_ReturnCode.Success)
+                {
+                    MapFrame oMapFrame = layout.FindElement(Constants.MAPS_AOI_LOCATION_MAP_FRAME_NAME) as MapFrame;
+                    var extentLayer = map.GetLayersAsFlattenedList()
+                                                        .OfType<FeatureLayer>()
+                                                        .FirstOrDefault(l => l.Name == Constants.MAPS_HUC6_WATERSHEDS);
+                    FeatureClass featureClass = extentLayer.GetFeatureClass();
+                    oMapFrame.SetCamera(featureClass.GetExtent());
+                }
+            });
+
 
             //Need to call on GUI thread
             if (bCreateMapPane)
