@@ -3352,7 +3352,8 @@ namespace bagis_pro
                     }
                     if (bNoFireData)
                     {
-                        success = GeneralTools.GenerateBlankPage(Constants.TITLE_FIRE_BLANK_PAGE, GeneralTools.GetFullPdfFileName(Constants.FILE_BLANK_PAGE_PDF));
+                        string firePageTitle = $@"{overrideMinYear}-{overrideMaxYear} {Constants.TITLE_FIRE_BLANK_PAGE}";
+                        success = GeneralTools.GenerateBlankPage(firePageTitle, GeneralTools.GetFullPdfFileName(Constants.FILE_BLANK_PAGE_PDF));
                         if (success == BA_ReturnCode.Success)
                         {
                             lstExportedMaps.Add(GeneralTools.GetFullPdfFileName(Constants.FILE_BLANK_PAGE_PDF));

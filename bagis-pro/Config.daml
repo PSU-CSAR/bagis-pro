@@ -33,7 +33,6 @@
           <button refID="bagis_pro_Buttons_BtnDefineAoi" size="middle" />
           <button refID="bagis_pro_Buttons_BtnSetPourpoint" size="middle" />
           <button refID="bagis_pro_Buttons_BtnCreateAoi" size="middle" />
-          <button refID="bagis_pro_Aoi_WinAoiInfo" size="large" />
         </group>
         <group id="bagis_pro_Groups_Maps" appearsOnAddInTab="false" caption="Map Functions" keytip="G3">
           <labelControl refID="bagis_pro_Buttons_LblCurrentAoi" />
