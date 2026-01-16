@@ -54,12 +54,12 @@ namespace bagis_pro
             // Set annual from value to annual to value - 29 (30 years)
             var textBox = sender as TextBox;
             int maxYear = -1;
+            int minYear = -1;
             if (textBox != null && tbSelectMinYear != null)            {                
                 bool bSuccess = int.TryParse(textBox.Text, out maxYear);
                 if (bSuccess)
                 {
-                    tbSelectMinYear.Text = Convert.ToString(maxYear - 29);
-                   
+                    tbSelectMinYear.Text = Convert.ToString(maxYear - 29);                   
                 }
             }
             // The model wasn't catching this value without this
@@ -67,6 +67,11 @@ namespace bagis_pro
             if (textBox != null)
             {
                 oModel.SelectedMaxYear = maxYear;
+                bool bSuccess = int.TryParse(tbSelectMinYear.Text, out minYear);
+                if (bSuccess)
+                {
+                    oModel.SelectedMinYear = minYear;
+                }                
             }
         }
         public void Clip_Mtbs_Changed(object s, RoutedEventArgs e)

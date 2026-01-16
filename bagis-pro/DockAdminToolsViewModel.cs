@@ -2990,7 +2990,6 @@ namespace bagis_pro
             File.WriteAllText(_strFireMapsLogFile, strLogEntry);    // overwrite file if it exists
 
             int intIncrementPeriods = 0;
-            IList<Interval> lstInterval = null;
             int overrideMinYear = _intMinYear;
             int overrideMaxYear = AnnualEndYear;
 
@@ -3249,6 +3248,13 @@ namespace bagis_pro
                             lstExportedMaps.Add(GeneralTools.GetFullPdfFileName(Module1.Current.DisplayedMap));
                         }
                     }
+                    // Calculate interval list so it can be used by the NoData reports
+                    bool bRequestPeriods = false;
+                    if (IncrementDataChecked)
+                    {
+                        bRequestPeriods = true;
+                    }
+                    IList<Interval> lstInterval = GeneralTools.GetFireStatisticsIntervals(IncrementalEndYear, FireDataClipYears, FireIncrementYears, bRequestPeriods, FireTimePeriodCount, out intIncrementPeriods);
                     if (bIncrementMaps)
                     {
                         if (nifcLayer == null)
@@ -3256,12 +3262,6 @@ namespace bagis_pro
                             nifcLayer = oMap.GetLayersAsFlattenedList().OfType<FeatureLayer>().Where(l => l.Name.Equals(Constants.MAPS_NIFC_PERIMETER, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
                         }
                         // Generating increment maps
-                        bool bRequestPeriods = false;
-                        if (IncrementDataChecked)
-                        {
-                            bRequestPeriods = true;
-                        }
-                        lstInterval = GeneralTools.GetFireStatisticsIntervals(IncrementalEndYear, FireDataClipYears, FireIncrementYears, bRequestPeriods, FireTimePeriodCount, out intIncrementPeriods);
                         foreach (var oInterval in lstInterval)
                         {
                             string strFileName = $"Max_{oInterval.Value}";
@@ -3352,7 +3352,35 @@ namespace bagis_pro
                     }
                     if (bNoFireData)
                     {
-                        string firePageTitle = $@"{overrideMinYear}-{overrideMaxYear} {Constants.TITLE_FIRE_BLANK_PAGE}";
+                        int titleMinYear = overrideMinYear;
+                        int titleMaxYear = overrideMaxYear;
+                        if (SelectedTimeChecked)
+                        {
+                            if (IncrementDataChecked && !AnnualDataChecked)
+                            {
+                                titleMaxYear = IncrementalEndYear;
+                                if (lstInterval.Count > 0)
+                                {
+                                    Interval oInterval = lstInterval.First();
+                                    if (titleMinYear > oInterval.LowerBound)
+                                    {
+                                        titleMinYear = Convert.ToInt16(oInterval.LowerBound);
+                                    }
+                                }
+                            }
+                            else if (IncrementDataChecked && AnnualDataChecked)
+                            {
+                                if (lstInterval.Count > 0)
+                                {
+                                    Interval oInterval = lstInterval.Last();
+                                    if (titleMinYear > oInterval.LowerBound)
+                                    {
+                                        titleMinYear = Convert.ToInt16(oInterval.LowerBound);
+                                    }                                
+                                }
+                            }
+                        }
+                        string firePageTitle = $@"{titleMinYear}-{titleMaxYear} {Constants.TITLE_FIRE_BLANK_PAGE}";
                         success = GeneralTools.GenerateBlankPage(firePageTitle, GeneralTools.GetFullPdfFileName(Constants.FILE_BLANK_PAGE_PDF));
                         if (success == BA_ReturnCode.Success)
                         {

@@ -2133,8 +2133,19 @@ namespace bagis_pro
                 }
                 i++;
             }
-            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-            combineDocument.Save(outputPath);
+
+            try
+            {
+                Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+                combineDocument.Save(outputPath);
+            }
+            catch (Exception)
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(PublishFirePdfDocument),
+                    "Unable to save pdf document to " + outputPath + ". Is the file open?");
+                return BA_ReturnCode.WriteError;
+            }
+
 
             foreach (var strPath in lstMapPaths)
             {
