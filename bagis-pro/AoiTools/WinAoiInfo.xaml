@@ -4,16 +4,15 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:extensions="clr-namespace:ArcGIS.Desktop.Extensions;assembly=ArcGIS.Desktop.Extensions"
-        mc:Ignorable="d" Height="600" Width="700"
-        WindowStartupLocation="CenterOwner"
-    >
+        xmlns:extensions="clr-namespace:ArcGIS.Desktop.Extensions;assembly=ArcGIS.Desktop.Extensions" xmlns:ui="clr-namespace:bagis_pro.AoiTools"
+                    mc:Ignorable="d" Height="600" Width="700"
+        WindowStartupLocation="CenterOwner">
     <controls:ProWindow.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <extensions:DesignOnlyResourceDictionary Source="pack://application:,,,/ArcGIS.Desktop.Framework;component\Themes\Default.xaml"/>
             </ResourceDictionary.MergedDictionaries>
-        </ResourceDictionary>
+        </ResourceDictionary> 
     </controls:ProWindow.Resources>
     <Grid>
         <Grid.RowDefinitions>
@@ -105,10 +104,22 @@
                     <RowDefinition Height="100"/>
                 </Grid.RowDefinitions>
                 <DockPanel Grid.Row="0" Grid.Column="0" Margin="2,0,2,0">
-                    <Button x:Name="btnClear" Content="Clear Selection" HorizontalAlignment="Center"  VerticalAlignment="Center" Width="100" Command="{Binding CmdClear}" Margin="5, 0, 0, 0" />
+                    <Button x:Name="btnClear" Content="Clear Selection" HorizontalAlignment="Center"  VerticalAlignment="Center" Width="100" Click="btnClear_Click" Margin="5, 0, 0, 0" />
                 </DockPanel>
                 <DockPanel Grid.Row="0" Grid.Column="1" Margin="2,0,2,0">
-                    <Button x:Name="btnLayers" Content="Add Selections To Map" HorizontalAlignment="Center"  VerticalAlignment="Center" Width="130" Command="{Binding CmdClear}" Margin="5, 0, 0, 0" />
+                    <Button x:Name="btnAddLayers" Content="Add Selections To Map" HorizontalAlignment="Center"  VerticalAlignment="Center" Width="130" Command="{Binding CmdAddLayers}" Margin="5, 0, 0, 0" >
+                        <Button.Resources>
+                            <ui:MultiValueConverter x:Key="multiValueConverter" />
+                        </Button.Resources>
+                        <Button.CommandParameter>
+                            <MultiBinding Converter="{StaticResource multiValueConverter}">
+                                <MultiBinding.Bindings>
+                                    <Binding ElementName="lstRaster" Path="SelectedItems" />
+                                    <Binding ElementName="lstVector" Path="SelectedItems" />
+                                </MultiBinding.Bindings>
+                            </MultiBinding>
+                        </Button.CommandParameter>
+                    </Button>
                 </DockPanel>
                 <DockPanel Grid.Row="1" Grid.Column="0" Margin="2,0,2,0">
                     <TextBlock MaxWidth="90" VerticalAlignment="Center" HorizontalAlignment="Left"  Text="Raster Layers" Margin="5, 0, 0, 0"/>
@@ -117,8 +128,13 @@
                     <TextBlock MaxWidth="90" VerticalAlignment="Center" HorizontalAlignment="Left"  Text="Vector Layers" Margin="5, 0, 0, 0"/>
                 </DockPanel>
                 <DockPanel Grid.Row="2" Grid.Column="0" Margin="2,0,2,0">
-                    <ListBox x:Name="lstRaster" Grid.Row="1" ItemsSource="{Binding RasterLayers}" SelectionMode="Multiple"/>
+                    <ListBox x:Name="lstRaster" Grid.Row="1" ItemsSource="{Binding RasterLayers}"  SelectionMode="Multiple">
+                    </ListBox>
                 </DockPanel>
+                <DockPanel Grid.Row="2" Grid.Column="1" Margin="2,0,2,0">
+                    <ListBox x:Name="lstVector" Grid.Row="1" ItemsSource="{Binding VectorLayers}" SelectionMode="Multiple"/>
+                </DockPanel>
+
             </Grid>
         </GroupBox>
         <GroupBox Margin="5,0,0,5" Padding="2" Grid.Row="4" Grid.Column="2" HorizontalAlignment="Left">

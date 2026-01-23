@@ -9,19 +9,16 @@ using ArcGIS.Desktop.Framework.Contracts;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
 using ArcGIS.Desktop.Mapping;
 using bagis_pro.BA_Objects;
-using ExtensionMethod;
-using Microsoft.Office.Interop.Excel;
-using Microsoft.VisualBasic.Logging;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Collections.Specialized;
-using System.ComponentModel;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Data;
 using System.Windows.Input;
 
 namespace bagis_pro.AoiTools
@@ -52,6 +49,8 @@ namespace bagis_pro.AoiTools
         private bool _reclipSnowCos_Checked = false;
         private ObservableCollection<string> _lstUnits = new ObservableCollection<string>();
         private ObservableCollection<string> _rasterLayers = new ObservableCollection<string>();
+        private ObservableCollection<string> _vectorLayers = new ObservableCollection<string>();
+        private ObservableCollection<string> _selectedLayers = new ObservableCollection<string>();
         public WinAoiInfoModel(WinAoiInfo view)
         {
             _view = view;
@@ -250,6 +249,18 @@ namespace bagis_pro.AoiTools
             get => _rasterLayers;
             set => SetProperty(ref _rasterLayers, value); // Utilizes ViewModelBase.SetProperty
         }
+
+        public ObservableCollection<string> VectorLayers
+        {
+            get => _vectorLayers;
+            set => SetProperty(ref _vectorLayers, value); // Utilizes ViewModelBase.SetProperty
+        }
+
+        public ObservableCollection<string> SelectedLayers
+        {
+            get => _selectedLayers;
+            set => SetProperty(ref _selectedLayers, value); // Utilizes ViewModelBase.SetProperty
+        }
         private RelayCommand _setAoiCommand;
         public ICommand CmdSetAoi
         {
@@ -279,6 +290,17 @@ namespace bagis_pro.AoiTools
                 return new RelayCommand( () => {
                     _view.Close();
                 });
+            }
+        }
+
+        private RelayCommand _addLayersCommand;
+        public ICommand CmdAddLayers
+        {
+            get
+            {
+                if (_addLayersCommand == null)
+                    _addLayersCommand = new RelayCommand(AddLayersImplAsync, () => true);
+                return _addLayersCommand;
             }
         }
         private async void SetAoiImplAsync(object param)
@@ -401,20 +423,28 @@ namespace bagis_pro.AoiTools
                             }
                         }
                         Uri uriLayers = new Uri(GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers));
-                        ObservableCollection<string> tmpList = null;
+                        ObservableCollection<string> tmpRaster = null;
+                        ObservableCollection<string> tmpVector = null;
                         await QueuedTask.Run(() =>
                         {
                             using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(uriLayers)))
                             {
-                                tmpList = new ObservableCollection<string>();
+                                tmpRaster = new ObservableCollection<string>();
+                                tmpVector = new ObservableCollection<string>();
                                 IReadOnlyList<RasterDatasetDefinition> definitions = geodatabase.GetDefinitions<RasterDatasetDefinition>();
                                 foreach (RasterDatasetDefinition def in definitions)
                                 {
-                                   tmpList.Add(def.GetName());
+                                    tmpRaster.Add(def.GetName());
+                                }
+                                IReadOnlyList<FeatureClassDefinition> fcDefinitions = geodatabase.GetDefinitions<FeatureClassDefinition>();
+                                foreach (FeatureClassDefinition def in fcDefinitions)
+                                {
+                                   tmpVector.Add(def.GetName());
                                 }
                             }
                         });
-                        RasterLayers = tmpList;
+                        RasterLayers = tmpRaster;
+                        VectorLayers = tmpVector;
                     }
                 }
             }
@@ -521,5 +551,26 @@ namespace bagis_pro.AoiTools
                     "Exception: " + ex.Message);
             }
         }
+
+        private async void AddLayersImplAsync(object param)
+        {
+            IList lstBothLists = (IList)param;
+            if (lstBothLists != null && lstBothLists.Count == 2)
+            {
+
+            }             
+        }
     }
+
+    public class MultiValueConverter : IMultiValueConverter
+    {
+        public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
+        {
+            return values.Clone();
+        }
+        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
     }
+}

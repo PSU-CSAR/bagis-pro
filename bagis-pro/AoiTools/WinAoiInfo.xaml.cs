@@ -1,6 +1,4 @@
-﻿using ActiproSoftware.Windows.Controls;
-using bagis_pro.Basin;
-using Microsoft.VisualBasic.Devices;
+﻿using bagis_pro.Basin;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,11 +8,8 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
+using System.Windows.Forms;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace bagis_pro.AoiTools
 {
@@ -27,6 +22,10 @@ namespace bagis_pro.AoiTools
         {
             InitializeComponent();
             this.DataContext = new WinAoiInfoModel(this);
+            lstRaster.Items.SortDescriptions.Add(
+                new System.ComponentModel.SortDescription("", System.ComponentModel.ListSortDirection.Ascending));
+            lstVector.Items.SortDescriptions.Add(
+                new System.ComponentModel.SortDescription("", System.ComponentModel.ListSortDirection.Ascending));
         }
         private void ClipCheckBoxChanged(object sender, RoutedEventArgs e)
         {
@@ -53,6 +52,11 @@ namespace bagis_pro.AoiTools
                 }
             }
             btnReclip.IsEnabled = bEnableReclip;
+        }
+        private void btnClear_Click(object sender, RoutedEventArgs e)
+        {
+            lstRaster.SelectedItems.Clear();
+            lstVector.SelectedItems.Clear();
         }
 
     }
