@@ -551,13 +551,35 @@ namespace bagis_pro.AoiTools
                     "Exception: " + ex.Message);
             }
         }
-
         private async void AddLayersImplAsync(object param)
         {
             IList lstBothLists = (IList)param;
             if (lstBothLists != null && lstBothLists.Count == 2)
             {
-
+                BA_ReturnCode success = BA_ReturnCode.UnknownError;
+                IList lstRasters = (IList) lstBothLists[0];
+                IList lstFeatureClasses = (IList)lstBothLists[1];
+                string strGdbPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers);
+                for (int i = 0; i < lstRasters.Count; i++)
+                {
+                    Uri uri = new Uri($@"{strGdbPath}\{Convert.ToString(lstRasters[i])}");
+                    success = await MapTools.DisplayRasterLayerAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, Convert.ToString(lstRasters[i]),true);
+                }
+                Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
+                for (int i = 0; i < lstFeatureClasses.Count; i++)
+                {
+                    Uri uri = new Uri($@"{strGdbPath}\{Convert.ToString(lstFeatureClasses[i])}");
+                    await QueuedTask.Run(() =>
+                    {
+                        //Define some of the Feature Layer's parameters
+                        var flyrCreatnParam = new FeatureLayerCreationParams(uri)
+                        {
+                            Name = Convert.ToString(lstFeatureClasses[i]),
+                            IsVisible = true,
+                        };
+                        FeatureLayer fLayer = LayerFactory.Instance.CreateLayer<FeatureLayer>(flyrCreatnParam, oMap);
+                    });
+                }
             }             
         }
     }

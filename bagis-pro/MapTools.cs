@@ -424,14 +424,13 @@ namespace bagis_pro
         public static async Task<Map> SetDefaultMapNameAsync(string mapName)
         {
             Project proj = Project.Current;
-            bool bCreateMapPane = false;
             Map oMap = null;
+            //Finding the first project item with name matches with mapName
+            MapProjectItem mpi =
+                proj.GetItems<MapProjectItem>()
+                    .FirstOrDefault(m => m.Name.Equals(mapName, StringComparison.CurrentCultureIgnoreCase));
             await QueuedTask.Run(() =>
             {
-                //Finding the first project item with name matches with mapName
-                MapProjectItem mpi =
-                    proj.GetItems<MapProjectItem>()
-                        .FirstOrDefault(m => m.Name.Equals(mapName, StringComparison.CurrentCultureIgnoreCase));
                 if (mpi != null)
                 {
                     oMap = mpi.GetMap();
@@ -439,12 +438,31 @@ namespace bagis_pro
                 else
                 {
                     oMap = MapFactory.Instance.CreateMap(mapName, basemap: Basemap.None);
-                    bCreateMapPane = true;
                 }
             });
-            if (bCreateMapPane)
+            if (mpi != null)
             {
-                IMapPane activePane = await ProApp.Panes.CreateMapPaneAsync(oMap);
+                // is it already open? - check the open panes
+                var mapPane = ProApp.Panes.OfType<IMapPane>().FirstOrDefault(mPane => (mPane as Pane).ContentID == mpi.Path);
+
+                if (mapPane != null)
+                {
+                    var pane = mapPane as Pane;
+                    pane.Activate();
+                }
+                else
+                {
+                    // open a new mapPane
+                    await mpi.OpenMapPaneAsync();
+
+                    // OR use the following
+                    //    it does the same thing as MapProjectItem.OpenMapPaneAsync
+                    //QueuedTask.Run(() =>
+                    //{
+                    //  var map = mapProjItem.GetMap();
+                    //  ProApp.Panes.CreateMapPaneAsync(map);
+                    //});
+                }
             }
             return oMap;
         }
