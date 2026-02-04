@@ -388,6 +388,30 @@ namespace bagis_pro.AoiTools
                             PrismMmChecked = true;
                         }
 
+                        Uri uriLayers = new Uri(GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers));
+                        ObservableCollection<string> tmpRaster = null;
+                        ObservableCollection<string> tmpVector = null;
+                        await QueuedTask.Run(() =>
+                        {
+                            using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(uriLayers)))
+                            {
+                                tmpRaster = new ObservableCollection<string>();
+                                tmpVector = new ObservableCollection<string>();
+                                IReadOnlyList<RasterDatasetDefinition> definitions = geodatabase.GetDefinitions<RasterDatasetDefinition>();
+                                foreach (RasterDatasetDefinition def in definitions)
+                                {
+                                    tmpRaster.Add(def.GetName());
+                                }
+                                IReadOnlyList<FeatureClassDefinition> fcDefinitions = geodatabase.GetDefinitions<FeatureClassDefinition>();
+                                foreach (FeatureClassDefinition def in fcDefinitions)
+                                {
+                                   tmpVector.Add(def.GetName());
+                                }
+                            }
+                        });
+                        RasterLayers = tmpRaster;
+                        VectorLayers = tmpVector;
+
                         if (!oAoi.ValidForecastData)
                         {
                             StringBuilder sb = new StringBuilder();
@@ -422,29 +446,6 @@ namespace bagis_pro.AoiTools
                                 MessageBox.Show(sb.ToString(), "BAGIS PRO");
                             }
                         }
-                        Uri uriLayers = new Uri(GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers));
-                        ObservableCollection<string> tmpRaster = null;
-                        ObservableCollection<string> tmpVector = null;
-                        await QueuedTask.Run(() =>
-                        {
-                            using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(uriLayers)))
-                            {
-                                tmpRaster = new ObservableCollection<string>();
-                                tmpVector = new ObservableCollection<string>();
-                                IReadOnlyList<RasterDatasetDefinition> definitions = geodatabase.GetDefinitions<RasterDatasetDefinition>();
-                                foreach (RasterDatasetDefinition def in definitions)
-                                {
-                                    tmpRaster.Add(def.GetName());
-                                }
-                                IReadOnlyList<FeatureClassDefinition> fcDefinitions = geodatabase.GetDefinitions<FeatureClassDefinition>();
-                                foreach (FeatureClassDefinition def in fcDefinitions)
-                                {
-                                   tmpVector.Add(def.GetName());
-                                }
-                            }
-                        });
-                        RasterLayers = tmpRaster;
-                        VectorLayers = tmpVector;
                     }
                 }
             }

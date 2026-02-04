@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO.Compression;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using ArcGIS.Core.CIM;
+﻿using ArcGIS.Core.CIM;
 using ArcGIS.Core.Data;
 using ArcGIS.Core.Geometry;
 using ArcGIS.Desktop.Catalog;
@@ -17,6 +10,14 @@ using ArcGIS.Desktop.Framework.Contracts;
 using ArcGIS.Desktop.Framework.Dialogs;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
 using ArcGIS.Desktop.Mapping;
+using bagis_pro.AoiTools;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.IO.Compression;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace bagis_pro.Menus
 {
@@ -101,66 +102,18 @@ namespace bagis_pro.Menus
 
     internal class MnuAoiTools_BtnSelectAoi : Button
     {
-        protected async override void OnClick()
+        private WinAoiInfo _winaoiinfo = null;
+        protected override void OnClick()
         {
             try
             {
-                OpenItemDialog selectAoiDialog = new OpenItemDialog()
-                {
-                    Title = "Select AOI Folder",
-                    MultiSelect = false,
-                    Filter = ItemFilters.Folders
-                };
-                if (selectAoiDialog.ShowDialog() == true)
-                {
-                    Module1.DeactivateState("Aoi_Selected_State");
-                    IEnumerable<Item> selectedItems = selectAoiDialog.Items;
-                    var e = selectedItems.FirstOrDefault();
-                    BA_Objects.Aoi oAoi = await GeneralTools.SetAoiAsync(e.Path, null);
-                    if (oAoi != null)
-                    {
-                        Module1.Current.CboCurrentAoi.SetAoiName(oAoi.Name);
-                        MessageBox.Show("AOI is set to " + oAoi.Name + "!", "BAGIS PRO");
-
-                        if (!oAoi.ValidForecastData)
-                        {
-                            StringBuilder sb = new StringBuilder();
-                            sb.Append("This AOI does not have the required forecast station information. ");
-                            sb.Append("Use the Batch Tools menu to run the 'Forecast Station Data' tool to update ");
-                            sb.Append("the forecast station data. Next use the Batch Tools menu to run the ");
-                            sb.Append("'Generate AOI Reports' tool to create the analysis layers required by BAGIS-Pro.");
-                            MessageBox.Show(sb.ToString(), "BAGIS PRO");
-                        }
-                        else
-                        {
-                            string[] arrButtonNames = { "bagis_pro_Menus_MnuMaps_BtnMapLoad", "bagis_pro_Buttons_BtnExcelTables",
-                                "bagis_pro_WinExportPdf"};
-                            int intButtonsDisabled = 0;
-                            for (int i = 0; i < arrButtonNames.Length; i++)
-                            {
-                                var plugin = FrameworkApplication.GetPlugInWrapper(arrButtonNames[i]);
-                                if (plugin == null)
-                                {
-                                    intButtonsDisabled++;
-                                }
-                                else if (!plugin.Enabled)
-                                {
-                                    intButtonsDisabled++;
-                                }
-                            }
-                            if (intButtonsDisabled > 0)
-                            {
-                                StringBuilder sb = new StringBuilder();
-                                sb.Append("This AOI is missing at least one required layer. Use the Batch Tools menu to run the ");
-                                sb.Append("'Generate AOI Reports' tool to create the analysis layers required by BAGIS-Pro.");
-                                MessageBox.Show(sb.ToString(), "BAGIS PRO");
-                            }
-                        }
-                        // @ToDo: Re-enable when I'm ready to work on DockAoiInfo
-                        //DockAoiInfoViewModel.Show();
-
-                    }
-                }
+                //already open?
+                if (_winaoiinfo != null)
+                    return;
+                _winaoiinfo = new WinAoiInfo();
+                _winaoiinfo.Owner = FrameworkApplication.Current.MainWindow;
+                _winaoiinfo.Closed += (o, e) => { _winaoiinfo = null; };
+                _winaoiinfo.Show();
             }
             catch (Exception e)
             {
