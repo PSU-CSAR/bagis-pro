@@ -580,7 +580,7 @@ namespace bagis_pro.Basin
                                 Module1.Current.CboCurrentBasin.SetBasinName(Path.GetFileName(ParentFolder));
                             });
                             Module1.DeactivateState("bagis_pro_Buttons_SetBasinExtentTool_State");
-                            Module1.ActivateState("bagis_pro_Buttons_BtnDefineAoi");
+                            Module1.ActivateState("bagis_pro_Buttons_BtnDefineAoi_State");
                         }
                     }
                 });
