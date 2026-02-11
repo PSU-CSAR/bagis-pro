@@ -26,10 +26,17 @@ namespace bagis_pro.AoiTools
     internal class WinDefineAoiModel : ViewModelBase
     {
         WinDefineAoi _view = null;
+        string _basinName = "";
         public WinDefineAoiModel(WinDefineAoi view)
         {
             _view = view;
             _view.Title = "Define AOI";
+            BasinName = Convert.ToString(Module1.Current.CboCurrentBasin.SelectedItem);
+        }
+        public string BasinName
+        {
+            get => _basinName;
+            set => SetProperty(ref _basinName, value);
         }
         public ICommand CmdClose
         {
