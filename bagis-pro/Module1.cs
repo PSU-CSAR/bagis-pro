@@ -124,5 +124,7 @@ namespace bagis_pro
         internal string DataSourceGroup { get; set; } = Constants.DATA_SOURCES_DEFAULT;
         internal string ChromePath { get; set; } = "";
         internal DemInfo DemDimension { get; set; }
+
+        internal string BasinFolderBase { get; set; }
     }
 }

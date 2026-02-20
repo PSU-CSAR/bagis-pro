@@ -16,7 +16,7 @@
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </controls:ProWindow.Resources>
-    <Grid>
+    <Grid Loaded="MyGrid_Loaded">
         <Grid.RowDefinitions>
             <RowDefinition Height="30"/>
             <RowDefinition Height="30"/>
@@ -33,7 +33,7 @@
         <DockPanel Grid.Row="0" Grid.Column="0" Margin="2,0,2,0">
             <TextBlock Name="tbBasinName" MaxWidth="100" VerticalAlignment="Center" HorizontalAlignment="Left" Text="Basin Name:" FontWeight="Bold" Margin="5, 0, 5, 0"/>
             <TextBlock x:Name="tbBasinNameValue" Text="{Binding Path=BasinName}" TextAlignment="Left" FontWeight="Bold" 
-                                    VerticalAlignment="Center" Width="100"/>
+                                     VerticalAlignment="Center" Width="100"/>
         </DockPanel>
         <DockPanel Grid.Row="1" Grid.Column="0" Grid.RowSpan="5">
             <ListBox x:Name="lstAoi" Grid.Row="1" ItemsSource="{Binding AoiFolders}" Margin="5, 0, 0, 0">
@@ -46,15 +46,12 @@
             <Button x:Name="btnNew" Content="New" HorizontalAlignment="Center"  VerticalAlignment="Center" Width="70" Command="{Binding CmdNew}" Margin="10, 0, 0, 0" />
         </DockPanel>
         <DockPanel Grid.Row="2" Grid.Column="1" >
-            <Button x:Name="btnDisplayLayers" Content="Layers" HorizontalAlignment="Right"  VerticalAlignment="Center" Width="70" Command="{Binding CmdDisplayLayers}" Margin="15, 0, 0, 0" />
-        </DockPanel>
-        <DockPanel Grid.Row="3" Grid.Column="1" >
             <Button x:Name="btnSelect" Content="Select" HorizontalAlignment="Right"  VerticalAlignment="Center" Width="70" Command="{Binding CmdSelectAoi}" Margin="15, 0, 0, 0" />
         </DockPanel>
-        <DockPanel Grid.Row="4" Grid.Column="1" >
+        <DockPanel Grid.Row="3" Grid.Column="1" >
             <Button x:Name="btnDelete" Content="Delete" HorizontalAlignment="Right"  VerticalAlignment="Center" Width="70" Command="{Binding CmdDeleteAoi}" Margin="15, 0, 0, 0" />
         </DockPanel>
-        <DockPanel Grid.Row="5" Grid.Column="1" >
+        <DockPanel Grid.Row="4" Grid.Column="1" >
             <Button x:Name="btnClose" Content="Close" HorizontalAlignment="Right"  VerticalAlignment="Center" Width="70" Command="{Binding CmdClose}" Margin="15, 0, 0, 0" />
         </DockPanel>
 

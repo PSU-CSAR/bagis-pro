@@ -464,6 +464,7 @@ namespace bagis_pro.Basin
                     Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
                     BA_ReturnCode success = await MapTools.SetDefaultMapFrameDimensionAsync(Constants.MAPS_DEFAULT_MAP_FRAME_NAME, layout, oMap,
                         0.5, 2.5, 8.0, 10.5);
+                    Module1.Current.BasinFolderBase = ParentFolder;
                     FrameworkApplication.Current.Dispatcher.Invoke(() =>
                     {
                         Module1.Current.CboCurrentBasin.SetBasinName(Path.GetFileName(ParentFolder));
@@ -558,10 +559,11 @@ namespace bagis_pro.Basin
                             }
                         }
                         Module1.ActivateState("bagis_pro_Buttons_SetBasinExtentTool_State");
+                        Module1.Current.BasinFolderBase = ParentFolder;
                         FrameworkApplication.Current.Dispatcher.Invoke(() =>
                         {
                             // Do something on the GUI thread
-                            Module1.Current.CboCurrentBasin.SetBasinName(Path.GetFileName(ParentFolder));
+                            Module1.Current.CboCurrentBasin.SetBasinName(Path.GetFileName(ParentFolder));                           
                             System.Windows.MessageBox.Show("Please select and clip the DEM to the basin folder!", "BAGIS-Pro");
                         });
                     }
@@ -575,6 +577,7 @@ namespace bagis_pro.Basin
                         }
                         else
                         {
+                            Module1.Current.BasinFolderBase = ParentFolder;
                             FrameworkApplication.Current.Dispatcher.Invoke(() =>
                             {
                                 Module1.Current.CboCurrentBasin.SetBasinName(Path.GetFileName(ParentFolder));

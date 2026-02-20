@@ -14,6 +14,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -27,16 +28,34 @@ namespace bagis_pro.AoiTools
     {
         WinDefineAoi _view = null;
         string _basinName = "";
+        private ObservableCollection<string> _aoiFolders = new ObservableCollection<string>();
         public WinDefineAoiModel(WinDefineAoi view)
         {
             _view = view;
             _view.Title = "Define AOI";
             BasinName = Convert.ToString(Module1.Current.CboCurrentBasin.SelectedItem);
         }
+
+        public async Task InitializeAsync()
+        {
+            ObservableCollection<string> tmpList = new ObservableCollection<string>();
+            IList<Aoi> lstAois = await GeneralTools.GetAoiFoldersAsync(Module1.Current.BasinFolderBase, "");
+            for (int i = 0; i < lstAois.Count; i++)
+            {
+                Aoi oAoi = lstAois[i];
+                tmpList.Add(Path.GetFileName(oAoi.FilePath));
+            }
+            AoiFolders = tmpList;
+        }
         public string BasinName
         {
             get => _basinName;
             set => SetProperty(ref _basinName, value);
+        }
+        public ObservableCollection<string> AoiFolders
+        {
+            get => _aoiFolders;
+            set => SetProperty(ref _aoiFolders, value); // Utilizes ViewModelBase.SetProperty
         }
         public ICommand CmdClose
         {

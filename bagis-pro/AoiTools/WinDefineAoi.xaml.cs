@@ -21,5 +21,10 @@ namespace bagis_pro.AoiTools
             InitializeComponent();
             this.DataContext = new WinDefineAoiModel(this);
         }
+        private async void MyGrid_Loaded(object sender, RoutedEventArgs e)
+        {
+            WinDefineAoiModel oModel = this.DataContext as WinDefineAoiModel;
+            await oModel.InitializeAsync();
+        }
     }
 }
