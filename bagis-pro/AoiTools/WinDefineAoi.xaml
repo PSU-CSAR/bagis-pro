@@ -6,7 +6,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:extensions="clr-namespace:ArcGIS.Desktop.Extensions;assembly=ArcGIS.Desktop.Extensions"
         mc:Ignorable="d"
-        Height="300" Width="300"
+        Height="300" Width="350"
         WindowStartupLocation="CenterOwner"
     >
     <controls:ProWindow.Resources>
@@ -36,7 +36,7 @@
                                      VerticalAlignment="Center" Width="100"/>
         </DockPanel>
         <DockPanel Grid.Row="1" Grid.Column="0" Grid.RowSpan="5">
-            <ListBox x:Name="lstAoi" Grid.Row="1" ItemsSource="{Binding AoiFolders}" Margin="5, 0, 0, 0">
+            <ListBox x:Name="lstAoi" Grid.Row="1" ItemsSource="{Binding AoiFolders}" Margin="5, 0, 0, 0" MinWidth="200" SelectedItem="{Binding SelectedAoi, Mode=TwoWay}">
             </ListBox>
         </DockPanel>
         <DockPanel Grid.Row="1" Grid.Column="1" >

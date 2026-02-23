@@ -29,6 +29,7 @@ namespace bagis_pro.AoiTools
         WinDefineAoi _view = null;
         string _basinName = "";
         private ObservableCollection<string> _aoiFolders = new ObservableCollection<string>();
+        string _selectedAoi = "";
         public WinDefineAoiModel(WinDefineAoi view)
         {
             _view = view;
@@ -57,6 +58,17 @@ namespace bagis_pro.AoiTools
             get => _aoiFolders;
             set => SetProperty(ref _aoiFolders, value); // Utilizes ViewModelBase.SetProperty
         }
+        public string SelectedAoi
+        {
+            get => _selectedAoi;
+            set
+            {
+                if (_selectedAoi != value)
+                {
+                    _selectedAoi = value;
+                }
+            }
+        }
         public ICommand CmdClose
         {
             get
@@ -64,6 +76,62 @@ namespace bagis_pro.AoiTools
                 return new RelayCommand( () => {
                     _view.Close();
                 });
+            }
+        }
+
+        private RelayCommand _selectAoiCommand;
+        public ICommand CmdSelectAoi
+        {
+            get
+            {
+                if (_selectAoiCommand == null)
+                    _selectAoiCommand = new RelayCommand(SelectAoiImplAsync, () => true);
+                return _selectAoiCommand;
+            }
+        }
+
+        private async void SelectAoiImplAsync(object param)
+        {
+            string aoiFolder = $@"{Module1.Current.BasinFolderBase}\{SelectedAoi}";
+            Aoi oAoi = await GeneralTools.SetAoiAsync(aoiFolder, null);
+            if (oAoi != null)
+            {
+                Module1.Current.CboCurrentAoi.SetAoiName(oAoi.Name);
+                if (!oAoi.ValidForecastData)
+                {
+                    StringBuilder sb = new StringBuilder();
+                    sb.Append("This AOI does not have the required forecast station information. ");
+                    sb.Append("Use the Batch Tools menu to run the 'Forecast Station Data' tool to update ");
+                    sb.Append("the forecast station data. Next use the Batch Tools menu to run the ");
+                    sb.Append("'Generate AOI Reports' tool to create the analysis layers required by BAGIS-Pro.");
+                    MessageBox.Show(sb.ToString(), "BAGIS PRO");
+                }
+                else
+                {
+                    string[] arrButtonNames = { "bagis_pro_Menus_MnuMaps_BtnMapLoad", "bagis_pro_Buttons_BtnExcelTables",
+                                "bagis_pro_WinExportPdf"};
+                    int intButtonsDisabled = 0;
+                    for (int i = 0; i < arrButtonNames.Length; i++)
+                    {
+                        var plugin = FrameworkApplication.GetPlugInWrapper(arrButtonNames[i]);
+                        if (plugin == null)
+                        {
+                            intButtonsDisabled++;
+                        }
+                        else if (!plugin.Enabled)
+                        {
+                            intButtonsDisabled++;
+                        }
+                    }
+                    if (intButtonsDisabled > 0)
+                    {
+                        StringBuilder sb = new StringBuilder();
+                        sb.Append("This AOI is missing at least one required layer. Use the Batch Tools menu to run the ");
+                        sb.Append("'Generate AOI Reports' tool to create the analysis layers required by BAGIS-Pro.");
+                        MessageBox.Show(sb.ToString(), "BAGIS PRO");
+                    }
+                }
+                _view.Close();
             }
         }
 
