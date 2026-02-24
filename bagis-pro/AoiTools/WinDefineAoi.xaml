@@ -40,16 +40,16 @@
             </ListBox>
         </DockPanel>
         <DockPanel Grid.Row="1" Grid.Column="1" >
-            <Button x:Name="btnBoundary"  HorizontalAlignment="Center"  VerticalAlignment="Center" Width="20" Height="20" Command="{Binding CmdBoundary}" Margin="5, 0, 0, 0">
+            <Button x:Name="btnBoundary"  HorizontalAlignment="Center"  VerticalAlignment="Center" Width="20" Height="20" Command="{Binding CmdBoundary}" IsEnabled ="{Binding BtnBoundaryEnabled}"  Margin="5, 0, 0, 0">
                 <Image Source="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/EditingRectangleSquareTool16.png"/>
             </Button>
             <Button x:Name="btnNew" Content="New" HorizontalAlignment="Center"  VerticalAlignment="Center" Width="70" Command="{Binding CmdNew}" Margin="10, 0, 0, 0" />
         </DockPanel>
         <DockPanel Grid.Row="2" Grid.Column="1" >
-            <Button x:Name="btnSelect" Content="Select" HorizontalAlignment="Right"  VerticalAlignment="Center" Width="70" Command="{Binding CmdSelectAoi}" Margin="15, 0, 0, 0" />
+            <Button x:Name="btnSelect" Content="Select" HorizontalAlignment="Right"  VerticalAlignment="Center" Width="70" Command="{Binding CmdSelectAoi}" IsEnabled ="{Binding BtnSelectEnabled}" Margin="15, 0, 0, 0" />
         </DockPanel>
         <DockPanel Grid.Row="3" Grid.Column="1" >
-            <Button x:Name="btnDelete" Content="Delete" HorizontalAlignment="Right"  VerticalAlignment="Center" Width="70" Command="{Binding CmdDeleteAoi}" Margin="15, 0, 0, 0" />
+            <Button x:Name="btnDelete" Content="Delete" HorizontalAlignment="Right"  VerticalAlignment="Center" Width="70" Command="{Binding CmdDeleteAoi}" IsEnabled ="{Binding BtnDeleteEnabled}" Margin="15, 0, 0, 0" />
         </DockPanel>
         <DockPanel Grid.Row="4" Grid.Column="1" >
             <Button x:Name="btnClose" Content="Close" HorizontalAlignment="Right"  VerticalAlignment="Center" Width="70" Command="{Binding CmdClose}" Margin="15, 0, 0, 0" />

@@ -25,6 +25,10 @@ namespace bagis_pro.AoiTools
         {
             WinDefineAoiModel oModel = this.DataContext as WinDefineAoiModel;
             await oModel.InitializeAsync();
+            if (lstAoi.Items.Count > 0)
+            {
+                lstAoi.SelectedIndex = 0;
+            }
         }
     }
 }

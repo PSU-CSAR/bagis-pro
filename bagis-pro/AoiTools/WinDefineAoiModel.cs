@@ -30,6 +30,9 @@ namespace bagis_pro.AoiTools
         string _basinName = "";
         private ObservableCollection<string> _aoiFolders = new ObservableCollection<string>();
         string _selectedAoi = "";
+        bool _btnBoundaryEnabled = false;
+        bool _btnSelectEnabled = false;
+        bool _btnDeleteEnabled = false;
         public WinDefineAoiModel(WinDefineAoi view)
         {
             _view = view;
@@ -38,7 +41,7 @@ namespace bagis_pro.AoiTools
         }
 
         public async Task InitializeAsync()
-        {
+        {            
             ObservableCollection<string> tmpList = new ObservableCollection<string>();
             IList<Aoi> lstAois = await GeneralTools.GetAoiFoldersAsync(Module1.Current.BasinFolderBase, "");
             for (int i = 0; i < lstAois.Count; i++)
@@ -47,6 +50,18 @@ namespace bagis_pro.AoiTools
                 tmpList.Add(Path.GetFileName(oAoi.FilePath));
             }
             AoiFolders = tmpList;
+            if (AoiFolders.Count != 0)
+            {
+                BtnBoundaryEnabled = true;
+                BtnSelectEnabled = true;
+                BtnDeleteEnabled = true;
+            }
+            else
+            {
+                BtnBoundaryEnabled = false;
+                BtnSelectEnabled = false;
+                BtnDeleteEnabled = false;
+            }
         }
         public string BasinName
         {
@@ -69,6 +84,21 @@ namespace bagis_pro.AoiTools
                 }
             }
         }
+        public bool BtnBoundaryEnabled
+        {
+            get => _btnBoundaryEnabled;
+            set => SetProperty(ref _btnBoundaryEnabled, value);
+        }
+        public bool BtnSelectEnabled
+        {
+            get => _btnSelectEnabled;
+            set => SetProperty(ref _btnSelectEnabled, value);
+        }
+        public bool BtnDeleteEnabled
+        {
+            get => _btnDeleteEnabled;
+            set => SetProperty(ref _btnDeleteEnabled, value);
+        }
         public ICommand CmdClose
         {
             get
@@ -89,7 +119,6 @@ namespace bagis_pro.AoiTools
                 return _selectAoiCommand;
             }
         }
-
         private async void SelectAoiImplAsync(object param)
         {
             string aoiFolder = $@"{Module1.Current.BasinFolderBase}\{SelectedAoi}";
@@ -133,6 +162,27 @@ namespace bagis_pro.AoiTools
                 }
                 _view.Close();
             }
+        }
+
+        private RelayCommand _displayBoundaryCommand;
+        public ICommand CmdBoundary
+        {
+            get
+            {
+                if (_displayBoundaryCommand == null)
+                    _displayBoundaryCommand = new RelayCommand(DisplayBoundaryImplAsync, () => true);
+                return _displayBoundaryCommand;
+            }
+        }
+
+        private async void DisplayBoundaryImplAsync(object param)
+        {
+            //add aoi boundary to map
+            string aoiFolder = $@"{Module1.Current.BasinFolderBase}\{SelectedAoi}";
+            string strPath = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Aoi, true) +
+                             Constants.FILE_AOI_VECTOR;
+            Uri aoiUri = new Uri(strPath);
+            BA_ReturnCode success = await MapTools.AddAoiBoundaryToMapAsync(aoiUri, ColorFactory.Instance.RedRGB, Constants.MAPS_DEFAULT_MAP_NAME, $@"{SelectedAoi}");
         }
 
         private RelayCommand _addLayersCommand;
