@@ -20,6 +20,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Data;
+using System.Windows.Forms;
 using System.Windows.Input;
 
 namespace bagis_pro.AoiTools
@@ -133,7 +134,7 @@ namespace bagis_pro.AoiTools
                     sb.Append("Use the Batch Tools menu to run the 'Forecast Station Data' tool to update ");
                     sb.Append("the forecast station data. Next use the Batch Tools menu to run the ");
                     sb.Append("'Generate AOI Reports' tool to create the analysis layers required by BAGIS-Pro.");
-                    MessageBox.Show(sb.ToString(), "BAGIS PRO");
+                    System.Windows.MessageBox.Show(sb.ToString(), "BAGIS PRO");
                 }
                 else
                 {
@@ -157,7 +158,7 @@ namespace bagis_pro.AoiTools
                         StringBuilder sb = new StringBuilder();
                         sb.Append("This AOI is missing at least one required layer. Use the Batch Tools menu to run the ");
                         sb.Append("'Generate AOI Reports' tool to create the analysis layers required by BAGIS-Pro.");
-                        MessageBox.Show(sb.ToString(), "BAGIS PRO");
+                        System.Windows.MessageBox.Show(sb.ToString(), "BAGIS PRO");
                     }
                 }
                 _view.Close();
@@ -174,7 +175,6 @@ namespace bagis_pro.AoiTools
                 return _displayBoundaryCommand;
             }
         }
-
         private async void DisplayBoundaryImplAsync(object param)
         {
             //add aoi boundary to map
@@ -185,46 +185,53 @@ namespace bagis_pro.AoiTools
             BA_ReturnCode success = await MapTools.AddAoiBoundaryToMapAsync(aoiUri, ColorFactory.Instance.RedRGB, Constants.MAPS_DEFAULT_MAP_NAME, $@"{SelectedAoi}");
         }
 
-        private RelayCommand _addLayersCommand;
-        public ICommand CmdAddLayers
+        private RelayCommand _deleteAoiCommand;
+        public ICommand CmdDeleteAoi
         {
             get
             {
-                if (_addLayersCommand == null)
-                    _addLayersCommand = new RelayCommand(AddLayersImplAsync, () => true);
-                return _addLayersCommand;
+                if (_deleteAoiCommand == null)
+                    _deleteAoiCommand = new RelayCommand(DeleteAoiImplAsync, () => true);
+                return _deleteAoiCommand;
             }
         }
-        private async void AddLayersImplAsync(object param)
+        private async void DeleteAoiImplAsync(object param)
         {
-            IList lstBothLists = (IList)param;
-            if (lstBothLists != null && lstBothLists.Count == 2)
+            string aoiFolder = $@"{Module1.Current.BasinFolderBase}\{SelectedAoi}";
+            DialogResult res = System.Windows.Forms.MessageBox.Show($@"Delete {SelectedAoi} ?", "BAGIS-Pro",
+                MessageBoxButtons.YesNo);
+            switch (res)
             {
-                BA_ReturnCode success = BA_ReturnCode.UnknownError;
-                IList lstRasters = (IList) lstBothLists[0];
-                IList lstFeatureClasses = (IList)lstBothLists[1];
-                string strGdbPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers);
-                for (int i = 0; i < lstRasters.Count; i++)
+                case DialogResult.Cancel:
+                    return;
+                case DialogResult.Yes:
+                    // Continue to delete aoi
+                    break;
+                case DialogResult.No:
+                    return;
+            }
+
+            // If the selected aoi is contained by the aoi to be deleted, reset aoi
+            if (Module1.Current.Aoi != null && !String.IsNullOrEmpty(Module1.Current.Aoi.FilePath))
+            {
+                // Doing this because Aoi.name is the stationName, Not necessarily same as folder name
+                string aoiFolderName = Path.GetFileName(Module1.Current.Aoi.FilePath);
+                if (aoiFolderName.Equals(SelectedAoi))
                 {
-                    Uri uri = new Uri($@"{strGdbPath}\{Convert.ToString(lstRasters[i])}");
-                    success = await MapTools.DisplayRasterLayerAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, Convert.ToString(lstRasters[i]),true);
+                    GeneralTools.ResetAoi();
                 }
-                Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
-                for (int i = 0; i < lstFeatureClasses.Count; i++)
-                {
-                    Uri uri = new Uri($@"{strGdbPath}\{Convert.ToString(lstFeatureClasses[i])}");
-                    await QueuedTask.Run(() =>
-                    {
-                        //Define some of the Feature Layer's parameters
-                        var flyrCreatnParam = new FeatureLayerCreationParams(uri)
-                        {
-                            Name = Convert.ToString(lstFeatureClasses[i]),
-                            IsVisible = true,
-                        };
-                        FeatureLayer fLayer = LayerFactory.Instance.CreateLayer<FeatureLayer>(flyrCreatnParam, oMap);
-                    });
-                }
-            }             
+            }
+
+            AoiFolders.Clear();
+            int layerCount = await MapTools.RemoveLayersInFolderAsync(aoiFolder);
+            BA_ReturnCode success = await GeoprocessingTools.DeleteDatasetAsync(aoiFolder);
+            if (success != BA_ReturnCode.Success || Directory.Exists(aoiFolder))
+            {
+                System.Windows.MessageBox.Show("Cannot delete the AOI! It is probably caused by a file lock in the Geodatabase. Please restart ArcGIS and repeat the process.");
+            }
+
+            await this.InitializeAsync();
         }
+
     }
 }
