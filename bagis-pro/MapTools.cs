@@ -489,34 +489,27 @@ namespace bagis_pro
                     "Unable to locate feature class " + aoiUri.LocalPath + "!");
                 return BA_ReturnCode.ReadError;
             }
+            if (String.IsNullOrEmpty(displayName))
+            {
+                displayName = Constants.MAPS_BASIN_BOUNDARY;
+            }
+
+            // Create symbology for feature layer
+            var flyrCreatnParam = new FeatureLayerCreationParams(aoiUri)
+            {
+                Name = displayName,
+                IsVisible = isVisible,
+                RendererDefinition = new SimpleRendererDefinition()
+                {
+                    SymbolTemplate = SymbolFactory.Instance.ConstructPolygonSymbol(
+                        ColorFactory.Instance.BlackRGB, SimpleFillStyle.Null,
+                    SymbolFactory.Instance.ConstructStroke(lineColor, lineSymbolWidth, SimpleLineStyle.Solid))
+                    .MakeSymbolReference()
+                }
+            };
+
             await QueuedTask.Run(() =>
             {
-                FeatureClass fClass = null;
-                // Opens a file geodatabase. This will open the geodatabase if the folder exists and contains a valid geodatabase.
-                using (Geodatabase geodatabase =
-                    new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(strFolderPath))))
-                {
-                    // Use the geodatabase.
-                    fClass = geodatabase.OpenDataset<FeatureClass>(strFileName);
-                }
-                if (String.IsNullOrEmpty(displayName))
-                {
-                    displayName = fClass.GetDefinition().GetAliasName();
-                }
-                // Create symbology for feature layer
-                var flyrCreatnParam = new FeatureLayerCreationParams(fClass)
-                {
-                    Name = displayName,
-                    IsVisible = isVisible,
-                    RendererDefinition = new SimpleRendererDefinition()
-                    {
-                        SymbolTemplate = SymbolFactory.Instance.ConstructPolygonSymbol(
-                            ColorFactory.Instance.BlackRGB, SimpleFillStyle.Null,
-                        SymbolFactory.Instance.ConstructStroke(lineColor, lineSymbolWidth, SimpleLineStyle.Solid))
-                        .MakeSymbolReference()
-                    }
-                };
-
                 FeatureLayer fLayer = LayerFactory.Instance.CreateLayer<FeatureLayer>(flyrCreatnParam, oMap);
             });
             return BA_ReturnCode.Success;
@@ -4073,20 +4066,21 @@ namespace bagis_pro
                                 }
                             }
                         }
-                        await QueuedTask.Run(() =>
-                        {
+
                             for (int i = 0; i < lstRemove.Count; i++)
                             {
                                 Layer oLayer =
                                     oMap.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(lstRemove[i], StringComparison.CurrentCultureIgnoreCase));
                                 if (oLayer != null)
                                 {
-
+                                await QueuedTask.Run(() =>
+                                {
                                     oMap.RemoveLayer(oLayer);
-                                    layersRemoved++;
+                                });
+                                layersRemoved++;
                                 }
                             }
-                        });
+
                     }
                 }
             }

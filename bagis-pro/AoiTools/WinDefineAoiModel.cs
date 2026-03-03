@@ -224,13 +224,19 @@ namespace bagis_pro.AoiTools
 
             AoiFolders.Clear();
             int layerCount = await MapTools.RemoveLayersInFolderAsync(aoiFolder);
-            BA_ReturnCode success = await GeoprocessingTools.DeleteDatasetAsync(aoiFolder);
+            BA_ReturnCode success = await GeoprocessingTools.ClearWorkspaceCacheAsync(aoiFolder);
+            if (success == BA_ReturnCode.Success)
+            {
+                success = await GeoprocessingTools.DeleteDatasetAsync(aoiFolder);
+            }            
             if (success != BA_ReturnCode.Success || Directory.Exists(aoiFolder))
             {
                 System.Windows.MessageBox.Show("Cannot delete the AOI! It is probably caused by a file lock in the Geodatabase. Please restart ArcGIS and repeat the process.");
             }
-
-            await this.InitializeAsync();
+            else 
+            {
+                await this.InitializeAsync();
+            }                
         }
 
     }

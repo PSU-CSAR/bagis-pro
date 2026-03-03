@@ -529,13 +529,28 @@ namespace bagis_pro
                 return BA_ReturnCode.Success;
             }
         }
-
         public static async Task<BA_ReturnCode> RasterToPointAsync(string inputRaster, string strField, 
             string outputName, CancelableProgressor prog)
         {
             var parameters = Geoprocessing.MakeValueArray(inputRaster, outputName, strField);
             IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("RasterToPoint", parameters, null,
                 prog, GPExecuteToolFlags.AddToHistory);
+            if (gpResult.IsFailed)
+            {
+                return BA_ReturnCode.UnknownError;
+            }
+            else
+            {
+                return BA_ReturnCode.Success;
+            }
+        }
+
+        public static async Task<BA_ReturnCode> ClearWorkspaceCacheAsync(string strWorkspace)
+        {
+            var parameters = Geoprocessing.MakeValueArray(strWorkspace);
+            var env = Geoprocessing.MakeEnvironmentArray(workspace: strWorkspace);
+            IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("ClearWorkspaceCache", null, env,
+                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
             if (gpResult.IsFailed)
             {
                 return BA_ReturnCode.UnknownError;
