@@ -13,6 +13,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
@@ -4393,6 +4394,17 @@ namespace bagis_pro
                     success = BA_ReturnCode.ReadError;
                     return;
                 }
+            });
+            success = await DisplayGaugeStationsLayerAsync(strGaugeStationsUri);
+            return success;
+        }
+        public static async Task<BA_ReturnCode> DisplayGaugeStationsLayerAsync(string strGaugeStationsUri)
+        {
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            // Make sure the default map frame is available
+            Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
+            await QueuedTask.Run(() =>
+            {
                 if (!string.IsNullOrEmpty(strGaugeStationsUri))
                 {
                     // Get the referenced styles in the current project
@@ -4403,7 +4415,7 @@ namespace bagis_pro
                     if (style != null)
                     {
                         // Search for a point symbol named "Circle 1" within the style
-                        IList <SymbolStyleItem> symbolItems = style.SearchSymbols(StyleItemType.PointSymbol, "Circle 4");
+                        IList<SymbolStyleItem> symbolItems = style.SearchSymbols(StyleItemType.PointSymbol, "Circle 4");
                         SymbolStyleItem symbolStyleItem = symbolItems.FirstOrDefault();
                         // Need to find exact symbol we want. Pro uses a fuzzy search
                         foreach (var item in symbolItems)
@@ -4440,18 +4452,17 @@ namespace bagis_pro
                                 //SymbolTemplate = SymbolFactory.Instance.ConstructPointSymbol(CIMColor.CreateRGBColor(255, 165, 0), 5, SimpleMarkerStyle.Circle)
                                 //    .MakeSymbolReference()
                                 SymbolTemplate = pointSymbol.MakeSymbolReference()
-                            }
+                            },
+                            Name = Constants.MAPS_GAUGE_STATIONS
                         };
                         var featureLayer = LayerFactory.Instance.CreateLayer<FeatureLayer>(
                             flyrCreatnParam, oMap);
+                        success = BA_ReturnCode.Success;
                     }
                 }
             });
-
             return success;
         }
-
-
 
     }
 }

@@ -1,0 +1,41 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Navigation;
+using System.Windows.Shapes;
+
+namespace bagis_pro.AoiTools
+{
+    /// <summary>
+    /// Interaction logic for WinPourPoint.xaml
+    /// </summary>
+    public partial class WinPourPoint : ArcGIS.Desktop.Framework.Controls.ProWindow
+    {
+        public WinPourPoint()
+        {
+            InitializeComponent();
+            this.DataContext = new WinPourPointModel(this);
+        }
+
+        private async void MyGrid_Loaded(object sender, RoutedEventArgs e)
+        {
+            WinPourPointModel oModel = this.DataContext as WinPourPointModel;
+            await oModel.InitializeAsync();
+            if (lstPourPoints.Items.Count > 0)
+            {
+                lstPourPoints.SelectedIndex = 0;
+            }
+        }
+    }
+
+
+}

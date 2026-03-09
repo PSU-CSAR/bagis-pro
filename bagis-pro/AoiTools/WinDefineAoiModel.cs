@@ -34,6 +34,7 @@ namespace bagis_pro.AoiTools
         bool _btnBoundaryEnabled = false;
         bool _btnSelectEnabled = false;
         bool _btnDeleteEnabled = false;
+        private WinPourPoint _winPourPoint = null;
         public WinDefineAoiModel(WinDefineAoi view)
         {
             _view = view;
@@ -109,6 +110,25 @@ namespace bagis_pro.AoiTools
                 });
             }
         }
+        public ICommand CmdNew
+        {
+            get
+            {
+                return new RelayCommand(() => {
+                    //already open?
+                    if (_winPourPoint != null)
+                        return;
+                    _winPourPoint = new WinPourPoint();
+                    _winPourPoint.Owner = FrameworkApplication.Current.MainWindow;
+                    _winPourPoint.Closed += (o, e) => { _winPourPoint = null; };
+                    _winPourPoint.Show();
+                    //uncomment for modal
+                    //_windefineaoi.ShowDialog();
+                    _view.Close();
+                });
+            }
+        }
+
 
         private RelayCommand _selectAoiCommand;
         public ICommand CmdSelectAoi
