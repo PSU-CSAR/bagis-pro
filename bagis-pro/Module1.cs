@@ -119,7 +119,6 @@ namespace bagis_pro
         internal dynamic BagisSettings { get; set; }
         internal IDictionary<string, dynamic> DataSources { get; set; }
         internal double PrismZonesInterval { get; set; } = 999;
-        internal string WesternStateBoundariesUri { get; } = "";
         internal string RoadsBufferDistance { get; set; } = "";
         internal string DataSourceGroup { get; set; } = Constants.DATA_SOURCES_DEFAULT;
         internal string ChromePath { get; set; } = "";

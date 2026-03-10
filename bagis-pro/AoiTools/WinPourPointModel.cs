@@ -22,7 +22,6 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Data;
-using System.Windows.Forms;
 using System.Windows.Input;
 
 namespace bagis_pro.AoiTools
@@ -32,9 +31,7 @@ namespace bagis_pro.AoiTools
         WinPourPoint _view = null;
         private ObservableCollection<string> _pourPoints = new ObservableCollection<string>();
         string _selectedPourPoint = "";
-        bool _btnBoundaryEnabled = false;
         bool _btnSelectEnabled = false;
-        bool _btnDeleteEnabled = false;
         bool _hasTempPourPoint = false;
         public WinPourPointModel(WinPourPoint view)
         {
@@ -82,27 +79,100 @@ namespace bagis_pro.AoiTools
                 BA_ReturnCode success = await MapTools.DisplayGaugeStationsLayerAsync(strGaugeStationsUri);
             }
 
+            bool bPointLayer = false;
+            FeatureLayer oFeatureLayer = null;
+            await QueuedTask.Run(() =>
+            {
+                //Finding the first project item with name matches with mapName
+                Map map = null;
+                MapProjectItem mpi =
+                    Project.Current.GetItems<MapProjectItem>()
+                    .FirstOrDefault(m => m.Name.Equals(Constants.MAPS_DEFAULT_MAP_NAME, StringComparison.CurrentCultureIgnoreCase));
+                if (mpi != null)
+                {
+                    map = mpi.GetMap();
+                    Layer oLayer =
+                        map.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(Constants.MAPS_GAUGE_STATIONS, StringComparison.CurrentCultureIgnoreCase));
+                    if (oLayer != null)
+                    {
+                        oFeatureLayer = (FeatureLayer)oLayer;
+                        if (oFeatureLayer.ShapeType == ArcGIS.Core.CIM.esriGeometryType.esriGeometryPoint)
+                        {
+                            bPointLayer = true;
+                        }
+                    }
+                }
+            });
+            if (!bPointLayer)
+            {
+                MessageBox.Show("Gauge station layer specified in the settings is invalid!", "BAGIS-Pro");
+                return;
+            }
 
-            //ObservableCollection<string> tmpList = new ObservableCollection<string>();
-            //IList<Aoi> lstAois = await GeneralTools.GetAoiFoldersAsync(Module1.Current.BasinFolderBase, "");
-            //for (int i = 0; i < lstAois.Count; i++)
-            //{
-            //    Aoi oAoi = lstAois[i];
-            //    tmpList.Add(Path.GetFileName(oAoi.FilePath));
-            //}
-            //AoiFolders = tmpList;
-            //if (AoiFolders.Count != 0)
-            //{
-            //    BtnBoundaryEnabled = true;
-            //    BtnSelectEnabled = true;
-            //    BtnDeleteEnabled = true;
-            //}
-            //else
-            //{
-            //    BtnBoundaryEnabled = false;
-            //    BtnSelectEnabled = false;
-            //    BtnDeleteEnabled = false;
-            //}
+            SpatialQueryFilter spatialQueryFilter = null;
+            Uri polyFeatureGdbUri = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.BasinFolderBase, GeodatabaseNames.Aoi));
+            Geometry polyGeometry = null;
+            await QueuedTask.Run(() =>
+            {
+                using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(polyFeatureGdbUri)))
+                {
+                    using (Table table = geodatabase.OpenDataset<Table>(Constants.FILE_AOI_VECTOR))
+                    {
+                        QueryFilter queryFilter = new QueryFilter();
+                        double maxArea = -1;    // We will report the points in the largest polygon if > 1
+                        using (RowCursor cursor = table.Search(queryFilter, false))
+                        {
+                            while (cursor.MoveNext())
+                            {
+                                using (Feature feature = (Feature)cursor.Current)
+                                {
+                                    Geometry areaGeo = feature.GetShape();
+                                    var area = GeometryEngine.Instance.Area(areaGeo);
+                                    if (area > maxArea)
+                                    {
+                                        maxArea = area;
+                                        polyGeometry = feature.GetShape();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                spatialQueryFilter = new SpatialQueryFilter
+                {
+                    FilterGeometry = polyGeometry,
+                    SpatialRelationship = SpatialRelationship.Contains
+                };
+            });
+
+            ObservableCollection<string> tmpList = new ObservableCollection<string>();
+            await QueuedTask.Run(() =>
+            {
+                using (RowCursor cursor = oFeatureLayer.Search(spatialQueryFilter))
+                {
+                    while (cursor.MoveNext())
+                    {
+                        if (cursor.Current is Feature feature)
+                        {
+                            int idx = feature.FindField(Constants.FIELD_NAME);
+                            if (idx > -1)
+                            {
+                                tmpList.Add(Convert.ToString(feature[idx]));
+                            }
+                        }
+                    }
+                }
+            });
+
+            PourPoints = tmpList;
+            if (PourPoints.Count != 0)
+            {
+                BtnSelectEnabled = true;
+            }
+            else
+            {
+                BtnSelectEnabled = false;
+            }
         }
         public ObservableCollection<string> PourPoints
         {
@@ -120,20 +190,10 @@ namespace bagis_pro.AoiTools
                 }
             }
         }
-        public bool BtnBoundaryEnabled
-        {
-            get => _btnBoundaryEnabled;
-            set => SetProperty(ref _btnBoundaryEnabled, value);
-        }
         public bool BtnSelectEnabled
         {
             get => _btnSelectEnabled;
             set => SetProperty(ref _btnSelectEnabled, value);
-        }
-        public bool BtnDeleteEnabled
-        {
-            get => _btnDeleteEnabled;
-            set => SetProperty(ref _btnDeleteEnabled, value);
         }
         public ICommand CmdClose
         {
