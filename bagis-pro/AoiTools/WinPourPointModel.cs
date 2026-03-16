@@ -195,7 +195,7 @@ namespace bagis_pro.AoiTools
             get => _btnSelectEnabled;
             set => SetProperty(ref _btnSelectEnabled, value);
         }
-        public ICommand CmdClose
+        public ICommand CmdCancel
         {
             get
             {
@@ -215,24 +215,36 @@ namespace bagis_pro.AoiTools
         }
 
 
-      private RelayCommand _displayBoundaryCommand;
-        public ICommand CmdBoundary
+      private RelayCommand _viewBasinCommand;
+        public ICommand CmdViewBasin
         {
             get
             {
-                if (_displayBoundaryCommand == null)
-                    _displayBoundaryCommand = new RelayCommand(DisplayBoundaryImplAsync, () => true);
-                return _displayBoundaryCommand;
+                if (_viewBasinCommand == null)
+                    _viewBasinCommand = new RelayCommand(ViewBasinImplAsync, () => true);
+                return _viewBasinCommand;
             }
         }
-        private async void DisplayBoundaryImplAsync(object param)
+        private async void ViewBasinImplAsync(object param)
         {
-            //add aoi boundary to map
-            string aoiFolder = $@"{Module1.Current.BasinFolderBase}\{SelectedPourPoint}";
-            string strPath = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Aoi, true) +
-                             Constants.FILE_AOI_VECTOR;
+            //zoom to basin boundary
+            string strPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.BasinFolderBase, GeodatabaseNames.Aoi);
             Uri aoiUri = new Uri(strPath);
-            BA_ReturnCode success = await MapTools.AddAoiBoundaryToMapAsync(aoiUri, ColorFactory.Instance.RedRGB, Constants.MAPS_DEFAULT_MAP_NAME, $@"{SelectedPourPoint}");
+            await QueuedTask.Run(() =>
+            {
+                using (Geodatabase geodatabase =
+                        new Geodatabase(new FileGeodatabaseConnectionPath(aoiUri)))
+                {
+                    // Use the geodatabase.
+                    Envelope expandedExtent = null;
+                    using (FeatureClassDefinition fcDefinition = geodatabase.GetDefinition<FeatureClassDefinition>(Constants.FILE_AOI_VECTOR))
+                    {
+                        var extent = fcDefinition.GetExtent();
+                        //expandedExtent = extent.Expand(-0.5, -0.5, true);
+                        MapView.Active.ZoomToAsync(extent);
+                    }
+                }
+            });
         }
 
     }
