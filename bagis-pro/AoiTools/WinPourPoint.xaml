@@ -40,7 +40,7 @@
             <Button x:Name="btnNew" Content="New" HorizontalAlignment="Center"  VerticalAlignment="Center" Width="70" Command="{Binding CmdNew}" Margin="15, 0, 0, 0" />
         </DockPanel>
         <DockPanel Grid.Row="2" Grid.Column="1" >
-            <Button x:Name="btnSelect" Content="Select" HorizontalAlignment="Right"  VerticalAlignment="Center" Width="70" Command="{Binding CmdSelectAoi}" IsEnabled ="{Binding BtnSelectEnabled}" Margin="15, 0, 0, 0" />
+            <Button x:Name="btnSelect" Content="Select" HorizontalAlignment="Right"  VerticalAlignment="Center" Width="70" Command="{Binding CmdSelect}" IsEnabled ="{Binding BtnSelectEnabled}" Margin="15, 0, 0, 0" />
         </DockPanel>
         <DockPanel Grid.Row="4" Grid.Column="1" >
             <Button x:Name="btnCancel" Content="Cancel" HorizontalAlignment="Right"  VerticalAlignment="Center" Width="70" Command="{Binding CmdCancel}" Margin="15, 0, 0, 0" />

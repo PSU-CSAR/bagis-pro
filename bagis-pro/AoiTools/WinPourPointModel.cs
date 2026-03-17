@@ -204,12 +204,23 @@ namespace bagis_pro.AoiTools
                 });
             }
         }
-        public ICommand CmdNew
+        public ICommand CmdSelect
         {
             get
             {
                 return new RelayCommand(() => {
-                    _view.Close();
+                    string defaultInput = $@"{SelectedPourPoint}_{DateTime.Now.ToString("MMddyyyy")}";
+                    var inputDialog = new InputWindow("AOI Name","Please enter the name of the AOI:", defaultInput);
+                    // ShowDialog() blocks the current thread until the window is closed
+                    if (inputDialog.ShowDialog() == true)
+                    {
+                        string aoiName = inputDialog.UserInput;
+                        MessageBox.Show($"You entered: {aoiName}");
+                    }
+                    else
+                    {
+                        MessageBox.Show("Input cancelled.");
+                    }
                 });
             }
         }
@@ -236,7 +247,6 @@ namespace bagis_pro.AoiTools
                         new Geodatabase(new FileGeodatabaseConnectionPath(aoiUri)))
                 {
                     // Use the geodatabase.
-                    Envelope expandedExtent = null;
                     using (FeatureClassDefinition fcDefinition = geodatabase.GetDefinition<FeatureClassDefinition>(Constants.FILE_AOI_VECTOR))
                     {
                         var extent = fcDefinition.GetExtent();
