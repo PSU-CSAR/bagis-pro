@@ -204,25 +204,100 @@ namespace bagis_pro.AoiTools
                 });
             }
         }
+        private RelayCommand _selectCommand;
         public ICommand CmdSelect
         {
             get
             {
-                return new RelayCommand(() => {
-                    string defaultInput = $@"{SelectedPourPoint}_{DateTime.Now.ToString("MMddyyyy")}";
-                    var inputDialog = new InputWindow("AOI Name","Please enter the name of the AOI:", defaultInput);
-                    // ShowDialog() blocks the current thread until the window is closed
-                    if (inputDialog.ShowDialog() == true)
-                    {
-                        string aoiName = inputDialog.UserInput;
-                        MessageBox.Show($"You entered: {aoiName}");
-                    }
-                    else
-                    {
-                        MessageBox.Show("Input cancelled.");
-                    }
-                });
+                if (_selectCommand == null)
+                    _selectCommand = new RelayCommand(SelectImplAsync, () => true);
+                return _selectCommand;
             }
+        }
+
+        private async void SelectImplAsync(object param)
+        {
+            if (String.IsNullOrEmpty(SelectedPourPoint))
+            {
+                MessageBox.Show("Please add a new pourpoint!", "BAGIS-Pro");
+                return;
+            }
+            // Query the stationTriplet for the selected pourpoint
+            //Finding the first project item with name matches with mapName
+            string stationTriplet = null;
+            await QueuedTask.Run(() =>
+            {
+                FeatureLayer oFeatureLayer = null;
+                Map map = null;
+                MapProjectItem mpi =
+                    Project.Current.GetItems<MapProjectItem>()
+                    .FirstOrDefault(m => m.Name.Equals(Constants.MAPS_DEFAULT_MAP_NAME, StringComparison.CurrentCultureIgnoreCase));
+                if (mpi != null)
+                {
+                    map = mpi.GetMap();
+                    Layer oLayer =
+                     map.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(Constants.MAPS_GAUGE_STATIONS, StringComparison.CurrentCultureIgnoreCase));
+                    if (oLayer != null)
+                    {
+                        oFeatureLayer = (FeatureLayer)oLayer;
+                    }
+                }
+                if (oFeatureLayer != null)
+                {
+                    QueryFilter filter = new QueryFilter();
+                    filter.WhereClause = $@"{Constants.FIELD_NAME} = '{SelectedPourPoint.Trim()}'";
+                    using (RowCursor cursor = oFeatureLayer.Search(filter))
+                    {
+                        while (cursor.MoveNext())
+                        {
+                            if (cursor.Current is Feature feature)
+                            {
+                                int idx = feature.FindField(Constants.FIELD_STATION_TRIPLET);
+                                if (idx > -1)
+                                {
+                                    
+                                    stationTriplet = Convert.ToString(feature[idx]);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            string str1 = SelectedPourPoint.Replace(' ', '_');
+            string str2 = str1.Replace(",", "-");
+            string defaultInput = str2.Replace("'", "-");
+            defaultInput = $@"{defaultInput}_{DateTime.Now.ToString("MMddyyyy")}";
+            var inputDialog = new InputWindow("AOI Name", "Please enter the name of the AOI:", defaultInput);
+            // ShowDialog() blocks the current thread until the window is closed
+            string aoiName = "";
+            if (inputDialog.ShowDialog() == true)
+            {
+                aoiName = inputDialog.UserInput;
+            }
+            else
+            {
+                return;
+            }
+            if (aoiName.IndexOf(' ') > -1)
+            {
+                MessageBox.Show("Space not allowed in the AOI name!", "BAGIS-Pro");
+            }
+            _view.Close();
+            string tempAOIFolderName = $@"{Module1.Current.BasinFolderBase}\{aoiName}";
+            if (Directory.Exists(tempAOIFolderName))
+            {
+                MessageBoxResult res = MessageBox.Show($@"{aoiName} folder already exists. Overwrite?", "BAGIS-Pro", MessageBoxButton.YesNo);
+                if (res == MessageBoxResult.Yes)
+                {
+                    int layersRemoved = await MapTools.RemoveLayersInFolderAsync(tempAOIFolderName);
+                    BA_ReturnCode success = await GeoprocessingTools.DeleteDatasetAsync(tempAOIFolderName);
+                    if (success != BA_ReturnCode.Success || Directory.Exists(tempAOIFolderName))
+                    {
+                        MessageBox.Show("Unable to remove the folder. Program stopped.");
+                    }
+                }
+            }
+
         }
 
 
