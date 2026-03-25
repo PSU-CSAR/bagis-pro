@@ -1,36 +1,40 @@
 ﻿using ArcGIS.Core.CIM;
 using ArcGIS.Core.Geometry;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
+using ArcGIS.Desktop.Internal.Mapping;
 using ArcGIS.Desktop.Layouts;
 using ArcGIS.Desktop.Mapping;
+using PdfSharp.Charting;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace bagis_pro.Buttons
 {
-    internal class SetBasinExtentTool : MapTool
+    internal class SetPourpointTool : MapTool
     {
-        public SetBasinExtentTool()
+        public SetPourpointTool()
         {
             IsSketchTool = true;
-            SketchType = SketchGeometryType.Rectangle;
+            SketchType = SketchGeometryType.Point;
             SketchOutputMode = SketchOutputMode.Map;
         }
         protected override Task OnToolActivateAsync(bool active)
         {
             return base.OnToolActivateAsync(active);
         }
+
         protected async override Task<bool> OnSketchCompleteAsync(Geometry geometry)
         {
             Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
-            string glName = Constants.MAPS_CLIP_DEM_LAYER;
+            string glName = "Pourpoint";
             var gl_param = new GraphicsLayerCreationParams
             {
                 Name = glName,
                 IsVisible = true
             };
             GraphicElement oElement = null;
-           await QueuedTask.Run(() =>
+            await QueuedTask.Run(() =>
             {
                 // Create a new graphics layer if one doesn't exist
                 GraphicsLayer graphicsLayer = oMap.GetLayersAsFlattenedList().OfType<GraphicsLayer>().Where(f =>
@@ -45,30 +49,27 @@ namespace bagis_pro.Buttons
                 }
 
                 //Set symbolology, create and add element to layout
-                CIMStroke outline = SymbolFactory.Instance.ConstructStroke(
-                    ColorFactory.Instance.GreenRGB, 3.0, SimpleLineStyle.Solid);
-                CIMPolygonSymbol polySym = 
-                    SymbolFactory.Instance.ConstructPolygonSymbol(null, outline); // Null fill for no fill.
+                CIMPointSymbol oPointSymbol = SymbolFactory.Instance.ConstructPointSymbol(ColorFactory.Instance.GreenRGB, 
+                    14.0, SimpleMarkerStyle.Circle);
 
                 // Create the graphic using the geometry and symbol
-                var cimGraphicElement = new CIMPolygonGraphic
+                var cimGraphicElement = new CIMPointGraphic()
                 {
-                    Polygon = (Polygon)geometry,
-                    Symbol = polySym.MakeSymbolReference()
+                    Location = (MapPoint) geometry,
+                    Symbol = oPointSymbol.MakeSymbolReference()
                 };
                 oElement = graphicsLayer.AddElement(cimGraphicElement);
             });
 
             if (oElement != null)
             {
-                Module1.ActivateState("bagis_pro_Buttons_BtnCreateBasin_State");
                 return true;
             }
             else
             {
-                Module1.DeactivateState("bagis_pro_Buttons_BtnCreateBasin_State");
                 return false;
             }
         }
+
     }
 }

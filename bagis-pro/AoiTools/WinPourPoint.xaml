@@ -30,7 +30,7 @@
             <ColumnDefinition Width="Auto"/>
         </Grid.ColumnDefinitions>
         <DockPanel Grid.Row="0" Grid.Column="0" Grid.RowSpan="5">
-            <ListBox x:Name="lstPourPoints" Grid.Row="1" ItemsSource="{Binding PourPoints}" Margin="5, 0, 0, 0" MinWidth="200" SelectedItem="{Binding SelectedPourPoint, Mode=TwoWay}">
+            <ListBox x:Name="lstPourPoints" Grid.Row="1" ItemsSource="{Binding PourPoints}" Margin="5, 0, 0, 0" MinWidth="200" SelectedItem="{Binding SelectedPourPoint, Mode=TwoWay}" SelectionChanged="lstPourPoints_SelectionChanged">
             </ListBox>
         </DockPanel>
         <DockPanel Grid.Row="0" Grid.Column="1" >

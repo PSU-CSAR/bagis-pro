@@ -3470,7 +3470,7 @@ namespace bagis_pro
         public static void ResetAoiFlags()
         {
             Module1.DeactivateState("bagis_pro_Buttons_BtnDefineAoi_State");
-            Module1.DeactivateState("bagis_pro_Buttons_BtnSetPourpoint_State");
+            Module1.DeactivateState("bagis_pro_Buttons_SetPourpointTool_State");
             Module1.DeactivateState("bagis_pro_Buttons_BtnCreateAoi_State");
             //@ToDo: Will there be a stream links button?
             //Disable AOI flags also disable all the map flags

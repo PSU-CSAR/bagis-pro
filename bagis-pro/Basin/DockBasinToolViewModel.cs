@@ -534,6 +534,9 @@ namespace bagis_pro.Basin
                     // These are gp environment variables to be used for gp tools in this function; There is no way to set this at the session/project level
                     var env = Geoprocessing.MakeEnvironmentArray(workspace: ParentFolder);
 
+                    this.Hide();
+                    FrameworkApplication.ActivateTab("BAGIS_Tab1");
+
                     if (bNeedToClipDem)
                     {
                         DemInfo demInfo = null;

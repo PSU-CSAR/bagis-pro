@@ -293,11 +293,32 @@ namespace bagis_pro.AoiTools
                     BA_ReturnCode success = await GeoprocessingTools.DeleteDatasetAsync(tempAOIFolderName);
                     if (success != BA_ReturnCode.Success || Directory.Exists(tempAOIFolderName))
                     {
-                        MessageBox.Show("Unable to remove the folder. Program stopped.");
+                        MessageBox.Show("Unable to remove the folder. Program stopped.", "BAGIS-Pro");
+                        return;
                     }
                 }
             }
+            try
+            {
+                DirectoryInfo di = Directory.CreateDirectory(tempAOIFolderName);
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show("Unable to create new AOI folder. Program stopped", "BAGIS-Pro");
+                return;
+            }
 
+            // reset aoi tools when a new aoi is selected
+            GeneralTools.ResetAoiFlags();
+            GeneralTools.ResetAoi();
+
+            // SelectAOI_Flag = True 'still allow user to select a different AOI
+            Module1.ActivateState("bagis_pro_Buttons_BtnDefineAoi_State");
+            Module1.Current.CboCurrentAoi.SetAoiName(aoiName);
+            Module1.ActivateState("bagis_pro_Buttons_SetPourpointTool_State");
+            Module1.ActivateState("bagis_pro_Buttons_BtnCreateAoi_State");
+
+            MessageBox.Show($@"Please select a pourpoint location and then create the AOI! ID: {stationTriplet}", "BAGIS-Pro");
         }
 
 

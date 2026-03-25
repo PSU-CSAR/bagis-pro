@@ -30,7 +30,7 @@
           <button refID="bagis_pro_Buttons_BtnSetBasinExtent" size="middle" />
           <button refID="bagis_pro_Buttons_BtnCreateBasin" size="middle" />
           <button refID="bagis_pro_Buttons_BtnDefineAoi" size="middle" />
-          <button refID="bagis_pro_Buttons_BtnSetPourpoint" size="middle" />
+          <button refID="bagis_pro_Buttons_SetPourpointTool" size="middle" />
           <button refID="bagis_pro_Buttons_BtnCreateAoi" size="middle" />
         </group>
         <group id="bagis_pro_Groups_Maps" appearsOnAddInTab="false" caption="Map Functions" keytip="G3">
@@ -257,7 +257,7 @@
         <button id="bagis_pro_Buttons_BtnDefineAoi" caption="Define AOI" className="bagis_pro.Buttons.BtnDefineAoi" loadOnClick="true" condition="bagis_pro_Buttons_BtnDefineAoi_Condition" smallImage="FolderConnection16" largeImage="FolderConnection32">
           <tooltip heading="Define AOI">Define AOI<disabledText /></tooltip>
         </button>
-        <button id="bagis_pro_Buttons_BtnSetPourpoint" caption="Set Pourpoint Location" className="bagis_pro.Buttons.BtnSetPourpoint" loadOnClick="true" condition="bagis_pro_Buttons_BtnSetPourpoint_Condition" smallImage="SnapPourPoint16" largeImage="SnapPourPoint32">
+        <button id="bagis_pro_Buttons_SetPourpointTool" caption="Set Pourpoint Location" className="bagis_pro.Buttons.SetPourpointTool" loadOnClick="true" condition="bagis_pro_Buttons_SetPourpointTool_Condition" smallImage="SnapPourPoint16" largeImage="SnapPourPoint32">
           <tooltip heading="Set Pourpoint Location">Set Pourpoint Location<disabledText /></tooltip>
         </button>
         <button id="bagis_pro_Buttons_BtnCreateAoi" caption="Create AOI" className="bagis_pro.Buttons.BtnCreateAoi" loadOnClick="true" condition="bagis_pro_Buttons_BtnCreateAoi_Condition" smallImage="WatershedHammer16" largeImage="WatershedHammer32">
@@ -423,8 +423,8 @@
     <insertCondition id="bagis_pro_Buttons_BtnDefineAoi_Condition" caption="Disabled">
       <state id="bagis_pro_Buttons_BtnDefineAoi_State" />
     </insertCondition>
-    <insertCondition id="bagis_pro_Buttons_BtnSetPourpoint_Condition" caption="Disabled">
-      <state id="bagis_pro_Buttons_BtnSetPourpoint_State" />
+    <insertCondition id="bagis_pro_Buttons_SetPourpointTool_Condition" caption="Disabled">
+      <state id="bagis_pro_Buttons_SetPourpointTool_State" />
     </insertCondition>
     <insertCondition id="bagis_pro_Buttons_BtnCreateAoi_Condition" caption="Disabled">
       <state id="bagis_pro_Buttons_BtnCreateAoi_State" />

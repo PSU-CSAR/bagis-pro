@@ -405,7 +405,7 @@ namespace bagis_pro
         //                                                        "MapButtonPalette_BtnSitesLocationZone_State",
         //                                                        "MapButtonPalette_BtnPublicLandOwnership_State"};
         public static string[] STATES_BASIN_BUTTONS => new string[] { "bagis_pro_Buttons_SetBasinExtentTool_State",
-        "bagis_pro_Buttons_BtnCreateBasin_State", "bagis_pro_Buttons_BtnDefineAoi_State", "bagis_pro_Buttons_BtnSetPourpoint_State",
+        "bagis_pro_Buttons_BtnCreateBasin_State", "bagis_pro_Buttons_BtnDefineAoi_State", "bagis_pro_Buttons_SetPourpointTool_State",
         "bagis_pro_Buttons_BtnCreateAoi_State"};
 
         public static string META_TAG_XPATH = @"/metadata/dataIdInfo/searchKeys/keyword";
