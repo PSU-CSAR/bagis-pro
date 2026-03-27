@@ -70,6 +70,7 @@ namespace bagis_pro
             Constants.MAPS_SNOTEL, Constants.MAPS_SNOW_COURSE, Constants.MAPS_HILLSHADE, Constants.MAPS_SNOLITE, Constants.MAPS_COOP_PILLOW, 
             Constants.MAPS_STREAM_GAGE, Constants.MAPS_NIFC_PERIMETER};
         public const string MAPS_CLIP_DEM_LAYER = "Clip DEM";
+        public const string MAPS_POURPOINT_LAYER = "Pourpoint";
         public const string FILE_AOI_VECTOR = "aoi_v";
         public const string FILE_AOI_BUFFERED_VECTOR = "aoib_v";
         public const string FILE_AOI_PRISM_VECTOR = "p_aoi_v";

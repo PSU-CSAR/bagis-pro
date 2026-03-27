@@ -23,11 +23,10 @@ namespace bagis_pro.Buttons
         {
             return base.OnToolActivateAsync(active);
         }
-
         protected async override Task<bool> OnSketchCompleteAsync(Geometry geometry)
         {
             Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
-            string glName = "Pourpoint";
+            string glName = Constants.MAPS_POURPOINT_LAYER;
             var gl_param = new GraphicsLayerCreationParams
             {
                 Name = glName,
