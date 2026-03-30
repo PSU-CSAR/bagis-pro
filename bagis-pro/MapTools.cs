@@ -4464,5 +4464,27 @@ namespace bagis_pro
             return success;
         }
 
+        public static async Task<BA_ReturnCode> DisplayFlowAccumLayerAsync(string strMapName, string strFlowAccumUri, string strLayerName)
+        {
+            Map oMap = await MapTools.SetDefaultMapNameAsync(strMapName);
+            await MapTools.DisplayRasterStretchSymbolAsync(Constants.MAPS_DEFAULT_MAP_NAME, new Uri(strFlowAccumUri), strLayerName, "ArcGIS Colors", "Black to White", 0);
+            await QueuedTask.Run(() =>
+            {
+                var rasterLayer = oMap.GetLayersAsFlattenedList().OfType<RasterLayer>().Where(f =>
+                    f.Name == strLayerName).FirstOrDefault();
+                CIMRasterColorizer rColorizer = rasterLayer.GetColorizer();
+                // Check if the colorizer is an RGB colorizer.
+                if (rColorizer is CIMRasterStretchColorizer stretchColorizer)
+                {
+                    // Update RGB colorizer properties.
+                    stretchColorizer.StretchType = RasterStretchType.HistogramEqualize;
+                    stretchColorizer.StatsType = RasterStretchStatsType.AreaOfView;
+                    // Update the raster layer with the changed colorizer.
+                    rasterLayer.SetColorizer(stretchColorizer);
+                }
+            });
+            return BA_ReturnCode.Success;
+        }
+
     }
-}
+    }

@@ -48,9 +48,7 @@ namespace bagis_pro.AoiTools
             string[] arrFlow = { Constants.FILE_FLOW_ACCUMULATION };
             await MapTools.RemoveLayersfromMapFrame(Constants.MAPS_DEFAULT_MAP_NAME, arrFlow);
             string surfacesGdbPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.BasinFolderBase, GeodatabaseNames.Surfaces);
-            await MapTools.DisplayRasterStretchSymbolAsync(Constants.MAPS_DEFAULT_MAP_NAME, new Uri($@"{surfacesGdbPath}\{Constants.FILE_FLOW_ACCUMULATION}"),
-                Constants.FILE_FLOW_ACCUMULATION,
-                "ArcGIS Colors", "Black to White", 0);
+            BA_ReturnCode success = await MapTools.DisplayFlowAccumLayerAsync(Constants.MAPS_DEFAULT_MAP_NAME,$@"{surfacesGdbPath}\{Constants.FILE_FLOW_ACCUMULATION}", Constants.FILE_FLOW_ACCUMULATION);
 
             // Load gauge station layer if it doesn't already exist
             bool bExists = false;
@@ -76,7 +74,7 @@ namespace bagis_pro.AoiTools
             if (!bExists)
             {
                 string strGaugeStationsUri = (string)Module1.Current.BagisSettings.GaugeStationUri;
-                BA_ReturnCode success = await MapTools.DisplayGaugeStationsLayerAsync(strGaugeStationsUri);
+                success = await MapTools.DisplayGaugeStationsLayerAsync(strGaugeStationsUri);
             }
 
             bool bPointLayer = false;

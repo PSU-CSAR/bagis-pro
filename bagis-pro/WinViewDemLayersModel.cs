@@ -124,8 +124,7 @@ namespace bagis_pro
             if (FlowAccChecked)
             {
                 strPath = $@"{surfacesGdb}\{Constants.FILE_FLOW_ACCUMULATION}";
-                await MapTools.DisplayRasterStretchSymbolAsync(Constants.MAPS_DEFAULT_MAP_NAME, new Uri(strPath), Constants.FILE_FLOW_ACCUMULATION,
-                    "ArcGIS Colors", "Black to White", 0);
+                await MapTools.DisplayFlowAccumLayerAsync(Constants.MAPS_DEFAULT_MAP_NAME, strPath, Constants.FILE_FLOW_ACCUMULATION);
             }
             if (FlowDirChecked)
             {

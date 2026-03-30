@@ -472,9 +472,7 @@ namespace bagis_pro.Basin
             }
             if (FlowAccChecked)
             {
-                await MapTools.DisplayRasterStretchSymbolAsync(Constants.MAPS_DEFAULT_MAP_NAME, new Uri($@"{surfacesGdbPath}\{Constants.FILE_FLOW_ACCUMULATION}"), 
-                    Constants.FILE_FLOW_ACCUMULATION,
-                    "ArcGIS Colors", "Black to White", 0);
+                success = await MapTools.DisplayFlowAccumLayerAsync(Constants.MAPS_DEFAULT_MAP_NAME, $@"{surfacesGdbPath}\{Constants.FILE_FLOW_ACCUMULATION}", Constants.FILE_FLOW_ACCUMULATION);
             }
 
             await QueuedTask.Run(() =>
