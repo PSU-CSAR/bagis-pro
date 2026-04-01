@@ -222,7 +222,7 @@ namespace bagis_pro.AoiTools
             }
             // Query the stationTriplet for the selected pourpoint
             //Finding the first project item with name matches with mapName
-            string stationTriplet = null;
+            string stationTriplet = "";
             await QueuedTask.Run(() =>
             {
                 FeatureLayer oFeatureLayer = null;
@@ -261,8 +261,17 @@ namespace bagis_pro.AoiTools
                     }
                 }
             });
-            string str1 = SelectedPourPoint.Replace(' ', '_');
-            string str2 = str1.Replace(",", "-");
+            string str1 = "";
+            if (string.IsNullOrEmpty(stationTriplet))
+            {
+                str1 = SelectedPourPoint;
+            }
+            else
+            {
+                str1 = $@"{stationTriplet}_{SelectedPourPoint}".Replace(':', '_');
+            }
+            string str2 = str1.Replace(' ', '_');
+            string str3 = str2.Replace(",", "-");
             string defaultInput = str2.Replace("'", "-");
             defaultInput = $@"{defaultInput}_{DateTime.Now.ToString("MMddyyyy")}";
             var inputDialog = new InputWindow("AOI Name", "Please enter the name of the AOI:", defaultInput);

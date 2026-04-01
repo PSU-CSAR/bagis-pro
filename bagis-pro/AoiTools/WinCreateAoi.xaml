@@ -6,7 +6,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:extensions="clr-namespace:ArcGIS.Desktop.Extensions;assembly=ArcGIS.Desktop.Extensions"
         mc:Ignorable="d"
-        Title="Create Aoi" Height="300" Width="300"
+        Title="Create Aoi" Height="500" Width="300"
         WindowStartupLocation="CenterOwner"
     >
     <controls:ProWindow.Resources>
@@ -24,6 +24,10 @@
             <RowDefinition Height="30"/>
             <RowDefinition Height="30"/>
             <RowDefinition Height="30"/>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="30"/>
+
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
@@ -40,6 +44,31 @@
             <TextBox x:Name="txtSnapDistance" Margin="5,0,0,0" Text="{Binding SnapDistance}" Height="20" Width="50" HorizontalAlignment="Left"/>
             <TextBlock Text="Meters" Width="90" Margin="5,0,0,0" VerticalAlignment="Center"/>
         </DockPanel>
-
+        <DockPanel Grid.Row="2" Grid.Column="0" Margin="0,0,0,0" HorizontalAlignment="Center" Grid.ColumnSpan="2" VerticalAlignment="Center">
+            <CheckBox x:Name="ckAoiBuffer" Content="Buffer AOI to clip layers" IsChecked="{Binding AoiBufferChecked}" Checked="CkAoiBuffer_Checked" Unchecked="CkAoiBuffer_Checked"/>
+        </DockPanel>
+        <DockPanel Grid.Row="3" Grid.Column="0" Margin="0,0,0,0" HorizontalAlignment="Right" VerticalAlignment="Center">
+            <TextBlock Text="AOI Buffer Distance:" Width="120" />
+        </DockPanel>
+        <DockPanel Grid.Row="3" Grid.Column="1"  HorizontalAlignment="Left" VerticalAlignment="Center">
+            <TextBox x:Name="txtBufferDistance" Margin="5,0,0,0" Text="{Binding AoiBufferDistance}" Height="20" Width="50" HorizontalAlignment="Left"/>
+            <TextBlock Text="Meters" Width="90" Margin="5,0,0,0" VerticalAlignment="Center"/>
+        </DockPanel>
+        <DockPanel Grid.Row="4" Grid.Column="0" Margin="0,0,0,0" HorizontalAlignment="Right" VerticalAlignment="Center">
+            <TextBlock Text="PRISM Buffer Distance:" Width="135" />
+        </DockPanel>
+        <DockPanel Grid.Row="4" Grid.Column="1"  HorizontalAlignment="Left" VerticalAlignment="Center">
+            <TextBox x:Name="txtPrismBufferDistance" Margin="5,0,0,0" Text="{Binding PrismBufferDistance}" Height="20" Width="50" HorizontalAlignment="Left"/>
+            <TextBlock Text="Meters" Width="90" Margin="5,0,0,0" VerticalAlignment="Center"/>
+        </DockPanel>
+        <DockPanel Grid.Row="5" Grid.Column="0" Margin="5,0,0,0" Grid.ColumnSpan="2">
+            <TextBlock x:Name="lblBufferAoi" FontWeight="Bold" Foreground="Blue" MouseLeftButtonUp="LblBuffer_MouseLeftButtonUp" Width="110"><Run Text="(Why use a buffer?)"/></TextBlock>
+        </DockPanel>
+        <DockPanel Grid.Row="6" Grid.Column="0" Margin="0,0,0,0" HorizontalAlignment="Right" VerticalAlignment="Center">
+            <TextBlock Text="DEM Elevation Unit:" Width="120" />
+        </DockPanel>
+        <DockPanel Grid.Row="6" Grid.Column="1" Margin="5,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Center" >
+            <Label x:Name="lblElevUnits" Content="{Binding DemElevUnit}" Width="90"/>
+        </DockPanel>
     </Grid>
 </controls:ProWindow>

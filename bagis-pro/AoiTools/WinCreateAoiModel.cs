@@ -13,12 +13,10 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Data;
 using System.Windows.Input;
 
 namespace bagis_pro.AoiTools
@@ -28,13 +26,11 @@ namespace bagis_pro.AoiTools
         WinCreateAoi _view = null;
         bool _snapPPChecked;
         double _snapDistance;
-        double _areaSqKm;
-        double _areaAcre;
-        double _areaSqMiles;
-        double _aoiRefArea;
-        string _aoiRefUnits = "N/A";
+        bool _aoiBufferChecked;
+        double _aoiBufferDistance;
+        double _prismBufferDistance;
+        string _demElevUnit = "";
         private bool _prism_Checked = false;
-        private string _prismBufferDistance = "";
         private string _prismBufferUnits = "Meters";
         private bool _reclipPrism_Checked = false;
         private bool _prismInchesChecked;
@@ -56,6 +52,10 @@ namespace bagis_pro.AoiTools
             _view = view;
             SnapPPChecked = true;
             SnapDistance = 15;
+            AoiBufferChecked = true;
+            AoiBufferDistance = Convert.ToDouble((string)Module1.Current.BagisSettings.AoiBufferDistance);
+            PrismBufferDistance = 1000;
+            DemElevUnit = (string)Module1.Current.BagisSettings.DemUnits;
         }
         public bool SnapPPChecked
         {
@@ -79,33 +79,26 @@ namespace bagis_pro.AoiTools
                 }
             }
         }
-        public double AreaSqKm
+        public bool AoiBufferChecked
         {
-            get => _areaSqKm;
-            set => SetProperty(ref _areaSqKm, value);
+            get => _aoiBufferChecked;
+            set => SetProperty(ref _aoiBufferChecked, value);
         }
 
-        public double AreaAcre
+        public double AoiBufferDistance
         {
-            get => _areaAcre;
-            set => SetProperty(ref _areaAcre, value);
+            get => _aoiBufferDistance;
+            set => SetProperty(ref _aoiBufferDistance, value);
         }
-        public double AreaSqMile
+        public double PrismBufferDistance
         {
-            get => _areaSqMiles;
-            set => SetProperty(ref _areaSqMiles, value);
+            get => _prismBufferDistance;
+            set => SetProperty(ref _prismBufferDistance, value);
         }
-
-        public double AoiRefArea
+        public string DemElevUnit
         {
-            get => _aoiRefArea;
-            set => SetProperty(ref _aoiRefArea, value);
-        }
-
-        public string AoiRefUnits
-        {
-            get => _aoiRefUnits;
-            set => SetProperty(ref _aoiRefUnits, value);
+            get => _demElevUnit;
+            set => SetProperty(ref _demElevUnit, value);
         }
         public bool Prism_Checked
         {
@@ -113,14 +106,6 @@ namespace bagis_pro.AoiTools
             set
             {
                 SetProperty(ref _prism_Checked, value, () => Prism_Checked);
-            }
-        }
-        public string PrismBufferDistance
-        {
-            get { return _prismBufferDistance; }
-            set
-            {
-                SetProperty(ref _prismBufferDistance, value, () => PrismBufferDistance);
             }
         }
         public string PrismBufferUnits
@@ -310,12 +295,6 @@ namespace bagis_pro.AoiTools
                 }
 
                 BA_ReturnCode success = BA_ReturnCode.Success;
-                // Apply default buffer if left null
-                if (string.IsNullOrEmpty(PrismBufferDistance))
-                {
-                    PrismBufferDistance = (string)Module1.Current.BagisSettings.PrecipBufferDistance;
-                    PrismBufferUnits = (string)Module1.Current.BagisSettings.PrecipBufferUnits;
-                }
 
                 if (clipPrism)
                 {
@@ -326,20 +305,7 @@ namespace bagis_pro.AoiTools
                         string strDistance = $@"{PrismBufferDistance} {PrismBufferUnits}";
                         success = await GeoprocessingTools.BufferAsync(strInputFeatures, strOutputFeatures, strDistance, "ALL", CancelableProgressor.None);
                     }
-                    if (success == BA_ReturnCode.Success)
-                    {
-                        success = await AnalysisTools.ClipLayersAsync(Module1.Current.Aoi.FilePath, BA_Objects.DataSource.GetPrecipitationKey,
-                            PrismBufferDistance, PrismBufferUnits, PrismBufferDistance, PrismBufferUnits);
-                        if (success == BA_ReturnCode.Success)
-                        {
-                            success = await AnalysisTools.UpdateSitesPropertiesAsync(Module1.Current.Aoi.FilePath, SiteProperties.Precipitation);
-                        }
-                        if (success == BA_ReturnCode.Success)
-                        {
-                            ReclipPrism_Checked = false;
-                            Prism_Checked = true;
-                        }
-                    }
+
                 }
 
                 if (clipSnotel || clipSnowCos)
