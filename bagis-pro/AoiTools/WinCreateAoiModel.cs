@@ -9,6 +9,7 @@ using ArcGIS.Desktop.Framework.Contracts;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
 using ArcGIS.Desktop.Mapping;
 using bagis_pro.BA_Objects;
+using ExtensionMethod;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -28,13 +29,8 @@ namespace bagis_pro.AoiTools
         double _snapDistance;
         bool _aoiBufferChecked;
         double _aoiBufferDistance;
-        double _prismBufferDistance;
         string _demElevUnit = "";
-        private bool _prism_Checked = false;
-        private string _prismBufferUnits = "Meters";
-        private bool _reclipPrism_Checked = false;
-        private bool _prismInchesChecked;
-        private bool _prismMmChecked = false;
+        private string _slopeUnitDescr;
         private bool _SNOTEL_Checked = false;
         private string _snotelBufferDistance = "";
         private string _snotelBufferUnits = "";
@@ -54,8 +50,11 @@ namespace bagis_pro.AoiTools
             SnapDistance = 15;
             AoiBufferChecked = true;
             AoiBufferDistance = Convert.ToDouble((string)Module1.Current.BagisSettings.AoiBufferDistance);
-            PrismBufferDistance = 1000;
             DemElevUnit = (string)Module1.Current.BagisSettings.DemUnits;
+            SlopeUnit defaultSlope = SlopeUnit.PctSlope; //BAGIS generates Slope in Degree
+            SlopeUnitDescr = defaultSlope.GetEnumDescription();
+
+
         }
         public bool SnapPPChecked
         {
@@ -90,57 +89,16 @@ namespace bagis_pro.AoiTools
             get => _aoiBufferDistance;
             set => SetProperty(ref _aoiBufferDistance, value);
         }
-        public double PrismBufferDistance
-        {
-            get => _prismBufferDistance;
-            set => SetProperty(ref _prismBufferDistance, value);
-        }
         public string DemElevUnit
         {
             get => _demElevUnit;
             set => SetProperty(ref _demElevUnit, value);
         }
-        public bool Prism_Checked
+        public string SlopeUnitDescr
         {
-            get { return _prism_Checked; }
-            set
-            {
-                SetProperty(ref _prism_Checked, value, () => Prism_Checked);
-            }
+            get => _slopeUnitDescr;
+            set => SetProperty(ref _slopeUnitDescr, value);
         }
-        public string PrismBufferUnits
-        {
-            get { return _prismBufferUnits; }
-            set
-            {
-                SetProperty(ref _prismBufferUnits, value, () => PrismBufferUnits);
-            }
-        }
-        public bool ReclipPrism_Checked
-        {
-            get { return _reclipPrism_Checked; }
-            set
-            {
-                SetProperty(ref _reclipPrism_Checked, value, () => ReclipPrism_Checked);
-            }
-        }
-        public bool PrismInchesChecked
-        {
-            get { return _prismInchesChecked; }
-            set
-            {
-                SetProperty(ref _prismInchesChecked, value, () => PrismInchesChecked);
-            }
-        }
-        public bool PrismMmChecked
-        {
-            get { return _prismMmChecked; }
-            set
-            {
-                SetProperty(ref _prismMmChecked, value, () => PrismMmChecked);
-            }
-        }
-
         public bool SNOTEL_Checked
         {
             get { return _SNOTEL_Checked; }
@@ -248,7 +206,7 @@ namespace bagis_pro.AoiTools
             {
                 return new RelayCommand(async () => {
                     // Create from template
-                    await ClipLayersAsync(ReclipPrism_Checked, ReclipSNOTEL_Checked,
+                    await ClipLayersAsync(false, ReclipSNOTEL_Checked,
                         ReclipSnowCos_Checked);
                 });
             }
@@ -295,18 +253,6 @@ namespace bagis_pro.AoiTools
                 }
 
                 BA_ReturnCode success = BA_ReturnCode.Success;
-
-                if (clipPrism)
-                {
-                    if (!await GeodatabaseTools.FeatureClassExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi)), Constants.FILE_AOI_PRISM_VECTOR))
-                    {
-                        string strInputFeatures = $@"{GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi)}\{Constants.FILE_AOI_VECTOR}";
-                        string strOutputFeatures = $@"{GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Aoi)}\{Constants.FILE_AOI_PRISM_VECTOR}";
-                        string strDistance = $@"{PrismBufferDistance} {PrismBufferUnits}";
-                        success = await GeoprocessingTools.BufferAsync(strInputFeatures, strOutputFeatures, strDistance, "ALL", CancelableProgressor.None);
-                    }
-
-                }
 
                 if (clipSnotel || clipSnowCos)
                 {
