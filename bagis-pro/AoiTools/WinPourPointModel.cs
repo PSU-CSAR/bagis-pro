@@ -319,6 +319,11 @@ namespace bagis_pro.AoiTools
             GeneralTools.ResetAoiFlags();
             GeneralTools.ResetAoi();
 
+            // store AOI info in session
+            Aoi oAoi = new Aoi(aoiName, tempAOIFolderName);
+            oAoi.StationTriplet = stationTriplet;
+            Module1.Current.Aoi = oAoi;
+
             // SelectAOI_Flag = True 'still allow user to select a different AOI
             Module1.ActivateState("bagis_pro_Buttons_BtnDefineAoi_State");
             Module1.Current.CboCurrentAoi.SetAoiName(aoiName);

@@ -1,9 +1,11 @@
 ﻿using ArcGIS.Core.Data;
 using ArcGIS.Core.Data.Raster;
+using ArcGIS.Core.Data.UtilityNetwork.Trace;
 using ArcGIS.Core.Geometry;
 using ArcGIS.Desktop.Catalog;
 using ArcGIS.Desktop.Core;
 using ArcGIS.Desktop.Core.Geoprocessing;
+using ArcGIS.Desktop.Core.Utilities;
 using ArcGIS.Desktop.Framework;
 using ArcGIS.Desktop.Framework.Contracts;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
@@ -14,6 +16,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -31,18 +34,7 @@ namespace bagis_pro.AoiTools
         double _aoiBufferDistance;
         string _demElevUnit = "";
         private string _slopeUnitDescr;
-        private bool _SNOTEL_Checked = false;
-        private string _snotelBufferDistance = "";
-        private string _snotelBufferUnits = "";
-        private bool _reclipSnotel_Checked = false;
-        private bool _snowCos_Checked = false;
-        private string _snowCosBufferDistance = "";
-        private string _snowCosBufferUnits = "";
-        private bool _reclipSnowCos_Checked = false;
-        private ObservableCollection<string> _lstUnits = new ObservableCollection<string>();
-        private ObservableCollection<string> _rasterLayers = new ObservableCollection<string>();
-        private ObservableCollection<string> _vectorLayers = new ObservableCollection<string>();
-        private ObservableCollection<string> _selectedLayers = new ObservableCollection<string>();
+
         public WinCreateAoiModel(WinCreateAoi view)
         {
             _view = view;
@@ -99,236 +91,506 @@ namespace bagis_pro.AoiTools
             get => _slopeUnitDescr;
             set => SetProperty(ref _slopeUnitDescr, value);
         }
-        public bool SNOTEL_Checked
-        {
-            get { return _SNOTEL_Checked; }
-            set
-            {
-                SetProperty(ref _SNOTEL_Checked, value, () => SNOTEL_Checked);
-            }
-        }
 
-        public string SnotelBufferDistance
-        {
-            get { return _snotelBufferDistance; }
-            set
-            {
-                SetProperty(ref _snotelBufferDistance, value, () => SnotelBufferDistance);
-            }
-        }
 
-        public string SnotelBufferUnits
-        {
-            get { return _snotelBufferUnits; }
-            set
-            {
-                SetProperty(ref _snotelBufferUnits, value, () => SnotelBufferUnits);
-            }
-        }
 
-        public bool ReclipSNOTEL_Checked
-        {
-            get { return _reclipSnotel_Checked; }
-            set
-            {
-                SetProperty(ref _reclipSnotel_Checked, value, () => ReclipSNOTEL_Checked);
-            }
-        }
-
-        public bool SnowCos_Checked
-        {
-            get { return _snowCos_Checked; }
-            set
-            {
-                SetProperty(ref _snowCos_Checked, value, () => SnowCos_Checked);
-            }
-        }
-        public string SnowCosBufferDistance
-        {
-            get { return _snowCosBufferDistance; }
-            set
-            {
-                SetProperty(ref _snowCosBufferDistance, value, () => SnowCosBufferDistance);
-            }
-        }
-
-        public string SnowCosBufferUnits
-        {
-            get { return _snowCosBufferUnits; }
-            set
-            {
-                SetProperty(ref _snowCosBufferUnits, value, () => SnowCosBufferUnits);
-            }
-        }
-        public bool ReclipSnowCos_Checked
-        {
-            get { return _reclipSnowCos_Checked; }
-            set
-            {
-                SetProperty(ref _reclipSnowCos_Checked, value, () => ReclipSnowCos_Checked);
-            }
-        }
-        public ObservableCollection<string> LstUnits
+        private RelayCommand _runGenerateAoiCommand;
+        public ICommand CmdGenerateAoi
         {
             get
             {
-                if (_lstUnits.Count == 0)
+                if (_runGenerateAoiCommand == null)
+                    _runGenerateAoiCommand = new RelayCommand(RunGenerateAoiImplAsync, () => true);
+                return _runGenerateAoiCommand;
+            }
+        }
+        private async void RunGenerateAoiImplAsync(object param)
+        {
+            uint nStep = 10;
+            int intWait = 500;
+            // Validation
+            Aoi oAoi = Module1.Current.Aoi;
+            if (string.IsNullOrEmpty(oAoi.FilePath) || string.IsNullOrEmpty(oAoi.Name))
+            {
+                System.Windows.MessageBox.Show("Missing output workspace or AOI name!", "BAGIS-Pro", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            if (!Directory.Exists(oAoi.FilePath))
+            {
+                MessageBox.Show("Output workspace does not exist!", "BAGIS-Pro", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            // verify dem is available
+            string strSourceDem = Module1.Current.DataSources[DataSource.GetDemKey].uri;
+            WorkspaceType wType = await GeneralTools.GetRasterWorkspaceType(strSourceDem);
+            if (wType == WorkspaceType.None)
+            {
+                System.Windows.MessageBox.Show("Invalid DEM. AOI cannot be created!", "BAGIS-Pro", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            //verify AOI buffer distance
+            if (AoiBufferChecked)
+            {
+                if (AoiBufferDistance <= 0)
                 {
-                    _lstUnits.Add("Meters");
-                    _lstUnits.Add("Kilometers");
+                    // Switch back to default
+                    AoiBufferDistance = Convert.ToDouble((string)Module1.Current.BagisSettings.AoiBufferDistance);
                 }
-                return _lstUnits;
             }
-            set { _lstUnits = value; NotifyPropertyChanged("LstUnits"); }
-        }
-        public ObservableCollection<string> RasterLayers
-        {
-            get => _rasterLayers;
-            set => SetProperty(ref _rasterLayers, value); // Utilizes ViewModelBase.SetProperty
-        }
 
-        public ObservableCollection<string> VectorLayers
-        {
-            get => _vectorLayers;
-            set => SetProperty(ref _vectorLayers, value); // Utilizes ViewModelBase.SetProperty
-        }
+            // Start populating aoi object
+            Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
 
-        public ObservableCollection<string> SelectedLayers
-        {
-            get => _selectedLayers;
-            set => SetProperty(ref _selectedLayers, value); // Utilizes ViewModelBase.SetProperty
-        }
-        private RelayCommand _setAoiCommand;
-
-        public ICommand CmdClipLayers
-        {
-            get
+            var progress = new ProgressDialog("Processing ...", "Cancel", 100, false);
+            var status = new CancelableProgressorSource(progress);
+            status.Max = 100;
+            progress.Show();
+            await QueuedTask.Run(() =>
             {
-                return new RelayCommand(async () => {
-                    // Create from template
-                    await ClipLayersAsync(false, ReclipSNOTEL_Checked,
-                        ReclipSnowCos_Checked);
+                status.Progressor.Value = 0;    // reset the progressor's value back to 0 between GP tasks
+                status.Progressor.Message = $@"Generating AOI boundary... (step 1 of {nStep})";
+                //block the CIM for a second
+                Task.Delay(intWait).Wait();
+
+            }, status.Progressor);
+
+            BA_ReturnCode success = await GeodatabaseTools.CreateGeodatabaseFoldersAsync(oAoi.FilePath, FolderType.AOI, status.Progressor);
+            if (success != BA_ReturnCode.Success)
+            {
+                System.Windows.MessageBox.Show("Unable to create GDBs! Please check disk space", "BAGIS-Pro", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            // Create maps folder
+            string strMapsFolder = $@"{oAoi.FilePath}\{Constants.FOLDER_MAPS}";
+            if (!Directory.Exists(strMapsFolder))
+            {
+                DirectoryInfo dirInfo = Directory.CreateDirectory(strMapsFolder);
+                if (dirInfo == null)
+                {
+                    MessageBox.Show("Unable to create maps folder in " + oAoi.FilePath + "! Process stopped.", "BAGIS-Pro", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return ;
+                }
+            }
+
+            // set pourpoint filename and save pourpoint as a feature
+            string aoiGdb = $@"{GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi)}";
+            string unsnappedppname = Constants.FILE_UNSNAPPED_POURPOINT;
+            if (!SnapPPChecked)
+            {
+                unsnappedppname = Constants.FILE_POURPOINT;
+            }
+
+            IGPResult oGpResult = await QueuedTask.Run(() =>
+            {
+                var parameters = Geoprocessing.MakeValueArray(Constants.MAPS_POURPOINT_LAYER, "POINT", $@"{aoiGdb}\{unsnappedppname}",
+                    "DELETE_GRAPHICS");
+                return Geoprocessing.ExecuteToolAsync("GraphicsToFeatures_conversion", parameters, null,
+                            status.Progressor, GPExecuteToolFlags.AddToHistory);
+            });
+            if (oGpResult.IsFailed)
+            {
+                MessageBox.Show("Unable to save Pour Point!", "BAGIS-Pro");
+            }
+
+            await QueuedTask.Run(() =>
+            {
+                status.Progressor.Value = 0;
+                status.Progressor.Message = $@"Delineating AOI Boundaries... (step 2 of {nStep})";
+                //block the CIM for a second
+                Task.Delay(intWait).Wait();
+
+            }, status.Progressor);
+
+            if (SnapPPChecked)
+            {
+                string snapFileName = "tmpSnap";
+                string extractFileName = "tmpExtract";
+                oGpResult = await QueuedTask.Run(() =>
+                {
+                    var parameters = Geoprocessing.MakeValueArray($@"{aoiGdb}\{unsnappedppname}", 
+                        $@"{GeodatabaseTools.GetGeodatabasePath(Module1.Current.BasinFolderBase, GeodatabaseNames.Surfaces, true)}{Constants.FILE_FLOW_ACCUMULATION}",
+                        $@"{aoiGdb}\{snapFileName}", SnapDistance, Constants.FIELD_OID);
+                    return Geoprocessing.ExecuteToolAsync("SnapPourPoint_sa", parameters, null,
+                                status.Progressor, GPExecuteToolFlags.AddToHistory);
                 });
-            }
-        }
-
-        public ICommand CmdClose
-        {
-            get
-            {
-                return new RelayCommand( () => {
-                    _view.Close();
-                });
-            }
-        }
-
-        private RelayCommand _addLayersCommand;
-        public ICommand CmdAddLayers
-        {
-            get
-            {
-                if (_addLayersCommand == null)
-                    _addLayersCommand = new RelayCommand(AddLayersImplAsync, () => true);
-                return _addLayersCommand;
-            }
-        }
-
-        private async Task ClipLayersAsync(bool clipPrism, bool clipSnotel, bool clipSnowCos)
-        {
-            try
-            {
-                if (clipPrism == false && clipSnotel == false && clipSnowCos == false)
+                if (oGpResult.IsFailed)
                 {
-                    MessageBox.Show("No layers selected to clip !!", "BAGIS-PRO");
-                    return;
+                    MessageBox.Show("Unable to snap Pour Point!", "BAGIS-Pro");
                 }
-
-                var cmdShowHistory = FrameworkApplication.GetPlugInWrapper("esri_geoprocessing_showToolHistory") as ICommand;
-                if (cmdShowHistory != null)
+                else
                 {
-                    if (cmdShowHistory.CanExecute(null))
+                    //Query the Previous Raster to Include only the PP location
+                    //Set where_clause to > -1 (Pour Point Value)
+                    oGpResult = await QueuedTask.Run(() =>
                     {
-                        cmdShowHistory.Execute(null);
-                    }
-                }
+                        var parameters = Geoprocessing.MakeValueArray($@"{aoiGdb}\{snapFileName}",
+                            $@"{Constants.FIELD_VALUE} > -1", $@"{aoiGdb}\{extractFileName}");
 
-                BA_ReturnCode success = BA_ReturnCode.Success;
-
-                if (clipSnotel || clipSnowCos)
-                {
-                    string snotelBufferDistance = "";
-                    string snowCosBufferDistance = "";
-                    double dblDistance = -1;
-                    bool isDouble = Double.TryParse(SnotelBufferDistance, out dblDistance);
-                    if (clipSnotel && isDouble && dblDistance > 0)
+                        return Geoprocessing.ExecuteToolAsync("ExtractByAttributes_sa", parameters, null,
+                                    status.Progressor, GPExecuteToolFlags.AddToHistory);
+                    });
+                    if (oGpResult.IsFailed)
                     {
-                        snotelBufferDistance = SnotelBufferDistance + " " + SnotelBufferUnits;
+                        MessageBox.Show("Unable to extract Pour Point location!", "BAGIS-Pro");
                     }
-                    isDouble = Double.TryParse(SnowCosBufferDistance, out dblDistance);
-                    if (clipSnowCos && isDouble && dblDistance > 0)
+                    else
                     {
-                        snowCosBufferDistance = SnowCosBufferDistance + " " + SnowCosBufferUnits;
+                        success = await GeoprocessingTools.RasterToPointAsync($@"{aoiGdb}\{extractFileName}", Constants.FIELD_VALUE,
+                            $@"{aoiGdb}\{Constants.FILE_POURPOINT}", status.Progressor);
                     }
-
-                    success = await AnalysisTools.ClipSnoLayersAsync(Module1.Current.Aoi.FilePath, clipSnotel, snotelBufferDistance,
-                        clipSnowCos, snowCosBufferDistance);
                     if (success == BA_ReturnCode.Success)
                     {
-                        Uri uriLayers = new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers));
-                        if (clipSnotel)
+
+                    }
+                }
+            }
+
+
+            double cellSize = await GeodatabaseTools.GetCellSizeAsync(new Uri(strSourceDem), wType);
+            // If DEM CellSize could not be calculated, the DEM is likely invalid
+            if (cellSize <= 0)
+            {
+                System.Windows.MessageBox.Show($@"{strSourceDem} is invalid and cannot be used as the DEM layer. Check your BAGIS settings.", "BAGIS-Pro", MessageBoxButton.OK, MessageBoxImage.Error);
+                progress.Hide();
+                return;
+            }
+
+            string aoiRasterPath = $@"{GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi, true)}{Constants.FILE_AOI_RASTER}";
+            if (success == BA_ReturnCode.Success)
+            {
+                //IGPResult gpResult = await QueuedTask.Run(() =>
+                //{
+                //    var environments = Geoprocessing.MakeEnvironmentArray(workspace: oAoi.FilePath, snapRaster: strSourceDem);
+                //    var parameters = Geoprocessing.MakeValueArray(SourceFile, fieldRasterId, aoiRasterPath, cellSize);
+                //    return Geoprocessing.ExecuteToolAsync("FeatureToRaster_conversion", parameters, environments,
+                //                status.Progressor, GPExecuteToolFlags.AddToHistory);
+                //});
+                //if (gpResult.IsFailed)
+                //{
+                //    System.Windows.MessageBox.Show("Unable to convert input polygon to raster.", "BAGIS-Pro", MessageBoxButton.OK, MessageBoxImage.Error);
+                //    success = BA_ReturnCode.WriteError;
+                //    progress.Hide();
+                //    return;
+                //}
+            }
+
+            //rasterize the raster to vector
+            if (success == BA_ReturnCode.Success)
+            {
+                string aoiVectorPath = $@"{GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi, true)}{Constants.FILE_AOI_VECTOR}";
+                IGPResult gpResult = await QueuedTask.Run(() =>
+                {
+                    var environments = Geoprocessing.MakeEnvironmentArray(workspace: oAoi.FilePath);
+                    var parameters = Geoprocessing.MakeValueArray(aoiRasterPath, aoiVectorPath, "NO_SIMPLIFY");
+                    return Geoprocessing.ExecuteToolAsync("RasterToPolygon_conversion", parameters, environments,
+                                status.Progressor, GPExecuteToolFlags.AddToHistory);
+                });
+                if (gpResult.IsFailed)
+                {
+                    System.Windows.MessageBox.Show("Unable to convert input raster to polygon.", "BAGIS-Pro", MessageBoxButton.OK, MessageBoxImage.Error);
+                    success = BA_ReturnCode.WriteError;
+                    progress.Hide();
+                    return;
+                }
+                else
+                {
+                    success = await GeodatabaseTools.AddAOIVectorAttributesAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi)), oAoi.Name, status);
+                    if (success != BA_ReturnCode.Success)
+                    {
+                        System.Windows.MessageBox.Show("Unable to add or populate fields to aoi_v", "BAGIS-Pro", MessageBoxButton.OK, MessageBoxImage.Error);
+                        progress.Hide();
+                        return;
+                    }
+                }
+            }
+
+            // clip DEM then save it
+            string strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi, true) +
+                         Constants.FILE_AOI_VECTOR;
+            await QueuedTask.Run(() =>
+            {
+                status.Progressor.Value = 0;
+                status.Progressor.Message = $@"Clipping DEM... (step 2 of {nStep})";
+                //block the CIM for a second
+                Task.Delay(intWait).Wait();
+
+            }, status.Progressor);
+
+            string aoiGdbPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi);
+            string strOutputFeatures = "";
+            string aoiBufferDistance = Convert.ToString(AoiBufferDistance); // Default buffer distance is meters
+            if (success == BA_ReturnCode.Success)
+            {
+                if (!AoiBufferChecked)
+                {
+                    aoiBufferDistance = "1"; //one meter buffer to dissolve polygons connected at a point
+                }
+                strOutputFeatures = $@"{aoiGdbPath}\{Constants.FILE_AOI_BUFFERED_VECTOR}";
+                success = await GeoprocessingTools.BufferAsync(strPath, strOutputFeatures, $@"{aoiBufferDistance} {Constants.UNITS_METERS}", "ALL", status.Progressor);
+            }
+
+            string surfacesGdbPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Surfaces);
+            if (success == BA_ReturnCode.Success)
+            {
+                string tempDem = "originaldem";
+                string tempOutput = $@"{surfacesGdbPath}\{tempDem}";
+                success = await AnalysisTools.ClipRasterLayerNoBufferAsync(oAoi.FilePath, strOutputFeatures,
+                    strSourceDem, tempOutput, strSourceDem, status.Progressor);
+
+                string strDem = $@"{surfacesGdbPath}\{Constants.FILE_DEM}";
+                if (success == BA_ReturnCode.Success)
+                {
+
+                }
+                Uri uri = null;
+                string filledDemPath = $@"{surfacesGdbPath}\{Constants.FILE_DEM_FILLED}";
+                await QueuedTask.Run(() =>
+                {
+                    status.Progressor.Value = 0;
+                    status.Progressor.Message = $@"Filling DEM... (step 3 of {nStep})";
+                    //block the CIM for a second
+                    Task.Delay(intWait).Wait();
+
+                }, status.Progressor);
+                if (success == BA_ReturnCode.Success)
+                {
+                    var parameters = Geoprocessing.MakeValueArray(strDem, filledDemPath);
+                    var environments = Geoprocessing.MakeEnvironmentArray(workspace: oAoi.FilePath, mask: $@"{strDem}", snapRaster: strSourceDem);
+                    var gpResult = await Geoprocessing.ExecuteToolAsync("Fill_sa", parameters, environments,
+                        status.Progressor, GPExecuteToolFlags.AddToHistory);
+                    if (gpResult.IsFailed)
+                    {
+                        success = BA_ReturnCode.UnknownError;
+                        progress.Hide();
+                        return;
+                    }
+                    else
+                    {
+                        StringBuilder sbDem = new StringBuilder();
+                        //We need to add a new tag at "/metadata/dataIdInfo/searchKeys/keyword"
+                        sbDem.Append(Constants.META_TAG_PREFIX);
+                        // Elevation Units
+                        sbDem.Append(Constants.META_TAG_ZUNIT_CATEGORY + MeasurementUnitType.Elevation + "; ");
+                        sbDem.Append(Constants.META_TAG_ZUNIT_VALUE + DemElevUnit + "; ");
+                        // Buffer Distance
+                        sbDem.Append(Constants.META_TAG_BUFFER_DISTANCE + aoiBufferDistance + "; ");
+                        // X Units
+                        sbDem.Append(Constants.META_TAG_XUNIT_VALUE + Constants.UNITS_METERS + "; ");
+                        sbDem.Append(Constants.META_TAG_SUFFIX);
+                        if (success == BA_ReturnCode.Success)
                         {
-                            ReclipSNOTEL_Checked = false;
-                            SNOTEL_Checked = await GeodatabaseTools.FeatureClassExistsAsync(uriLayers, Constants.FILE_SNOTEL);
+                            //Update the metadata
+                            await QueuedTask.Run(() =>
+                            {
+                                var fc = ItemFactory.Instance.Create(filledDemPath,
+                                ItemFactory.ItemType.PathItem);
+                                if (fc != null)
+                                {
+                                    string strXml = string.Empty;
+                                    strXml = fc.GetXml();
+                                    System.Xml.XmlDocument xmlDocument = GeneralTools.UpdateMetadata(strXml, Constants.META_TAG_XPATH, sbDem.ToString(),
+                                        Constants.META_TAG_PREFIX.Length);
+                                    fc.SetXml(xmlDocument.OuterXml);
+                                }
+                            });
                         }
-                        if (clipSnowCos)
+                        success = BA_ReturnCode.Success;
+                    }
+                }
+                await QueuedTask.Run(() =>
+                {
+                    status.Progressor.Value = 0;
+                    status.Progressor.Message = $@"Calculating Slope... (step 4 of {nStep})";
+                    //block the CIM for a second
+                    Task.Delay(intWait).Wait();
+                }, status.Progressor);
+
+                if (success == BA_ReturnCode.Success)
+                {
+                    double zFactor = 1;
+                    if (!DemElevUnit.Equals("Meters"))
+                    {
+                        zFactor = 0.3048;
+                    }
+                    var parameters = Geoprocessing.MakeValueArray(filledDemPath, $@"{surfacesGdbPath}\{Constants.FILE_SLOPE}",
+                        "PERCENT_RISE", zFactor);
+                    var environments = Geoprocessing.MakeEnvironmentArray(workspace: oAoi.FilePath, snapRaster: strSourceDem);
+                    var gpResult = await Geoprocessing.ExecuteToolAsync("Slope_sa", parameters, environments,
+                        status.Progressor, GPExecuteToolFlags.AddToHistory);
+                    if (gpResult.IsFailed)
+                    {
+                        success = BA_ReturnCode.UnknownError;
+                        progress.Hide();
+                        return;
+                    }
+                    StringBuilder sbDem = new StringBuilder();
+                    //We need to add a new tag at "/metadata/dataIdInfo/searchKeys/keyword"
+                    sbDem.Append(Constants.META_TAG_PREFIX);
+                    // Elevation Units
+                    sbDem.Append(Constants.META_TAG_ZUNIT_CATEGORY + MeasurementUnitType.Slope + "; ");
+                    sbDem.Append(Constants.META_TAG_ZUNIT_VALUE + SlopeUnitDescr + "; ");
+                    sbDem.Append(Constants.META_TAG_SUFFIX);
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        //Update the metadata
+                        await QueuedTask.Run(() =>
                         {
-                            ReclipSnowCos_Checked = false;
-                            SnowCos_Checked = await GeodatabaseTools.FeatureClassExistsAsync(uriLayers, Constants.FILE_SNOW_COURSE);
-                        }
+                            var fc = ItemFactory.Instance.Create($@"{surfacesGdbPath}\{Constants.FILE_SLOPE}",
+                            ItemFactory.ItemType.PathItem);
+                            if (fc != null)
+                            {
+                                string strXml = string.Empty;
+                                strXml = fc.GetXml();
+                                System.Xml.XmlDocument xmlDocument = GeneralTools.UpdateMetadata(strXml, Constants.META_TAG_XPATH, sbDem.ToString(),
+                                    Constants.META_TAG_PREFIX.Length);
+                                fc.SetXml(xmlDocument.OuterXml);
+                            }
+                        });
+
                     }
                 }
 
-                if (success != BA_ReturnCode.Success)
+                await QueuedTask.Run(() =>
                 {
-                    MessageBox.Show("An error occurred while trying to clip the layers !!", "BAGIS-PRO");
-                }
-            }
-            catch (Exception ex)
-            {
-                Module1.Current.ModuleLogManager.LogError(nameof(ClipLayersAsync),
-                    "Exception: " + ex.Message);
-            }
-        }
-        private async void AddLayersImplAsync(object param)
-        {
-            IList lstBothLists = (IList)param;
-            if (lstBothLists != null && lstBothLists.Count == 2)
-            {
-                BA_ReturnCode success = BA_ReturnCode.UnknownError;
-                IList lstRasters = (IList) lstBothLists[0];
-                IList lstFeatureClasses = (IList)lstBothLists[1];
-                string strGdbPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Layers);
-                for (int i = 0; i < lstRasters.Count; i++)
+                    status.Progressor.Value = 0;
+                    status.Progressor.Message = $@"Calculating Aspect... (step 5 of {nStep})";
+                    //block the CIM for a second
+                    Task.Delay(intWait).Wait();
+
+                }, status.Progressor);
+
+                if (success == BA_ReturnCode.Success)
                 {
-                    Uri uri = new Uri($@"{strGdbPath}\{Convert.ToString(lstRasters[i])}");
-                    success = await MapTools.DisplayRasterLayerAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, Convert.ToString(lstRasters[i]),true);
-                }
-                Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
-                for (int i = 0; i < lstFeatureClasses.Count; i++)
-                {
-                    Uri uri = new Uri($@"{strGdbPath}\{Convert.ToString(lstFeatureClasses[i])}");
-                    await QueuedTask.Run(() =>
+                    var parameters = Geoprocessing.MakeValueArray(filledDemPath,
+                        $@"{surfacesGdbPath}\{Constants.FILE_ASPECT}");
+                    var environments = Geoprocessing.MakeEnvironmentArray(workspace: oAoi.FilePath, snapRaster: strSourceDem);
+                    var gpResult = await Geoprocessing.ExecuteToolAsync("Aspect_sa", parameters, environments,
+                        status.Progressor, GPExecuteToolFlags.AddToHistory);
+                    if (gpResult.IsFailed)
                     {
-                        //Define some of the Feature Layer's parameters
-                        var flyrCreatnParam = new FeatureLayerCreationParams(uri)
-                        {
-                            Name = Convert.ToString(lstFeatureClasses[i]),
-                            IsVisible = true,
-                        };
-                        FeatureLayer fLayer = LayerFactory.Instance.CreateLayer<FeatureLayer>(flyrCreatnParam, oMap);
-                    });
+                        success = BA_ReturnCode.UnknownError;
+                        progress.Hide();
+                        return;
+                    }
                 }
-            }             
+
+                await QueuedTask.Run(() =>
+                {
+                    status.Progressor.Value = 0;
+                    status.Progressor.Message = $@"Calculating Flow Direction... (step 6 of {nStep})";
+                    //block the CIM for a second
+                    Task.Delay(intWait).Wait();
+
+                }, status.Progressor);
+                if (success == BA_ReturnCode.Success)
+                {
+                    var parameters = Geoprocessing.MakeValueArray(filledDemPath,
+                        $@"{surfacesGdbPath}\{Constants.FILE_FLOW_DIRECTION}");
+                    var environments = Geoprocessing.MakeEnvironmentArray(workspace: oAoi.FilePath, snapRaster: strSourceDem);
+                    var gpResult = await Geoprocessing.ExecuteToolAsync("FlowDirection_sa", parameters, environments,
+                        status.Progressor, GPExecuteToolFlags.AddToHistory);
+                    if (gpResult.IsFailed)
+                    {
+                        success = BA_ReturnCode.UnknownError;
+                        progress.Hide();
+                        return;
+                    }
+                }
+                await QueuedTask.Run(() =>
+                {
+                    status.Progressor.Value = 0;
+                    status.Progressor.Message = $@"Calculating Flow Accumulation... (step 7 of {nStep})";
+                    //block the CIM for a second
+                    Task.Delay(intWait).Wait();
+                }, status.Progressor);
+                if (success == BA_ReturnCode.Success)
+                {
+                    var parameters = Geoprocessing.MakeValueArray($@"{surfacesGdbPath}\{Constants.FILE_FLOW_DIRECTION}",
+                        $@"{surfacesGdbPath}\{Constants.FILE_FLOW_ACCUMULATION}");
+                    var environments = Geoprocessing.MakeEnvironmentArray(workspace: oAoi.FilePath, snapRaster: strSourceDem);
+                    var gpResult = await Geoprocessing.ExecuteToolAsync("FlowAccumulation_sa", parameters, environments,
+                        status.Progressor, GPExecuteToolFlags.AddToHistory);
+                    if (gpResult.IsFailed)
+                    {
+                        success = BA_ReturnCode.UnknownError;
+                        progress.Hide();
+                        return;
+                    }
+                }
+                //create pourpoint using the max of flow_acc value within the AOI
+                if (success == BA_ReturnCode.Success)
+                {
+                    //get the max of flow acc
+                    double dblMax = -1;
+                    var parameters = Geoprocessing.MakeValueArray($@"{surfacesGdbPath}\{Constants.FILE_FLOW_ACCUMULATION}", "MAXIMUM");
+                    IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("GetRasterProperties_management", parameters, null,
+                        status.Progressor, GPExecuteToolFlags.AddToHistory);
+                    if (gpResult.IsFailed)
+                    {
+                        success = BA_ReturnCode.UnknownError;
+                        progress.Hide();
+                        return;
+                    }
+                    else
+                    {
+                        bool bSuccess = Double.TryParse(Convert.ToString(gpResult.ReturnValue), out dblMax);
+                        string ppRaster = "ppraster";
+                        if (bSuccess)
+                        {
+                            success = await GeoprocessingTools.ConAsync($@"{surfacesGdbPath}\{Constants.FILE_FLOW_ACCUMULATION}", "1",
+                                $@"{surfacesGdbPath}\{ppRaster}", dblMax, status.Progressor);
+                            if (success == BA_ReturnCode.Success)
+                            {
+                                success = await GeoprocessingTools.RasterToPointAsync($@"{surfacesGdbPath}\{ppRaster}", Constants.FIELD_VALUE,
+                                   $@"{aoiGdbPath}\{Constants.FILE_POURPOINT}", status.Progressor);
+                            }
+                        }
+                        if (success == BA_ReturnCode.Success)
+                        {
+                            success = await GeodatabaseTools.AddPourpointAttributesAsync(oAoi.FilePath, oAoi.Name, Constants.VALUE_NOT_SPECIFIED, "", status);
+                        }
+                        if (await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(surfacesGdbPath), ppRaster))
+                        {
+                            success = await GeoprocessingTools.DeleteDatasetAsync($@"{surfacesGdbPath}\{ppRaster}", status.Progressor);
+                        }
+                    }
+                }
+                await QueuedTask.Run(() =>
+                {
+                    status.Progressor.Value = 0;
+                    status.Progressor.Message = $@"Calculating Hillshade... (step 8 of {nStep})";
+                    //block the CIM for a second
+                    Task.Delay(intWait).Wait();
+
+                }, status.Progressor);
+                // Create Hillshade layer
+                if (success == BA_ReturnCode.Success)
+                {
+                    //@ToDo: Clip Hillshade
+
+                    // Display DEM Extent layer - aoi_v            
+                    if (oMap != null)
+                    {
+                        strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi, true) +
+                         Constants.FILE_AOI_VECTOR;
+                        Uri aoiUri = new Uri(strPath);
+                        success = await MapTools.AddAoiBoundaryToMapAsync(aoiUri, ColorFactory.Instance.RedRGB, Constants.MAPS_DEFAULT_MAP_NAME, Constants.MAPS_BASIN_BOUNDARY);
+                        if (success != BA_ReturnCode.Success)
+                        {
+                            System.Windows.MessageBox.Show("Unable to add the extent layer", "BAGIS-Pro", MessageBoxButton.OK, MessageBoxImage.Error);
+                            return;
+                        }
+                        uri = new Uri($@"{surfacesGdbPath}\{Constants.FILE_HILLSHADE}");
+                        await MapTools.DisplayRasterStretchSymbolAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, Constants.MAPS_HILLSHADE, "ArcGIS Colors", "Black to White", 0);
+
+                    }
+                }
+            }
+            System.Windows.Forms.MessageBox.Show("AOI was created!", "BAGIS-Pro");
         }
     }
 

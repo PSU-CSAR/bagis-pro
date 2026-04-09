@@ -64,6 +64,10 @@
         <DockPanel Grid.Row="6" Grid.Column="0" Margin="0,0,0,0" HorizontalAlignment="Right" VerticalAlignment="Center">
             <TextBlock Text="Slope Unit:" Width="72" />
         </DockPanel>
+        <DockPanel Grid.Row="6" Grid.Column="1" Margin="0,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Center">
+            <Label x:Name="lblSlopeUnits" Content="{Binding SlopeUnitDescr}" Width="72" />
+        </DockPanel>
+
         <DockPanel Grid.Row="7" Grid.Column="0" Margin="5,0,0,0" Grid.ColumnSpan="2">
             <Button x:Name="btnCreateAoi" Content="Generate AOI" HorizontalAlignment="Center" Width="130" FontWeight="Bold" VerticalAlignment="Center" Command="{Binding CmdGenerateAoi}" />
         </DockPanel>
