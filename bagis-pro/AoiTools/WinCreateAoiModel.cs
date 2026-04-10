@@ -11,6 +11,7 @@ using ArcGIS.Desktop.Framework.Contracts;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
 using ArcGIS.Desktop.Mapping;
 using bagis_pro.BA_Objects;
+using bagis_pro.Buttons;
 using ExtensionMethod;
 using System;
 using System.Collections;
@@ -178,6 +179,7 @@ namespace bagis_pro.AoiTools
 
             // set pourpoint filename and save pourpoint as a feature
             string aoiGdb = $@"{GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi)}";
+            string surfacesGdbPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Surfaces);
             string unsnappedppname = Constants.FILE_UNSNAPPED_POURPOINT;
             if (!SnapPPChecked)
             {
@@ -195,15 +197,14 @@ namespace bagis_pro.AoiTools
             {
                 MessageBox.Show("Unable to save Pour Point!", "BAGIS-Pro");
             }
+                await QueuedTask.Run(() =>
+                {
+                    status.Progressor.Value = 0;
+                    status.Progressor.Message = $@"Delineating AOI Boundaries... (step 2 of {nStep})";
+                    //block the CIM for a second
+                    Task.Delay(intWait).Wait();
 
-            await QueuedTask.Run(() =>
-            {
-                status.Progressor.Value = 0;
-                status.Progressor.Message = $@"Delineating AOI Boundaries... (step 2 of {nStep})";
-                //block the CIM for a second
-                Task.Delay(intWait).Wait();
-
-            }, status.Progressor);
+                }, status.Progressor);
 
             if (SnapPPChecked)
             {
@@ -244,12 +245,61 @@ namespace bagis_pro.AoiTools
                     }
                     if (success == BA_ReturnCode.Success)
                     {
+                        oGpResult = await QueuedTask.Run(() =>
+                        {
+                            var parameters = Geoprocessing.MakeValueArray($@"{GeodatabaseTools.GetGeodatabasePath(Module1.Current.BasinFolderBase, GeodatabaseNames.Surfaces, true)}{Constants.FILE_FLOW_DIRECTION}",
+                                $@"{aoiGdb}\{Constants.FILE_POURPOINT}", $@"{aoiGdb}\{Constants.FILE_AOI_RASTER}");
 
+                            return Geoprocessing.ExecuteToolAsync("Watershed_sa", parameters, null,
+                                        status.Progressor, GPExecuteToolFlags.AddToHistory);
+                        });
+                        if (oGpResult.IsFailed)
+                        {
+                            MessageBox.Show("Unable to create AOI boundary!", "BAGIS-Pro");
+                            progress.Hide();
+                            return;
+                        }
+                    }
+                    if (await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(aoiGdb), snapFileName))
+                    {
+                        success = await GeoprocessingTools.DeleteDatasetAsync($@"{aoiGdb}\{snapFileName}");
+;                   }
+                    if (await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(aoiGdb), extractFileName))
+                    {
+                        success = await GeoprocessingTools.DeleteDatasetAsync($@"{aoiGdb}\{extractFileName}");
                     }
                 }
             }
+            else
+            {
+                oGpResult = await QueuedTask.Run(() =>
+                {
+                    var parameters = Geoprocessing.MakeValueArray($@"{GeodatabaseTools.GetGeodatabasePath(Module1.Current.BasinFolderBase, GeodatabaseNames.Surfaces, true)}{Constants.FILE_FLOW_DIRECTION}",
+                        $@"{aoiGdb}\{Constants.FILE_POURPOINT}", $@"{aoiGdb}\{Constants.FILE_AOI_RASTER}");
 
+                    return Geoprocessing.ExecuteToolAsync("Watershed_sa", parameters, null,
+                                status.Progressor, GPExecuteToolFlags.AddToHistory);
+                });
+                if (oGpResult.IsFailed)
+                {
+                    MessageBox.Show("Unable to create AOI boundary!", "BAGIS-Pro");
+                    progress.Hide();
+                    return;
+                }
+            }
 
+            if (success == BA_ReturnCode.Success)
+            {
+                string stationTriplet = Constants.VALUE_NOT_SPECIFIED;
+                if (!string.IsNullOrEmpty( oAoi.StationTriplet))
+                {
+                    stationTriplet = oAoi.StationTriplet;
+                }
+                string basinName = Convert.ToString(Module1.Current.CboCurrentBasin.SelectedItem);
+                success = await GeodatabaseTools.AddPourpointAttributesAsync(oAoi.FilePath, oAoi.Name, stationTriplet, basinName, status);
+            }
+
+            return;
             double cellSize = await GeodatabaseTools.GetCellSizeAsync(new Uri(strSourceDem), wType);
             // If DEM CellSize could not be calculated, the DEM is likely invalid
             if (cellSize <= 0)
@@ -333,7 +383,6 @@ namespace bagis_pro.AoiTools
                 success = await GeoprocessingTools.BufferAsync(strPath, strOutputFeatures, $@"{aoiBufferDistance} {Constants.UNITS_METERS}", "ALL", status.Progressor);
             }
 
-            string surfacesGdbPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Surfaces);
             if (success == BA_ReturnCode.Success)
             {
                 string tempDem = "originaldem";
@@ -548,10 +597,6 @@ namespace bagis_pro.AoiTools
                                 success = await GeoprocessingTools.RasterToPointAsync($@"{surfacesGdbPath}\{ppRaster}", Constants.FIELD_VALUE,
                                    $@"{aoiGdbPath}\{Constants.FILE_POURPOINT}", status.Progressor);
                             }
-                        }
-                        if (success == BA_ReturnCode.Success)
-                        {
-                            success = await GeodatabaseTools.AddPourpointAttributesAsync(oAoi.FilePath, oAoi.Name, Constants.VALUE_NOT_SPECIFIED, "", status);
                         }
                         if (await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(surfacesGdbPath), ppRaster))
                         {
