@@ -222,7 +222,8 @@ namespace bagis_pro.AoiTools
             }
             // Query the stationTriplet for the selected pourpoint
             //Finding the first project item with name matches with mapName
-            string stationTriplet = "";
+            string stationName = "";
+            string stationTriplet = Constants.VALUE_NOT_SPECIFIED;
             await QueuedTask.Run(() =>
             {
                 FeatureLayer oFeatureLayer = null;
@@ -255,6 +256,11 @@ namespace bagis_pro.AoiTools
                                 {
                                     
                                     stationTriplet = Convert.ToString(feature[idx]);
+                                }
+                                idx = feature.FindField(Constants.FIELD_NAME);
+                                if (idx > -1)
+                                {
+                                    stationName = Convert.ToString(feature[idx]);
                                 }
                             }
                         }
@@ -320,8 +326,13 @@ namespace bagis_pro.AoiTools
             GeneralTools.ResetAoi();
 
             // store AOI info in session
-            Aoi oAoi = new Aoi(aoiName, tempAOIFolderName);
+            if (string.IsNullOrEmpty(stationName))
+            {
+                stationName = aoiName;
+            }
+            Aoi oAoi = new Aoi(stationName, tempAOIFolderName);
             oAoi.StationTriplet = stationTriplet;
+            oAoi.StationName = stationName;
             Module1.Current.Aoi = oAoi;
 
             // SelectAOI_Flag = True 'still allow user to select a different AOI

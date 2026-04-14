@@ -1203,12 +1203,13 @@ namespace bagis_pro
                });
             return dictReturn;
         }
-        public static async Task<BA_ReturnCode> AddAOIVectorAttributesAsync(Uri uriAoiGdb, string aoiName, CancelableProgressorSource source)
+        public static async Task<BA_ReturnCode> AddAOIVectorAttributesAsync(Uri uriAoiGdb, string aoiName, string stationTriplet, string basin,
+            CancelableProgressorSource source)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
             string[] arrAddFields = new string[] { Constants.FIELD_STATION_NAME, Constants.FIELD_STATION_TRIPLET, Constants.FIELD_BASIN };
             string[] arrNewFieldTypes = new string[] { "TEXT", "TEXT", "TEXT" };
-            string[] arrNewFieldValues = new string[] { aoiName, "", "" };
+            string[] arrNewFieldValues = new string[] { aoiName, stationTriplet, basin };
             for (int i = 0; i < arrAddFields.Length; i++)
             {
                 bool bExists = await GeodatabaseTools.AttributeExistsAsync(uriAoiGdb, Constants.FILE_AOI_VECTOR,arrAddFields[i]);

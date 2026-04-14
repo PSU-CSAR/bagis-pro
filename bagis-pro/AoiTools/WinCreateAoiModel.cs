@@ -1,4 +1,5 @@
-﻿using ArcGIS.Core.Data;
+﻿using ArcGIS.Core.CIM;
+using ArcGIS.Core.Data;
 using ArcGIS.Core.Data.Raster;
 using ArcGIS.Core.Data.UtilityNetwork.Trace;
 using ArcGIS.Core.Geometry;
@@ -19,6 +20,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -197,6 +199,9 @@ namespace bagis_pro.AoiTools
             {
                 MessageBox.Show("Unable to save Pour Point!", "BAGIS-Pro");
             }
+            // Delete graphics layer
+            string[] arrRemove = { Constants.MAPS_POURPOINT_LAYER };
+            await MapTools.RemoveLayersfromMapFrame(Constants.MAPS_DEFAULT_MAP_NAME, arrRemove);
                 await QueuedTask.Run(() =>
                 {
                     status.Progressor.Value = 0;
@@ -240,8 +245,9 @@ namespace bagis_pro.AoiTools
                     }
                     else
                     {
+                        GPExecuteToolFlags oFlags = GPExecuteToolFlags.None | GPExecuteToolFlags.AddToHistory; 
                         success = await GeoprocessingTools.RasterToPointAsync($@"{aoiGdb}\{extractFileName}", Constants.FIELD_VALUE,
-                            $@"{aoiGdb}\{Constants.FILE_POURPOINT}", status.Progressor);
+                            $@"{aoiGdb}\{Constants.FILE_POURPOINT}", oFlags, status.Progressor);
                     }
                     if (success == BA_ReturnCode.Success)
                     {
@@ -288,18 +294,50 @@ namespace bagis_pro.AoiTools
                 }
             }
 
+            // add pourpoint layer to map
+            Uri uri = new Uri(aoiGdb + "\\" + Constants.FILE_POURPOINT);
+            success = await MapTools.AddPointMarkersAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, Constants.MAPS_STREAM_GAGE, CIMColor.CreateRGBColor(255, 165, 0),
+                SimpleMarkerStyle.Circle, 8, "", MaplexPointPlacementMethod.NorthEastOfPoint);
+
             if (success == BA_ReturnCode.Success)
             {
+                string aoiVectorPath = $@"{aoiGdb}\{Constants.FILE_AOI_VECTOR}";
+                IGPResult gpResult = await QueuedTask.Run(() =>
+                {
+                    var environments = Geoprocessing.MakeEnvironmentArray(workspace: oAoi.FilePath);
+                    var parameters = Geoprocessing.MakeValueArray($@"{aoiGdb}\{Constants.FILE_AOI_RASTER}", aoiVectorPath, "NO_SIMPLIFY");
+                    return Geoprocessing.ExecuteToolAsync("RasterToPolygon_conversion", parameters, environments,
+                                status.Progressor, GPExecuteToolFlags.AddToHistory);
+                });
+                if (gpResult.IsFailed)
+                {
+                    System.Windows.MessageBox.Show("Unable to convert input raster to polygon.", "BAGIS-Pro", MessageBoxButton.OK, MessageBoxImage.Error);
+                    success = BA_ReturnCode.WriteError;
+                    progress.Hide();
+                    return;
+                }
+            }
+
+            //Add attributes after aoi_v is created
+            if (success == BA_ReturnCode.Success)
+            {
+                string stationName = "";
+                if (!string.IsNullOrEmpty(oAoi.StationName))
+                {
+                    stationName = oAoi.StationName;
+                }
                 string stationTriplet = Constants.VALUE_NOT_SPECIFIED;
-                if (!string.IsNullOrEmpty( oAoi.StationTriplet))
+                if (!string.IsNullOrEmpty(oAoi.StationTriplet))
                 {
                     stationTriplet = oAoi.StationTriplet;
                 }
                 string basinName = Convert.ToString(Module1.Current.CboCurrentBasin.SelectedItem);
-                success = await GeodatabaseTools.AddPourpointAttributesAsync(oAoi.FilePath, oAoi.Name, stationTriplet, basinName, status);
+                success = await GeodatabaseTools.AddPourpointAttributesAsync(oAoi.FilePath, stationName, stationTriplet, basinName, status);
+                success = await GeodatabaseTools.AddAOIVectorAttributesAsync(new Uri(aoiGdb), stationName, stationTriplet, basinName, status);
             }
 
             return;
+
             double cellSize = await GeodatabaseTools.GetCellSizeAsync(new Uri(strSourceDem), wType);
             // If DEM CellSize could not be calculated, the DEM is likely invalid
             if (cellSize <= 0)
@@ -327,36 +365,7 @@ namespace bagis_pro.AoiTools
                 //    return;
                 //}
             }
-
-            //rasterize the raster to vector
-            if (success == BA_ReturnCode.Success)
-            {
-                string aoiVectorPath = $@"{GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi, true)}{Constants.FILE_AOI_VECTOR}";
-                IGPResult gpResult = await QueuedTask.Run(() =>
-                {
-                    var environments = Geoprocessing.MakeEnvironmentArray(workspace: oAoi.FilePath);
-                    var parameters = Geoprocessing.MakeValueArray(aoiRasterPath, aoiVectorPath, "NO_SIMPLIFY");
-                    return Geoprocessing.ExecuteToolAsync("RasterToPolygon_conversion", parameters, environments,
-                                status.Progressor, GPExecuteToolFlags.AddToHistory);
-                });
-                if (gpResult.IsFailed)
-                {
-                    System.Windows.MessageBox.Show("Unable to convert input raster to polygon.", "BAGIS-Pro", MessageBoxButton.OK, MessageBoxImage.Error);
-                    success = BA_ReturnCode.WriteError;
-                    progress.Hide();
-                    return;
-                }
-                else
-                {
-                    success = await GeodatabaseTools.AddAOIVectorAttributesAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi)), oAoi.Name, status);
-                    if (success != BA_ReturnCode.Success)
-                    {
-                        System.Windows.MessageBox.Show("Unable to add or populate fields to aoi_v", "BAGIS-Pro", MessageBoxButton.OK, MessageBoxImage.Error);
-                        progress.Hide();
-                        return;
-                    }
-                }
-            }
+        
 
             // clip DEM then save it
             string strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi, true) +
@@ -395,7 +404,6 @@ namespace bagis_pro.AoiTools
                 {
 
                 }
-                Uri uri = null;
                 string filledDemPath = $@"{surfacesGdbPath}\{Constants.FILE_DEM_FILLED}";
                 await QueuedTask.Run(() =>
                 {
@@ -595,7 +603,7 @@ namespace bagis_pro.AoiTools
                             if (success == BA_ReturnCode.Success)
                             {
                                 success = await GeoprocessingTools.RasterToPointAsync($@"{surfacesGdbPath}\{ppRaster}", Constants.FIELD_VALUE,
-                                   $@"{aoiGdbPath}\{Constants.FILE_POURPOINT}", status.Progressor);
+                                   $@"{aoiGdbPath}\{Constants.FILE_POURPOINT}", GPExecuteToolFlags.AddToHistory, status.Progressor);
                             }
                         }
                         if (await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(surfacesGdbPath), ppRaster))

@@ -754,8 +754,13 @@ namespace bagis_pro
 
                 FeatureLayer fLayer = LayerFactory.Instance.CreateLayer<FeatureLayer>(flyrCreatnParam, oMap);
 
-                if (fLayer != null && idxLabelField > -1)
+                if (string.IsNullOrEmpty(labelField))
                 {
+                    success = BA_ReturnCode.Success;
+                }
+                else if (fLayer != null && idxLabelField > -1)
+                {
+                    // Configure label settings, if used
                     fLayer.SetLabelVisibility(true);   //set the label's visiblity
                     //Get the layer's definition
                     var lyrDefn = fLayer.GetDefinition() as CIMFeatureLayer;

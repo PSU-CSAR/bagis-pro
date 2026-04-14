@@ -530,11 +530,11 @@ namespace bagis_pro
             }
         }
         public static async Task<BA_ReturnCode> RasterToPointAsync(string inputRaster, string strField, 
-            string outputName, CancelableProgressor prog)
+            string outputName, GPExecuteToolFlags oExecuteToolFlags, CancelableProgressor prog)
         {
             var parameters = Geoprocessing.MakeValueArray(inputRaster, outputName, strField);
             IGPResult gpResult = await Geoprocessing.ExecuteToolAsync("RasterToPoint", parameters, null,
-                prog, GPExecuteToolFlags.AddToHistory);
+                prog, oExecuteToolFlags);
             if (gpResult.IsFailed)
             {
                 return BA_ReturnCode.UnknownError;

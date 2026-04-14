@@ -349,7 +349,7 @@ namespace bagis_pro
                 }
                 else
                 {
-                    success = await GeodatabaseTools.AddAOIVectorAttributesAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi)), AoiName, status);
+                    success = await GeodatabaseTools.AddAOIVectorAttributesAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi)), AoiName, "", "", status);
                     if (success != BA_ReturnCode.Success)
                     {
                         System.Windows.MessageBox.Show("Unable to add or populate fields to aoi_v", "BAGIS-Pro", MessageBoxButton.OK, MessageBoxImage.Error);
@@ -649,7 +649,7 @@ namespace bagis_pro
                             if (success == BA_ReturnCode.Success)
                             {
                                 success = await GeoprocessingTools.RasterToPointAsync($@"{surfacesGdbPath}\{ppRaster}", Constants.FIELD_VALUE,
-                                   $@"{aoiGdbPath}\{Constants.FILE_POURPOINT}", status.Progressor);
+                                   $@"{aoiGdbPath}\{Constants.FILE_POURPOINT}", GPExecuteToolFlags.AddToHistory, status.Progressor);
                             }
                         }
                         if (success == BA_ReturnCode.Success)
