@@ -299,9 +299,9 @@ namespace bagis_pro.AoiTools
             success = await MapTools.AddPointMarkersAsync(Constants.MAPS_DEFAULT_MAP_NAME, uri, Constants.MAPS_STREAM_GAGE, CIMColor.CreateRGBColor(255, 165, 0),
                 SimpleMarkerStyle.Circle, 8, "", MaplexPointPlacementMethod.NorthEastOfPoint);
 
+            string aoiVectorPath = $@"{aoiGdb}\{Constants.FILE_AOI_VECTOR}";
             if (success == BA_ReturnCode.Success)
-            {
-                string aoiVectorPath = $@"{aoiGdb}\{Constants.FILE_AOI_VECTOR}";
+            {                
                 IGPResult gpResult = await QueuedTask.Run(() =>
                 {
                     var environments = Geoprocessing.MakeEnvironmentArray(workspace: oAoi.FilePath);
@@ -334,6 +334,56 @@ namespace bagis_pro.AoiTools
                 string basinName = Convert.ToString(Module1.Current.CboCurrentBasin.SelectedItem);
                 success = await GeodatabaseTools.AddPourpointAttributesAsync(oAoi.FilePath, stationName, stationTriplet, basinName, status);
                 success = await GeodatabaseTools.AddAOIVectorAttributesAsync(new Uri(aoiGdb), stationName, stationTriplet, basinName, status);
+            }
+
+            if (success == BA_ReturnCode.Success)
+            {
+                success = await MapTools.AddAoiBoundaryToMapAsync(new Uri(aoiVectorPath), 
+                    ColorFactory.Instance.RedRGB, Constants.MAPS_DEFAULT_MAP_NAME, $@"AOI {oAoi.StationName}");
+            }
+            else
+            {
+                System.Windows.MessageBox.Show("Unable to append attributes to aoi layers.", "BAGIS-Pro", MessageBoxButton.OK, MessageBoxImage.Error);
+                success = BA_ReturnCode.WriteError;
+                progress.Hide();
+                return;
+            }
+
+            if (success == BA_ReturnCode.Success)
+            {
+                double aoiMinArea = 0.0036; //Sq Km - 4 pixels of 30 meter DEM
+                var result = await GeodatabaseTools.CalculateAoiAreaSqMetersAsync(oAoi.FilePath, -1);
+                double aoiAreaSqMeters = result.Item1;
+                double areaSqKm = AreaUnit.SquareMeters.ConvertTo(aoiAreaSqMeters, AreaUnit.SquareKilometers);
+                if (areaSqKm <= 0)
+                {
+                    System.Windows.MessageBox.Show("Unable to get the area of the AOI! Program stopped.", "BAGIS-Pro", MessageBoxButton.OK, MessageBoxImage.Error);
+                    success = BA_ReturnCode.WriteError;
+                    progress.Hide();
+                    return;
+                }
+                else if (areaSqKm < aoiMinArea)
+                {
+                    System.Windows.MessageBox.Show("The size of the AOI is too small! \r\nPlease select a new pour point location or use the auto snapping option.", "BAGIS-Pro", MessageBoxButton.OK, MessageBoxImage.Error);
+                    success = BA_ReturnCode.WriteError;
+                    progress.Hide();
+                    return;
+                }
+                else
+                {
+                    string areaMessage = "The area of AOI is:\r\n";
+                    areaMessage = areaMessage + $"{areaSqKm,8:####0.00}" + "  Square Km\r\n";
+                    double acres = AreaUnit.SquareKilometers.ConvertTo(areaSqKm, AreaUnit.Acres);
+                    areaMessage = areaMessage + $"{acres,8:####0.00}" + "  Acre\r\n";
+                    double sqMiles = AreaUnit.SquareKilometers.ConvertTo(areaSqKm, AreaUnit.SquareMiles);
+                    areaMessage = areaMessage + $"{sqMiles,8:####0.00}" + "  Square Miles\r\n\r\n";
+                    areaMessage = areaMessage + "Do you want to use this AOI boundary?";
+                    MessageBoxResult res = MessageBox.Show(areaMessage, "BAGIS-Pro", MessageBoxButton.YesNo);
+                    if (res == MessageBoxResult.No)
+                    {
+                        _view.Close();
+                    }
+                }
             }
 
             return;
