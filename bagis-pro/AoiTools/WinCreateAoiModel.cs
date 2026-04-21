@@ -25,6 +25,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace bagis_pro.AoiTools
 {
@@ -372,11 +373,11 @@ namespace bagis_pro.AoiTools
                 else
                 {
                     string areaMessage = "The area of AOI is:\r\n";
-                    areaMessage = areaMessage + $"{areaSqKm,8:####0.00}" + "  Square Km\r\n";
+                    areaMessage = areaMessage + string.Format("{0,8:N2} ", areaSqKm) + "Square Km\r\n";
                     double acres = AreaUnit.SquareKilometers.ConvertTo(areaSqKm, AreaUnit.Acres);
-                    areaMessage = areaMessage + $"{acres,8:####0.00}" + "  Acre\r\n";
+                    areaMessage = areaMessage + string.Format("{0,8:N2} ", acres) + "Acre\r\n";
                     double sqMiles = AreaUnit.SquareKilometers.ConvertTo(areaSqKm, AreaUnit.SquareMiles);
-                    areaMessage = areaMessage + $"{sqMiles,8:####0.00}" + "  Square Miles\r\n\r\n";
+                    areaMessage = areaMessage + $"{sqMiles,8:N2} " + "Square Miles\r\n\r\n";
                     areaMessage = areaMessage + "Do you want to use this AOI boundary?";
                     MessageBoxResult res = MessageBox.Show(areaMessage, "BAGIS-Pro", MessageBoxButton.YesNo);
                     if (res == MessageBoxResult.No)
@@ -385,6 +386,14 @@ namespace bagis_pro.AoiTools
                     }
                 }
             }
+
+            if (!AoiBufferChecked)
+            {
+                // one meter buffer to dissolve polygons connected at a point
+                AoiBufferDistance = 1;
+            }
+            success = await GeoprocessingTools.BufferAsync(aoiVectorPath,$@"{aoiGdb}\{Constants.FILE_AOI_BUFFERED_VECTOR}", 
+                $@"{AoiBufferDistance} {Constants.UNITS_METERS}", "ALL", status.Progressor);
 
             return;
 
