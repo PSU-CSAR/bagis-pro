@@ -395,37 +395,116 @@ namespace bagis_pro.AoiTools
             success = await GeoprocessingTools.BufferAsync(aoiVectorPath,$@"{aoiGdb}\{Constants.FILE_AOI_BUFFERED_VECTOR}", 
                 $@"{AoiBufferDistance} {Constants.UNITS_METERS}", "ALL", status.Progressor);
 
-            return;
-
-            double cellSize = await GeodatabaseTools.GetCellSizeAsync(new Uri(strSourceDem), wType);
-            // If DEM CellSize could not be calculated, the DEM is likely invalid
-            if (cellSize <= 0)
-            {
-                System.Windows.MessageBox.Show($@"{strSourceDem} is invalid and cannot be used as the DEM layer. Check your BAGIS settings.", "BAGIS-Pro", MessageBoxButton.OK, MessageBoxImage.Error);
-                progress.Hide();
-                return;
-            }
-
-            string aoiRasterPath = $@"{GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi, true)}{Constants.FILE_AOI_RASTER}";
+            string snapRaster = $@"{GeodatabaseTools.GetGeodatabasePath(Module1.Current.BasinFolderBase, GeodatabaseNames.Surfaces, true)}{Constants.FILE_DEM_FILLED}";
+            double cellSize = await GeodatabaseTools.GetCellSizeAsync(new Uri(snapRaster), await GeneralTools.GetRasterWorkspaceType(snapRaster));
             if (success == BA_ReturnCode.Success)
             {
-                //IGPResult gpResult = await QueuedTask.Run(() =>
-                //{
-                //    var environments = Geoprocessing.MakeEnvironmentArray(workspace: oAoi.FilePath, snapRaster: strSourceDem);
-                //    var parameters = Geoprocessing.MakeValueArray(SourceFile, fieldRasterId, aoiRasterPath, cellSize);
-                //    return Geoprocessing.ExecuteToolAsync("FeatureToRaster_conversion", parameters, environments,
-                //                status.Progressor, GPExecuteToolFlags.AddToHistory);
-                //});
-                //if (gpResult.IsFailed)
-                //{
-                //    System.Windows.MessageBox.Show("Unable to convert input polygon to raster.", "BAGIS-Pro", MessageBoxButton.OK, MessageBoxImage.Error);
-                //    success = BA_ReturnCode.WriteError;
-                //    progress.Hide();
-                //    return;
-                //}
+                string aoiRasterPath = $@"{surfacesGdbPath}\{Constants.FILE_AOI_BUFFERED_RASTER}";
+                IGPResult gpResult = await QueuedTask.Run(() =>
+                {
+                    var environments = Geoprocessing.MakeEnvironmentArray(workspace: oAoi.FilePath, snapRaster: snapRaster);
+                    var parameters = Geoprocessing.MakeValueArray($@"{aoiGdb}\{Constants.FILE_AOI_BUFFERED_VECTOR}", Constants.FIELD_OBJECT_ID, 
+                        aoiRasterPath, cellSize);
+                    return Geoprocessing.ExecuteToolAsync("FeatureToRaster_conversion", parameters, environments,
+                                status.Progressor, GPExecuteToolFlags.AddToHistory);
+                });
+                if (gpResult.IsFailed)
+                {
+                    System.Windows.MessageBox.Show("Unable to convert input polygon to raster.", "BAGIS-Pro", MessageBoxButton.OK, MessageBoxImage.Error);
+                    success = BA_ReturnCode.WriteError;
+                    progress.Hide();
+                    return;
+                }
             }
-        
 
+            //=========================
+            //start the clipping preparation
+            //=========================
+            await QueuedTask.Run(() =>
+            {
+                status.Progressor.Value = 0;
+                status.Progressor.Message = $@"Clipping DEM layer... (step 3 of {nStep})";
+                //block the CIM for a second
+                Task.Delay(intWait).Wait();
+
+            }, status.Progressor);
+
+            // Open and Clip DEM
+            string clipEnvelope = null;
+            string outputRaster = $@"{surfacesGdbPath}\{Constants.FILE_DEM}";
+            await QueuedTask.Run(() =>
+            {
+                using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(aoiGdb))))
+                using (FeatureClass fClass = geodatabase.OpenDataset<FeatureClass>(Constants.FILE_AOI_BUFFERED_VECTOR))
+                {
+                    Envelope env = fClass.GetExtent();
+                    clipEnvelope = env.Extent.XMin + " " + env.Extent.YMin + " " + env.Extent.XMax + " " + env.Extent.YMax;
+                }
+            });
+            success = await GeoprocessingTools.ClipRasterAsync($@"{GeodatabaseTools.GetGeodatabasePath(Module1.Current.BasinFolderBase, GeodatabaseNames.Surfaces, true)}{Constants.FILE_DEM}", 
+                clipEnvelope, outputRaster, $@"{aoiGdb}\{Constants.FILE_AOI_BUFFERED_VECTOR}", null, true, 
+                oAoi.FilePath, snapRaster);
+            if (success != BA_ReturnCode.Success)
+            {
+                MessageBox.Show("Clipping DEM failed!", "BAGIS-Pro", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+
+            outputRaster = $@"{surfacesGdbPath}\{Constants.FILE_DEM_FILLED}";
+            success = await GeoprocessingTools.ClipRasterAsync($@"{GeodatabaseTools.GetGeodatabasePath(Module1.Current.BasinFolderBase, GeodatabaseNames.Surfaces, true)}{Constants.FILE_DEM_FILLED}",
+                clipEnvelope, outputRaster, $@"{aoiGdb}\{Constants.FILE_AOI_BUFFERED_VECTOR}", null, true,
+                oAoi.FilePath, snapRaster);
+            if (success != BA_ReturnCode.Success)
+            {
+                MessageBox.Show("Clipping FILLED DEM failed!", "BAGIS-Pro", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+
+            //=========================
+            //Clip and save ASPECT
+            //=========================
+            await QueuedTask.Run(() =>
+            {
+                status.Progressor.Value = 0;
+                status.Progressor.Message = $@"Clipping ASPECT... (step 4 of {nStep})";
+                //block the CIM for a second
+                Task.Delay(intWait).Wait();
+
+            }, status.Progressor);
+
+            outputRaster = $@"{surfacesGdbPath}\{Constants.FILE_ASPECT}";
+            success = await GeoprocessingTools.ClipRasterAsync($@"{GeodatabaseTools.GetGeodatabasePath(Module1.Current.BasinFolderBase, GeodatabaseNames.Surfaces, true)}{Constants.FILE_ASPECT}",
+                clipEnvelope, outputRaster, $@"{aoiGdb}\{Constants.FILE_AOI_BUFFERED_VECTOR}", null, true,
+                oAoi.FilePath, snapRaster);
+            if (success != BA_ReturnCode.Success)
+            {
+                MessageBox.Show("Clipping ASPECT failed!", "BAGIS-Pro", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+
+            //=========================
+            //Clip and save SlOPE
+            //=========================
+            await QueuedTask.Run(() =>
+            {
+                status.Progressor.Value = 0;
+                status.Progressor.Message = $@"Clipping SLOPE... (step 5 of {nStep})";
+                //block the CIM for a second
+                Task.Delay(intWait).Wait();
+
+            }, status.Progressor);
+
+            outputRaster = $@"{surfacesGdbPath}\{Constants.FILE_SLOPE}";
+            success = await GeoprocessingTools.ClipRasterAsync($@"{GeodatabaseTools.GetGeodatabasePath(Module1.Current.BasinFolderBase, GeodatabaseNames.Surfaces, true)}{Constants.FILE_SLOPE}",
+                clipEnvelope, outputRaster, $@"{aoiGdb}\{Constants.FILE_AOI_BUFFERED_VECTOR}", null, true,
+                oAoi.FilePath, snapRaster);
+            if (success != BA_ReturnCode.Success)
+            {
+                MessageBox.Show("Clipping ASPECT failed!", "BAGIS-Pro", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+
+
+            return;
+
+           
+       
             // clip DEM then save it
             string strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi, true) +
                          Constants.FILE_AOI_VECTOR;
