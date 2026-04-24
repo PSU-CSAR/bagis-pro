@@ -617,6 +617,10 @@ namespace bagis_pro.AoiTools
 
             progress.Hide();
             // enable and disable relevant UI buttons
+            Aoi newAoi = await GeneralTools.SetAoiAsync(oAoi.FilePath, oAoi);
+            Module1.DeactivateState("bagis_pro_Buttons_SetPourpointTool_State");
+            Module1.DeactivateState("bagis_pro_Buttons_BtnCreateAoi_State");
+            _view.Close();
 
             if (success == BA_ReturnCode.Success)
             {
