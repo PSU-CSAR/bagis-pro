@@ -27,6 +27,7 @@ using ArcGIS.Desktop.Core.Geoprocessing;
 using System.Text;
 using bagis_pro.BA_Objects;
 using System.Security.Policy;
+using System.Runtime.CompilerServices;
 
 namespace bagis_pro
 {
@@ -2638,9 +2639,9 @@ namespace bagis_pro
 
         public static BA_ReturnCode SaveAnalysisSettings(string strAoiPath, BA_Objects.Analysis oAnalysis)
         {
-            string strSettingsFile = strAoiPath + "\\" + Constants.FOLDER_MAPS + "\\" +
-                Constants.FILE_SETTINGS;
-            using (var file_stream = File.Create(strSettingsFile))
+            string strSettingsFolder = strAoiPath + "\\" + Constants.FOLDER_MAPS;
+            DirectoryInfo di = Directory.CreateDirectory(strSettingsFolder);
+            using (var file_stream = File.Create($@"{strSettingsFolder}\{Constants.FILE_SETTINGS}"))
             {
                 var serializer = new System.Xml.Serialization.XmlSerializer(typeof(BA_Objects.Analysis));
                 serializer.Serialize(file_stream, oAnalysis);
@@ -3844,6 +3845,56 @@ namespace bagis_pro
                 }
             }
             return BA_ReturnCode.Success;
+        }
+        public static BA_ReturnCode SaveAoiSourceSettings(string strAoiPath,
+            string strSourceDemClip, string strSourcePourpoint)
+        {
+            // record buffer distances, buffer units, elevation distance, and elevation units in metadata
+            string settingsPath = strAoiPath + "\\" + Constants.FOLDER_MAPS + "\\" +
+                Constants.FILE_SETTINGS;
+            Analysis oAnalysis = new Analysis();
+            if (File.Exists(settingsPath))
+            {
+                using (var file = new StreamReader(settingsPath))
+                {
+                    var reader = new System.Xml.Serialization.XmlSerializer(typeof(BA_Objects.Analysis));
+                    oAnalysis = (BA_Objects.Analysis)reader.Deserialize(file);
+                }
+            }
+            else
+            {
+                oAnalysis = new Analysis();
+            }
+            if (oAnalysis != null)
+            {
+                // We don't check for existing data sources because the AOI/basin is new
+                List<DataSource> lstDataSource = new List<DataSource>();
+                DataSource updateDataSource = new BA_Objects.DataSource()
+                {
+                    layerType = Constants.DATA_TYPE_SOURCE_DEM_CLIP,
+                    description = "Path to the dem that was clipped when the basin or AOI was created",
+                    heading = Constants.DATA_TYPE_SOURCE_DEM_CLIP,
+                    DateClipped = DateTime.Now,
+                    uri = strSourceDemClip
+                };
+                lstDataSource.Add(updateDataSource);
+
+                if (!string.IsNullOrEmpty(strSourcePourpoint))
+                {
+                    DataSource ppDataSource = new BA_Objects.DataSource()
+                    {
+                        layerType = Constants.DATA_TYPE_SOURCE_POURPOINT,
+                        description = "Pourpoint source when the AOI was created",
+                        heading = Constants.DATA_TYPE_SOURCE_POURPOINT,
+                        DateClipped = DateTime.Now,
+                        uri = strSourcePourpoint
+                    };
+                    lstDataSource.Add(ppDataSource);
+                }
+                oAnalysis.DataSources = lstDataSource;  // Always overwrite any existing collection of data sources
+            }
+            // Save settings file
+            return SaveAnalysisSettings(strAoiPath,oAnalysis);
         }
 
 

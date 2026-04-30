@@ -662,6 +662,11 @@ namespace bagis_pro
                         }
                     }
                 }
+                if (success == BA_ReturnCode.Success)
+                {
+                    // Record dem and pourpoint sources
+                    success = GeneralTools.SaveAoiSourceSettings(oAoi.FilePath, strSourceDem, SourceFile);
+                }
                 await QueuedTask.Run(() =>
                 {
                     status.Progressor.Value = 0;

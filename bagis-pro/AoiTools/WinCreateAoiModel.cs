@@ -615,6 +615,11 @@ namespace bagis_pro.AoiTools
                 });
             }
 
+            string strGaugeStationsUri = (string)Module1.Current.BagisSettings.GaugeStationUri;
+            success = GeneralTools.SaveAoiSourceSettings(oAoi.FilePath, 
+                $@"{GeodatabaseTools.GetGeodatabasePath(Module1.Current.BasinFolderBase, GeodatabaseNames.Surfaces, true)}{Constants.FILE_DEM}",
+                strGaugeStationsUri);
+
             progress.Hide();
             // enable and disable relevant UI buttons
             Aoi newAoi = await GeneralTools.SetAoiAsync(oAoi.FilePath, oAoi);

@@ -303,14 +303,19 @@ namespace bagis_pro.Basin
                 int retVal = await AbandonClipDEMAsync(_basinFolder, progress, status.Progressor);
                 return;
             }
-
-            await QueuedTask.Run(() =>
+            else
             {
-                status.Progressor.Value = 0;    // reset the progressor's value back to 0 between GP tasks
-                status.Progressor.Message = $@"Filling DEM... (step 2 of {nStep})";
-                //block the CIM for a second
-                Task.Delay(intWait).Wait();
-            }, status.Progressor);
+                // Record dem source in analysis.xml
+                success = GeneralTools.SaveAoiSourceSettings(_basinFolder, strSourceDem, "");
+            }
+
+                await QueuedTask.Run(() =>
+                {
+                    status.Progressor.Value = 0;    // reset the progressor's value back to 0 between GP tasks
+                    status.Progressor.Message = $@"Filling DEM... (step 2 of {nStep})";
+                    //block the CIM for a second
+                    Task.Delay(intWait).Wait();
+                }, status.Progressor);
 
             string filledDemPath = $@"{surfacesGdbPath}\{Constants.FILE_DEM_FILLED}";
             parameters = Geoprocessing.MakeValueArray(strDem, filledDemPath);
