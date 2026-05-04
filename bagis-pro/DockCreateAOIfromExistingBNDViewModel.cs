@@ -652,9 +652,10 @@ namespace bagis_pro
                                    $@"{aoiGdbPath}\{Constants.FILE_POURPOINT}", GPExecuteToolFlags.AddToHistory, status.Progressor);
                             }
                         }
+                        oAoi.StationName = Constants.VALUE_NOT_SPECIFIED;
                         if (success == BA_ReturnCode.Success)
                         {
-                            success = await GeodatabaseTools.AddPourpointAttributesAsync(oAoi.FilePath, AoiName, Constants.VALUE_NOT_SPECIFIED, "", status);
+                            success = await GeodatabaseTools.AddPourpointAttributesAsync(oAoi.FilePath, oAoi.StationName, oAoi.StationTriplet, "", status);
                         }
                         if (await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(surfacesGdbPath),ppRaster))
                         {

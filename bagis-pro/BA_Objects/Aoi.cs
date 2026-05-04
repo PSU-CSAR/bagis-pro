@@ -23,8 +23,6 @@ namespace bagis_pro.BA_Objects
         string m_aoiBatchState;
         bool m_aoiBatchIsSelected;
         string m_stationTriplet = "";
-        string m_stationNumber = "";
-        string m_stationState = "";
         public string StationName = "";
         public int WinterStartMonth;
         public int WinterEndMonth;
@@ -138,13 +136,6 @@ namespace bagis_pro.BA_Objects
                 if (!string.IsNullOrEmpty(value))
                 {
                     m_stationTriplet = value;
-                    // Example triplet: 09361500:CO:USGS
-                    string[] strPieces = m_stationTriplet.Split(':');
-                    if (strPieces.Length == 3)
-                    {
-                        m_stationNumber = strPieces[0];
-                        m_stationState = strPieces[2];
-                    }
                 }
                 else
                 {
@@ -152,16 +143,6 @@ namespace bagis_pro.BA_Objects
                 }
             }
         }
-        public string StationNumber
-        {
-            get { return m_stationNumber; }
-        }
-
-        public string StationState
-        {
-            get { return m_stationState; }
-        }
-
         public bool ValidForecastData
         {
             get

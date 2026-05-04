@@ -72,6 +72,13 @@ namespace bagis_pro.AoiTools
                 });
             }
         }
+        public void SelectLastPourpoint()
+        {
+            if (lstPourPoints.Items.Count > 0)
+            {
+                lstPourPoints.SelectedIndex = lstPourPoints.Items.Count - 1;
+            }
+        }
     }
 
 

@@ -1,11 +1,11 @@
 ﻿<ArcGIS defaultAssembly="bagis_pro.dll" defaultNamespace="bagis_pro" xmlns="http://schemas.esri.com/DADF/Registry" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://schemas.esri.com/DADF/Registry file:///C:/Program%20Files/ArcGIS/Pro/bin/ArcGIS.Desktop.Framework.xsd">
-  <AddInInfo id="{bfef0cd1-e877-48dc-8b78-40de4825c346}" version="1.0" desktopVersion="3.5.57366" product="ArcGISPro">
+  <AddInInfo id="{bfef0cd1-e877-48dc-8b78-40de4825c346}" version="1.0" desktopVersion="3.5.57366">
     <Name>BAGIS-PRO</Name>
     <Description>Basin Analysis for ArcGIS Pro</Description>
     <Image>Images\AddinDesktop32.png</Image>
     <Author>Lesley Bross and Geoffrey Duh</Author>
     <Company>Portland State University</Company>
-    <Date>7/7/2025 3:36:00 PM</Date>
+    <Date>5/4/2026 3:36:00 PM</Date>
     <Subject>Content, Geoprocessing, Map Authoring</Subject>
     <!-- Note subject can be one or more of these topics:
                     Content, Framework, Editing, Geodatabase, Geometry, Geoprocessing, Layouts, Map Authoring, Map Exploration -->

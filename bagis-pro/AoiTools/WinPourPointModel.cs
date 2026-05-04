@@ -1,17 +1,12 @@
 ﻿using ArcGIS.Core.Data;
 using ArcGIS.Core.Geometry;
-using ArcGIS.Desktop.Catalog;
 using ArcGIS.Desktop.Core;
-using ArcGIS.Desktop.Core.Geoprocessing;
 using ArcGIS.Desktop.Framework;
 using ArcGIS.Desktop.Framework.Contracts;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
-using ArcGIS.Desktop.Layouts;
 using ArcGIS.Desktop.Mapping;
 using bagis_pro.BA_Objects;
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
@@ -209,6 +204,16 @@ namespace bagis_pro.AoiTools
             }
         }
 
+        private RelayCommand _newCommand;
+        public ICommand CmdNew
+        {
+            get
+            {
+                if (_newCommand == null)
+                    _newCommand = new RelayCommand(NewImpl, () => true);
+                return _newCommand;
+            }
+        }
         private async void SelectImplAsync(object param)
         {
             if (String.IsNullOrEmpty(SelectedPourPoint))
@@ -216,53 +221,61 @@ namespace bagis_pro.AoiTools
                 MessageBox.Show("Please add a new pourpoint!", "BAGIS-Pro");
                 return;
             }
-            // Query the stationTriplet for the selected pourpoint
-            //Finding the first project item with name matches with mapName
-            string stationName = "";
-            string stationTriplet = Constants.VALUE_NOT_SPECIFIED;
-            await QueuedTask.Run(() =>
+            string stationTriplet = "";
+            string stationName = Constants.VALUE_NOT_SPECIFIED;
+            if (SelectedPourPoint.IndexOf(" (Temporary)") > 0)
             {
-                FeatureLayer oFeatureLayer = null;
-                Map map = null;
-                MapProjectItem mpi =
-                    Project.Current.GetItems<MapProjectItem>()
-                    .FirstOrDefault(m => m.Name.Equals(Constants.MAPS_DEFAULT_MAP_NAME, StringComparison.CurrentCultureIgnoreCase));
-                if (mpi != null)
+                SelectedPourPoint = SelectedPourPoint.Replace(" (Temporary)","");
+            }
+            else
+            {
+                //Query the stationTriplet for the selected pourpoint
+                //Finding the first project item with name matches with mapName                
+                await QueuedTask.Run(() =>
                 {
-                    map = mpi.GetMap();
-                    Layer oLayer =
-                     map.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(Constants.MAPS_GAUGE_STATIONS, StringComparison.CurrentCultureIgnoreCase));
-                    if (oLayer != null)
+                    FeatureLayer oFeatureLayer = null;
+                    Map map = null;
+                    MapProjectItem mpi =
+                        Project.Current.GetItems<MapProjectItem>()
+                        .FirstOrDefault(m => m.Name.Equals(Constants.MAPS_DEFAULT_MAP_NAME, StringComparison.CurrentCultureIgnoreCase));
+                    if (mpi != null)
                     {
-                        oFeatureLayer = (FeatureLayer)oLayer;
-                    }
-                }
-                if (oFeatureLayer != null)
-                {
-                    QueryFilter filter = new QueryFilter();
-                    filter.WhereClause = $@"{Constants.FIELD_NAME} = '{SelectedPourPoint.Trim()}'";
-                    using (RowCursor cursor = oFeatureLayer.Search(filter))
-                    {
-                        while (cursor.MoveNext())
+                        map = mpi.GetMap();
+                        Layer oLayer =
+                         map.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(Constants.MAPS_GAUGE_STATIONS, StringComparison.CurrentCultureIgnoreCase));
+                        if (oLayer != null)
                         {
-                            if (cursor.Current is Feature feature)
+                            oFeatureLayer = (FeatureLayer)oLayer;
+                        }
+                    }
+                    if (oFeatureLayer != null)
+                    {
+                        QueryFilter filter = new QueryFilter();
+                        filter.WhereClause = $@"{Constants.FIELD_NAME} = '{SelectedPourPoint.Trim()}'";
+                        using (RowCursor cursor = oFeatureLayer.Search(filter))
+                        {
+                            while (cursor.MoveNext())
                             {
-                                int idx = feature.FindField(Constants.FIELD_STATION_TRIPLET);
-                                if (idx > -1)
+                                if (cursor.Current is Feature feature)
                                 {
-                                    
-                                    stationTriplet = Convert.ToString(feature[idx]);
-                                }
-                                idx = feature.FindField(Constants.FIELD_NAME);
-                                if (idx > -1)
-                                {
-                                    stationName = Convert.ToString(feature[idx]);
+                                    int idx = feature.FindField(Constants.FIELD_STATION_TRIPLET);
+                                    if (idx > -1)
+                                    {
+
+                                        stationTriplet = Convert.ToString(feature[idx]);
+                                    }
+                                    idx = feature.FindField(Constants.FIELD_NAME);
+                                    if (idx > -1)
+                                    {
+                                        stationName = Convert.ToString(feature[idx]);
+                                    }
                                 }
                             }
                         }
                     }
-                }
-            });
+                });
+            }
+
             string str1 = "";
             if (string.IsNullOrEmpty(stationTriplet))
             {
@@ -276,7 +289,7 @@ namespace bagis_pro.AoiTools
             string str3 = str2.Replace(",", "-");
             string defaultInput = str2.Replace("'", "-");
             defaultInput = $@"{defaultInput}_{DateTime.Now.ToString("MMddyyyy")}";
-            var inputDialog = new InputWindow("AOI Name", "Please enter the name of the AOI:", defaultInput);
+            var inputDialog = new InputWindow("AOI Name", "Please enter the name of the AOI folder:", defaultInput);
             // ShowDialog() blocks the current thread until the window is closed
             string aoiName = "";
             if (inputDialog.ShowDialog() == true)
@@ -339,9 +352,39 @@ namespace bagis_pro.AoiTools
 
             MessageBox.Show($@"Please select a pourpoint location and then create the AOI! ID: {stationTriplet}", "BAGIS-Pro");
         }
+        private void NewImpl(object param)
+        {
+            var inputDialog = new InputWindow("AOI Name", "Please enter a temporary name of the pourpoint.\r\nNo update will be made on the gauge station layer!", "");
+            // ShowDialog() blocks the current thread until the window is closed
+            string aoiName = "";
+            if (inputDialog.ShowDialog() == true)
+            {
+                aoiName = inputDialog.UserInput;
+            }
+            else
+            {
+                return;
+            }
+            if (PourPoints.Count == 0)
+            {
+                _hasTempPourPoint = false;
+            }
+            // temp name is always the last entry on the list
+            if (!string.IsNullOrEmpty(aoiName))
+            {
+                if (_hasTempPourPoint)
+                {
+                    PourPoints.RemoveAt(PourPoints.Count - 1);  //remove the temp pourpoint name from the list
+                }
+                _hasTempPourPoint = true;
+                PourPoints.Add($@"{aoiName} (Temporary)");
+                _view.SelectLastPourpoint();
+                BtnSelectEnabled = true;
+            }
+        }
 
 
-      private RelayCommand _viewBasinCommand;
+        private RelayCommand _viewBasinCommand;
         public ICommand CmdViewBasin
         {
             get
@@ -355,6 +398,7 @@ namespace bagis_pro.AoiTools
         {
             //zoom to basin boundary
             string strPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.BasinFolderBase, GeodatabaseNames.Aoi);
+            Envelope basinExtent = null;
             Uri aoiUri = new Uri(strPath);
             await QueuedTask.Run(() =>
             {
@@ -364,12 +408,17 @@ namespace bagis_pro.AoiTools
                     // Use the geodatabase.
                     using (FeatureClassDefinition fcDefinition = geodatabase.GetDefinition<FeatureClassDefinition>(Constants.FILE_AOI_VECTOR))
                     {
-                        var extent = fcDefinition.GetExtent();
-                        //expandedExtent = extent.Expand(-0.5, -0.5, true);
-                        MapView.Active.ZoomToAsync(extent);
+                        basinExtent = fcDefinition.GetExtent();
                     }
                 }
             });
+            if (basinExtent != null)
+            {
+                await QueuedTask.Run(() =>
+                {
+                    MapView.Active.ZoomToAsync(basinExtent);
+                });
+            }
         }
 
     }

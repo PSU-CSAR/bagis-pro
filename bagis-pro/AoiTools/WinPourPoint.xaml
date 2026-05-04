@@ -34,7 +34,7 @@
             </ListBox>
         </DockPanel>
         <DockPanel Grid.Row="0" Grid.Column="1" >
-            <Button x:Name="btnView" Content="View" HorizontalAlignment="Right"  VerticalAlignment="Center" Width="70" Command="{Binding CmdViewBasin}" Margin="15, 0, 0, 0" />
+            <Button x:Name="btnView" Content="View Basin" HorizontalAlignment="Right"  VerticalAlignment="Center" Width="70" Command="{Binding CmdViewBasin}" Margin="15, 0, 0, 0" />
         </DockPanel>
         <DockPanel Grid.Row="1" Grid.Column="1" >
             <Button x:Name="btnNew" Content="New" HorizontalAlignment="Center"  VerticalAlignment="Center" Width="70" Command="{Binding CmdNew}" Margin="15, 0, 0, 0" />
