@@ -354,7 +354,7 @@ namespace bagis_pro.AoiTools
         }
         private void NewImpl(object param)
         {
-            var inputDialog = new InputWindow("AOI Name", "Please enter a temporary name of the pourpoint.\r\nNo update will be made on the gauge station layer!", "");
+            var inputDialog = new InputWindow("AOI Name", "Please enter a temporary name of the pourpoint.\r\nNo update will be made on the gauge station layer!", Constants.VALUE_NOT_SPECIFIED);
             // ShowDialog() blocks the current thread until the window is closed
             string aoiName = "";
             if (inputDialog.ShowDialog() == true)

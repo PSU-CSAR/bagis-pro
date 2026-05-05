@@ -23,7 +23,7 @@ namespace bagis_pro.BA_Objects
         string m_aoiBatchState;
         bool m_aoiBatchIsSelected;
         string m_stationTriplet = "";
-        public string StationName = "";
+        public string StationName = Constants.VALUE_NOT_SPECIFIED;
         public int WinterStartMonth;
         public int WinterEndMonth;
         public int Huc2;
