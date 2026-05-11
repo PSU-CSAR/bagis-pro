@@ -317,6 +317,7 @@ namespace bagis_pro.AoiTools
             //Add attributes after aoi_v is created
             if (success == BA_ReturnCode.Success)
             {
+
                 string stationName = "";
                 if (!string.IsNullOrEmpty(oAoi.StationName))
                 {
@@ -347,6 +348,28 @@ namespace bagis_pro.AoiTools
 
             if (success == BA_ReturnCode.Success)
             {
+                // Zoom to aoi_v extent
+                Envelope aoiExtent = null;
+                await QueuedTask.Run(() =>
+                {
+                    using (Geodatabase geodatabase =
+                            new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(aoiGdb))))
+                    {
+                        // Use the geodatabase.
+                        using (FeatureClassDefinition fcDefinition = geodatabase.GetDefinition<FeatureClassDefinition>(Constants.FILE_AOI_VECTOR))
+                        {
+                            aoiExtent = fcDefinition.GetExtent();
+                        }
+                    }
+                });
+                if (aoiExtent != null)
+                {
+                    await QueuedTask.Run(() =>
+                    {
+                        MapView.Active.ZoomToAsync(aoiExtent);
+                    });
+                }
+
                 double aoiMinArea = 0.0036; //Sq Km - 4 pixels of 30 meter DEM
                 var result = await GeodatabaseTools.CalculateAoiAreaSqMetersAsync(oAoi.FilePath, -1);
                 double aoiAreaSqMeters = result.Item1;
@@ -377,7 +400,8 @@ namespace bagis_pro.AoiTools
                     MessageBoxResult res = MessageBox.Show(areaMessage, "BAGIS-Pro", MessageBoxButton.YesNo);
                     if (res == MessageBoxResult.No)
                     {
-                        _view.Close();
+                        progress.Hide();
+                        return;
                     }
                 }
             }

@@ -514,6 +514,7 @@ namespace bagis_pro.Basin
             }
 
             // Clean-up step progressor
+            _view.Close();
             progress.Hide();
             progress.Dispose();
             CmdClipEnabled = true;

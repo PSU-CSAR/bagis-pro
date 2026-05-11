@@ -45,7 +45,6 @@ namespace bagis_pro
                     NifcMinYear = (int)Module1.Current.BagisSettings.FireNifcMinYear;
                     MtbsMinYear = (int)Module1.Current.BagisSettings.FireMtbsMinYear;
                     FireDataClipYears = (int)Module1.Current.BagisSettings.FireDataClipYears;
-                    SettingsFile = $@"{GeneralTools.GetBagisSettingsPath()}\{Constants.FOLDER_SETTINGS}\{Constants.FILE_BAGIS_SETTINGS}";
                 }
             }
             catch (Exception e)
@@ -135,7 +134,6 @@ namespace bagis_pro
         private bool _bClip_Nifc_Checked;
         private bool _bClip_Mtbs_Checked;
         private bool _Reclip_MTBS_Checked = false;  //@ToDo: Change to true before production
-        private string _strSettingsFile;
         private string _strSelectedFireStatus;
         private const string _separator = ",";
 
@@ -519,14 +517,6 @@ namespace bagis_pro
             set
             {
                 SetProperty(ref _bClip_Mtbs_Checked, value, () => Clip_Mtbs_Checked);
-            }
-        }
-        public string SettingsFile
-        {
-            get { return _strSettingsFile; }
-            set 
-            {
-                SetProperty(ref _strSettingsFile, value, () => SettingsFile);
             }
         }
 

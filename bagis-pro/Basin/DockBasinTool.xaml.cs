@@ -42,5 +42,10 @@ namespace bagis_pro.Basin
                 }
             }
         }
+
+        private void btnViewDem_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
     }
 }
