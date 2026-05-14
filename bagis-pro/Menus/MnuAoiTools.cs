@@ -11,6 +11,7 @@ using ArcGIS.Desktop.Framework.Dialogs;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
 using ArcGIS.Desktop.Mapping;
 using bagis_pro.AoiTools;
+using bagis_pro.Basin;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -94,9 +95,18 @@ namespace bagis_pro.Menus
 
     internal class MnuAoiTools_Options : Button
     {
+        private Basin.WinBasinOptions _winBasinOptions = null;
         protected override void OnClick()
         {
-            MessageBox.Show("You have options!");
+            //already open?
+            if (_winBasinOptions != null)
+                return;
+            _winBasinOptions = new WinBasinOptions();
+            _winBasinOptions.Owner = FrameworkApplication.Current.MainWindow;
+            _winBasinOptions.Closed += (o, e) => { _winBasinOptions = null; };
+            //_winClipDem.Show();
+            //uncomment for modal
+            _winBasinOptions.ShowDialog();
         }
     }
 
