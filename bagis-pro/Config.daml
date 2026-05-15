@@ -26,16 +26,18 @@
         <group id="bagis_pro_Groups_BasinAnalyst" appearsOnAddInTab="false" caption=" " keytip="G1">
           <labelControl refID="bagis_pro_Buttons_LblCurrentBasin" />
           <comboBox refID="bagis_pro_Buttons_CboCurrentBasin" />
-          <menu refID="bagis_pro_Menus_MnuAoiTools" size="middle" />
+          <button refID="bagis_pro_Basin_DockBasinTool_ShowButton" size="middle" />
           <button refID="bagis_pro_Buttons_BtnSetBasinExtent" size="middle" />
           <button refID="bagis_pro_Buttons_BtnCreateBasin" size="middle" />
           <button refID="bagis_pro_Buttons_BtnDefineAoi" size="middle" />
           <button refID="bagis_pro_Buttons_SetPourpointTool" size="middle" />
           <button refID="bagis_pro_Buttons_BtnCreateAoi" size="middle" />
+          <menu refID="bagis_pro_Menus_MnuAoiTools" size="middle" />
         </group>
         <group id="bagis_pro_Groups_Maps" appearsOnAddInTab="false" caption="Map Functions" keytip="G3">
           <labelControl refID="bagis_pro_Buttons_LblCurrentAoi" />
           <comboBox refID="bagis_pro_Buttons_CboCurrentAoi" />
+          <button refID="bagis_pro_Menus_MnuAoiTools_BtnSelectAoi" size="middle"/>
           <button refID="bagis_pro_DockpaneLayers_ShowButton" size="middle" />
           <button refID="bagis_pro_DockAnalysisLayers_ShowButton" size="middle" />
           <button refID="bagis_pro_WinExportPdf" size="middle" />
@@ -193,7 +195,7 @@
           <tooltip heading="Land Cover">
             Display Land Cover<disabledText /></tooltip>
         </button>
-        <comboBox id="bagis_pro_Buttons_CboCurrentAoi" className="bagis_pro.Buttons.CboCurrentAoi" itemWidth="180" isEditable="false" isReadOnly="true" resizable="true" caption=" " keytip="C1">
+        <comboBox id="bagis_pro_Buttons_CboCurrentAoi" className="bagis_pro.Buttons.CboCurrentAoi" itemWidth="180" isEditable="false" isReadOnly="true" resizable="true" keytip="C1">
           <tooltip heading="Tooltip Heading">
             Selected AOI<disabledText /></tooltip>
         </comboBox>
@@ -267,9 +269,7 @@
       <menus>
         <menu id="bagis_pro_Menus_MnuAoiTools" caption="AOI Tools">
           <button refID="bagis_pro_Menus_MnuAoiTools_AddRefLayers" />
-          <button refID="bagis_pro_Basin_DockBasinTool_ShowButton" />
           <button refID="bagis_pro_Menus_MnuAoiTools_AOIShapefile" />
-          <button refID="bagis_pro_Menus_MnuAoiTools_BtnSelectAoi" />
           <button refID="bagis_pro_Menus_MnuAoiTools_Options" />
         </menu>
       </menus>
