@@ -1,4 +1,5 @@
-﻿using System;
+﻿using bagis_pro.AoiTools;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -24,6 +25,12 @@ namespace bagis_pro.Basin
         {
             InitializeComponent();
             this.DataContext = new WinBasinOptionsModel(this);            
+        }
+
+        private async void MyGrid_Loaded(object sender, RoutedEventArgs e)
+        {
+            WinBasinOptionsModel oModel = this.DataContext as WinBasinOptionsModel;
+            await oModel.InitializeAsync();
         }
     }
 }

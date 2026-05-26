@@ -3055,6 +3055,7 @@ namespace bagis_pro
                         }
                     }
                     Module1.Current.DataSources = dictDataSources;
+                    Module1.Current.AoiCreationSettings = oBagisSettings.AoiCreation;
                 }
                 return BA_ReturnCode.Success;
             }
