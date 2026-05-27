@@ -1,4 +1,6 @@
 ﻿using ArcGIS.Core.Data;
+using ArcGIS.Desktop.Catalog;
+using ArcGIS.Desktop.Core;
 using ArcGIS.Desktop.Framework;
 using ArcGIS.Desktop.Framework.Contracts;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
@@ -22,9 +24,10 @@ namespace bagis_pro.Basin
         private string _gaugeStation;
         private bool _metersChecked;
         private bool _feetChecked;
-        private string _selectedName;
-        private string _selectedId;
+        private string _selectedName = "";
+        private string _selectedId = "";
         private ObservableCollection<string> _names = new ObservableCollection<string>();
+        private ObservableCollection<string> _ids = new ObservableCollection<string>();
         public string RefLayer
         {
             get => _refLayer;
@@ -65,7 +68,11 @@ namespace bagis_pro.Basin
             get => _names;
             set => SetProperty(ref _names, value); // Utilizes ViewModelBase.SetProperty
         }
-
+        public ObservableCollection<string> Ids
+        {
+            get => _ids;
+            set => SetProperty(ref _ids, value); // Utilizes ViewModelBase.SetProperty
+        }
         public WinBasinOptionsModel(WinBasinOptions view)
         {
             _view = view;
@@ -73,26 +80,29 @@ namespace bagis_pro.Basin
             if (oSettings == null)
             {
                 GeneralTools.LoadBagisSettings();
-                oSettings = Module1.Current.AoiCreationSettings;
-                if (oSettings != null)
+                oSettings = Module1.Current.AoiCreationSettings;               
+            }
+            if (oSettings != null)
+            {
+                RefLayer = oSettings.ReferenceLayer;
+                GaugeStation = oSettings.GaugeStationPath;
+                DemPath = oSettings.DemPath;
+                MetersChecked = true;
+                SelectedName = oSettings.FieldStationName;
+                SelectedId = oSettings.FieldStationId;
+                string retVal = oSettings.DemUnits;
+                if (retVal != null && retVal == Constants.UNITS_FEET)
                 {
-                    RefLayer = oSettings.ReferenceLayer;
-                    GaugeStation = oSettings.GaugeStationPath;
-                    DemPath = oSettings.DemPath;
-                    MetersChecked = true;
-                    string retVal = oSettings.DemUnits;
-                    if (retVal != null && retVal == Constants.UNITS_FEET)
-                    {
-                        FeetChecked = true;
-                    }
-                }               
+                    FeetChecked = true;
+                }
             }
         }
         public async Task InitializeAsync()
         {
             WorkspaceType wType = await GeneralTools.GetFeatureWorkspaceType(GaugeStation);
-            FeatureClassDefinition fcDefinition = null;
+            IReadOnlyList<Field> fields = null;
             Names.Clear();
+            Ids.Clear();
             switch (wType)
             {
                 case WorkspaceType.None:
@@ -107,7 +117,8 @@ namespace bagis_pro.Basin
                         {
                             using (Geodatabase geodatabase = new Geodatabase(serviceProps))
                             {
-                                fcDefinition = geodatabase.GetDefinition<FeatureClassDefinition>(arrReturnValues[1]);
+                                FeatureClassDefinition fcDefinition = geodatabase.GetDefinition<FeatureClassDefinition>(arrReturnValues[1]);
+                                fields = fcDefinition.GetFields();
                             }
                         });
                     }
@@ -119,7 +130,8 @@ namespace bagis_pro.Basin
                         using (Geodatabase geodatabase =
                                 new Geodatabase(new FileGeodatabaseConnectionPath(uri)))
                         {
-                            fcDefinition = geodatabase.GetDefinition<FeatureClassDefinition>(Path.GetFileName(GaugeStation));
+                            FeatureClassDefinition fcDefinition = geodatabase.GetDefinition<FeatureClassDefinition>(Path.GetFileName(GaugeStation));
+                            fields = fcDefinition.GetFields();
                         }
                     });
                     break;
@@ -129,25 +141,34 @@ namespace bagis_pro.Basin
                         FileSystemConnectionPath connectionPath =
                             new FileSystemConnectionPath(new Uri(Path.GetDirectoryName(GaugeStation)), FileSystemDatastoreType.Shapefile);
                         FileSystemDatastore dataStore = new FileSystemDatastore(connectionPath);
-                        fcDefinition = dataStore.GetDefinition<FeatureClassDefinition>(Path.GetFileName(GaugeStation));
+                        FeatureClassDefinition fcDefinition = dataStore.GetDefinition<FeatureClassDefinition>(Path.GetFileName(GaugeStation));
+                        fields = fcDefinition.GetFields();
                     });
                     break;
             }
             ObservableCollection<string> tmpList = new ObservableCollection<string>();
-            if (fcDefinition != null)
+            ObservableCollection<string> tmpListId = new ObservableCollection<string>();
+            if (fields != null)
             {
+                var validIdOptions = new[] { FieldType.String, FieldType.Integer, FieldType.SmallInteger, FieldType.BigInteger};
                 await QueuedTask.Run(() =>
                 {
-                    IReadOnlyList<Field> fields = fcDefinition.GetFields();
                     foreach (var field in fields)
                     {
-                        tmpList.Add(field.Name);
+                        if (field.FieldType.Equals(FieldType.String))
+                        {
+                            tmpList.Add(field.Name);
+                        }
+                        if (validIdOptions.Contains(field.FieldType))
+                        {
+                            tmpListId.Add(field.Name);
+                        }
                     }
                 });
             }
             Names = tmpList;
+            Ids = tmpListId;
         }
-
         public ICommand CmdClose
         {
             get
@@ -157,6 +178,138 @@ namespace bagis_pro.Basin
                 });
             }
         }
+        public ICommand CmdRefLayer
+        {
+            get
+            {
+                return new RelayCommand(async () => {
+                    await MapTools.DisplayReferenceLayersAsync();
+                });
+            }
+        }
+        public ICommand CmdSelectRefLayer
+        {
+            get
+            {
+                return new RelayCommand(() =>
+                {
+
+                    //Display the filter in an Open Item dialog
+                    OpenItemDialog aNewFilter = new OpenItemDialog
+                    {
+                        Title = "Select a layer file",
+                        MultiSelect = false,
+                        Filter = ItemFilters.Layers_AllFileTypes
+                    };
+                    bool? ok = aNewFilter.ShowDialog();
+                    bool bOk = ok ?? false;
+                    if (bOk)
+                    {
+                        RefLayer = "";
+                        var arrFileNames = aNewFilter.Items;
+                        foreach (var item in arrFileNames)
+                        {
+                            RefLayer = item.Path;
+                        }
+                    }
+
+                    return Task.CompletedTask;
+                });
+            }
+        }
+        public ICommand CmdSelectDem
+        {
+            get
+            {
+                return new RelayCommand(() => {
+
+                    // 1. Create the composite filter
+                    BrowseProjectFilter multiFilter = new BrowseProjectFilter();
+
+                    // 2. Add multiple predefined filters
+                    multiFilter.AddFilter(BrowseProjectFilter.GetFilter("esri_browseDialogFilters_rasters"));
+                    multiFilter.AddFilter(BrowseProjectFilter.GetFilter("esri_browseDialogFilters_services_image"));
+
+                    //Display the filter in an Open Item dialog
+                    OpenItemDialog aNewFilter = new OpenItemDialog
+                    {
+                        Title = "Select DEM",
+                        MultiSelect = false,
+                        BrowseFilter = multiFilter
+                    };
+                    bool? ok = aNewFilter.ShowDialog();
+                    bool bOk = ok ?? false;
+                    if (bOk)
+                    {
+                        DemPath = "";
+                        var arrFileNames = aNewFilter.Items;
+                        foreach (var item in arrFileNames)
+                        {
+                            DemPath = item.Path;
+                        }
+                    }
+                });
+            }
+        }
+
+        public ICommand CmdSetGaugeStations
+        {
+            get
+            {
+                return new RelayCommand( async () => {
+
+                    // 1. Create the composite filter
+                    BrowseProjectFilter multiFilter = new BrowseProjectFilter();
+
+                    // 2. Add multiple predefined filters
+                    multiFilter.AddFilter(BrowseProjectFilter.GetFilter("esri_browseDialogFilters_featureClasses_point"));
+                    multiFilter.AddFilter(BrowseProjectFilter.GetFilter("esri_browseDialogFilters_shapefiles"));
+
+
+                    //Display the filter in an Open Item dialog
+                    OpenItemDialog aNewFilter = new OpenItemDialog
+                    {
+                        Title = "Select gauge stations",
+                        MultiSelect = false,
+                        BrowseFilter = multiFilter
+                    };
+                    bool? ok = aNewFilter.ShowDialog();
+                    bool bOk = ok ?? false;
+                    if (bOk)
+                    {
+                        GaugeStation = "";
+                        var arrFileNames = aNewFilter.Items;
+                        foreach (var item in arrFileNames)
+                        {
+                            GaugeStation = item.Path;
+                        }
+                        await InitializeAsync();
+                    }
+                });
+            }
+        }
+
+        public ICommand CmdDefault
+        {
+            get
+            {
+                return new RelayCommand(() => {
+                    IDictionary<string, dynamic> dictDataSources = Module1.Current.DataSources;
+                    RefLayer = Constants.LAYER_FILE_REFERENCE_MAPS;
+                    BA_Objects.DataSource dsDem = new BA_Objects.DataSource(dictDataSources[Constants.DATA_TYPE_DEM]);
+                    if (dsDem != null)
+                    {
+                        DemPath = dsDem.uri;
+                    }
+                    dynamic oSettings = Module1.Current.BagisSettings;
+                    if (oSettings != null)
+                    {
+                        GaugeStation = (string)oSettings.GaugeStationUri;
+                    }
+                });
+            }
+        }
+
     }
 
 

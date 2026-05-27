@@ -64,7 +64,7 @@ namespace bagis_pro.AoiTools
 
             if (!bExists)
             {
-                string strGaugeStationsUri = (string)Module1.Current.BagisSettings.GaugeStationUri;
+                string strGaugeStationsUri = (string)Module1.Current.AoiCreationSettings.GaugeStationPath;
                 success = await MapTools.DisplayGaugeStationsLayerAsync(strGaugeStationsUri);
             }
 

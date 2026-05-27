@@ -4350,7 +4350,6 @@ namespace bagis_pro
             });
             return BA_ReturnCode.Success;
         }
-
         public static async Task<BA_ReturnCode> DisplayReferenceLayersAsync()
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;            
@@ -4369,8 +4368,25 @@ namespace bagis_pro
             
             // Make sure the default map frame is available
             Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
-            string strLayerFilePath = Module1.Current.SettingsPath + "\\" + Constants.FOLDER_SETTINGS + "\\" + Constants.LAYER_FILE_REFERENCE_MAPS;
-            string strGaugeStationsUri = (string)Module1.Current.BagisSettings.GaugeStationUri;
+            // Use the aoi settings
+            dynamic oAoiSettings = Module1.Current.AoiCreationSettings;
+            if (oAoiSettings == null)
+            {
+                MessageBox.Show("There is a problem with the Basin options. Please check the reference layer setting.");
+                return BA_ReturnCode.ReadError;
+            }
+            string strLayerFilePath = "";
+            if ((string) oAoiSettings.ReferenceLayer == Constants.LAYER_FILE_REFERENCE_MAPS)
+            {
+                // we need to append the AppData directory to the default reference layer path
+                strLayerFilePath = Module1.Current.SettingsPath + "\\" + Constants.FOLDER_SETTINGS + "\\" + Constants.LAYER_FILE_REFERENCE_MAPS;
+            }
+            else
+            {
+                strLayerFilePath = (string)oAoiSettings.ReferenceLayer;
+            }
+
+            string strGaugeStationsUri = (string)oAoiSettings.GaugeStationPath;
             await QueuedTask.Run( () =>
             {
                 // Check for existence of reference map layers

@@ -37,7 +37,7 @@
             <TextBox x:Name="txtRefLayer" Text="{Binding RefLayer}" HorizontalAlignment="Right"  VerticalAlignment="Center" Width="300" IsReadOnly="True" />
         </DockPanel>
         <DockPanel Grid.Row="0" Grid.Column="1" LastChildFill="true" KeyboardNavigation.TabNavigation="Local"  Margin="2,0,2,0">
-            <Button x:Name="btnRefLayer" Content="Set" HorizontalAlignment="Left"  VerticalAlignment="Center" Width="50" Command="{Binding CmdRefLayer}" Margin="5, 0, 0, 0"/>
+            <Button x:Name="btnRefLayer" Content="Set" HorizontalAlignment="Left"  VerticalAlignment="Center" Width="50" Command="{Binding CmdSelectRefLayer}" Margin="5, 0, 0, 0"/>
         </DockPanel>
         <DockPanel Grid.Row="0" Grid.Column="2" LastChildFill="true" KeyboardNavigation.TabNavigation="Local"  Margin="2,0,2,0">
             <Button x:Name="btnAddRefLayer" Content="Add Ref. Layers to Map" FontWeight="Bold" HorizontalAlignment="Center"  VerticalAlignment="Center" Width="150" Command="{Binding CmdRefLayer}" Margin="5, 0, 0, 0"/>
@@ -48,7 +48,7 @@
             <TextBox x:Name="txtDem" Text="{Binding DemPath}" HorizontalAlignment="Right"  VerticalAlignment="Center" Width="300" IsReadOnly="True"/>
         </DockPanel>
         <DockPanel Grid.Row="1" Grid.Column="1" LastChildFill="true" KeyboardNavigation.TabNavigation="Local"  Margin="2,0,2,0">
-            <Button x:Name="btnDem" Content="Set" HorizontalAlignment="Left"  VerticalAlignment="Center" Width="50" Command="{Binding CmdDem}" Margin="5, 0, 0, 0"/>
+            <Button x:Name="btnDem" Content="Set" HorizontalAlignment="Left"  VerticalAlignment="Center" Width="50" Command="{Binding CmdSelectDem}" Margin="5, 0, 0, 0"/>
         </DockPanel>
         <DockPanel Grid.Row="1" Grid.Column="2" LastChildFill="true" KeyboardNavigation.TabNavigation="Local"  Margin="2,0,2,0" VerticalAlignment="Center">
             <TextBlock HorizontalAlignment="Left"  Text="Elevation Unit" Margin="0, 0, 5, 0"/>
@@ -60,17 +60,17 @@
             <TextBox x:Name="txtGaugeStation" Text="{Binding GaugeStation}" HorizontalAlignment="Right"  VerticalAlignment="Center" Width="300" IsReadOnly="True"/>
         </DockPanel>
         <DockPanel Grid.Row="2" Grid.Column="1" LastChildFill="true" KeyboardNavigation.TabNavigation="Local"  Margin="2,0,2,0">
-            <Button x:Name="btnGaugeStation" Content="Set" HorizontalAlignment="Left"  VerticalAlignment="Center" Width="50" Command="{Binding CmdGaugeStations}" Margin="5, 0, 0, 0"/>
+            <Button x:Name="btnGaugeStation" Content="Set" HorizontalAlignment="Left"  VerticalAlignment="Center" Width="50" Command="{Binding CmdSetGaugeStations}" Margin="5, 0, 0, 0"/>
         </DockPanel>
         <DockPanel Grid.Row="2" Grid.Column="2" LastChildFill="true" KeyboardNavigation.TabNavigation="Local"  Margin="2,0,2,0" VerticalAlignment="Center">
-            <TextBlock HorizontalAlignment="Left"  Text="Name Field" Margin="15,0,0,0"/>
-            <TextBlock HorizontalAlignment="Left"  Text="Station ID Field" Margin="20,0,0,0"/>
+            <TextBlock HorizontalAlignment="Left"  Text="Name Field" Margin="30,0,0,0"/>
+            <TextBlock HorizontalAlignment="Left"  Text="Station ID Field" Margin="45,0,0,0"/>
         </DockPanel>
         <DockPanel Grid.Row="3" Grid.Column="2" LastChildFill="true" KeyboardNavigation.TabNavigation="Local"  Margin="2,0,2,0" VerticalAlignment="Top">
-            <ComboBox Name="cboName" SelectedItem="{Binding SelectedName}" HorizontalAlignment="Left" 
-                ItemsSource="{Binding LstNames}"  Width="75" Height="20" Margin="10,0,0,0" />
-            <ComboBox Name="cboStationId" SelectedItem="{Binding SelectedStationId}" HorizontalAlignment="Left" 
-           ItemsSource="{Binding LstNames}"  Width="75" Height="20" Margin="15,0,0,0" />
+            <ComboBox Name="cboName" SelectedItem="{Binding SelectedName, Mode=TwoWay}" HorizontalAlignment="Left" 
+                ItemsSource="{Binding Names}"  Width="100" Height="20" Margin="10,0,0,0" />
+            <ComboBox Name="cboStationId" SelectedItem="{Binding SelectedId,Mode=TwoWay}" HorizontalAlignment="Left" 
+           ItemsSource="{Binding Ids}" Width="100" Height="20" Margin="15,0,0,0" />
         </DockPanel>
         <DockPanel Grid.Row="4" Grid.Column="2" LastChildFill="true" KeyboardNavigation.TabNavigation="Local"  Margin="2,0,2,0">
             <Button x:Name="btnDefaultSettings" Content="Default Settings" FontWeight="Bold" HorizontalAlignment="Center"  VerticalAlignment="Center" Width="120" Command="{Binding CmdDefault}"/>
