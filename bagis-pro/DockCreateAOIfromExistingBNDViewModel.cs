@@ -210,7 +210,11 @@ namespace bagis_pro
             }
 
             // verify dem is available
-            string strSourceDem = Module1.Current.DataSources[DataSource.GetDemKey].uri;
+            string strSourceDem = "";
+            if (Module1.Current.AoiCreationSettings != null)
+            {
+                strSourceDem = (string) Module1.Current.AoiCreationSettings.DemPath;
+            }            
             WorkspaceType wType = await GeneralTools.GetRasterWorkspaceType(strSourceDem);
             if (wType == WorkspaceType.None)
             {

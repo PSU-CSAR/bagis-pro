@@ -8,11 +8,7 @@ using bagis_pro.BA_Objects;
 using ExtensionMethod;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.ComponentModel.DataAnnotations;
-using System.Diagnostics;
 using System.Linq;
-using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -147,7 +143,11 @@ namespace bagis_pro.Basin
             }
 
             // verify dem is available
-            string strSourceDem = Module1.Current.DataSources[DataSource.GetDemKey].uri;
+            string strSourceDem = "";
+            if (Module1.Current.AoiCreationSettings != null)
+            {
+                strSourceDem = (string)Module1.Current.AoiCreationSettings.DemPath;
+            }
             WorkspaceType wType = await GeneralTools.GetRasterWorkspaceType(strSourceDem);
             if (wType == WorkspaceType.None)
             {
@@ -323,6 +323,12 @@ namespace bagis_pro.Basin
             gpResult = await Geoprocessing.ExecuteToolAsync("Fill_sa", parameters, environments,
                 status.Progressor, GPExecuteToolFlags.AddToHistory);
             StringBuilder sbDem = new StringBuilder();
+            string demUnits = (string)Module1.Current.BagisSettings.DemUnits;
+            if (Module1.Current.AoiCreationSettings != null)
+            {
+                demUnits = (string)Module1.Current.BagisSettings.DemUnits;
+            }
+
             if (gpResult.IsFailed)
             {
                 int retVal = await AbandonClipDEMAsync(_basinFolder, progress, status.Progressor);
@@ -334,7 +340,7 @@ namespace bagis_pro.Basin
                 sbDem.Append(Constants.META_TAG_PREFIX);
                 // Elevation Units
                 sbDem.Append(Constants.META_TAG_ZUNIT_CATEGORY + MeasurementUnitType.Elevation + "; ");
-                sbDem.Append(Constants.META_TAG_ZUNIT_VALUE + (string)Module1.Current.BagisSettings.DemUnits + "; ");
+                sbDem.Append(Constants.META_TAG_ZUNIT_VALUE + demUnits + "; ");
                 if (success == BA_ReturnCode.Success)
                 {
                     //Update the metadata
@@ -368,7 +374,6 @@ namespace bagis_pro.Basin
             }, status.Progressor);
 
             double zFactor = 1;
-            string demUnits = (string)Module1.Current.BagisSettings.DemUnits;
             if (!demUnits.Equals("Meters"))
             {
                 zFactor = 0.3048;

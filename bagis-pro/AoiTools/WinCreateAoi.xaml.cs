@@ -1,4 +1,5 @@
-﻿using System;
+﻿using bagis_pro.Basin;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -45,6 +46,11 @@ namespace bagis_pro.AoiTools
         " its derivatives" +
         " are clipped to the AOI using the buffered boundaries.";
             MessageBox.Show(strMessage, "Why Buffer an AOI", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        private async void MyGrid_Loaded(object sender, RoutedEventArgs e)
+        {
+            WinCreateAoiModel oModel = this.DataContext as WinCreateAoiModel;
+            await oModel.InitializeAsync();
         }
     }
 }

@@ -2,7 +2,6 @@
 using ArcGIS.Core.Data;
 using ArcGIS.Core.Data.Raster;
 using ArcGIS.Core.Geometry;
-using ArcGIS.Desktop.Catalog;
 using ArcGIS.Desktop.Core;
 using ArcGIS.Desktop.Core.Geoprocessing;
 using ArcGIS.Desktop.Framework;
@@ -13,8 +12,6 @@ using bagis_pro.BA_Objects;
 using ExtensionMethod;
 using System;
 using System.Collections;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -41,11 +38,23 @@ namespace bagis_pro.AoiTools
             SnapDistance = 15;
             AoiBufferChecked = true;
             AoiBufferDistance = Convert.ToDouble((string)Module1.Current.BagisSettings.AoiBufferDistance);
-            DemElevUnit = (string)Module1.Current.BagisSettings.DemUnits;
             SlopeUnit defaultSlope = SlopeUnit.PctSlope; //BAGIS generates Slope in Degree
             SlopeUnitDescr = defaultSlope.GetEnumDescription();
-
-
+        }
+        public async Task InitializeAsync()
+        {
+            string gdbSurfaces = GeodatabaseTools.GetGeodatabasePath(Module1.Current.BasinFolderBase, GeodatabaseNames.Surfaces, true);
+            string strPath = gdbSurfaces + Constants.FILE_DEM_FILLED;
+            string strBagisTag = await GeneralTools.GetBagisTagAsync(strPath, Constants.META_TAG_XPATH);
+            if (!String.IsNullOrEmpty(strBagisTag))
+            {
+                DemElevUnit = GeneralTools.GetValueForKey(strBagisTag, Constants.META_TAG_ZUNIT_VALUE, ';');
+            }
+            if (string.IsNullOrEmpty(DemElevUnit))
+            {
+                MessageBox.Show("The dem units could not be acquired from the basin filled_dem");
+                return;
+            }
         }
         public bool SnapPPChecked
         {
@@ -639,7 +648,12 @@ namespace bagis_pro.AoiTools
                 });
             }
 
-            string strGaugeStationsUri = (string)Module1.Current.BagisSettings.GaugeStationUri;
+            string strGaugeStationsUri = "";
+            dynamic oAoiCreationSettings = Module1.Current.AoiCreationSettings;
+            if (oAoiCreationSettings != null)
+            {
+                strGaugeStationsUri = (string)oAoiCreationSettings.GaugeStationPath;
+            }
             success = GeneralTools.SaveAoiSourceSettings(oAoi.FilePath, 
                 $@"{GeodatabaseTools.GetGeodatabasePath(Module1.Current.BasinFolderBase, GeodatabaseNames.Surfaces, true)}{Constants.FILE_DEM}",
                 strGaugeStationsUri);
