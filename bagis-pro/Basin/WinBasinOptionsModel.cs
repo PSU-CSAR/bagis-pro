@@ -309,8 +309,22 @@ namespace bagis_pro.Basin
                 });
             }
         }
+        private RelayCommand _runSaveCommand;
+        public ICommand CmdSave
+        {
+            get
+            {
+                if (_runSaveCommand == null)
+                    _runSaveCommand = new RelayCommand(RunSaveImplAsync, () => true);
+                return _runSaveCommand;
+            }
+        }
+        private async void RunSaveImplAsync(object param)
+        {
 
-    }
+        }
+
+     }
 
 
     }

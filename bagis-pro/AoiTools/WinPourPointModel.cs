@@ -135,6 +135,13 @@ namespace bagis_pro.AoiTools
             });
 
             ObservableCollection<string> tmpList = new ObservableCollection<string>();
+            dynamic oAoiCreationSettings = Module1.Current.AoiCreationSettings;
+            string fldName = Constants.FIELD_NAME;
+            if (oAoiCreationSettings != null)
+            {
+                fldName = (string)oAoiCreationSettings.FieldStationName;
+            }
+
             await QueuedTask.Run(() =>
             {
                 using (RowCursor cursor = oFeatureLayer.Search(spatialQueryFilter))
@@ -143,7 +150,7 @@ namespace bagis_pro.AoiTools
                     {
                         if (cursor.Current is Feature feature)
                         {
-                            int idx = feature.FindField(Constants.FIELD_NAME);
+                            int idx = feature.FindField(fldName);
                             if (idx > -1)
                             {
                                 tmpList.Add(Convert.ToString(feature[idx]));
@@ -250,21 +257,29 @@ namespace bagis_pro.AoiTools
                     }
                     if (oFeatureLayer != null)
                     {
+                        dynamic oAoiCreationSettings = Module1.Current.AoiCreationSettings;
+                        string fldName = Constants.FIELD_NAME;
+                        string fldId = Constants.FIELD_STATION_TRIPLET;
+                        if (oAoiCreationSettings != null)
+                        {
+                            fldName = (string)oAoiCreationSettings.FieldStationName;
+                            fldId = (string)oAoiCreationSettings.FieldStationId;
+                        }
                         QueryFilter filter = new QueryFilter();
-                        filter.WhereClause = $@"{Constants.FIELD_NAME} = '{SelectedPourPoint.Trim()}'";
+                        filter.WhereClause = $@"{fldName} = '{SelectedPourPoint.Trim()}'";
                         using (RowCursor cursor = oFeatureLayer.Search(filter))
                         {
                             while (cursor.MoveNext())
                             {
                                 if (cursor.Current is Feature feature)
                                 {
-                                    int idx = feature.FindField(Constants.FIELD_STATION_TRIPLET);
+                                    int idx = feature.FindField(fldId);
                                     if (idx > -1)
                                     {
 
                                         stationTriplet = Convert.ToString(feature[idx]);
                                     }
-                                    idx = feature.FindField(Constants.FIELD_NAME);
+                                    idx = feature.FindField(fldName);
                                     if (idx > -1)
                                     {
                                         stationName = Convert.ToString(feature[idx]);
