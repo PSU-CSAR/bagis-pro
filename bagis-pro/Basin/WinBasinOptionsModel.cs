@@ -4,6 +4,8 @@ using ArcGIS.Desktop.Core;
 using ArcGIS.Desktop.Framework;
 using ArcGIS.Desktop.Framework.Contracts;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -305,7 +307,12 @@ namespace bagis_pro.Basin
                     if (oSettings != null)
                     {
                         GaugeStation = (string)oSettings.GaugeStationUri;
+                        SelectedName = Constants.FIELD_NAME.ToLower();
+                        SelectedId = Constants.FIELD_STATION_TRIPLET;
+                        MetersChecked = true;
+                        FeetChecked = false;
                     }
+                    
                 });
             }
         }
@@ -315,16 +322,61 @@ namespace bagis_pro.Basin
             get
             {
                 if (_runSaveCommand == null)
-                    _runSaveCommand = new RelayCommand(RunSaveImplAsync, () => true);
+                    _runSaveCommand = new RelayCommand(RunSaveImpl, () => true);
                 return _runSaveCommand;
             }
         }
-        private async void RunSaveImplAsync(object param)
+        private void RunSaveImpl(object param)
         {
+            dynamic oAoiSettings = Module1.Current.AoiCreationSettings;
+            string strFullPath = GeneralTools.GetBagisSettingsPath() + @"\" + Constants.FOLDER_SETTINGS
+                + @"\" + Constants.FILE_BAGIS_SETTINGS;
+            dynamic oAllSettings = null;
+            // read JSON directly from a file
+            using (FileStream fs = File.OpenRead(strFullPath))
+            {
+                using (JsonTextReader reader = new JsonTextReader(new StreamReader(fs)))
+                {
+                    oAllSettings = (JObject)JToken.ReadFrom(reader);
+                }
+            }
+
+            if (oAllSettings != null && oAoiSettings != null)
+            {
+                oAoiSettings.ReferenceLayer = RefLayer;
+                oAoiSettings.DemPath = DemPath;
+                oAoiSettings.GaugeStationPath = GaugeStation;
+                oAoiSettings.DemPath = DemPath;
+                oAoiSettings.DemUnits = Constants.UNITS_METERS;
+                if (FeetChecked)
+                {
+                    oAoiSettings.DemUnits = Constants.UNITS_FEET;
+                }
+                oAoiSettings.FieldStationName = SelectedName;
+                oAoiSettings.FieldStationId = SelectedId;
+                try
+                {
+                    oAllSettings.AoiCreation = oAoiSettings;
+                    // write JSON directly to a file
+                    using (StreamWriter file = File.CreateText(strFullPath))
+                    using (JsonTextWriter writer = new JsonTextWriter(file))
+                    {
+                        writer.Formatting = Formatting.Indented;
+                        oAllSettings.WriteTo(writer);
+                    }
+                    // Save updated options to session variables
+                    Module1.Current.AoiCreationSettings = oAoiSettings;
+                    MessageBox.Show("Options have been successfully saved", "BAGIS-Pro");                    
+                }
+                catch (Exception e)
+                {
+                    MessageBox.Show("Unable to save updated options!", "BAGIS-Pro");
+                }
+            }
 
         }
 
-     }
+        }
 
 
     }
