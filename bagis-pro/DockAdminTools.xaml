@@ -277,18 +277,23 @@
                     </StackPanel>
                 </TabItem.Header>
                 <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="168*"/>
+                        <ColumnDefinition Width="30*"/>
+                        <ColumnDefinition Width="121*"/>
+                    </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="80"/>
                         <RowDefinition Height="130"/>
                         <RowDefinition Height="350"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
-                    <StackPanel Grid.Row="0" Orientation="Vertical" Margin="5,5,5,5">
+                    <StackPanel Grid.Row="0" Orientation="Vertical" Margin="5,5,5,5" Grid.ColumnSpan="3">
                         <TextBlock FontWeight="Bold" Text="{Binding NifcDataDescr}"/>
                         <TextBlock FontWeight="Bold" Text="{Binding MtbsDataDescr}" Width="300" 
                                    HorizontalAlignment="Left" TextWrapping="Wrap"/>
                     </StackPanel>
-                    <GroupBox Margin="5,0,0,5" Padding="2" Grid.Row="1" HorizontalAlignment="Left" IsEnabled="{Binding FireDataEnabled}">
+                    <GroupBox Margin="5,0,0,5" Padding="2" Grid.Row="1" HorizontalAlignment="Left" IsEnabled="{Binding FireDataEnabled}" Grid.ColumnSpan="3">
                         <GroupBox.Header>
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock FontWeight="Bold">Retrieve AOI Fire Data</TextBlock>
@@ -317,7 +322,7 @@
                             </StackPanel>
                         </Grid>
                     </GroupBox>
-                    <GroupBox Margin="5,0,0,5" Padding="2" Grid.Row="2" HorizontalAlignment="Left">
+                    <GroupBox Margin="5,0,0,5" Padding="2" Grid.Row="2" HorizontalAlignment="Left" Grid.ColumnSpan="3">
                         <GroupBox.Header>
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock FontWeight="Bold">Generate AOI Fire Reports and Maps</TextBlock>
@@ -387,6 +392,84 @@
                     </GroupBox>
                 </Grid>
             </TabItem>
+            <TabItem Visibility="Visible">
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="LULCC Tasks" Foreground="Black" />
+                    </StackPanel>
+                </TabItem.Header>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="18*"/>
+                        <ColumnDefinition Width="11*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="120"/>
+                        <RowDefinition Height="175"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <GroupBox Margin="5,0,0,5" Padding="2" Grid.Row="0" HorizontalAlignment="Left" IsEnabled="{Binding LulccDataEnabled}" Grid.ColumnSpan="2">
+                        <GroupBox.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock FontWeight="Bold">Retrieve AOI LULCC Data</TextBlock>
+                            </StackPanel>
+                        </GroupBox.Header>
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="25"/>
+                                <RowDefinition Height="25"/>
+                                <RowDefinition Height="10"/>
+                                <RowDefinition Height="30"/>
+                            </Grid.RowDefinitions>
+                            <StackPanel Grid.Row="0" Orientation="Horizontal">
+                                <CheckBox x:Name="ckClipIrr" Content="Clip Irrigated Lands" IsChecked="{Binding Clip_Irr_Checked}" />
+                                <CheckBox x:Name="ckClipNlcd" Content="Clip NLCD Land Cover" IsChecked="{Binding Clip_Nlcd_Checked}" Margin="10, 0, 0, 0"/>
+                            </StackPanel>
+                            <StackPanel Grid.Row="1" >
+                                <CheckBox x:Name="ckOverwrite" Content="Overwrite Existing IrrMapper &amp; NLCD rasters in AOI" IsChecked="{Binding Reclip_MTBS_Checked}" />
+                            </StackPanel>
+                            <StackPanel Grid.Row="3" Orientation="Horizontal">
+                                <Button x:Name="btnLulccDataLog" Content="View Log" HorizontalAlignment="Left" VerticalAlignment="Center" Width="75" IsEnabled="{Binding CmdLulccLogEnabled}" Command="{Binding CmdLulccDataLog}" Margin="5, 0, 70, 0"/>
+                                <Button x:Name="btnLulccData" Content="Retrieve" HorizontalAlignment="Right" VerticalAlignment="Center" Width="60" IsEnabled="{Binding LulccDataEnabled}" Command="{Binding CmdLulccData}" Margin="70, 0, 0, 0"/>
+                            </StackPanel>
+                        </Grid>
+                    </GroupBox>
+                    <GroupBox Margin="5,0,0,5" Padding="2" Grid.Row="1" HorizontalAlignment="Left" Grid.ColumnSpan="2">
+                        <GroupBox.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock FontWeight="Bold">Generate AOI LULCC Reports and Maps</TextBlock>
+                            </StackPanel>
+                        </GroupBox.Header>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="145*"/>
+                                <ColumnDefinition Width="47*"/>
+                                <ColumnDefinition Width="98*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="30"/>
+                                <RowDefinition Height="35"/>
+                                <RowDefinition Height="30"/>
+                                <RowDefinition Height="30"/>
+                            </Grid.RowDefinitions>
+                            <StackPanel Grid.Row="0" Orientation="Horizontal" Grid.ColumnSpan="3">
+                                <Button x:Name="btnVerifyForLulcc" Content="Verify AOI LIst for LULCC" HorizontalAlignment="Left" VerticalAlignment="Center" Width="150" Margin="5, 0, 0, 0" IsEnabled="{Binding LulccDataEnabled}" Command="{Binding CmdVerifyForLulcc}"/>
+                            </StackPanel>
+                            <StackPanel Grid.Row="1" Orientation="Horizontal" Grid.ColumnSpan="3" Margin="0, 10, 0, 0">
+                                <CheckBox x:Name="ckReportIrr" Content="Irrigated Lands" IsChecked="{Binding Report_Irr_Checked}" />
+                                <CheckBox x:Name="ckReportNlcd" Content="Land Cover and Change" IsChecked="{Binding Report_Nlcd_Checked}" Margin="15, 0, 0, 0"/>
+                            </StackPanel>
+                            <StackPanel Grid.Row="3" Orientation="Horizontal" Grid.ColumnSpan="3">
+                                <Button x:Name="btnLulccReportLog" Content="View Log" HorizontalAlignment="Left" VerticalAlignment="Center" Width="60" IsEnabled="{Binding CmdLulccReportLogEnabled}" Command="{Binding CmdFireReportLog}" Margin="0, 0, 5, 0"/>
+                                <Button x:Name="btnLulccReport" Content="1. Generate Report" Width="105" VerticalAlignment="Center" IsEnabled="{Binding CmdLulccReportEnabled}" Command="{Binding CmdLulccReport}" Margin="5, 0, 5, 0"/>
+                                <Button x:Name="btnLulccMaps" Content="2. Generate Maps" HorizontalAlignment="Left" VerticalAlignment="Center" Width="100" IsEnabled="{Binding CmdLulccReportEnabled}" Command="{Binding CmdLulccMaps}" Margin="5, 0, 5, 0"/>
+                            </StackPanel>
+
+                        </Grid>
+                    </GroupBox>
+                </Grid>
+            </TabItem>
+
         </TabControl>
     </Grid>
 </UserControl>
