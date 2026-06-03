@@ -117,6 +117,18 @@
             "heading": "MTBS Fire Burn Severity",
             "description": "Monitoring Trends in Burn Severity (MTBS) burn severity and extent of large fires webservices accessed on the report creating date (see the report summary page). See https://mtbs.gov/project-overview for more information.",
             "uri": "http://bagis.geog.pdx.edu/arcgis/services/usgs_mtbs_ak/"
+        },
+        {
+            "layerType": "Irrigated Historical",
+            "heading": "Historical Irrigated Lands",
+            "description": "TBD",
+            "uri": "https://webservices.geog.pdx.edu/arcgis/rest/services/landuse/IrrMapper_historical/"
+        },
+        {
+            "layerType": "Irrigated Recent",
+            "heading": "Irrigated Lands From Recent 5 Years",
+            "description": "TBD",
+            "uri": "http://webservices.geog.pdx.edu/arcgis/rest/services/landuse/IrrMapper_recent_5_years/"
         }
     ],
     "BagisSettings": {
@@ -199,7 +211,7 @@
                 "Severity": "None"
             }
         ],
-        "Version": 29
+        "Version": 30
     },
     "AoiCreation": {
     "ReferenceLayer":"BAGIS_Reference_Maps.lyrx",
