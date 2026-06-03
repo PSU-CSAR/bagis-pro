@@ -122,13 +122,13 @@
             "layerType": "Irrigated Historical",
             "heading": "Historical Irrigated Lands",
             "description": "TBD",
-            "uri": "https://webservices.geog.pdx.edu/arcgis/rest/services/landuse/IrrMapper_historical/"
+            "uri": "https://webservices.geog.pdx.edu/arcgis/rest/services/landuse/IrrMapper_historical/ImageServer"
         },
         {
             "layerType": "Irrigated Recent",
             "heading": "Irrigated Lands From Recent 5 Years",
             "description": "TBD",
-            "uri": "http://webservices.geog.pdx.edu/arcgis/rest/services/landuse/IrrMapper_recent_5_years/"
+            "uri": "http://webservices.geog.pdx.edu/arcgis/rest/services/landuse/IrrMapper_recent_5_years/ImageServer"
         }
     ],
     "BagisSettings": {
