@@ -120,14 +120,14 @@
         },
         {
             "layerType": "Irrigated Historical",
-            "heading": "Historical Irrigated Lands",
-            "description": "TBD",
+            "heading": "Irrigated Lands - Historical",
+            "description": "IrrMapper Irrigated Lands, Version 1.2. 1986-2020 imageservice accessed on the report creating date (see the report summary page). See https://climate.umt.edu/research/irrmapper/ for more information.",
             "uri": "https://webservices.geog.pdx.edu/arcgis/rest/services/landuse/IrrMapper_historical/ImageServer"
         },
         {
-            "layerType": "Irrigated Recent",
-            "heading": "Irrigated Lands From Recent 5 Years",
-            "description": "TBD",
+            "layerType": "Irrigated Current",
+            "heading": "Irrigated Lands - Current",
+            "description": "IrrMapper Irrigated Lands, Version 1.2. 2021-2025 imageservice accessed on the report creating date (see the report summary page). See https://climate.umt.edu/research/irrmapper/ for more information.",
             "uri": "http://webservices.geog.pdx.edu/arcgis/rest/services/landuse/IrrMapper_recent_5_years/ImageServer"
         }
     ],
@@ -211,7 +211,7 @@
                 "Severity": "None"
             }
         ],
-        "Version": 30
+        "Version": 31
     },
     "AoiCreation": {
     "ReferenceLayer":"BAGIS_Reference_Maps.lyrx",
