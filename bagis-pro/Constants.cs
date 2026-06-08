@@ -1,13 +1,4 @@
-﻿using ArcGIS.Desktop.Core;
-using ArcGIS.Desktop.Framework.Threading.Tasks;
-using ArcGIS.Desktop.Mapping;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace bagis_pro
+﻿namespace bagis_pro
 {
     static class Constants
     {
@@ -127,7 +118,8 @@ namespace bagis_pro
         public const string FILE_GEN_STATISTICS_LOG = "generate_statistics_log.txt";
         public const string FILE_FIRE_DATA_LOG = "generate_fire_data_log.txt";
         public const string FILE_FIRE_REPORT_LOG = "generate_fire_report_log.txt";
-        public const string FILE_FIRE_MAPS_LOG = "generate_fire_maps_log.txt";
+        public const string FILE_LULCC_DATA_LOG = "generate_lulcc_data_log.txt";
+        public const string FILE_LULCC_REPORT_LOG = "generate_lulcc_report_log.txt";
         public const string FILE_FORECAST_STATION_LOG = "forecast_station_log.csv";
         public const string FILE_AOI_STATISTICS = "forecast_aoi_statistics.csv";
         public const string FILE_SNOLITE = "snolite_sites";
@@ -277,6 +269,7 @@ namespace bagis_pro
         public const string FOLDER_SNODAS_GEOJSON = "snodas_geojson";
         public const string FOLDER_FIRE_STATISTICS = "fire_statistics";
         public const string FOLDER_CHROME_USER_DATA = "chrome_user_data";
+        public const string FOLDER_LULCC_STATISTICS = "lulcc_statistics";
 
         public const string FIELD_SITE_ELEV = "BA_SELEV";
         public const string FIELD_SITE_NAME = "BA_SNAME";
@@ -355,6 +348,8 @@ namespace bagis_pro
         public const string DATA_TYPE_ALASKA_FIRE_BURN_SEVERITY = "Alaska Fire Burn Severity";
         public const string DATA_TYPE_SOURCE_DEM_CLIP = "DEM Clip Source";
         public const string DATA_TYPE_SOURCE_POURPOINT = "Pourpoint Source";    //Note: This is not really a data source
+        public const string DATA_TYPE_IRRIGATED_HISTORICAL = "Irrigated Historical";
+        public const string DATA_TYPE_IRRIGATED_RECENT = "Irrigated Recent";
 
         public const int VALUE_NO_DATA_9999 = -9999;
         public const string VALUE_NO_DATA = "NoData";

@@ -426,11 +426,11 @@
                                 <CheckBox x:Name="ckClipNlcd" Content="Clip NLCD Land Cover" IsChecked="{Binding Clip_Nlcd_Checked}" Margin="10, 0, 0, 0"/>
                             </StackPanel>
                             <StackPanel Grid.Row="1" >
-                                <CheckBox x:Name="ckOverwrite" Content="Overwrite Existing IrrMapper &amp; NLCD rasters in AOI" IsChecked="{Binding Reclip_MTBS_Checked}" />
+                                <CheckBox x:Name="ckOverwrite" Content="Overwrite Existing IrrMapper &amp; NLCD rasters in AOI" IsChecked="{Binding Reclip_LULCC_Checked}" />
                             </StackPanel>
                             <StackPanel Grid.Row="3" Orientation="Horizontal">
-                                <Button x:Name="btnLulccDataLog" Content="View Log" HorizontalAlignment="Left" VerticalAlignment="Center" Width="75" IsEnabled="{Binding CmdLulccLogEnabled}" Command="{Binding CmdLulccDataLog}" Margin="5, 0, 70, 0"/>
-                                <Button x:Name="btnLulccData" Content="Retrieve" HorizontalAlignment="Right" VerticalAlignment="Center" Width="60" IsEnabled="{Binding LulccDataEnabled}" Command="{Binding CmdLulccData}" Margin="70, 0, 0, 0"/>
+                                <Button x:Name="btnLulccDataLog" Content="View Log" HorizontalAlignment="Left" VerticalAlignment="Center" Width="75" IsEnabled="{Binding CmdLulccDataLogEnabled}" Command="{Binding CmdLulccDataLog}" Margin="5, 0, 70, 0"/>
+                                <Button x:Name="btnLulccData" Content="Retrieve" HorizontalAlignment="Right" VerticalAlignment="Center" Width="60" IsEnabled="{Binding CmdLulccDataEnabled}" Command="{Binding CmdLulccData}" Margin="70, 0, 0, 0"/>
                             </StackPanel>
                         </Grid>
                     </GroupBox>

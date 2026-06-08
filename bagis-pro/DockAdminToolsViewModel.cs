@@ -1,5 +1,6 @@
 ﻿using ArcGIS.Core.Data;
 using ArcGIS.Core.Data.Raster;
+using ArcGIS.Core.Data.UtilityNetwork.Trace;
 using ArcGIS.Core.Geometry;
 using ArcGIS.Desktop.Catalog;
 using ArcGIS.Desktop.Core;
@@ -24,7 +25,10 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Controls;
 using System.Windows.Input;
+using System.Xml;
+using System.Xml.Linq;
 
 namespace bagis_pro
 {
@@ -64,6 +68,8 @@ namespace bagis_pro
             FilterFireStatus.Add(AoiBatchState.MissingReport.ToString());
             FilterFireStatus.Add(AoiBatchState.NoFire.ToString());
             SelectedFireStatus = _all;
+            Clip_Irr_Checked = true;
+            Clip_Nlcd_Checked = true;
         }
 
         /// <summary>
@@ -94,7 +100,6 @@ namespace bagis_pro
         private string _strGenStatisticsLogFile;
         private string _strFireDataLogFile;
         private string _strFireReportLogFile;
-        private string _strFireMapsLogFile;
         private bool _cmdRunEnabled = false;
         private bool _cmdForecastEnabled = false;
         private bool _cmdSnodasEnabled = false;
@@ -113,6 +118,9 @@ namespace bagis_pro
         private bool _cmdFireReportLogEnabled = false;
         private bool _cmdFireReportEnabled = false;
         private bool _cmdFireDataLogEnabled = false;
+        private bool _cmdLulccReportLogEnabled = false;
+        private bool _cmdLulccReportEnabled = false;
+        private bool _cmdLulccDataLogEnabled = false;
         private int _intAnnualEndYear;
         private int _intIncrementalEndYear;
         private int _intMinYear;
@@ -133,9 +141,16 @@ namespace bagis_pro
         private string _strMtbsDataDescr;
         private bool _bClip_Nifc_Checked;
         private bool _bClip_Mtbs_Checked;
-        private bool _Reclip_MTBS_Checked = false;  //@ToDo: Change to true before production
+        private bool _Reclip_MTBS_Checked;
         private string _strSelectedFireStatus;
         private const string _separator = ",";
+        private bool _bClip_Irr_Checked;
+        private bool _bClip_Nlcd_Checked;
+        private bool _Reclip_LULCC_Checked = false; //@ToDo: Change to true for production
+        private string _strLulccDataLogFile;
+        private string _strLulccReportLogFile;
+
+
 
         public string Heading
         {
@@ -353,6 +368,30 @@ namespace bagis_pro
                 SetProperty(ref _cmdFireReportEnabled, value, () => CmdFireReportEnabled);
             }
         }
+        public bool CmdLulccDataLogEnabled
+        {
+            get { return _cmdLulccDataLogEnabled; }
+            set
+            {
+                SetProperty(ref _cmdLulccDataLogEnabled, value, () => CmdLulccDataLogEnabled);
+            }
+        }
+        public bool CmdLulccReportEnabled
+        {
+            get { return _cmdLulccReportEnabled; }
+            set
+            {
+                SetProperty(ref _cmdLulccReportEnabled, value, () => CmdLulccReportEnabled);
+            }
+        }
+        public bool CmdLulccReportLogEnabled
+        {
+            get { return _cmdLulccReportLogEnabled; }
+            set
+            {
+                SetProperty(ref _cmdLulccReportLogEnabled, value, () => CmdLulccReportLogEnabled);
+            }
+        }
         public int AnnualEndYear
         {
             get { return _intAnnualEndYear; }
@@ -519,6 +558,30 @@ namespace bagis_pro
                 SetProperty(ref _bClip_Mtbs_Checked, value, () => Clip_Mtbs_Checked);
             }
         }
+        public bool Clip_Irr_Checked
+        {
+            get { return _bClip_Irr_Checked; }
+            set
+            {
+                SetProperty(ref _bClip_Irr_Checked, value, () => Clip_Irr_Checked);
+            }
+        }
+        public bool Clip_Nlcd_Checked
+        {
+            get { return _bClip_Nlcd_Checked; }
+            set
+            {
+                SetProperty(ref _bClip_Nlcd_Checked, value, () => Clip_Nlcd_Checked);
+            }
+        }
+        public bool Reclip_LULCC_Checked
+        {
+            get { return _Reclip_LULCC_Checked; }
+            set
+            {
+                SetProperty(ref _Reclip_LULCC_Checked, value, () => Reclip_LULCC_Checked);
+            }
+        }
 
         public ObservableCollection<BA_Objects.Aoi> Names { get; set; }
         public ObservableCollection<string> FilterFireStatus { get; set; }
@@ -609,8 +672,13 @@ namespace bagis_pro
                     CmdFireDataLogEnabled = File.Exists(_strFireDataLogFile);
 
                     _strFireReportLogFile = $@"{ParentFolder}\{Constants.FOLDER_MAP_PACKAGE}\{Constants.FOLDER_FIRE_STATISTICS}\{Constants.FILE_FIRE_REPORT_LOG}";
-                    _strFireMapsLogFile = $@"{ParentFolder}\{Constants.FOLDER_MAP_PACKAGE}\{Constants.FOLDER_FIRE_STATISTICS}\{Constants.FILE_FIRE_REPORT_LOG}";
                     CmdFireReportLogEnabled = File.Exists(_strFireReportLogFile);
+
+                    _strLulccDataLogFile = $@"{ParentFolder}\{Constants.FOLDER_MAP_PACKAGE}\{Constants.FOLDER_LULCC_STATISTICS}\{Constants.FILE_LULCC_DATA_LOG}";
+                    CmdLulccDataLogEnabled = File.Exists(_strLulccDataLogFile);
+
+                    _strLulccReportLogFile = $@"{ParentFolder}\{Constants.FOLDER_MAP_PACKAGE}\{Constants.FOLDER_LULCC_STATISTICS}\{Constants.FILE_LULCC_REPORT_LOG}";
+                    CmdLulccReportLogEnabled = File.Exists(_strLulccReportLogFile);
 
 
                     Names.Clear();
@@ -1419,7 +1487,8 @@ namespace bagis_pro
             if (!Publisher.Trim().Equals(strPublisher))
             {
                 Module1.Current.BagisSettings.Publisher = Publisher;
-                String json = JsonConvert.SerializeObject(Module1.Current.BagisSettings, Formatting.Indented);
+                String json = JsonConvert.SerializeObject(Module1.Current.BagisSettings, 
+                    Newtonsoft.Json.Formatting.Indented);
                 string strSettingsPath = GeneralTools.GetBagisSettingsPath();
                 File.WriteAllText(strSettingsPath, json);
             }
@@ -2970,14 +3039,14 @@ namespace bagis_pro
         private async void RunFireMapsImplAsync(object param)
         {
             // Make sure the maps_publish\fire_statistics folder exists under the selected folder
-            if (!Directory.Exists(Path.GetDirectoryName(_strFireMapsLogFile)))
+            if (!Directory.Exists(Path.GetDirectoryName(_strFireReportLogFile)))
             {
-                Directory.CreateDirectory(Path.GetDirectoryName(_strFireMapsLogFile));
+                Directory.CreateDirectory(Path.GetDirectoryName(_strFireReportLogFile));
             }
 
             // Create initial log entry
             string strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Starting fire maps " + "\r\n";
-            File.WriteAllText(_strFireMapsLogFile, strLogEntry);    // overwrite file if it exists
+            File.WriteAllText(_strFireReportLogFile, strLogEntry);    // overwrite file if it exists
 
             int intIncrementPeriods = 0;
             int overrideMinYear = _intMinYear;
@@ -3023,12 +3092,12 @@ namespace bagis_pro
                         Names[idxRow].AoiBatchStateText = AoiBatchState.Started.ToString();  // update gui
                         strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Creating fire map placeholder for " +
                             Names[idxRow].Name + "\r\n";
-                        File.AppendAllText(_strFireMapsLogFile, strLogEntry);       // append
+                        File.AppendAllText(_strFireReportLogFile, strLogEntry);       // append
                     }
                     else if (!Names[idxRow].AoiBatchStateText.Equals(AoiBatchState.Waiting.ToString()))
                     {
                         strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} Skipping fire map for {Names[idxRow].FilePath}. Required station information is missing.{System.Environment.NewLine}";
-                        File.AppendAllText(_strFireMapsLogFile, strLogEntry);
+                        File.AppendAllText(_strFireReportLogFile, strLogEntry);
                         continue;
                     }
                     else
@@ -3036,7 +3105,7 @@ namespace bagis_pro
                         Names[idxRow].AoiBatchStateText = AoiBatchState.Started.ToString();  // update gui
                         strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Starting fire maps for " +
                             Names[idxRow].Name + "\r\n";
-                        File.AppendAllText(_strFireMapsLogFile, strLogEntry);       // append
+                        File.AppendAllText(_strFireReportLogFile, strLogEntry);       // append
                     }
                     // Set current AOI
                     Aoi oAoi = await GeneralTools.SetAoiAsync(aoiFolder, Names[idxRow]);
@@ -3404,13 +3473,105 @@ namespace bagis_pro
                     Names[idxRow].AoiBatchStateText = AoiBatchState.Completed.ToString();  // update gui
                     strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Finished generate maps export for " +
                         Names[idxRow].Name + "\r\n";
-                    File.AppendAllText(_strFireMapsLogFile, strLogEntry);       // append
+                    File.AppendAllText(_strFireReportLogFile, strLogEntry);       // append
                 }
             }
             strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Completed fire maps generation" + "\r\n";
-            File.AppendAllText(_strFireMapsLogFile, strLogEntry);       // append
+            File.AppendAllText(_strFireReportLogFile, strLogEntry);       // append
             CmdFireReportEnabled = false;
             MessageBox.Show("Fire maps have been generated!");
+        }
+
+        private RelayCommand _runLulccData;
+        public ICommand CmdLulccData
+        {
+            get
+            {
+                if (_runLulccData == null)
+                    _runLulccData = new RelayCommand(RunLulccDataImplAsync, () => true);
+                return _runLulccData;
+            }
+        }
+        private async void RunLulccDataImplAsync(object param)
+        {
+            if (!Clip_Irr_Checked && !Clip_Nlcd_Checked)
+            {
+                MessageBox.Show("No layer types selected to clip. Process stopped!", "BAGIS-Pro");
+                return;
+            }
+
+            // Make sure the maps_publish\fire_statistics folder exists under the selected folder
+            string strParentPath = Path.GetDirectoryName(Path.GetDirectoryName(_strFireDataLogFile));
+            if (!Directory.Exists(strParentPath))
+            {
+                Directory.CreateDirectory(strParentPath);
+            }
+            if (!Directory.Exists(Path.GetDirectoryName(_strFireDataLogFile)))
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(_strFireDataLogFile));
+            }
+
+
+            string strWsUri = Module1.Current.DataSources[Constants.DATA_TYPE_IRRIGATED_RECENT].uri;
+            string displayName = "tempLulcc";
+            Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
+            await QueuedTask.Run(() =>
+            {
+                try
+                {
+                    var rasterLayerCreationParams = new RasterLayerCreationParams(new Uri(strWsUri))
+                    {
+                        Name = displayName,
+                        IsVisible = false
+                    };
+                    //Create the raster layer on the active map and set the visibility
+                    LayerFactory.Instance.CreateLayer<RasterLayer>(rasterLayerCreationParams, oMap);
+                }
+                catch (Exception e)
+                {
+                    Module1.Current.ModuleLogManager.LogError(nameof(RunLulccDataImplAsync),
+                        $@"An error occurred while trying to create the raster layer. Exception: {e.Message}");
+                }
+            });
+            string startYear = "";
+            string endYear = "";
+            await QueuedTask.Run(() =>
+            {
+                // 1. Get your active Image Service Layer
+                var imageLayer = oMap.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(displayName, StringComparison.CurrentCultureIgnoreCase));
+                if (imageLayer == null) return;
+                // 2. Check if the layer supports and provides metadata
+                if (imageLayer.SupportsMetadata)
+                {
+                    // 3. Retrieve the metadata as an XML string
+                    string metadataXml = imageLayer.GetMetadata();
+                    // 4. Parse the XML to extract specific metadata tags
+                    try
+                    {
+                        XDocument xmlDoc = XDocument.Parse(metadataXml);
+
+                        // Use LINQ to XML to locate specific data elements
+                        // Note: The XPaths may vary depending on your organization's Metadata style
+                        foreach (XElement element in xmlDoc.Descendants("keyword"))
+                        {
+                            if (element.ToString().IndexOf("bagisYearStart") > -1)
+                            {
+                                string[] arrPieces = element.Value.Split(':');
+                                if (arrPieces.Length == 2)
+                                {
+                                    startYear = arrPieces[1];
+                                }
+                            }
+                        }
+
+                        // Output or use the parsed metadata...
+                    }
+                    catch (Exception ex)
+                    {
+                        // Handle XML parsing errors
+                    }
+                }
+            });
         }
         private string GetMtbsMapName(int year)
         {
