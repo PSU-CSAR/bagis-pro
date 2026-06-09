@@ -81,7 +81,7 @@ namespace bagis_pro
                         0.5, 2.5, 8.0, 10.5);
 
                     //remove existing layers from map frame
-                    await MapTools.RemoveLayersfromMapFrame(Constants.MAPS_DEFAULT_MAP_NAME, Constants.MAPS_ALL_ARRAY);
+                    await MapTools.RemoveLayersfromMapFrameAsync(Constants.MAPS_DEFAULT_MAP_NAME, Constants.MAPS_ALL_ARRAY);
 
                     //retrieve layer symbology files from portal if needed
                     success = await GetSystemFilesFromPortalAsync();
@@ -865,7 +865,7 @@ namespace bagis_pro
             return expandedExtent;
         }
 
-        public static async Task RemoveLayersfromMapFrame(string mapName, string[] arrLayersToRemove)
+        public static async Task RemoveLayersfromMapFrameAsync(string mapName, string[] arrLayersToRemove)
         {
             await QueuedTask.Run(() =>
             {
@@ -4186,7 +4186,7 @@ namespace bagis_pro
                         0.5, 2.5, 8.0, 10.5);
 
                     //remove existing layers from map frame
-                    await MapTools.RemoveLayersfromMapFrame(Constants.MAPS_FIRE_MAP_NAME, Constants.MAPS_FIRE_ARRAY);
+                    await MapTools.RemoveLayersfromMapFrameAsync(Constants.MAPS_FIRE_MAP_NAME, Constants.MAPS_FIRE_ARRAY);
                     //remove mtbs layers
                     Regex regexMtbs = new Regex(@"^MTBS_|^MTBS "); // ^ anchors the pattern to the start
                     await QueuedTask.Run(() =>

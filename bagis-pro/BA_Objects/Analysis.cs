@@ -57,6 +57,10 @@ namespace bagis_pro.BA_Objects
         public string WinterEndMonth;
         public double SeasonalPrecipMax = 100;
         public double SeasonalPrecipMin = 0;
+        public string IrrCurrentYearStart = "9998";
+        public string IrrCurrentYearEnd = "9999";
+        public string IrrHistoryYearStart = "9998";
+        public string IrrHistoryYearEnd = "9999";
         public DateTime DateBagisSettingsConverted;
         public string DateCreatedText
         {

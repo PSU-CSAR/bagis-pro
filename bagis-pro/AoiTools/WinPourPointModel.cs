@@ -37,7 +37,7 @@ namespace bagis_pro.AoiTools
 
             // Load flow accumulation raster as a reference
             string[] arrFlow = { Constants.FILE_FLOW_ACCUMULATION };
-            await MapTools.RemoveLayersfromMapFrame(Constants.MAPS_DEFAULT_MAP_NAME, arrFlow);
+            await MapTools.RemoveLayersfromMapFrameAsync(Constants.MAPS_DEFAULT_MAP_NAME, arrFlow);
             string surfacesGdbPath = GeodatabaseTools.GetGeodatabasePath(Module1.Current.BasinFolderBase, GeodatabaseNames.Surfaces);
             BA_ReturnCode success = await MapTools.DisplayFlowAccumLayerAsync(Constants.MAPS_DEFAULT_MAP_NAME,$@"{surfacesGdbPath}\{Constants.FILE_FLOW_ACCUMULATION}", Constants.FILE_FLOW_ACCUMULATION);
 

@@ -206,7 +206,7 @@ namespace bagis_pro.AoiTools
             }
             // Delete graphics layer
             string[] arrRemove = { Constants.MAPS_POURPOINT_LAYER };
-            await MapTools.RemoveLayersfromMapFrame(Constants.MAPS_DEFAULT_MAP_NAME, arrRemove);
+            await MapTools.RemoveLayersfromMapFrameAsync(Constants.MAPS_DEFAULT_MAP_NAME, arrRemove);
                 await QueuedTask.Run(() =>
                 {
                     status.Progressor.Value = 0;

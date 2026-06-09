@@ -127,6 +127,9 @@
         public const string FILE_FIRE_HISTORY = "firehistory";
         public const string FILE_FIRE_CURRENT = "firecurrent";
         public const string FILE_NIFC_FIRE = "nifcfire";
+        public const string FILE_IRR_HISTORICAL = "irrmapper_historical";
+        public const string FILE_IRR_CURRENT = "irrmapper_current";
+        public const string FILE_IRR_CHANGE = "irrmapper_change";
         public const string FILE_EXPORT_MAP_ELEV_PDF = "elevation_distribution.pdf";
         public const string FILE_EXPORT_MAP_SNOTEL_PDF = "map_elevation_snotel.pdf";
         public const string FILE_EXPORT_MAP_SCOS_PDF = "map_elevation_sc.pdf";
@@ -349,7 +352,7 @@
         public const string DATA_TYPE_SOURCE_DEM_CLIP = "DEM Clip Source";
         public const string DATA_TYPE_SOURCE_POURPOINT = "Pourpoint Source";    //Note: This is not really a data source
         public const string DATA_TYPE_IRRIGATED_HISTORICAL = "Irrigated Historical";
-        public const string DATA_TYPE_IRRIGATED_RECENT = "Irrigated Recent";
+        public const string DATA_TYPE_IRRIGATED_CURRENT = "Irrigated Current";
 
         public const int VALUE_NO_DATA_9999 = -9999;
         public const string VALUE_NO_DATA = "NoData";

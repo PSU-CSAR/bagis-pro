@@ -118,6 +118,7 @@ namespace bagis_pro
         private bool _cmdFireReportLogEnabled = false;
         private bool _cmdFireReportEnabled = false;
         private bool _cmdFireDataLogEnabled = false;
+        private bool _lulccDataEnabled = false;
         private bool _cmdLulccReportLogEnabled = false;
         private bool _cmdLulccReportEnabled = false;
         private bool _cmdLulccDataLogEnabled = false;
@@ -252,6 +253,14 @@ namespace bagis_pro
             set
             {
                 SetProperty(ref _fireDataEnabled, value, () => FireDataEnabled);
+            }
+        }
+        public bool LulccDataEnabled
+        {
+            get { return _lulccDataEnabled; }
+            set
+            {
+                SetProperty(ref _lulccDataEnabled, value, () => LulccDataEnabled);
             }
         }
         public bool CmdRunEnabled
@@ -706,6 +715,7 @@ namespace bagis_pro
                         CmdToggleEnabled = true;
                         TasksEnabled = true;
                         CmdGenStatisticsEnabled = true;
+                        LulccDataEnabled = true;
                     }
                     else
                     {
@@ -718,6 +728,7 @@ namespace bagis_pro
                         CmdToggleEnabled = false;
                         TasksEnabled = false;
                         FireDataEnabled = false;
+                        LulccDataEnabled = true;
                         CmdGenStatisticsEnabled = false;
                     }
                     CmdFireReportEnabled = false;
@@ -3501,77 +3512,234 @@ namespace bagis_pro
             }
 
             // Make sure the maps_publish\fire_statistics folder exists under the selected folder
-            string strParentPath = Path.GetDirectoryName(Path.GetDirectoryName(_strFireDataLogFile));
+            string strParentPath = Path.GetDirectoryName(Path.GetDirectoryName(_strLulccDataLogFile));
             if (!Directory.Exists(strParentPath))
             {
                 Directory.CreateDirectory(strParentPath);
             }
-            if (!Directory.Exists(Path.GetDirectoryName(_strFireDataLogFile)))
+            if (!Directory.Exists(Path.GetDirectoryName(_strLulccDataLogFile)))
             {
-                Directory.CreateDirectory(Path.GetDirectoryName(_strFireDataLogFile));
+                Directory.CreateDirectory(Path.GetDirectoryName(_strLulccDataLogFile));
             }
+            // Create initial log entry
+            string strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Starting lulcc data " + "\r\n";
+            File.WriteAllText(_strLulccDataLogFile, strLogEntry);    // overwrite file if it exists
+            var oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
 
+            // Reset batch states
+            ResetAoiBatchStateText();
+            // Set status to waiting for selected AOIs
+            int intReturn = SetAoiWaitingText();
 
-            string strWsUri = Module1.Current.DataSources[Constants.DATA_TYPE_IRRIGATED_RECENT].uri;
-            string displayName = "tempLulcc";
-            Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
-            await QueuedTask.Run(() =>
+            for (int idxRow = 0; idxRow < Names.Count; idxRow++)
             {
-                try
+                if (Names[idxRow].AoiBatchIsSelected)
                 {
-                    var rasterLayerCreationParams = new RasterLayerCreationParams(new Uri(strWsUri))
+                    int errorCount = 0; // keep track of any non-fatal errors
+                    string aoiFolder = Names[idxRow].FilePath;
+                    if (!Names[idxRow].AoiBatchStateText.Equals(AoiBatchState.Waiting.ToString()))
                     {
-                        Name = displayName,
-                        IsVisible = false
-                    };
-                    //Create the raster layer on the active map and set the visibility
-                    LayerFactory.Instance.CreateLayer<RasterLayer>(rasterLayerCreationParams, oMap);
+                        strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} Skipping lulcc data for {Names[idxRow].FilePath}. Required station information is missing.{System.Environment.NewLine}";
+                        File.AppendAllText(_strLulccDataLogFile, strLogEntry);
+                        continue;
+                    }
+                    else
+                    {
+                        Names[idxRow].AoiBatchStateText = AoiBatchState.Started.ToString();  // update gui
+                        strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Starting lulcc data for " +
+                            Names[idxRow].Name + "\r\n";
+                        File.AppendAllText(_strLulccDataLogFile, strLogEntry);       // append
+                    }
+                    string strAoiFolder = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Aoi);
+                    // Set current AOI
+                    Aoi oAoi = await GeneralTools.SetAoiAsync(aoiFolder, Names[idxRow]);
+                    if (Module1.Current.CboCurrentAoi != null)
+                    {
+                        FrameworkApplication.Current.Dispatcher.Invoke(() =>
+                        {
+                            // Do something on the GUI thread
+                            Module1.Current.CboCurrentAoi.SetAoiName(oAoi.Name);
+                        });
+                    }
+                    //Clip nifc fire layers
+                    string strWsUri = Module1.Current.DataSources[Constants.DATA_TYPE_IRRIGATED_CURRENT].uri;
+                    Analysis oAnalysis = GeneralTools.GetAnalysisSettings(oAoi.FilePath);
+                    BA_ReturnCode success = BA_ReturnCode.UnknownError;
+                    if (Clip_Irr_Checked)
+                    {
+                        string strOutputFc = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Layers, true)
+                            + Constants.FILE_IRR_CURRENT;
+                        string strClipFile = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Aoi, true)
+                            + Constants.FILE_AOI_VECTOR;
+                        // Delete irr layers before starting clip
+                        string[] arrLayersToDelete = {$"{GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Layers, true)}{Constants.FILE_IRR_CURRENT}",
+                                                      $"{GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Layers, true)}{Constants.FILE_IRR_HISTORICAL}",
+                                                      $"{GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Analysis, true)}{Constants.FILE_IRR_CHANGE}"};
+                        for (int i = 0; i < arrLayersToDelete.Length; i++)
+                        {
+                            Uri uri = new Uri(Path.GetDirectoryName(arrLayersToDelete[i]));
+                            string fName = Path.GetFileName(arrLayersToDelete[i]);
+                            if (await GeodatabaseTools.RasterDatasetExistsAsync(uri, fName))
+                            {
+                                success = await GeoprocessingTools.DeleteDatasetAsync(arrLayersToDelete[i]);
+                            }
+                        }
+                        // Add layer to map so we can read the tags
+                        string displayName = "tempIrrClip";
+                        await QueuedTask.Run(() =>
+                        {
+                            try
+                            {
+                                var rasterLayerCreationParams = new RasterLayerCreationParams(new Uri(strWsUri))
+                                {
+                                    Name = displayName,
+                                    IsVisible = false
+                                };
+                                //Create the raster layer on the active map and set the visibility
+                                LayerFactory.Instance.CreateLayer<RasterLayer>(rasterLayerCreationParams, oMap);
+                            }
+                            catch (Exception e)
+                            {
+                                Module1.Current.ModuleLogManager.LogError(nameof(RunLulccDataImplAsync),
+                                    $@"An error occurred while trying to create the raster layer. Exception: {e.Message}");
+                                errorCount++;
+                                return;
+                            }
+                        });
+                        if (oAnalysis != null)
+                        {
+                            string[] arrReturn = await QueryIrrMetadataAsync(displayName);
+                            if (arrReturn[0] != null)
+                            {
+                                oAnalysis.IrrCurrentYearStart = arrReturn[0];
+                                oAnalysis.IrrCurrentYearEnd = arrReturn[1];
+                            }
+                            if (success == BA_ReturnCode.Success)
+                            {
+
+                                Layer imageLayer = oMap.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(displayName, StringComparison.CurrentCultureIgnoreCase));
+                                success = await AnalysisTools.ClipRasterFromLayerNoBufferAsync(oAoi.FilePath, strClipFile,
+                                    imageLayer, strOutputFc, Aoi.SnapRasterPath(oAoi.FilePath), CancelableProgressor.None);
+                                if (success != BA_ReturnCode.Success)
+                                {
+                                    Module1.Current.ModuleLogManager.LogError(nameof(RunLulccDataImplAsync),
+                                        $@"An error occurred when trying to read the clip the irr data. Skipping AOI!");
+                                    return;
+                                }
+                            }
+                            await MapTools.RemoveLayersfromMapFrameAsync(Constants.MAPS_DEFAULT_MAP_NAME, [displayName]);
+                            // Add historical layer
+                            strWsUri = Module1.Current.DataSources[Constants.DATA_TYPE_IRRIGATED_HISTORICAL].uri;
+                            strOutputFc = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Layers, true)
+                                + Constants.FILE_IRR_HISTORICAL;
+                            await QueuedTask.Run(() =>
+                            {
+                                try
+                                {
+                                    var rasterLayerCreationParams = new RasterLayerCreationParams(new Uri(strWsUri))
+                                    {
+                                        Name = displayName,
+                                        IsVisible = false
+                                    };
+                                    //Create the raster layer on the active map and set the visibility
+                                    LayerFactory.Instance.CreateLayer<RasterLayer>(rasterLayerCreationParams, oMap);
+                                }
+                                catch (Exception e)
+                                {
+                                    Module1.Current.ModuleLogManager.LogError(nameof(RunLulccDataImplAsync),
+                                        $@"An error occurred while trying to create the raster layer. Exception: {e.Message}");
+                                    errorCount++;
+                                    return;
+                                }
+                            });
+                            arrReturn = await QueryIrrMetadataAsync(displayName);
+                            if (arrReturn[0] != null)
+                            {
+                                oAnalysis.IrrHistoryYearStart = arrReturn[0];
+                                oAnalysis.IrrHistoryYearEnd = arrReturn[1];
+                            }
+                            if (success == BA_ReturnCode.Success)
+                            {
+
+                                Layer imageLayer = oMap.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(displayName, StringComparison.CurrentCultureIgnoreCase));
+                                success = await AnalysisTools.ClipRasterFromLayerNoBufferAsync(oAoi.FilePath, strClipFile,
+                                    imageLayer, strOutputFc, Aoi.SnapRasterPath(oAoi.FilePath), CancelableProgressor.None);
+                                if (success != BA_ReturnCode.Success)
+                                {
+                                    Module1.Current.ModuleLogManager.LogError(nameof(RunLulccDataImplAsync),
+                                        $@"An error occurred when trying to read the clip the irr data. Skipping AOI!");
+                                    return;
+                                }
+                            }
+                            await MapTools.RemoveLayersfromMapFrameAsync(Constants.MAPS_DEFAULT_MAP_NAME, [displayName]);
+                            success = GeneralTools.SaveAnalysisSettings(oAoi.FilePath, oAnalysis);
+                        }
+                        else
+                        {
+                            MessageBox.Show("The analysis.xml settings could not be found. Process halted!", "Bagis-Pro");
+                            Module1.Current.ModuleLogManager.LogError(nameof(RunLulccDataImplAsync),
+                                $@"The analysis.xml settings could not be found. Skipping AOI!");
+                            return;
+                        }
+
+                    }
                 }
-                catch (Exception e)
-                {
-                    Module1.Current.ModuleLogManager.LogError(nameof(RunLulccDataImplAsync),
-                        $@"An error occurred while trying to create the raster layer. Exception: {e.Message}");
-                }
-            });
-            string startYear = "";
-            string endYear = "";
+            }
+        }
+
+        private async Task<string[]> QueryIrrMetadataAsync(string displayName)
+        {
+            var oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
+            string[] arrReturn = new string[2];
             await QueuedTask.Run(() =>
             {
                 // 1. Get your active Image Service Layer
-                var imageLayer = oMap.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(displayName, StringComparison.CurrentCultureIgnoreCase));
-                if (imageLayer == null) return;
-                // 2. Check if the layer supports and provides metadata
-                if (imageLayer.SupportsMetadata)
+                Layer imageLayer = oMap.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(displayName, StringComparison.CurrentCultureIgnoreCase));
+                if (imageLayer == null)
                 {
-                    // 3. Retrieve the metadata as an XML string
-                    string metadataXml = imageLayer.GetMetadata();
-                    // 4. Parse the XML to extract specific metadata tags
-                    try
+                    Module1.Current.ModuleLogManager.LogError(nameof(QueryIrrMetadataAsync),
+                        $@"Could not find imagelayer!");
+                }
+                // 2. Check if the layer supports and provides metadata
+                if ( imageLayer != null && imageLayer.SupportsMetadata)
                     {
-                        XDocument xmlDoc = XDocument.Parse(metadataXml);
-
-                        // Use LINQ to XML to locate specific data elements
-                        // Note: The XPaths may vary depending on your organization's Metadata style
-                        foreach (XElement element in xmlDoc.Descendants("keyword"))
+                        // 3. Retrieve the metadata as an XML string
+                        string metadataXml = imageLayer.GetMetadata();
+                        // 4. Parse the XML to extract specific metadata tags
+                        try
                         {
-                            if (element.ToString().IndexOf("bagisYearStart") > -1)
+                            XDocument xmlDoc = XDocument.Parse(metadataXml);
+                            // Use LINQ to XML to locate specific data elements
+                            // Note: The XPaths may vary depending on your organization's Metadata style
+                            foreach (XElement element in xmlDoc.Descendants("keyword"))
                             {
-                                string[] arrPieces = element.Value.Split(':');
-                                if (arrPieces.Length == 2)
+                                if (element.ToString().IndexOf("bagisYearStart") > -1)
                                 {
-                                    startYear = arrPieces[1];
+                                    string[] arrPieces = element.Value.Split(':');
+                                    if (arrPieces.Length == 2)
+                                    {
+                                    arrReturn[0] = arrPieces[1];                                        
+                                    }
+                                }
+                                if (element.ToString().IndexOf("bagisYearEnd") > -1)
+                                {
+                                    string[] arrPieces = element.Value.Split(':');
+                                    if (arrPieces.Length == 2)
+                                    {
+                                    arrReturn[1] = arrPieces[1];
+                                }
                                 }
                             }
                         }
-
-                        // Output or use the parsed metadata...
+                        catch (Exception)
+                        {
+                            // Handle XML parsing errors
+                            Module1.Current.ModuleLogManager.LogError(nameof(QueryIrrMetadataAsync),
+                                $@"An error occurred when trying to read the image service metadata. Skipping AOI!");
+                        }
                     }
-                    catch (Exception ex)
-                    {
-                        // Handle XML parsing errors
-                    }
-                }
-            });
+                });
+            return arrReturn;
         }
         private string GetMtbsMapName(int year)
         {
