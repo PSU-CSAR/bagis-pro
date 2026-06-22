@@ -3567,8 +3567,10 @@ namespace bagis_pro
                     BA_ReturnCode success = BA_ReturnCode.UnknownError;
                     if (Clip_Irr_Checked)
                     {
-                        string strOutputFc = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Layers, true)
+                        string strIrrCurrent = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Layers, true)
                             + Constants.FILE_IRR_CURRENT;
+                        string strIrrHistorical = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Layers, true)
+                            + Constants.FILE_IRR_HISTORICAL;
                         string strClipFile = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Aoi, true)
                             + Constants.FILE_AOI_VECTOR;
                         // Delete irr layers before starting clip
@@ -3619,7 +3621,7 @@ namespace bagis_pro
 
                                 Layer imageLayer = oMap.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(displayName, StringComparison.CurrentCultureIgnoreCase));
                                 success = await AnalysisTools.ClipRasterFromLayerNoBufferAsync(oAoi.FilePath, strClipFile,
-                                    imageLayer, strOutputFc, Aoi.SnapRasterPath(oAoi.FilePath), CancelableProgressor.None);
+                                    imageLayer, strIrrCurrent, Aoi.SnapRasterPath(oAoi.FilePath), CancelableProgressor.None);
                                 if (success != BA_ReturnCode.Success)
                                 {
                                     Module1.Current.ModuleLogManager.LogError(nameof(RunLulccDataImplAsync),
@@ -3630,7 +3632,7 @@ namespace bagis_pro
                             await MapTools.RemoveLayersfromMapFrameAsync(Constants.MAPS_DEFAULT_MAP_NAME, [displayName]);
                             // Add historical layer
                             strWsUri = Module1.Current.DataSources[Constants.DATA_TYPE_IRRIGATED_HISTORICAL].uri;
-                            strOutputFc = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Layers, true)
+                            strIrrHistorical = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Layers, true)
                                 + Constants.FILE_IRR_HISTORICAL;
                             await QueuedTask.Run(() =>
                             {
@@ -3663,7 +3665,7 @@ namespace bagis_pro
 
                                 Layer imageLayer = oMap.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(displayName, StringComparison.CurrentCultureIgnoreCase));
                                 success = await AnalysisTools.ClipRasterFromLayerNoBufferAsync(oAoi.FilePath, strClipFile,
-                                    imageLayer, strOutputFc, Aoi.SnapRasterPath(oAoi.FilePath), CancelableProgressor.None);
+                                    imageLayer, strIrrHistorical, Aoi.SnapRasterPath(oAoi.FilePath), CancelableProgressor.None);
                                 if (success != BA_ReturnCode.Success)
                                 {
                                     Module1.Current.ModuleLogManager.LogError(nameof(RunLulccDataImplAsync),
@@ -3681,12 +3683,39 @@ namespace bagis_pro
                                 $@"The analysis.xml settings could not be found. Skipping AOI!");
                             return;
                         }
+                        if (success == BA_ReturnCode.Success)
+                        {
+                            // define the map algebra expression
+                            string maExpression = String.Format("\"{0}\" + (\"{1}\" * 10 )", strIrrHistorical, strIrrCurrent);
+                            string outRaster = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Analysis, true) + Constants.FILE_IRR_CHANGE;
+                            // make the input parameter values array
+                            var valueArray = Geoprocessing.MakeValueArray(maExpression, outRaster);
+                            var environments = Geoprocessing.MakeEnvironmentArray(workspace: GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Analysis));
+                            // execute the Raster calculator tool to process the map algebra expression
+                            var gpResult = await Geoprocessing.ExecuteToolAsync("RasterCalculator_sa", valueArray, environments,
+                                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                            if (gpResult.IsFailed)
+                            {
+                                Module1.Current.ModuleLogManager.LogDebug(nameof(RunLulccDataImplAsync),
+                                    "Raster Calculator failed for " + outRaster + "!");
+                                foreach (var objMessage in gpResult.Messages)
+                                {
+                                    IGPMessage msg = (IGPMessage)objMessage;
+                                    Module1.Current.ModuleLogManager.LogError(nameof(RunLulccDataImplAsync),
+                                        msg.Text);
+                                }
+                                success = BA_ReturnCode.OtherError;
+                            }
+                            else
+                            {
+                                success = BA_ReturnCode.Success;
+                            }
+                        }
 
                     }
                 }
             }
         }
-
         private async Task<string[]> QueryIrrMetadataAsync(string displayName)
         {
             var oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
