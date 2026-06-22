@@ -732,6 +732,7 @@ namespace bagis_pro
                         CmdGenStatisticsEnabled = false;
                     }
                     CmdFireReportEnabled = false;
+                    CmdLulccReportEnabled = false;
 
                     // Query minimum available fire data year from webservice; It's here because it's an async call
                     if (AnnualEndYear < 1)   // Only do this the first time an AOI folder is selected
@@ -1309,7 +1310,6 @@ namespace bagis_pro
                 });
             }
         }
-
         public ICommand CmdVerifyForFire
         {
             get
@@ -2743,7 +2743,6 @@ namespace bagis_pro
             strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Fire data generation complete!! \r\n";
             File.AppendAllText(_strFireDataLogFile, strLogEntry);       // append
         }
-
         private async void RunFireReportImplAsync(object param)
         {
             // Make sure the maps_publish folder exists under the selected folder
@@ -3492,6 +3491,33 @@ namespace bagis_pro
             CmdFireReportEnabled = false;
             MessageBox.Show("Fire maps have been generated!");
         }
+        public ICommand CmdVerifyForLulcc
+        {
+            get
+            {
+                return new RelayCommand(async () =>
+                {
+                    ResetAoiBatchStateText();
+                    for (int idxRow = 0; idxRow < Names.Count; idxRow++)
+                    {
+                        Aoi oAoi = Names[idxRow];
+                        // Check for fire.gdb and data before continuing
+                        string strAnalysisGdbPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis);
+                        bool bHasIrrData = false;
+                        if (await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(strAnalysisGdbPath), Constants.FILE_IRR_CHANGE))
+                        {
+                            bHasIrrData = true;
+                        }
+                        if (!bHasIrrData)
+                        {
+                            Names[idxRow].AoiBatchStateText = AoiBatchState.MissingIrrData.ToString();  // update gui
+                            continue;
+                        }
+                    }
+                    CmdLulccReportEnabled = true;
+                });
+            }
+        }
 
         private RelayCommand _runLulccData;
         public ICommand CmdLulccData
@@ -3616,18 +3642,15 @@ namespace bagis_pro
                                 oAnalysis.IrrCurrentYearStart = arrReturn[0];
                                 oAnalysis.IrrCurrentYearEnd = arrReturn[1];
                             }
-                            if (success == BA_ReturnCode.Success)
+                            Layer imageLayer = oMap.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(displayName, StringComparison.CurrentCultureIgnoreCase));
+                            success = await AnalysisTools.ClipRasterFromLayerNoBufferAsync(oAoi.FilePath, strClipFile,
+                                imageLayer, strIrrCurrent, Aoi.SnapRasterPath(oAoi.FilePath), CancelableProgressor.None);
+                            if (success != BA_ReturnCode.Success)
                             {
-
-                                Layer imageLayer = oMap.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(displayName, StringComparison.CurrentCultureIgnoreCase));
-                                success = await AnalysisTools.ClipRasterFromLayerNoBufferAsync(oAoi.FilePath, strClipFile,
-                                    imageLayer, strIrrCurrent, Aoi.SnapRasterPath(oAoi.FilePath), CancelableProgressor.None);
-                                if (success != BA_ReturnCode.Success)
-                                {
-                                    Module1.Current.ModuleLogManager.LogError(nameof(RunLulccDataImplAsync),
-                                        $@"An error occurred when trying to read the clip the irr data. Skipping AOI!");
-                                    return;
-                                }
+                                Module1.Current.ModuleLogManager.LogError(nameof(RunLulccDataImplAsync),
+                                    $@"An error occurred when trying to clip the irr data. Skipping AOI!");
+                                errorCount++;
+                                return;
                             }
                             await MapTools.RemoveLayersfromMapFrameAsync(Constants.MAPS_DEFAULT_MAP_NAME, [displayName]);
                             // Add historical layer
@@ -3663,13 +3686,14 @@ namespace bagis_pro
                             if (success == BA_ReturnCode.Success)
                             {
 
-                                Layer imageLayer = oMap.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(displayName, StringComparison.CurrentCultureIgnoreCase));
+                                imageLayer = oMap.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(displayName, StringComparison.CurrentCultureIgnoreCase));
                                 success = await AnalysisTools.ClipRasterFromLayerNoBufferAsync(oAoi.FilePath, strClipFile,
                                     imageLayer, strIrrHistorical, Aoi.SnapRasterPath(oAoi.FilePath), CancelableProgressor.None);
                                 if (success != BA_ReturnCode.Success)
                                 {
                                     Module1.Current.ModuleLogManager.LogError(nameof(RunLulccDataImplAsync),
-                                        $@"An error occurred when trying to read the clip the irr data. Skipping AOI!");
+                                        $@"An error occurred when trying to clip the irr data. Skipping AOI!");
+                                    errorCount++;
                                     return;
                                 }
                             }
@@ -3704,6 +3728,7 @@ namespace bagis_pro
                                     Module1.Current.ModuleLogManager.LogError(nameof(RunLulccDataImplAsync),
                                         msg.Text);
                                 }
+                                errorCount++;
                                 success = BA_ReturnCode.OtherError;
                             }
                             else
@@ -3711,7 +3736,20 @@ namespace bagis_pro
                                 success = BA_ReturnCode.Success;
                             }
                         }
-
+                    }
+                    if (success == BA_ReturnCode.Success && errorCount == 0)
+                    {
+                        Names[idxRow].AoiBatchStateText = AoiBatchState.Completed.ToString();  // update gui
+                        strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Lulcc data complete for " +
+                            Names[idxRow].Name + "\r\n";
+                        File.AppendAllText(_strLulccDataLogFile, strLogEntry);       // append
+                    }
+                    else
+                    {
+                        Names[idxRow].AoiBatchStateText = AoiBatchState.Failed.ToString();
+                        strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Lulcc data FAILED for " +
+                            Names[idxRow].Name + "\r\n";
+                        File.AppendAllText(_strLulccDataLogFile, strLogEntry);
                     }
                 }
             }
@@ -3769,6 +3807,178 @@ namespace bagis_pro
                     }
                 });
             return arrReturn;
+        }
+        private RelayCommand _runLulccReport;
+        public ICommand CmdLulccReport
+        {
+            get
+            {
+                if (_runLulccReport == null)
+                    _runLulccReport = new RelayCommand(RunLulccReportImplAsync, () => true);
+                return _runLulccReport;
+            }
+        }
+        private async void RunLulccReportImplAsync(object param)
+        {
+            // Make sure the maps_publish folder exists under the selected folder
+            // Make sure the maps_publish\fire_statistics folder exists under the selected folder
+            string strParentPath = Path.GetDirectoryName(Path.GetDirectoryName(_strLulccReportLogFile));
+            if (!Directory.Exists(strParentPath))
+            {
+                Directory.CreateDirectory(strParentPath);
+            }
+            if (!Directory.Exists(Path.GetDirectoryName(_strLulccReportLogFile)))
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(_strLulccReportLogFile));
+            }
+
+            // Create initial log entry
+            string strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Starting Lulcc report " + "\r\n";
+            File.WriteAllText(_strLulccReportLogFile, strLogEntry);    // overwrite file if it exists
+
+            int overrideMinYear = _intMinYear;
+            int overrideMaxYear = AnnualEndYear;
+            bool bAnnualStatistics = true;
+
+            string dateSuffix = DateTime.Now.ToString("MMddyyyy");
+            // Warn if there is existing output and give option to terminate
+            var dir = new DirectoryInfo($@"{Path.GetDirectoryName(_strLulccReportLogFile)}");
+            string strSearch = $@"irr_lands_statistics_{dateSuffix}.csv";
+            var fileEnum = dir.EnumerateFiles(strSearch);
+            if (fileEnum.Count() > 0)
+            {
+                System.Windows.MessageBoxResult res = MessageBox.Show("At least 1 irrigated lands statistics file exists in the output folder. Do you want to continue and overwrite these files?", "BAGIS-Pro",
+                    System.Windows.MessageBoxButton.YesNo);
+                if (res != System.Windows.MessageBoxResult.Yes)
+                {
+                    return;
+                }
+            }
+            string strCsvFile = $@"{Path.GetDirectoryName(_strLulccReportLogFile)}\{strSearch}";
+            if (File.Exists(strCsvFile))
+            {
+                try
+                {
+                    File.Delete(strCsvFile);
+                }
+                catch (Exception e)
+                {
+                    MessageBox.Show($@"Unable to overwrite {strCsvFile}. Report process stopped!");
+                    return;
+                }
+            }
+
+            string[] arrValidStatus = [AoiBatchState.HasReport.ToString(), AoiBatchState.MissingReport.ToString(), AoiBatchState.NoFire.ToString()];
+            //@ToDo: work on this when state model is better defined
+            for (int idxRow = 0; idxRow < Names.Count; idxRow++)
+            {
+                Aoi oAoi = Names[idxRow];
+                if (Names[idxRow].AoiBatchIsSelected && arrValidStatus.Contains(oAoi.AoiBatchStateText))
+                {
+                    oAoi.AoiBatchStateText = AoiBatchState.Waiting.ToString();
+                }
+            }
+
+            for (int idxRow = 0; idxRow < Names.Count; idxRow++)
+            {
+                if (Names[idxRow].AoiBatchIsSelected)
+                {
+                    string aoiFolder = Names[idxRow].FilePath;
+                    if (!Names[idxRow].AoiBatchStateText.Equals(AoiBatchState.Waiting.ToString()))
+                    {
+                        strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} Skipping fire report for {Names[idxRow].FilePath}. AOI not ready for reports.{System.Environment.NewLine}";
+                        File.AppendAllText(_strFireReportLogFile, strLogEntry);
+                        continue;
+                    }
+                    else
+                    {
+                        Names[idxRow].AoiBatchStateText = AoiBatchState.Started.ToString();  // update gui
+                        strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Starting fire statistics for " +
+                            Names[idxRow].Name + "\r\n";
+                        File.AppendAllText(_strFireReportLogFile, strLogEntry);       // append
+                    }
+                    // Set current AOI
+                    Aoi oAoi = await GeneralTools.SetAoiAsync(aoiFolder, Names[idxRow]);
+                    if (Module1.Current.CboCurrentAoi != null)
+                    {
+                        FrameworkApplication.Current.Dispatcher.Invoke(() =>
+                        {
+                            // Do something on the GUI thread
+                            Module1.Current.CboCurrentAoi.SetAoiName(oAoi.Name);
+                        });
+                    }
+
+                    Uri aoiUri = new Uri(GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi));
+                    Uri fireUri = new Uri(GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Fire));
+                    double aoiAreaSqMeters = await GeodatabaseTools.CalculateTotalPolygonAreaAsync(aoiUri, Constants.FILE_AOI_VECTOR, null);
+                    double cellSizeSqMeters = -1;
+                    for (int i = overrideMinYear; i <= overrideMaxYear; i++)
+                    {
+                        string strRasterName = GeneralTools.GetMtbsLayerFileName(i);
+                        Uri fullFireUri = new Uri($@"{fireUri.LocalPath}\{strRasterName}");
+                        if (await GeodatabaseTools.RasterDatasetExistsAsync(fireUri, strRasterName))
+                        {
+                            double dblTest = await GeodatabaseTools.GetCellSizeAsync(fullFireUri, WorkspaceType.Geodatabase);
+                            if (dblTest > 0)
+                            {
+                                cellSizeSqMeters = Math.Round(dblTest, 2);
+                                break;
+                            }
+                        }
+                    }
+
+                    IList<string> lstMissingMtbsYears = await GeodatabaseTools.QueryMissingMtbsRasters(oAoi.FilePath, overrideMinYear, overrideMaxYear);
+                    if (bAnnualStatistics)
+                    {
+                        for (int i = overrideMinYear; i <= overrideMaxYear; i++)
+                        {
+                            BA_ReturnCode success = BA_ReturnCode.WriteError;
+                            if (!File.Exists(strCsvFile))
+                            {
+                                success = this.InitAnnualCsv(i, strCsvFile);
+                            }
+                            else
+                            {
+                                success = BA_ReturnCode.Success;
+                            }
+                            if (success == BA_ReturnCode.Success)
+                            {
+                                IList<string> lstAnnualElements = await AnalysisTools.GenerateAnnualFireStatisticsList(oAoi, _strFireReportLogFile,
+                                    aoiAreaSqMeters, cellSizeSqMeters, i, overrideMaxYear, lstMissingMtbsYears);
+                                if (lstAnnualElements.Count > 0)
+                                {
+                                    try
+                                    {
+                                        // Adds new content to file
+                                        StringBuilder sb = new StringBuilder();
+                                        foreach (var item in lstAnnualElements)
+                                        {
+                                            sb.Append($@"{item}{_separator}");
+                                        }
+                                        using (StreamWriter sw = File.AppendText(strCsvFile))
+                                        {
+                                            sw.WriteLine(sb.ToString());
+                                        }
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} Data could not be written to the {strCsvFile} file!{System.Environment.NewLine}";
+                                        File.AppendAllText(_strFireReportLogFile, strLogEntry);
+                                        return;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    Names[idxRow].AoiBatchStateText = AoiBatchState.Completed.ToString();  // update gui
+                    strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Finished generating Lulcc statistics export for " +
+                        Names[idxRow].Name + "\r\n";
+                    File.AppendAllText(_strLulccReportLogFile, strLogEntry);       // append
+                }
+            }
+            CmdLulccReportEnabled = false;
+            MessageBox.Show("Lulcc statistics have been generated!");
         }
         private string GetMtbsMapName(int year)
         {

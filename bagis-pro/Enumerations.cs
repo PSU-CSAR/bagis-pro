@@ -125,7 +125,9 @@ namespace bagis_pro
         MissingFireData,
         MissingReport,
         HasReport,
-        NoFire
+        NoFire,
+        MissingIrrData,
+        HasIrrReport
     }
 
     public enum ReportType
