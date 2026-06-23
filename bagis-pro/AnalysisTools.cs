@@ -9,23 +9,15 @@ using ArcGIS.Desktop.Editing;
 using ArcGIS.Desktop.Framework.Dialogs;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
 using ArcGIS.Desktop.Internal.Catalog;
-using ArcGIS.Desktop.Internal.Catalog.PropertyPages.NetworkDataset;
-using ArcGIS.Desktop.Internal.Core.Conda;
-using ArcGIS.Desktop.Internal.GeoProcessing;
-using ArcGIS.Desktop.Layouts;
 using ArcGIS.Desktop.Mapping;
 using bagis_pro.BA_Objects;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
-using System.Windows.Ink;
 
 namespace bagis_pro
 {
@@ -8214,6 +8206,70 @@ namespace bagis_pro
             return lstElements;
         }
 
+        public static async Task<IList<string>> GenerateIrrStatisticsList(BA_Objects.Aoi oAoi, string strLogFile, double aoiAreaSqMeters,
+        double dblCellSize)
+        {
+            IList<string> lstElements = new List<string>();
+            lstElements.Add(oAoi.StationTriplet);   // Station triplet
+            lstElements.Add(oAoi.Name);  //AOI Name
+
+            const string INACTIVE = "1";
+            const string IRRIGATED = "11";
+            const string NEWLY_IRRIGATED = "10";
+
+            Uri uriAnalysis = new Uri(GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis));
+            QueryFilter queryFilter = new QueryFilter();
+            StringBuilder sb = new StringBuilder();
+            sb.Append(INACTIVE + ",");
+            sb.Append(IRRIGATED + ",");
+            sb.Append(NEWLY_IRRIGATED);
+            string strWhere = $@"{Constants.FIELD_VALUE} IN ({sb.ToString().TrimEnd(',')})";
+            queryFilter.WhereClause = strWhere;
+            IDictionary<string, long> dictReturn = await GeodatabaseTools.RasterTableToDictionaryAsync(uriAnalysis, Constants.FILE_IRR_CHANGE, queryFilter);
+            double dblIrrigated = 0;
+            double dblNewlyIrrigated = 0;
+            double dblInactiveIrrigated = 0;
+            if (dictReturn.ContainsKey(IRRIGATED))
+            {
+                dblIrrigated = Convert.ToDouble(dictReturn[IRRIGATED]);
+            }
+            if (dictReturn.ContainsKey(NEWLY_IRRIGATED))
+            {
+                dblNewlyIrrigated = Convert.ToDouble(dictReturn[NEWLY_IRRIGATED]);
+            }
+            if (dictReturn.ContainsKey(INACTIVE))
+            {
+                dblInactiveIrrigated = Convert.ToDouble(dictReturn[INACTIVE]);
+            }
+            double dblTotIrrigatedSqMeters = (dblIrrigated + dblNewlyIrrigated) * dblCellSize * dblCellSize;
+            double dblTotIrrigatedSqMiles = Math.Round(AreaUnit.SquareMeters.ConvertTo(dblTotIrrigatedSqMeters, AreaUnit.SquareMiles), 2);
+            lstElements.Add(Convert.ToString(dblTotIrrigatedSqMiles));
+            double dblTotIrrigatedAreaPct = 0;
+            if (dblTotIrrigatedSqMeters > 0)
+            {
+                dblTotIrrigatedAreaPct = Math.Round(dblTotIrrigatedSqMeters / aoiAreaSqMeters * 100, 3);
+            }
+            lstElements.Add(Convert.ToString(dblTotIrrigatedAreaPct));
+            double dblNewIrrigatedSqMeters = dblNewlyIrrigated * dblCellSize * dblCellSize;
+            double dblNewIrrigatedSqMiles = Math.Round(AreaUnit.SquareMeters.ConvertTo(dblNewIrrigatedSqMeters, AreaUnit.SquareMiles), 2);
+            lstElements.Add(Convert.ToString(dblNewIrrigatedSqMiles));
+            double dblNewIrrigatedAreaPct = 0;
+            if (dblNewIrrigatedSqMeters > 0)
+            {
+                dblNewIrrigatedAreaPct = Math.Round(dblNewIrrigatedSqMeters / aoiAreaSqMeters * 100, 3);
+            }
+            lstElements.Add(Convert.ToString(dblNewIrrigatedAreaPct));
+            double dblInactiveIrrigatedSqMeters = dblInactiveIrrigated * dblCellSize * dblCellSize;
+            double dblInactiveIrrigatedSqMiles = Math.Round(AreaUnit.SquareMeters.ConvertTo(dblInactiveIrrigatedSqMeters, AreaUnit.SquareMiles), 2);
+            lstElements.Add(Convert.ToString(dblInactiveIrrigatedSqMiles));
+            double dblInactiveIrrigatedAreaPct = 0;
+            if (dblInactiveIrrigatedSqMeters > 0)
+            {
+                dblInactiveIrrigatedAreaPct = Math.Round(dblInactiveIrrigatedSqMeters / aoiAreaSqMeters * 100, 3);
+            }
+            lstElements.Add(Convert.ToString(dblInactiveIrrigatedAreaPct));
+            return lstElements;
+        }
         public static async Task<IList<string>> QueryMtbsAreasByIncrementAsync(string aoiPath, Interval oInterval, double aoiAreaSqMeters,
             double dblMtbsCellSize, IList<string> lstMtbsMissingYears)
         {

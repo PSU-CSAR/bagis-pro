@@ -462,7 +462,7 @@
                             <StackPanel Grid.Row="3" Orientation="Horizontal" Grid.ColumnSpan="3">
                                 <Button x:Name="btnLulccReportLog" Content="View Log" HorizontalAlignment="Left" VerticalAlignment="Center" Width="60" IsEnabled="{Binding CmdLulccReportLogEnabled}" Command="{Binding CmdFireReportLog}" Margin="0, 0, 5, 0"/>
                                 <Button x:Name="btnLulccReport" Content="1. Generate Report" Width="105" VerticalAlignment="Center" IsEnabled="{Binding CmdLulccReportEnabled}" Command="{Binding CmdLulccReport}" Margin="5, 0, 5, 0"/>
-                                <Button x:Name="btnLulccMaps" Content="2. Generate Maps" HorizontalAlignment="Left" VerticalAlignment="Center" Width="100" IsEnabled="{Binding CmdLulccReportEnabled}" Command="{Binding CmdLulccMaps}" Margin="5, 0, 5, 0"/>
+                                <Button x:Name="btnLulccMaps" Content="2. Generate Maps" HorizontalAlignment="Left" VerticalAlignment="Center" Width="100" IsEnabled="{Binding CmdLulccMapEnabled}" Command="{Binding CmdLulccMaps}" Margin="5, 0, 5, 0"/>
                             </StackPanel>
 
                         </Grid>
