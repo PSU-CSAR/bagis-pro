@@ -3164,7 +3164,7 @@ namespace bagis_pro
                         strExportPrefix = Constants.VALUE_NOT_SPECIFIED;
                         
                     }
-                    string strFireReportPath = $@"{Module1.Current.Aoi.FilePath}\{Constants.FOLDER_MAP_PACKAGE}\{Constants.FOLDER_FIRE_STATISTICS}\{strExportPrefix}{Constants.FILE_REPORT_SUFFIX_PDF}";
+                    string strFireReportPath = $@"{Module1.Current.Aoi.FilePath}\{Constants.FOLDER_MAP_PACKAGE}\{Constants.FOLDER_FIRE_STATISTICS}\{strExportPrefix}{Constants.FILE_FIRE_REPORT_SUFFIX_PDF}";
                     // Make sure output directory exists
                     if (!Directory.Exists(Path.GetDirectoryName(strFireReportPath)))
                     {
@@ -3246,7 +3246,7 @@ namespace bagis_pro
                             long lngCount = await GeodatabaseTools.CountFeaturesWithFilterAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Fire)),
                                 Constants.FILE_NIFC_FIRE, strWhere);
                             bool bHasMtbsLayer = false;
-                            Module1.Current.DisplayedMap = $@"{strExportPrefix}_{i}{Constants.FILE_MAP_SUFFIX_PDF}";
+                            Module1.Current.DisplayedMap = $@"{strExportPrefix}_{i}{Constants.FILE_FIRE_MAP_SUFFIX_PDF}";
                             if (success == BA_ReturnCode.Success)
                             {
                                 await QueuedTask.Run(() =>
@@ -3359,7 +3359,7 @@ namespace bagis_pro
                         {
                             string strFileName = $"Max_{oInterval.Value}";
                             string strLayerName = $"MTBS {oInterval.LowerBound}-{oInterval.UpperBound}";
-                            Module1.Current.DisplayedMap = $@"{strExportPrefix}_{oInterval.LowerBound}-{oInterval.UpperBound}{Constants.FILE_MAP_SUFFIX_PDF}";
+                            Module1.Current.DisplayedMap = $@"{strExportPrefix}_{oInterval.LowerBound}-{oInterval.UpperBound}{Constants.FILE_FIRE_MAP_SUFFIX_PDF}";
                             string strWhere = $"{Constants.FIELD_YEAR} >= {oInterval.LowerBound} And {Constants.FIELD_YEAR} <= {oInterval.UpperBound}";
                             long lngCount = await GeodatabaseTools.CountFeaturesWithFilterAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Fire)),
                                 Constants.FILE_NIFC_FIRE, strWhere);
@@ -3495,7 +3495,7 @@ namespace bagis_pro
                             }
                             try
                             {
-                                File.Copy(strFireReportPath, $@"{strTargetFolder}\{strExportPrefix}{Constants.FILE_REPORT_SUFFIX_PDF}", true);
+                                File.Copy(strFireReportPath, $@"{strTargetFolder}\{strExportPrefix}{Constants.FILE_FIRE_REPORT_SUFFIX_PDF}", true);
                             }
                             catch (Exception)
                             {
@@ -3677,12 +3677,30 @@ namespace bagis_pro
                             Layer imageLayer = oMap.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(displayName, StringComparison.CurrentCultureIgnoreCase));
                             success = await AnalysisTools.ClipRasterFromLayerNoBufferAsync(oAoi.FilePath, strClipFile,
                                 imageLayer, strIrrCurrent, Aoi.SnapRasterPath(oAoi.FilePath), CancelableProgressor.None);
+                            string strDataType = Constants.DATA_TYPE_IRRIGATED_CURRENT;
+                            IDictionary<string, DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
                             if (success != BA_ReturnCode.Success)
                             {
                                 Module1.Current.ModuleLogManager.LogError(nameof(RunLulccDataImplAsync),
                                     $@"An error occurred when trying to clip the irr data. Skipping AOI!");
                                 errorCount++;
                                 return;
+                            }
+                            else
+                            {
+                                // Update layer metadata                                
+                                DataSource updateDataSource = new DataSource(Module1.Current.DataSources[strDataType])
+                                {
+                                    DateClipped = DateTime.Now,
+                                };
+                                if (dictLocalDataSources.ContainsKey(strDataType))
+                                {
+                                    dictLocalDataSources[strDataType] = updateDataSource;
+                                }
+                                else
+                                {
+                                    dictLocalDataSources.Add(strDataType, updateDataSource);
+                                }
                             }
                             await MapTools.RemoveLayersfromMapFrameAsync(Constants.MAPS_DEFAULT_MAP_NAME, [displayName]);
                             // Add historical layer
@@ -3728,8 +3746,32 @@ namespace bagis_pro
                                     errorCount++;
                                     return;
                                 }
+                                else
+                                {
+                                    strDataType = Constants.DATA_TYPE_IRRIGATED_HISTORICAL;
+                                    // Update layer metadata                                
+                                    DataSource updateDataSource = new DataSource(Module1.Current.DataSources[strDataType])
+                                    {
+                                        DateClipped = DateTime.Now,
+                                    };
+                                    if (dictLocalDataSources.ContainsKey(strDataType))
+                                    {
+                                        dictLocalDataSources[strDataType] = updateDataSource;
+                                    }
+                                    else
+                                    {
+                                        dictLocalDataSources.Add(strDataType, updateDataSource);
+                                    }
+
+                                }
                             }
                             await MapTools.RemoveLayersfromMapFrameAsync(Constants.MAPS_DEFAULT_MAP_NAME, [displayName]);
+                            List<DataSource> lstDataSources = new List<DataSource>();
+                            foreach (string key in dictLocalDataSources.Keys)
+                            {
+                                lstDataSources.Add(dictLocalDataSources[key]);
+                            }
+                            oAnalysis.DataSources = lstDataSources;
                             success = GeneralTools.SaveAnalysisSettings(oAoi.FilePath, oAnalysis);
                         }
                         else
@@ -4005,6 +4047,102 @@ namespace bagis_pro
             CmdLulccReportEnabled = true;
             CmdLulccMapEnabled = true;
             MessageBox.Show("Lulcc statistics have been generated!");
+        }
+
+        private RelayCommand _runLulccMaps;
+        public ICommand CmdLulccMaps
+        {
+            get
+            {
+                if (_runLulccMaps == null)
+                    _runLulccMaps = new RelayCommand(RunLulccMapsImplAsync, () => true);
+                return _runLulccMaps;
+            }
+        }
+        private async void RunLulccMapsImplAsync(object param)
+        {
+            if (!Report_Irr_Checked && !Report_Nlcd_Checked)
+            {
+                MessageBox.Show("No checkboxes selected to generate Maps. Process halted!", "BAGIS-Pro");
+                return;
+            }
+            // Make sure the maps_publish folder exists under the selected folder
+            // Make sure the maps_publish\fire_statistics folder exists under the selected folder
+            string strParentPath = Path.GetDirectoryName(Path.GetDirectoryName(_strLulccReportLogFile));
+            if (!Directory.Exists(strParentPath))
+            {
+                Directory.CreateDirectory(strParentPath);
+            }
+            if (!Directory.Exists(Path.GetDirectoryName(_strLulccReportLogFile)))
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(_strLulccReportLogFile));
+            }
+
+            // Create initial log entry
+            string strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Starting Lulcc maps " + "\r\n";
+            File.WriteAllText(_strLulccReportLogFile, strLogEntry);    // overwrite file if it exists
+
+            //@ToDo: work on this when state model is better defined
+            string[] arrValidStatus = [AoiBatchState.Ready.ToString()];
+            for (int idxRow = 0; idxRow < Names.Count; idxRow++)
+            {
+                Aoi oAoi = Names[idxRow];
+                if (Names[idxRow].AoiBatchIsSelected && arrValidStatus.Contains(oAoi.AoiBatchStateText))
+                {
+                    oAoi.AoiBatchStateText = AoiBatchState.Waiting.ToString();
+                }
+            }
+
+            for (int idxRow = 0; idxRow < Names.Count; idxRow++)
+            {
+                if (Names[idxRow].AoiBatchIsSelected)
+                {
+                    string aoiFolder = Names[idxRow].FilePath;
+                    string strAnalysisGdbPath = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Analysis);
+                    if (!Names[idxRow].AoiBatchStateText.Equals(AoiBatchState.Waiting.ToString()))
+                    {
+                        strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} Skipping irr map for {Names[idxRow].FilePath}. Required station information is missing.{System.Environment.NewLine}";
+                        File.AppendAllText(_strLulccReportLogFile, strLogEntry);
+                        continue;
+                    }
+                    else
+                    {
+                        Names[idxRow].AoiBatchStateText = AoiBatchState.Started.ToString();  // update gui
+                        strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Starting irr map for " +
+                            Names[idxRow].Name + "\r\n";
+                        File.AppendAllText(_strLulccReportLogFile, strLogEntry);       // append
+                    }
+                    // Set current AOI
+                    Aoi oAoi = await GeneralTools.SetAoiAsync(aoiFolder, Names[idxRow]);
+                    if (Module1.Current.CboCurrentAoi != null)
+                    {
+                        FrameworkApplication.Current.Dispatcher.Invoke(() =>
+                        {
+                            // Do something on the GUI thread
+                            Module1.Current.CboCurrentAoi.SetAoiName(oAoi.Name);
+                        });
+                    }
+
+                    Uri aoiUri = new Uri(GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi));
+                    Uri analysisUri = new Uri(strAnalysisGdbPath);
+                    string strExportPrefix = "";
+                    if (!string.IsNullOrEmpty(Module1.Current.Aoi.StationTriplet))
+                    {
+                        strExportPrefix = Module1.Current.Aoi.StationTriplet.Replace(':', '_');
+                    }
+                    else
+                    {
+                        strExportPrefix = Constants.VALUE_NOT_SPECIFIED;
+
+                    }
+                    string strLulccReportPath = $@"{Module1.Current.Aoi.FilePath}\{Constants.FOLDER_MAP_PACKAGE}\{Constants.FOLDER_LULCC_STATISTICS}\{strExportPrefix}{Constants.FILE_IRR_REPORT_SUFFIX_PDF}";
+                    var result = await GeodatabaseTools.CalculateAoiAreaSqMetersAsync(Module1.Current.Aoi.FilePath, -1);
+                    double aoiAreaSqMeters = result.Item1;
+                    double areaSqKm = AreaUnit.SquareMeters.ConvertTo(aoiAreaSqMeters, AreaUnit.SquareKilometers);
+
+                }
+
+            }
         }
         private string GetMtbsMapName(int year)
         {

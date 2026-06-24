@@ -86,7 +86,7 @@ namespace bagis_pro
                             break;
                     }
 
-                    if (Module1.Current.DisplayedMap.IndexOf(Constants.FILE_MAP_SUFFIX_PDF) > -1)
+                    if (Module1.Current.DisplayedMap.IndexOf(Constants.FILE_FIRE_MAP_SUFFIX_PDF) > -1)
                     {
                         layoutName = Constants.MAPS_FIRE_LAYOUT_NAME;
                     }
@@ -3730,6 +3730,172 @@ namespace bagis_pro
                     streamgage_station_name = Module1.Current.Aoi.StationName,
                     drainage_area_sqkm = areaSqKm,
                     missing_mtbs_years = missingMtbsYears,
+                    date_created = DateTime.Now
+                };
+                if (lstDataSources.Count > 0)
+                {
+                    DataSource[] data_sources = new DataSource[lstDataSources.Count];
+                    lstDataSources.CopyTo(data_sources, 0);
+                    tPage.data_sources = data_sources;
+                }
+                //Delete any existing title and data sources page so we don't append the old ones
+                if (File.Exists($"{publishFolder + "\\" + Constants.FILE_DATA_SOURCES_PDF}"))
+                    File.Delete($"{publishFolder + "\\" + Constants.FILE_DATA_SOURCES_PDF}");
+                if (File.Exists($"{publishFolder + "\\" + Constants.FILE_TITLE_PAGE_PDF}"))
+                    File.Delete($"{publishFolder + "\\" + Constants.FILE_TITLE_PAGE_PDF}");
+
+                string myXmlFile = publishFolder + "\\" + Constants.FILE_TITLE_PAGE_XML;
+                System.Xml.Serialization.XmlSerializer writer = new System.Xml.Serialization.XmlSerializer(tPage.GetType());
+                using (System.IO.FileStream fs = System.IO.File.Create(myXmlFile))
+                {
+                    writer.Serialize(fs, tPage);
+                }
+
+                // Process the title page through the xsl template
+                string myStyleSheet = GeneralTools.GetAddInDirectory() + "\\" + Constants.FILE_TITLE_PAGE_FIRE_XSL;
+                XPathDocument myXPathDoc = new XPathDocument(myXmlFile);
+                XslCompiledTransform myXslTrans = new XslCompiledTransform();
+                myXslTrans.Load(myStyleSheet);
+                string htmlFilePath = publishFolder + "\\" + Constants.FILE_TITLE_PAGE_HTML;
+                using (XmlTextWriter myWriter = new XmlTextWriter(htmlFilePath, null))
+                {
+                    myXslTrans.Transform(myXPathDoc, null, myWriter);
+                }
+
+                // Convert the title page to PDF
+                if (File.Exists(htmlFilePath))
+                {
+                    //PdfSharp.Pdf.PdfDocument titlePageDoc = TheArtOfDev.HtmlRenderer.PdfSharp.PdfGenerator.GeneratePdf(System.IO.File.ReadAllText(htmlFilePath),
+                    //    PdfSharp.PageSize.Letter);
+                    //titlePageDoc.Save(publishFolder + "\\" + Constants.FILE_TITLE_PAGE_PDF);
+                    if (!Directory.Exists($@"{publishFolder}\{Constants.FOLDER_CHROME_USER_DATA}"))
+                    {
+                        var dirInfo = Directory.CreateDirectory($@"{publishFolder}\{Constants.FOLDER_CHROME_USER_DATA}");
+                        if (!dirInfo.Exists)
+                        {
+                            Module1.Current.ModuleLogManager.LogError(nameof(GenerateFireMapsTitlePage),
+                                "Unable to create working directory for Chrome. PDF conversion failed!");
+                            return BA_ReturnCode.WriteError;
+                        }
+                    }
+                    var url = $@"file:///{htmlFilePath}";
+                    using (var p = new Process())
+                    {
+                        p.StartInfo.FileName = Module1.Current.ChromePath;
+                        p.StartInfo.Arguments = $"--headless --disable-gpu --no-pdf-header-footer --user-data-dir={publishFolder}\\{Constants.FOLDER_CHROME_USER_DATA} --lang=en_US --print-to-pdf={publishFolder + "\\" + Constants.FILE_TITLE_PAGE_PDF} {url}";
+                        p.Start();
+                        p.WaitForExit();
+                    }
+
+                    // Clean up Chrome work directory; It leaves a bunch of garbage here
+                    Directory.Delete($@"{publishFolder}\{Constants.FOLDER_CHROME_USER_DATA}", true);
+                }
+                Module1.Current.ModuleLogManager.LogDebug(nameof(GenerateFireMapsTitlePage),
+                    "Title page created!!");
+
+                // Data sources page
+                writer = new System.Xml.Serialization.XmlSerializer(tPage.GetType());
+                myXmlFile = publishFolder + "\\" + Constants.FILE_DATA_SOURCES_XML;
+                using (FileStream fs = File.Create(myXmlFile))
+                {
+                    writer.Serialize(fs, tPage);
+                }
+
+                // Process the data sources page through the xsl template
+                myStyleSheet = GeneralTools.GetAddInDirectory() + "\\" + Constants.FILE_DATA_SOURCES_XSL;
+                myXPathDoc = new XPathDocument(myXmlFile);
+                myXslTrans = new XslCompiledTransform();
+                myXslTrans.Load(myStyleSheet);
+                htmlFilePath = publishFolder + "\\" + Constants.FILE_DATA_SOURCES_HTML;
+                using (XmlTextWriter myWriter = new XmlTextWriter(htmlFilePath, null))
+                {
+                    myXslTrans.Transform(myXPathDoc, null, myWriter);
+                }
+
+                // Convert the title page to PDF
+                if (File.Exists(htmlFilePath))
+                {
+                    //PdfSharp.Pdf.PdfDocument titlePageDoc = TheArtOfDev.HtmlRenderer.PdfSharp.PdfGenerator.GeneratePdf(System.IO.File.ReadAllText(htmlFilePath),
+                    //    PdfSharp.PageSize.Letter);
+                    //titlePageDoc.Save(publishFolder + "\\" + Constants.FILE_DATA_SOURCES_PDF);
+                    var url = $@"file:///{htmlFilePath}";
+                    using (var p = new Process())
+                    {
+                        p.StartInfo.FileName = Module1.Current.ChromePath;
+                        p.StartInfo.Arguments = $"--headless --disable-gpu --no-pdf-header-footer --user-data-dir={publishFolder}\\{Constants.FOLDER_CHROME_USER_DATA} --print-to-pdf={publishFolder + "\\" + Constants.FILE_DATA_SOURCES_PDF} {url}";
+                        p.Start();
+                        p.WaitForExit();
+                    }
+                }
+                Module1.Current.ModuleLogManager.LogDebug(nameof(GenerateFireMapsTitlePage),
+                    "Data sources page created!!");
+            }
+            catch (Exception e)
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(GenerateFireMapsTitlePage),
+                    "Exception: " + e.Message);
+                MessageBox.Show("An error occurred while trying to parse the XML!! " + e.Message, "BAGIS PRO");
+                return BA_ReturnCode.UnknownError;
+            }
+            finally
+            {
+                // Clean up Chrome work directory; It leaves a bunch of garbage here                
+                if (Directory.Exists($@"{publishFolder}\{Constants.FOLDER_CHROME_USER_DATA}"))
+                {
+                    Directory.Delete($@"{publishFolder}\{Constants.FOLDER_CHROME_USER_DATA}", true);
+                }
+            }
+            return BA_ReturnCode.Success;
+        }
+
+        public static BA_ReturnCode GenerateLulccMapsTitlePage(double areaSqKm)
+        {
+            string publishFolder = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE;
+            //Printing data sources
+            IDictionary<string, DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
+            IDictionary<string, DataSource> dictAllDataSources = GeneralTools.QueryLocalFireDataSources(Module1.Current.Aoi.FilePath);
+            // Merge watershed report data sources into fire data sources; Fire data sources win
+            foreach (var key in dictLocalDataSources.Keys)
+            {
+                if (!dictAllDataSources.ContainsKey(key))
+                {
+                    dictAllDataSources.Add(key, dictLocalDataSources[key]);
+                }
+            }
+
+            string[] keys = { Constants.DATA_TYPE_SNOTEL, Constants.DATA_TYPE_SNOW_COURSE, Constants.DATA_TYPE_SNOLITE, Constants.DATA_TYPE_COOP_PILLOW,
+                              DataSource.GetDemKey, Constants.DATA_TYPE_FIRE_CURRENT, Constants.DATA_TYPE_FIRE_HISTORY, DataSource.GetFireBurnSeverityKey };
+            IList<DataSource> lstDataSources = new List<DataSource>();
+            foreach (string strKey in keys)
+            {
+                if (dictAllDataSources.ContainsKey(strKey))
+                {
+                    DataSource newSource = dictAllDataSources[strKey];
+                    lstDataSources.Add(newSource);
+                }
+            }
+            // Add the DEM if it isn't there
+            if (!dictAllDataSources.ContainsKey(DataSource.GetDemKey))
+            {
+                if (Module1.Current.DataSources != null)
+                {
+                    DataSource dsDem = new BA_Objects.DataSource(Module1.Current.DataSources[BA_Objects.DataSource.GetDemKey]);
+                    if (dsDem != null)
+                    {
+                        lstDataSources.Add(dsDem);
+                    }
+                }
+            }
+            try
+            {
+                // Serialize the title page object
+                ExportTitlePage tPage = new ExportTitlePage
+                {
+                    aoi_name = Module1.Current.Aoi.StationName,
+                    local_path = Module1.Current.Aoi.FilePath,
+                    streamgage_station = Module1.Current.Aoi.StationTriplet,
+                    streamgage_station_name = Module1.Current.Aoi.StationName,
+                    drainage_area_sqkm = areaSqKm,
                     date_created = DateTime.Now
                 };
                 if (lstDataSources.Count > 0)
