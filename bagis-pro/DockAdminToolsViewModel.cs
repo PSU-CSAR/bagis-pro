@@ -4139,7 +4139,7 @@ namespace bagis_pro
                     var result = await GeodatabaseTools.CalculateAoiAreaSqMetersAsync(Module1.Current.Aoi.FilePath, -1);
                     double aoiAreaSqMeters = result.Item1;
                     double areaSqKm = AreaUnit.SquareMeters.ConvertTo(aoiAreaSqMeters, AreaUnit.SquareKilometers);
-
+                    BA_ReturnCode success = GeneralTools.GenerateLulccMapsTitlePage(areaSqKm);
                 }
 
             }

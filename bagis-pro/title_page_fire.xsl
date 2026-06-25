@@ -102,11 +102,13 @@
                     Delineated drainage area: <xsl:value-of select="drainage_area_sqmi"/> square miles
                   </td>
                 </tr>
+                  <xsl:if test="missing_mtbs_years != ''">
                   <tr>
                     <td class="style3">
                       Missing MTBS years: <xsl:value-of select="missing_mtbs_years"/>
                     </td>
                   </tr>
+                  </xsl:if>
                 </table>
             </div>
                    

@@ -406,15 +406,24 @@ namespace bagis_pro.AoiTools
                     double sqMiles = AreaUnit.SquareKilometers.ConvertTo(areaSqKm, AreaUnit.SquareMiles);
                     areaMessage = areaMessage + $"{sqMiles,8:N2} " + "Square Miles\r\n\r\n";
                     areaMessage = areaMessage + "Do you want to use this AOI boundary?";
-                    MessageBoxResult res = MessageBox.Show(areaMessage, "BAGIS-Pro", MessageBoxButton.YesNo);
-                    if (res == MessageBoxResult.No)
-                    {
-                        progress.Hide();
-                        return;
-                    }
+
+
+                        MessageBoxResult res = MessageBox.Show(_view, areaMessage, "BAGIS-Pro", MessageBoxButton.YesNo);
+                        if (res == MessageBoxResult.No)
+                        {
+                            success = BA_ReturnCode.OtherError;
+                            progress.Hide();
+                            return;
+                        }
                 }
             }
 
+            // Required to catch the information returned by the MessageBox
+            //if (success != BA_ReturnCode.Success)
+            //{
+            //    return;
+            //}
+            
             if (!AoiBufferChecked)
             {
                 // one meter buffer to dissolve polygons connected at a point

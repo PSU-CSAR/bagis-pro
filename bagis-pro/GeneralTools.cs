@@ -3853,29 +3853,19 @@ namespace bagis_pro
             string publishFolder = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE;
             //Printing data sources
             IDictionary<string, DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
-            IDictionary<string, DataSource> dictAllDataSources = GeneralTools.QueryLocalFireDataSources(Module1.Current.Aoi.FilePath);
-            // Merge watershed report data sources into fire data sources; Fire data sources win
-            foreach (var key in dictLocalDataSources.Keys)
-            {
-                if (!dictAllDataSources.ContainsKey(key))
-                {
-                    dictAllDataSources.Add(key, dictLocalDataSources[key]);
-                }
-            }
-
             string[] keys = { Constants.DATA_TYPE_SNOTEL, Constants.DATA_TYPE_SNOW_COURSE, Constants.DATA_TYPE_SNOLITE, Constants.DATA_TYPE_COOP_PILLOW,
-                              DataSource.GetDemKey, Constants.DATA_TYPE_FIRE_CURRENT, Constants.DATA_TYPE_FIRE_HISTORY, DataSource.GetFireBurnSeverityKey };
+                              DataSource.GetDemKey, Constants.DATA_TYPE_IRRIGATED_CURRENT, Constants.DATA_TYPE_IRRIGATED_HISTORICAL };
             IList<DataSource> lstDataSources = new List<DataSource>();
             foreach (string strKey in keys)
             {
-                if (dictAllDataSources.ContainsKey(strKey))
+                if (dictLocalDataSources.ContainsKey(strKey))
                 {
-                    DataSource newSource = dictAllDataSources[strKey];
+                    DataSource newSource = dictLocalDataSources[strKey];
                     lstDataSources.Add(newSource);
                 }
             }
             // Add the DEM if it isn't there
-            if (!dictAllDataSources.ContainsKey(DataSource.GetDemKey))
+            if (!dictLocalDataSources.ContainsKey(DataSource.GetDemKey))
             {
                 if (Module1.Current.DataSources != null)
                 {
@@ -3939,7 +3929,7 @@ namespace bagis_pro
                         var dirInfo = Directory.CreateDirectory($@"{publishFolder}\{Constants.FOLDER_CHROME_USER_DATA}");
                         if (!dirInfo.Exists)
                         {
-                            Module1.Current.ModuleLogManager.LogError(nameof(GenerateFireMapsTitlePage),
+                            Module1.Current.ModuleLogManager.LogError(nameof(GenerateLulccMapsTitlePage),
                                 "Unable to create working directory for Chrome. PDF conversion failed!");
                             return BA_ReturnCode.WriteError;
                         }
@@ -3956,7 +3946,7 @@ namespace bagis_pro
                     // Clean up Chrome work directory; It leaves a bunch of garbage here
                     Directory.Delete($@"{publishFolder}\{Constants.FOLDER_CHROME_USER_DATA}", true);
                 }
-                Module1.Current.ModuleLogManager.LogDebug(nameof(GenerateFireMapsTitlePage),
+                Module1.Current.ModuleLogManager.LogDebug(nameof(GenerateLulccMapsTitlePage),
                     "Title page created!!");
 
                 // Data sources page
@@ -3993,12 +3983,12 @@ namespace bagis_pro
                         p.WaitForExit();
                     }
                 }
-                Module1.Current.ModuleLogManager.LogDebug(nameof(GenerateFireMapsTitlePage),
+                Module1.Current.ModuleLogManager.LogDebug(nameof(GenerateLulccMapsTitlePage),
                     "Data sources page created!!");
             }
             catch (Exception e)
             {
-                Module1.Current.ModuleLogManager.LogError(nameof(GenerateFireMapsTitlePage),
+                Module1.Current.ModuleLogManager.LogError(nameof(GenerateLulccMapsTitlePage),
                     "Exception: " + e.Message);
                 MessageBox.Show("An error occurred while trying to parse the XML!! " + e.Message, "BAGIS PRO");
                 return BA_ReturnCode.UnknownError;
