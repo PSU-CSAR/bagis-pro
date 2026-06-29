@@ -151,6 +151,7 @@ namespace bagis_pro.AoiTools
 
             // Start populating aoi object
             Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
+            _view.Close();
 
             var progress = new ProgressDialog("Processing ...", "Cancel", 100, false);
             var status = new CancelableProgressorSource(progress);
@@ -407,14 +408,14 @@ namespace bagis_pro.AoiTools
                     areaMessage = areaMessage + $"{sqMiles,8:N2} " + "Square Miles\r\n\r\n";
                     areaMessage = areaMessage + "Do you want to use this AOI boundary?";
 
-
-                        MessageBoxResult res = MessageBox.Show(_view, areaMessage, "BAGIS-Pro", MessageBoxButton.YesNo);
-                        if (res == MessageBoxResult.No)
-                        {
-                            success = BA_ReturnCode.OtherError;
-                            progress.Hide();
-                            return;
-                        }
+                    // Set the handle of the MessageBox to the application main window because the view has been closed
+                    MessageBoxResult res = MessageBox.Show(FrameworkApplication.Current.MainWindow, areaMessage, "BAGIS-Pro", MessageBoxButton.YesNo);
+                    if (res == MessageBoxResult.No)
+                    {
+                        success = BA_ReturnCode.OtherError;
+                        progress.Hide();
+                        return;
+                    }
                 }
             }
 

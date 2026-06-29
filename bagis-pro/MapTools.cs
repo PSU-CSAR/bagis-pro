@@ -77,14 +77,13 @@ namespace bagis_pro
                 }
                 else
                 {
-                    BA_ReturnCode success = await MapTools.SetDefaultMapFrameDimensionAsync(Constants.MAPS_DEFAULT_MAP_FRAME_NAME, layout, oMap,
-                        0.5, 2.5, 8.0, 10.5);
+                    await SetDefaultProjection();
 
                     //remove existing layers from map frame
                     await MapTools.RemoveLayersfromMapFrameAsync(Constants.MAPS_DEFAULT_MAP_NAME, Constants.MAPS_ALL_ARRAY);
 
                     //retrieve layer symbology files from portal if needed
-                    success = await GetSystemFilesFromPortalAsync();
+                    BA_ReturnCode success = await GetSystemFilesFromPortalAsync();
 
                     //retrieve Analysis object
                     BA_Objects.Analysis oAnalysis = GeneralTools.GetAnalysisSettings(Module1.Current.Aoi.FilePath);
@@ -2950,7 +2949,6 @@ namespace bagis_pro
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
             Map map = null;
             Layout layout = null;
-            bool bCreateMapPane = false;
             bool bCreateLayoutPane = false;
             await QueuedTask.Run(async () =>
             {
@@ -2967,7 +2965,6 @@ namespace bagis_pro
                 else
                 {
                     map = MapFactory.Instance.CreateMap(mapName, basemap: Basemap.None);
-                    bCreateMapPane = true;
                 }
 
                 //Finding the first project item with name matches with layoutName
@@ -3080,16 +3077,9 @@ namespace bagis_pro
                 }
             });
 
-
-            //Need to call on GUI thread
-            if (bCreateMapPane)
-            {
-                IMapPane newMapPane = await ProApp.Panes.CreateMapPaneAsync(map);
-            }
             if (bCreateLayoutPane)
             {
                 ILayoutPane newLayoutPane = newLayoutPane = await ProApp.Panes.CreateLayoutPaneAsync(layout); //GUI thread
-                //(newLayoutPane as Pane).Activate();
             }
             return success;
         }
@@ -4116,17 +4106,20 @@ namespace bagis_pro
                     if (bApplyProjection)
                     {
                         // Spatial reference for NAD 1983 Albers North America
-                        SpatialReference oAlbersCoordSystem = SpatialReferenceBuilder.CreateSpatialReference(102008);
+                        SpatialReference oAlbersCoordSystem = SpatialReferenceBuilder.CreateSpatialReference(Constants.ALBERS_PROJ_WKID);
                         // Valid factory code for layer projection; Make sure it matches Albers datum
                         if (spatialReference != null && spatialReference.Wkid > 0)
                         {
                             bool bDatumMatch = DatumMatch(spatialReference, oAlbersCoordSystem);
                             if (!bDatumMatch)
                             {
-                                MessageBox.Show("Datums do not match. Layer cannot be correctly projected without a transformation!", "BAGIS-Pro");
-                                return BA_ReturnCode.NotSupportedOperation;
+                                //MessageBox.Show("Datums do not match. Layer cannot be correctly projected without a transformation!", "BAGIS-Pro");
+                                //return BA_ReturnCode.NotSupportedOperation;
                             }
-                            oMap.SetSpatialReference(oAlbersCoordSystem);
+                            await QueuedTask.Run(() =>
+                            {
+                                oMap.SetSpatialReference(oAlbersCoordSystem);
+                            });
                         }
                     }
                 }

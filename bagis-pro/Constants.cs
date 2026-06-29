@@ -380,6 +380,7 @@
         public const double MAP_BUFFER_FACTOR = 1.3;
         public const string TEXT_SITES_TABLE_DESCR = "See Active Sites Table for characteristics of each snow monitoring site.";
         public const int PDF_EXPORT_RESOLUTION = 300;
+        public const int ALBERS_PROJ_WKID = 102039;
 
         // States that control the map display buttons
         // JanSwe always needs to be last so that we can export the other months directly

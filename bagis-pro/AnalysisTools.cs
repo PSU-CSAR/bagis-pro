@@ -5860,7 +5860,7 @@ namespace bagis_pro
                     string strTmpStatesProj = "tmpStatesProj";
                     strOutputFeatureProj = $@"{aoiUri.LocalPath}\{strTmpStatesProj}";
                     // Spatial reference for NAD 1983 Albers North America
-                    SpatialReference oSpatialReference = SpatialReferenceBuilder.CreateSpatialReference(102008);
+                    SpatialReference oSpatialReference = SpatialReferenceBuilder.CreateSpatialReference(Constants.ALBERS_PROJ_WKID);
                     parameters = Geoprocessing.MakeValueArray(strOutputFeature, strOutputFeatureProj, oSpatialReference);
                     gpResult = await Geoprocessing.ExecuteToolAsync("Project_management", parameters, null,
                         CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
