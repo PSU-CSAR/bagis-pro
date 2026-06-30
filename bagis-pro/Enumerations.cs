@@ -126,7 +126,9 @@ namespace bagis_pro
         MissingReport,
         HasReport,
         NoFire,
+        MissingData,
         MissingIrrData,
+        MissingLulccData,
         HasIrrReport
     }
 

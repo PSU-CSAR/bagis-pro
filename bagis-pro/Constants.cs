@@ -130,6 +130,10 @@
         public const string FILE_IRR_HISTORICAL = "irrmapper_historical";
         public const string FILE_IRR_CURRENT = "irrmapper_current";
         public const string FILE_IRR_CHANGE = "irrmapper_change";
+        public const string FILE_LANDCOVER_HISTORICAL = "landcover_historical";
+        public const string FILE_LANDCOVER_CURRENT = "landcover_current";
+        public const string FILE_LANDCOVER_CHANGE = "landcover_change";
+
         public const string FILE_EXPORT_MAP_ELEV_PDF = "elevation_distribution.pdf";
         public const string FILE_EXPORT_MAP_SNOTEL_PDF = "map_elevation_snotel.pdf";
         public const string FILE_EXPORT_MAP_SCOS_PDF = "map_elevation_sc.pdf";
@@ -178,9 +182,10 @@
         public const string FILE_EXPORT_LAND_COVER_PDF = "land_cover.pdf";
         public const string FILE_FIRE_MAP_SUFFIX_PDF = "_Fire-Map.pdf";
         public const string FILE_FIRE_REPORT_SUFFIX_PDF = "_Fire-Report.pdf";
-        public const string FILE_IRR_MAP_SUFFIX_PDF = "_Irr-Map.pdf";
-        public const string FILE_IRR_REPORT_SUFFIX_PDF = "_Irr-Report.pdf";
-
+        public const string FILE_IRR_MAP_PDF = "Irr-Map.pdf";
+        public const string FILE_LAND_COVER_MAP_PDF = "Land-Cover-Map.pdf";
+        public const string FILE_LULCC_MAP_SUFFIX_PDF = "_Lulcc-Map.pdf";
+        public const string FILE_LULCC_REPORT_SUFFIX_PDF = "_Lulcc-Report.pdf";
 
         // List of files in the watershed PDF map package and the order in which they will be assembled
         // Any changes to members or order of this array need to have a corresponding update to FILES_EXPORT_TITLES
@@ -356,6 +361,9 @@
         public const string DATA_TYPE_SOURCE_POURPOINT = "Pourpoint Source";    //Note: This is not really a data source
         public const string DATA_TYPE_IRRIGATED_HISTORICAL = "Irrigated Historical";
         public const string DATA_TYPE_IRRIGATED_CURRENT = "Irrigated Current";
+        public const string DATA_TYPE_LANDCOVER_HISTORICAL = "Landcover Historical";
+        public const string DATA_TYPE_LANDCOVER_CURRENT = "Landcover Current";
+
 
         public const int VALUE_NO_DATA_9999 = -9999;
         public const string VALUE_NO_DATA = "NoData";

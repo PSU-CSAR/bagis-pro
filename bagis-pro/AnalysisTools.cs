@@ -8209,7 +8209,14 @@ namespace bagis_pro
         public static async Task<IList<string>> GenerateIrrStatisticsList(BA_Objects.Aoi oAoi, string strLogFile, double aoiAreaSqMeters,
         double dblCellSize)
         {
+            Uri uriAnalysis = new Uri(GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis));
+            // With the structure of LULCC data, we cannot be sure that the required data exists for irr
+            // If it doesn't, return 0 element List
             IList<string> lstElements = new List<string>();
+            if (!await GeodatabaseTools.RasterDatasetExistsAsync(uriAnalysis, Constants.FILE_IRR_CHANGE))
+            {
+                return lstElements;
+            }
             lstElements.Add(oAoi.StationTriplet);   // Station triplet
             lstElements.Add(oAoi.Name);  //AOI Name
 
@@ -8217,7 +8224,6 @@ namespace bagis_pro
             const string IRRIGATED = "11";
             const string NEWLY_IRRIGATED = "10";
 
-            Uri uriAnalysis = new Uri(GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis));
             QueryFilter queryFilter = new QueryFilter();
             StringBuilder sb = new StringBuilder();
             sb.Append(INACTIVE + ",");

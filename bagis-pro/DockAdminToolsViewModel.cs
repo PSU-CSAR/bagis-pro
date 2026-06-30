@@ -3531,20 +3531,35 @@ namespace bagis_pro
                         // Check for fire.gdb and data before continuing
                         string strAnalysisGdbPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis);
                         bool bHasIrrData = false;
+                        bool bHasLandcoverData = false;
                         if (await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(strAnalysisGdbPath), Constants.FILE_IRR_CHANGE))
                         {
                             bHasIrrData = true;
+                            Report_Irr_Checked = true;
+                            CmdLulccReportEnabled = true;
+                            CmdLulccMapEnabled = true;
                         }
-                        if (!bHasIrrData)
+                        if (await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(strAnalysisGdbPath), Constants.FILE_LANDCOVER_CHANGE))
+                        {
+                            bHasLandcoverData = true;
+                            Report_Nlcd_Checked = true;
+                            CmdLulccReportEnabled = true;
+                            CmdLulccMapEnabled = true;
+                        }
+                        if (!bHasIrrData && !bHasLandcoverData)
+                        {
+                            Names[idxRow].AoiBatchStateText = AoiBatchState.MissingData.ToString();  // update gui
+                            continue;
+                        }
+                        else if (!bHasIrrData)
                         {
                             Names[idxRow].AoiBatchStateText = AoiBatchState.MissingIrrData.ToString();  // update gui
                             continue;
                         }
-                        else
+                        else if (!bHasLandcoverData)
                         {
-                            Report_Irr_Checked = true;
-                            CmdLulccReportEnabled = true;
-                            CmdLulccMapEnabled = true;
+                            Names[idxRow].AoiBatchStateText = AoiBatchState.MissingLulccData.ToString();  // update gui
+                            continue;
                         }
                     }
                 });
@@ -3948,11 +3963,11 @@ namespace bagis_pro
             }
 
             //@ToDo: work on this when state model is better defined
-            string[] arrValidStatus = [AoiBatchState.Ready.ToString()];
+            string[] arrInvalidStatus = [AoiBatchState.MissingData.ToString()];
             for (int idxRow = 0; idxRow < Names.Count; idxRow++)
             {
                 Aoi oAoi = Names[idxRow];
-                if (Names[idxRow].AoiBatchIsSelected && arrValidStatus.Contains(oAoi.AoiBatchStateText))
+                if (Names[idxRow].AoiBatchIsSelected && !arrInvalidStatus.Contains(oAoi.AoiBatchStateText))
                 {
                     oAoi.AoiBatchStateText = AoiBatchState.Waiting.ToString();
                 }
@@ -4013,7 +4028,7 @@ namespace bagis_pro
                         {
                             IList<string> lstElements = await AnalysisTools.GenerateIrrStatisticsList(oAoi, _strLulccReportLogFile,
                                 aoiAreaSqMeters, cellSizeSqMeters);
-                            if (lstElements.Count > 0)
+                            if (lstElements.Count > 0)                            
                             {
                                 try
                                 {
@@ -4034,6 +4049,11 @@ namespace bagis_pro
                                     File.AppendAllText(_strLulccReportLogFile, strLogEntry);
                                     return;
                                 }
+                            }
+                            else
+                            {
+                                strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} No irr data for {Names[idxRow].Name}. Report not generated. {System.Environment.NewLine}";
+                                File.AppendAllText(_strLulccReportLogFile, strLogEntry);
                             }
                         }
                     }
@@ -4083,11 +4103,11 @@ namespace bagis_pro
             File.WriteAllText(_strLulccReportLogFile, strLogEntry);    // overwrite file if it exists
 
             //@ToDo: work on this when state model is better defined
-            string[] arrValidStatus = [AoiBatchState.Ready.ToString()];
+            string[] arrInvalidStatus = [AoiBatchState.MissingData.ToString()];
             for (int idxRow = 0; idxRow < Names.Count; idxRow++)
             {
                 Aoi oAoi = Names[idxRow];
-                if (Names[idxRow].AoiBatchIsSelected && arrValidStatus.Contains(oAoi.AoiBatchStateText))
+                if (Names[idxRow].AoiBatchIsSelected && !arrInvalidStatus.Contains(oAoi.AoiBatchStateText))
                 {
                     oAoi.AoiBatchStateText = AoiBatchState.Waiting.ToString();
                 }
@@ -4135,11 +4155,24 @@ namespace bagis_pro
                         strExportPrefix = Constants.VALUE_NOT_SPECIFIED;
 
                     }
-                    string strLulccReportPath = $@"{Module1.Current.Aoi.FilePath}\{Constants.FOLDER_MAP_PACKAGE}\{Constants.FOLDER_LULCC_STATISTICS}\{strExportPrefix}{Constants.FILE_IRR_REPORT_SUFFIX_PDF}";
+                    string strIrrMapPath = $@"{Module1.Current.Aoi.FilePath}\{Constants.FOLDER_MAP_PACKAGE}\{Constants.FOLDER_LULCC_STATISTICS}\{Constants.FILE_IRR_MAP_PDF}";
+                    string strLandCoverMapPath = $@"{Module1.Current.Aoi.FilePath}\{Constants.FOLDER_MAP_PACKAGE}\{Constants.FOLDER_LULCC_STATISTICS}\{Constants.FILE_LAND_COVER_MAP_PDF}";
+                    string strLulccMapPath = $@"{Module1.Current.Aoi.FilePath}\{Constants.FOLDER_MAP_PACKAGE}\{Constants.FOLDER_LULCC_STATISTICS}\{strExportPrefix}_{Constants.FILE_LULCC_MAP_SUFFIX_PDF}";
                     var result = await GeodatabaseTools.CalculateAoiAreaSqMetersAsync(Module1.Current.Aoi.FilePath, -1);
                     double aoiAreaSqMeters = result.Item1;
+                    BA_ReturnCode success = BA_ReturnCode.UnknownError;
                     double areaSqKm = AreaUnit.SquareMeters.ConvertTo(aoiAreaSqMeters, AreaUnit.SquareKilometers);
-                    BA_ReturnCode success = GeneralTools.GenerateLulccMapsTitlePage(areaSqKm);
+                    if (Report_Irr_Checked)
+                    {
+                        success = GeneralTools.GenerateLulccMapsTitlePage(areaSqKm, true);
+
+                    }
+                    if (Report_Nlcd_Checked)
+                    {
+                        success = GeneralTools.GenerateLulccMapsTitlePage(areaSqKm, false);
+                    }
+                    
+
                 }
 
             }

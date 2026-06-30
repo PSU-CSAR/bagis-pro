@@ -3848,13 +3848,22 @@ namespace bagis_pro
             return BA_ReturnCode.Success;
         }
 
-        public static BA_ReturnCode GenerateLulccMapsTitlePage(double areaSqKm)
+        public static BA_ReturnCode GenerateLulccMapsTitlePage(double areaSqKm, bool irrDataSources)
         {
             string publishFolder = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE;
             //Printing data sources
+            string[] keys = { };
             IDictionary<string, DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
-            string[] keys = { Constants.DATA_TYPE_SNOTEL, Constants.DATA_TYPE_SNOW_COURSE, Constants.DATA_TYPE_SNOLITE, Constants.DATA_TYPE_COOP_PILLOW,
-                              DataSource.GetDemKey, Constants.DATA_TYPE_IRRIGATED_CURRENT, Constants.DATA_TYPE_IRRIGATED_HISTORICAL };
+            if (irrDataSources)
+            {
+                keys = new string[] {Constants.DATA_TYPE_SNOTEL, Constants.DATA_TYPE_SNOW_COURSE, Constants.DATA_TYPE_SNOLITE, Constants.DATA_TYPE_COOP_PILLOW,
+                    DataSource.GetDemKey, Constants.DATA_TYPE_IRRIGATED_CURRENT, Constants.DATA_TYPE_IRRIGATED_HISTORICAL };
+            }
+            else
+            {
+                keys = new string[] {Constants.DATA_TYPE_SNOTEL, Constants.DATA_TYPE_SNOW_COURSE, Constants.DATA_TYPE_SNOLITE, Constants.DATA_TYPE_COOP_PILLOW,
+                    DataSource.GetDemKey, Constants.DATA_TYPE_LANDCOVER_CURRENT, Constants.DATA_TYPE_LANDCOVER_HISTORICAL };
+            }
             IList<DataSource> lstDataSources = new List<DataSource>();
             foreach (string strKey in keys)
             {
@@ -3895,10 +3904,15 @@ namespace bagis_pro
                     tPage.data_sources = data_sources;
                 }
                 //Delete any existing title and data sources page so we don't append the old ones
-                if (File.Exists($"{publishFolder + "\\" + Constants.FILE_DATA_SOURCES_PDF}"))
-                    File.Delete($"{publishFolder + "\\" + Constants.FILE_DATA_SOURCES_PDF}");
-                if (File.Exists($"{publishFolder + "\\" + Constants.FILE_TITLE_PAGE_PDF}"))
-                    File.Delete($"{publishFolder + "\\" + Constants.FILE_TITLE_PAGE_PDF}");
+                string strSuffix = "_1";
+                if (!irrDataSources)
+                {
+                    strSuffix = "_2";
+                }
+                if (File.Exists($"{publishFolder + "\\" + Constants.FILE_DATA_SOURCES_PDF}{strSuffix}"))
+                    File.Delete($"{publishFolder + "\\" + Constants.FILE_DATA_SOURCES_PDF}{strSuffix}");
+                if (File.Exists($"{publishFolder + "\\" + Constants.FILE_TITLE_PAGE_PDF}{strSuffix}"))
+                    File.Delete($"{publishFolder + "\\" + Constants.FILE_TITLE_PAGE_PDF}{strSuffix}");
 
                 string myXmlFile = publishFolder + "\\" + Constants.FILE_TITLE_PAGE_XML;
                 System.Xml.Serialization.XmlSerializer writer = new System.Xml.Serialization.XmlSerializer(tPage.GetType());
@@ -3938,7 +3952,7 @@ namespace bagis_pro
                     using (var p = new Process())
                     {
                         p.StartInfo.FileName = Module1.Current.ChromePath;
-                        p.StartInfo.Arguments = $"--headless --disable-gpu --no-pdf-header-footer --user-data-dir={publishFolder}\\{Constants.FOLDER_CHROME_USER_DATA} --lang=en_US --print-to-pdf={publishFolder + "\\" + Constants.FILE_TITLE_PAGE_PDF} {url}";
+                        p.StartInfo.Arguments = $"--headless --disable-gpu --no-pdf-header-footer --user-data-dir={publishFolder}\\{Constants.FOLDER_CHROME_USER_DATA} --lang=en_US --print-to-pdf={publishFolder + "\\" + Constants.FILE_TITLE_PAGE_PDF}{strSuffix} {url}";
                         p.Start();
                         p.WaitForExit();
                     }
@@ -3978,7 +3992,7 @@ namespace bagis_pro
                     using (var p = new Process())
                     {
                         p.StartInfo.FileName = Module1.Current.ChromePath;
-                        p.StartInfo.Arguments = $"--headless --disable-gpu --no-pdf-header-footer --user-data-dir={publishFolder}\\{Constants.FOLDER_CHROME_USER_DATA} --print-to-pdf={publishFolder + "\\" + Constants.FILE_DATA_SOURCES_PDF} {url}";
+                        p.StartInfo.Arguments = $"--headless --disable-gpu --no-pdf-header-footer --user-data-dir={publishFolder}\\{Constants.FOLDER_CHROME_USER_DATA} --print-to-pdf={publishFolder + "\\" + Constants.FILE_DATA_SOURCES_PDF}{strSuffix} {url}";
                         p.Start();
                         p.WaitForExit();
                     }
