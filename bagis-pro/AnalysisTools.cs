@@ -8220,32 +8220,28 @@ namespace bagis_pro
             lstElements.Add(oAoi.StationTriplet);   // Station triplet
             lstElements.Add(oAoi.Name);  //AOI Name
 
-            const string INACTIVE = "1";
-            const string IRRIGATED = "11";
-            const string NEWLY_IRRIGATED = "10";
-
             QueryFilter queryFilter = new QueryFilter();
             StringBuilder sb = new StringBuilder();
-            sb.Append(INACTIVE + ",");
-            sb.Append(IRRIGATED + ",");
-            sb.Append(NEWLY_IRRIGATED);
+            sb.Append(Constants.VALUE_IRR_INACTIVE + ",");
+            sb.Append(Constants.VALUE_IRR_IRRIGATED + ",");
+            sb.Append(Constants.VALUE_IRR_NEWLY_IRRIGATED);
             string strWhere = $@"{Constants.FIELD_VALUE} IN ({sb.ToString().TrimEnd(',')})";
             queryFilter.WhereClause = strWhere;
             IDictionary<string, long> dictReturn = await GeodatabaseTools.RasterTableToDictionaryAsync(uriAnalysis, Constants.FILE_IRR_CHANGE, queryFilter);
             double dblIrrigated = 0;
             double dblNewlyIrrigated = 0;
             double dblInactiveIrrigated = 0;
-            if (dictReturn.ContainsKey(IRRIGATED))
+            if (dictReturn.ContainsKey(Constants.VALUE_IRR_IRRIGATED))
             {
-                dblIrrigated = Convert.ToDouble(dictReturn[IRRIGATED]);
+                dblIrrigated = Convert.ToDouble(dictReturn[Constants.VALUE_IRR_IRRIGATED]);
             }
-            if (dictReturn.ContainsKey(NEWLY_IRRIGATED))
+            if (dictReturn.ContainsKey(Constants.VALUE_IRR_NEWLY_IRRIGATED))
             {
-                dblNewlyIrrigated = Convert.ToDouble(dictReturn[NEWLY_IRRIGATED]);
+                dblNewlyIrrigated = Convert.ToDouble(dictReturn[Constants.VALUE_IRR_NEWLY_IRRIGATED]);
             }
-            if (dictReturn.ContainsKey(INACTIVE))
+            if (dictReturn.ContainsKey(Constants.VALUE_IRR_INACTIVE))
             {
-                dblInactiveIrrigated = Convert.ToDouble(dictReturn[INACTIVE]);
+                dblInactiveIrrigated = Convert.ToDouble(dictReturn[Constants.VALUE_IRR_INACTIVE]);
             }
             double dblTotIrrigatedSqMeters = (dblIrrigated + dblNewlyIrrigated) * dblCellSize * dblCellSize;
             double dblTotIrrigatedSqMiles = Math.Round(AreaUnit.SquareMeters.ConvertTo(dblTotIrrigatedSqMeters, AreaUnit.SquareMiles), 2);

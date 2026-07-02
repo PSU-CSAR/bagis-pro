@@ -3822,6 +3822,17 @@ namespace bagis_pro
                             }
                             else
                             {
+                                // Write names to raster
+                                IList<string> lstValues = new List<string>();
+                                lstValues.Add(Constants.VALUE_IRR_INACTIVE);
+                                lstValues.Add(Constants.VALUE_IRR_IRRIGATED);
+                                lstValues.Add(Constants.VALUE_IRR_NEWLY_IRRIGATED);
+                                IList<string> lstNames = new List<string>();
+                                lstNames.Add("Inactive");
+                                lstNames.Add("Irrigated");
+                                lstNames.Add("Newly Irrigated");
+                                success = await GeodatabaseTools.UpdateRasterAttributeNamesAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Analysis)),
+                                    Constants.FILE_IRR_CHANGE, lstValues, lstNames);
                                 success = BA_ReturnCode.Success;
                             }
                         }
@@ -4162,9 +4173,56 @@ namespace bagis_pro
                     double aoiAreaSqMeters = result.Item1;
                     BA_ReturnCode success = BA_ReturnCode.UnknownError;
                     double areaSqKm = AreaUnit.SquareMeters.ConvertTo(aoiAreaSqMeters, AreaUnit.SquareKilometers);
+                    Layout oLayout = await MapTools.GetDefaultLayoutAsync(Constants.MAPS_LULCC_LAYOUT_NAME);
+                    Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_LULCC_MAP_NAME);
+
                     if (Report_Irr_Checked)
                     {
                         success = GeneralTools.GenerateLulccMapsTitlePage(areaSqKm, true);
+                        success = await MapTools.DisplayLulccMapAsync(Module1.Current.Aoi.FilePath, oLayout, true);
+                        if (success != BA_ReturnCode.Success)
+                        {
+                            Module1.Current.ModuleLogManager.LogError(nameof(RunLulccMapsImplAsync),
+                                "An error occurred while trying to load the maps. The report cannot be exported!");
+                            Names[idxRow].AoiBatchStateText = AoiBatchState.Failed.ToString();
+                            return;
+                        }
+
+                        bool bFoundIt = false;
+                        //A layout view may exist but it may not be active
+                        //Iterate through each pane in the application and check to see if the layout is already open and if so, activate it
+                        foreach (var pane in FrameworkApplication.Panes)
+                        {
+                            if (!(pane is ILayoutPane layoutPane))  //if not a layout view, continue to the next pane    
+                                continue;
+                            if (layoutPane.LayoutView != null &&
+                                layoutPane.LayoutView.Layout == oLayout) //if there is a match, activate the view  
+                            {
+                                (layoutPane as Pane).Activate();
+                                bFoundIt = true;
+                            }
+                        }
+                        if (!bFoundIt)
+                        {
+                            await FrameworkApplication.Current.Dispatcher.Invoke(async () =>
+                            {
+                                // Do something on the GUI thread
+                                ILayoutPane iNewLayoutPane = await FrameworkApplication.Panes.CreateLayoutPaneAsync(oLayout); //GUI thread
+                                (iNewLayoutPane as Pane).Activate();
+                            });
+                        }
+
+                        // Legend
+                        success = await MapTools.DisplayLegendAsync(Constants.MAPS_LULCC_MAP_FRAME_NAME, oLayout,
+                            "ArcGIS Colors", "1.5 Point", true);
+                        if (oLayout != null)
+                        {
+                            if (success == BA_ReturnCode.Success)
+                            {
+                                MapDefinition mapDefinition = MapTools.LoadMapDefinition(BagisMapType.IRR);
+                                success = await MapTools.UpdateLegendAsync(oLayout, mapDefinition.LegendLayerList);
+                            }
+                        }
 
                     }
                     if (Report_Nlcd_Checked)

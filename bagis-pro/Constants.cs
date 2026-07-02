@@ -11,6 +11,9 @@
         public const string MAPS_FIRE_MAP_NAME = "Basin Fire Analysis";
         public const string MAPS_FIRE_LAYOUT_NAME = "Basin Fire Analysis Layout";
         public const string MAPS_FIRE_MAP_FRAME_NAME = "Basin Fire Analysis Map Frame";
+        public const string MAPS_LULCC_MAP_NAME = "Basin Lulcc Analysis";
+        public const string MAPS_LULCC_LAYOUT_NAME = "Basin Lulcc Analysis Layout";
+        public const string MAPS_LULCC_MAP_FRAME_NAME = "Basin Lulcc Analysis Map Frame";
         public const string MAPS_SNODAS_LAYOUT = "SNODAS Layout";
         public const string MAPS_SNODAS_DELTA_LAYOUT = "SNODAS Delta Layout";
         public const string MAPS_SEASONAL_PRECIP_LAYOUT = "Seasonal Precipitation Layout";
@@ -43,6 +46,10 @@
         public const string MAPS_WATERBODIES = "Waterbodies";
         public const string MAPS_STREAM_GAGE = "Streamgage";
         public const string MAPS_GAUGE_STATIONS = "Gauge Stations";
+        public const string MAPS_IRRIGATION_STATUS = "Irrigation Status";
+        public const string MAPS_CURRENT_LANDCOVER = "Current Land Cover";
+        public const string MAPS_HISTORICAL_LANDCOVER = "Historical Land Cover";
+        public const string MAPS_LANDCOVER_CHANGE = "Land Cover Change";
         public static readonly string[] MAPS_ALL_ARRAY = { Constants.MAPS_BASIN_BOUNDARY, Constants.MAPS_STREAMS, Constants.MAPS_SNOTEL,
             Constants.MAPS_SNOW_COURSE, Constants.MAPS_HILLSHADE, Constants.MAPS_ELEV_ZONE, Constants.MAPS_SNOW_COURSE_REPRESENTED,
             Constants.MAPS_AUTOMATED_SITES_REPRESENTED, Constants.MAPS_SLOPE_ZONE, Constants.MAPS_ASPECT_ZONE,
@@ -60,6 +67,10 @@
         public static readonly string[] MAPS_FIRE_ARRAY = { Constants.MAPS_BASIN_BOUNDARY, Constants.MAPS_STREAMS, Constants.MAPS_WATERBODIES, 
             Constants.MAPS_SNOTEL, Constants.MAPS_SNOW_COURSE, Constants.MAPS_HILLSHADE, Constants.MAPS_SNOLITE, Constants.MAPS_COOP_PILLOW, 
             Constants.MAPS_STREAM_GAGE, Constants.MAPS_NIFC_PERIMETER};
+        public static readonly string[] MAPS_LULCC_ARRAY = { Constants.MAPS_BASIN_BOUNDARY, Constants.MAPS_STREAMS, Constants.MAPS_WATERBODIES,
+            Constants.MAPS_SNOTEL, Constants.MAPS_SNOW_COURSE, Constants.MAPS_HILLSHADE, Constants.MAPS_SNOLITE, Constants.MAPS_COOP_PILLOW,
+            Constants.MAPS_STREAM_GAGE, Constants.MAPS_IRRIGATION_STATUS, Constants.MAPS_HISTORICAL_LANDCOVER, Constants.MAPS_CURRENT_LANDCOVER,
+            Constants.MAPS_LANDCOVER_CHANGE};
         public const string MAPS_CLIP_DEM_LAYER = "Clip DEM";
         public const string MAPS_POURPOINT_LAYER = "Pourpoint";
         public const string FILE_AOI_VECTOR = "aoi_v";
@@ -379,7 +390,10 @@
         public const string VALUE_MTBS_SEVERITY_HIGH = "High";
         public static string[] MTBS_INCLUDE_SEVERITIES = { Constants.VALUE_MTBS_SEVERITY_LOW, Constants.VALUE_MTBS_SEVERITY_MODERATE, Constants.VALUE_MTBS_SEVERITY_HIGH };
         public static int[] VALUES_NLCD_FORESTED_AREA = { 41, 42, 43 };
-        
+        public const string VALUE_IRR_INACTIVE = "1";
+        public const string VALUE_IRR_IRRIGATED = "11";
+        public const string VALUE_IRR_NEWLY_IRRIGATED = "10";
+
         public const string UNITS_INCHES = "Inches";
         public const string UNITS_MILLIMETERS = "Millimeters";
         public const string UNITS_FEET = "Feet";

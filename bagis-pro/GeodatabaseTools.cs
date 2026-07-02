@@ -2,6 +2,7 @@
 using ArcGIS.Core.Data;
 using ArcGIS.Core.Data.Exceptions;
 using ArcGIS.Core.Data.Raster;
+using ArcGIS.Core.Data.UtilityNetwork.Trace;
 using ArcGIS.Core.Geometry;
 using ArcGIS.Desktop.Core;
 using ArcGIS.Desktop.Core.Geoprocessing;
@@ -9,6 +10,7 @@ using ArcGIS.Desktop.Editing;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
 using ArcGIS.Desktop.Mapping;
 using bagis_pro.BA_Objects;
+using Microsoft.Office.Interop.Excel;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -63,7 +65,7 @@ namespace bagis_pro
                     if (bExists)
                     {
                         return FolderType.AOI;
-                    }                    
+                    }
                 }
                 bExists = await FeatureClassExistsAsync(gdbUri, Constants.FILE_AOI_VECTOR);
                 if (bExists)
@@ -152,7 +154,7 @@ namespace bagis_pro
         public static async Task<IList<string>> QueryTableForDistinctValuesAsync(Uri fileUri, string featureClassName, string fieldName, QueryFilter queryFilter)
         {
             // parse the uri for the folder and file
-            IList<string> lstReturn = new List<string>();   
+            IList<string> lstReturn = new List<string>();
             string strFileName = null;
             string strFolderPath = null;
             if (fileUri.IsFile)
@@ -606,12 +608,13 @@ namespace bagis_pro
                     FeatureClassDefinition featureClassDefinition = featureClass.GetDefinition();
 
                     EditOperation editOperation = new EditOperation();
-                    editOperation.Callback(context => {
+                    editOperation.Callback(context =>
+                    {
                         using (RowCursor rowCursor = featureClass.Search(oQueryFilter, false))
                         {
                             while (rowCursor.MoveNext())
                             {
-                                using (Feature feature = (Feature) rowCursor.Current)
+                                using (Feature feature = (Feature)rowCursor.Current)
                                 {
                                     // In order to update the the attribute table has to be called before any changes are made to the row
                                     context.Invalidate(feature);
@@ -658,13 +661,13 @@ namespace bagis_pro
             }
         }
 
-        public static async Task<BA_ReturnCode> UpdateFeatureAttributeNumericAsync(Uri gdbUri, string featureClassName, QueryFilter oQueryFilter, 
+        public static async Task<BA_ReturnCode> UpdateFeatureAttributeNumericAsync(Uri gdbUri, string featureClassName, QueryFilter oQueryFilter,
             string strFieldName, double dblNewValue)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
             // Geodatabase
             if (gdbUri.LocalPath.IndexOf(".gdb") > -1)
-            { 
+            {
                 await QueuedTask.Run(async () =>
                 {
                     using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(gdbUri)))
@@ -697,7 +700,8 @@ namespace bagis_pro
             string errorMsg = "";
             FeatureClassDefinition featureClassDefinition = featureClass.GetDefinition();
             EditOperation editOperation = new EditOperation();
-            editOperation.Callback(context => {
+            editOperation.Callback(context =>
+            {
                 using (RowCursor rowCursor = featureClass.Search(oQueryFilter, false))
                 {
                     while (rowCursor.MoveNext())
@@ -742,13 +746,13 @@ namespace bagis_pro
             }
         }
 
-        public static async Task<BA_ReturnCode> UpdateReclassFeatureAttributesAsync(Uri uriFeatureClass, string strFeatureClassName, 
+        public static async Task<BA_ReturnCode> UpdateReclassFeatureAttributesAsync(Uri uriFeatureClass, string strFeatureClassName,
             IList<BA_Objects.Interval> lstIntervals)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
             // Add fields to be updated to feature class, if missing
-            string[] arrReclassFields = { Constants.FIELD_NAME, Constants.FIELD_LBOUND, Constants.FIELD_UBOUND};
-            string[] arrReclassFieldTypes = { "TEXT", "DOUBLE", "DOUBLE"};
+            string[] arrReclassFields = { Constants.FIELD_NAME, Constants.FIELD_LBOUND, Constants.FIELD_UBOUND };
+            string[] arrReclassFieldTypes = { "TEXT", "DOUBLE", "DOUBLE" };
             string strFeatureClassPath = uriFeatureClass.LocalPath + "\\" + strFeatureClassName;
             for (int i = 0; i < arrReclassFields.Length; i++)
             {
@@ -849,11 +853,12 @@ namespace bagis_pro
         public static async Task<IList<BA_Objects.Interval>> ReadReclassRasterAttribute(Uri gdbUri, string rasterName)
         {
             IList<BA_Objects.Interval> lstInterval = new List<BA_Objects.Interval>();
-            if (! await RasterDatasetExistsAsync(gdbUri,rasterName)) 
+            if (!await RasterDatasetExistsAsync(gdbUri, rasterName))
             {
                 return lstInterval;
             }
-            await QueuedTask.Run(() => {
+            await QueuedTask.Run(() =>
+            {
                 using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(gdbUri)))
                 using (RasterDataset rasterDataset = geodatabase.OpenDataset<RasterDataset>(rasterName))
                 {
@@ -898,7 +903,7 @@ namespace bagis_pro
                                     interval.LowerBound = Convert.ToDouble(row[idxLowerBound]);
                                 }
                                 if (idxCount > 0)
-                                {                                    
+                                {
                                     // Square cell size to calculate area
                                     interval.Area = cellSize * cellSize * Convert.ToInt32(row[idxCount]);
                                 }
@@ -920,9 +925,10 @@ namespace bagis_pro
             {
                 case WorkspaceType.Geodatabase:
                     Uri gdbUri = new Uri(System.IO.Path.GetDirectoryName(uriRaster.LocalPath));
-                    if (await GeodatabaseTools.RasterDatasetExistsAsync(gdbUri, rasterName ))
+                    if (await GeodatabaseTools.RasterDatasetExistsAsync(gdbUri, rasterName))
                     {
-                        await QueuedTask.Run(() => {
+                        await QueuedTask.Run(() =>
+                        {
                             using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(gdbUri)))
                             using (RasterDataset rasterDataset = geodatabase.OpenDataset<RasterDataset>(rasterName))
                             {
@@ -964,7 +970,8 @@ namespace bagis_pro
                 case WorkspaceType.Raster:
                     // Create a FileSystemConnectionPath using the folder path
                     Uri folderUri = new Uri(System.IO.Path.GetDirectoryName(uriRaster.LocalPath));
-                    await QueuedTask.Run(() => {
+                    await QueuedTask.Run(() =>
+                    {
                         FileSystemConnectionPath connectionPath =
                             new FileSystemConnectionPath(folderUri, FileSystemDatastoreType.Raster);
                         // Create a new FileSystemDatastore using the FileSystemConnectionPath.
@@ -1017,7 +1024,7 @@ namespace bagis_pro
             return bExists;
         }
 
-        public static async Task<IList<BA_Objects.Interval>> GetUniqueSortedValuesAsync(Uri gdbUri, SiteType sType, 
+        public static async Task<IList<BA_Objects.Interval>> GetUniqueSortedValuesAsync(Uri gdbUri, SiteType sType,
             string valueFieldName, string nameFieldName, double upperBound, double lowerBound)
         {
             IList<BA_Objects.Interval> lstInterval = new List<BA_Objects.Interval>();
@@ -1052,7 +1059,7 @@ namespace bagis_pro
                             else
                             {
                                 queryFilter.WhereClause = Constants.FIELD_SITE_TYPE + " = '" + sType + "'";
-                            }                            
+                            }
                             using (RowCursor rowCursor = featureClass.Search(queryFilter, false))
                             {
                                 while (rowCursor.MoveNext())
@@ -1086,24 +1093,24 @@ namespace bagis_pro
                                 }
                             }
                         }
-                            List<double> lstValidValues = new List<double>();
-                            int nuniquevalue = dictElev.Keys.Count;
-                            double value = -1.0F;
-                            bool bSuccess = false;
-                            foreach (var strElev in dictElev.Keys)
+                        List<double> lstValidValues = new List<double>();
+                        int nuniquevalue = dictElev.Keys.Count;
+                        double value = -1.0F;
+                        bool bSuccess = false;
+                        foreach (var strElev in dictElev.Keys)
+                        {
+                            bSuccess = Double.TryParse(strElev, out value);
+                            if ((int)(value - 0.5) < (int)upperBound && (int)value + 0.5 > (int)lowerBound)
                             {
-                                bSuccess = Double.TryParse(strElev, out value);
-                                if ((int) (value - 0.5) < (int) upperBound && (int) value + 0.5 > (int) lowerBound)
-                                {
-                                    lstValidValues.Add(value);
-                                }
-                                else if (value > upperBound || value < lowerBound)  //invalid data in the attribute field, out of bound
-                                {
-                                    Module1.Current.ModuleLogManager.LogError(nameof(GetUniqueSortedValuesAsync),
-                                        "WARNING!! A monitoring site is ignored in the analysis! The site's elevation (" + 
-                                        value + ") is outside the DEM range (" + lowerBound + ", " + upperBound + ")!");
-                                }
+                                lstValidValues.Add(value);
                             }
+                            else if (value > upperBound || value < lowerBound)  //invalid data in the attribute field, out of bound
+                            {
+                                Module1.Current.ModuleLogManager.LogError(nameof(GetUniqueSortedValuesAsync),
+                                    "WARNING!! A monitoring site is ignored in the analysis! The site's elevation (" +
+                                    value + ") is outside the DEM range (" + lowerBound + ", " + upperBound + ")!");
+                            }
+                        }
                         //add upper and lower bnds to the dictionary
                         if (!dictElev.ContainsKey(Convert.ToString(upperBound)))
                         {
@@ -1116,13 +1123,13 @@ namespace bagis_pro
                             lstValidValues.Add(lowerBound);
                         }
 
-                    // Sort the list
-                    lstValidValues.Sort();
-                    // Add lower bound to interval list
-                    for (int i = 0; i<lstValidValues.Count -1; i++)
+                        // Sort the list
+                        lstValidValues.Sort();
+                        // Add lower bound to interval list
+                        for (int i = 0; i < lstValidValues.Count - 1; i++)
                         {
                             BA_Objects.Interval interval = new BA_Objects.Interval();
-                            interval.Value = i+1;
+                            interval.Value = i + 1;
                             interval.LowerBound = lstValidValues[i];
                             double nextItem = lstValidValues[i + 1];
                             interval.UpperBound = nextItem;
@@ -1169,10 +1176,10 @@ namespace bagis_pro
         }
 
         // key is value, value is count
-        public static async Task<IDictionary<string, long>> RasterTableToDictionaryAsync(Uri gdbUri, 
+        public static async Task<IDictionary<string, long>> RasterTableToDictionaryAsync(Uri gdbUri,
             string rasterName, QueryFilter queryFilter)
         {
-            IDictionary<string, long> dictReturn = new Dictionary<string, long>(); 
+            IDictionary<string, long> dictReturn = new Dictionary<string, long>();
             await QueuedTask.Run(() =>
             {
                 using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(gdbUri)))
@@ -1200,7 +1207,7 @@ namespace bagis_pro
                         }
                     }
                 }
-               });
+            });
             return dictReturn;
         }
         public static async Task<BA_ReturnCode> AddAOIVectorAttributesAsync(Uri uriAoiGdb, string aoiName, string stationTriplet, string basin,
@@ -1212,14 +1219,14 @@ namespace bagis_pro
             string[] arrNewFieldValues = new string[] { aoiName, stationTriplet, basin };
             for (int i = 0; i < arrAddFields.Length; i++)
             {
-                bool bExists = await GeodatabaseTools.AttributeExistsAsync(uriAoiGdb, Constants.FILE_AOI_VECTOR,arrAddFields[i]);
-                if (! bExists)
+                bool bExists = await GeodatabaseTools.AttributeExistsAsync(uriAoiGdb, Constants.FILE_AOI_VECTOR, arrAddFields[i]);
+                if (!bExists)
                 {
-                    success = await GeoprocessingTools.AddFieldAsync($@"{uriAoiGdb.LocalPath}\{Constants.FILE_AOI_VECTOR}", arrAddFields[i], 
+                    success = await GeoprocessingTools.AddFieldAsync($@"{uriAoiGdb.LocalPath}\{Constants.FILE_AOI_VECTOR}", arrAddFields[i],
                         arrNewFieldTypes[i], source);
                     if (success == BA_ReturnCode.Success && !string.IsNullOrEmpty(arrNewFieldValues[i]))
                     {
-                        IDictionary<string,string> dictUpdate = new Dictionary<string,string>();
+                        IDictionary<string, string> dictUpdate = new Dictionary<string, string>();
                         dictUpdate.Add(arrAddFields[i], arrNewFieldValues[i]);
                         success = await GeodatabaseTools.UpdateFeatureAttributesAsync(uriAoiGdb, Constants.FILE_AOI_VECTOR, new QueryFilter(), dictUpdate);
                     }
@@ -1228,11 +1235,11 @@ namespace bagis_pro
             return success;
         }
 
-        public static async Task<BA_ReturnCode> AddPourpointAttributesAsync(string aoiPath, string aoiName, 
+        public static async Task<BA_ReturnCode> AddPourpointAttributesAsync(string aoiPath, string aoiName,
             string stationTriplet, string basinName, CancelableProgressorSource status)
         {
             BA_ReturnCode success = BA_ReturnCode.UnknownError;
-            string[] arrAddFields = new string[] { Constants.FIELD_STATION_NAME, Constants.FIELD_STATION_TRIPLET, Constants.FIELD_BASIN, Constants.FIELD_HUC2};
+            string[] arrAddFields = new string[] { Constants.FIELD_STATION_NAME, Constants.FIELD_STATION_TRIPLET, Constants.FIELD_BASIN, Constants.FIELD_HUC2 };
             string[] arrNewFieldTypes = new string[] { "TEXT", "TEXT", "TEXT", "INTEGER" };
             string[] arrNewFieldValues = new string[] { aoiName, stationTriplet, basinName, "" };
             Uri uriAoiGdb = new Uri(GeodatabaseTools.GetGeodatabasePath(aoiPath, GeodatabaseNames.Aoi));
@@ -1282,7 +1289,7 @@ namespace bagis_pro
         public static async Task<SpatialReference> GetSpatialReferenceAsync(string strGdb, string strFile)
         {
             SpatialReference spatialReference = null;
-            await QueuedTask.Run( () =>
+            await QueuedTask.Run(() =>
             {
                 using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(strGdb))))
                 using (FeatureClass fc = geodatabase.OpenDataset<FeatureClass>(strFile))
@@ -1293,7 +1300,7 @@ namespace bagis_pro
             });
             return spatialReference;
         }
-        public static async Task<(double,bool)> CalculateAoiAreaSqMetersAsync(string aoiPath, double inAreaSqM)
+        public static async Task<(double, bool)> CalculateAoiAreaSqMetersAsync(string aoiPath, double inAreaSqM)
         {
             double areaSqM = inAreaSqM;
             bool bIsMeters = false;
@@ -1313,7 +1320,7 @@ namespace bagis_pro
                 }
                 else
                 {
-                    areaSqM = -1;    
+                    areaSqM = -1;
                 }
             }
             return (areaSqM, bIsMeters);
@@ -1328,7 +1335,8 @@ namespace bagis_pro
                 string layerName = GeneralTools.GetMtbsLayerFileName(i);
                 layerNames.Add(layerName);
                 allYears.Add(i);
-;           }
+                ;
+            }
             // Get a list of all the rasters in the fire.gdb
             Uri uriFire = new Uri(GeodatabaseTools.GetGeodatabasePath(aoiPath, GeodatabaseNames.Fire));
             IList<string> lstMtbsRasters = new List<string>();
@@ -1413,6 +1421,108 @@ namespace bagis_pro
             }
             return lstBasinGdb;
         }
+        public static async Task<BA_ReturnCode> UpdateRasterAttributeNamesAsync(Uri uriGdb, string strFileName,
+            IList<string> lstValues, IList<string> lstNames)
+        {
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            EditOperation editOperation = new EditOperation();
+            // Add name field to table so we have a field to write to
+            string strAddFields = Constants.FIELD_NAME + " TEXT # " + Constants.FIELD_NAME_WIDTH + " # #";
+            string strUpdateLayer = uriGdb.LocalPath + "\\" + strFileName;
+            var parameters = Geoprocessing.MakeValueArray(strUpdateLayer, strAddFields);
+            var gpResult = Geoprocessing.ExecuteToolAsync("AddFields_management", parameters, null,
+                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+            if (gpResult.Result.IsFailed)
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(UpdateRasterAttributeNamesAsync),
+                    "Failed to add fields. Error code: " + gpResult.Result.ErrorCode);
+                foreach (var objMessage in gpResult.Result.Messages)
+                {
+                    IGPMessage msg = (IGPMessage)objMessage;
+                    Module1.Current.ModuleLogManager.LogError(nameof(UpdateRasterAttributeNamesAsync),
+                        msg.Text);
+                }
+                success = BA_ReturnCode.WriteError;
+            }
+            else
+            {
+                success = BA_ReturnCode.Success;
+                Module1.Current.ModuleLogManager.LogDebug(nameof(UpdateRasterAttributeNamesAsync),
+                "New fields added");
+            }
+
+            await QueuedTask.Run(() => {
+
+                using (Geodatabase geodatabase = new Geodatabase(new FileGeodatabaseConnectionPath(uriGdb)))
+            using (RasterDataset rasterDataset = geodatabase.OpenDataset<RasterDataset>(strFileName))
+            {
+                RasterBandDefinition bandDefinition = rasterDataset.GetBand(0).GetDefinition();
+                Raster raster = rasterDataset.CreateDefaultRaster();
+                Table rasterTable = raster.GetAttributeTable();
+                TableDefinition definition = rasterTable.GetDefinition();
+                QueryFilter oQueryFilter = new QueryFilter();
+                editOperation.Callback(context =>
+                {
+                    for (int i = 0; i < lstValues.Count; i++)
+                    {
+                        oQueryFilter.WhereClause = " Value = " + lstValues[i];
+                        using (RowCursor rowCursor = rasterTable.Search(oQueryFilter, false))
+                        {
+                            // Only one row should be returned
+                            rowCursor.MoveNext();
+                            using (Row row = (Row)rowCursor.Current)
+                            {
+                                if (row != null)
+                                {
+                                    // In order to update the the attribute table has to be called before any changes are made to the row
+                                    context.Invalidate(row);
+                                    int idxRow = definition.FindField(Constants.FIELD_NAME);
+                                    if (idxRow > 0)
+                                    {
+                                        row[idxRow] = lstNames[i];
+                                    }
+                                    row.Store();
+                                    // Has to be called after the store too
+                                    context.Invalidate(row);
+                                }
+                            }
+                        }
+                    }
+                }, rasterTable);
+            }
+            if (success == BA_ReturnCode.Success)
+            {
+                bool bModificationResult = false;
+                string errorMsg = "";
+                try
+                {
+                    bModificationResult = editOperation.Execute();
+                    if (!bModificationResult) errorMsg = editOperation.ErrorMessage;
+                }
+                catch (GeodatabaseException exObj)
+                {
+                    success = BA_ReturnCode.WriteError;
+                    errorMsg = exObj.Message;
+                }
+
+                if (String.IsNullOrEmpty(errorMsg))
+                {
+                    Project.Current.SaveEditsAsync();
+                    success = BA_ReturnCode.Success;
+                }
+                else
+                {
+                    if (Project.Current.HasEdits)
+                        Project.Current.DiscardEditsAsync();
+                    Module1.Current.ModuleLogManager.LogError(nameof(UpdateRasterAttributeNamesAsync),
+                        "Exception: " + errorMsg);
+                    success = BA_ReturnCode.UnknownError;
+                }
+            }
+            });
+            return success;
+        }
+
     }
 
     

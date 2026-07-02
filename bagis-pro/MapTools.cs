@@ -2564,6 +2564,39 @@ namespace bagis_pro
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;
+                case BagisMapType.IRR:
+                    lstLayers = new List<string> { Constants.MAPS_BASIN_BOUNDARY, Constants.MAPS_STREAMS,
+                                                   Constants.MAPS_HILLSHADE, Constants.MAPS_IRRIGATION_STATUS,
+                                                   Constants.MAPS_WATERBODIES, Constants.MAPS_STREAM_GAGE};
+                    lstLegendLayers = new List<string>() { Constants.MAPS_IRRIGATION_STATUS, Constants.MAPS_STREAM_GAGE,
+                                                           Constants.MAPS_WATERBODIES};
+                    if (Module1.Current.Aoi.HasSnotel == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOTEL);
+                        lstLegendLayers.Add(Constants.MAPS_SNOTEL);
+                    }
+                    if (Module1.Current.Aoi.HasSnolite == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOLITE);
+                        lstLegendLayers.Add(Constants.MAPS_SNOLITE);
+                    }
+                    if (Module1.Current.Aoi.HasCoopPillow == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_COOP_PILLOW);
+                        lstLegendLayers.Add(Constants.MAPS_COOP_PILLOW);
+                    }
+                    if (Module1.Current.Aoi.HasSnowCourse == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOW_COURSE);
+                        lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE);
+                    }
+
+                    mapDefinition = new BA_Objects.MapDefinition("IRRIGATED LAND",
+                        " ", Constants.FILE_EXPORT_MAP_ELEV_PDF,
+                        Constants.TEXT_SITES_TABLE_DESCR);
+                    mapDefinition.LayerList = lstLayers;
+                    mapDefinition.LegendLayerList = lstLegendLayers;
+                    break;
             }
             return mapDefinition;
         }
@@ -4281,6 +4314,124 @@ namespace bagis_pro
 
                     //zoom to aoi boundary layer
                     success = await MapTools.ZoomToExtentAsync(aoiUri, Constants.MAPS_FIRE_LAYOUT_NAME, Constants.MAPS_FIRE_MAP_FRAME_NAME,
+                        Constants.MAP_BUFFER_FACTOR);
+                    return success;
+                }
+            }
+
+            return BA_ReturnCode.UnknownError;
+        }
+        public static async Task<BA_ReturnCode> DisplayLulccMapAsync(string strAoiPath, Layout layout, bool irrMap)
+        {
+            BA_Objects.Aoi oAoi = Module1.Current.Aoi;
+            Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_LULCC_MAP_NAME);
+            if (oMap != null)
+            {
+
+                if (layout == null)
+                {
+                    MessageBox.Show("The Basin Lulcc Analysis layout could not be located. Maps will not display!", "BAGIS-PRO");
+                    Module1.Current.ModuleLogManager.LogError(nameof(DisplayLulccMapAsync), "The Basin Lulcc Analysis layout could not be located. Maps not displayed!");
+                    return BA_ReturnCode.UnknownError;
+                }
+                else
+                {
+                    BA_ReturnCode success = await MapTools.SetDefaultMapFrameDimensionAsync(Constants.MAPS_LULCC_MAP_FRAME_NAME, layout, oMap,
+                        0.5, 2.5, 8.0, 10.5);
+
+                    //remove existing layers from map frame
+                    await MapTools.RemoveLayersfromMapFrameAsync(Constants.MAPS_LULCC_MAP_NAME, Constants.MAPS_LULCC_ARRAY);
+
+                    //retrieve layer symbology files from portal if needed
+                    success = await GetSystemFilesFromPortalAsync();
+
+                    //retrieve Analysis object
+                    BA_Objects.Analysis oAnalysis = GeneralTools.GetAnalysisSettings(Module1.Current.Aoi.FilePath);
+
+                    //add aoi boundary to map
+                    string strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi, true) +
+                                     Constants.FILE_AOI_VECTOR;
+                    Uri aoiUri = new Uri(strPath);
+                    success = await MapTools.AddAoiBoundaryToMapAsync(aoiUri, ColorFactory.Instance.BlackRGB, Constants.MAPS_LULCC_MAP_NAME, Constants.MAPS_BASIN_BOUNDARY);
+
+                    //add waterbodies layer Layer; Adding it last so it shows up on top
+                    CIMColor fillColor = CIMColor.CreateRGBColor(0, 0, 255, 100);    //Blue with 0% transparency
+                    strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
+                        Constants.FILE_WATER_BODIES;
+                    Uri uri = new Uri(strPath);
+                    success = await MapTools.AddPolygonLayerAsync(Constants.MAPS_LULCC_MAP_NAME, uri, fillColor, true, Constants.MAPS_WATERBODIES);
+
+                    // add aoi streams layer
+                    strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers, true) +
+                              Constants.FILE_STREAMS;
+                    uri = new Uri(strPath);
+                    await MapTools.AddLineLayerAsync(Constants.MAPS_LULCC_MAP_NAME, uri, Constants.MAPS_STREAMS, true, ColorFactory.Instance.BlueRGB);
+
+                    // add pourpoint layer
+                    strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Aoi, true) +
+                              Constants.FILE_POURPOINT;
+                    uri = new Uri(strPath);
+                    success = await MapTools.AddPointMarkersAsync(Constants.MAPS_LULCC_MAP_NAME, uri, Constants.MAPS_STREAM_GAGE, CIMColor.CreateRGBColor(255, 165, 0),
+                        SimpleMarkerStyle.Circle, 8, "", MaplexPointPlacementMethod.NorthEastOfPoint);
+
+                    // add Snotel Layer
+                    strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers, true) +
+                              Constants.FILE_SNOTEL;
+                    uri = new Uri(strPath);
+                    success = await MapTools.AddPointMarkersAsync(Constants.MAPS_LULCC_MAP_NAME, uri, Constants.MAPS_SNOTEL, CIMColor.CreateRGBColor(0, 255, 255),
+                        SimpleMarkerStyle.X, 10, Constants.FIELD_SITE_ID, MaplexPointPlacementMethod.NorthEastOfPoint);
+                    if (success == BA_ReturnCode.Success)
+                        Module1.Current.Aoi.HasSnotel = true;
+
+                    // add Snolite Layer
+                    strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers, true) +
+                              Constants.FILE_SNOLITE;
+                    uri = new Uri(strPath);
+                    success = await MapTools.AddPointMarkersAsync(Constants.MAPS_LULCC_MAP_NAME, uri, Constants.MAPS_SNOLITE, CIMColor.CreateRGBColor(0, 255, 255),
+                        SimpleMarkerStyle.Cross, 12, Constants.FIELD_SITE_ID, MaplexPointPlacementMethod.NorthEastOfPoint);
+                    if (success == BA_ReturnCode.Success)
+                        Module1.Current.Aoi.HasSnolite = true;
+
+                    // add Coop Pillow Layer
+                    strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers, true) +
+                              Constants.FILE_COOP_PILLOW;
+                    uri = new Uri(strPath);
+                    success = await MapTools.AddPointMarkersAsync(Constants.MAPS_LULCC_MAP_NAME, uri, Constants.MAPS_COOP_PILLOW, CIMColor.CreateRGBColor(0, 255, 255),
+                        SimpleMarkerStyle.Rectangle, 8, Constants.FIELD_SITE_ID, MaplexPointPlacementMethod.NorthEastOfPoint);
+                    if (success == BA_ReturnCode.Success)
+                        Module1.Current.Aoi.HasCoopPillow = true;
+
+                    // add Snow Course Layer
+                    strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers, true) +
+                              Constants.FILE_SNOW_COURSE;
+                    uri = new Uri(strPath);
+                    success = await MapTools.AddPointMarkersAsync(Constants.MAPS_LULCC_MAP_NAME, uri, Constants.MAPS_SNOW_COURSE, CIMColor.CreateRGBColor(0, 255, 255),
+                        SimpleMarkerStyle.Star, 12, Constants.FIELD_SITE_ID, MaplexPointPlacementMethod.NorthWestOfPoint);
+                    if (success == BA_ReturnCode.Success)
+                        Module1.Current.Aoi.HasSnowCourse = true;
+
+                    // add hillshade layer
+                    strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Surfaces, true) +
+                        Constants.FILE_HILLSHADE;
+                    uri = new Uri(strPath);
+                    await MapTools.DisplayRasterStretchSymbolAsync(Constants.MAPS_LULCC_MAP_NAME, uri, Constants.MAPS_HILLSHADE, "ArcGIS Colors", "Black to White", 50);
+
+                    // add irr layer
+                    strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
+                              Constants.FILE_IRR_CHANGE;
+                    uri = new Uri(strPath);
+                    success = await MapTools.DisplayRasterWithSymbolAsync(Constants.MAPS_LULCC_MAP_NAME, uri, Constants.MAPS_IRRIGATION_STATUS, "ArcGIS Colors",
+                                "Aspect", "Name", 30, false);
+
+                    // create map elements
+                    success = await MapTools.AddMapElements(Constants.MAPS_LULCC_MAP_FRAME_NAME, Constants.MAPS_LULCC_LAYOUT_NAME);
+                    success = await MapTools.DisplayNorthArrowAsync(layout, Constants.MAPS_LULCC_MAP_FRAME_NAME);
+                    success = await MapTools.DisplayScaleBarAsync(layout, Constants.MAPS_LULCC_MAP_FRAME_NAME);
+
+                    success = await SetClipGeometryAsync(oAoi.FilePath, Constants.MAPS_LULCC_MAP_NAME);
+
+                    //zoom to aoi boundary layer
+                    success = await MapTools.ZoomToExtentAsync(aoiUri, Constants.MAPS_FIRE_LAYOUT_NAME, Constants.MAPS_LULCC_MAP_FRAME_NAME,
                         Constants.MAP_BUFFER_FACTOR);
                     return success;
                 }

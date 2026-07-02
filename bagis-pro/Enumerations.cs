@@ -42,7 +42,8 @@ namespace bagis_pro
         SNODAS_SWE,
         SNODAS_DELTA,
         SEASONAL_PRECIP_CONTRIB,
-        FIRE
+        FIRE,
+        IRR
     }
 
     public enum SiteType
