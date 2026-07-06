@@ -81,6 +81,8 @@ namespace bagis_pro
                         case Constants.FILE_EXPORT_SEASONAL_PRECIP_DISTRIBUTION_PDF:
                             layoutName = Constants.MAPS_SEASONAL_PRECIP_LAYOUT;
                             break;
+                        case Constants.FILE_IRR_MAP_PDF:
+                            layoutName = Constants.MAPS_LULCC_LAYOUT_NAME;                            break;
                         default:
                             layoutName = Constants.MAPS_DEFAULT_LAYOUT_NAME;
                             break;

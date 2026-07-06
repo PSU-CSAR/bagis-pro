@@ -2568,8 +2568,7 @@ namespace bagis_pro
                     lstLayers = new List<string> { Constants.MAPS_BASIN_BOUNDARY, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_HILLSHADE, Constants.MAPS_IRRIGATION_STATUS,
                                                    Constants.MAPS_WATERBODIES, Constants.MAPS_STREAM_GAGE};
-                    lstLegendLayers = new List<string>() { Constants.MAPS_IRRIGATION_STATUS, Constants.MAPS_STREAM_GAGE,
-                                                           Constants.MAPS_WATERBODIES};
+                    lstLegendLayers = new List<string>() {Constants.MAPS_STREAM_GAGE, Constants.MAPS_WATERBODIES};
                     if (Module1.Current.Aoi.HasSnotel == true)
                     {
                         lstLayers.Add(Constants.MAPS_SNOTEL);
@@ -2590,10 +2589,10 @@ namespace bagis_pro
                         lstLayers.Add(Constants.MAPS_SNOW_COURSE);
                         lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE);
                     }
+                    lstLegendLayers.Add(Constants.MAPS_IRRIGATION_STATUS);
 
                     mapDefinition = new BA_Objects.MapDefinition("IRRIGATED LAND",
-                        " ", Constants.FILE_EXPORT_MAP_ELEV_PDF,
-                        Constants.TEXT_SITES_TABLE_DESCR);
+                        " ", Constants.FILE_EXPORT_MAP_ELEV_PDF," ");
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;
@@ -4192,7 +4191,6 @@ namespace bagis_pro
             }
             return false;
         }
-
         public static async Task<BA_ReturnCode> DisplayFireMapsAsync(string strAoiPath, Layout layout)
         {
             BA_Objects.Aoi oAoi = Module1.Current.Aoi;
@@ -4421,7 +4419,7 @@ namespace bagis_pro
                               Constants.FILE_IRR_CHANGE;
                     uri = new Uri(strPath);
                     success = await MapTools.DisplayRasterWithSymbolAsync(Constants.MAPS_LULCC_MAP_NAME, uri, Constants.MAPS_IRRIGATION_STATUS, "ArcGIS Colors",
-                                "Aspect", "Name", 30, false);
+                                "Aspect", "Name", 25, true);
 
                     // create map elements
                     success = await MapTools.AddMapElements(Constants.MAPS_LULCC_MAP_FRAME_NAME, Constants.MAPS_LULCC_LAYOUT_NAME);
@@ -4431,7 +4429,7 @@ namespace bagis_pro
                     success = await SetClipGeometryAsync(oAoi.FilePath, Constants.MAPS_LULCC_MAP_NAME);
 
                     //zoom to aoi boundary layer
-                    success = await MapTools.ZoomToExtentAsync(aoiUri, Constants.MAPS_FIRE_LAYOUT_NAME, Constants.MAPS_LULCC_MAP_FRAME_NAME,
+                    success = await MapTools.ZoomToExtentAsync(aoiUri, Constants.MAPS_LULCC_LAYOUT_NAME, Constants.MAPS_LULCC_MAP_FRAME_NAME,
                         Constants.MAP_BUFFER_FACTOR);
                     return success;
                 }

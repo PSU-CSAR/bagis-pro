@@ -4175,6 +4175,7 @@ namespace bagis_pro
                     double areaSqKm = AreaUnit.SquareMeters.ConvertTo(aoiAreaSqMeters, AreaUnit.SquareKilometers);
                     Layout oLayout = await MapTools.GetDefaultLayoutAsync(Constants.MAPS_LULCC_LAYOUT_NAME);
                     Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_LULCC_MAP_NAME);
+                    Analysis oAnalysis = GeneralTools.GetAnalysisSettings(oAoi.FilePath);
 
                     if (Report_Irr_Checked)
                     {
@@ -4221,6 +4222,14 @@ namespace bagis_pro
                             {
                                 MapDefinition mapDefinition = MapTools.LoadMapDefinition(BagisMapType.IRR);
                                 success = await MapTools.UpdateLegendAsync(oLayout, mapDefinition.LegendLayerList);
+                                mapDefinition.Title = $@"IRRIGATED LAND ({oAnalysis.IrrHistoryYearStart}-{oAnalysis.IrrHistoryYearEnd})";
+                                mapDefinition.LowerRightTextbox = $@"Lands irrigated between {oAnalysis.IrrHistoryYearStart} and {oAnalysis.IrrHistoryYearEnd}, but were inactive after {oAnalysis.IrrHistoryYearEnd} are labeled as{Environment.NewLine}""Inactive"". ""Newly Irrigated"" indicates lands that were non-irrigated prior to {oAnalysis.IrrCurrentYearStart}.";
+                                success = await MapTools.UpdateMapElementsAsync(Module1.Current.Aoi.StationName, Constants.MAPS_LULCC_LAYOUT_NAME, mapDefinition);
+                                if (success == BA_ReturnCode.Success)
+                                {
+                                    Module1.Current.DisplayedMap = $@"{Constants.FILE_IRR_MAP_PDF}";
+                                    success = await GeneralTools.ExportMapToPdfAsync(Constants.PDF_EXPORT_RESOLUTION);
+                                }
                             }
                         }
 
