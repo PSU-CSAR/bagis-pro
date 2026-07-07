@@ -4098,7 +4098,7 @@ namespace bagis_pro
                 return;
             }
             // Make sure the maps_publish folder exists under the selected folder
-            // Make sure the maps_publish\fire_statistics folder exists under the selected folder
+            // Make sure the maps_publish\lulcc_statistics folder exists under the selected folder
             string strParentPath = Path.GetDirectoryName(Path.GetDirectoryName(_strLulccReportLogFile));
             if (!Directory.Exists(strParentPath))
             {
@@ -4177,72 +4177,131 @@ namespace bagis_pro
                     Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_LULCC_MAP_NAME);
                     Analysis oAnalysis = GeneralTools.GetAnalysisSettings(oAoi.FilePath);
 
+                    bool bIrrMapPublished = false;
+                    bool bLcMapPublished = false;
                     if (Report_Irr_Checked)
                     {
                         success = GeneralTools.GenerateLulccMapsTitlePage(areaSqKm, true);
-                        success = await MapTools.DisplayLulccMapAsync(Module1.Current.Aoi.FilePath, oLayout, true);
-                        if (success != BA_ReturnCode.Success)
-                        {
-                            Module1.Current.ModuleLogManager.LogError(nameof(RunLulccMapsImplAsync),
-                                "An error occurred while trying to load the maps. The report cannot be exported!");
-                            Names[idxRow].AoiBatchStateText = AoiBatchState.Failed.ToString();
-                            return;
-                        }
+                        QueryFilter queryFilter = new QueryFilter();
+                        StringBuilder sb = new StringBuilder();
+                        sb.Append(Constants.VALUE_IRR_INACTIVE + ",");
+                        sb.Append(Constants.VALUE_IRR_IRRIGATED + ",");
+                        sb.Append(Constants.VALUE_IRR_NEWLY_IRRIGATED);
+                        string strWhere = $@"{Constants.FIELD_VALUE} IN ({sb.ToString().TrimEnd(',')})";
+                        queryFilter.WhereClause = strWhere;
+                        IDictionary<string, long> dictReturn = await GeodatabaseTools.RasterTableToDictionaryAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis)), 
+                            Constants.FILE_IRR_CHANGE, queryFilter);
 
-                        bool bFoundIt = false;
-                        //A layout view may exist but it may not be active
-                        //Iterate through each pane in the application and check to see if the layout is already open and if so, activate it
-                        foreach (var pane in FrameworkApplication.Panes)
+                        if (dictReturn.Keys.Count > 0)
                         {
-                            if (!(pane is ILayoutPane layoutPane))  //if not a layout view, continue to the next pane    
-                                continue;
-                            if (layoutPane.LayoutView != null &&
-                                layoutPane.LayoutView.Layout == oLayout) //if there is a match, activate the view  
+                            // The AOI has valid irr data
+                            success = await MapTools.DisplayLulccMapAsync(Module1.Current.Aoi.FilePath, oLayout, true);
+                            if (success != BA_ReturnCode.Success)
                             {
-                                (layoutPane as Pane).Activate();
-                                bFoundIt = true;
+                                Module1.Current.ModuleLogManager.LogError(nameof(RunLulccMapsImplAsync),
+                                    "An error occurred while trying to load the maps. The report cannot be exported!");
+                                Names[idxRow].AoiBatchStateText = AoiBatchState.Failed.ToString();
+                                return;
                             }
-                        }
-                        if (!bFoundIt)
-                        {
-                            await FrameworkApplication.Current.Dispatcher.Invoke(async () =>
-                            {
-                                // Do something on the GUI thread
-                                ILayoutPane iNewLayoutPane = await FrameworkApplication.Panes.CreateLayoutPaneAsync(oLayout); //GUI thread
-                                (iNewLayoutPane as Pane).Activate();
-                            });
-                        }
 
-                        // Legend
-                        success = await MapTools.DisplayLegendAsync(Constants.MAPS_LULCC_MAP_FRAME_NAME, oLayout,
-                            "ArcGIS Colors", "1.5 Point", true);
-                        if (oLayout != null)
-                        {
-                            if (success == BA_ReturnCode.Success)
+                            bool bFoundIt = false;
+                            //A layout view may exist but it may not be active
+                            //Iterate through each pane in the application and check to see if the layout is already open and if so, activate it
+                            foreach (var pane in FrameworkApplication.Panes)
                             {
-                                MapDefinition mapDefinition = MapTools.LoadMapDefinition(BagisMapType.IRR);
-                                success = await MapTools.UpdateLegendAsync(oLayout, mapDefinition.LegendLayerList);
-                                mapDefinition.Title = $@"IRRIGATED LAND ({oAnalysis.IrrHistoryYearStart}-{oAnalysis.IrrHistoryYearEnd})";
-                                mapDefinition.LowerRightTextbox = $@"Lands irrigated between {oAnalysis.IrrHistoryYearStart} and {oAnalysis.IrrHistoryYearEnd}, but were inactive after {oAnalysis.IrrHistoryYearEnd} are labeled as{Environment.NewLine}""Inactive"". ""Newly Irrigated"" indicates lands that were non-irrigated prior to {oAnalysis.IrrCurrentYearStart}.";
-                                success = await MapTools.UpdateMapElementsAsync(Module1.Current.Aoi.StationName, Constants.MAPS_LULCC_LAYOUT_NAME, mapDefinition);
+                                if (!(pane is ILayoutPane layoutPane))  //if not a layout view, continue to the next pane    
+                                    continue;
+                                if (layoutPane.LayoutView != null &&
+                                    layoutPane.LayoutView.Layout == oLayout) //if there is a match, activate the view  
+                                {
+                                    (layoutPane as Pane).Activate();
+                                    bFoundIt = true;
+                                }
+                            }
+                            if (!bFoundIt)
+                            {
+                                await FrameworkApplication.Current.Dispatcher.Invoke(async () =>
+                                {
+                                    // Do something on the GUI thread
+                                    ILayoutPane iNewLayoutPane = await FrameworkApplication.Panes.CreateLayoutPaneAsync(oLayout); //GUI thread
+                                    (iNewLayoutPane as Pane).Activate();
+                                });
+                            }
+
+                            // Legend
+                            success = await MapTools.DisplayLegendAsync(Constants.MAPS_LULCC_MAP_FRAME_NAME, oLayout,
+                                "ArcGIS Colors", "1.5 Point", true);
+                            if (oLayout != null)
+                            {
                                 if (success == BA_ReturnCode.Success)
                                 {
-                                    Module1.Current.DisplayedMap = $@"{Constants.FILE_IRR_MAP_PDF}";
-                                    success = await GeneralTools.ExportMapToPdfAsync(Constants.PDF_EXPORT_RESOLUTION);
+                                    MapDefinition mapDefinition = MapTools.LoadMapDefinition(BagisMapType.IRR);
+                                    success = await MapTools.UpdateLegendAsync(oLayout, mapDefinition.LegendLayerList);
+                                    mapDefinition.Title = $@"IRRIGATED LAND ({oAnalysis.IrrHistoryYearStart}-{oAnalysis.IrrHistoryYearEnd})";
+                                    mapDefinition.LowerRightTextbox = $@"Lands irrigated between {oAnalysis.IrrHistoryYearStart} and {oAnalysis.IrrHistoryYearEnd}, but were inactive after {oAnalysis.IrrHistoryYearEnd} are labeled as{Environment.NewLine}""Inactive"". ""Newly Irrigated"" indicates lands that were non-irrigated prior to {oAnalysis.IrrCurrentYearStart}.";
+                                    success = await MapTools.UpdateMapElementsAsync(Module1.Current.Aoi.StationName, Constants.MAPS_LULCC_LAYOUT_NAME, mapDefinition);
+                                    if (success == BA_ReturnCode.Success)
+                                    {
+                                        Module1.Current.DisplayedMap = $@"{Constants.FILE_IRR_MAP_PDF}";
+                                        success = await GeneralTools.ExportMapToPdfAsync(Constants.PDF_EXPORT_RESOLUTION);
+                                    }
                                 }
                             }
                         }
+                        else
+                        {
+                            Module1.Current.ModuleLogManager.LogInfo(nameof(RunLulccMapsImplAsync),
+                                $@"{oAoi.StationName} has no irr data. The map cannot be generated!");
+                            success = BA_ReturnCode.UnknownError;
+                        }
 
+                        if (success == BA_ReturnCode.Success)
+                        {
+                            bIrrMapPublished = true;
+                        }
                     }
                     if (Report_Nlcd_Checked)
                     {
                         success = GeneralTools.GenerateLulccMapsTitlePage(areaSqKm, false);
-                    }
-                    
 
+                        if (success == BA_ReturnCode.Success)
+                        {
+                            bLcMapPublished = true;
+                        }
+                    }
+                    string publishFolder = Module1.Current.Aoi.FilePath + "\\" + Constants.FOLDER_MAP_PACKAGE;
+                    string strOutputPath = $@"{publishFolder}\{strExportPrefix}_{Constants.FILE_LULCC_MAP_SUFFIX_PDF}";
+                    success = GeneralTools.PublishLulccPdfDocument(strOutputPath, bIrrMapPublished, bLcMapPublished);
+                    if (success == BA_ReturnCode.Success)
+                    {
+                        if (!ParentFolder.Equals(Module1.Current.Aoi.FilePath))
+                        {
+                            string strTargetFolder = $@"{ParentFolder}\{Constants.FOLDER_MAP_PACKAGE}\{Constants.FOLDER_LULCC_STATISTICS}";
+                            if (!Directory.Exists(strTargetFolder))
+                            {
+                                Directory.CreateDirectory(strTargetFolder);
+                            }
+                            try
+                            {
+                                File.Copy(strOutputPath, $@"{strTargetFolder}\{strExportPrefix}{Constants.FILE_LULCC_REPORT_SUFFIX_PDF}", true);
+                            }
+                            catch (Exception)
+                            {
+                                MessageBox.Show("Unable to copy maps to selected folder. Please make sure all map documents are closed!");
+                            }
+                        }
+                    }
+                    Names[idxRow].AoiBatchStateText = AoiBatchState.Completed.ToString();  // update gui
+                    strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Finished generate maps export for " +
+                        Names[idxRow].Name + "\r\n";
+                    File.AppendAllText(_strLulccReportLogFile, strLogEntry);       // append
                 }
 
             }
+            strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Completed lulcc maps generation" + "\r\n";
+            File.AppendAllText(_strLulccReportLogFile, strLogEntry);       // append
+            MessageBox.Show("Lulcc maps have been generated!");
+
         }
         private string GetMtbsMapName(int year)
         {

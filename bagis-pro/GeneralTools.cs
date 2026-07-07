@@ -2169,6 +2169,87 @@ namespace bagis_pro
             return BA_ReturnCode.Success;
         }
 
+        public static BA_ReturnCode PublishLulccPdfDocument(string outputPath, bool bIrrMap, bool bLcMap)
+        {
+            // Initialize output document
+            PdfDocument outputDocument = new PdfDocument();
+
+            int idx = 0;
+            int i = 0;
+            PdfDocument combineDocument = new PdfDocument();
+            IList<string> lstAllPages = new List<string>();
+            IList<string> lstMapPaths = new List<string>();
+            if (bIrrMap)
+            {
+                lstAllPages.Add(GetFullPdfFileName(Constants.FILE_TITLE_PAGE_IRR_PDF));
+                lstAllPages.Add(GetFullPdfFileName(Constants.FILE_DATA_SOURCES_IRR_PDF));
+                lstAllPages.Add(GetFullPdfFileName(Constants.FILE_IRR_MAP_PDF));
+                lstMapPaths.Add(GetFullPdfFileName(Constants.FILE_IRR_MAP_PDF));
+            }
+            if (bLcMap)
+            {
+                lstAllPages.Add(GetFullPdfFileName(Constants.FILE_TITLE_PAGE_LC_PDF));
+                lstAllPages.Add(GetFullPdfFileName(Constants.FILE_DATA_SOURCES_LC_PDF));
+                lstAllPages.Add(GetFullPdfFileName(Constants.FILE_LAND_COVER_MAP_PDF));
+                lstMapPaths.Add(GetFullPdfFileName(Constants.FILE_LAND_COVER_MAP_PDF));
+            }
+
+            //Iterate through map files
+            foreach (var fullPath in lstAllPages)
+            {
+                PdfDocument inputDocument = null;
+                if (File.Exists(fullPath))
+                {
+                    inputDocument = PdfReader.Open(fullPath, PdfDocumentOpenMode.Import);
+                }
+                else
+                {
+                    //@ToDo: Checking to see if we need filler pages if both maps aren't present
+                    //BA_ReturnCode success = GeneralTools.GenerateBlankPage(Constants.FILES_EXPORT_TITLES[i], fullPath);
+                    //if (success == BA_ReturnCode.Success)
+                    //{
+                    //    inputDocument = PdfReader.Open(fullPath, PdfDocumentOpenMode.Import);
+                    //}
+                }
+                if (inputDocument != null)
+                {
+                    PdfPage page = inputDocument.Pages[idx];
+                    combineDocument.AddPage(page);
+                }
+                i++;
+            }
+
+            try
+            {
+                Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+                combineDocument.Save(outputPath);
+            }
+            catch (Exception)
+            {
+                Module1.Current.ModuleLogManager.LogError(nameof(PublishLulccPdfDocument),
+                    "Unable to save pdf document to " + outputPath + ". Is the file open?");
+                return BA_ReturnCode.WriteError;
+            }
+
+            foreach (var strPath in lstMapPaths)
+            {
+                if (File.Exists(strPath))
+                {
+                    try
+                    {
+                        File.Delete(strPath);
+                    }
+                    catch (Exception)
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(PublishLulccPdfDocument),
+                            "Unable to delete " + strPath + " !!");
+                    }
+                }
+            }
+
+            return BA_ReturnCode.Success;
+        }
+
         public static BA_ReturnCode ConcatenatePagesInPdf(string outputPath, IList<string> lstToConcat)
         {
             // Initialize output document
@@ -3906,15 +3987,18 @@ namespace bagis_pro
                     tPage.data_sources = data_sources;
                 }
                 //Delete any existing title and data sources page so we don't append the old ones
-                string strSuffix = "_1";
+                string dataSourcesPdf = Constants.FILE_DATA_SOURCES_IRR_PDF;
+                string titlePagePdf = Constants.FILE_TITLE_PAGE_IRR_PDF;
                 if (!irrDataSources)
                 {
-                    strSuffix = "_2";
+                    dataSourcesPdf = Constants.FILE_DATA_SOURCES_LC_PDF;
+                    titlePagePdf = Constants.FILE_TITLE_PAGE_LC_PDF;
                 }
-                if (File.Exists($"{publishFolder + "\\" + Constants.FILE_DATA_SOURCES_PDF}{strSuffix}"))
-                    File.Delete($"{publishFolder + "\\" + Constants.FILE_DATA_SOURCES_PDF}{strSuffix}");
-                if (File.Exists($"{publishFolder + "\\" + Constants.FILE_TITLE_PAGE_PDF}{strSuffix}"))
-                    File.Delete($"{publishFolder + "\\" + Constants.FILE_TITLE_PAGE_PDF}{strSuffix}");
+
+                if (File.Exists($"{publishFolder + "\\"}{dataSourcesPdf}"))
+                    File.Delete($"{publishFolder + "\\"}{dataSourcesPdf}");
+                if (File.Exists($"{publishFolder + "\\"}{titlePagePdf}"))
+                    File.Delete($"{publishFolder + "\\"}{titlePagePdf}");
 
                 string myXmlFile = publishFolder + "\\" + Constants.FILE_TITLE_PAGE_XML;
                 System.Xml.Serialization.XmlSerializer writer = new System.Xml.Serialization.XmlSerializer(tPage.GetType());
@@ -3954,7 +4038,7 @@ namespace bagis_pro
                     using (var p = new Process())
                     {
                         p.StartInfo.FileName = Module1.Current.ChromePath;
-                        p.StartInfo.Arguments = $"--headless --disable-gpu --no-pdf-header-footer --user-data-dir={publishFolder}\\{Constants.FOLDER_CHROME_USER_DATA} --lang=en_US --print-to-pdf={publishFolder + "\\" + Constants.FILE_TITLE_PAGE_PDF}{strSuffix} {url}";
+                        p.StartInfo.Arguments = $"--headless --disable-gpu --no-pdf-header-footer --user-data-dir={publishFolder}\\{Constants.FOLDER_CHROME_USER_DATA} --lang=en_US --print-to-pdf={publishFolder + "\\"}{titlePagePdf} {url}";
                         p.Start();
                         p.WaitForExit();
                     }
@@ -3994,7 +4078,7 @@ namespace bagis_pro
                     using (var p = new Process())
                     {
                         p.StartInfo.FileName = Module1.Current.ChromePath;
-                        p.StartInfo.Arguments = $"--headless --disable-gpu --no-pdf-header-footer --user-data-dir={publishFolder}\\{Constants.FOLDER_CHROME_USER_DATA} --print-to-pdf={publishFolder + "\\" + Constants.FILE_DATA_SOURCES_PDF}{strSuffix} {url}";
+                        p.StartInfo.Arguments = $"--headless --disable-gpu --no-pdf-header-footer --user-data-dir={publishFolder}\\{Constants.FOLDER_CHROME_USER_DATA} --print-to-pdf={publishFolder + "\\"}{dataSourcesPdf} {url}";
                         p.Start();
                         p.WaitForExit();
                     }

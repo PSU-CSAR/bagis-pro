@@ -229,10 +229,14 @@
         public const string FILE_TITLE_PAGE_XML = "title_page.xml";
         public const string FILE_TITLE_PAGE_HTML = "title_page.html";
         public const string FILE_TITLE_PAGE_PDF = "title_page.pdf";
+        public const string FILE_TITLE_PAGE_IRR_PDF = "title_page_irr.pdf";
+        public const string FILE_TITLE_PAGE_LC_PDF = "title_page_lc.pdf";
         public const string FILE_DATA_SOURCES_XSL = "data_sources.xsl";
         public const string FILE_DATA_SOURCES_XML = "data_sources.xml";
         public const string FILE_DATA_SOURCES_HTML = "data_sources.html";
         public const string FILE_DATA_SOURCES_PDF = "data_sources.pdf";
+        public const string FILE_DATA_SOURCES_IRR_PDF = "data_sources_irr.pdf";
+        public const string FILE_DATA_SOURCES_LC_PDF = "data_sources_lc.pdf";
         public const string FILE_SITES_TABLE_XSL = "sites_table.xsl";
         public const string FILE_SITES_TABLE_XML = "sites_table.xml";
         public const string FILE_SITES_TABLE_HTML = "sites_table.html";

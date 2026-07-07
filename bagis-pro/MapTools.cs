@@ -4419,7 +4419,7 @@ namespace bagis_pro
                               Constants.FILE_IRR_CHANGE;
                     uri = new Uri(strPath);
                     success = await MapTools.DisplayRasterWithSymbolAsync(Constants.MAPS_LULCC_MAP_NAME, uri, Constants.MAPS_IRRIGATION_STATUS, "ArcGIS Colors",
-                                "Aspect", "Name", 25, true);
+                                "Basic Random", "Name", 25, true);
 
                     // create map elements
                     success = await MapTools.AddMapElements(Constants.MAPS_LULCC_MAP_FRAME_NAME, Constants.MAPS_LULCC_LAYOUT_NAME);
