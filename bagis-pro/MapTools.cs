@@ -3417,7 +3417,7 @@ namespace bagis_pro
 
         public static async Task<BA_ReturnCode> GetSystemFilesFromPortalAsync()
         {
-            string[] documentIds = new string[7];
+            string[] documentIds = new string[8];
             documentIds[0] = (string)Module1.Current.BagisSettings.NLCDLandCoverLayerItemId;
             documentIds[1] = (string)Module1.Current.BagisSettings.SnodasSweLayoutItemId;
             documentIds[2] = (string)Module1.Current.BagisSettings.SnodasDeltaLayoutItemId;
@@ -3425,9 +3425,10 @@ namespace bagis_pro
             documentIds[4] = (string)Module1.Current.BagisSettings.PublicAndTribalLandsLayerItemId;
             documentIds[5] = (string)Module1.Current.BagisSettings.MTBSFireLayerItemId;
             documentIds[6] = (string)Module1.Current.BagisSettings.ReferenceMapsLayerItemId;
+            documentIds[7] = (string)Module1.Current.BagisSettings.IrrigatedLandsLayerItemId;
             string[] layerFileNames = new string[] { Constants.LAYER_FILE_NLCD_LAND_COVER, Constants.LAYOUT_FILE_SNODAS_SWE,
                 Constants.LAYOUT_FILE_SNODAS_DELTA_SWE, Constants.LAYOUT_FILE_SEASONAL_PRECIP_CONTRIB, Constants.LAYER_FILE_PUBLIC_TRIBAL_LANDS,
-                Constants.LAYER_FILE_MTBS_FIRE, Constants.LAYER_FILE_REFERENCE_MAPS};
+                Constants.LAYER_FILE_MTBS_FIRE, Constants.LAYER_FILE_REFERENCE_MAPS, Constants.LAYER_FILE_IRR_DATA};
             Webservices ws = new Webservices();
             BA_ReturnCode success = BA_ReturnCode.ReadError;
 
@@ -4417,9 +4418,10 @@ namespace bagis_pro
                     // add irr layer
                     strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
                               Constants.FILE_IRR_CHANGE;
+                    string strLayerFilePath = Module1.Current.SettingsPath + "\\" + Constants.FOLDER_SETTINGS + "\\" + Constants.LAYER_FILE_IRR_DATA;
                     uri = new Uri(strPath);
-                    success = await MapTools.DisplayRasterWithSymbolAsync(Constants.MAPS_LULCC_MAP_NAME, uri, Constants.MAPS_IRRIGATION_STATUS, "ArcGIS Colors",
-                                "Basic Random", "Name", 25, true);
+                    success = await MapTools.DisplayUniqueValuesRasterFromLayerFileAsync(Constants.MAPS_LULCC_MAP_NAME, uri,
+                        Constants.MAPS_IRRIGATION_STATUS, strLayerFilePath, 25, true);
 
                     // create map elements
                     success = await MapTools.AddMapElements(Constants.MAPS_LULCC_MAP_FRAME_NAME, Constants.MAPS_LULCC_LAYOUT_NAME);
