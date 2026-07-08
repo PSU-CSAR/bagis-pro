@@ -168,6 +168,7 @@
         "SeasonalPrecipLayoutItemId": "34a1c22f75254c56918c5eb820a6810a",
         "PublicAndTribalLandsLayerItemId": "c72cf8608c644a8c90c651e1bbfe815f",
         "ReferenceMapsLayerItemId": "afbcb79e203b40e889aeaf4edb4a6930",
+        "IrrigatedLandsLayerItemId": "21d3db24022a41998afdf8ebbba02f86",
         "MaximumSitesAllowed": 50,
         "WinterStartMonth": 11,
         "WinterEndMonth": 3,
