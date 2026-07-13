@@ -125,10 +125,16 @@
             "uri": "https://webservices.geog.pdx.edu/arcgis/rest/services/landuse/IrrMapper_historical/ImageServer"
         },
         {
-            "layerType": "Irrigated Current",
-            "heading": "Irrigated Lands - Current",
-            "description": "IrrMapper Irrigated Lands, Version 1.2. 2021-2025 imageservice accessed on the report creating date (see the report summary page). See https://climate.umt.edu/research/irrmapper/ for more information.",
-            "uri": "http://webservices.geog.pdx.edu/arcgis/rest/services/landuse/IrrMapper_recent_5_years/ImageServer"
+            "layerType": "Land Cover Current",
+            "heading": "Land Cover - Current",
+            "description": "No description yet.",
+            "uri": "https://webservices.geog.pdx.edu/arcgis/rest/services/landuse/landcover_current/ImageServer"
+        },
+                {
+            "layerType": "Land Cover Historical",
+            "heading": "Land Cover - Historical",
+            "description": "No description yet.",
+            "uri": "https://webservices.geog.pdx.edu/arcgis/rest/services/landuse/landcover_before/ImageServer"
         }
     ],
     "BagisSettings": {
@@ -212,7 +218,7 @@
                 "Severity": "None"
             }
         ],
-        "Version": 32
+        "Version": 33
     },
     "AoiCreation": {
     "ReferenceLayer":"BAGIS_Reference_Maps.lyrx",
