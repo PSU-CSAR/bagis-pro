@@ -3634,11 +3634,11 @@ namespace bagis_pro
                             Module1.Current.CboCurrentAoi.SetAoiName(oAoi.Name);
                         });
                     }
-                    //Clip nifc fire layers
+                    //Clip irrigation layers
                     string strWsUri = Module1.Current.DataSources[Constants.DATA_TYPE_IRRIGATED_CURRENT].uri;
                     Analysis oAnalysis = GeneralTools.GetAnalysisSettings(oAoi.FilePath);
                     BA_ReturnCode success = BA_ReturnCode.UnknownError;
-                    if (Clip_Irr_Checked)
+                    if (Clip_Irr_Checked)                    
                     {
                         string strIrrCurrent = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Layers, true)
                             + Constants.FILE_IRR_CURRENT;
@@ -3683,7 +3683,7 @@ namespace bagis_pro
                         });
                         if (oAnalysis != null)
                         {
-                            string[] arrReturn = await QueryIrrMetadataAsync(displayName);
+                            string[] arrReturn = await QueryLulcMetadataAsync(displayName);
                             if (arrReturn[0] != null)
                             {
                                 oAnalysis.IrrCurrentYearStart = arrReturn[0];
@@ -3720,8 +3720,6 @@ namespace bagis_pro
                             await MapTools.RemoveLayersfromMapFrameAsync(Constants.MAPS_DEFAULT_MAP_NAME, [displayName]);
                             // Add historical layer
                             strWsUri = Module1.Current.DataSources[Constants.DATA_TYPE_IRRIGATED_HISTORICAL].uri;
-                            strIrrHistorical = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Layers, true)
-                                + Constants.FILE_IRR_HISTORICAL;
                             await QueuedTask.Run(() =>
                             {
                                 try
@@ -3742,7 +3740,7 @@ namespace bagis_pro
                                     return;
                                 }
                             });
-                            arrReturn = await QueryIrrMetadataAsync(displayName);
+                            arrReturn = await QueryLulcMetadataAsync(displayName);
                             if (arrReturn[0] != null)
                             {
                                 oAnalysis.IrrHistoryYearStart = arrReturn[0];
@@ -3837,6 +3835,158 @@ namespace bagis_pro
                             }
                         }
                     }
+                    if (Clip_Nlcd_Checked)
+                    {
+                        string strLcCurrent = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Layers, true)
+                            + Constants.FILE_LANDCOVER_CURRENT;
+                        string strLcHistorical = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Layers, true)
+                            + Constants.FILE_LANDCOVER_HISTORICAL;
+                        string strClipFile = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Aoi, true)
+                            + Constants.FILE_AOI_VECTOR;
+                        // Delete irr layers before starting clip
+                        string[] arrLayersToDelete = {$"{GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Layers, true)}{Constants.FILE_LANDCOVER_CURRENT}",
+                                                      $"{GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Layers, true)}{Constants.FILE_LANDCOVER_HISTORICAL}",
+                                                      $"{GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Analysis, true)}{Constants.FILE_LANDCOVER_CHANGE}"};
+                        for (int i = 0; i < arrLayersToDelete.Length; i++)
+                        {
+                            Uri uri = new Uri(Path.GetDirectoryName(arrLayersToDelete[i]));
+                            string fName = Path.GetFileName(arrLayersToDelete[i]);
+                            if (await GeodatabaseTools.RasterDatasetExistsAsync(uri, fName))
+                            {
+                                success = await GeoprocessingTools.DeleteDatasetAsync(arrLayersToDelete[i]);
+                            }
+                        }
+
+                        // Add layer to map so we can read the tags
+                        string displayName = "tempLcClip";
+                        strWsUri = Module1.Current.DataSources[Constants.DATA_TYPE_LANDCOVER_CURRENT].uri;
+                        await QueuedTask.Run(() =>
+                        {
+                            try
+                            {
+                                var rasterLayerCreationParams = new RasterLayerCreationParams(new Uri(strWsUri))
+                                {
+                                    Name = displayName,
+                                    IsVisible = false
+                                };
+                                //Create the raster layer on the active map and set the visibility
+                                LayerFactory.Instance.CreateLayer<RasterLayer>(rasterLayerCreationParams, oMap);
+                            }
+                            catch (Exception e)
+                            {
+                                Module1.Current.ModuleLogManager.LogError(nameof(RunLulccDataImplAsync),
+                                    $@"An error occurred while trying to create the raster layer. Exception: {e.Message}");
+                                errorCount++;
+                                return;
+                            }
+                        });
+                        if (oAnalysis != null)
+                        {
+                            string[] arrReturn = await QueryLulcMetadataAsync(displayName);
+                            if (arrReturn[0] != null)
+                            {
+                                oAnalysis.LcCurrentYearStart = arrReturn[0];
+                                oAnalysis.LcCurrentYearEnd = arrReturn[1];
+                            }
+                            Layer imageLayer = oMap.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(displayName, StringComparison.CurrentCultureIgnoreCase));
+                            success = await AnalysisTools.ClipRasterFromLayerNoBufferAsync(oAoi.FilePath, strClipFile,
+                                imageLayer, strLcCurrent, Aoi.SnapRasterPath(oAoi.FilePath), CancelableProgressor.None);
+                            string strDataType = Constants.DATA_TYPE_LANDCOVER_CURRENT;
+                            IDictionary<string, DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
+                            if (success != BA_ReturnCode.Success)
+                            {
+                                Module1.Current.ModuleLogManager.LogError(nameof(RunLulccDataImplAsync),
+                                    $@"An error occurred when trying to clip the land cover data. Skipping AOI!");
+                                errorCount++;
+                                return;
+                            }
+                            else
+                            {
+                                // Update layer metadata                                
+                                DataSource updateDataSource = new DataSource(Module1.Current.DataSources[strDataType])
+                                {
+                                    DateClipped = DateTime.Now,
+                                };
+                                if (dictLocalDataSources.ContainsKey(strDataType))
+                                {
+                                    dictLocalDataSources[strDataType] = updateDataSource;
+                                }
+                                else
+                                {
+                                    dictLocalDataSources.Add(strDataType, updateDataSource);
+                                }
+                            }
+                            await MapTools.RemoveLayersfromMapFrameAsync(Constants.MAPS_DEFAULT_MAP_NAME, [displayName]);
+                            // Add historical layer
+                            strWsUri = Module1.Current.DataSources[Constants.DATA_TYPE_LANDCOVER_HISTORICAL].uri;
+                            await QueuedTask.Run(() =>
+                            {
+                                try
+                                {
+                                    var rasterLayerCreationParams = new RasterLayerCreationParams(new Uri(strWsUri))
+                                    {
+                                        Name = displayName,
+                                        IsVisible = false
+                                    };
+                                    //Create the raster layer on the active map and set the visibility
+                                    LayerFactory.Instance.CreateLayer<RasterLayer>(rasterLayerCreationParams, oMap);
+                                }
+                                catch (Exception e)
+                                {
+                                    Module1.Current.ModuleLogManager.LogError(nameof(RunLulccDataImplAsync),
+                                        $@"An error occurred while trying to create the raster layer. Exception: {e.Message}");
+                                    errorCount++;
+                                    return;
+                                }
+                            });
+                            arrReturn = await QueryLulcMetadataAsync(displayName);
+                            if (arrReturn[0] != null)
+                            {
+                                oAnalysis.LcHistoryYearStart = arrReturn[0];
+                                oAnalysis.LcHistoryYearEnd = arrReturn[1];
+                            }
+                            if (success == BA_ReturnCode.Success)
+                            {
+
+                                imageLayer = oMap.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(displayName, StringComparison.CurrentCultureIgnoreCase));
+                                success = await AnalysisTools.ClipRasterFromLayerNoBufferAsync(oAoi.FilePath, strClipFile,
+                                    imageLayer, strLcHistorical, Aoi.SnapRasterPath(oAoi.FilePath), CancelableProgressor.None);
+                                if (success != BA_ReturnCode.Success)
+                                {
+                                    Module1.Current.ModuleLogManager.LogError(nameof(RunLulccDataImplAsync),
+                                        $@"An error occurred when trying to clip the historical land cover data. Skipping AOI!");
+                                    errorCount++;
+                                    return;
+                                }
+                                else
+                                {
+                                    strDataType = Constants.DATA_TYPE_LANDCOVER_HISTORICAL;
+                                    // Update layer metadata                                
+                                    DataSource updateDataSource = new DataSource(Module1.Current.DataSources[strDataType])
+                                    {
+                                        DateClipped = DateTime.Now,
+                                    };
+                                    if (dictLocalDataSources.ContainsKey(strDataType))
+                                    {
+                                        dictLocalDataSources[strDataType] = updateDataSource;
+                                    }
+                                    else
+                                    {
+                                        dictLocalDataSources.Add(strDataType, updateDataSource);
+                                    }
+
+                                }
+                            }
+                            await MapTools.RemoveLayersfromMapFrameAsync(Constants.MAPS_DEFAULT_MAP_NAME, [displayName]);
+                            List<DataSource> lstDataSources = new List<DataSource>();
+                            foreach (string key in dictLocalDataSources.Keys)
+                            {
+                                lstDataSources.Add(dictLocalDataSources[key]);
+                            }
+                            oAnalysis.DataSources = lstDataSources;
+                            success = GeneralTools.SaveAnalysisSettings(oAoi.FilePath, oAnalysis);
+                        }
+                    }
                     if (success == BA_ReturnCode.Success && errorCount == 0)
                     {
                         Names[idxRow].AoiBatchStateText = AoiBatchState.Completed.ToString();  // update gui
@@ -3854,7 +4004,7 @@ namespace bagis_pro
                 }
             }
         }
-        private async Task<string[]> QueryIrrMetadataAsync(string displayName)
+        private async Task<string[]> QueryLulcMetadataAsync(string displayName)
         {
             var oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
             string[] arrReturn = new string[2];
@@ -3864,7 +4014,7 @@ namespace bagis_pro
                 Layer imageLayer = oMap.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(displayName, StringComparison.CurrentCultureIgnoreCase));
                 if (imageLayer == null)
                 {
-                    Module1.Current.ModuleLogManager.LogError(nameof(QueryIrrMetadataAsync),
+                    Module1.Current.ModuleLogManager.LogError(nameof(QueryLulcMetadataAsync),
                         $@"Could not find imagelayer!");
                 }
                 // 2. Check if the layer supports and provides metadata
@@ -3880,20 +4030,21 @@ namespace bagis_pro
                             // Note: The XPaths may vary depending on your organization's Metadata style
                             foreach (XElement element in xmlDoc.Descendants("keyword"))
                             {
-                                if (element.ToString().IndexOf("bagisYearStart") > -1)
+                            string strValue = Convert.ToString(element.Value).Trim();
+                            if (strValue.IndexOf("bagisYearStart") > -1)
                                 {
-                                    string[] arrPieces = element.Value.Split(':');
+                                    string[] arrPieces = strValue.Split(':');
                                     if (arrPieces.Length == 2)
                                     {
-                                    arrReturn[0] = arrPieces[1];                                        
+                                    arrReturn[0] = arrPieces[1].Substring(0,4);                                        
                                     }
                                 }
-                                if (element.ToString().IndexOf("bagisYearEnd") > -1)
+                                if (strValue.IndexOf("bagisYearEnd") > -1)
                                 {
-                                    string[] arrPieces = element.Value.Split(':');
+                                    string[] arrPieces = strValue.Split(':');
                                     if (arrPieces.Length == 2)
                                     {
-                                    arrReturn[1] = arrPieces[1];
+                                    arrReturn[1] = arrPieces[1].Substring(0,4);
                                 }
                                 }
                             }
@@ -3901,7 +4052,7 @@ namespace bagis_pro
                         catch (Exception)
                         {
                             // Handle XML parsing errors
-                            Module1.Current.ModuleLogManager.LogError(nameof(QueryIrrMetadataAsync),
+                            Module1.Current.ModuleLogManager.LogError(nameof(QueryLulcMetadataAsync),
                                 $@"An error occurred when trying to read the image service metadata. Skipping AOI!");
                         }
                     }

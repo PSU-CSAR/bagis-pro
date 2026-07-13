@@ -61,6 +61,10 @@ namespace bagis_pro.BA_Objects
         public string IrrCurrentYearEnd = "9999";
         public string IrrHistoryYearStart = "9998";
         public string IrrHistoryYearEnd = "9999";
+        public string LcCurrentYearStart = "9998";
+        public string LcCurrentYearEnd = "9999";
+        public string LcHistoryYearStart = "9998";
+        public string LcHistoryYearEnd = "9999";
         public DateTime DateBagisSettingsConverted;
         public string DateCreatedText
         {

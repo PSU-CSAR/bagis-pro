@@ -377,8 +377,8 @@
         public const string DATA_TYPE_SOURCE_POURPOINT = "Pourpoint Source";    //Note: This is not really a data source
         public const string DATA_TYPE_IRRIGATED_HISTORICAL = "Irrigated Historical";
         public const string DATA_TYPE_IRRIGATED_CURRENT = "Irrigated Current";
-        public const string DATA_TYPE_LANDCOVER_HISTORICAL = "Landcover Historical";
-        public const string DATA_TYPE_LANDCOVER_CURRENT = "Landcover Current";
+        public const string DATA_TYPE_LANDCOVER_HISTORICAL = "Land Cover Historical";
+        public const string DATA_TYPE_LANDCOVER_CURRENT = "Land Cover Current";
 
 
         public const int VALUE_NO_DATA_9999 = -9999;
