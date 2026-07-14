@@ -22,6 +22,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -146,7 +147,7 @@ namespace bagis_pro
         private const string _separator = ",";
         private bool _bClip_Irr_Checked;
         private bool _bClip_Nlcd_Checked;
-        private bool _Reclip_LULCC_Checked = false; //@ToDo: Change to true for production
+        private bool _Reclip_LULCC_Checked = true;
         private string _strLulccDataLogFile;
         private string _strLulccReportLogFile;
         private bool _bReport_Irr_Checked;
@@ -617,6 +618,15 @@ namespace bagis_pro
 
         public ObservableCollection<BA_Objects.Aoi> Names { get; set; }
         public ObservableCollection<string> FilterFireStatus { get; set; }
+
+        IReadOnlyDictionary<string, string> DictLandCoverTypes = new Dictionary<string, string>()
+        {
+            { "1", "Others" },
+            { "2", "Developed" },
+            { "4", "Forest" },
+            { "8", "Agricultural" },
+            { "9", "Wetland" }
+        };
 
         // Assigns the propertyChanged event handler to each AOI item
         public void ContentCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
@@ -3638,7 +3648,7 @@ namespace bagis_pro
                     string strWsUri = Module1.Current.DataSources[Constants.DATA_TYPE_IRRIGATED_CURRENT].uri;
                     Analysis oAnalysis = GeneralTools.GetAnalysisSettings(oAoi.FilePath);
                     BA_ReturnCode success = BA_ReturnCode.UnknownError;
-                    if (Clip_Irr_Checked)                    
+                    if (Clip_Irr_Checked)
                     {
                         string strIrrCurrent = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Layers, true)
                             + Constants.FILE_IRR_CURRENT;
@@ -3646,80 +3656,48 @@ namespace bagis_pro
                             + Constants.FILE_IRR_HISTORICAL;
                         string strClipFile = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Aoi, true)
                             + Constants.FILE_AOI_VECTOR;
-                        // Delete irr layers before starting clip
-                        string[] arrLayersToDelete = {$"{GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Layers, true)}{Constants.FILE_IRR_CURRENT}",
-                                                      $"{GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Layers, true)}{Constants.FILE_IRR_HISTORICAL}",
-                                                      $"{GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Analysis, true)}{Constants.FILE_IRR_CHANGE}"};
-                        for (int i = 0; i < arrLayersToDelete.Length; i++)
+                        // Check to see if we overwrite and continue
+                        bool bClipIrr = true;
+                        if (!Reclip_LULCC_Checked)
                         {
-                            Uri uri = new Uri(Path.GetDirectoryName(arrLayersToDelete[i]));
-                            string fName = Path.GetFileName(arrLayersToDelete[i]);
-                            if (await GeodatabaseTools.RasterDatasetExistsAsync(uri, fName))
+                            if (await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Analysis)), Constants.FILE_IRR_CHANGE))
                             {
-                                success = await GeoprocessingTools.DeleteDatasetAsync(arrLayersToDelete[i]);
+                                strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Irrigation data exists and we don't want to reclip. Skipping! " +
+                                    Names[idxRow].Name + "\r\n";
+                                File.AppendAllText(_strLulccDataLogFile, strLogEntry);       // append
+                                success = BA_ReturnCode.Success;
+                                bClipIrr = false;
                             }
                         }
-                        // Add layer to map so we can read the tags
-                        string displayName = "tempIrrClip";
-                        await QueuedTask.Run(() =>
+                        if (bClipIrr)
                         {
-                            try
+                            if (!Reclip_LULCC_Checked)
                             {
-                                var rasterLayerCreationParams = new RasterLayerCreationParams(new Uri(strWsUri))
+                                if (await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Analysis)), Constants.FILE_LANDCOVER_CHANGE))
                                 {
-                                    Name = displayName,
-                                    IsVisible = false
-                                };
-                                //Create the raster layer on the active map and set the visibility
-                                LayerFactory.Instance.CreateLayer<RasterLayer>(rasterLayerCreationParams, oMap);
-                            }
-                            catch (Exception e)
-                            {
-                                Module1.Current.ModuleLogManager.LogError(nameof(RunLulccDataImplAsync),
-                                    $@"An error occurred while trying to create the raster layer. Exception: {e.Message}");
-                                errorCount++;
-                                return;
-                            }
-                        });
-                        if (oAnalysis != null)
-                        {
-                            string[] arrReturn = await QueryLulcMetadataAsync(displayName);
-                            if (arrReturn[0] != null)
-                            {
-                                oAnalysis.IrrCurrentYearStart = arrReturn[0];
-                                oAnalysis.IrrCurrentYearEnd = arrReturn[1];
-                            }
-                            Layer imageLayer = oMap.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(displayName, StringComparison.CurrentCultureIgnoreCase));
-                            success = await AnalysisTools.ClipRasterFromLayerNoBufferAsync(oAoi.FilePath, strClipFile,
-                                imageLayer, strIrrCurrent, Aoi.SnapRasterPath(oAoi.FilePath), CancelableProgressor.None);
-                            string strDataType = Constants.DATA_TYPE_IRRIGATED_CURRENT;
-                            IDictionary<string, DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
-                            if (success != BA_ReturnCode.Success)
-                            {
-                                Module1.Current.ModuleLogManager.LogError(nameof(RunLulccDataImplAsync),
-                                    $@"An error occurred when trying to clip the irr data. Skipping AOI!");
-                                errorCount++;
-                                return;
-                            }
-                            else
-                            {
-                                // Update layer metadata                                
-                                DataSource updateDataSource = new DataSource(Module1.Current.DataSources[strDataType])
-                                {
-                                    DateClipped = DateTime.Now,
-                                };
-                                if (dictLocalDataSources.ContainsKey(strDataType))
-                                {
-                                    dictLocalDataSources[strDataType] = updateDataSource;
-                                }
-                                else
-                                {
-                                    dictLocalDataSources.Add(strDataType, updateDataSource);
+                                    strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Land cover data exists and we don't want to reclip. Skipping! " +
+                                        Names[idxRow].Name + "\r\n";
+                                    File.AppendAllText(_strLulccDataLogFile, strLogEntry);       // append
+                                    bClipIrr = false;
                                 }
                             }
-                            await MapTools.RemoveLayersfromMapFrameAsync(Constants.MAPS_DEFAULT_MAP_NAME, [displayName]);
-                            // Add historical layer
-                            strWsUri = Module1.Current.DataSources[Constants.DATA_TYPE_IRRIGATED_HISTORICAL].uri;
+
+
+                            // Delete irr layers before starting clip
+                            string[] arrLayersToDelete = {$"{GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Layers, true)}{Constants.FILE_IRR_CURRENT}",
+                                                      $"{GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Layers, true)}{Constants.FILE_IRR_HISTORICAL}",
+                                                      $"{GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Analysis, true)}{Constants.FILE_IRR_CHANGE}"};
+                            for (int i = 0; i < arrLayersToDelete.Length; i++)
+                            {
+                                Uri uri = new Uri(Path.GetDirectoryName(arrLayersToDelete[i]));
+                                string fName = Path.GetFileName(arrLayersToDelete[i]);
+                                if (await GeodatabaseTools.RasterDatasetExistsAsync(uri, fName))
+                                {
+                                    success = await GeoprocessingTools.DeleteDatasetAsync(arrLayersToDelete[i]);
+                                }
+                            }
+                            // Add layer to map so we can read the tags
+                            string displayName = "tempIrrClip";
                             await QueuedTask.Run(() =>
                             {
                                 try
@@ -3740,18 +3718,19 @@ namespace bagis_pro
                                     return;
                                 }
                             });
-                            arrReturn = await QueryLulcMetadataAsync(displayName);
-                            if (arrReturn[0] != null)
+                            if (oAnalysis != null)
                             {
-                                oAnalysis.IrrHistoryYearStart = arrReturn[0];
-                                oAnalysis.IrrHistoryYearEnd = arrReturn[1];
-                            }
-                            if (success == BA_ReturnCode.Success)
-                            {
-
-                                imageLayer = oMap.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(displayName, StringComparison.CurrentCultureIgnoreCase));
+                                string[] arrReturn = await QueryLulcMetadataAsync(displayName);
+                                if (arrReturn[0] != null)
+                                {
+                                    oAnalysis.IrrCurrentYearStart = arrReturn[0];
+                                    oAnalysis.IrrCurrentYearEnd = arrReturn[1];
+                                }
+                                Layer imageLayer = oMap.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(displayName, StringComparison.CurrentCultureIgnoreCase));
                                 success = await AnalysisTools.ClipRasterFromLayerNoBufferAsync(oAoi.FilePath, strClipFile,
-                                    imageLayer, strIrrHistorical, Aoi.SnapRasterPath(oAoi.FilePath), CancelableProgressor.None);
+                                    imageLayer, strIrrCurrent, Aoi.SnapRasterPath(oAoi.FilePath), CancelableProgressor.None);
+                                string strDataType = Constants.DATA_TYPE_IRRIGATED_CURRENT;
+                                IDictionary<string, DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
                                 if (success != BA_ReturnCode.Success)
                                 {
                                     Module1.Current.ModuleLogManager.LogError(nameof(RunLulccDataImplAsync),
@@ -3761,7 +3740,6 @@ namespace bagis_pro
                                 }
                                 else
                                 {
-                                    strDataType = Constants.DATA_TYPE_IRRIGATED_HISTORICAL;
                                     // Update layer metadata                                
                                     DataSource updateDataSource = new DataSource(Module1.Current.DataSources[strDataType])
                                     {
@@ -3775,150 +3753,167 @@ namespace bagis_pro
                                     {
                                         dictLocalDataSources.Add(strDataType, updateDataSource);
                                     }
-
                                 }
-                            }
-                            await MapTools.RemoveLayersfromMapFrameAsync(Constants.MAPS_DEFAULT_MAP_NAME, [displayName]);
-                            List<DataSource> lstDataSources = new List<DataSource>();
-                            foreach (string key in dictLocalDataSources.Keys)
-                            {
-                                lstDataSources.Add(dictLocalDataSources[key]);
-                            }
-                            oAnalysis.DataSources = lstDataSources;
-                            success = GeneralTools.SaveAnalysisSettings(oAoi.FilePath, oAnalysis);
-                        }
-                        else
-                        {
-                            MessageBox.Show("The analysis.xml settings could not be found. Process halted!", "Bagis-Pro");
-                            Module1.Current.ModuleLogManager.LogError(nameof(RunLulccDataImplAsync),
-                                $@"The analysis.xml settings could not be found. Skipping AOI!");
-                            return;
-                        }
-                        if (success == BA_ReturnCode.Success)
-                        {
-                            // define the map algebra expression
-                            string maExpression = String.Format("\"{0}\" + (\"{1}\" * 10 )", strIrrHistorical, strIrrCurrent);
-                            string outRaster = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Analysis, true) + Constants.FILE_IRR_CHANGE;
-                            // make the input parameter values array
-                            var valueArray = Geoprocessing.MakeValueArray(maExpression, outRaster);
-                            var environments = Geoprocessing.MakeEnvironmentArray(workspace: GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Analysis));
-                            // execute the Raster calculator tool to process the map algebra expression
-                            var gpResult = await Geoprocessing.ExecuteToolAsync("RasterCalculator_sa", valueArray, environments,
-                                CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
-                            if (gpResult.IsFailed)
-                            {
-                                Module1.Current.ModuleLogManager.LogDebug(nameof(RunLulccDataImplAsync),
-                                    "Raster Calculator failed for " + outRaster + "!");
-                                foreach (var objMessage in gpResult.Messages)
+                                await MapTools.RemoveLayersfromMapFrameAsync(Constants.MAPS_DEFAULT_MAP_NAME, [displayName]);
+                                // Add historical layer
+                                strWsUri = Module1.Current.DataSources[Constants.DATA_TYPE_IRRIGATED_HISTORICAL].uri;
+                                await QueuedTask.Run(() =>
                                 {
-                                    IGPMessage msg = (IGPMessage)objMessage;
-                                    Module1.Current.ModuleLogManager.LogError(nameof(RunLulccDataImplAsync),
-                                        msg.Text);
+                                    try
+                                    {
+                                        var rasterLayerCreationParams = new RasterLayerCreationParams(new Uri(strWsUri))
+                                        {
+                                            Name = displayName,
+                                            IsVisible = false
+                                        };
+                                        //Create the raster layer on the active map and set the visibility
+                                        LayerFactory.Instance.CreateLayer<RasterLayer>(rasterLayerCreationParams, oMap);
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        Module1.Current.ModuleLogManager.LogError(nameof(RunLulccDataImplAsync),
+                                            $@"An error occurred while trying to create the raster layer. Exception: {e.Message}");
+                                        errorCount++;
+                                        return;
+                                    }
+                                });
+                                arrReturn = await QueryLulcMetadataAsync(displayName);
+                                if (arrReturn[0] != null)
+                                {
+                                    oAnalysis.IrrHistoryYearStart = arrReturn[0];
+                                    oAnalysis.IrrHistoryYearEnd = arrReturn[1];
                                 }
-                                errorCount++;
-                                success = BA_ReturnCode.OtherError;
+                                if (success == BA_ReturnCode.Success)
+                                {
+
+                                    imageLayer = oMap.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(displayName, StringComparison.CurrentCultureIgnoreCase));
+                                    success = await AnalysisTools.ClipRasterFromLayerNoBufferAsync(oAoi.FilePath, strClipFile,
+                                        imageLayer, strIrrHistorical, Aoi.SnapRasterPath(oAoi.FilePath), CancelableProgressor.None);
+                                    if (success != BA_ReturnCode.Success)
+                                    {
+                                        Module1.Current.ModuleLogManager.LogError(nameof(RunLulccDataImplAsync),
+                                            $@"An error occurred when trying to clip the irr data. Skipping AOI!");
+                                        errorCount++;
+                                        return;
+                                    }
+                                    else
+                                    {
+                                        strDataType = Constants.DATA_TYPE_IRRIGATED_HISTORICAL;
+                                        // Update layer metadata                                
+                                        DataSource updateDataSource = new DataSource(Module1.Current.DataSources[strDataType])
+                                        {
+                                            DateClipped = DateTime.Now,
+                                        };
+                                        if (dictLocalDataSources.ContainsKey(strDataType))
+                                        {
+                                            dictLocalDataSources[strDataType] = updateDataSource;
+                                        }
+                                        else
+                                        {
+                                            dictLocalDataSources.Add(strDataType, updateDataSource);
+                                        }
+
+                                    }
+                                }
+                                await MapTools.RemoveLayersfromMapFrameAsync(Constants.MAPS_DEFAULT_MAP_NAME, [displayName]);
+                                List<DataSource> lstDataSources = new List<DataSource>();
+                                foreach (string key in dictLocalDataSources.Keys)
+                                {
+                                    lstDataSources.Add(dictLocalDataSources[key]);
+                                }
+                                oAnalysis.DataSources = lstDataSources;
+                                success = GeneralTools.SaveAnalysisSettings(oAoi.FilePath, oAnalysis);
                             }
                             else
                             {
-                                // Write names to raster
-                                IList<string> lstValues = new List<string>();
-                                lstValues.Add(Constants.VALUE_IRR_INACTIVE);
-                                lstValues.Add(Constants.VALUE_IRR_IRRIGATED);
-                                lstValues.Add(Constants.VALUE_IRR_NEWLY_IRRIGATED);
-                                IList<string> lstNames = new List<string>();
-                                lstNames.Add("Inactive");
-                                lstNames.Add("Irrigated");
-                                lstNames.Add("Newly Irrigated");
-                                success = await GeodatabaseTools.UpdateRasterAttributeNamesAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Analysis)),
-                                    Constants.FILE_IRR_CHANGE, lstValues, lstNames);
-                                success = BA_ReturnCode.Success;
+                                MessageBox.Show("The analysis.xml settings could not be found. Process halted!", "Bagis-Pro");
+                                Module1.Current.ModuleLogManager.LogError(nameof(RunLulccDataImplAsync),
+                                    $@"The analysis.xml settings could not be found. Skipping AOI!");
+                                return;
+                            }
+                            if (success == BA_ReturnCode.Success)
+                            {
+                                // define the map algebra expression
+                                string maExpression = String.Format("\"{0}\" + (\"{1}\" * 10 )", strIrrHistorical, strIrrCurrent);
+                                string outRaster = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Analysis, true) + Constants.FILE_IRR_CHANGE;
+                                // make the input parameter values array
+                                var valueArray = Geoprocessing.MakeValueArray(maExpression, outRaster);
+                                var environments = Geoprocessing.MakeEnvironmentArray(workspace: GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Analysis));
+                                // execute the Raster calculator tool to process the map algebra expression
+                                var gpResult = await Geoprocessing.ExecuteToolAsync("RasterCalculator_sa", valueArray, environments,
+                                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                                if (gpResult.IsFailed)
+                                {
+                                    Module1.Current.ModuleLogManager.LogDebug(nameof(RunLulccDataImplAsync),
+                                        "Raster Calculator failed for " + outRaster + "!");
+                                    foreach (var objMessage in gpResult.Messages)
+                                    {
+                                        IGPMessage msg = (IGPMessage)objMessage;
+                                        Module1.Current.ModuleLogManager.LogError(nameof(RunLulccDataImplAsync),
+                                            msg.Text);
+                                    }
+                                    errorCount++;
+                                    success = BA_ReturnCode.OtherError;
+                                }
+                                else
+                                {
+                                    // Write names to raster
+                                    IList<string> lstValues = new List<string>();
+                                    lstValues.Add(Constants.VALUE_IRR_INACTIVE);
+                                    lstValues.Add(Constants.VALUE_IRR_IRRIGATED);
+                                    lstValues.Add(Constants.VALUE_IRR_NEWLY_IRRIGATED);
+                                    IList<string> lstNames = new List<string>();
+                                    lstNames.Add("Inactive");
+                                    lstNames.Add("Irrigated");
+                                    lstNames.Add("Newly Irrigated");
+                                    success = await GeodatabaseTools.UpdateRasterAttributeNamesAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Analysis)),
+                                        Constants.FILE_IRR_CHANGE, lstValues, lstNames);
+                                    success = BA_ReturnCode.Success;
+                                }
                             }
                         }
                     }
                     if (Clip_Nlcd_Checked)
                     {
-                        string strLcCurrent = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Layers, true)
-                            + Constants.FILE_LANDCOVER_CURRENT;
-                        string strLcHistorical = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Layers, true)
-                            + Constants.FILE_LANDCOVER_HISTORICAL;
-                        string strClipFile = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Aoi, true)
-                            + Constants.FILE_AOI_VECTOR;
-                        // Delete irr layers before starting clip
-                        string[] arrLayersToDelete = {$"{GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Layers, true)}{Constants.FILE_LANDCOVER_CURRENT}",
-                                                      $"{GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Layers, true)}{Constants.FILE_LANDCOVER_HISTORICAL}",
-                                                      $"{GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Analysis, true)}{Constants.FILE_LANDCOVER_CHANGE}"};
-                        for (int i = 0; i < arrLayersToDelete.Length; i++)
+                        // Check to see if we overwrite and continue
+                        bool bClipLandCover = true;
+                        if (!Reclip_LULCC_Checked)
                         {
-                            Uri uri = new Uri(Path.GetDirectoryName(arrLayersToDelete[i]));
-                            string fName = Path.GetFileName(arrLayersToDelete[i]);
-                            if (await GeodatabaseTools.RasterDatasetExistsAsync(uri, fName))
+                            if (await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Analysis)), Constants.FILE_LANDCOVER_CHANGE))
                             {
-                                success = await GeoprocessingTools.DeleteDatasetAsync(arrLayersToDelete[i]);
+                                strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Land cover data exists and we don't want to reclip. Skipping! " +
+                                    Names[idxRow].Name + "\r\n";
+                                File.AppendAllText(_strLulccDataLogFile, strLogEntry);       // append
+                                bClipLandCover = false;
+                                success = BA_ReturnCode.Success;
                             }
                         }
 
-                        // Add layer to map so we can read the tags
-                        string displayName = "tempLcClip";
-                        strWsUri = Module1.Current.DataSources[Constants.DATA_TYPE_LANDCOVER_CURRENT].uri;
-                        await QueuedTask.Run(() =>
+                        if (bClipLandCover)
                         {
-                            try
+                            string strLcCurrent = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Layers, true)
+                                + Constants.FILE_LANDCOVER_CURRENT;
+                            string strLcHistorical = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Layers, true)
+                                + Constants.FILE_LANDCOVER_HISTORICAL;
+                            string strClipFile = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Aoi, true)
+                                + Constants.FILE_AOI_VECTOR;
+                            // Delete irr layers before starting clip
+                            string[] arrLayersToDelete = {$"{GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Layers, true)}{Constants.FILE_LANDCOVER_CURRENT}",
+                                                      $"{GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Layers, true)}{Constants.FILE_LANDCOVER_HISTORICAL}",
+                                                      $"{GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Analysis, true)}{Constants.FILE_LANDCOVER_CHANGE}"};
+                            for (int i = 0; i < arrLayersToDelete.Length; i++)
                             {
-                                var rasterLayerCreationParams = new RasterLayerCreationParams(new Uri(strWsUri))
+                                Uri uri = new Uri(Path.GetDirectoryName(arrLayersToDelete[i]));
+                                string fName = Path.GetFileName(arrLayersToDelete[i]);
+                                if (await GeodatabaseTools.RasterDatasetExistsAsync(uri, fName))
                                 {
-                                    Name = displayName,
-                                    IsVisible = false
-                                };
-                                //Create the raster layer on the active map and set the visibility
-                                LayerFactory.Instance.CreateLayer<RasterLayer>(rasterLayerCreationParams, oMap);
-                            }
-                            catch (Exception e)
-                            {
-                                Module1.Current.ModuleLogManager.LogError(nameof(RunLulccDataImplAsync),
-                                    $@"An error occurred while trying to create the raster layer. Exception: {e.Message}");
-                                errorCount++;
-                                return;
-                            }
-                        });
-                        if (oAnalysis != null)
-                        {
-                            string[] arrReturn = await QueryLulcMetadataAsync(displayName);
-                            if (arrReturn[0] != null)
-                            {
-                                oAnalysis.LcCurrentYearStart = arrReturn[0];
-                                oAnalysis.LcCurrentYearEnd = arrReturn[1];
-                            }
-                            Layer imageLayer = oMap.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(displayName, StringComparison.CurrentCultureIgnoreCase));
-                            success = await AnalysisTools.ClipRasterFromLayerNoBufferAsync(oAoi.FilePath, strClipFile,
-                                imageLayer, strLcCurrent, Aoi.SnapRasterPath(oAoi.FilePath), CancelableProgressor.None);
-                            string strDataType = Constants.DATA_TYPE_LANDCOVER_CURRENT;
-                            IDictionary<string, DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
-                            if (success != BA_ReturnCode.Success)
-                            {
-                                Module1.Current.ModuleLogManager.LogError(nameof(RunLulccDataImplAsync),
-                                    $@"An error occurred when trying to clip the land cover data. Skipping AOI!");
-                                errorCount++;
-                                return;
-                            }
-                            else
-                            {
-                                // Update layer metadata                                
-                                DataSource updateDataSource = new DataSource(Module1.Current.DataSources[strDataType])
-                                {
-                                    DateClipped = DateTime.Now,
-                                };
-                                if (dictLocalDataSources.ContainsKey(strDataType))
-                                {
-                                    dictLocalDataSources[strDataType] = updateDataSource;
-                                }
-                                else
-                                {
-                                    dictLocalDataSources.Add(strDataType, updateDataSource);
+                                    success = await GeoprocessingTools.DeleteDatasetAsync(arrLayersToDelete[i]);
                                 }
                             }
-                            await MapTools.RemoveLayersfromMapFrameAsync(Constants.MAPS_DEFAULT_MAP_NAME, [displayName]);
-                            // Add historical layer
-                            strWsUri = Module1.Current.DataSources[Constants.DATA_TYPE_LANDCOVER_HISTORICAL].uri;
+
+                            // Add layer to map so we can read the tags
+                            string displayName = "tempLcClip";
+                            strWsUri = Module1.Current.DataSources[Constants.DATA_TYPE_LANDCOVER_CURRENT].uri;
                             await QueuedTask.Run(() =>
                             {
                                 try
@@ -3939,28 +3934,28 @@ namespace bagis_pro
                                     return;
                                 }
                             });
-                            arrReturn = await QueryLulcMetadataAsync(displayName);
-                            if (arrReturn[0] != null)
+                            if (oAnalysis != null)
                             {
-                                oAnalysis.LcHistoryYearStart = arrReturn[0];
-                                oAnalysis.LcHistoryYearEnd = arrReturn[1];
-                            }
-                            if (success == BA_ReturnCode.Success)
-                            {
-
-                                imageLayer = oMap.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(displayName, StringComparison.CurrentCultureIgnoreCase));
+                                string[] arrReturn = await QueryLulcMetadataAsync(displayName);
+                                if (arrReturn[0] != null)
+                                {
+                                    oAnalysis.LcCurrentYearStart = arrReturn[0];
+                                    oAnalysis.LcCurrentYearEnd = arrReturn[1];
+                                }
+                                Layer imageLayer = oMap.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(displayName, StringComparison.CurrentCultureIgnoreCase));
                                 success = await AnalysisTools.ClipRasterFromLayerNoBufferAsync(oAoi.FilePath, strClipFile,
-                                    imageLayer, strLcHistorical, Aoi.SnapRasterPath(oAoi.FilePath), CancelableProgressor.None);
+                                    imageLayer, strLcCurrent, Aoi.SnapRasterPath(oAoi.FilePath), CancelableProgressor.None);
+                                string strDataType = Constants.DATA_TYPE_LANDCOVER_CURRENT;
+                                IDictionary<string, DataSource> dictLocalDataSources = GeneralTools.QueryLocalDataSources();
                                 if (success != BA_ReturnCode.Success)
                                 {
                                     Module1.Current.ModuleLogManager.LogError(nameof(RunLulccDataImplAsync),
-                                        $@"An error occurred when trying to clip the historical land cover data. Skipping AOI!");
+                                        $@"An error occurred when trying to clip the land cover data. Skipping AOI!");
                                     errorCount++;
                                     return;
                                 }
                                 else
                                 {
-                                    strDataType = Constants.DATA_TYPE_LANDCOVER_HISTORICAL;
                                     // Update layer metadata                                
                                     DataSource updateDataSource = new DataSource(Module1.Current.DataSources[strDataType])
                                     {
@@ -3974,17 +3969,102 @@ namespace bagis_pro
                                     {
                                         dictLocalDataSources.Add(strDataType, updateDataSource);
                                     }
+                                }
+                                await MapTools.RemoveLayersfromMapFrameAsync(Constants.MAPS_DEFAULT_MAP_NAME, [displayName]);
+                                // Add historical layer
+                                strWsUri = Module1.Current.DataSources[Constants.DATA_TYPE_LANDCOVER_HISTORICAL].uri;
+                                await QueuedTask.Run(() =>
+                                {
+                                    try
+                                    {
+                                        var rasterLayerCreationParams = new RasterLayerCreationParams(new Uri(strWsUri))
+                                        {
+                                            Name = displayName,
+                                            IsVisible = false
+                                        };
+                                        //Create the raster layer on the active map and set the visibility
+                                        LayerFactory.Instance.CreateLayer<RasterLayer>(rasterLayerCreationParams, oMap);
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        Module1.Current.ModuleLogManager.LogError(nameof(RunLulccDataImplAsync),
+                                            $@"An error occurred while trying to create the raster layer. Exception: {e.Message}");
+                                        errorCount++;
+                                        return;
+                                    }
+                                });
+                                arrReturn = await QueryLulcMetadataAsync(displayName);
+                                if (arrReturn[0] != null)
+                                {
+                                    oAnalysis.LcHistoryYearStart = arrReturn[0];
+                                    oAnalysis.LcHistoryYearEnd = arrReturn[1];
+                                }
+                                if (success == BA_ReturnCode.Success)
+                                {
 
+                                    imageLayer = oMap.Layers.FirstOrDefault<Layer>(m => m.Name.Equals(displayName, StringComparison.CurrentCultureIgnoreCase));
+                                    success = await AnalysisTools.ClipRasterFromLayerNoBufferAsync(oAoi.FilePath, strClipFile,
+                                        imageLayer, strLcHistorical, Aoi.SnapRasterPath(oAoi.FilePath), CancelableProgressor.None);
+                                    if (success != BA_ReturnCode.Success)
+                                    {
+                                        Module1.Current.ModuleLogManager.LogError(nameof(RunLulccDataImplAsync),
+                                            $@"An error occurred when trying to clip the historical land cover data. Skipping AOI!");
+                                        errorCount++;
+                                        return;
+                                    }
+                                    else
+                                    {
+                                        strDataType = Constants.DATA_TYPE_LANDCOVER_HISTORICAL;
+                                        // Update layer metadata                                
+                                        DataSource updateDataSource = new DataSource(Module1.Current.DataSources[strDataType])
+                                        {
+                                            DateClipped = DateTime.Now,
+                                        };
+                                        if (dictLocalDataSources.ContainsKey(strDataType))
+                                        {
+                                            dictLocalDataSources[strDataType] = updateDataSource;
+                                        }
+                                        else
+                                        {
+                                            dictLocalDataSources.Add(strDataType, updateDataSource);
+                                        }
+
+                                    }
+                                }
+                                await MapTools.RemoveLayersfromMapFrameAsync(Constants.MAPS_DEFAULT_MAP_NAME, [displayName]);
+                                List<DataSource> lstDataSources = new List<DataSource>();
+                                foreach (string key in dictLocalDataSources.Keys)
+                                {
+                                    lstDataSources.Add(dictLocalDataSources[key]);
+                                }
+                                oAnalysis.DataSources = lstDataSources;
+                                success = GeneralTools.SaveAnalysisSettings(oAoi.FilePath, oAnalysis);
+                            }
+                            if (success == BA_ReturnCode.Success)
+                            {
+                                // define the map algebra expression
+                                    string maExpression = String.Format("(\"{0}\" * 10 + \"{1}\")", strLcHistorical, strLcCurrent);
+                                string outRaster = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Analysis, true) + Constants.FILE_LANDCOVER_CHANGE;
+                                // make the input parameter values array
+                                var valueArray = Geoprocessing.MakeValueArray(maExpression, outRaster);
+                                var environments = Geoprocessing.MakeEnvironmentArray(workspace: GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Analysis));
+                                // execute the Raster calculator tool to process the map algebra expression
+                                var gpResult = await Geoprocessing.ExecuteToolAsync("RasterCalculator_sa", valueArray, environments,
+                                    CancelableProgressor.None, GPExecuteToolFlags.AddToHistory);
+                                if (gpResult.IsFailed)
+                                {
+                                    Module1.Current.ModuleLogManager.LogDebug(nameof(RunLulccDataImplAsync),
+                                        "Raster Calculator failed for " + outRaster + "!");
+                                    foreach (var objMessage in gpResult.Messages)
+                                    {
+                                        IGPMessage msg = (IGPMessage)objMessage;
+                                        Module1.Current.ModuleLogManager.LogError(nameof(RunLulccDataImplAsync),
+                                            msg.Text);
+                                    }
+                                    errorCount++;
+                                    success = BA_ReturnCode.OtherError;
                                 }
                             }
-                            await MapTools.RemoveLayersfromMapFrameAsync(Constants.MAPS_DEFAULT_MAP_NAME, [displayName]);
-                            List<DataSource> lstDataSources = new List<DataSource>();
-                            foreach (string key in dictLocalDataSources.Keys)
-                            {
-                                lstDataSources.Add(dictLocalDataSources[key]);
-                            }
-                            oAnalysis.DataSources = lstDataSources;
-                            success = GeneralTools.SaveAnalysisSettings(oAoi.FilePath, oAnalysis);
                         }
                     }
                     if (success == BA_ReturnCode.Success && errorCount == 0)
