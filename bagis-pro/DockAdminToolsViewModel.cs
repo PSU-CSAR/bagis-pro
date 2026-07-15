@@ -24,6 +24,7 @@ using System.IO;
 using System.Linq;
 using System.Security.Policy;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using System.Xml;
@@ -3538,7 +3539,6 @@ namespace bagis_pro
                     for (int idxRow = 0; idxRow < Names.Count; idxRow++)
                     {
                         Aoi oAoi = Names[idxRow];
-                        // Check for fire.gdb and data before continuing
                         string strAnalysisGdbPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis);
                         bool bHasIrrData = false;
                         bool bHasLandcoverData = false;
@@ -3570,6 +3570,38 @@ namespace bagis_pro
                         {
                             Names[idxRow].AoiBatchStateText = AoiBatchState.MissingLulccData.ToString();  // update gui
                             continue;
+                        }
+                        bool bHasIrrReport = false;
+                        bool bHasLandcoverReport = false;
+                        Regex reg = new Regex(@"irr_lands_statistics_");
+                        var files = Directory.GetFiles(Path.GetDirectoryName(_strLulccReportLogFile), "*.csv")
+                            .Where(path => reg.IsMatch(path))
+                            .ToList();
+                        if (files.Count > 0)
+                        {
+                            bHasIrrReport = true;
+                        }
+                        reg = new Regex(@"land_cover_statistics_");
+                        files = Directory.GetFiles(Path.GetDirectoryName(_strLulccReportLogFile), "*.csv")
+                            .Where(path => reg.IsMatch(path))
+                            .ToList();
+                        if (files.Count > 0)
+                        {
+                            bHasLandcoverReport = true;
+                        }
+                        if (!bHasIrrReport)
+                        {
+                            Names[idxRow].AoiBatchStateText = AoiBatchState.MissingIrrReport.ToString();  // update gui
+                            continue;
+                        }
+                        else if (!bHasLandcoverReport)
+                        {
+                            Names[idxRow].AoiBatchStateText = AoiBatchState.MissingLulccReport.ToString();  // update gui
+                            continue;
+                        }
+                        else if (bHasIrrReport && bHasLandcoverReport)
+                        {
+                            Names[idxRow].AoiBatchStateText = AoiBatchState.HasReport.ToString();  // update gui
                         }
                     }
                 });
@@ -4204,7 +4236,7 @@ namespace bagis_pro
                 }
             }
 
-            //@ToDo: work on this when state model is better defined
+            // Let missing irr or land cover data through and catch it in the method that generates the statistics
             string[] arrInvalidStatus = [AoiBatchState.MissingData.ToString()];
             for (int idxRow = 0; idxRow < Names.Count; idxRow++)
             {
