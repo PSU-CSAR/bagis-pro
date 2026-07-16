@@ -2627,6 +2627,70 @@ namespace bagis_pro
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;
+                case BagisMapType.LAND_COVER_HISTORY:
+                    lstLayers = new List<string> { Constants.MAPS_BASIN_BOUNDARY, Constants.MAPS_STREAMS,
+                                                   Constants.MAPS_HILLSHADE, Constants.MAPS_HISTORICAL_LANDCOVER,
+                                                   Constants.MAPS_WATERBODIES, Constants.MAPS_STREAM_GAGE};
+                    lstLegendLayers = new List<string>() { Constants.MAPS_STREAM_GAGE, Constants.MAPS_WATERBODIES };
+                    if (Module1.Current.Aoi.HasSnotel == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOTEL);
+                        lstLegendLayers.Add(Constants.MAPS_SNOTEL);
+                    }
+                    if (Module1.Current.Aoi.HasSnolite == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOLITE);
+                        lstLegendLayers.Add(Constants.MAPS_SNOLITE);
+                    }
+                    if (Module1.Current.Aoi.HasCoopPillow == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_COOP_PILLOW);
+                        lstLegendLayers.Add(Constants.MAPS_COOP_PILLOW);
+                    }
+                    if (Module1.Current.Aoi.HasSnowCourse == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOW_COURSE);
+                        lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE);
+                    }
+                    lstLegendLayers.Add(Constants.MAPS_CURRENT_LANDCOVER);
+
+                    mapDefinition = new BA_Objects.MapDefinition("HISTORICAL LAND COVER",
+                        " ", Constants.FILE_LAND_COVER_HISTORY_MAP_PDF, " ");
+                    mapDefinition.LayerList = lstLayers;
+                    mapDefinition.LegendLayerList = lstLegendLayers;
+                    break;
+                case BagisMapType.LAND_COVER_CHANGE:
+                    lstLayers = new List<string> { Constants.MAPS_BASIN_BOUNDARY, Constants.MAPS_STREAMS,
+                                                   Constants.MAPS_HILLSHADE, Constants.MAPS_LANDCOVER_CHANGE,
+                                                   Constants.MAPS_WATERBODIES, Constants.MAPS_STREAM_GAGE};
+                    lstLegendLayers = new List<string>() { Constants.MAPS_STREAM_GAGE, Constants.MAPS_WATERBODIES };
+                    if (Module1.Current.Aoi.HasSnotel == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOTEL);
+                        lstLegendLayers.Add(Constants.MAPS_SNOTEL);
+                    }
+                    if (Module1.Current.Aoi.HasSnolite == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOLITE);
+                        lstLegendLayers.Add(Constants.MAPS_SNOLITE);
+                    }
+                    if (Module1.Current.Aoi.HasCoopPillow == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_COOP_PILLOW);
+                        lstLegendLayers.Add(Constants.MAPS_COOP_PILLOW);
+                    }
+                    if (Module1.Current.Aoi.HasSnowCourse == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOW_COURSE);
+                        lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE);
+                    }
+                    lstLegendLayers.Add(Constants.MAPS_LANDCOVER_CHANGE);
+
+                    mapDefinition = new BA_Objects.MapDefinition("LAND COVER CHANGE",
+                        " ", Constants.FILE_LAND_COVER_CHANGE_MAP_PDF, " ");
+                    mapDefinition.LayerList = lstLayers;
+                    mapDefinition.LegendLayerList = lstLegendLayers;
+                    break;
             }
             return mapDefinition;
         }
@@ -4468,6 +4532,25 @@ namespace bagis_pro
                         //    Constants.MAPS_IRRIGATION_STATUS, strLayerFilePath, 25, true);
                         success = await MapTools.DisplayRasterWithSymbolAsync(Constants.MAPS_LULCC_MAP_NAME, uri, Constants.MAPS_CURRENT_LANDCOVER, "ArcGIS Colors",
                             "Aspect", "VALUE", 25, false);
+                        // add land cover historical
+                        strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers, true) +
+                            Constants.FILE_LANDCOVER_HISTORICAL;
+                        //string strLayerFilePath = Module1.Current.SettingsPath + "\\" + Constants.FOLDER_SETTINGS + "\\" + Constants.LAYER_FILE_IRR_DATA;
+                        uri = new Uri(strPath);
+                        //success = await MapTools.DisplayUniqueValuesRasterFromLayerFileAsync(Constants.MAPS_LULCC_MAP_NAME, uri,
+                        //    Constants.MAPS_IRRIGATION_STATUS, strLayerFilePath, 25, true);
+                        success = await MapTools.DisplayRasterWithSymbolAsync(Constants.MAPS_LULCC_MAP_NAME, uri, Constants.MAPS_HISTORICAL_LANDCOVER, "ArcGIS Colors",
+                            "Aspect", "VALUE", 25, false);
+                        // add land cover historical
+                        strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
+                            Constants.FILE_LANDCOVER_CHANGE;
+                        //string strLayerFilePath = Module1.Current.SettingsPath + "\\" + Constants.FOLDER_SETTINGS + "\\" + Constants.LAYER_FILE_IRR_DATA;
+                        uri = new Uri(strPath);
+                        //success = await MapTools.DisplayUniqueValuesRasterFromLayerFileAsync(Constants.MAPS_LULCC_MAP_NAME, uri,
+                        //    Constants.MAPS_IRRIGATION_STATUS, strLayerFilePath, 25, true);
+                        success = await MapTools.DisplayRasterWithSymbolAsync(Constants.MAPS_LULCC_MAP_NAME, uri, Constants.MAPS_LANDCOVER_CHANGE, "ArcGIS Colors",
+                            "Aspect", "VALUE", 25, false);
+
                     }
 
                     // create map elements

@@ -4562,30 +4562,52 @@ namespace bagis_pro
                         {
                             if (success == BA_ReturnCode.Success)
                             {
-                                MapDefinition mapDefinition = MapTools.LoadMapDefinition(BagisMapType.LAND_COVER_CURRENT);
-                                success = await MapTools.UpdateLegendAsync(oLayout, mapDefinition.LegendLayerList);
-                                mapDefinition.Title = $@"CURRENT LAND COVER ({oAnalysis.LcCurrentYearStart})";
-                                mapDefinition.LowerRightTextbox = $@"Ipsum Lorem Facto.";
-                                success = await MapTools.UpdateMapElementsAsync(Module1.Current.Aoi.StationName, Constants.MAPS_LULCC_LAYOUT_NAME, mapDefinition);
-                                var allLayers = oMap.Layers.ToList();
-                                foreach (var layer in allLayers)
+                                BagisMapType[] arrMapTypes = new BagisMapType[3];
+                                arrMapTypes[0] = BagisMapType.LAND_COVER_CURRENT;
+                                arrMapTypes[1] = BagisMapType.LAND_COVER_HISTORY;
+                                arrMapTypes[2] = BagisMapType.LAND_COVER_CHANGE;
+                                for (int i = 0; i < arrMapTypes.Length; i++)
                                 {
-                                    await QueuedTask.Run(() =>
+                                    MapDefinition mapDefinition = MapTools.LoadMapDefinition(arrMapTypes[i]);
+                                    success = await MapTools.UpdateLegendAsync(oLayout, mapDefinition.LegendLayerList);
+                                    switch (arrMapTypes[i])
                                     {
-                                        if (mapDefinition.LayerList.Contains(layer.Name))
+                                        case BagisMapType.LAND_COVER_CURRENT:
+                                            mapDefinition.Title = $@"CURRENT LAND COVER ({oAnalysis.LcCurrentYearStart})";
+                                            mapDefinition.LowerRightTextbox = $@"Ipsum Lorem Facto.";
+                                            break;
+                                        case BagisMapType.LAND_COVER_HISTORY:
+                                            mapDefinition.Title = $@"HISTORICAL LAND COVER ({oAnalysis.LcHistoryYearStart})";
+                                            mapDefinition.LowerRightTextbox = $@"Ipsum Lorem Facto.";
+                                            break;
+                                        case BagisMapType.LAND_COVER_CHANGE:
+                                            mapDefinition.Title = $@"LAND COVER CHANGE BETWEEN ({oAnalysis.LcHistoryYearStart} AND {oAnalysis.LcCurrentYearEnd})";
+                                            mapDefinition.LowerRightTextbox = $@"Ipsum Lorem Facto.";
+                                            break;
+                                        default:
+                                            break;
+                                    }
+                                    success = await MapTools.UpdateMapElementsAsync(Module1.Current.Aoi.StationName, Constants.MAPS_LULCC_LAYOUT_NAME, mapDefinition);
+                                    var allLayers = oMap.Layers.ToList();
+                                    foreach (var layer in allLayers)
+                                    {
+                                        await QueuedTask.Run(() =>
                                         {
-                                            layer.SetVisibility(true);
-                                        }
-                                        else
-                                        {
-                                            layer.SetVisibility(false);
-                                        }
-                                    });
-                                }
-                                if (success == BA_ReturnCode.Success)
-                                {
-                                    Module1.Current.DisplayedMap = mapDefinition.PdfFileName;
-                                    success = await GeneralTools.ExportMapToPdfAsync(Constants.PDF_EXPORT_RESOLUTION);
+                                            if (mapDefinition.LayerList.Contains(layer.Name))
+                                            {
+                                                layer.SetVisibility(true);
+                                            }
+                                            else
+                                            {
+                                                layer.SetVisibility(false);
+                                            }
+                                        });
+                                    }
+                                    if (success == BA_ReturnCode.Success)
+                                    {
+                                        Module1.Current.DisplayedMap = mapDefinition.PdfFileName;
+                                        success = await GeneralTools.ExportMapToPdfAsync(Constants.PDF_EXPORT_RESOLUTION);
+                                    }
                                 }
                             }
                         }

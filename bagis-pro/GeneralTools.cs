@@ -87,6 +87,12 @@ namespace bagis_pro
                         case Constants.FILE_LAND_COVER_CURRENT_MAP_PDF:
                             layoutName = Constants.MAPS_LULCC_LAYOUT_NAME; 
                             break;
+                        case Constants.FILE_LAND_COVER_HISTORY_MAP_PDF:
+                            layoutName = Constants.MAPS_LULCC_LAYOUT_NAME;
+                            break;
+                        case Constants.FILE_LAND_COVER_CHANGE_MAP_PDF:
+                            layoutName = Constants.MAPS_LULCC_LAYOUT_NAME;
+                            break;
                         default:
                             layoutName = Constants.MAPS_DEFAULT_LAYOUT_NAME;
                             break;
