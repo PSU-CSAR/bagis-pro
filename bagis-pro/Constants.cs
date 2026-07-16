@@ -194,7 +194,9 @@
         public const string FILE_FIRE_MAP_SUFFIX_PDF = "_Fire-Map.pdf";
         public const string FILE_FIRE_REPORT_SUFFIX_PDF = "_Fire-Report.pdf";
         public const string FILE_IRR_MAP_PDF = "Irr-Map.pdf";
-        public const string FILE_LAND_COVER_MAP_PDF = "Land-Cover-Map.pdf";
+        public const string FILE_LAND_COVER_CURRENT_MAP_PDF = "Land-Cover-Current-Map.pdf";
+        public const string FILE_LAND_COVER_HISTORY_MAP_PDF = "Land-Cover-History-Map.pdf";
+        public const string FILE_LAND_COVER_CHANGE_MAP_PDF = "Land-Cover-Change-Map.pdf";
         public const string FILE_LULCC_MAP_SUFFIX_PDF = "_Lulcc-Map.pdf";
         public const string FILE_LULCC_REPORT_SUFFIX_PDF = "_Lulcc-Report.pdf";
 

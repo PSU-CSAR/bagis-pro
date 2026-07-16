@@ -4429,9 +4429,6 @@ namespace bagis_pro
                         strExportPrefix = Constants.VALUE_NOT_SPECIFIED;
 
                     }
-                    string strIrrMapPath = $@"{Module1.Current.Aoi.FilePath}\{Constants.FOLDER_MAP_PACKAGE}\{Constants.FOLDER_LULCC_STATISTICS}\{Constants.FILE_IRR_MAP_PDF}";
-                    string strLandCoverMapPath = $@"{Module1.Current.Aoi.FilePath}\{Constants.FOLDER_MAP_PACKAGE}\{Constants.FOLDER_LULCC_STATISTICS}\{Constants.FILE_LAND_COVER_MAP_PDF}";
-                    string strLulccMapPath = $@"{Module1.Current.Aoi.FilePath}\{Constants.FOLDER_MAP_PACKAGE}\{Constants.FOLDER_LULCC_STATISTICS}\{strExportPrefix}_{Constants.FILE_LULCC_MAP_SUFFIX_PDF}";
                     var result = await GeodatabaseTools.CalculateAoiAreaSqMetersAsync(Module1.Current.Aoi.FilePath, -1);
                     double aoiAreaSqMeters = result.Item1;
                     BA_ReturnCode success = BA_ReturnCode.UnknownError;
@@ -4439,7 +4436,6 @@ namespace bagis_pro
                     Layout oLayout = await MapTools.GetDefaultLayoutAsync(Constants.MAPS_LULCC_LAYOUT_NAME);
                     Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_LULCC_MAP_NAME);
                     Analysis oAnalysis = GeneralTools.GetAnalysisSettings(oAoi.FilePath);
-
                     bool bIrrMapPublished = false;
                     bool bLcMapPublished = false;
                     if (Report_Irr_Checked)
@@ -4458,7 +4454,7 @@ namespace bagis_pro
                         if (dictReturn.Keys.Count > 0)
                         {
                             // The AOI has valid irr data
-                            success = await MapTools.DisplayLulccMapAsync(Module1.Current.Aoi.FilePath, oLayout, true);
+                            success = await MapTools.DisplayLulccMapsAsync(Module1.Current.Aoi.FilePath, oLayout, true, false);
                             if (success != BA_ReturnCode.Success)
                             {
                                 Module1.Current.ModuleLogManager.LogError(nameof(RunLulccMapsImplAsync),
@@ -4526,6 +4522,73 @@ namespace bagis_pro
                     if (Report_Nlcd_Checked)
                     {
                         success = GeneralTools.GenerateLulccMapsTitlePage(areaSqKm, false);
+                        success = await MapTools.DisplayLulccMapsAsync(Module1.Current.Aoi.FilePath, oLayout, false, true);
+                        if (success != BA_ReturnCode.Success)
+                        {
+                            Module1.Current.ModuleLogManager.LogError(nameof(RunLulccMapsImplAsync),
+                                "An error occurred while trying to load the maps. The report cannot be exported!");
+                            Names[idxRow].AoiBatchStateText = AoiBatchState.Failed.ToString();
+                            return;
+                        }
+
+                        bool bFoundIt = false;
+                        //A layout view may exist but it may not be active
+                        //Iterate through each pane in the application and check to see if the layout is already open and if so, activate it
+                        foreach (var pane in FrameworkApplication.Panes)
+                        {
+                            if (!(pane is ILayoutPane layoutPane))  //if not a layout view, continue to the next pane    
+                                continue;
+                            if (layoutPane.LayoutView != null &&
+                                layoutPane.LayoutView.Layout == oLayout) //if there is a match, activate the view  
+                            {
+                                (layoutPane as Pane).Activate();
+                                bFoundIt = true;
+                            }
+                        }
+                        if (!bFoundIt)
+                        {
+                            await FrameworkApplication.Current.Dispatcher.Invoke(async () =>
+                            {
+                                // Do something on the GUI thread
+                                ILayoutPane iNewLayoutPane = await FrameworkApplication.Panes.CreateLayoutPaneAsync(oLayout); //GUI thread
+                                (iNewLayoutPane as Pane).Activate();
+                            });
+                        }
+
+                        // Legend
+                        success = await MapTools.DisplayLegendAsync(Constants.MAPS_LULCC_MAP_FRAME_NAME, oLayout,
+                            "ArcGIS Colors", "1.5 Point", true);
+                        if (oLayout != null)
+                        {
+                            if (success == BA_ReturnCode.Success)
+                            {
+                                MapDefinition mapDefinition = MapTools.LoadMapDefinition(BagisMapType.LAND_COVER_CURRENT);
+                                success = await MapTools.UpdateLegendAsync(oLayout, mapDefinition.LegendLayerList);
+                                mapDefinition.Title = $@"CURRENT LAND COVER ({oAnalysis.LcCurrentYearStart})";
+                                mapDefinition.LowerRightTextbox = $@"Ipsum Lorem Facto.";
+                                success = await MapTools.UpdateMapElementsAsync(Module1.Current.Aoi.StationName, Constants.MAPS_LULCC_LAYOUT_NAME, mapDefinition);
+                                var allLayers = oMap.Layers.ToList();
+                                foreach (var layer in allLayers)
+                                {
+                                    await QueuedTask.Run(() =>
+                                    {
+                                        if (mapDefinition.LayerList.Contains(layer.Name))
+                                        {
+                                            layer.SetVisibility(true);
+                                        }
+                                        else
+                                        {
+                                            layer.SetVisibility(false);
+                                        }
+                                    });
+                                }
+                                if (success == BA_ReturnCode.Success)
+                                {
+                                    Module1.Current.DisplayedMap = mapDefinition.PdfFileName;
+                                    success = await GeneralTools.ExportMapToPdfAsync(Constants.PDF_EXPORT_RESOLUTION);
+                                }
+                            }
+                        }
 
                         if (success == BA_ReturnCode.Success)
                         {

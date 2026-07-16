@@ -43,7 +43,10 @@ namespace bagis_pro
         SNODAS_DELTA,
         SEASONAL_PRECIP_CONTRIB,
         FIRE,
-        IRR
+        IRR,
+        LAND_COVER_CURRENT,
+        LAND_COVER_HISTORY,
+        LAND_COVER_CHANGE
     }
 
     public enum SiteType

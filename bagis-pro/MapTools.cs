@@ -1668,7 +1668,6 @@ namespace bagis_pro
                             CIMTextGraphic graphic = (CIMTextGraphic)textBox.GetGraphic();
                             graphic.Text = mapDefinition.Title;
                             textBox.SetGraphic(graphic);
-
                         }
                     }
                     if (subTitleText != null)
@@ -2593,6 +2592,38 @@ namespace bagis_pro
 
                     mapDefinition = new BA_Objects.MapDefinition("IRRIGATED LAND",
                         " ", Constants.FILE_EXPORT_MAP_ELEV_PDF," ");
+                    mapDefinition.LayerList = lstLayers;
+                    mapDefinition.LegendLayerList = lstLegendLayers;
+                    break;
+                case BagisMapType.LAND_COVER_CURRENT:
+                    lstLayers = new List<string> { Constants.MAPS_BASIN_BOUNDARY, Constants.MAPS_STREAMS,
+                                                   Constants.MAPS_HILLSHADE, Constants.MAPS_CURRENT_LANDCOVER,
+                                                   Constants.MAPS_WATERBODIES, Constants.MAPS_STREAM_GAGE};
+                    lstLegendLayers = new List<string>() { Constants.MAPS_STREAM_GAGE, Constants.MAPS_WATERBODIES };
+                    if (Module1.Current.Aoi.HasSnotel == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOTEL);
+                        lstLegendLayers.Add(Constants.MAPS_SNOTEL);
+                    }
+                    if (Module1.Current.Aoi.HasSnolite == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOLITE);
+                        lstLegendLayers.Add(Constants.MAPS_SNOLITE);
+                    }
+                    if (Module1.Current.Aoi.HasCoopPillow == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_COOP_PILLOW);
+                        lstLegendLayers.Add(Constants.MAPS_COOP_PILLOW);
+                    }
+                    if (Module1.Current.Aoi.HasSnowCourse == true)
+                    {
+                        lstLayers.Add(Constants.MAPS_SNOW_COURSE);
+                        lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE);
+                    }
+                    lstLegendLayers.Add(Constants.MAPS_CURRENT_LANDCOVER);
+
+                    mapDefinition = new BA_Objects.MapDefinition("CURRENT LAND COVER",
+                        " ", Constants.FILE_LAND_COVER_CURRENT_MAP_PDF, " ");
                     mapDefinition.LayerList = lstLayers;
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;
@@ -4320,7 +4351,8 @@ namespace bagis_pro
 
             return BA_ReturnCode.UnknownError;
         }
-        public static async Task<BA_ReturnCode> DisplayLulccMapAsync(string strAoiPath, Layout layout, bool irrMap)
+        public static async Task<BA_ReturnCode> DisplayLulccMapsAsync(string strAoiPath, Layout layout, bool hasIrrData,
+            bool isLandCoverData)
         {
             BA_Objects.Aoi oAoi = Module1.Current.Aoi;
             Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_LULCC_MAP_NAME);
@@ -4330,7 +4362,7 @@ namespace bagis_pro
                 if (layout == null)
                 {
                     MessageBox.Show("The Basin Lulcc Analysis layout could not be located. Maps will not display!", "BAGIS-PRO");
-                    Module1.Current.ModuleLogManager.LogError(nameof(DisplayLulccMapAsync), "The Basin Lulcc Analysis layout could not be located. Maps not displayed!");
+                    Module1.Current.ModuleLogManager.LogError(nameof(DisplayLulccMapsAsync), "The Basin Lulcc Analysis layout could not be located. Maps not displayed!");
                     return BA_ReturnCode.UnknownError;
                 }
                 else
@@ -4415,13 +4447,28 @@ namespace bagis_pro
                     uri = new Uri(strPath);
                     await MapTools.DisplayRasterStretchSymbolAsync(Constants.MAPS_LULCC_MAP_NAME, uri, Constants.MAPS_HILLSHADE, "ArcGIS Colors", "Black to White", 50);
 
-                    // add irr layer
-                    strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
-                              Constants.FILE_IRR_CHANGE;
-                    string strLayerFilePath = Module1.Current.SettingsPath + "\\" + Constants.FOLDER_SETTINGS + "\\" + Constants.LAYER_FILE_IRR_DATA;
-                    uri = new Uri(strPath);
-                    success = await MapTools.DisplayUniqueValuesRasterFromLayerFileAsync(Constants.MAPS_LULCC_MAP_NAME, uri,
-                        Constants.MAPS_IRRIGATION_STATUS, strLayerFilePath, 25, true);
+                    if (hasIrrData)
+                    {
+                        // add irr layer
+                        strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
+                                  Constants.FILE_IRR_CHANGE;
+                        string strLayerFilePath = Module1.Current.SettingsPath + "\\" + Constants.FOLDER_SETTINGS + "\\" + Constants.LAYER_FILE_IRR_DATA;
+                        uri = new Uri(strPath);
+                        success = await MapTools.DisplayUniqueValuesRasterFromLayerFileAsync(Constants.MAPS_LULCC_MAP_NAME, uri,
+                            Constants.MAPS_IRRIGATION_STATUS, strLayerFilePath, 25, true);
+                    }
+                    if (isLandCoverData)
+                    {
+                        // add land cover current
+                        strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers, true) +
+                            Constants.FILE_LANDCOVER_CURRENT;
+                        //string strLayerFilePath = Module1.Current.SettingsPath + "\\" + Constants.FOLDER_SETTINGS + "\\" + Constants.LAYER_FILE_IRR_DATA;
+                        uri = new Uri(strPath);
+                        //success = await MapTools.DisplayUniqueValuesRasterFromLayerFileAsync(Constants.MAPS_LULCC_MAP_NAME, uri,
+                        //    Constants.MAPS_IRRIGATION_STATUS, strLayerFilePath, 25, true);
+                        success = await MapTools.DisplayRasterWithSymbolAsync(Constants.MAPS_LULCC_MAP_NAME, uri, Constants.MAPS_CURRENT_LANDCOVER, "ArcGIS Colors",
+                            "Aspect", "VALUE", 25, false);
+                    }
 
                     // create map elements
                     success = await MapTools.AddMapElements(Constants.MAPS_LULCC_MAP_FRAME_NAME, Constants.MAPS_LULCC_LAYOUT_NAME);

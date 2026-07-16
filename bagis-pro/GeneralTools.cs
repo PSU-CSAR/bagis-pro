@@ -82,7 +82,11 @@ namespace bagis_pro
                             layoutName = Constants.MAPS_SEASONAL_PRECIP_LAYOUT;
                             break;
                         case Constants.FILE_IRR_MAP_PDF:
-                            layoutName = Constants.MAPS_LULCC_LAYOUT_NAME;                            break;
+                            layoutName = Constants.MAPS_LULCC_LAYOUT_NAME;
+                            break;
+                        case Constants.FILE_LAND_COVER_CURRENT_MAP_PDF:
+                            layoutName = Constants.MAPS_LULCC_LAYOUT_NAME; 
+                            break;
                         default:
                             layoutName = Constants.MAPS_DEFAULT_LAYOUT_NAME;
                             break;
@@ -2190,8 +2194,12 @@ namespace bagis_pro
             {
                 lstAllPages.Add(GetFullPdfFileName(Constants.FILE_TITLE_PAGE_LC_PDF));
                 lstAllPages.Add(GetFullPdfFileName(Constants.FILE_DATA_SOURCES_LC_PDF));
-                lstAllPages.Add(GetFullPdfFileName(Constants.FILE_LAND_COVER_MAP_PDF));
-                lstMapPaths.Add(GetFullPdfFileName(Constants.FILE_LAND_COVER_MAP_PDF));
+                lstAllPages.Add(GetFullPdfFileName(Constants.FILE_LAND_COVER_CURRENT_MAP_PDF));
+                lstMapPaths.Add(GetFullPdfFileName(Constants.FILE_LAND_COVER_CURRENT_MAP_PDF));
+                lstAllPages.Add(GetFullPdfFileName(Constants.FILE_LAND_COVER_HISTORY_MAP_PDF));
+                lstMapPaths.Add(GetFullPdfFileName(Constants.FILE_LAND_COVER_HISTORY_MAP_PDF));
+                lstAllPages.Add(GetFullPdfFileName(Constants.FILE_LAND_COVER_CHANGE_MAP_PDF));
+                lstMapPaths.Add(GetFullPdfFileName(Constants.FILE_LAND_COVER_CHANGE_MAP_PDF));
             }
 
             //Iterate through map files
