@@ -181,6 +181,8 @@
         "PublicAndTribalLandsLayerItemId": "c72cf8608c644a8c90c651e1bbfe815f",
         "ReferenceMapsLayerItemId": "afbcb79e203b40e889aeaf4edb4a6930",
         "IrrigatedLandsLayerItemId": "21d3db24022a41998afdf8ebbba02f86",
+        "LandCoverLayerItemId": "41c98735785b43219eeafbf4055962bb",
+        "LandCoverChangeLayerItemId": "7847f3c060b24e3b8478eb7d866e1d57",
         "MaximumSitesAllowed": 50,
         "WinterStartMonth": 11,
         "WinterEndMonth": 3,
@@ -224,7 +226,7 @@
                 "Severity": "None"
             }
         ],
-        "Version": 35
+        "Version": 36
     },
     "AoiCreation": {
     "ReferenceLayer":"BAGIS_Reference_Maps.lyrx",
