@@ -247,6 +247,7 @@
         public const string FILE_BLANK_PAGE_XML = "blank_page.xml";
         public const string FILE_BLANK_PAGE_HTML = "blank_page.html";
         public const string FILE_BLANK_FIRE_PAGE_XSL = "blank_fire_page.xsl";
+        public const string FILE_BLANK_LULCC_PAGE_XSL = "blank_lulcc_map_page.xsl";
         public const string FILE_EXPORT_OVERVIEW_PDF = "overview.pdf";
         public const string FILE_EXPORT_POTENTIAL_SITE_ANALYSIS_PDF = "potential_site_analysis.pdf";
         public const string FILE_BLANK_PAGE_PDF = "blank_page.pdf";
@@ -286,6 +287,8 @@
         public const string LAYER_FILE_MTBS_FIRE = "mtbs_fire_data.lyrx";
         public const string LAYER_FILE_REFERENCE_MAPS = "BAGIS_Reference_Maps.lyrx";
         public const string LAYER_FILE_IRR_DATA = "irr_data.lyrx";
+        public const string LAYER_FILE_LAND_COVER_DATA = "land_cover_data.lyrx";
+        public const string LAYER_FILE_LAND_COVER_CHANGE_DATA = "land_cover_change.lyrx";
         public const string LAYOUT_FILE_SNODAS_SWE = "SNODAS Layout.pagx";
         public const string LAYOUT_FILE_SNODAS_DELTA_SWE = "SNODAS Delta Layout.pagx";
         public const string LAYOUT_FILE_SEASONAL_PRECIP_CONTRIB = "Seasonal Precipitation Layout.pagx";
@@ -482,7 +485,8 @@
         public static string TITLE_SEASONAL_PRECIP_CONTRIB = "SEASONAL PRECIPITATION CONTRIBUTION MAPS";
         public static string TITLE_SNODAS_MEAN_SWE = "SNODAS MEAN SWE MAPS";
         public static string TITLE_SNODAS_MEAN_SWE_DELTA = "SNODAS MEAN SWE DELTA MAPS";
-        public static string TITLE_FIRE_BLANK_PAGE = "FIRE DISTURBANCE";  
+        public static string TITLE_FIRE_BLANK_PAGE = "FIRE DISTURBANCE";
+        public static string TITLE_LULCC_BLANK_PAGE = "IRRIGATED LANDS MAP";
 
         public static string[] FILES_EXPORT_TITLES = new string[]
         { "Title Page", "Data Sources Table", TITLE_LOCATION_MAP, "Active Sites Table",

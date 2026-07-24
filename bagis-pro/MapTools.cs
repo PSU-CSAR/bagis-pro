@@ -2596,8 +2596,8 @@ namespace bagis_pro
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;
                 case BagisMapType.LAND_COVER_CURRENT:
-                    lstLayers = new List<string> { Constants.MAPS_BASIN_BOUNDARY, Constants.MAPS_STREAMS,
-                                                   Constants.MAPS_HILLSHADE, Constants.MAPS_CURRENT_LANDCOVER,
+                    lstLayers = new List<string> { Constants.MAPS_BASIN_BOUNDARY, Constants.MAPS_HILLSHADE,
+                                                   Constants.MAPS_CURRENT_LANDCOVER,Constants.MAPS_STREAMS,
                                                    Constants.MAPS_WATERBODIES, Constants.MAPS_STREAM_GAGE};
                     lstLegendLayers = new List<string>() { Constants.MAPS_STREAM_GAGE, Constants.MAPS_WATERBODIES };
                     if (Module1.Current.Aoi.HasSnotel == true)
@@ -2628,8 +2628,8 @@ namespace bagis_pro
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;
                 case BagisMapType.LAND_COVER_HISTORY:
-                    lstLayers = new List<string> { Constants.MAPS_BASIN_BOUNDARY, Constants.MAPS_STREAMS,
-                                                   Constants.MAPS_HILLSHADE, Constants.MAPS_HISTORICAL_LANDCOVER,
+                    lstLayers = new List<string> { Constants.MAPS_BASIN_BOUNDARY,Constants.MAPS_HILLSHADE,
+                                                   Constants.MAPS_HISTORICAL_LANDCOVER, Constants.MAPS_STREAMS,
                                                    Constants.MAPS_WATERBODIES, Constants.MAPS_STREAM_GAGE};
                     lstLegendLayers = new List<string>() { Constants.MAPS_STREAM_GAGE, Constants.MAPS_WATERBODIES };
                     if (Module1.Current.Aoi.HasSnotel == true)
@@ -2652,7 +2652,7 @@ namespace bagis_pro
                         lstLayers.Add(Constants.MAPS_SNOW_COURSE);
                         lstLegendLayers.Add(Constants.MAPS_SNOW_COURSE);
                     }
-                    lstLegendLayers.Add(Constants.MAPS_CURRENT_LANDCOVER);
+                    lstLegendLayers.Add(Constants.MAPS_HISTORICAL_LANDCOVER);
 
                     mapDefinition = new BA_Objects.MapDefinition("HISTORICAL LAND COVER",
                         " ", Constants.FILE_LAND_COVER_HISTORY_MAP_PDF, " ");
@@ -2660,8 +2660,8 @@ namespace bagis_pro
                     mapDefinition.LegendLayerList = lstLegendLayers;
                     break;
                 case BagisMapType.LAND_COVER_CHANGE:
-                    lstLayers = new List<string> { Constants.MAPS_BASIN_BOUNDARY, Constants.MAPS_STREAMS,
-                                                   Constants.MAPS_HILLSHADE, Constants.MAPS_LANDCOVER_CHANGE,
+                    lstLayers = new List<string> { Constants.MAPS_BASIN_BOUNDARY, Constants.MAPS_HILLSHADE,
+                                                   Constants.MAPS_LANDCOVER_CHANGE,Constants.MAPS_STREAMS,
                                                    Constants.MAPS_WATERBODIES, Constants.MAPS_STREAM_GAGE};
                     lstLegendLayers = new List<string>() { Constants.MAPS_STREAM_GAGE, Constants.MAPS_WATERBODIES };
                     if (Module1.Current.Aoi.HasSnotel == true)
@@ -3512,7 +3512,7 @@ namespace bagis_pro
 
         public static async Task<BA_ReturnCode> GetSystemFilesFromPortalAsync()
         {
-            string[] documentIds = new string[8];
+            string[] documentIds = new string[10];
             documentIds[0] = (string)Module1.Current.BagisSettings.NLCDLandCoverLayerItemId;
             documentIds[1] = (string)Module1.Current.BagisSettings.SnodasSweLayoutItemId;
             documentIds[2] = (string)Module1.Current.BagisSettings.SnodasDeltaLayoutItemId;
@@ -3521,9 +3521,12 @@ namespace bagis_pro
             documentIds[5] = (string)Module1.Current.BagisSettings.MTBSFireLayerItemId;
             documentIds[6] = (string)Module1.Current.BagisSettings.ReferenceMapsLayerItemId;
             documentIds[7] = (string)Module1.Current.BagisSettings.IrrigatedLandsLayerItemId;
+            documentIds[8] = (string)Module1.Current.BagisSettings.LandCoverLayerItemId;
+            documentIds[9] = (string)Module1.Current.BagisSettings.LandCoverChangeLayerItemId;
             string[] layerFileNames = new string[] { Constants.LAYER_FILE_NLCD_LAND_COVER, Constants.LAYOUT_FILE_SNODAS_SWE,
                 Constants.LAYOUT_FILE_SNODAS_DELTA_SWE, Constants.LAYOUT_FILE_SEASONAL_PRECIP_CONTRIB, Constants.LAYER_FILE_PUBLIC_TRIBAL_LANDS,
-                Constants.LAYER_FILE_MTBS_FIRE, Constants.LAYER_FILE_REFERENCE_MAPS, Constants.LAYER_FILE_IRR_DATA};
+                Constants.LAYER_FILE_MTBS_FIRE, Constants.LAYER_FILE_REFERENCE_MAPS, Constants.LAYER_FILE_IRR_DATA,
+                Constants.LAYER_FILE_LAND_COVER_DATA, Constants.LAYER_FILE_LAND_COVER_CHANGE_DATA};
             Webservices ws = new Webservices();
             BA_ReturnCode success = BA_ReturnCode.ReadError;
 
@@ -4161,6 +4164,46 @@ namespace bagis_pro
             }
             return BA_ReturnCode.Success;
         }
+        private static async Task<BA_ReturnCode> ReOrderLandCoverMapsAsync()
+        {
+            string[] arrTestLayers = { Constants.MAPS_STREAMS, Constants.MAPS_WATERBODIES,
+                Constants.MAPS_STREAM_GAGE, Constants.MAPS_SNOTEL, Constants.MAPS_SNOLITE, Constants.MAPS_COOP_PILLOW,
+                Constants.MAPS_SNOW_COURSE, Constants.MAPS_CURRENT_LANDCOVER,
+                Constants.MAPS_HISTORICAL_LANDCOVER,Constants.MAPS_LANDCOVER_CHANGE, Constants.MAPS_HILLSHADE};
+            Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_LULCC_MAP_NAME);
+            var moveBelowThisLayerName = "";
+            for (int i = 0; i < arrTestLayers.Length; i++)
+            {
+                var layerToMove = oMap.GetLayersAsFlattenedList().OfType<FeatureLayer>().Where(f =>
+                    f.Name == arrTestLayers[i]).FirstOrDefault();
+                if (layerToMove != null)
+                {
+                    //In order to move layerToMove, I need to know if the destination is a group layer and the zero based position it needs to move to.
+                    Tuple<GroupLayer, int> moveToLayerPosition = new Tuple<GroupLayer, int>(null, 0);
+                    if (!string.IsNullOrEmpty(moveBelowThisLayerName))
+                    {
+                        moveToLayerPosition = FindLayerPosition(null, moveBelowThisLayerName, oMap);
+                    }
+                    if (moveToLayerPosition.Item2 == -1)
+                    {
+                        Module1.Current.ModuleLogManager.LogError(nameof(ReOrderMapsAsync), $"Layer {moveBelowThisLayerName} not found ");
+                    }
+                    await QueuedTask.Run(() =>
+                    {
+                        if (moveToLayerPosition.Item1 != null) //layer gets moved into the group
+                            moveToLayerPosition.Item1.MoveLayer(layerToMove, moveToLayerPosition.Item2);
+                        else //Layer gets moved into the root
+                            oMap.MoveLayer(layerToMove, moveToLayerPosition.Item2);
+                    });
+                    moveBelowThisLayerName = arrTestLayers[i];
+                }
+                else
+                {
+                    Module1.Current.ModuleLogManager.LogWarn(nameof(ReOrderLandCoverMapsAsync), @$"The {arrTestLayers[i]} layer was not be found!");
+                }
+            }
+            return BA_ReturnCode.Success;
+        }
 
         public static async Task<int> RemoveLayersInFolderAsync(string folderPath)
         {
@@ -4241,8 +4284,8 @@ namespace bagis_pro
                             bool bDatumMatch = DatumMatch(spatialReference, oAlbersCoordSystem);
                             if (!bDatumMatch)
                             {
-                                //MessageBox.Show("Datums do not match. Layer cannot be correctly projected without a transformation!", "BAGIS-Pro");
-                                //return BA_ReturnCode.NotSupportedOperation;
+                                MessageBox.Show("WARNING: One or more layers is in a different projection from the 30m DEM layer!", "BAGIS-Pro");
+                                return BA_ReturnCode.NotSupportedOperation;
                             }
                             await QueuedTask.Run(() =>
                             {
@@ -4526,31 +4569,24 @@ namespace bagis_pro
                         // add land cover current
                         strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers, true) +
                             Constants.FILE_LANDCOVER_CURRENT;
-                        //string strLayerFilePath = Module1.Current.SettingsPath + "\\" + Constants.FOLDER_SETTINGS + "\\" + Constants.LAYER_FILE_IRR_DATA;
+                        string strLayerFilePath = Module1.Current.SettingsPath + "\\" + Constants.FOLDER_SETTINGS + "\\" + Constants.LAYER_FILE_LAND_COVER_DATA;
                         uri = new Uri(strPath);
-                        //success = await MapTools.DisplayUniqueValuesRasterFromLayerFileAsync(Constants.MAPS_LULCC_MAP_NAME, uri,
-                        //    Constants.MAPS_IRRIGATION_STATUS, strLayerFilePath, 25, true);
-                        success = await MapTools.DisplayRasterWithSymbolAsync(Constants.MAPS_LULCC_MAP_NAME, uri, Constants.MAPS_CURRENT_LANDCOVER, "ArcGIS Colors",
-                            "Aspect", "VALUE", 25, false);
+                        success = await MapTools.DisplayUniqueValuesRasterFromLayerFileAsync(Constants.MAPS_LULCC_MAP_NAME, uri,
+                            Constants.MAPS_CURRENT_LANDCOVER, strLayerFilePath, 25, true);
                         // add land cover historical
                         strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Layers, true) +
                             Constants.FILE_LANDCOVER_HISTORICAL;
-                        //string strLayerFilePath = Module1.Current.SettingsPath + "\\" + Constants.FOLDER_SETTINGS + "\\" + Constants.LAYER_FILE_IRR_DATA;
                         uri = new Uri(strPath);
-                        //success = await MapTools.DisplayUniqueValuesRasterFromLayerFileAsync(Constants.MAPS_LULCC_MAP_NAME, uri,
-                        //    Constants.MAPS_IRRIGATION_STATUS, strLayerFilePath, 25, true);
-                        success = await MapTools.DisplayRasterWithSymbolAsync(Constants.MAPS_LULCC_MAP_NAME, uri, Constants.MAPS_HISTORICAL_LANDCOVER, "ArcGIS Colors",
-                            "Aspect", "VALUE", 25, false);
-                        // add land cover historical
+                        success = await MapTools.DisplayUniqueValuesRasterFromLayerFileAsync(Constants.MAPS_LULCC_MAP_NAME, uri,
+                            Constants.MAPS_HISTORICAL_LANDCOVER, strLayerFilePath, 25, true);
+                        // add land cover change
                         strPath = GeodatabaseTools.GetGeodatabasePath(oAoi.FilePath, GeodatabaseNames.Analysis, true) +
                             Constants.FILE_LANDCOVER_CHANGE;
-                        //string strLayerFilePath = Module1.Current.SettingsPath + "\\" + Constants.FOLDER_SETTINGS + "\\" + Constants.LAYER_FILE_IRR_DATA;
+                        strLayerFilePath = Module1.Current.SettingsPath + "\\" + Constants.FOLDER_SETTINGS + "\\" + Constants.LAYER_FILE_LAND_COVER_CHANGE_DATA;
                         uri = new Uri(strPath);
-                        //success = await MapTools.DisplayUniqueValuesRasterFromLayerFileAsync(Constants.MAPS_LULCC_MAP_NAME, uri,
-                        //    Constants.MAPS_IRRIGATION_STATUS, strLayerFilePath, 25, true);
-                        success = await MapTools.DisplayRasterWithSymbolAsync(Constants.MAPS_LULCC_MAP_NAME, uri, Constants.MAPS_LANDCOVER_CHANGE, "ArcGIS Colors",
-                            "Aspect", "VALUE", 25, false);
-
+                        success = await MapTools.DisplayUniqueValuesRasterFromLayerFileAsync(Constants.MAPS_LULCC_MAP_NAME, uri,
+                            Constants.MAPS_LANDCOVER_CHANGE, strLayerFilePath, 25, true);
+                        await ReOrderLandCoverMapsAsync();
                     }
 
                     // create map elements

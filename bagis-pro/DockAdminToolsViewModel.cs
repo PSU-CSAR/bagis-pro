@@ -4438,7 +4438,29 @@ namespace bagis_pro
                     Analysis oAnalysis = GeneralTools.GetAnalysisSettings(oAoi.FilePath);
                     bool bIrrMapPublished = false;
                     bool bLcMapPublished = false;
-                    if (Report_Irr_Checked)
+                    bool bIrrDataExists = false;
+                    if (await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath,GeodatabaseNames.Analysis)), Constants.FILE_IRR_CHANGE))
+                    {
+                        bIrrDataExists = true;
+                    }
+                    else
+                    {
+                        strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Irr data missing for " +
+                            Names[idxRow].Name + ". Maps will not be generated \r\n";
+                        File.AppendAllText(_strLulccReportLogFile, strLogEntry);       // append
+                    }
+                    bool bLcDataExists = false;
+                    if (await GeodatabaseTools.RasterDatasetExistsAsync(new Uri(GeodatabaseTools.GetGeodatabasePath(Module1.Current.Aoi.FilePath, GeodatabaseNames.Analysis)), Constants.FILE_LANDCOVER_CHANGE))
+                    {
+                        bLcDataExists = true;
+                    }
+                    else
+                    {
+                        strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Land cover data missing for " +
+                            Names[idxRow].Name + ". Maps will not be generated \r\n";
+                        File.AppendAllText(_strLulccReportLogFile, strLogEntry);       // append
+                    }
+                    if (Report_Irr_Checked && bIrrDataExists)
                     {
                         success = GeneralTools.GenerateLulccMapsTitlePage(areaSqKm, true);
                         QueryFilter queryFilter = new QueryFilter();
@@ -4499,6 +4521,16 @@ namespace bagis_pro
                                     mapDefinition.Title = $@"IRRIGATED LAND ({oAnalysis.IrrHistoryYearStart}-{oAnalysis.IrrHistoryYearEnd})";
                                     mapDefinition.LowerRightTextbox = $@"Lands irrigated between {oAnalysis.IrrHistoryYearStart} and {oAnalysis.IrrHistoryYearEnd}, but were inactive after {oAnalysis.IrrHistoryYearEnd} are labeled as{Environment.NewLine}""Inactive"". ""Newly Irrigated"" indicates lands that were non-irrigated prior to {oAnalysis.IrrCurrentYearStart}.";
                                     success = await MapTools.UpdateMapElementsAsync(Module1.Current.Aoi.StationName, Constants.MAPS_LULCC_LAYOUT_NAME, mapDefinition);
+                                    // Make the textBox a little narrower to preserve right margin
+                                    await QueuedTask.Run(() =>
+                                    {
+                                        GraphicElement textBox2 = oLayout.FindElement(Constants.MAPS_TEXTBOX2) as GraphicElement;
+                                        if (textBox2 != null)
+                                        {
+                                            textBox2.SetWidth(5.0);
+                                        }
+                                    });
+
                                     if (success == BA_ReturnCode.Success)
                                     {
                                         Module1.Current.DisplayedMap = $@"{Constants.FILE_IRR_MAP_PDF}";
@@ -4509,9 +4541,10 @@ namespace bagis_pro
                         }
                         else
                         {
+                            success = GeneralTools.GenerateBlankPage(Constants.TITLE_LULCC_BLANK_PAGE, 
+                                GeneralTools.GetFullPdfFileName($@"{Constants.FILE_IRR_MAP_PDF}"));
                             Module1.Current.ModuleLogManager.LogInfo(nameof(RunLulccMapsImplAsync),
                                 $@"{oAoi.StationName} has no irr data. The map cannot be generated!");
-                            success = BA_ReturnCode.UnknownError;
                         }
 
                         if (success == BA_ReturnCode.Success)
@@ -4519,8 +4552,8 @@ namespace bagis_pro
                             bIrrMapPublished = true;
                         }
                     }
-                    if (Report_Nlcd_Checked)
-                    {
+                    if (Report_Nlcd_Checked && bLcDataExists)
+                    {                        
                         success = GeneralTools.GenerateLulccMapsTitlePage(areaSqKm, false);
                         success = await MapTools.DisplayLulccMapsAsync(Module1.Current.Aoi.FilePath, oLayout, false, true);
                         if (success != BA_ReturnCode.Success)
@@ -4574,15 +4607,12 @@ namespace bagis_pro
                                     {
                                         case BagisMapType.LAND_COVER_CURRENT:
                                             mapDefinition.Title = $@"CURRENT LAND COVER ({oAnalysis.LcCurrentYearStart})";
-                                            mapDefinition.LowerRightTextbox = $@"Ipsum Lorem Facto.";
                                             break;
                                         case BagisMapType.LAND_COVER_HISTORY:
                                             mapDefinition.Title = $@"HISTORICAL LAND COVER ({oAnalysis.LcHistoryYearStart})";
-                                            mapDefinition.LowerRightTextbox = $@"Ipsum Lorem Facto.";
                                             break;
                                         case BagisMapType.LAND_COVER_CHANGE:
                                             mapDefinition.Title = $@"LAND COVER CHANGE BETWEEN ({oAnalysis.LcHistoryYearStart} AND {oAnalysis.LcCurrentYearEnd})";
-                                            mapDefinition.LowerRightTextbox = $@"Ipsum Lorem Facto.";
                                             break;
                                         default:
                                             break;

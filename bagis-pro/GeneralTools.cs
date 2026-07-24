@@ -2978,9 +2978,14 @@ namespace bagis_pro
                     page_content = pageContent.ToUpper()
                 };
                 bool bIsFirePage = false;
+                bool bIsLulccPage = false;
                 if (pageContent.Contains(Constants.TITLE_FIRE_BLANK_PAGE))
                 {
                     bIsFirePage = true;
+                }
+                else if (pageContent.Contains(Constants.TITLE_LULCC_BLANK_PAGE))
+                {
+                    bIsLulccPage = true;
                 }
                 string myXmlFile = publishFolder + "\\" + Constants.FILE_BLANK_PAGE_XML;
                 System.Xml.Serialization.XmlSerializer writer = new System.Xml.Serialization.XmlSerializer(tPage.GetType());
@@ -2994,6 +2999,10 @@ namespace bagis_pro
                 if (bIsFirePage)
                 {
                     myStyleSheet = GeneralTools.GetAddInDirectory() + "\\" + Constants.FILE_BLANK_FIRE_PAGE_XSL;
+                }
+                else if (bIsLulccPage)
+                {
+                    myStyleSheet = GeneralTools.GetAddInDirectory() + "\\" + Constants.FILE_BLANK_LULCC_PAGE_XSL;
                 }
                 XPathDocument myXPathDoc = new XPathDocument(myXmlFile);
                 XslCompiledTransform myXslTrans = new XslCompiledTransform();

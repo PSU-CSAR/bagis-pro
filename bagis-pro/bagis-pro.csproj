@@ -172,6 +172,9 @@
     <None Include="Templates\too_many_sites.docx" />
   </ItemGroup>
   <ItemGroup>
+    <None Update="blank_lulcc_map_page.xsl">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="blank_fire_page.xsl">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
