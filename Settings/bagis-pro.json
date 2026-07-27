@@ -133,13 +133,13 @@
         {
             "layerType": "Land Cover Current",
             "heading": "Land Cover - Current",
-            "description": "No description yet.",
+            "description": "Land cover data reclassified from 2024 MRLC land cover (https://www.mrlc.gov/data). Cell values: 1. Others, 2. Developed, 4. Forest, 8. Agricultural, 9. Wetland. 1. Others.",
             "uri": "http://bagis.geog.pdx.edu/arcgis/rest/services/landuse/landcover_current/ImageServer"
         },
                 {
             "layerType": "Land Cover Historical",
             "heading": "Land Cover - Historical",
-            "description": "No description yet.",
+            "description": "Land Cover - Historical: Land cover data reclassified from 2020 MRLC land cover (https://www.mrlc.gov/data). Cell values: 1. Others, 2. Developed, 4. Forest, 8. Agricultural, 9. Wetland. 1. Others.",
             "uri": "http://bagis.geog.pdx.edu/arcgis/rest/services/landuse/landcover_before/ImageServer"
         }
     ],
@@ -226,7 +226,7 @@
                 "Severity": "None"
             }
         ],
-        "Version": 36
+        "Version": 37
     },
     "AoiCreation": {
     "ReferenceLayer":"BAGIS_Reference_Maps.lyrx",
