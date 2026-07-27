@@ -456,14 +456,13 @@ namespace bagis_pro.Basin
             {
                 return new RelayCommand(async () =>
                 {
-                    //SetDefaultProjection also initializes the Layout and the MapFrame dimensions
-                    //01-APR-2025: We decided not to set a default project for now so other projections could be supported
+                    //SetDefaultProjection also initializes the Layout and the MapFrame dimensions in BAGIS V3
                     //Initialize the layout and map separately instead
-                    //BA_ReturnCode success = await MapTools.SetDefaultProjection();
                     ArcGIS.Desktop.Layouts.Layout layout = await MapTools.GetDefaultLayoutAsync(Constants.MAPS_DEFAULT_LAYOUT_NAME);
                     Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);
                     BA_ReturnCode success = await MapTools.SetDefaultMapFrameDimensionAsync(Constants.MAPS_DEFAULT_MAP_FRAME_NAME, layout, oMap,
                         0.5, 2.5, 8.0, 10.5);
+                    success = await MapTools.SetDefaultProjectionAsync();
                     Module1.Current.BasinFolderBase = ParentFolder;
                     FrameworkApplication.Current.Dispatcher.Invoke(() =>
                     {

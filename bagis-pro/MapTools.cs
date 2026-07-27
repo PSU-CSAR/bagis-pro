@@ -77,7 +77,7 @@ namespace bagis_pro
                 }
                 else
                 {
-                    await SetDefaultProjection();
+                    await SetDefaultProjectionAsync();
 
                     //remove existing layers from map frame
                     await MapTools.RemoveLayersfromMapFrameAsync(Constants.MAPS_DEFAULT_MAP_NAME, Constants.MAPS_ALL_ARRAY);
@@ -439,6 +439,9 @@ namespace bagis_pro
                 {
                     oMap = MapFactory.Instance.CreateMap(mapName, basemap: Basemap.None);
                 }
+                // Spatial reference for NAD 1983 Albers North America
+                SpatialReference oAlbersCoordSystem = SpatialReferenceBuilder.CreateSpatialReference(Constants.ALBERS_PROJ_WKID);
+                oMap.SetSpatialReference(oAlbersCoordSystem);
             });
             if (mpi != null)
             {
@@ -4253,7 +4256,7 @@ namespace bagis_pro
             }
             return layersRemoved;
         }
-        public static async Task<BA_ReturnCode> SetDefaultProjection()
+        public static async Task<BA_ReturnCode> SetDefaultProjectionAsync()
         {
             Layout layout = await MapTools.GetDefaultLayoutAsync(Constants.MAPS_DEFAULT_LAYOUT_NAME);
             Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_DEFAULT_MAP_NAME);

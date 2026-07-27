@@ -1,4 +1,5 @@
-﻿using ArcGIS.Core.Data;
+﻿using ActiproSoftware.Windows.Extensions;
+using ArcGIS.Core.Data;
 using ArcGIS.Core.Data.Raster;
 using ArcGIS.Core.Geometry;
 using ArcGIS.Desktop.Catalog;
@@ -3184,6 +3185,7 @@ namespace bagis_pro
                     Layout oLayout = await MapTools.GetDefaultLayoutAsync(Constants.MAPS_FIRE_LAYOUT_NAME);
                     string strLayerFilePath = Module1.Current.SettingsPath + "\\" + Constants.FOLDER_SETTINGS + "\\" + Constants.LAYER_FILE_MTBS_FIRE;
                     Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_FIRE_MAP_NAME);
+                    success = await MapTools.SetDefaultProjectionAsync();
                     FeatureLayer nifcLayer = null;
                     MapDefinition defaultMap = null;
 
@@ -4462,6 +4464,7 @@ namespace bagis_pro
                     double areaSqKm = AreaUnit.SquareMeters.ConvertTo(aoiAreaSqMeters, AreaUnit.SquareKilometers);
                     Layout oLayout = await MapTools.GetDefaultLayoutAsync(Constants.MAPS_LULCC_LAYOUT_NAME);
                     Map oMap = await MapTools.SetDefaultMapNameAsync(Constants.MAPS_LULCC_MAP_NAME);
+                    success = await MapTools.SetDefaultProjectionAsync();
                     Analysis oAnalysis = GeneralTools.GetAnalysisSettings(oAoi.FilePath);
                     bool bIrrMapPublished = false;
                     bool bLcMapPublished = false;

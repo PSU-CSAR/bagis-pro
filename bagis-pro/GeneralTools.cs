@@ -1668,6 +1668,8 @@ namespace bagis_pro
                     Module1.Current.Aoi = oAoi;
                 });
 
+                success = await MapTools.SetDefaultProjectionAsync();
+                
                 // Find path to chrome so we can export to pdf
                 if (string.IsNullOrEmpty(Module1.Current.ChromePath))
                 {
