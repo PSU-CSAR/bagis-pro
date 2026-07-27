@@ -127,7 +127,7 @@ namespace bagis_pro
         Ready,
         NotReady,
         MissingFireData,
-        MissingReport,
+        MissingReports,
         HasReport,
         NoFire,
         MissingData,

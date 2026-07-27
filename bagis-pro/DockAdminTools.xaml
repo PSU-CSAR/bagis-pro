@@ -80,8 +80,8 @@
                         </ListView>
                     </DockPanel>
                     <DockPanel Grid.Row="3" Grid.Column="0" >
-                        <Label Content="Fire status:"/>
-                        <ComboBox Name="cboFireStatus" IsReadOnly="true" ItemsSource="{Binding FilterFireStatus}" SelectedItem="{Binding SelectedFireStatus}"/>
+                        <Label Content="Status:"/>
+                        <ComboBox Name="cboStatus" IsReadOnly="true" ItemsSource="{Binding FilterStatus}" SelectedItem="{Binding SelectedStatus}"/>
                     </DockPanel>
                     <DockPanel Grid.Row="3" Grid.Column="1" >
                         <Button x:Name="btnToggle" Content="Switch Selection" HorizontalAlignment="Center" VerticalAlignment="Center" Width="100" IsEnabled="{Binding CmdToggleEnabled}" Command="{Binding CmdToggle}" Margin="5,0,0,0"/>

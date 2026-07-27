@@ -61,13 +61,7 @@ namespace bagis_pro
             TasksEnabled = false;
             Clip_Nifc_Checked = true;
             Clip_Mtbs_Checked = true;
-            FilterFireStatus = new ObservableCollection<string>();
-            FilterFireStatus.Add(_all);
-            FilterFireStatus.Add(AoiBatchState.MissingFireData.ToString());
-            FilterFireStatus.Add(AoiBatchState.HasReport.ToString());
-            FilterFireStatus.Add(AoiBatchState.MissingReport.ToString());
-            FilterFireStatus.Add(AoiBatchState.NoFire.ToString());
-            SelectedFireStatus = _all;
+            FilterStatus = new ObservableCollection<string>();
             Clip_Irr_Checked = true;
             Clip_Nlcd_Checked = true;
         }
@@ -144,7 +138,7 @@ namespace bagis_pro
         private bool _bClip_Nifc_Checked;
         private bool _bClip_Mtbs_Checked;
         private bool _Reclip_MTBS_Checked;
-        private string _strSelectedFireStatus;
+        private string _strSelectedStatus;
         private const string _separator = ",";
         private bool _bClip_Irr_Checked;
         private bool _bClip_Nlcd_Checked;
@@ -539,12 +533,12 @@ namespace bagis_pro
             }
         }
 
-        public string SelectedFireStatus
+        public string SelectedStatus
         {
-            get { return _strSelectedFireStatus; }
+            get { return _strSelectedStatus; }
             set
             {
-                SetProperty(ref _strSelectedFireStatus, value, () => SelectedFireStatus);
+                SetProperty(ref _strSelectedStatus, value, () => SelectedStatus);
             }
         }
 
@@ -618,7 +612,7 @@ namespace bagis_pro
         }
 
         public ObservableCollection<BA_Objects.Aoi> Names { get; set; }
-        public ObservableCollection<string> FilterFireStatus { get; set; }
+        public ObservableCollection<string> FilterStatus { get; set; }
 
         IReadOnlyDictionary<string, string> DictLandCoverTypes = new Dictionary<string, string>()
         {
@@ -726,6 +720,8 @@ namespace bagis_pro
 
                     Names.Clear();
                     IList<BA_Objects.Aoi> lstAois = await GeneralTools.GetAoiFoldersAsync(ParentFolder, _strLogFile);
+                    IList<string> lstStatus = new List<string>();
+                    lstStatus.Add(_all);
                     foreach (var pAoi in lstAois)
                     {
                         string[] arrValues = await AnalysisTools.QueryLocalStationValues(pAoi.FilePath);
@@ -740,6 +736,10 @@ namespace bagis_pro
                             }
                         }
                         Names.Add(pAoi);
+                        if (!lstStatus.Contains(pAoi.AoiBatchStateText))
+                        {
+                            lstStatus.Add(pAoi.AoiBatchStateText);
+                        }
                     }
                     if (Names.Count > 0)
                     {
@@ -795,6 +795,10 @@ namespace bagis_pro
                         IList<Interval> lstInterval = GeneralTools.GetFireStatisticsIntervals(IncrementalEndYear, FireDataClipYears, FireIncrementYears, false, 0, out intIncrementPeriods);
                         FireTimePeriodCount = intIncrementPeriods;
                     }
+
+                    FilterStatus.Clear();
+                    FilterStatus.AddRange(lstStatus);
+                    SelectedStatus = _all;
                 });
             }
         }
@@ -805,60 +809,23 @@ namespace bagis_pro
             {
                 return new RelayCommand( () =>
                 {
-                    switch (SelectedFireStatus)
+                    if (SelectedStatus.Equals(_all))
                     {
-                        case _all:
-                            for (int idxRow = 0; idxRow < Names.Count; idxRow++)
-                            {
-                                Names[idxRow].AoiBatchIsSelected = !Names[idxRow].AoiBatchIsSelected;
-                            }
-                            break;
-                        case nameof(AoiBatchState.MissingFireData):
-                            for (int idxRow = 0; idxRow < Names.Count; idxRow++)
-                            {
-                                if (Names[idxRow].AoiBatchStateText.Equals(AoiBatchState.MissingFireData.ToString()))
-                                {
-                                    Names[idxRow].AoiBatchIsSelected = !Names[idxRow].AoiBatchIsSelected;
-                                }                               
-                            }
-                            break;
-                        case nameof(AoiBatchState.HasReport):
-                            for (int idxRow = 0; idxRow < Names.Count; idxRow++)
-                            {
-                                if (Names[idxRow].AoiBatchStateText.Equals(AoiBatchState.HasReport.ToString()))
-                                {
-                                    Names[idxRow].AoiBatchIsSelected = !Names[idxRow].AoiBatchIsSelected;
-                                }
-                            }
-                            break;
-                        case nameof(AoiBatchState.MissingReport):
-                            for (int idxRow = 0; idxRow < Names.Count; idxRow++)
-                            {
-                                if (Names[idxRow].AoiBatchStateText.Equals(AoiBatchState.MissingReport.ToString()))
-                                {
-                                    Names[idxRow].AoiBatchIsSelected = !Names[idxRow].AoiBatchIsSelected;
-                                }
-                            }
-                            break;
-                        case nameof(AoiBatchState.NoFire):
-                            for (int idxRow = 0; idxRow < Names.Count; idxRow++)
-                            {
-                                if (Names[idxRow].AoiBatchStateText.Equals(AoiBatchState.NoFire.ToString()))
-                                {
-                                    Names[idxRow].AoiBatchIsSelected = !Names[idxRow].AoiBatchIsSelected;
-                                }
-                            }
-                            break;
-                        default:
-                            for (int idxRow = 0; idxRow < Names.Count; idxRow++)
-                            {
-                                Names[idxRow].AoiBatchIsSelected = !Names[idxRow].AoiBatchIsSelected;
-                            }
-                            break;
-
+                        for (int idxRow = 0; idxRow < Names.Count; idxRow++)
+                        {
+                            Names[idxRow].AoiBatchIsSelected = !Names[idxRow].AoiBatchIsSelected;
+                        }
                     }
-
-
+                    else
+                    {
+                        for (int idxRow = 0; idxRow < Names.Count; idxRow++)
+                        {
+                            if (Names[idxRow].AoiBatchStateText.Equals(SelectedStatus))
+                            {
+                                Names[idxRow].AoiBatchIsSelected = !Names[idxRow].AoiBatchIsSelected;
+                            }
+                        }
+                    }
                 });
             }
         }
@@ -1352,6 +1319,8 @@ namespace bagis_pro
                 return new RelayCommand( async () =>
                 {
                     ResetAoiBatchStateText();
+                    IList<string> lstStatus = new List<string>();
+                    lstStatus.Add(_all);
                     for (int idxRow = 0; idxRow < Names.Count; idxRow++)
                     {
                         Aoi oAoi = Names[idxRow];
@@ -1374,6 +1343,10 @@ namespace bagis_pro
                         if (bMissingFireSettings)
                         {
                             Names[idxRow].AoiBatchStateText = AoiBatchState.MissingFireData.ToString();  // update gui
+                            if (!lstStatus.Contains(Names[idxRow].AoiBatchStateText))
+                            {
+                                lstStatus.Add(Names[idxRow].AoiBatchStateText);
+                            }
                             continue;
                         }
                         // Check for fire.gdb and data before continuing
@@ -1413,6 +1386,10 @@ namespace bagis_pro
                         if (!bHasFireData)
                         {
                             Names[idxRow].AoiBatchStateText = AoiBatchState.MissingFireData.ToString();  // update gui
+                            if (!lstStatus.Contains(Names[idxRow].AoiBatchStateText))
+                            {
+                                lstStatus.Add(Names[idxRow].AoiBatchStateText);
+                            }
                             continue;
                         }
                         // Fire data existence has been validated; Check no fire status
@@ -1442,6 +1419,10 @@ namespace bagis_pro
                             {
                                 bZeroFires = true;
                                 Names[idxRow].AoiBatchStateText = AoiBatchState.NoFire.ToString();  // update gui
+                                if (!lstStatus.Contains(Names[idxRow].AoiBatchStateText))
+                                {
+                                    lstStatus.Add(Names[idxRow].AoiBatchStateText);
+                                }
                                 continue;
                             }
                         }
@@ -1460,16 +1441,24 @@ namespace bagis_pro
                                 }
                                 else
                                 {
-                                    Names[idxRow].AoiBatchStateText = AoiBatchState.MissingReport.ToString();  // update gui
+                                    Names[idxRow].AoiBatchStateText = AoiBatchState.MissingReports.ToString();  // update gui
                                 }
                             }
                             else
                             {
-                                Names[idxRow].AoiBatchStateText = AoiBatchState.MissingReport.ToString();  // update gui
+                                Names[idxRow].AoiBatchStateText = AoiBatchState.MissingReports.ToString();  // update gui
                             }
+                        }
+                        if (!lstStatus.Contains(Names[idxRow].AoiBatchStateText))
+                        {
+                            lstStatus.Add(Names[idxRow].AoiBatchStateText);
                         }
                     }
                     CmdFireReportEnabled = true;
+
+                    FilterStatus.Clear();
+                    FilterStatus.AddRange(lstStatus);
+                    SelectedStatus = _all;
                 });
             }
         }
@@ -2883,7 +2872,7 @@ namespace bagis_pro
                     }
                 }
             }
-            string[] arrValidStatus = [AoiBatchState.HasReport.ToString(), AoiBatchState.MissingReport.ToString(), AoiBatchState.NoFire.ToString()];
+            string[] arrValidStatus = [AoiBatchState.HasReport.ToString(), AoiBatchState.MissingReports.ToString(), AoiBatchState.NoFire.ToString()];
             for (int idxRow = 0; idxRow < Names.Count; idxRow++)
             {
                 Aoi oAoi = Names[idxRow];
@@ -3536,6 +3525,8 @@ namespace bagis_pro
                     Report_Irr_Checked = false;
                     CmdLulccReportEnabled = false;
                     CmdLulccMapEnabled = false;
+                    IList<string> lstStatus = new List<string>();
+                    lstStatus.Add(_all);
                     for (int idxRow = 0; idxRow < Names.Count; idxRow++)
                     {
                         Aoi oAoi = Names[idxRow];
@@ -3559,16 +3550,28 @@ namespace bagis_pro
                         if (!bHasIrrData && !bHasLandcoverData)
                         {
                             Names[idxRow].AoiBatchStateText = AoiBatchState.MissingData.ToString();  // update gui
+                            if (!lstStatus.Contains(Names[idxRow].AoiBatchStateText))
+                            {
+                                lstStatus.Add(Names[idxRow].AoiBatchStateText);
+                            }
                             continue;
                         }
                         else if (!bHasIrrData)
                         {
                             Names[idxRow].AoiBatchStateText = AoiBatchState.MissingIrrData.ToString();  // update gui
+                            if (!lstStatus.Contains(Names[idxRow].AoiBatchStateText))
+                            {
+                                lstStatus.Add(Names[idxRow].AoiBatchStateText);
+                            }
                             continue;
                         }
                         else if (!bHasLandcoverData)
                         {
                             Names[idxRow].AoiBatchStateText = AoiBatchState.MissingLulccData.ToString();  // update gui
+                            if (!lstStatus.Contains(Names[idxRow].AoiBatchStateText))
+                            {
+                                lstStatus.Add(Names[idxRow].AoiBatchStateText);
+                            }
                             continue;
                         }
                         bool bHasIrrReport = false;
@@ -3589,21 +3592,45 @@ namespace bagis_pro
                         {
                             bHasLandcoverReport = true;
                         }
-                        if (!bHasIrrReport)
+                        if (!bHasIrrReport && !bHasLandcoverReport)
+                        {
+                            Names[idxRow].AoiBatchStateText = AoiBatchState.MissingReports.ToString();  // update gui
+                            if (!lstStatus.Contains(Names[idxRow].AoiBatchStateText))
+                            {
+                                lstStatus.Add(Names[idxRow].AoiBatchStateText);
+                            }
+                            continue;
+                        }
+                        else if (!bHasIrrReport)
                         {
                             Names[idxRow].AoiBatchStateText = AoiBatchState.MissingIrrReport.ToString();  // update gui
+                            if (!lstStatus.Contains(Names[idxRow].AoiBatchStateText))
+                            {
+                                lstStatus.Add(Names[idxRow].AoiBatchStateText);
+                            }
                             continue;
                         }
                         else if (!bHasLandcoverReport)
                         {
                             Names[idxRow].AoiBatchStateText = AoiBatchState.MissingLulccReport.ToString();  // update gui
+                            if (!lstStatus.Contains(Names[idxRow].AoiBatchStateText))
+                            {
+                                lstStatus.Add(Names[idxRow].AoiBatchStateText);
+                            }
                             continue;
                         }
                         else if (bHasIrrReport && bHasLandcoverReport)
                         {
                             Names[idxRow].AoiBatchStateText = AoiBatchState.HasReport.ToString();  // update gui
+                            if (!lstStatus.Contains(Names[idxRow].AoiBatchStateText))
+                            {
+                                lstStatus.Add(Names[idxRow].AoiBatchStateText);
+                            }
                         }
                     }
+                    FilterStatus.Clear();
+                    FilterStatus.AddRange(lstStatus);
+                    SelectedStatus = _all;
                 });
             }
         }
