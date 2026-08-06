@@ -4236,11 +4236,12 @@ namespace bagis_pro
             string dateSuffix = DateTime.Now.ToString("MMddyyyy");
             // Warn if there is existing output and give option to terminate
             var dir = new DirectoryInfo($@"{Path.GetDirectoryName(_strLulccReportLogFile)}");
-            string strCsvFile = "";
+            string strIrrCsvFile = "";
+            string strLandCoverCsvFile = "";
             if (Report_Irr_Checked)
             {
                 string strSearch = $@"irr_lands_statistics_{dateSuffix}.csv";
-                strCsvFile = $@"{Path.GetDirectoryName(_strLulccReportLogFile)}\{strSearch}";
+                strIrrCsvFile = $@"{Path.GetDirectoryName(_strLulccReportLogFile)}\{strSearch}";
                 var fileEnum = dir.EnumerateFiles(strSearch);
                 if (fileEnum.Count() > 0)
                 {
@@ -4251,15 +4252,42 @@ namespace bagis_pro
                         return;
                     }
                 }
-                if (File.Exists(strCsvFile))
+                if (File.Exists(strIrrCsvFile))
                 {
                     try
                     {
-                        File.Delete(strCsvFile);
+                        File.Delete(strIrrCsvFile);
                     }
                     catch (Exception e)
                     {
-                        MessageBox.Show($@"Unable to overwrite {strCsvFile}. Report process stopped!");
+                        MessageBox.Show($@"Unable to overwrite {strIrrCsvFile}. Report process stopped!");
+                        return;
+                    }
+                }
+            }
+            if (Report_Nlcd_Checked)
+            {
+                string strSearch = $@"land_cover_statistics_{dateSuffix}.csv";
+                strLandCoverCsvFile = $@"{Path.GetDirectoryName(_strLulccReportLogFile)}\{strSearch}";
+                var fileEnum = dir.EnumerateFiles(strSearch);
+                if (fileEnum.Count() > 0)
+                {
+                    System.Windows.MessageBoxResult res = MessageBox.Show("At least 1 land cover statistics file exists in the output folder. Do you want to continue and overwrite these files?", "BAGIS-Pro",
+                        System.Windows.MessageBoxButton.YesNo);
+                    if (res != System.Windows.MessageBoxResult.Yes)
+                    {
+                        return;
+                    }
+                }
+                if (File.Exists(strLandCoverCsvFile))
+                {
+                    try
+                    {
+                        File.Delete(strLandCoverCsvFile);
+                    }
+                    catch (Exception e)
+                    {
+                        MessageBox.Show($@"Unable to overwrite {strLandCoverCsvFile}. Report process stopped!");
                         return;
                     }
                 }
@@ -4319,9 +4347,9 @@ namespace bagis_pro
                         }
 
                         BA_ReturnCode success = BA_ReturnCode.WriteError;
-                        if (!File.Exists(strCsvFile))
+                        if (!File.Exists(strIrrCsvFile))
                         {
-                            success = this.InitLulccCsv(strCsvFile);
+                            success = this.InitIrrCsv(strIrrCsvFile);
                         }
                         else
                         {
@@ -4341,14 +4369,14 @@ namespace bagis_pro
                                     {
                                         sb.Append($@"{item}{_separator}");
                                     }
-                                    using (StreamWriter sw = File.AppendText(strCsvFile))
+                                    using (StreamWriter sw = File.AppendText(strIrrCsvFile))
                                     {
                                         sw.WriteLine(sb.ToString());
                                     }
                                 }
                                 catch (Exception ex)
                                 {
-                                    strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} Data could not be written to the {strCsvFile} file!{System.Environment.NewLine}";
+                                    strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} Data could not be written to the {strIrrCsvFile} file!{System.Environment.NewLine}";
                                     File.AppendAllText(_strLulccReportLogFile, strLogEntry);
                                     return;
                                 }
@@ -4359,6 +4387,57 @@ namespace bagis_pro
                                 File.AppendAllText(_strLulccReportLogFile, strLogEntry);
                             }
                         }
+                    }
+                    if (Report_Nlcd_Checked)
+                    {
+                        double dblTest = await GeodatabaseTools.GetCellSizeAsync(new Uri($@"{analysisUri.LocalPath}\{Constants.FILE_LANDCOVER_CHANGE}"), WorkspaceType.Geodatabase);
+                        if (dblTest > 0)
+                        {
+                            cellSizeSqMeters = Math.Round(dblTest, 2);
+                        }
+
+                        BA_ReturnCode success = BA_ReturnCode.WriteError;
+                        if (!File.Exists(strLandCoverCsvFile))
+                        {
+                            success = this.InitLandCoverCsv(strLandCoverCsvFile);
+                        }
+                        else
+                        {
+                            success = BA_ReturnCode.Success;
+                        }
+                        if (success == BA_ReturnCode.Success)
+                        {
+                            IList<string> lstElements = await AnalysisTools.GenerateLandCoverStatisticsList(oAoi, _strLulccReportLogFile,
+                                aoiAreaSqMeters, cellSizeSqMeters);
+                            if (lstElements.Count > 0)
+                            {
+                                try
+                                {
+                                    // Adds new content to file
+                                    StringBuilder sb = new StringBuilder();
+                                    foreach (var item in lstElements)
+                                    {
+                                        sb.Append($@"{item}{_separator}");
+                                    }
+                                    using (StreamWriter sw = File.AppendText(strLandCoverCsvFile))
+                                    {
+                                        sw.WriteLine(sb.ToString());
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} Data could not be written to the {strLandCoverCsvFile} file!{System.Environment.NewLine}";
+                                    File.AppendAllText(_strLulccReportLogFile, strLogEntry);
+                                    return;
+                                }
+                            }
+                            else
+                            {
+                                strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} No irr data for {Names[idxRow].Name}. Report not generated. {System.Environment.NewLine}";
+                                File.AppendAllText(_strLulccReportLogFile, strLogEntry);
+                            }
+                        }
+
                     }
 
                     Names[idxRow].AoiBatchStateText = AoiBatchState.Completed.ToString();  // update gui
@@ -4884,8 +4963,7 @@ namespace bagis_pro
                 return BA_ReturnCode.WriteError;
             }
         }
-
-        private BA_ReturnCode InitLulccCsv(string strCsvFile)
+        private BA_ReturnCode InitIrrCsv(string strCsvFile)
         {
             StringBuilder output = new StringBuilder();
             String[] headings = { "stationTriplet", "stationName", "TotalIrrigatedArea_SquareMile", "TotalIrrigatedArea_Percent",
@@ -4899,7 +4977,29 @@ namespace bagis_pro
             }
             catch (Exception ex)
             {
-                string strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} Headings could not be written to an Lulcc CSV file!{System.Environment.NewLine}";
+                string strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} Headings could not be written to the irr CSV file!{System.Environment.NewLine}";
+                File.AppendAllText(_strLulccReportLogFile, strLogEntry);
+                return BA_ReturnCode.WriteError;
+            }
+        }
+        private BA_ReturnCode InitLandCoverCsv(string strCsvFile)
+        {
+            StringBuilder output = new StringBuilder();
+            String[] headings = { "stationTriplet", "stationName", "CurrentOthersArea_SquareMile", "CurrentOthersArea_Percent", "CurrentDevelopedArea_SquareMile",
+                "CurrentDevelopedArea_Percent", "CurrentForestArea_SquareMile", "CurrentForestArea_Percent", "CurrentAgriArea_SquareMile",
+                "CurrentAgriArea_Percent", "CurrentWetlandArea_SquareMile","CurrentWetlandArea_Percent", "PreviousOthersArea_SquareMile",
+                "PreviousOthersArea_Percent", "PreviousDevelopedArea_SquareMile", "PreviousDevelopedArea_Percent", "PreviousForestArea_SquareMile",
+                "PreviousForestedArea_Percent","PreviousAgriArea_SquareMile", "PreviousAgriArea_Percent", "PreviousWetlandArea_SquareMile","PreviousWetlandArea_Percent" };
+            output.AppendLine(string.Join(_separator, headings));
+            try
+            {
+                // Overwrites file with new content
+                File.WriteAllText(strCsvFile, output.ToString());
+                return BA_ReturnCode.Success;
+            }
+            catch (Exception ex)
+            {
+                string strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} Headings could not be written to the land cover CSV file!{System.Environment.NewLine}";
                 File.AppendAllText(_strLulccReportLogFile, strLogEntry);
                 return BA_ReturnCode.WriteError;
             }
