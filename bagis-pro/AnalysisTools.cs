@@ -4460,7 +4460,7 @@ namespace bagis_pro
             }
             if (outsideCount > 0)
             {
-                success = await ReclipSurfacesAsync(strAoiFilePath, Constants.FILE_MERGED_SITES);
+                success = await ReclipSurfacesAsync(strAoiFilePath, $@"{sitesGdbUri.LocalPath}\{Constants.FILE_MERGED_SITES}");
             }
 
             var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiFilePath, snapRaster: BA_Objects.Aoi.SnapRasterPath(strAoiFilePath));
