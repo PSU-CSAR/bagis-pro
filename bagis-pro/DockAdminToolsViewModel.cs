@@ -4989,7 +4989,10 @@ namespace bagis_pro
                 "CurrentDevelopedArea_Percent", "CurrentForestArea_SquareMile", "CurrentForestArea_Percent", "CurrentAgriArea_SquareMile",
                 "CurrentAgriArea_Percent", "CurrentWetlandArea_SquareMile","CurrentWetlandArea_Percent", "PreviousOthersArea_SquareMile",
                 "PreviousOthersArea_Percent", "PreviousDevelopedArea_SquareMile", "PreviousDevelopedArea_Percent", "PreviousForestArea_SquareMile",
-                "PreviousForestedArea_Percent","PreviousAgriArea_SquareMile", "PreviousAgriArea_Percent", "PreviousWetlandArea_SquareMile","PreviousWetlandArea_Percent" };
+                "PreviousForestedArea_Percent","PreviousAgriArea_SquareMile", "PreviousAgriArea_Percent", "PreviousWetlandArea_SquareMile","PreviousWetlandArea_Percent",
+                "ChangeOthersArea_SquareMile", "ChangeOthersArea_Percent", "ChangeDevelopedArea_SquareMile",
+                "ChangeDevelopedArea_Percent", "ChangeForestArea_SquareMile", "ChangeForestArea_Percent", "ChangeAgriArea_SquareMile",
+                "ChangeAgriArea_Percent", "ChangeWetlandArea_SquareMile","ChangeWetlandArea_Percent"};
             output.AppendLine(string.Join(_separator, headings));
             try
             {

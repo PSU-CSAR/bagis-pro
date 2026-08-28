@@ -8294,9 +8294,15 @@ namespace bagis_pro
             const string VALUE_AGRI = "8";
             const string VALUE_WETLAND = "9";
             string[] arrLandCover = new string[] { Constants.FILE_LANDCOVER_CURRENT, Constants.FILE_LANDCOVER_HISTORICAL };
+            double dblCurrOthersSqMeters = 0;
+            double dblCurrDevelopedSqMeters = 0;
+            double dblCurrForestSqMeters = 0;
+            double dblCurrAgriSqMeters = 0;
+            double dblCurrWetlandSqMeters = 0;
+
             for (int i = 0; i < arrLandCover.Length; i++)
             {
-                IDictionary<string, long> dictReturn = await GeodatabaseTools.RasterTableToDictionaryAsync(uriLayers, Constants.FILE_LANDCOVER_CURRENT, queryFilter);
+                IDictionary<string, long> dictReturn = await GeodatabaseTools.RasterTableToDictionaryAsync(uriLayers, arrLandCover[i], queryFilter);
                 double dblOthers = 0;
                 double dblDeveloped = 0;
                 double dblForest = 0;
@@ -8367,6 +8373,62 @@ namespace bagis_pro
                     dblTotWetlandPct = Math.Round(dblTotWetlandSqMeters / aoiAreaSqMeters * 100, 3);
                 }
                 lstElements.Add(Convert.ToString(dblTotWetlandPct));
+                if (i == 0)
+                {
+                    dblCurrAgriSqMeters = dblTotAgriSqMeters;
+                    dblCurrDevelopedSqMeters = dblTotDevelopedSqMeters;
+                    dblCurrForestSqMeters = dblTotDevelopedSqMeters;
+                    dblCurrOthersSqMeters = dblTotOthersSqMeters;
+                    dblCurrWetlandSqMeters = dblTotWetlandSqMeters;
+                }
+                else
+                {
+                    double dblChangeOthersSqMeters = dblCurrOthersSqMeters - dblTotOthersSqMeters;
+                    double dblChangeOthersSqMiles = Math.Round(AreaUnit.SquareMeters.ConvertTo(dblChangeOthersSqMeters, AreaUnit.SquareMiles), 2);
+                    lstElements.Add(Convert.ToString(dblChangeOthersSqMiles));
+                    double dblChangeOthersPct = 0;
+                    if (dblChangeOthersSqMeters != 0)
+                    {
+                        dblChangeOthersPct = Math.Round(dblChangeOthersSqMeters / aoiAreaSqMeters * 100, 3);
+                    }
+                    lstElements.Add(Convert.ToString(dblChangeOthersPct));
+                    double dblChangeDevelopedSqMeters = dblCurrDevelopedSqMeters - dblTotDevelopedSqMeters;
+                    double dblChangeDevelopedSqMiles = Math.Round(AreaUnit.SquareMeters.ConvertTo(dblChangeDevelopedSqMeters, AreaUnit.SquareMiles), 2);
+                    lstElements.Add(Convert.ToString(dblChangeDevelopedSqMiles));
+                    double dblChangeDevelopedPct = 0;
+                    if (dblChangeDevelopedSqMeters != 0)
+                    {
+                        dblChangeDevelopedPct = Math.Round(dblChangeDevelopedSqMeters / aoiAreaSqMeters * 100, 3);
+                    }
+                    lstElements.Add(Convert.ToString(dblChangeDevelopedPct));
+                    double dblChangeForestSqMeters = dblCurrForestSqMeters - dblTotForestSqMeters;
+                    double dblChangeForestSqMiles = Math.Round(AreaUnit.SquareMeters.ConvertTo(dblChangeForestSqMeters, AreaUnit.SquareMiles), 2);
+                    lstElements.Add(Convert.ToString(dblChangeForestSqMiles));
+                    double dblChangeForestPct = 0;
+                    if (dblChangeForestSqMeters != 0)
+                    {
+                        dblChangeForestPct = Math.Round(dblChangeForestSqMeters / aoiAreaSqMeters * 100, 3);
+                    }
+                    lstElements.Add(Convert.ToString(dblChangeForestPct));
+                    double dblChangeAgriSqMeters = dblCurrAgriSqMeters - dblTotAgriSqMeters;
+                    double dblChangeAgriSqMiles = Math.Round(AreaUnit.SquareMeters.ConvertTo(dblChangeAgriSqMeters, AreaUnit.SquareMiles), 2);
+                    lstElements.Add(Convert.ToString(dblChangeAgriSqMiles));
+                    double dblChangeAgriPct = 0;
+                    if (dblChangeAgriSqMeters != 0)
+                    {
+                        dblChangeAgriPct = Math.Round(dblChangeAgriSqMeters / aoiAreaSqMeters * 100, 3);
+                    }
+                    lstElements.Add(Convert.ToString(dblChangeAgriPct));
+                    double dblChangeWetlandSqMeters = dblCurrWetlandSqMeters - dblTotWetlandSqMeters;
+                    double dblChangeWetlandSqMiles = Math.Round(AreaUnit.SquareMeters.ConvertTo(dblChangeWetlandSqMeters, AreaUnit.SquareMiles), 2);
+                    lstElements.Add(Convert.ToString(dblChangeWetlandSqMiles));
+                    double dblChangeWetlandPct = 0;
+                    if (dblChangeWetlandSqMeters != 0)
+                    {
+                        dblChangeWetlandPct = Math.Round(dblChangeWetlandSqMeters / aoiAreaSqMeters * 100, 3);
+                    }
+                    lstElements.Add(Convert.ToString(dblChangeWetlandPct));
+                }
             }
             return lstElements;
         }
