@@ -908,52 +908,108 @@ namespace bagis_pro
                         string[] arrClippedFileNames = Constants.FILES_SNODAS_SWE;
                         string strOutputGdb = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers, true);
 
-                        // Reset some variables if clipping PRISM
-                        if (strDataType.Equals(BA_Objects.DataSource.GetPrecipitationKey))
+                        WorkspaceType workspaceType = WorkspaceType.ImageServer;
+                        if (strDataType.Equals(DataSource.GetPrecipitationKey))
                         {
+                            if (strWsPrefix.IndexOf("http") < 0)
+                            {
+                                workspaceType = await GeneralTools.GetRasterWorkspaceType($@"{strWsPrefix}{PrismFile.Annual.ToString()}");
+                            }
+                        }
+                        else if (strDataType.Equals(Constants.DATA_TYPE_SWE))
+                        {
+                            if (strWsPrefix.IndexOf("http") < 0)
+                            {
+                                workspaceType = await GeneralTools.GetRasterWorkspaceType($@"{strWsPrefix}{Constants.FILES_SNODAS_SWE[0]}");
+                            }
+                        }
+                        if (strDataType.Equals(DataSource.GetPrecipitationKey))
+                        {
+                            // Reset some variables if clipping PRISM
                             int prismCount = Enum.GetNames(typeof(PrismFile)).Length;
                             int seasonalPrismCount = Enum.GetNames(typeof(SeasonalPrismFile)).Length;
                             Array.Resize<string>(ref arrClipUris, prismCount + seasonalPrismCount);
                             int j = 0;
                             int count = 0;
-                            foreach (var month in Enum.GetValues(typeof(PrismServiceNames)))
+                            if (workspaceType == WorkspaceType.ImageServer)
                             {
-                                arrClipUris[j] = month.ToString();
-                                j++;
-                                count++;
+                                foreach (var month in Enum.GetValues(typeof(PrismServiceNames)))
+                                {
+                                    arrClipUris[j] = month.ToString();
+                                    j++;
+                                    count++;
+                                }
+                                Array.Resize<string>(ref arrClippedFileNames, prismCount + seasonalPrismCount);
+                                j = 0;
+                                foreach (var month in Enum.GetValues(typeof(PrismFile)))
+                                {
+                                    arrClippedFileNames[j] = month.ToString();
+                                    j++;
+                                }
+                                j = count;
+                                foreach (var quarter in Enum.GetValues(typeof(SeasonalPrismServiceNames)))
+                                {
+                                    arrClipUris[j] = quarter.ToString();
+                                    j++;
+                                }
+                                j = count;
+                                foreach (var quarter in Enum.GetValues(typeof(SeasonalPrismFile)))
+                                {
+                                    arrClippedFileNames[j] = quarter.ToString();
+                                    j++;
+                                }
                             }
-                            Array.Resize<string>(ref arrClippedFileNames, prismCount + seasonalPrismCount);
-                            j = 0;
-                            foreach (var month in Enum.GetValues(typeof(PrismFile)))
+                            else if (workspaceType == WorkspaceType.Geodatabase)
+                            // File Geodatabase
                             {
-                                arrClippedFileNames[j] = month.ToString();
-                                j++;
-                            }
-                            j = count;
-                            foreach (var quarter in Enum.GetValues(typeof(SeasonalPrismServiceNames)))
-                            {
-                                arrClipUris[j] = quarter.ToString();
-                                j++;
-                            }
-                            j = count;
-                            foreach (var quarter in Enum.GetValues(typeof(SeasonalPrismFile)))
-                            {
-                                arrClippedFileNames[j] = quarter.ToString();
-                                j++;
+                                foreach (var month in Enum.GetValues(typeof(PrismFile)))
+                                {
+                                    arrClipUris[j] = month.ToString();
+                                    j++;
+                                    count++;
+                                }
+                                Array.Resize<string>(ref arrClippedFileNames, prismCount + seasonalPrismCount);
+                                j = 0;
+                                foreach (var month in Enum.GetValues(typeof(PrismFile)))
+                                {
+                                    arrClippedFileNames[j] = month.ToString();
+                                    j++;
+                                }
+                                j = count;
+                                foreach (var quarter in Enum.GetValues(typeof(SeasonalPrismFile)))
+                                {
+                                    arrClipUris[j] = quarter.ToString();
+                                    j++;
+                                }
+                                j = count;
+                                foreach (var quarter in Enum.GetValues(typeof(SeasonalPrismFile)))
+                                {
+                                    arrClippedFileNames[j] = quarter.ToString();
+                                    j++;
+                                }
                             }
                             strOutputGdb = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Prism, true);
                         }
 
                         int i = 0;
                         bool bIsNoData = false;
+                        string inputFilePath = "";
                         foreach (string strUri in arrClipUris)
                         {
                             Uri imageServiceUri = new Uri(strWsPrefix + strUri + Constants.URI_IMAGE_SERVER);
+                            if (workspaceType == WorkspaceType.ImageServer)
+                            {
+                                inputFilePath = imageServiceUri.AbsoluteUri;
+                            }
+                            else if (workspaceType == WorkspaceType.Geodatabase)
+                            {
+                                inputFilePath = $@"{strWsPrefix}{strUri}";
+                            }
                             string strOutputRaster = strOutputGdb + arrClippedFileNames[i];
                             string strTemplateDataset = strClipGdb + "\\" + strClipFile;                     
                             var environments = Geoprocessing.MakeEnvironmentArray(workspace: strAoiPath, snapRaster: BA_Objects.Aoi.SnapRasterPath(strAoiPath),
                                 extent: strClipEnvelope);
-                            var parameters = Geoprocessing.MakeValueArray(imageServiceUri.AbsoluteUri, strClipEnvelope, strOutputRaster, strTemplateDataset,
+                            var parameters = Geoprocessing.MakeValueArray(inputFilePath, strClipEnvelope, strOutputRaster, strTemplateDataset,
                                                 "", "ClippingGeometry");
                             // Always set the extent when clipping from an image service
                             var gpResult = await Geoprocessing.ExecuteToolAsync("Clip_management", parameters, environments,
