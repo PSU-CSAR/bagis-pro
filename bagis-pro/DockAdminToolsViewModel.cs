@@ -4444,7 +4444,7 @@ namespace bagis_pro
         {
             if (!Report_Irr_Checked && !Report_Nlcd_Checked)
             {
-                MessageBox.Show("No checkboxes selected to generate Maps. Process halted!", "BAGIS-Pro");
+                MessageBox.Show("No checkboxes selected to generate Reports and Statistics. Process halted!", "BAGIS-Pro");
                 return;
             }
             // Make sure the maps_publish folder exists under the selected folder
@@ -4463,7 +4463,69 @@ namespace bagis_pro
             string strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Starting Lulcc maps " + "\r\n";
             File.WriteAllText(_strLulccReportLogFile, strLogEntry);    // overwrite file if it exists
 
-            //@ToDo: work on this when state model is better defined
+            // Create initial log entry
+            strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Starting Lulcc report " + "\r\n";
+            File.WriteAllText(_strLulccReportLogFile, strLogEntry);    // overwrite file if it exists
+            string dateSuffix = DateTime.Now.ToString("MMddyyyy");
+            // Warn if there is existing output and give option to terminate
+            var dir = new DirectoryInfo($@"{Path.GetDirectoryName(_strLulccReportLogFile)}");
+            string strIrrCsvFile = "";
+            string strLandCoverCsvFile = "";
+            if (Report_Irr_Checked)
+            {
+                string strSearch = $@"irr_lands_statistics_{dateSuffix}.csv";
+                strIrrCsvFile = $@"{Path.GetDirectoryName(_strLulccReportLogFile)}\{strSearch}";
+                var fileEnum = dir.EnumerateFiles(strSearch);
+                if (fileEnum.Count() > 0)
+                {
+                    System.Windows.MessageBoxResult res = MessageBox.Show("At least 1 irrigated lands statistics file exists in the output folder. Do you want to continue and overwrite these files?", "BAGIS-Pro",
+                        System.Windows.MessageBoxButton.YesNo);
+                    if (res != System.Windows.MessageBoxResult.Yes)
+                    {
+                        return;
+                    }
+                }
+                if (File.Exists(strIrrCsvFile))
+                {
+                    try
+                    {
+                        File.Delete(strIrrCsvFile);
+                    }
+                    catch (Exception e)
+                    {
+                        MessageBox.Show($@"Unable to overwrite {strIrrCsvFile}. Report process stopped!");
+                        return;
+                    }
+                }
+            }
+            if (Report_Nlcd_Checked)
+            {
+                string strSearch = $@"land_cover_statistics_{dateSuffix}.csv";
+                strLandCoverCsvFile = $@"{Path.GetDirectoryName(_strLulccReportLogFile)}\{strSearch}";
+                var fileEnum = dir.EnumerateFiles(strSearch);
+                if (fileEnum.Count() > 0)
+                {
+                    System.Windows.MessageBoxResult res = MessageBox.Show("At least 1 land cover statistics file exists in the output folder. Do you want to continue and overwrite these files?", "BAGIS-Pro",
+                        System.Windows.MessageBoxButton.YesNo);
+                    if (res != System.Windows.MessageBoxResult.Yes)
+                    {
+                        return;
+                    }
+                }
+                if (File.Exists(strLandCoverCsvFile))
+                {
+                    try
+                    {
+                        File.Delete(strLandCoverCsvFile);
+                    }
+                    catch (Exception e)
+                    {
+                        MessageBox.Show($@"Unable to overwrite {strLandCoverCsvFile}. Report process stopped!");
+                        return;
+                    }
+                }
+            }
+
             string[] arrInvalidStatus = [AoiBatchState.MissingData.ToString()];
             for (int idxRow = 0; idxRow < Names.Count; idxRow++)
             {
@@ -4482,7 +4544,7 @@ namespace bagis_pro
                     string strAnalysisGdbPath = GeodatabaseTools.GetGeodatabasePath(aoiFolder, GeodatabaseNames.Analysis);
                     if (!Names[idxRow].AoiBatchStateText.Equals(AoiBatchState.Waiting.ToString()))
                     {
-                        strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} Skipping irr map for {Names[idxRow].FilePath}. Required station information is missing.{System.Environment.NewLine}";
+                        strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} Skipping irr reports and statistics for {Names[idxRow].FilePath}. Required station information is missing.{System.Environment.NewLine}";
                         File.AppendAllText(_strLulccReportLogFile, strLogEntry);
                         continue;
                     }
@@ -4757,16 +4819,124 @@ namespace bagis_pro
                             }
                         }
                     }
-                    Names[idxRow].AoiBatchStateText = AoiBatchState.Completed.ToString();  // update gui
                     strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Finished generate maps export for " +
                         Names[idxRow].Name + "\r\n";
                     File.AppendAllText(_strLulccReportLogFile, strLogEntry);       // append
+
+                    CmdLulccMapEnabled = false;
+
+                    double cellSizeSqMeters = -1;
+                    if (Report_Irr_Checked)
+                    {
+                        double dblTest = await GeodatabaseTools.GetCellSizeAsync(new Uri($@"{analysisUri.LocalPath}\{Constants.FILE_IRR_CHANGE}"), WorkspaceType.Geodatabase);
+                        if (dblTest > 0)
+                        {
+                            cellSizeSqMeters = Math.Round(dblTest, 2);
+                        }
+
+                        success = BA_ReturnCode.WriteError;
+                        if (!File.Exists(strIrrCsvFile))
+                        {
+                            success = this.InitIrrCsv(strIrrCsvFile);
+                        }
+                        else
+                        {
+                            success = BA_ReturnCode.Success;
+                        }
+                        if (success == BA_ReturnCode.Success)
+                        {
+                            IList<string> lstElements = await AnalysisTools.GenerateIrrStatisticsList(oAoi, _strLulccReportLogFile,
+                                aoiAreaSqMeters, cellSizeSqMeters);
+                            if (lstElements.Count > 0)
+                            {
+                                try
+                                {
+                                    // Adds new content to file
+                                    StringBuilder sb = new StringBuilder();
+                                    foreach (var item in lstElements)
+                                    {
+                                        sb.Append($@"{item}{_separator}");
+                                    }
+                                    using (StreamWriter sw = File.AppendText(strIrrCsvFile))
+                                    {
+                                        sw.WriteLine(sb.ToString());
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} Data could not be written to the {strIrrCsvFile} file!{System.Environment.NewLine}";
+                                    File.AppendAllText(_strLulccReportLogFile, strLogEntry);
+                                    return;
+                                }
+                            }
+                            else
+                            {
+                                strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} No irr data for {Names[idxRow].Name}. Report not generated. {System.Environment.NewLine}";
+                                File.AppendAllText(_strLulccReportLogFile, strLogEntry);
+                            }
+                        }
+                    }
+                    if (Report_Nlcd_Checked)
+                    {
+                        double dblTest = await GeodatabaseTools.GetCellSizeAsync(new Uri($@"{analysisUri.LocalPath}\{Constants.FILE_LANDCOVER_CHANGE}"), WorkspaceType.Geodatabase);
+                        if (dblTest > 0)
+                        {
+                            cellSizeSqMeters = Math.Round(dblTest, 2);
+                        }
+
+                        success = BA_ReturnCode.WriteError;
+                        if (!File.Exists(strLandCoverCsvFile))
+                        {
+                            success = this.InitLandCoverCsv(strLandCoverCsvFile);
+                        }
+                        else
+                        {
+                            success = BA_ReturnCode.Success;
+                        }
+                        if (success == BA_ReturnCode.Success)
+                        {
+                            IList<string> lstElements = await AnalysisTools.GenerateLandCoverStatisticsList(oAoi, _strLulccReportLogFile,
+                                aoiAreaSqMeters, cellSizeSqMeters);
+                            if (lstElements.Count > 0)
+                            {
+                                try
+                                {
+                                    // Adds new content to file
+                                    StringBuilder sb = new StringBuilder();
+                                    foreach (var item in lstElements)
+                                    {
+                                        sb.Append($@"{item}{_separator}");
+                                    }
+                                    using (StreamWriter sw = File.AppendText(strLandCoverCsvFile))
+                                    {
+                                        sw.WriteLine(sb.ToString());
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} Data could not be written to the {strLandCoverCsvFile} file!{System.Environment.NewLine}";
+                                    File.AppendAllText(_strLulccReportLogFile, strLogEntry);
+                                    return;
+                                }
+                            }
+                            else
+                            {
+                                strLogEntry = $@"{DateTime.Now.ToString("MM/dd/yy H:mm:ss")} No irr data for {Names[idxRow].Name}. Report not generated. {System.Environment.NewLine}";
+                                File.AppendAllText(_strLulccReportLogFile, strLogEntry);
+                            }
+                        }
+
+                    }
+                    strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Finished generating Lulcc statistics export for " +
+                        Names[idxRow].Name + "\r\n";
+                    File.AppendAllText(_strLulccReportLogFile, strLogEntry);       // append
+                    Names[idxRow].AoiBatchStateText = AoiBatchState.Completed.ToString();  // update gui
                 }
 
             }
-            strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Completed lulcc maps generation" + "\r\n";
+            strLogEntry = DateTime.Now.ToString("MM/dd/yy H:mm:ss ") + "Completed lulcc reports and statistics generation" + "\r\n";
             File.AppendAllText(_strLulccReportLogFile, strLogEntry);       // append
-            MessageBox.Show("Lulcc maps have been generated!");
+            MessageBox.Show("Lulcc reports and statistics have been generated!");
 
         }
         private string GetMtbsMapName(int year)
