@@ -133,8 +133,6 @@ namespace bagis_pro
         MissingData,
         MissingIrrData,
         MissingLulccData,
-        MissingIrrReport,
-        MissingLulccReport
     }
 
     public enum ReportType

@@ -3576,25 +3576,22 @@ namespace bagis_pro
                             }
                             continue;
                         }
-                        bool bHasIrrReport = false;
-                        bool bHasLandcoverReport = false;
-                        Regex reg = new Regex(@"irr_lands_statistics_");
-                        var files = Directory.GetFiles(Path.GetDirectoryName(_strLulccReportLogFile), "*.csv")
-                            .Where(path => reg.IsMatch(path))
-                            .ToList();
-                        if (files.Count > 0)
+                        bool bHasReport = false;
+                        string strExportPrefix = "";
+                        if (!string.IsNullOrEmpty(oAoi.StationTriplet))
                         {
-                            bHasIrrReport = true;
+                            strExportPrefix = oAoi.StationTriplet.Replace(':', '_');
                         }
-                        reg = new Regex(@"land_cover_statistics_");
-                        files = Directory.GetFiles(Path.GetDirectoryName(_strLulccReportLogFile), "*.csv")
-                            .Where(path => reg.IsMatch(path))
-                            .ToList();
-                        if (files.Count > 0)
+                        else
                         {
-                            bHasLandcoverReport = true;
+                            strExportPrefix = Constants.VALUE_NOT_SPECIFIED;
                         }
-                        if (!bHasIrrReport && !bHasLandcoverReport)
+                        string strOutputPath = $@"{Path.GetDirectoryName(_strLulccReportLogFile)}\{strExportPrefix}{Constants.FILE_LULCC_REPORT_SUFFIX_PDF}";
+                        if (File.Exists(strOutputPath))
+                        {
+                            bHasReport = true;
+                        }
+                        if (!bHasReport)
                         {
                             Names[idxRow].AoiBatchStateText = AoiBatchState.MissingReports.ToString();  // update gui
                             if (!lstStatus.Contains(Names[idxRow].AoiBatchStateText))
@@ -3603,25 +3600,7 @@ namespace bagis_pro
                             }
                             continue;
                         }
-                        else if (!bHasIrrReport)
-                        {
-                            Names[idxRow].AoiBatchStateText = AoiBatchState.MissingIrrReport.ToString();  // update gui
-                            if (!lstStatus.Contains(Names[idxRow].AoiBatchStateText))
-                            {
-                                lstStatus.Add(Names[idxRow].AoiBatchStateText);
-                            }
-                            continue;
-                        }
-                        else if (!bHasLandcoverReport)
-                        {
-                            Names[idxRow].AoiBatchStateText = AoiBatchState.MissingLulccReport.ToString();  // update gui
-                            if (!lstStatus.Contains(Names[idxRow].AoiBatchStateText))
-                            {
-                                lstStatus.Add(Names[idxRow].AoiBatchStateText);
-                            }
-                            continue;
-                        }
-                        else if (bHasIrrReport && bHasLandcoverReport)
+                        else if (bHasReport)
                         {
                             Names[idxRow].AoiBatchStateText = AoiBatchState.HasReport.ToString();  // update gui
                             if (!lstStatus.Contains(Names[idxRow].AoiBatchStateText))
