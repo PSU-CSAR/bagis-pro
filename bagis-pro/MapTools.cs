@@ -1547,14 +1547,6 @@ namespace bagis_pro
                     {
                         CIMLegendItem[] arrTempItems = new CIMLegendItem[legend.Items.Length];
                         int idx = 0;
-                        //bool bCustomLegend = false;
-                        //// This flag is used to customize long legends
-                        //if (lstLegendLayer.Contains(Constants.MAPS_ELEV_ZONE) || lstLegendLayer.Contains(Constants.MAPS_LAND_COVER)
-                        //    || lstLegendLayer.Contains(Constants.MAPS_PRECIPITATION_CONTRIBUTION))
-                        //{
-                        //    bCustomLegend = true;
-                        //}
-
 
                         //  Add items that we want to display to temporary array
                         foreach (var strName in lstLegendLayer)
@@ -1566,22 +1558,7 @@ namespace bagis_pro
                                 {
                                     // Set the visibility
                                     legendItem.IsVisible = true;
-                                    //if (bCustomLegend)
-                                    //{
-                                    //    legendItem.LabelSymbol.Symbol.SetSize(8);
-                                    //    legendItem.LayerNameSymbol.Symbol.SetSize(12);
-                                    //    if (legendItem.Name.Equals(Constants.MAPS_LAND_COVER) || legendItem.Name.Equals(Constants.MAPS_ELEV_ZONE) ||
-                                    //        legendItem.Name.Equals(Constants.MAPS_PRECIPITATION_CONTRIBUTION))
-                                    //    {
-                                    //        legendItem.PatchHeight = 8;
-                                    //        legendItem.PatchWidth = 14;
-                                    //    }
-                                    //}
-                                    //else
-                                    //{
-                                    //    legendItem.LabelSymbol.Symbol.SetSize(10);
-                                    //    legendItem.LayerNameSymbol.Symbol.SetSize(14);
-                                    //}
+
                                     // Special handling for critical precip zones because it isn't on map when legend is created
                                     if (legendItem.Name.Equals(Constants.MAPS_CRITICAL_PRECIPITATION_ZONES))
                                     {
@@ -1610,17 +1587,6 @@ namespace bagis_pro
                         }
                         // Set the legend items
                         legend.Items = arrTempItems;
-
-                        // Set legend fitting strategy to accommodate longer classification list if elevation
-                        // Otherwise adjust columns and size to make it fit
-                        //if (bCustomLegend)
-                        //{
-                        //    legend.FittingStrategy = LegendFittingStrategy.AdjustFrame;
-                        //}
-                        //else
-                        //{
-                        //    legend.FittingStrategy = LegendFittingStrategy.AdjustColumnsAndSize;
-                        //}
                         legend.Visible = true;
                     }
                     else
@@ -1635,6 +1601,46 @@ namespace bagis_pro
             success = BA_ReturnCode.Success;
             return success;
         }
+
+        public async static Task<BA_ReturnCode> UpdateLegendLulccAsync(Layout oLayout, IList<string> lstLegendLayer)
+        {
+            BA_ReturnCode success = BA_ReturnCode.UnknownError;
+            if (oLayout == null) return success;
+
+            // 2. Perform modifications on the CIM within a QueuedTask
+            await QueuedTask.Run(() =>
+            {
+                // Get the layout's CIM definition
+                var layoutDef = oLayout.GetDefinition();
+
+                // Find the legend element inside the layout components
+                var legendElement = layoutDef.Elements.OfType<CIMLegend>().FirstOrDefault();
+                if (legendElement != null && legendElement.Items != null)
+                {
+                    foreach (var targetItem in legendElement.Items)
+                    {
+                        // Find the targeted legend item using its name/path
+                        // Note: The Layer property on CIMLegendItem often contains the layer path or name
+                        if (lstLegendLayer.Contains(targetItem.Name))
+                        {
+                            // Toggle or set the visibility
+                            targetItem.IsVisible = true; 
+                        }
+                        else
+                        {
+                            targetItem.IsVisible = false;
+                        }
+                    }
+
+
+                    // 3. Commit the modified CIM definition back to the layout
+                    oLayout.SetDefinition(layoutDef);
+                }
+            });
+
+            return BA_ReturnCode.Success;
+        }
+
 
         public static async Task<BA_ReturnCode> UpdateMapElementsAsync(string subTitleText, string mapLayoutName,
             BA_Objects.MapDefinition mapDefinition)

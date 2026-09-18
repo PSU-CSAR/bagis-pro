@@ -4471,6 +4471,7 @@ namespace bagis_pro
             var dir = new DirectoryInfo($@"{Path.GetDirectoryName(_strLulccReportLogFile)}");
             string strIrrCsvFile = "";
             string strLandCoverCsvFile = "";
+
             if (Report_Irr_Checked)
             {
                 string strSearch = $@"irr_lands_statistics_{dateSuffix}.csv";
@@ -4667,7 +4668,7 @@ namespace bagis_pro
                                 if (success == BA_ReturnCode.Success)
                                 {
                                     MapDefinition mapDefinition = MapTools.LoadMapDefinition(BagisMapType.IRR);
-                                    success = await MapTools.UpdateLegendAsync(oLayout, mapDefinition.LegendLayerList);
+                                    success = await MapTools.UpdateLegendLulccAsync(oLayout, mapDefinition.LegendLayerList);
                                     mapDefinition.Title = $@"IRRIGATED LAND ({oAnalysis.IrrHistoryYearStart}-{oAnalysis.IrrHistoryYearEnd})";
                                     mapDefinition.LowerRightTextbox = $@"Lands irrigated between {oAnalysis.IrrHistoryYearStart} and {oAnalysis.IrrHistoryYearEnd}, but were inactive after {oAnalysis.IrrHistoryYearEnd} are labeled as{Environment.NewLine}""Inactive"". ""Newly Irrigated"" indicates lands that were non-irrigated prior to {oAnalysis.IrrCurrentYearStart}.";
                                     success = await MapTools.UpdateMapElementsAsync(Module1.Current.Aoi.StationName, Constants.MAPS_LULCC_LAYOUT_NAME, mapDefinition);
@@ -4703,7 +4704,7 @@ namespace bagis_pro
                         }
                     }
                     if (Report_Nlcd_Checked && bLcDataExists)
-                    {                        
+                    {
                         success = GeneralTools.GenerateLulccMapsTitlePage(areaSqKm, false);
                         success = await MapTools.DisplayLulccMapsAsync(Module1.Current.Aoi.FilePath, oLayout, false, true);
                         if (success != BA_ReturnCode.Success)
@@ -4752,7 +4753,7 @@ namespace bagis_pro
                                 for (int i = 0; i < arrMapTypes.Length; i++)
                                 {
                                     MapDefinition mapDefinition = MapTools.LoadMapDefinition(arrMapTypes[i]);
-                                    success = await MapTools.UpdateLegendAsync(oLayout, mapDefinition.LegendLayerList);
+                                    success = await MapTools.UpdateLegendLulccAsync(oLayout, mapDefinition.LegendLayerList);
                                     switch (arrMapTypes[i])
                                     {
                                         case BagisMapType.LAND_COVER_CURRENT:

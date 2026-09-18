@@ -903,12 +903,9 @@ namespace bagis_pro
                             return;
                         }
 
-                        // Prepare the data to be clipped depending on data type
-                        string[] arrClipUris = Constants.URIS_SNODAS_SWE;
-                        string[] arrClippedFileNames = Constants.FILES_SNODAS_SWE;
                         string strOutputGdb = GeodatabaseTools.GetGeodatabasePath(strAoiPath, GeodatabaseNames.Layers, true);
-
                         WorkspaceType workspaceType = WorkspaceType.ImageServer;
+                        string[] arrClipUris = Constants.URIS_SNODAS_SWE;
                         if (strDataType.Equals(DataSource.GetPrecipitationKey))
                         {
                             if (strWsPrefix.IndexOf("http") < 0)
@@ -922,7 +919,13 @@ namespace bagis_pro
                             {
                                 workspaceType = await GeneralTools.GetRasterWorkspaceType($@"{strWsPrefix}{Constants.FILES_SNODAS_SWE[0]}");
                             }
+                            if (workspaceType == WorkspaceType.Geodatabase)
+                            {
+                                arrClipUris = Constants.FILES_SNODAS_SWE;
+                            }
                         }
+                        // Prepare the data to be clipped depending on data type            
+                        string[] arrClippedFileNames = Constants.FILES_SNODAS_SWE;
                         if (strDataType.Equals(DataSource.GetPrecipitationKey))
                         {
                             // Reset some variables if clipping PRISM
@@ -5220,11 +5223,24 @@ namespace bagis_pro
                 {
                     string localLayerName = Path.GetFileName((string)Module1.Current.BagisSettings.AoiPrecipFile);
                     PrismFile prismFile = (PrismFile)Enum.Parse(typeof(PrismFile), localLayerName);
-                    int index = Array.IndexOf(Enum.GetValues(prismFile.GetType()), prismFile);
-                    PrismServiceNames serviceName = (PrismServiceNames)index;
-                    Uri imageServiceUri = new Uri(strWsPrefix + serviceName.ToString() +
-                        Constants.URI_IMAGE_SERVER);
-                    strUri = imageServiceUri.AbsoluteUri;
+                    // Is Prism coming from image service or gdb?
+                    WorkspaceType workspaceType = WorkspaceType.ImageServer;
+                    if (strWsPrefix.IndexOf("http") < 0)
+                    {
+                        workspaceType = await GeneralTools.GetRasterWorkspaceType($@"{strWsPrefix}{prismFile.ToString()}");
+                    }
+                    if (workspaceType == WorkspaceType.ImageServer)
+                    {
+                        int index = Array.IndexOf(Enum.GetValues(prismFile.GetType()), prismFile);
+                        PrismServiceNames serviceName = (PrismServiceNames)index;
+                        Uri imageServiceUri = new Uri(strWsPrefix + serviceName.ToString() +
+                            Constants.URI_IMAGE_SERVER);
+                        strUri = imageServiceUri.AbsoluteUri;
+                    }
+                    else if (workspaceType == WorkspaceType.Geodatabase)
+                    {
+                        strUri = $@"{strWsPrefix}{prismFile.ToString()}";
+                    }
                 }
             }
             return strUri;
