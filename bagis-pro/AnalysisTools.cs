@@ -924,6 +924,12 @@ namespace bagis_pro
                                 arrClipUris = Constants.FILES_SNODAS_SWE;
                             }
                         }
+                        if (workspaceType == WorkspaceType.None)
+                        {
+                            Module1.Current.ModuleLogManager.LogError(nameof(ClipLayersAsync),
+                            $@"The clip uri ({strWsPrefix}) is invalid for data type {strDataType}. Clipping cancelled!");
+                            return;
+                        }
                         // Prepare the data to be clipped depending on data type            
                         string[] arrClippedFileNames = Constants.FILES_SNODAS_SWE;
                         if (strDataType.Equals(DataSource.GetPrecipitationKey))
